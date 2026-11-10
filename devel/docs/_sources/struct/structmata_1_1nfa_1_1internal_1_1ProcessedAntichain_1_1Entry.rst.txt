@@ -1,0 +1,5 @@
+Struct mata::nfa::internal::ProcessedAntichain::Entry
+=====================================================
+
+.. doxygenstruct:: mata::nfa::internal::ProcessedAntichain::Entry
+   :members:

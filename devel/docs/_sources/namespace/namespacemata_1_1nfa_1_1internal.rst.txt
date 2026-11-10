@@ -1,0 +1,5 @@
+Namespace mata::nfa::internal
+=============================
+
+.. doxygennamespace:: mata::nfa::internal
+   :members:

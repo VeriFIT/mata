@@ -1,0 +1,5 @@
+Namespace mata::nft::internal
+=============================
+
+.. doxygennamespace:: mata::nft::internal
+   :members:

@@ -1,0 +1,4 @@
+Union mata::utils::SmallOrdVector::Buffer
+=========================================
+
+.. doxygenunion:: mata::utils::SmallOrdVector::Buffer

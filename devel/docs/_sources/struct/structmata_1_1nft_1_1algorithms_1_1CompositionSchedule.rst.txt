@@ -1,0 +1,5 @@
+Struct mata::nft::algorithms::CompositionSchedule
+=================================================
+
+.. doxygenstruct:: mata::nft::algorithms::CompositionSchedule
+   :members:

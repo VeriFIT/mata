@@ -1,0 +1,5 @@
+Struct mata::parser::Re2Options
+===============================
+
+.. doxygenstruct:: mata::parser::Re2Options
+   :members:

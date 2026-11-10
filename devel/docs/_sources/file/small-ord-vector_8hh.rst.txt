@@ -1,0 +1,4 @@
+File small-ord-vector.hh
+========================
+
+.. doxygenfile:: small-ord-vector.hh

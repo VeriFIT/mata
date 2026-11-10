@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>File small-ord-vector.hh &#8212; Mata v0.0.0-dev.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=623e9adf"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="File sparse-set.hh" href="sparse-set_8hh.html" />
+    <link rel="prev" title="File re2parser.hh" href="re2parser_8hh.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="file-small-ord-vector-hh">
+<h1>File small-ord-vector.hh<a class="headerlink" href="#file-small-ord-vector-hh" title="Link to this heading">¶</a></h1>
+<p>Ordered set of trivially copyable keys that stores small sets inline and spills larger ones to the heap. </p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv44mata">
+<span id="_CPPv34mata"></span><span id="_CPPv24mata"></span><span id="mata"></span><span class="target" id="namespacemata"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mata</span></span></span><br /></dt>
+<dd><p>Main namespace including structs and algorithms for all automata. </p>
+<p>In particular, this includes:<ol class="loweralpha simple">
+<li><p>Alphabets,</p></li>
+<li><p>Formula graphs and nodes,</p></li>
+<li><p><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1Mintermization"><span class="std std-ref">Mintermization</span></a>,</p></li>
+<li><p>Closed sets. </p></li>
+</ol>
+</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utilsE">
+<span id="_CPPv3N4mata5utilsE"></span><span id="_CPPv2N4mata5utilsE"></span><span id="mata::utils"></span><span class="target" id="namespacemata_1_1utils"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">utils</span></span></span><br /></dt>
+<dd><p>SparseSet.h Implements a class template of a sparse set of unsigned integers. </p>
+<p>Non-automata-related structures and algorithms.</p>
+<p>
+In particular, this includes:<ol class="lowerroman simple">
+<li><p>Predicates,</p></li>
+<li><p>Ordered Vectors,</p></li>
+<li><p>Iterators,</p></li>
+<li><p>Printers,</p></li>
+<li><p>Other helper functions. </p></li>
+</ol>
+<dl class="simple">
+<dt><strong>Author</strong></dt><dd><p>Sam Griffiths www.computist.xyz <a class="reference external" href="https://gist.github.com/sjgriffiths/06732c6076b9db8a7cf4dfe3a7aed43a">https://gist.github.com/sjgriffiths/06732c6076b9db8a7cf4dfe3a7aed43a</a></p>
+</dd>
+</dl>
+</p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE">
+<span id="_CPPv3I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE"></span><span id="_CPPv2I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Key</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">InlineCapacity</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">max</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">size_t</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">(</span></span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">uintptr_t</span></span><span class="p"><span class="pre">)</span></span><span class="w"> </span><span class="o"><span class="pre">/</span></span><span class="w"> </span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1SmallOrdVector"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SmallOrdVector</span></span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;small-ord-vector.hh&gt;</em></div>
+<p>A set of keys kept as a sorted, duplicate-free contiguous array, like <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1utils.html#classmata_1_1utils_1_1OrdVector"><span class="std std-ref"><span class="pre">OrdVector</span></span></a></code>, that stores up to <code class="docutils literal notranslate"><span class="pre">InlineCapacity</span></code> keys inside the object and allocates only for larger sets. </p>
+<p>The object is a pointer-sized buffer plus a 32-bit size word: the buffer holds either the inline keys or a pointer to a heap block, which keeps its capacity in a header in front of the keys. A set lives inline until it outgrows <code class="docutils literal notranslate"><span class="pre">InlineCapacity</span></code> or a larger capacity is reserved. Like <code class="docutils literal notranslate"><span class="pre">std::vector</span></code>, it then keeps its heap block when it shrinks, while copies are made in their final form: inline when they fit, otherwise with exact capacity. On 64-bit targets the object ends with four bytes of tail padding, so a <code class="docutils literal notranslate"></code>[[no_unique_address]] member followed by a 32-bit field packs both into 16 bytes.</p>
+<p>Iterators are plain pointers; any operation that grows the set may invalidate them. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector10value_typeE">
+<span id="_CPPv3N4mata5utils14SmallOrdVector10value_typeE"></span><span id="_CPPv2N4mata5utils14SmallOrdVector10value_typeE"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a5c1df1ab65750946a228fd036417792e"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">value_type</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector10value_typeE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector9size_typeE">
+<span id="_CPPv3N4mata5utils14SmallOrdVector9size_typeE"></span><span id="_CPPv2N4mata5utils14SmallOrdVector9size_typeE"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1af38ce1af42d538f410180c265518d4f0"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">size_type</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">size_t</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector9size_typeE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector15difference_typeE">
+<span id="_CPPv3N4mata5utils14SmallOrdVector15difference_typeE"></span><span id="_CPPv2N4mata5utils14SmallOrdVector15difference_typeE"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1ace405568d0b2f3fad4990044252c7732"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">difference_type</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">ptrdiff_t</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector15difference_typeE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector9referenceE">
+<span id="_CPPv3N4mata5utils14SmallOrdVector9referenceE"></span><span id="_CPPv2N4mata5utils14SmallOrdVector9referenceE"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a9c63bf4a9c668b0b1eb667b159837efd"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reference</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">&amp;</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector9referenceE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector15const_referenceE">
+<span id="_CPPv3N4mata5utils14SmallOrdVector15const_referenceE"></span><span id="_CPPv2N4mata5utils14SmallOrdVector15const_referenceE"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a1795290b91cab464a6168564d8a27e8e"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">const_reference</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">&amp;</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector15const_referenceE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector7pointerE">
+<span id="_CPPv3N4mata5utils14SmallOrdVector7pointerE"></span><span id="_CPPv2N4mata5utils14SmallOrdVector7pointerE"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1ab5df13e8a9b68ad033aa34c10f01a8ad"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">pointer</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">*</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector7pointerE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector13const_pointerE">
+<span id="_CPPv3N4mata5utils14SmallOrdVector13const_pointerE"></span><span id="_CPPv2N4mata5utils14SmallOrdVector13const_pointerE"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a9e9daba54d9afc6448504df976821b5b"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">const_pointer</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">*</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector13const_pointerE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector8iteratorE">
+<span id="_CPPv3N4mata5utils14SmallOrdVector8iteratorE"></span><span id="_CPPv2N4mata5utils14SmallOrdVector8iteratorE"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a0da52af691cae45223901e5b23644600"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iterator</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">*</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector8iteratorE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector14const_iteratorE">
+<span id="_CPPv3N4mata5utils14SmallOrdVector14const_iteratorE"></span><span id="_CPPv2N4mata5utils14SmallOrdVector14const_iteratorE"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a1c929603f6f13ef80797d41a683c8fac"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">const_iterator</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">*</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector14const_iteratorE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector14SmallOrdVectorEv">
+<span id="_CPPv3N4mata5utils14SmallOrdVector14SmallOrdVectorEv"></span><span id="_CPPv2N4mata5utils14SmallOrdVector14SmallOrdVectorEv"></span><span id="mata::utils::SmallOrdVector::SmallOrdVector"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a3c9a2cd9de4459fdb82bb557172bf462"></span><span class="sig-name descname"><span class="n"><span class="pre">SmallOrdVector</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector14SmallOrdVectorEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector14SmallOrdVectorEK3Key">
+<span id="_CPPv3N4mata5utils14SmallOrdVector14SmallOrdVectorEK3Key"></span><span id="_CPPv2N4mata5utils14SmallOrdVector14SmallOrdVectorEK3Key"></span><span id="mata::utils::SmallOrdVector::SmallOrdVector__KeyC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a1eed20c5ad24c49738430997fd2b9f0a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SmallOrdVector</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">key</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector14SmallOrdVectorEK3Key" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector14SmallOrdVectorENSt16initializer_listI3KeyEE">
+<span id="_CPPv3N4mata5utils14SmallOrdVector14SmallOrdVectorENSt16initializer_listI3KeyEE"></span><span id="_CPPv2N4mata5utils14SmallOrdVector14SmallOrdVectorENSt16initializer_listI3KeyEE"></span><span id="mata::utils::SmallOrdVector::SmallOrdVector__std::initializer_list:Key:"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1abe3fc193715a13a60c9ef11529f1c1b0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SmallOrdVector</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">initializer_list</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">keys</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector14SmallOrdVectorENSt16initializer_listI3KeyEE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I_NSt14input_iteratorEEN4mata5utils14SmallOrdVector14SmallOrdVectorE13InputIterator13InputIterator">
+<span id="_CPPv3I_NSt14input_iteratorEEN4mata5utils14SmallOrdVector14SmallOrdVectorE13InputIterator13InputIterator"></span><span id="_CPPv2I_NSt14input_iteratorEEN4mata5utils14SmallOrdVector14SmallOrdVectorE13InputIterator13InputIterator"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">input_iterator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">InputIterator</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a1c5e2851dbfc2116046c2bb92c433474"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SmallOrdVector</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I_NSt14input_iteratorEEN4mata5utils14SmallOrdVector14SmallOrdVectorE13InputIterator13InputIterator" title="mata::utils::SmallOrdVector::SmallOrdVector::InputIterator"><span class="n"><span class="pre">InputIterator</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">first</span></span>, <a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I_NSt14input_iteratorEEN4mata5utils14SmallOrdVector14SmallOrdVectorE13InputIterator13InputIterator" title="mata::utils::SmallOrdVector::SmallOrdVector::InputIterator"><span class="n"><span class="pre">InputIterator</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">last</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Construct from an unordered range of keys, which gets sorted and deduplicated. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector14SmallOrdVectorEKNSt4spanIK3KeyEE">
+<span id="_CPPv3N4mata5utils14SmallOrdVector14SmallOrdVectorEKNSt4spanIK3KeyEE"></span><span id="_CPPv2N4mata5utils14SmallOrdVector14SmallOrdVectorEKNSt4spanIK3KeyEE"></span><span id="mata::utils::SmallOrdVector::SmallOrdVector__std::span:KeyC:C"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a4b696c214a22fa045da221a99fb8ab35"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SmallOrdVector</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">span</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">sorted_keys</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Copy sorted, duplicate-free keys, such as an <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1utils.html#classmata_1_1utils_1_1OrdVector"><span class="std std-ref"><span class="pre">OrdVector</span></span></a></code>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector14SmallOrdVectorERK14SmallOrdVector">
+<span id="_CPPv3N4mata5utils14SmallOrdVector14SmallOrdVectorERK14SmallOrdVector"></span><span id="_CPPv2N4mata5utils14SmallOrdVector14SmallOrdVectorERK14SmallOrdVector"></span><span id="mata::utils::SmallOrdVector::SmallOrdVector__SmallOrdVectorCR"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a5c1a3cbb665cbe777466ca7c13b7cad9"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SmallOrdVector</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector14SmallOrdVectorERK14SmallOrdVector" title="mata::utils::SmallOrdVector::SmallOrdVector"><span class="n"><span class="pre">SmallOrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector14SmallOrdVectorERK14SmallOrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector14SmallOrdVectorERR14SmallOrdVector">
+<span id="_CPPv3N4mata5utils14SmallOrdVector14SmallOrdVectorERR14SmallOrdVector"></span><span id="_CPPv2N4mata5utils14SmallOrdVector14SmallOrdVectorERR14SmallOrdVector"></span><span id="mata::utils::SmallOrdVector::SmallOrdVector__SmallOrdVectorRR"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a8213f52eb01d6f1a5d4f07802706a7e2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SmallOrdVector</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector14SmallOrdVectorERR14SmallOrdVector" title="mata::utils::SmallOrdVector::SmallOrdVector"><span class="n"><span class="pre">SmallOrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector14SmallOrdVectorERR14SmallOrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVectoraSERK14SmallOrdVector">
+<span id="_CPPv3N4mata5utils14SmallOrdVectoraSERK14SmallOrdVector"></span><span id="_CPPv2N4mata5utils14SmallOrdVectoraSERK14SmallOrdVector"></span><span id="mata::utils::SmallOrdVector::assign-operator__SmallOrdVectorCR"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1af4511a483ddecb17a6c1f10721925118"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector"><span class="n"><span class="pre">SmallOrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector"><span class="n"><span class="pre">SmallOrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVectoraSERK14SmallOrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVectoraSERR14SmallOrdVector">
+<span id="_CPPv3N4mata5utils14SmallOrdVectoraSERR14SmallOrdVector"></span><span id="_CPPv2N4mata5utils14SmallOrdVectoraSERR14SmallOrdVector"></span><span id="mata::utils::SmallOrdVector::assign-operator__SmallOrdVectorRR"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a491132d8c7d30d334716e28f3e0e5f0e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector"><span class="n"><span class="pre">SmallOrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector"><span class="n"><span class="pre">SmallOrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVectoraSERR14SmallOrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVectoraSERK9OrdVectorI3KeyE">
+<span id="_CPPv3N4mata5utils14SmallOrdVectoraSERK9OrdVectorI3KeyE"></span><span id="_CPPv2N4mata5utils14SmallOrdVectoraSERK9OrdVectorI3KeyE"></span><span id="mata::utils::SmallOrdVector::assign-operator__OrdVector:Key:CR"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1ad207be40268e44060ead20c153ed1287"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector"><span class="n"><span class="pre">SmallOrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">set</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVectoraSERK9OrdVectorI3KeyE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVectorD0Ev">
+<span id="_CPPv3N4mata5utils14SmallOrdVectorD0Ev"></span><span id="_CPPv2N4mata5utils14SmallOrdVectorD0Ev"></span><span id="mata::utils::SmallOrdVector::~SmallOrdVector"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a2eb2a7106ca50dc24370254ab80b764a"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">~SmallOrdVector</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVectorD0Ev" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector4dataEv">
+<span id="_CPPv3N4mata5utils14SmallOrdVector4dataEv"></span><span id="_CPPv2N4mata5utils14SmallOrdVector4dataEv"></span><span id="mata::utils::SmallOrdVector::data"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a3ca6984bdf1f5e3bd0c373ac4a729ad0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">data</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector4dataEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector4dataEv">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector4dataEv"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector4dataEv"></span><span id="mata::utils::SmallOrdVector::dataC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1aba62c71814d82bdf4588a58c796a8264"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">data</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVector4dataEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector4sizeEv">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector4sizeEv"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector4sizeEv"></span><span id="mata::utils::SmallOrdVector::sizeC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a0801762a3fe36fe32dca5f16e515478d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector9size_typeE" title="mata::utils::SmallOrdVector::size_type"><span class="n"><span class="pre">size_type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">size</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVector4sizeEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector5emptyEv">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector5emptyEv"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector5emptyEv"></span><span id="mata::utils::SmallOrdVector::emptyC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a3f6fc5de06a318920d84f3c3742db07f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">empty</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVector5emptyEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector8capacityEv">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector8capacityEv"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector8capacityEv"></span><span id="mata::utils::SmallOrdVector::capacityC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1ae3adf2a15f25070d980012ce40c5de5f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector9size_typeE" title="mata::utils::SmallOrdVector::size_type"><span class="n"><span class="pre">size_type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">capacity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVector8capacityEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector9is_inlineEv">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector9is_inlineEv"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector9is_inlineEv"></span><span id="mata::utils::SmallOrdVector::is_inlineC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1ab02a02b808d3742c78beecc6c8cfa87e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_inline</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><br /></dt>
+<dd><p>Is the set stored inline, without a heap block? </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector5beginEv">
+<span id="_CPPv3N4mata5utils14SmallOrdVector5beginEv"></span><span id="_CPPv2N4mata5utils14SmallOrdVector5beginEv"></span><span id="mata::utils::SmallOrdVector::begin"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a979556eb331ec35eb33472a90a160f99"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector8iteratorE" title="mata::utils::SmallOrdVector::iterator"><span class="n"><span class="pre">iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">begin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector5beginEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector3endEv">
+<span id="_CPPv3N4mata5utils14SmallOrdVector3endEv"></span><span id="_CPPv2N4mata5utils14SmallOrdVector3endEv"></span><span id="mata::utils::SmallOrdVector::end"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1afc5380afa64b233d0df01a147616974b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector8iteratorE" title="mata::utils::SmallOrdVector::iterator"><span class="n"><span class="pre">iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">end</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector3endEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector5beginEv">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector5beginEv"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector5beginEv"></span><span id="mata::utils::SmallOrdVector::beginC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a1ca1fc2c9fc3e169d5d0decfd1e54221"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector14const_iteratorE" title="mata::utils::SmallOrdVector::const_iterator"><span class="n"><span class="pre">const_iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">begin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVector5beginEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector3endEv">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector3endEv"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector3endEv"></span><span id="mata::utils::SmallOrdVector::endC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a5b9b57293fae9b18b26349ac0b3fdcd3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector14const_iteratorE" title="mata::utils::SmallOrdVector::const_iterator"><span class="n"><span class="pre">const_iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">end</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVector3endEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector6cbeginEv">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector6cbeginEv"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector6cbeginEv"></span><span id="mata::utils::SmallOrdVector::cbeginC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1abeb76f7f3414f270020e6f467586bd93"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector14const_iteratorE" title="mata::utils::SmallOrdVector::const_iterator"><span class="n"><span class="pre">const_iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cbegin</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVector6cbeginEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector4cendEv">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector4cendEv"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector4cendEv"></span><span id="mata::utils::SmallOrdVector::cendC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a9859a454bb6f50c654e280274d6a9d13"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector14const_iteratorE" title="mata::utils::SmallOrdVector::const_iterator"><span class="n"><span class="pre">const_iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cend</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVector4cendEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector4spanEv">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector4spanEv"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector4spanEv"></span><span id="mata::utils::SmallOrdVector::spanC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1acfd68aa93aa8d500ee1e89c1421982b8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">span</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">span</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVector4spanEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVectorixEK9size_type">
+<span id="_CPPv3NK4mata5utils14SmallOrdVectorixEK9size_type"></span><span id="_CPPv2NK4mata5utils14SmallOrdVectorixEK9size_type"></span><span id="mata::utils::SmallOrdVector::subscript-operator__size_typeCC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a1873dad3b2b910572b8a48df0bb47bf4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">[]</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector9size_typeE" title="mata::utils::SmallOrdVector::size_type"><span class="n"><span class="pre">size_type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">index</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVectorixEK9size_type" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector5frontEv">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector5frontEv"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector5frontEv"></span><span id="mata::utils::SmallOrdVector::frontC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a91794864dc7038a5235f49a26f3435ba"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">front</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVector5frontEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector4backEv">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector4backEv"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector4backEv"></span><span id="mata::utils::SmallOrdVector::backC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1addc13a9b02b0d4849fb0f64158d64a41"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">back</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVector4backEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector3minEv">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector3minEv"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector3minEv"></span><span id="mata::utils::SmallOrdVector::minC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a79e51cc285d7db2a7947af9b40eb55ed"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">min</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVector3minEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector3maxEv">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector3maxEv"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector3maxEv"></span><span id="mata::utils::SmallOrdVector::maxC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1af6b62885fe3bf9b0986a617c6a23bc0d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">max</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVector3maxEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector7reserveEK9size_type">
+<span id="_CPPv3N4mata5utils14SmallOrdVector7reserveEK9size_type"></span><span id="_CPPv2N4mata5utils14SmallOrdVector7reserveEK9size_type"></span><span id="mata::utils::SmallOrdVector::reserve__size_typeC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a284d7e96d3ba847b937f2260ace96698"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reserve</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector9size_typeE" title="mata::utils::SmallOrdVector::size_type"><span class="n"><span class="pre">size_type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">capacity</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Ensure room for <code class="docutils literal notranslate"><span class="pre">capacity</span></code> keys; moves the set to the heap if <code class="docutils literal notranslate"><span class="pre">capacity</span></code> exceeds the inline capacity. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector5clearEv">
+<span id="_CPPv3N4mata5utils14SmallOrdVector5clearEv"></span><span id="_CPPv2N4mata5utils14SmallOrdVector5clearEv"></span><span id="mata::utils::SmallOrdVector::clear"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a03bfacfaaba9195e4498375659f43531"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">clear</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><br /></dt>
+<dd><p>Remove all keys, keeping the heap block if there is one. Keep the heap flag; <a class="reference internal" href="../namespace/namespacemata_1_1utils.html#classmata_1_1utils_1_1SmallOrdVector_1a03bfacfaaba9195e4498375659f43531"><span class="std std-ref">clear()</span></a> keeps the heap block like std::vector. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector4findEK3Key">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector4findEK3Key"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector4findEK3Key"></span><span id="mata::utils::SmallOrdVector::find__KeyCC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1ad09b8014986780b75367c9f311e966bb"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector14const_iteratorE" title="mata::utils::SmallOrdVector::const_iterator"><span class="n"><span class="pre">const_iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">find</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">key</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVector4findEK3Key" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector4findEK3Key">
+<span id="_CPPv3N4mata5utils14SmallOrdVector4findEK3Key"></span><span id="_CPPv2N4mata5utils14SmallOrdVector4findEK3Key"></span><span id="mata::utils::SmallOrdVector::find__KeyC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1abcac92d5f3dde40b23e598becb3007f7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector8iteratorE" title="mata::utils::SmallOrdVector::iterator"><span class="n"><span class="pre">iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">find</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">key</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector4findEK3Key" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector8containsEK3Key">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector8containsEK3Key"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector8containsEK3Key"></span><span id="mata::utils::SmallOrdVector::contains__KeyCC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a126e4f9cf9cf1888f953c52cb66999a3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">contains</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">key</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVector8containsEK3Key" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector5countEK3Key">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector5countEK3Key"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector5countEK3Key"></span><span id="mata::utils::SmallOrdVector::count__KeyCC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1ae62d4d9e07747a8f9e04b457a18de260"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector9size_typeE" title="mata::utils::SmallOrdVector::size_type"><span class="n"><span class="pre">size_type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">count</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">key</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVector5countEK3Key" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector6insertEK3Key">
+<span id="_CPPv3N4mata5utils14SmallOrdVector6insertEK3Key"></span><span id="_CPPv2N4mata5utils14SmallOrdVector6insertEK3Key"></span><span id="mata::utils::SmallOrdVector::insert__KeyC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1aad259df9e6e7036899da629b5e1d3231"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">pair</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector8iteratorE" title="mata::utils::SmallOrdVector::iterator"><span class="n"><span class="pre">iterator</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">insert</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">key</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Insert <code class="docutils literal notranslate"><span class="pre">key</span></code>, keeping the set sorted. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Iterator to <code class="docutils literal notranslate"><span class="pre">key</span></code> in the set and whether it was inserted. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector6insertEKNSt4spanIK3KeyEE">
+<span id="_CPPv3N4mata5utils14SmallOrdVector6insertEKNSt4spanIK3KeyEE"></span><span id="_CPPv2N4mata5utils14SmallOrdVector6insertEKNSt4spanIK3KeyEE"></span><span id="mata::utils::SmallOrdVector::insert__std::span:KeyC:C"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1ad6ca60f97ab7a2bfbc1d920bcce04184"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">insert</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">span</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">keys</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Insert all of the sorted, duplicate-free <code class="docutils literal notranslate"><span class="pre">keys</span></code>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if any key was inserted. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector9push_backEK3Key">
+<span id="_CPPv3N4mata5utils14SmallOrdVector9push_backEK3Key"></span><span id="_CPPv2N4mata5utils14SmallOrdVector9push_backEK3Key"></span><span id="mata::utils::SmallOrdVector::push_back__KeyC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a407086b730bfe9b3223fb08fc7424c94"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">push_back</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">key</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Append <code class="docutils literal notranslate"><span class="pre">key</span></code> without keeping the order; restore it with <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1utils.html#classmata_1_1utils_1_1SmallOrdVector_1a1e5668faf982942010ae6e28313986f0"><span class="std std-ref"><span class="pre">sort_and_rmdupl()</span></span></a></code>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4IDpEN4mata5utils14SmallOrdVector12emplace_backER3KeyDpRR4Args">
+<span id="_CPPv3IDpEN4mata5utils14SmallOrdVector12emplace_backEDpRR4Args"></span><span id="_CPPv2IDpEN4mata5utils14SmallOrdVector12emplace_backEDpRR4Args"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="sig-name descname"><span class="n"><span class="pre">Args</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a137df4eb59b42e8e922220fdf306e3b3"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">emplace_back</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4IDpEN4mata5utils14SmallOrdVector12emplace_backER3KeyDpRR4Args" title="mata::utils::SmallOrdVector::emplace_back::Args"><span class="n"><span class="pre">Args</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">...</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">args</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4IDpEN4mata5utils14SmallOrdVector12emplace_backER3KeyDpRR4Args" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector15sort_and_rmduplEv">
+<span id="_CPPv3N4mata5utils14SmallOrdVector15sort_and_rmduplEv"></span><span id="_CPPv2N4mata5utils14SmallOrdVector15sort_and_rmduplEv"></span><span id="mata::utils::SmallOrdVector::sort_and_rmdupl"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a1e5668faf982942010ae6e28313986f0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sort_and_rmdupl</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Sort the keys and drop duplicates, restoring the invariant after unordered <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1utils.html#classmata_1_1utils_1_1SmallOrdVector_1a407086b730bfe9b3223fb08fc7424c94"><span class="std std-ref"><span class="pre">push_back()</span></span></a></code>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector5eraseEK3Key">
+<span id="_CPPv3N4mata5utils14SmallOrdVector5eraseEK3Key"></span><span id="_CPPv2N4mata5utils14SmallOrdVector5eraseEK3Key"></span><span id="mata::utils::SmallOrdVector::erase__KeyC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1aeb8883bfaa95b280b35caa538381a6eb"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector9size_typeE" title="mata::utils::SmallOrdVector::size_type"><span class="n"><span class="pre">size_type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">key</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector5eraseEK3Key" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I_NSt14convertible_toI14const_iteratorEEEN4mata5utils14SmallOrdVector5eraseE8iteratorK8Iterator">
+<span id="_CPPv3I_NSt14convertible_toI14const_iteratorEEEN4mata5utils14SmallOrdVector5eraseEK8Iterator"></span><span id="_CPPv2I_NSt14convertible_toI14const_iteratorEEEN4mata5utils14SmallOrdVector5eraseEK8Iterator"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">convertible_to</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector14const_iteratorE" title="mata::utils::SmallOrdVector::const_iterator"><span class="n"><span class="pre">const_iterator</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Iterator</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1ab3b378feee2ada6a8822157eb1b27ad8"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector8iteratorE" title="mata::utils::SmallOrdVector::iterator"><span class="n"><span class="pre">iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I_NSt14convertible_toI14const_iteratorEEEN4mata5utils14SmallOrdVector5eraseE8iteratorK8Iterator" title="mata::utils::SmallOrdVector::erase::Iterator"><span class="n"><span class="pre">Iterator</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">pos</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>A template so that a literal <code class="docutils literal notranslate"><span class="pre">0</span></code> selects <code class="docutils literal notranslate"><a class="reference internal" href="#classmata_1_1utils_1_1SmallOrdVector_1aeb8883bfaa95b280b35caa538381a6eb"><span class="std std-ref"><span class="pre">erase(Key)</span></span></a></code> rather than converting to a null iterator. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector5eraseEK14const_iteratorK14const_iterator">
+<span id="_CPPv3N4mata5utils14SmallOrdVector5eraseEK14const_iteratorK14const_iterator"></span><span id="_CPPv2N4mata5utils14SmallOrdVector5eraseEK14const_iteratorK14const_iterator"></span><span id="mata::utils::SmallOrdVector::erase__const_iteratorC.const_iteratorC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a65d232b57b4803414594f53254243443"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector8iteratorE" title="mata::utils::SmallOrdVector::iterator"><span class="n"><span class="pre">iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector14const_iteratorE" title="mata::utils::SmallOrdVector::const_iterator"><span class="n"><span class="pre">const_iterator</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">first</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector14const_iteratorE" title="mata::utils::SmallOrdVector::const_iterator"><span class="n"><span class="pre">const_iterator</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">last</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector5eraseEK14const_iteratorK14const_iterator" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils14SmallOrdVector8erase_ifE9size_typeRR4Pred">
+<span id="_CPPv3I0EN4mata5utils14SmallOrdVector8erase_ifERR4Pred"></span><span id="_CPPv2I0EN4mata5utils14SmallOrdVector8erase_ifERR4Pred"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Pred</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1ac47f7da42b926f2d1b3e1e337af0539e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector9size_typeE" title="mata::utils::SmallOrdVector::size_type"><span class="n"><span class="pre">size_type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase_if</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN4mata5utils14SmallOrdVector8erase_ifE9size_typeRR4Pred" title="mata::utils::SmallOrdVector::erase_if::Pred"><span class="n"><span class="pre">Pred</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">should_erase</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN4mata5utils14SmallOrdVector8erase_ifE9size_typeRR4Pred" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVectoreqERK14SmallOrdVector">
+<span id="_CPPv3NK4mata5utils14SmallOrdVectoreqERK14SmallOrdVector"></span><span id="_CPPv2NK4mata5utils14SmallOrdVectoreqERK14SmallOrdVector"></span><span id="mata::utils::SmallOrdVector::eq-operator__SmallOrdVectorCRC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a08bc32a3a2c2eebb8a22ba165b7b75bb"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector"><span class="n"><span class="pre">SmallOrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVectoreqERK14SmallOrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVectorssERK14SmallOrdVector">
+<span id="_CPPv3NK4mata5utils14SmallOrdVectorssERK14SmallOrdVector"></span><span id="_CPPv2NK4mata5utils14SmallOrdVectorssERK14SmallOrdVector"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a737ac1331fd02fbc59ab0827a11eb695"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">auto</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&lt;=&gt;</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector"><span class="n"><span class="pre">SmallOrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVectorssERK14SmallOrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-static-attributes">Public Static Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector15inline_capacityE">
+<span id="_CPPv3N4mata5utils14SmallOrdVector15inline_capacityE"></span><span id="_CPPv2N4mata5utils14SmallOrdVector15inline_capacityE"></span><span id="mata::utils::SmallOrdVector::inline_capacity__size_type"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a52031fb1a21d610ff39d991f8d034d37"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">constexpr</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector9size_typeE" title="mata::utils::SmallOrdVector::size_type"><span class="n"><span class="pre">size_type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">inline_capacity</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::InlineCapacity"><span class="n"><span class="pre">InlineCapacity</span></span></a><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector15inline_capacityE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector8max_sizeE">
+<span id="_CPPv3N4mata5utils14SmallOrdVector8max_sizeE"></span><span id="_CPPv2N4mata5utils14SmallOrdVector8max_sizeE"></span><span id="mata::utils::SmallOrdVector::max_size__size_type"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a3c4ac14bdd07f325fa6656de00bfb960"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">constexpr</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector9size_typeE" title="mata::utils::SmallOrdVector::size_type"><span class="n"><span class="pre">size_type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">max_size</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector9size_typeE" title="mata::utils::SmallOrdVector::size_type"><span class="n"><span class="pre">size_type</span></span></a><span class="p"><span class="pre">{</span></span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">}</span></span><span class="w"> </span><span class="o"><span class="pre">&lt;&lt;</span></span><span class="w"> </span><span class="m"><span class="pre">31</span></span><span class="p"><span class="pre">)</span></span><span class="w"> </span><span class="o"><span class="pre">-</span></span><span class="w"> </span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">}</span></span><br /></dt>
+<dd><p>The size is stored in 31 bits. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-functions">Private Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector7on_heapEv">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector7on_heapEv"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector7on_heapEv"></span><span id="mata::utils::SmallOrdVector::on_heapC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1aae79591338be56be3836dd681b2a8366"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">on_heap</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVector7on_heapEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector9mark_heapEv">
+<span id="_CPPv3N4mata5utils14SmallOrdVector9mark_heapEv"></span><span id="_CPPv2N4mata5utils14SmallOrdVector9mark_heapEv"></span><span id="mata::utils::SmallOrdVector::mark_heap"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a1a1e18f328d2071e2016717c31885f95"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mark_heap</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector9mark_heapEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector13heap_capacityEv">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector13heap_capacityEv"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector13heap_capacityEv"></span><span id="mata::utils::SmallOrdVector::heap_capacityC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a41f32d80edc7adb4a1f9f0d91553e279"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector9size_typeE" title="mata::utils::SmallOrdVector::size_type"><span class="n"><span class="pre">size_type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">heap_capacity</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVector13heap_capacityEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector7releaseEv">
+<span id="_CPPv3N4mata5utils14SmallOrdVector7releaseEv"></span><span id="_CPPv2N4mata5utils14SmallOrdVector7releaseEv"></span><span id="mata::utils::SmallOrdVector::release"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a4fd0fa43d212f9effc3366b8bce40fb5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">release</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector7releaseEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector14grown_capacityEK9size_type">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector14grown_capacityEK9size_type"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector14grown_capacityEK9size_type"></span><span id="mata::utils::SmallOrdVector::grown_capacity__size_typeCC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a2a2144566069e25fc4f6edfc99dd0111"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector9size_typeE" title="mata::utils::SmallOrdVector::size_type"><span class="n"><span class="pre">size_type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">grown_capacity</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector9size_typeE" title="mata::utils::SmallOrdVector::size_type"><span class="n"><span class="pre">size_type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">needed</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVector14grown_capacityEK9size_type" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector10reallocateEK9size_type">
+<span id="_CPPv3N4mata5utils14SmallOrdVector10reallocateEK9size_type"></span><span id="_CPPv2N4mata5utils14SmallOrdVector10reallocateEK9size_type"></span><span id="mata::utils::SmallOrdVector::reallocate__size_typeC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1add4f3c4d0201c318f3ec1189c1426786"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reallocate</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector9size_typeE" title="mata::utils::SmallOrdVector::size_type"><span class="n"><span class="pre">size_type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">capacity</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector10reallocateEK9size_type" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector5stealER14SmallOrdVector">
+<span id="_CPPv3N4mata5utils14SmallOrdVector5stealER14SmallOrdVector"></span><span id="_CPPv2N4mata5utils14SmallOrdVector5stealER14SmallOrdVector"></span><span id="mata::utils::SmallOrdVector::steal__SmallOrdVectorR"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a275051333794bc0a4d1858136222ba38"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">steal</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector"><span class="n"><span class="pre">SmallOrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector5stealER14SmallOrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector13assign_sortedEKNSt4spanIK3KeyEE">
+<span id="_CPPv3N4mata5utils14SmallOrdVector13assign_sortedEKNSt4spanIK3KeyEE"></span><span id="_CPPv2N4mata5utils14SmallOrdVector13assign_sortedEKNSt4spanIK3KeyEE"></span><span id="mata::utils::SmallOrdVector::assign_sorted__std::span:KeyC:C"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a561fe11fff5e40b4fe48ca8799da57cf"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">assign_sorted</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">span</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">keys</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector13assign_sortedEKNSt4spanIK3KeyEE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Replace the content with the sorted, duplicate-free <code class="docutils literal notranslate"><span class="pre">keys</span></code>, which must not alias this set. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector6appendEKNSt4spanIK3KeyEE">
+<span id="_CPPv3N4mata5utils14SmallOrdVector6appendEKNSt4spanIK3KeyEE"></span><span id="_CPPv2N4mata5utils14SmallOrdVector6appendEKNSt4spanIK3KeyEE"></span><span id="mata::utils::SmallOrdVector::append__std::span:KeyC:C"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a3ce2a95478e4c99cc1ccddb610e69176"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">append</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">span</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">keys</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector6appendEKNSt4spanIK3KeyEE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils14SmallOrdVector16is_sorted_uniqueEv">
+<span id="_CPPv3NK4mata5utils14SmallOrdVector16is_sorted_uniqueEv"></span><span id="_CPPv2NK4mata5utils14SmallOrdVector16is_sorted_uniqueEv"></span><span id="mata::utils::SmallOrdVector::is_sorted_uniqueC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1af1f393594409fb7eb252ef992b996a32"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_sorted_unique</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils14SmallOrdVector16is_sorted_uniqueEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector8set_sizeEK9size_type">
+<span id="_CPPv3N4mata5utils14SmallOrdVector8set_sizeEK9size_type"></span><span id="_CPPv2N4mata5utils14SmallOrdVector8set_sizeEK9size_type"></span><span id="mata::utils::SmallOrdVector::set_size__size_typeC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1ad696433abc48687517b36c53f4b985ab"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">set_size</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector9size_typeE" title="mata::utils::SmallOrdVector::size_type"><span class="n"><span class="pre">size_type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">size</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector8set_sizeEK9size_type" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-members">Private Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector7buffer_E">
+<span id="_CPPv3N4mata5utils14SmallOrdVector7buffer_E"></span><span id="_CPPv2N4mata5utils14SmallOrdVector7buffer_E"></span><span id="mata::utils::SmallOrdVector::buffer___Buffer"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1ad2f36135dba583ca36affd1bfc8853be"></span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector6BufferE" title="mata::utils::SmallOrdVector::Buffer"><span class="n"><span class="pre">Buffer</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">buffer_</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector7buffer_E" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector5size_E">
+<span id="_CPPv3N4mata5utils14SmallOrdVector5size_E"></span><span id="_CPPv2N4mata5utils14SmallOrdVector5size_E"></span><span id="mata::utils::SmallOrdVector::size___std::uint32_t"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1a152506b78105e66007288e94a4d0cf59"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">size_</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector5size_E" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-static-functions">Private Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector8allocateEK9size_type">
+<span id="_CPPv3N4mata5utils14SmallOrdVector8allocateEK9size_type"></span><span id="_CPPv2N4mata5utils14SmallOrdVector8allocateEK9size_type"></span><span id="mata::utils::SmallOrdVector::allocate__size_typeC"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1ae8fccd22ac852eaf1158d5f681ba7905"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">allocate</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector9size_typeE" title="mata::utils::SmallOrdVector::size_type"><span class="n"><span class="pre">size_type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">capacity</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector8allocateEK9size_type" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-static-attributes">Private Static Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector11header_keysE">
+<span id="_CPPv3N4mata5utils14SmallOrdVector11header_keysE"></span><span id="_CPPv2N4mata5utils14SmallOrdVector11header_keysE"></span><span id="mata::utils::SmallOrdVector::header_keys__size_type"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1ad664f8c5d29927668283ee29f56e820e"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">constexpr</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils14SmallOrdVector9size_typeE" title="mata::utils::SmallOrdVector::size_type"><span class="n"><span class="pre">size_type</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">header_keys</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">(</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">uint32_t</span></span><span class="p"><span class="pre">)</span></span><span class="w"> </span><span class="o"><span class="pre">+</span></span><span class="w"> </span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">)</span></span><span class="w"> </span><span class="o"><span class="pre">-</span></span><span class="w"> </span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">)</span></span><span class="w"> </span><span class="o"><span class="pre">/</span></span><span class="w"> </span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector11header_keysE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Keys reserved at the start of a heap block to keep its capacity. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector9heap_flagE">
+<span id="_CPPv3N4mata5utils14SmallOrdVector9heap_flagE"></span><span id="_CPPv2N4mata5utils14SmallOrdVector9heap_flagE"></span><span id="mata::utils::SmallOrdVector::heap_flag__std::uint32_t"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1aedeb8f47ba319dc6c19637f208266faf"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">constexpr</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">heap_flag</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector9heap_flagE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-friends">Friends</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVectoreqERK14SmallOrdVectorRK9OrdVectorI3KeyE">
+<span id="_CPPv3N4mata5utils14SmallOrdVectoreqERK14SmallOrdVectorRK9OrdVectorI3KeyE"></span><span id="_CPPv2N4mata5utils14SmallOrdVectoreqERK14SmallOrdVectorRK9OrdVectorI3KeyE"></span><span id="mata::utils::SmallOrdVector::eq-operator__SmallOrdVectorCR.OrdVector:Key:CR"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1ab2118d19d357c62dc14a07a43a0546c0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">friend</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector"><span class="n"><span class="pre">SmallOrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">lhs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I0EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVectoreqERK14SmallOrdVectorRK9OrdVectorI3KeyE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVectorlsERNSt7ostreamERK14SmallOrdVector">
+<span id="_CPPv3N4mata5utils14SmallOrdVectorlsERNSt7ostreamERK14SmallOrdVector"></span><span id="_CPPv2N4mata5utils14SmallOrdVectorlsERNSt7ostreamERK14SmallOrdVector"></span><span id="mata::utils::SmallOrdVector::lshift-operator__osR.SmallOrdVectorCR"></span><span class="target" id="classmata_1_1utils_1_1SmallOrdVector_1af6900e5925cce77bdb1012983608ef21"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">friend</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">ostream</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&lt;&lt;</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">ostream</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">os</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector"><span class="n"><span class="pre">SmallOrdVector</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">set</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVectorlsERNSt7ostreamERK14SmallOrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<dl class="cpp union">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector6BufferE">
+<span id="_CPPv3N4mata5utils14SmallOrdVector6BufferE"></span><span id="_CPPv2N4mata5utils14SmallOrdVector6BufferE"></span><span class="target" id="unionmata_1_1utils_1_1SmallOrdVector_1_1Buffer"></span><span class="k"><span class="pre">union</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Buffer</span></span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector6BufferE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The set lives on the heap when the lowest bit of <code class="docutils literal notranslate"><span class="pre">size_</span></code> is set; the size sits in the upper bits of the same word, so a move is a copy of the buffer union plus this word. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector6Buffer7inline_E">
+<span id="_CPPv3N4mata5utils14SmallOrdVector6Buffer7inline_E"></span><span id="_CPPv2N4mata5utils14SmallOrdVector6Buffer7inline_E"></span><span id="mata::utils::SmallOrdVector::Buffer::inline___KeyA"></span><span class="target" id="unionmata_1_1utils_1_1SmallOrdVector_1_1Buffer_1a1467972fd461c92ef67c7c2edc4cf1a8"></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">inline_</span></span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::InlineCapacity"><span class="n"><span class="pre">InlineCapacity</span></span></a><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector6Buffer7inline_E" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils14SmallOrdVector6Buffer6block_E">
+<span id="_CPPv3N4mata5utils14SmallOrdVector6Buffer6block_E"></span><span id="_CPPv2N4mata5utils14SmallOrdVector6Buffer6block_E"></span><span id="mata::utils::SmallOrdVector::Buffer::block___KeyP"></span><span class="target" id="unionmata_1_1utils_1_1SmallOrdVector_1_1Buffer_1a91d14737286a9112b3fd24e8a96a6f15"></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SmallOrdVector.html#_CPPv4I0_NSt6size_tEEN4mata5utils14SmallOrdVectorE" title="mata::utils::SmallOrdVector::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">block_</span></span></span><a class="headerlink" href="#_CPPv4N4mata5utils14SmallOrdVector6Buffer6block_E" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Heap block: the capacity header, then the keys. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automata-format.html">Automata Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automaton.html">Automaton Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../applications.html">Strings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../namespacelist.html">Namespace list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../classlist.html">Class list</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../filelist.html">File list</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="alphabet_8hh.html">File alphabet.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="antichain-inclusion_8hh.html">File antichain-inclusion.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assert_8hh.html">File assert.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automaton_8hh.html">File automaton.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="closed-set_8hh.html">File closed-set.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generator-support_8hh.html">File generator-support.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inter-aut_8hh.html">File inter-aut.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lazy-word-generator_8hh.html">File lazy-word-generator.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mintermization_8hh.html">File mintermization.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2algorithms_8hh.html">File algorithms.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2builder_8hh.html">File builder.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2delta_8hh.html">File delta.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2plumbing_8hh.html">File plumbing.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2types_8hh.html">File types.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_8hh.html">File nfa.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft-internal_8hh.html">File nft-internal.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2algorithms_8hh.html">File algorithms.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2builder_8hh.html">File builder.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2delta_8hh.html">File delta.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2plumbing_8hh.html">File plumbing.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2types_8hh.html">File types.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_8hh.html">File nft.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ord-vector_8hh.html">File ord-vector.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parser_8hh.html">File parser.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="re2parser_8hh.html">File re2parser.hh</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">File small-ord-vector.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sparse-set_8hh.html">File sparse-set.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="strings_8hh.html">File strings.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synchronized-iterator_8hh.html">File synchronized-iterator.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="two-dimensional-map_8hh.html">File two-dimensional-map.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils_8hh.html">File utils.hh</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../structlist.html">Struct list</a></li>
+</ul>
+
+
+<hr />
+<ul>
+    
+    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/">Mata website</a></li>
+    
+    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/playground/">Playground</a></li>
+    
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../filelist.html">File list</a><ul>
+      <li>Previous: <a href="re2parser_8hh.html" title="previous chapter">File re2parser.hh</a></li>
+      <li>Next: <a href="sparse-set_8hh.html" title="next chapter">File sparse-set.hh</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.2.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/file/small-ord-vector_8hh.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

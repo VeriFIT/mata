@@ -1,0 +1,5 @@
+Struct mata::nfa::internal::Step
+================================
+
+.. doxygenstruct:: mata::nfa::internal::Step
+   :members:

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Class mata::Automaton &#8212; Mata v0.0.0-dev.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=623e9adf"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Class mata::BoolVector" href="classmata_1_1BoolVector.html" />
+    <link rel="prev" title="Class mata::AlphabetLevels" href="classmata_1_1AlphabetLevels.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="class-mata-automaton">
+<h1>Class mata::Automaton<a class="headerlink" href="#class-mata-automaton" title="Link to this heading">¶</a></h1>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata9AutomatonE">
+<span id="_CPPv3N4mata9AutomatonE"></span><span id="_CPPv2N4mata9AutomatonE"></span><span id="mata::Automaton"></span><span class="target" id="classmata_1_1Automaton"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Automaton</span></span></span><br /></dt>
+<dd><p>A class representing the structural part of an automaton. </p>
+<p>Every operation defined here is a walk over <code class="docutils literal notranslate"><span class="pre">delta</span></code>, <code class="docutils literal notranslate"><span class="pre">initial</span></code> and <code class="docutils literal notranslate"><span class="pre">final</span></code>. </p>
+<p>Subclassed by <a class="reference internal" href="../namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1Nfa"><span class="std std-ref">Nfa</span></a>, <a class="reference internal" href="../namespace/namespacemata_1_1nft.html#classmata_1_1nft_1_1Nft"><span class="std std-ref">Nft</span></a></p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata9Automaton9AutomatonEN3nfa5DeltaEN5utils9SparseSetIN3nfa5StateEEEN5utils9SparseSetIN3nfa5StateEEE">
+<span id="_CPPv3N4mata9Automaton9AutomatonEN3nfa5DeltaEN5utils9SparseSetIN3nfa5StateEEEN5utils9SparseSetIN3nfa5StateEEE"></span><span id="_CPPv2N4mata9Automaton9AutomatonEN3nfa5DeltaEN5utils9SparseSetIN3nfa5StateEEEN5utils9SparseSetIN3nfa5StateEEE"></span><span id="mata::Automaton::Automaton__nfa::Delta.utils::SparseSet:nfa::State:.utils::SparseSet:nfa::State:"></span><span class="target" id="classmata_1_1Automaton_1a57c5e3a86fb10506af91a71a0467687b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Automaton</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../file/antichain-inclusion_8hh.html#_CPPv4N4mata3nfaE" title="mata::nfa"><span class="n"><span class="pre">nfa</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classmata_1_1nfa_1_1Delta.html#_CPPv4N4mata3nfa5DeltaE" title="mata::nfa::Delta"><span class="n"><span class="pre">Delta</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">delta</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span>, <a class="reference internal" href="../file/lazy-word-generator_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet"><span class="n"><span class="pre">SparseSet</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/antichain-inclusion_8hh.html#_CPPv4N4mata3nfaE" title="mata::nfa"><span class="n"><span class="pre">nfa</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">initial_states</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span>, <a class="reference internal" href="../file/lazy-word-generator_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet"><span class="n"><span class="pre">SparseSet</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/antichain-inclusion_8hh.html#_CPPv4N4mata3nfaE" title="mata::nfa"><span class="n"><span class="pre">nfa</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">final_states</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Construct a new <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1Automaton"><span class="std std-ref">Automaton</span></a> with optional <code class="docutils literal notranslate"><span class="pre">delta</span></code>, <code class="docutils literal notranslate"><span class="pre">initial_states</span></code> and <code class="docutils literal notranslate"><span class="pre">final_states</span></code>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>delta</strong> – <strong>[in]</strong> Transition relation of the automaton. </p></li>
+<li><p><strong>initial_states</strong> – <strong>[in]</strong> Set of initial states of the automaton. </p></li>
+<li><p><strong>final_states</strong> – <strong>[in]</strong> Set of final states of the automaton. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata9Automaton9AutomatonEK6size_tN5utils9SparseSetIN3nfa5StateEEEN5utils9SparseSetIN3nfa5StateEEE">
+<span id="_CPPv3N4mata9Automaton9AutomatonEK6size_tN5utils9SparseSetIN3nfa5StateEEEN5utils9SparseSetIN3nfa5StateEEE"></span><span id="_CPPv2N4mata9Automaton9AutomatonEK6size_tN5utils9SparseSetIN3nfa5StateEEEN5utils9SparseSetIN3nfa5StateEEE"></span><span id="mata::Automaton::Automaton__sC.utils::SparseSet:nfa::State:.utils::SparseSet:nfa::State:"></span><span class="target" id="classmata_1_1Automaton_1a51df1be3192761188955e285c6ae1e23"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Automaton</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">num_of_states</span></span>, <a class="reference internal" href="../file/lazy-word-generator_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet"><span class="n"><span class="pre">SparseSet</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/antichain-inclusion_8hh.html#_CPPv4N4mata3nfaE" title="mata::nfa"><span class="n"><span class="pre">nfa</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">initial_states</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span>, <a class="reference internal" href="../file/lazy-word-generator_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet"><span class="n"><span class="pre">SparseSet</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/antichain-inclusion_8hh.html#_CPPv4N4mata3nfaE" title="mata::nfa"><span class="n"><span class="pre">nfa</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">final_states</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Construct a new <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1Automaton"><span class="std std-ref">Automaton</span></a> with <code class="docutils literal notranslate"><span class="pre">num_of_states</span></code> states and optionally <code class="docutils literal notranslate"><span class="pre">initial_states</span></code> and <code class="docutils literal notranslate"><span class="pre">final_states</span></code>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_of_states</strong> – <strong>[in]</strong> Number of states for which to preallocate Delta. </p></li>
+<li><p><strong>initial_states</strong> – <strong>[in]</strong> Set of initial states of the automaton. </p></li>
+<li><p><strong>final_states</strong> – <strong>[in]</strong> Set of final states of the automaton. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata9Automaton13num_of_statesEv">
+<span id="_CPPv3NK4mata9Automaton13num_of_statesEv"></span><span id="_CPPv2NK4mata9Automaton13num_of_statesEv"></span><span id="mata::Automaton::num_of_statesC"></span><span class="target" id="classmata_1_1Automaton_1a517ccaad5cfcaece95baead025656370"></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">num_of_states</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Get the current number of states in the whole automaton. </p>
+<p>This includes the initial and final states as well as states in the transition relation. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of states. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata9Automaton8is_stateERKN3nfa5StateE">
+<span id="_CPPv3NK4mata9Automaton8is_stateERKN3nfa5StateE"></span><span id="_CPPv2NK4mata9Automaton8is_stateERKN3nfa5StateE"></span><span id="mata::Automaton::is_state__nfa::StateCRC"></span><span class="target" id="classmata_1_1Automaton_1ae094fab16fbc0b07d1cd268fb1860d8b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_state</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/antichain-inclusion_8hh.html#_CPPv4N4mata3nfaE" title="mata::nfa"><span class="n"><span class="pre">nfa</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">state_to_check</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Check if a given state is a valid state in the automaton. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>state_to_check</strong> – <strong>[in]</strong> The state to check. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>true if the state is valid, false otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata9Automaton20get_reachable_statesERKNSt8functionIFbN3nfa5StateEEEE">
+<span id="_CPPv3NK4mata9Automaton20get_reachable_statesERKNSt8functionIFbN3nfa5StateEEEE"></span><span id="_CPPv2NK4mata9Automaton20get_reachable_statesERKNSt8functionIFbN3nfa5StateEEEE"></span><span class="target" id="classmata_1_1Automaton_1ac858c01a0e1fa40f855ed08729f7d917"></span><a class="reference internal" href="../file/antichain-inclusion_8hh.html#_CPPv4N4mata3nfaE" title="mata::nfa"><span class="n"><span class="pre">nfa</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nfa8StateSetE" title="mata::nfa::StateSet"><span class="n"><span class="pre">StateSet</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_reachable_states</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">function</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">bool</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="../file/antichain-inclusion_8hh.html#_CPPv4N4mata3nfaE" title="mata::nfa"><span class="n"><span class="pre">nfa</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filter</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Get set of reachable states. </p>
+<p>Reachable states are states accessible from any initial state. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filter</strong> – <strong>[in]</strong> Optional filter function to apply to reachable states. If provided, only states for which the filter returns true will be included in the result. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Set of reachable states. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata9Automaton22get_terminating_statesEv">
+<span id="_CPPv3NK4mata9Automaton22get_terminating_statesEv"></span><span id="_CPPv2NK4mata9Automaton22get_terminating_statesEv"></span><span id="mata::Automaton::get_terminating_statesC"></span><span class="target" id="classmata_1_1Automaton_1aca170ca097231922a0790a65c68718cf"></span><a class="reference internal" href="../file/antichain-inclusion_8hh.html#_CPPv4N4mata3nfaE" title="mata::nfa"><span class="n"><span class="pre">nfa</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nfa8StateSetE" title="mata::nfa::StateSet"><span class="n"><span class="pre">StateSet</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_terminating_states</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Get set of terminating states. </p>
+<p>Terminating states are states leading to any final state. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Set of terminating states. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata9Automaton17get_useful_statesENSt8optionalINSt17reference_wrapperIKN5utils9SparseSetIN3nfa5StateEEEEEEENSt8optionalINSt17reference_wrapperIKN5utils9SparseSetIN3nfa5StateEEEEEEE">
+<span id="_CPPv3NK4mata9Automaton17get_useful_statesENSt8optionalINSt17reference_wrapperIKN5utils9SparseSetIN3nfa5StateEEEEEEENSt8optionalINSt17reference_wrapperIKN5utils9SparseSetIN3nfa5StateEEEEEEE"></span><span id="_CPPv2NK4mata9Automaton17get_useful_statesENSt8optionalINSt17reference_wrapperIKN5utils9SparseSetIN3nfa5StateEEEEEEENSt8optionalINSt17reference_wrapperIKN5utils9SparseSetIN3nfa5StateEEEEEEE"></span><span id="mata::Automaton::get_useful_states__std::optional:std::reference_wrapper:utils::SparseSet:nfa::State:C::.std::optional:std::reference_wrapper:utils::SparseSet:nfa::State:C::C"></span><span class="target" id="classmata_1_1Automaton_1a10fa2b68aa61e272dc23381ac616f622"></span><a class="reference internal" href="classmata_1_1BoolVector.html#_CPPv4N4mata10BoolVectorE" title="mata::BoolVector"><span class="n"><span class="pre">BoolVector</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_useful_states</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">optional</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">reference_wrapper</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/lazy-word-generator_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet"><span class="n"><span class="pre">SparseSet</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/antichain-inclusion_8hh.html#_CPPv4N4mata3nfaE" title="mata::nfa"><span class="n"><span class="pre">nfa</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">initial_states</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">nullopt</span></span>, <a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">optional</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">reference_wrapper</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/lazy-word-generator_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet"><span class="n"><span class="pre">SparseSet</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/antichain-inclusion_8hh.html#_CPPv4N4mata3nfaE" title="mata::nfa"><span class="n"><span class="pre">nfa</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">final_states</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">nullopt</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Get the useful states using two reachability passes. </p>
+<p>A state is useful if it is reachable from an initial state and can reach a final state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>initial_states</strong> – Optional set of initial states to consider when computing usefulness. If <code class="docutils literal notranslate"><span class="pre">std::nullopt</span></code>, uses the automaton’s initial states. </p></li>
+<li><p><strong>final_states</strong> – Optional set of final states to consider when computing usefulness. If <code class="docutils literal notranslate"><span class="pre">std::nullopt</span></code>, uses the automaton’s final states. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1BoolVector"><span class="std std-ref">BoolVector</span></a> Bool vector whose <code class="docutils literal notranslate"><span class="pre">i</span></code>-th value is true iff the state <code class="docutils literal notranslate"><span class="pre">i</span></code> is useful. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata9Automaton19tarjan_scc_discoverERK22TarjanDiscoverCallbackNSt8optionalINSt17reference_wrapperIKN5utils9SparseSetIN3nfa5StateEEEEEEE">
+<span id="_CPPv3NK4mata9Automaton19tarjan_scc_discoverERK22TarjanDiscoverCallbackNSt8optionalINSt17reference_wrapperIKN5utils9SparseSetIN3nfa5StateEEEEEEE"></span><span id="_CPPv2NK4mata9Automaton19tarjan_scc_discoverERK22TarjanDiscoverCallbackNSt8optionalINSt17reference_wrapperIKN5utils9SparseSetIN3nfa5StateEEEEEEE"></span><span id="mata::Automaton::tarjan_scc_discover__TarjanDiscoverCallbackCR.std::optional:std::reference_wrapper:utils::SparseSet:nfa::State:C::C"></span><span class="target" id="classmata_1_1Automaton_1a3d871e2ef4e5937e5fb2fbad818ee367"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">tarjan_scc_discover</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../automaton.html#_CPPv4N4mata9Automaton22TarjanDiscoverCallbackE" title="mata::Automaton::TarjanDiscoverCallback"><span class="n"><span class="pre">TarjanDiscoverCallback</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">callback</span></span>, <a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">optional</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">reference_wrapper</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/lazy-word-generator_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet"><span class="n"><span class="pre">SparseSet</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/antichain-inclusion_8hh.html#_CPPv4N4mata3nfaE" title="mata::nfa"><span class="n"><span class="pre">nfa</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">initial_states</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">nullopt</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Tarjan’s SCC discover algorithm. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>callback</strong> – Callback class to instantiate callbacks for the Tarjan’s algorithm. </p></li>
+<li><p><strong>initial_states</strong> – Optional set of initial states to consider when computing SCCs. If <code class="docutils literal notranslate"><span class="pre">std::nullopt</span></code>, uses all states in the automaton. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata9Automaton22distances_from_initialEv">
+<span id="_CPPv3NK4mata9Automaton22distances_from_initialEv"></span><span id="_CPPv2NK4mata9Automaton22distances_from_initialEv"></span><span id="mata::Automaton::distances_from_initialC"></span><span class="target" id="classmata_1_1Automaton_1a3dbc14f986911850620ea09faac1d2b1"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/antichain-inclusion_8hh.html#_CPPv4N4mata3nfaE" title="mata::nfa"><span class="n"><span class="pre">nfa</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">distances_from_initial</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Returns vector ret where ret[q] is the length of the shortest path from any initial state to q. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata9Automaton18distances_to_finalEv">
+<span id="_CPPv3NK4mata9Automaton18distances_to_finalEv"></span><span id="_CPPv2NK4mata9Automaton18distances_to_finalEv"></span><span id="mata::Automaton::distances_to_finalC"></span><span class="target" id="classmata_1_1Automaton_1a643122db00191027e2e2c883f63256f2"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/antichain-inclusion_8hh.html#_CPPv4N4mata3nfaE" title="mata::nfa"><span class="n"><span class="pre">nfa</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">distances_to_final</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Returns vector ret where ret[q] is the length of the shortest path from q to any final state. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata9Automaton21has_no_accepting_pathEv">
+<span id="_CPPv3NK4mata9Automaton21has_no_accepting_pathEv"></span><span id="_CPPv2NK4mata9Automaton21has_no_accepting_pathEv"></span><span id="mata::Automaton::has_no_accepting_pathC"></span><span class="target" id="classmata_1_1Automaton_1a192cdd5b7a9fb0726e4880a940c7b10d"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">has_no_accepting_path</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Is no final state reachable from any initial state? </p>
+<p>A plain breadth-first search over a visited bit vector that stops at the first final state. This is a pure graph property; whether it coincides with the emptiness of the accepted language (or relation) is a fact about the concrete automaton class, so the leaves expose it under their own names (e.g. <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1Nfa_1a4bc25c644c998a5648af0ef8ad196c45"><span class="std std-ref"><span class="pre">mata::nfa::Nfa::is_lang_empty_scc()</span></span></a></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>true &lt;-&gt; no accepting path exists. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata9Automaton10is_acyclicEv">
+<span id="_CPPv3NK4mata9Automaton10is_acyclicEv"></span><span id="_CPPv2NK4mata9Automaton10is_acyclicEv"></span><span id="mata::Automaton::is_acyclicC"></span><span class="target" id="classmata_1_1Automaton_1a3081a0a932963e92b5e408663ea3980d"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_acyclic</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Is the automaton graph acyclic? </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>true &lt;-&gt; <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1Automaton"><span class="std std-ref">Automaton</span></a> graph is acyclic. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp">
+<span class="target" id="classmata_1_1Automaton_1a71592b1d2ec414c0f731988ebf1825cb"></span><span class="sig-name descname"><span class="pre">template&lt;typename</span> <span class="pre">Self&gt;</span> <span class="pre">bool</span> <span class="pre">is_identical</span> <span class="pre">(this</span> <span class="pre">const</span> <span class="pre">Self</span> <span class="pre">&amp;self,</span> <span class="pre">const</span> <span class="pre">Self</span> <span class="pre">&amp;other)</span></span></dt>
+<dd><p>Check if <code class="docutils literal notranslate"><span class="pre">this</span></code> is structuralry identical to <code class="docutils literal notranslate"><span class="pre">other</span></code>. </p>
+<p>Compares only <code class="docutils literal notranslate"><span class="pre">delta</span></code>, <code class="docutils literal notranslate"><span class="pre">initial</span></code> and <code class="docutils literal notranslate"><span class="pre">final</span></code>. This is exact structural equality, including state numbering (so even stronger than isomorphism), essentially only useful for testing purposes.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Templated on <code class="docutils literal notranslate"><span class="pre">Self</span></code> (<code class="docutils literal notranslate"><span class="pre">deducing</span> <span class="pre">this</span></code>) so that only same-type comparisons compile. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> – <strong>[in]</strong> The other automaton to compare with. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>true iff the structural parts of <code class="docutils literal notranslate"><span class="pre">this</span></code> and <code class="docutils literal notranslate"><span class="pre">other</span></code> are identical. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp">
+<span class="target" id="classmata_1_1Automaton_1a40af730b0fee59c2ed4a130938f23c56"></span><span class="sig-name descname"><span class="pre">template&lt;typename</span> <span class="pre">Self&gt;</span> <span class="pre">Self</span> <span class="pre">&amp;</span> <span class="pre">trim</span> <span class="pre">(this</span> <span class="pre">Self</span> <span class="pre">&amp;self,</span> <span class="pre">nfa::StateRenaming</span> <span class="pre">*state_renaming=nullptr)</span></span></dt>
+<dd><p>Remove unreachable and non-terminating states in-place. </p>
+<p>Remaining states are renumbered densely in ascending order.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A state is reachable when the state is the endpoint of a path starting from an initial state. A state is terminating when the state is the starting point of a path ending in a final state. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Every remaining state therefore lies on an accepting path: after trimming, the language is empty iff <code class="docutils literal notranslate"><span class="pre">initial</span></code> is empty, which is cheaper to test than <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1nft.html#classmata_1_1Automaton_1abdd9ce8c2b6c738eca6cd78845a47d0b"><span class="std std-ref"><span class="pre">is_lang_empty()</span></span></a></code>. </p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Reached only through a leaf’s own one-line <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1nft.html#classmata_1_1Automaton_1a40af730b0fee59c2ed4a130938f23c56"><span class="std std-ref"><span class="pre">trim()</span></span></a></code>, on <code class="docutils literal notranslate"><span class="pre">*this</span></code>, so an lvalue <code class="docutils literal notranslate"><span class="pre">Self</span></code> suffices here. </p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>state_renaming</strong> – <strong>[out]</strong> Mapping of trimmed states to new states. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">this</span></code> after trimming. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp">
+<span class="target" id="classmata_1_1Automaton_1abdd9ce8c2b6c738eca6cd78845a47d0b"></span><span class="sig-name descname"><span class="pre">template&lt;typename</span> <span class="pre">Self&gt;</span> <span class="pre">bool</span> <span class="pre">is_lang_empty</span> <span class="pre">(this</span> <span class="pre">const</span> <span class="pre">Self</span> <span class="pre">&amp;self,</span> <span class="pre">nfa::Run</span> <span class="pre">*cex=nullptr)</span></span></dt>
+<dd><p>Check whether no accepting path exists, recording a witness in <code class="docutils literal notranslate"><span class="pre">cex</span></code> when one does. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cex</strong> – <strong>[out]</strong> Counter-example path (and, via the leaf’s <code class="docutils literal notranslate"><span class="pre">get_word_for_path()</span></code>, word) for a case an accepting path exists. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>true if no accepting path exists, false otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata9Automaton5deltaE">
+<span id="_CPPv3N4mata9Automaton5deltaE"></span><span id="_CPPv2N4mata9Automaton5deltaE"></span><span id="mata::Automaton::delta__nfa::Delta"></span><span class="target" id="classmata_1_1Automaton_1ab2202337f647d65123ccf636e0b12548"></span><a class="reference internal" href="../file/antichain-inclusion_8hh.html#_CPPv4N4mata3nfaE" title="mata::nfa"><span class="n"><span class="pre">nfa</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classmata_1_1nfa_1_1Delta.html#_CPPv4N4mata3nfa5DeltaE" title="mata::nfa::Delta"><span class="n"><span class="pre">Delta</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">delta</span></span></span><br /></dt>
+<dd><p>Transition relation of the automaton. delta[q] contains transitions from state q. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata9Automaton7initialE">
+<span id="_CPPv3N4mata9Automaton7initialE"></span><span id="_CPPv2N4mata9Automaton7initialE"></span><span id="mata::Automaton::initial__utils::SparseSet:nfa::State:"></span><span class="target" id="classmata_1_1Automaton_1a13952d2293671c34a25f12d01d04672f"></span><a class="reference internal" href="../file/lazy-word-generator_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet"><span class="n"><span class="pre">SparseSet</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/antichain-inclusion_8hh.html#_CPPv4N4mata3nfaE" title="mata::nfa"><span class="n"><span class="pre">nfa</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">initial</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><br /></dt>
+<dd><p>Set of initial states of the automaton. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata9Automaton5finalE">
+<span id="_CPPv3N4mata9Automaton5finalE"></span><span id="_CPPv2N4mata9Automaton5finalE"></span><span id="mata::Automaton::final__utils::SparseSet:nfa::State:"></span><span class="target" id="classmata_1_1Automaton_1a02349e8bc5630f0cc06687f907b8e225"></span><a class="reference internal" href="../file/lazy-word-generator_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet"><span class="n"><span class="pre">SparseSet</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/antichain-inclusion_8hh.html#_CPPv4N4mata3nfaE" title="mata::nfa"><span class="n"><span class="pre">nfa</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">final</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><br /></dt>
+<dd><p>Set of final states of the automaton. </p>
+</dd></dl>
+
+</div>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata9Automaton22TarjanDiscoverCallbackE">
+<span id="_CPPv3N4mata9Automaton22TarjanDiscoverCallbackE"></span><span id="_CPPv2N4mata9Automaton22TarjanDiscoverCallbackE"></span><span id="mata::Automaton::TarjanDiscoverCallback"></span><span class="target" id="structmata_1_1Automaton_1_1TarjanDiscoverCallback"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TarjanDiscoverCallback</span></span></span><br /></dt>
+<dd><p>Structure for storing callback functions (event handlers) utilizing Tarjan’s SCC discover algorithm. </p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automata-format.html">Automata Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automaton.html">Automaton Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../applications.html">Strings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../namespacelist.html">Namespace list</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../classlist.html">Class list</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1Alphabet.html">Class mata::Alphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1AlphabetLevels.html">Class mata::AlphabetLevels</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Class mata::Automaton</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1BoolVector.html">Class mata::BoolVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1EnumAlphabet.html">Class mata::EnumAlphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1FormulaGraph.html">Class mata::FormulaGraph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1FormulaNode.html">Class mata::FormulaNode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntAlphabet.html">Class mata::IntAlphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton.html">Class mata::IntAlphabet::IntAlphabetSingleton</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntermediateAut.html">Class mata::IntermediateAut</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1Mintermization.html">Class mata::Mintermization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1OnTheFlyAlphabet.html">Class mata::OnTheFlyAlphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1ShortestWordsMap.html">Class mata::applications::strings::ShortestWordsMap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace.html">Class mata::applications::strings::replace::ReluctantReplace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation.html">Class mata::applications::strings::seg_nfa::Segmentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1LazyView.html">Class mata::applications::strings::seg_nfa::Segmentation::LazyView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Delta.html">Class mata::nfa::Delta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1DeltaBuilder.html">Class mata::nfa::DeltaBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Delta_1_1Transitions.html">Class mata::nfa::Delta::Transitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Delta_1_1Transitions_1_1const__iterator.html">Class mata::nfa::Delta::Transitions::const_iterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Move.html">Class mata::nfa::Move</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Nfa.html">Class mata::nfa::Nfa</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1StatePost.html">Class mata::nfa::StatePost</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1StatePost_1_1Moves.html">Class mata::nfa::StatePost::Moves</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1StatePost_1_1Moves_1_1const__iterator.html">Class mata::nfa::StatePost::Moves::const_iterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1SuccessorCursor.html">Class mata::nfa::SuccessorCursor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1SuccessorCursor_1_1const__iterator.html">Class mata::nfa::SuccessorCursor::const_iterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1SymbolPost.html">Class mata::nfa::SymbolPost</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1SynchronizedExistentialSymbolPostIterator.html">Class mata::nfa::SynchronizedExistentialSymbolPostIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1algorithms_1_1ExternalSolverNotFound.html">Class mata::nfa::algorithms::ExternalSolverNotFound</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1internal_1_1ProcessedAntichain.html">Class mata::nfa::internal::ProcessedAntichain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nft_1_1Levels.html">Class mata::nft::Levels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nft_1_1Levels_1_1Ordering.html">Class mata::nft::Levels::Ordering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nft_1_1Nft.html">Class mata::nft::Nft</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1LazyWordGenerator.html">Class mata::utils::LazyWordGenerator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1OrdVector.html">Class mata::utils::OrdVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SmallOrdVector.html">Class mata::utils::SmallOrdVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SparseSet.html">Class mata::utils::SparseSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SynchronizedExistentialIterator.html">Class mata::utils::SynchronizedExistentialIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SynchronizedIterator.html">Class mata::utils::SynchronizedIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SynchronizedUniversalIterator.html">Class mata::utils::SynchronizedUniversalIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1TwoDimensionalMap.html">Class mata::utils::TwoDimensionalMap</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../filelist.html">File list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../structlist.html">Struct list</a></li>
+</ul>
+
+
+<hr />
+<ul>
+    
+    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/">Mata website</a></li>
+    
+    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/playground/">Playground</a></li>
+    
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../classlist.html">Class list</a><ul>
+      <li>Previous: <a href="classmata_1_1AlphabetLevels.html" title="previous chapter">Class mata::AlphabetLevels</a></li>
+      <li>Next: <a href="classmata_1_1BoolVector.html" title="next chapter">Class mata::BoolVector</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.2.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/class/classmata_1_1Automaton.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

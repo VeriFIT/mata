@@ -1,0 +1,5 @@
+Struct std::tuple_element< 1, mata::nfa::SymbolPost >
+=====================================================
+
+.. doxygenstruct:: std::tuple_element< 1, mata::nfa::SymbolPost >
+   :members:

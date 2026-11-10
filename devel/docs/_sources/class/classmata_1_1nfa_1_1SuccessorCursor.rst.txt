@@ -1,0 +1,5 @@
+Class mata::nfa::SuccessorCursor
+================================
+
+.. doxygenclass:: mata::nfa::SuccessorCursor
+   :members:

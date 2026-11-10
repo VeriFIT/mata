@@ -1,0 +1,4 @@
+File generator-support.hh
+=========================
+
+.. doxygenfile:: generator-support.hh

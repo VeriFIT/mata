@@ -1,0 +1,5 @@
+Struct mata::parser::BodyToken
+==============================
+
+.. doxygenstruct:: mata::parser::BodyToken
+   :members:

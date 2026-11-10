@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Utils &#8212; Mata v0.0.0-dev.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=623e9adf"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Strings" href="applications.html" />
+    <link rel="prev" title="Alphabet" href="alphabet.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="utils">
+<h1>Utils<a class="headerlink" href="#utils" title="Link to this heading">¶</a></h1>
+<section id="closed-set">
+<h2>Closed Set<a class="headerlink" href="#closed-set" title="Link to this heading">¶</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>doxygenfile: Cannot find file “utils/closed-set.hh </p>
+</div>
+</section>
+<section id="sparse-set">
+<h2>Sparse Set<a class="headerlink" href="#sparse-set" title="Link to this heading">¶</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>doxygenfile: Cannot find file “utils/sparse-set.hh </p>
+</div>
+</section>
+<section id="ordvector">
+<h2>OrdVector<a class="headerlink" href="#ordvector" title="Link to this heading">¶</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>doxygenfile: Cannot find file “utils/ord-vector.hh </p>
+</div>
+</section>
+<section id="synchronized-iterator">
+<h2>Synchronized Iterator<a class="headerlink" href="#synchronized-iterator" title="Link to this heading">¶</a></h2>
+<dl>
+<dt class="sig sig-object cpp">
+<span class="target" id="synchronized_iterator"></span><em><span class="pre">page</span></em> <span class="sig-name descname"><span class="pre">Synchronized</span> <span class="pre">Iterator</span></span></dt>
+<dd><p>Two classes that provide “synchronized” iterators through a vector of ordered vectors, (or of some ordered OrdContainer that have a similar iterator), needed in computation of post in subset construction, product, and non-determinization. </p>
+<p>The Type stored in OrdContainers must be comparable with <code class="docutils literal notranslate"><span class="pre">&lt;</span></code>,<code class="docutils literal notranslate"><span class="pre">&gt;</span></code>,<code class="docutils literal notranslate"><span class="pre">==</span></code>,<code class="docutils literal notranslate"><span class="pre">!=</span></code>,<code class="docutils literal notranslate"><span class="pre">&lt;=</span></code>,<code class="docutils literal notranslate"><span class="pre">&gt;=</span></code>, and it must be a total (linear) ordering. The intended usage in, for instance, determinisation is for Type to be TransSymbolStates. TransSymbolStates is ordered by the symbol.</p>
+<p>SynchronisedIterator is the base class holding the data shared by both synchronized iterators. The hierarchy is non-polymorphic on purpose: every user instantiates one of the two derived classes directly, so the base needs no vtable. It stores a vector of end-iterators for the OrdContainer v and a vector of current positions. They are filled in using the function push_back(begin,end), that adds begin and end iterators of v to positions and ends, respectively. Method advance advances all positions forward so that they are synchronized on the next smallest equiv class (next smallest symbol in the case of TransSymbolStates).</p>
+<p>There are two versions of the class. i) In product, ALL positions must point to currently the smallest equiv. class (Moves with the same symbol). Method get_current then returns the vector of all position iterators, synchronized. ii) In determinization, it is enough that there EXISTS a position that points to the smallest class. Method get_current then returns the vector of only those positions that point to the smallest equiv. class.</p>
+<p>Usage: 0) construct, 1) fill in using <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1utils.html#classmata_1_1utils_1_1SynchronizedIterator_1a3d72c2665e8c5d8ce8b312b4d8ca8771"><span class="std std-ref"><span class="pre">SynchronizedIterator::push_back()</span></span></a></code>, iterate using <code class="docutils literal notranslate"><span class="pre">SynchronizedIterator::advance()</span></code> and <code class="docutils literal notranslate"><span class="pre">SynchronizedIterator::get_current()</span></code>, 2) <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1utils.html#classmata_1_1utils_1_1SynchronizedIterator_1ad0186d81f543b2208a435db927ae7a70"><span class="std std-ref"><span class="pre">SynchronizedIterator::reset()</span></span></a></code> and go back to 1).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The memory allocated internally for positions and ends is kept after <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1utils.html#classmata_1_1utils_1_1SynchronizedIterator_1ad0186d81f543b2208a435db927ae7a70"><span class="std std-ref"><span class="pre">SynchronizedIterator::reset()</span></span></a></code>, so it is advisable to use the same iterator for many iterations, as opposed to creating a new one for each iteration. </p>
+</div>
+</dd></dl>
+
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>doxygenfile: Cannot find file “utils/synchronized-iterator.hh </p>
+</div>
+</section>
+<section id="two-dimensional-map">
+<h2>Two Dimensional Map<a class="headerlink" href="#two-dimensional-map" title="Link to this heading">¶</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>doxygenfile: Cannot find file “utils/two-dimensional-map.hh </p>
+</div>
+</section>
+<section id="other-utils">
+<h2>Other Utils<a class="headerlink" href="#other-utils" title="Link to this heading">¶</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>doxygenfile: Cannot find file “utils/utils.hh </p>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="automata-format.html">Automata Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="automaton.html">Automaton Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alphabet.html">Alphabet</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Utils</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#closed-set">Closed Set</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sparse-set">Sparse Set</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ordvector">OrdVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#synchronized-iterator">Synchronized Iterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#two-dimensional-map">Two Dimensional Map</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#other-utils">Other Utils</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="applications.html">Strings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="namespacelist.html">Namespace list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="classlist.html">Class list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filelist.html">File list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="structlist.html">Struct list</a></li>
+</ul>
+
+
+<hr />
+<ul>
+    
+    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/">Mata website</a></li>
+    
+    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/playground/">Playground</a></li>
+    
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="alphabet.html" title="previous chapter">Alphabet</a></li>
+      <li>Next: <a href="applications.html" title="next chapter">Strings</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.2.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/utils.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

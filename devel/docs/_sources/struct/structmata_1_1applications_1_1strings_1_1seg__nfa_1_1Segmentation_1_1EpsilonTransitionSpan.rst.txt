@@ -1,0 +1,5 @@
+Struct mata::applications::strings::seg_nfa::Segmentation::EpsilonTransitionSpan
+================================================================================
+
+.. doxygenstruct:: mata::applications::strings::seg_nfa::Segmentation::EpsilonTransitionSpan
+   :members:

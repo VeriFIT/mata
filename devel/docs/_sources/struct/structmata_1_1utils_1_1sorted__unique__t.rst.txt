@@ -1,0 +1,5 @@
+Struct mata::utils::sorted_unique_t
+===================================
+
+.. doxygenstruct:: mata::utils::sorted_unique_t
+   :members:

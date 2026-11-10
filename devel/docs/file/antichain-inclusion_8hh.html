@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>File antichain-inclusion.hh &#8212; Mata v0.0.0-dev.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=623e9adf"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="File assert.hh" href="assert_8hh.html" />
+    <link rel="prev" title="File alphabet.hh" href="alphabet_8hh.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="file-antichain-inclusion-hh">
+<h1>File antichain-inclusion.hh<a class="headerlink" href="#file-antichain-inclusion-hh" title="Link to this heading">¶</a></h1>
+<p>The search nodes and the processed antichain of the antichain inclusion check, shared by the NFA inclusion and the NFT inclusion that explores jump transitions lazily; not installed. </p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv44mata">
+<span id="_CPPv34mata"></span><span id="_CPPv24mata"></span><span id="mata"></span><span class="target" id="namespacemata"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mata</span></span></span><br /></dt>
+<dd><p>Main namespace including structs and algorithms for all automata. </p>
+<p>In particular, this includes:<ol class="loweralpha simple">
+<li><p>Alphabets,</p></li>
+<li><p>Formula graphs and nodes,</p></li>
+<li><p><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1Mintermization"><span class="std std-ref">Mintermization</span></a>,</p></li>
+<li><p>Closed sets. </p></li>
+</ol>
+</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfaE">
+<span id="_CPPv3N4mata3nfaE"></span><span id="_CPPv2N4mata3nfaE"></span><span id="mata::nfa"></span><span class="target" id="namespacemata_1_1nfa"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">nfa</span></span></span><a class="headerlink" href="#_CPPv4N4mata3nfaE" title="Link to this definition">¶</a><br /></dt>
+<dd><dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8internalE">
+<span id="_CPPv3N4mata3nfa8internalE"></span><span id="_CPPv2N4mata3nfa8internalE"></span><span id="mata::nfa::internal"></span><span class="target" id="namespacemata_1_1nfa_1_1internal"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">internal</span></span></span><a class="headerlink" href="#_CPPv4N4mata3nfa8internalE" title="Link to this definition">¶</a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-functions">Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8internal10trace_backERKNSt6vectorI4NodeEERKNSt6vectorI4StepEE6size_tR3Run">
+<span id="_CPPv3N4mata3nfa8internal10trace_backERKNSt6vectorI4NodeEERKNSt6vectorI4StepEE6size_tR3Run"></span><span id="_CPPv2N4mata3nfa8internal10trace_backERKNSt6vectorI4NodeEERKNSt6vectorI4StepEE6size_tR3Run"></span><span id="mata::nfa::internal::trace_back__std::vector:Node:CR.std::vector:Step:CR.s.RunR"></span><span class="target" id="namespacemata_1_1nfa_1_1internal_1a04f62701790bad38cba7ee8da26c7083"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">trace_back</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4N4mata3nfa8internal4NodeE" title="mata::nfa::internal::Node"><span class="n"><span class="pre">Node</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">nodes</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4N4mata3nfa8internal4StepE" title="mata::nfa::internal::Step"><span class="n"><span class="pre">Step</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">steps</span></span>, <span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">node_idx</span></span>, <a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nfa3RunE" title="mata::nfa::Run"><span class="n"><span class="pre">Run</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">cex</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata3nfa8internal10trace_backERKNSt6vectorI4NodeEERKNSt6vectorI4StepEE6size_tR3Run" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Prepend to <code class="docutils literal notranslate"><span class="pre">cex</span></code> the symbols and the smaller states of the search steps that lead from an initial node to <code class="docutils literal notranslate"><span class="pre">node_idx</span></code>. </p>
+<p><code class="docutils literal notranslate"><span class="pre">cex</span></code> holds the part of the counterexample after <code class="docutils literal notranslate"><span class="pre">node_idx</span></code> in reverse order (the last symbol first); on return it is the whole run up to there in reading order. </p>
+</dd></dl>
+
+</div>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8internal4NodeE">
+<span id="_CPPv3N4mata3nfa8internal4NodeE"></span><span id="_CPPv2N4mata3nfa8internal4NodeE"></span><span id="mata::nfa::internal::Node"></span><span class="target" id="structmata_1_1nfa_1_1internal_1_1Node"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Node</span></span></span><a class="headerlink" href="#_CPPv4N4mata3nfa8internal4NodeE" title="Link to this definition">¶</a><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;antichain-inclusion.hh&gt;</em></div>
+<p>A pair (q, S) of a state of the smaller automaton and a macrostate of the bigger one, as a node of the search. Nodes are never removed from <code class="docutils literal notranslate"><span class="pre">nodes</span></code>, so their indices stay valid as the parents a counterexample is read back through. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8internal4Node13smaller_stateE">
+<span id="_CPPv3N4mata3nfa8internal4Node13smaller_stateE"></span><span id="_CPPv2N4mata3nfa8internal4Node13smaller_stateE"></span><span id="mata::nfa::internal::Node::smaller_state__State"></span><span class="target" id="structmata_1_1nfa_1_1internal_1_1Node_1ae92ccd5f7216069f9dbdc13c38919197"></span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nfa5StateE" title="mata::nfa::State"><span class="n"><span class="pre">State</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">smaller_state</span></span></span><a class="headerlink" href="#_CPPv4N4mata3nfa8internal4Node13smaller_stateE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8internal4Node10bigger_setE">
+<span id="_CPPv3N4mata3nfa8internal4Node10bigger_setE"></span><span id="_CPPv2N4mata3nfa8internal4Node10bigger_setE"></span><span id="mata::nfa::internal::Node::bigger_set__StateSet"></span><span class="target" id="structmata_1_1nfa_1_1internal_1_1Node_1a1a9f9f770bfc29a5d674e6ecae6c940c"></span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nfa8StateSetE" title="mata::nfa::StateSet"><span class="n"><span class="pre">StateSet</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">bigger_set</span></span></span><a class="headerlink" href="#_CPPv4N4mata3nfa8internal4Node10bigger_setE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8internal4Node9signatureE">
+<span id="_CPPv3N4mata3nfa8internal4Node9signatureE"></span><span id="_CPPv2N4mata3nfa8internal4Node9signatureE"></span><span id="mata::nfa::internal::Node::signature__uint64_t"></span><span class="target" id="structmata_1_1nfa_1_1internal_1_1Node_1afdc7f88e164103e4a16923869071899f"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">signature</span></span></span><a class="headerlink" href="#_CPPv4N4mata3nfa8internal4Node9signatureE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8internal4Node9dominatedE">
+<span id="_CPPv3N4mata3nfa8internal4Node9dominatedE"></span><span id="_CPPv2N4mata3nfa8internal4Node9dominatedE"></span><span id="mata::nfa::internal::Node::dominated__b"></span><span class="target" id="structmata_1_1nfa_1_1internal_1_1Node_1a6d77e5ed565e356b45f33d630bda1348"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">dominated</span></span></span><a class="headerlink" href="#_CPPv4N4mata3nfa8internal4Node9dominatedE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>A later node dominates this one: the worklist skips it and its macrostate is released. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8internal4StepE">
+<span id="_CPPv3N4mata3nfa8internal4StepE"></span><span id="_CPPv2N4mata3nfa8internal4StepE"></span><span id="mata::nfa::internal::Step"></span><span class="target" id="structmata_1_1nfa_1_1internal_1_1Step"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Step</span></span></span><a class="headerlink" href="#_CPPv4N4mata3nfa8internal4StepE" title="Link to this definition">¶</a><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;antichain-inclusion.hh&gt;</em></div>
+<p>How a node was reached, recorded only when a counterexample is requested. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8internal4Step6parentE">
+<span id="_CPPv3N4mata3nfa8internal4Step6parentE"></span><span id="_CPPv2N4mata3nfa8internal4Step6parentE"></span><span id="mata::nfa::internal::Step::parent__s"></span><span class="target" id="structmata_1_1nfa_1_1internal_1_1Step_1a911f4daadd0450a091a589eb27d02f52"></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">parent</span></span></span><a class="headerlink" href="#_CPPv4N4mata3nfa8internal4Step6parentE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The node this one was reached from, or the node itself for an initial one. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8internal4Step6symbolE">
+<span id="_CPPv3N4mata3nfa8internal4Step6symbolE"></span><span id="_CPPv2N4mata3nfa8internal4Step6symbolE"></span><span id="mata::nfa::internal::Step::symbol__Symbol"></span><span class="target" id="structmata_1_1nfa_1_1internal_1_1Step_1a86b1fd052877425f029f5528edab94d1"></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">symbol</span></span></span><a class="headerlink" href="#_CPPv4N4mata3nfa8internal4Step6symbolE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The symbol read on the transition from <code class="docutils literal notranslate"><span class="pre">parent</span></code>. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8internal18ProcessedAntichainE">
+<span id="_CPPv3N4mata3nfa8internal18ProcessedAntichainE"></span><span id="_CPPv2N4mata3nfa8internal18ProcessedAntichainE"></span><span id="mata::nfa::internal::ProcessedAntichain"></span><span class="target" id="classmata_1_1nfa_1_1internal_1_1ProcessedAntichain"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ProcessedAntichain</span></span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;antichain-inclusion.hh&gt;</em></div>
+<p>The macrostates already processed for one state of the smaller automaton, bucketed by cardinality. </p>
+<p>All entries stored here share the same state of the smaller automaton, so the dominance relation reduces to set inclusion between the macrostates of the bigger automaton. Cardinality alone then decides which entries can possibly be related to a candidate <code class="docutils literal notranslate"><span class="pre">succ:</span></code> <ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">anti</span></code> ⊆ <code class="docutils literal notranslate"><span class="pre">succ</span></code> requires <code class="docutils literal notranslate"><span class="pre">|anti|</span></code> ≤ <code class="docutils literal notranslate"><span class="pre">|succ|</span></code>, so the subsumption test reads nothing above <code class="docutils literal notranslate"><span class="pre">|succ|</span></code>;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">succ</span></code> ⊆ <code class="docutils literal notranslate"><span class="pre">d</span></code> requires <code class="docutils literal notranslate"><span class="pre">|d|</span></code> ≥ <code class="docutils literal notranslate"><span class="pre">|succ|</span></code>, so pruning reads nothing below <code class="docutils literal notranslate"><span class="pre">|succ|</span></code>;</p></li>
+<li><p>at equal cardinality both reduce to equality, which is one comparison of two sorted vectors, and an entry equal to <code class="docutils literal notranslate"><span class="pre">succ</span></code> subsumes it, so pruning never has to consider that bucket. Inside a bucket the stored signature rejects most of the remaining pairs in O(1), before the node is read and the two sorted vectors are merged; see <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1nfa_1_1algorithms.html#namespacemata_1_1nfa_1_1algorithms_1a1ab8d5734f3ba3c2293a7b71066e4f07"><span class="std std-ref"><span class="pre">algorithms::macrostate_signature()</span></span></a></code>.</p></li>
+</ul>
+</p>
+<p>Only cardinalities that actually hold an entry get a bucket, kept in increasing order: the macrostates of one run occupy few distinct cardinalities out of the <code class="docutils literal notranslate"><span class="pre">|bigger|</span></code> possible ones, so indexing by cardinality would pay for (and scan) a bucket header per unused size.</p>
+<p>Every node on the worklist is stored here as well, so marking the pruned nodes as dominated also removes them from the worklist, without scanning it. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata3nfa8internal18ProcessedAntichain8subsumesERKNSt6vectorI4NodeEERK8StateSetK8uint64_t">
+<span id="_CPPv3NK4mata3nfa8internal18ProcessedAntichain8subsumesERKNSt6vectorI4NodeEERK8StateSetK8uint64_t"></span><span id="_CPPv2NK4mata3nfa8internal18ProcessedAntichain8subsumesERKNSt6vectorI4NodeEERK8StateSetK8uint64_t"></span><span id="mata::nfa::internal::ProcessedAntichain::subsumes__std::vector:Node:CR.StateSetCR.uint64_tCC"></span><span class="target" id="classmata_1_1nfa_1_1internal_1_1ProcessedAntichain_1abbd8d57fab926b36eb845a51168d9e70"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">subsumes</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4N4mata3nfa8internal4NodeE" title="mata::nfa::internal::Node"><span class="n"><span class="pre">Node</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">nodes</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nfa8StateSetE" title="mata::nfa::StateSet"><span class="n"><span class="pre">StateSet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">succ_set</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">succ_signature</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Is some stored macrostate a subset of <code class="docutils literal notranslate"><span class="pre">succ_set</span></code>, and therefore dominates it? </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8internal18ProcessedAntichain5pruneERNSt6vectorI4NodeEERK8StateSetK8uint64_t">
+<span id="_CPPv3N4mata3nfa8internal18ProcessedAntichain5pruneERNSt6vectorI4NodeEERK8StateSetK8uint64_t"></span><span id="_CPPv2N4mata3nfa8internal18ProcessedAntichain5pruneERNSt6vectorI4NodeEERK8StateSetK8uint64_t"></span><span id="mata::nfa::internal::ProcessedAntichain::prune__std::vector:Node:R.StateSetCR.uint64_tC"></span><span class="target" id="classmata_1_1nfa_1_1internal_1_1ProcessedAntichain_1a9c9cdfb2a56d1183d3d57ae552a7aee5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">prune</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4N4mata3nfa8internal4NodeE" title="mata::nfa::internal::Node"><span class="n"><span class="pre">Node</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">nodes</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata3nfa8StateSetE" title="mata::nfa::StateSet"><span class="n"><span class="pre">StateSet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">succ_set</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">succ_signature</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Removes every stored macrostate that <code class="docutils literal notranslate"><span class="pre">succ_set</span></code> dominates, that is, every strict superset of it, and marks its node as dominated. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8internal18ProcessedAntichain6insertERKNSt6vectorI4NodeEEK6size_t">
+<span id="_CPPv3N4mata3nfa8internal18ProcessedAntichain6insertERKNSt6vectorI4NodeEEK6size_t"></span><span id="_CPPv2N4mata3nfa8internal18ProcessedAntichain6insertERKNSt6vectorI4NodeEEK6size_t"></span><span id="mata::nfa::internal::ProcessedAntichain::insert__std::vector:Node:CR.sC"></span><span class="target" id="classmata_1_1nfa_1_1internal_1_1ProcessedAntichain_1a1a39f1f972f72e470ac4405c68303e3b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">insert</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4N4mata3nfa8internal4NodeE" title="mata::nfa::internal::Node"><span class="n"><span class="pre">Node</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">nodes</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">node_idx</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata3nfa8internal18ProcessedAntichain6insertERKNSt6vectorI4NodeEEK6size_t" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-members">Private Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8internal18ProcessedAntichain8buckets_E">
+<span id="_CPPv3N4mata3nfa8internal18ProcessedAntichain8buckets_E"></span><span id="_CPPv2N4mata3nfa8internal18ProcessedAntichain8buckets_E"></span><span id="mata::nfa::internal::ProcessedAntichain::buckets___std::vector:Bucket:"></span><span class="target" id="classmata_1_1nfa_1_1internal_1_1ProcessedAntichain_1a4d1dc26607d11b142126285f35e52665"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4N4mata3nfa8internal18ProcessedAntichain6BucketE" title="mata::nfa::internal::ProcessedAntichain::Bucket"><span class="n"><span class="pre">Bucket</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">buckets_</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata3nfa8internal18ProcessedAntichain8buckets_E" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The occupied cardinalities only, ordered by increasing cardinality, never holding an empty bucket. </p>
+</dd></dl>
+
+</div>
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8internal18ProcessedAntichain5EntryE">
+<span id="_CPPv3N4mata3nfa8internal18ProcessedAntichain5EntryE"></span><span id="_CPPv2N4mata3nfa8internal18ProcessedAntichain5EntryE"></span><span id="mata::nfa::internal::ProcessedAntichain::Entry"></span><span class="target" id="structmata_1_1nfa_1_1internal_1_1ProcessedAntichain_1_1Entry"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Entry</span></span></span><a class="headerlink" href="#_CPPv4N4mata3nfa8internal18ProcessedAntichain5EntryE" title="Link to this definition">¶</a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8internal18ProcessedAntichain5Entry9signatureE">
+<span id="_CPPv3N4mata3nfa8internal18ProcessedAntichain5Entry9signatureE"></span><span id="_CPPv2N4mata3nfa8internal18ProcessedAntichain5Entry9signatureE"></span><span id="mata::nfa::internal::ProcessedAntichain::Entry::signature__uint64_t"></span><span class="target" id="structmata_1_1nfa_1_1internal_1_1ProcessedAntichain_1_1Entry_1afdc7f88e164103e4a16923869071899f"></span><span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">signature</span></span></span><a class="headerlink" href="#_CPPv4N4mata3nfa8internal18ProcessedAntichain5Entry9signatureE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8internal18ProcessedAntichain5Entry4nodeE">
+<span id="_CPPv3N4mata3nfa8internal18ProcessedAntichain5Entry4nodeE"></span><span id="_CPPv2N4mata3nfa8internal18ProcessedAntichain5Entry4nodeE"></span><span id="mata::nfa::internal::ProcessedAntichain::Entry::node__s"></span><span class="target" id="structmata_1_1nfa_1_1internal_1_1ProcessedAntichain_1_1Entry_1a8deb835975545524d2ba27f3dca61e29"></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">node</span></span></span><a class="headerlink" href="#_CPPv4N4mata3nfa8internal18ProcessedAntichain5Entry4nodeE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8internal18ProcessedAntichain6BucketE">
+<span id="_CPPv3N4mata3nfa8internal18ProcessedAntichain6BucketE"></span><span id="_CPPv2N4mata3nfa8internal18ProcessedAntichain6BucketE"></span><span id="mata::nfa::internal::ProcessedAntichain::Bucket"></span><span class="target" id="structmata_1_1nfa_1_1internal_1_1ProcessedAntichain_1_1Bucket"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Bucket</span></span></span><a class="headerlink" href="#_CPPv4N4mata3nfa8internal18ProcessedAntichain6BucketE" title="Link to this definition">¶</a><br /></dt>
+<dd><div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8internal18ProcessedAntichain6Bucket11cardinalityE">
+<span id="_CPPv3N4mata3nfa8internal18ProcessedAntichain6Bucket11cardinalityE"></span><span id="_CPPv2N4mata3nfa8internal18ProcessedAntichain6Bucket11cardinalityE"></span><span id="mata::nfa::internal::ProcessedAntichain::Bucket::cardinality__s"></span><span class="target" id="structmata_1_1nfa_1_1internal_1_1ProcessedAntichain_1_1Bucket_1af372b4e6995f66136163861f005f10ae"></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">cardinality</span></span></span><a class="headerlink" href="#_CPPv4N4mata3nfa8internal18ProcessedAntichain6Bucket11cardinalityE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa8internal18ProcessedAntichain6Bucket7entriesE">
+<span id="_CPPv3N4mata3nfa8internal18ProcessedAntichain6Bucket7entriesE"></span><span id="_CPPv2N4mata3nfa8internal18ProcessedAntichain6Bucket7entriesE"></span><span id="mata::nfa::internal::ProcessedAntichain::Bucket::entries__std::vector:Entry:"></span><span class="target" id="structmata_1_1nfa_1_1internal_1_1ProcessedAntichain_1_1Bucket_1a120e7d6232f9edb21dcf702e7756c045"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4N4mata3nfa8internal18ProcessedAntichain5EntryE" title="mata::nfa::internal::ProcessedAntichain::Entry"><span class="n"><span class="pre">Entry</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">entries</span></span></span><a class="headerlink" href="#_CPPv4N4mata3nfa8internal18ProcessedAntichain6Bucket7entriesE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automata-format.html">Automata Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automaton.html">Automaton Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../applications.html">Strings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../namespacelist.html">Namespace list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../classlist.html">Class list</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../filelist.html">File list</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="alphabet_8hh.html">File alphabet.hh</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">File antichain-inclusion.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assert_8hh.html">File assert.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automaton_8hh.html">File automaton.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="closed-set_8hh.html">File closed-set.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generator-support_8hh.html">File generator-support.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inter-aut_8hh.html">File inter-aut.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lazy-word-generator_8hh.html">File lazy-word-generator.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mintermization_8hh.html">File mintermization.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2algorithms_8hh.html">File algorithms.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2builder_8hh.html">File builder.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2delta_8hh.html">File delta.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2plumbing_8hh.html">File plumbing.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2types_8hh.html">File types.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_8hh.html">File nfa.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft-internal_8hh.html">File nft-internal.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2algorithms_8hh.html">File algorithms.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2builder_8hh.html">File builder.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2delta_8hh.html">File delta.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2plumbing_8hh.html">File plumbing.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2types_8hh.html">File types.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_8hh.html">File nft.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ord-vector_8hh.html">File ord-vector.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parser_8hh.html">File parser.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="re2parser_8hh.html">File re2parser.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="small-ord-vector_8hh.html">File small-ord-vector.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sparse-set_8hh.html">File sparse-set.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="strings_8hh.html">File strings.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synchronized-iterator_8hh.html">File synchronized-iterator.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="two-dimensional-map_8hh.html">File two-dimensional-map.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils_8hh.html">File utils.hh</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../structlist.html">Struct list</a></li>
+</ul>
+
+
+<hr />
+<ul>
+    
+    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/">Mata website</a></li>
+    
+    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/playground/">Playground</a></li>
+    
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../filelist.html">File list</a><ul>
+      <li>Previous: <a href="alphabet_8hh.html" title="previous chapter">File alphabet.hh</a></li>
+      <li>Next: <a href="assert_8hh.html" title="next chapter">File assert.hh</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.2.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/file/antichain-inclusion_8hh.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

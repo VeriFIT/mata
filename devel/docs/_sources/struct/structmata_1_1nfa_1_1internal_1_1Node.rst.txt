@@ -1,0 +1,5 @@
+Struct mata::nfa::internal::Node
+================================
+
+.. doxygenstruct:: mata::nfa::internal::Node
+   :members:

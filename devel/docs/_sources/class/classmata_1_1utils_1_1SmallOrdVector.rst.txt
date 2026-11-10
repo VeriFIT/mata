@@ -1,0 +1,5 @@
+Class mata::utils::SmallOrdVector
+=================================
+
+.. doxygenclass:: mata::utils::SmallOrdVector
+   :members:

@@ -1,0 +1,5 @@
+Struct mata::applications::strings::seg_nfa::NoodleSegment
+==========================================================
+
+.. doxygenstruct:: mata::applications::strings::seg_nfa::NoodleSegment
+   :members:

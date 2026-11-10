@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Nondeterministic Finite automata &#8212; Mata v0.0.0-dev.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=623e9adf"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Nondeterministic Finite Transducers" href="nft.html" />
+    <link rel="prev" title="Automaton Interface" href="automaton.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="nondeterministic-finite-automata">
+<h1>Nondeterministic Finite automata<a class="headerlink" href="#nondeterministic-finite-automata" title="Link to this heading">¶</a></h1>
+<p>The structural members and graph-only operations inherited by <code class="docutils literal notranslate"><span class="pre">mata::nfa::Nfa</span></code>
+are documented in <a class="reference internal" href="automaton.html"><span class="doc">Automaton Interface</span></a>.</p>
+<dl>
+<dt class="sig sig-object cpp">
+<span class="target" id="nfa"></span><em><span class="pre">page</span></em> <span class="sig-name descname"><span class="pre">Nondeterministic</span> <span class="pre">Finite</span> <span class="pre">Automata</span> <span class="pre">(NFAs)</span></span></dt>
+<dd><section id="nfa_1nfa_design">
+<h2>The design of NFAs in Mata<a class="headerlink" href="#nfa_1nfa_design" title="Link to this heading">¶</a></h2>
+<p id="nfa_1nfa_design">NFAs in Mata are represented using the <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1Nfa"><span class="std std-ref"><span class="pre">mata::nfa::Nfa</span></span></a></code> class. The transition relation is represented using the <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1Delta"><span class="std std-ref"><span class="pre">mata::nfa::Delta</span></span></a></code> class, which provides an efficient way to store and manipulate transitions. The states of the NFA are represented as integers, starting from 0 up to the number of states minus one. The initial and final states are represented using the <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1utils.html#classmata_1_1utils_1_1SparseSet"><span class="std std-ref"><span class="pre">mata::utils::SparseSet</span></span></a></code> class, which allows for efficient storage and manipulation of sets of states.</p>
+<p><code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1Delta"><span class="std std-ref"><span class="pre">mata::nfa::Delta</span></span></a></code> is a key component of the NFA representation. It stores transitions in a three-level data structure:<ol class="arabic simple">
+<li><p>A vector indexed by source states, where each entry <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1StatePost"><span class="std std-ref"><span class="pre">mata::nfa::StatePost</span></span></a></code> contains a vector of symbol posts <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1SymbolPost"><span class="std std-ref"><span class="pre">mata::nfa::SymbolPost</span></span></a></code>.</p></li>
+<li><p>Each <a class="reference internal" href="namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1SymbolPost"><span class="std std-ref">mata::nfa::SymbolPost</span></a> represents a set of transitions labeled with a specific symbol from the source state to a set of target states.</p></li>
+<li><p>Each <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1SymbolPost"><span class="std std-ref"><span class="pre">mata::nfa::SymbolPost</span></span></a></code> object contains a set of target states <code class="docutils literal notranslate"><span class="pre">std::OrdVector&lt;State&gt;</span></code> that can be reached from the source state via the corresponding symbol.</p></li>
+</ol>
+</p>
+<p>The main idea behind <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1Nfa"><span class="std std-ref"><span class="pre">mata::nfa::Nfa</span></span></a></code> is that the members (<code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nft.html#classmata_1_1Automaton_1ab2202337f647d65123ccf636e0b12548"><span class="std std-ref"><span class="pre">mata::nfa::Nfa::delta</span></span></a></code>, <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nft.html#classmata_1_1Automaton_1a13952d2293671c34a25f12d01d04672f"><span class="std std-ref"><span class="pre">mata::nfa::Nfa::initial</span></span></a></code>, <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1Nfa_1a3e8ecc77189ef96b6ff70738d0108e7c"><span class="std std-ref"><span class="pre">mata::nfa::Nfa::alphabet</span></span></a></code>, …) do not depend on each other. This allows for some well-optimized implementations as well as easy replacement of individual members, or extensions to the NFA structure (e.g., adding levels for NFT), if needed. However, this also poses a risk of inconsistency between the members (e.g., having initial states that do not exist in the delta). The high-level functions in <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa.html#namespacemata_1_1nfa"><span class="std std-ref"><span class="pre">mata::nfa</span></span></a></code> namespace and <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1Nfa"><span class="std std-ref"><span class="pre">mata::nfa::Nfa</span></span></a></code> class are designed to maintain the consistency of the NFA structure, but the individual members can be modified directly by the user, which may lead to inconsistencies, yet there are often useful when implementing highly-optimized algorithms.</p>
+<p>The main operation on NFAs is BFS/DFS through <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1Delta"><span class="std std-ref"><span class="pre">mata::nfa::Delta</span></span></a></code> structure, which is used in most algorithms. The data structure is designed such that direct access to a specific transition is less efficient, but iterating through all transitions from a given source state, for all source states is efficient (e.g., <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1utils.html#classmata_1_1utils_1_1SynchronizedIterator"><span class="std std-ref"><span class="pre">mata::utils::SynchronizedIterator</span></span></a></code>). When designing algorithms for Mata, be sure utilize iteration through <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1Delta"><span class="std std-ref"><span class="pre">mata::nfa::Delta</span></span></a></code> structure as much as possible.</p>
+</section>
+<section id="nfa_1nfa_usage">
+<h2>Working with NFAs<a class="headerlink" href="#nfa_1nfa_usage" title="Link to this heading">¶</a></h2>
+<p id="nfa_1nfa_usage">The library provides various functions to create, manipulate, and analyze NFAs. The core operations on NFAs, such as union, intersection, complement, determinization, and minimization, are implemented in <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa.html#namespacemata_1_1nfa"><span class="std std-ref"><span class="pre">mata::nfa</span></span></a></code> namespace and as methods of the <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1Nfa"><span class="std std-ref"><span class="pre">mata::nfa::Nfa</span></span></a></code> class. More advanced algorithms and utilities are available in the <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa_1_1algorithms.html#namespacemata_1_1nfa_1_1algorithms"><span class="std std-ref"><span class="pre">mata::nfa::algorithms</span></span></a></code> and <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa_1_1plumbing.html#namespacemata_1_1nfa_1_1plumbing"><span class="std std-ref"><span class="pre">mata::nfa::plumbing</span></span></a></code> namespaces. Users can create NFAs manually by adding states and transitions using the methods provided in the <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1Nfa"><span class="std std-ref"><span class="pre">mata::nfa::Nfa</span></span></a></code> and <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1Delta"><span class="std std-ref"><span class="pre">mata::nfa::Delta</span></span></a></code> classes, or they can use higher-level functions to construct NFAs from regular expressions, words, or other NFAs using the functions in the <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa_1_1builder.html#namespacemata_1_1nfa_1_1builder"><span class="std std-ref"><span class="pre">mata::nfa::builder</span></span></a></code> and <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1parser.html#namespacemata_1_1parser"><span class="std std-ref"><span class="pre">mata::parser</span></span></a></code> namespaces.</p>
+<p></p>
+</section>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The algorithms provided in Mata for NFAs are designed to perform only the core operations on NFAs, such as union, intersection, complement, determinization, minimization, etc., but do not by default optimize the NFAs during these operations. Users can apply optimization algorithms separately after performing the core operations, such as using the <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa.html#namespacemata_1_1nfa_1a9c5f8f2e9759e148b0efffa135e15dae"><span class="std std-ref"><span class="pre">mata::nfa::reduce()</span></span></a></code> function to reduce the resulting NFA, <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa.html#namespacemata_1_1nfa_1a57b322f08ef627f113a89f8aac5771d1"><span class="std std-ref"><span class="pre">mata::nfa::minimize()</span></span></a></code> to minimize the resulting NFA, or <code class="docutils literal notranslate"><a class="reference internal" href="namespace/namespacemata_1_1nfa.html#namespacemata_1_1nfa_1a6be10e89f7bcd0452b13390be07acb48"><span class="std std-ref"><span class="pre">mata::nfa::trim()</span></span></a></code> to remove unreachable and non-terminating states. </p>
+</div>
+</dd></dl>
+
+<section id="types">
+<h2>Types<a class="headerlink" href="#types" title="Link to this heading">¶</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>doxygenfile: Cannot find file “nfa/types.hh </p>
+</div>
+</section>
+<section id="id1">
+<h2>NFA<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>doxygenfile: Cannot find file “nfa/nfa.hh </p>
+</div>
+</section>
+<section id="delta">
+<h2>Delta<a class="headerlink" href="#delta" title="Link to this heading">¶</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>doxygenfile: Cannot find file “nfa/delta.hh </p>
+</div>
+</section>
+<section id="builder">
+<h2>Builder<a class="headerlink" href="#builder" title="Link to this heading">¶</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>doxygenfile: Cannot find file “nfa/builder.hh </p>
+</div>
+</section>
+<section id="algorithms">
+<h2>Algorithms<a class="headerlink" href="#algorithms" title="Link to this heading">¶</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>doxygenfile: Cannot find file “nfa/algorithms.hh </p>
+</div>
+</section>
+<section id="plumbing">
+<h2>Plumbing<a class="headerlink" href="#plumbing" title="Link to this heading">¶</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>doxygenfile: Cannot find file “nfa/plumbing.hh </p>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="automata-format.html">Automata Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="automaton.html">Automaton Interface</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Nondeterministic Finite automata</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#types">Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id1">NFA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#delta">Delta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#builder">Builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#algorithms">Algorithms</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#plumbing">Plumbing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="applications.html">Strings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="namespacelist.html">Namespace list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="classlist.html">Class list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filelist.html">File list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="structlist.html">Struct list</a></li>
+</ul>
+
+
+<hr />
+<ul>
+    
+    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/">Mata website</a></li>
+    
+    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/playground/">Playground</a></li>
+    
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="automaton.html" title="previous chapter">Automaton Interface</a></li>
+      <li>Next: <a href="nft.html" title="next chapter">Nondeterministic Finite Transducers</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.2.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/nfa.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
