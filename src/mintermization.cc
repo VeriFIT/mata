@@ -396,6 +396,10 @@ mata::IntermediateAut mata::Mintermization::mintermize(const IntermediateAut& au
 	return std::move(mintermize(std::vector<const IntermediateAut*>{&aut})[0]);
 }
 
+/**
+ * Mintermize all input automata over one shared minterm partition, preserving non-transition metadata while replacing
+ * bitvector transitions with explicit symbols.
+ */
 std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::vector<const IntermediateAut*>& auts) {
 	// Initialize source BDD tracking structures
 	source_bdds_.clear();
@@ -414,9 +418,20 @@ std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::v
 
 	std::vector<IntermediateAut> res;
 	for (const IntermediateAut* aut : auts) {
-		IntermediateAut mintermized_aut = *aut;
+		// The transitions are replaced below; copying their formula trees only to clear them dominates large inputs.
+		IntermediateAut mintermized_aut;
+		mintermized_aut.state_naming = aut->state_naming;
+		mintermized_aut.symbol_naming = aut->symbol_naming;
+		mintermized_aut.node_naming = aut->node_naming;
 		mintermized_aut.alphabet_type = IntermediateAut::AlphabetType::Explicit;
-		mintermized_aut.transitions.clear();
+		mintermized_aut.automaton_type = aut->automaton_type;
+		mintermized_aut.states_names = aut->states_names;
+		mintermized_aut.symbols_names = aut->symbols_names;
+		mintermized_aut.nodes_names = aut->nodes_names;
+		mintermized_aut.initial_formula = aut->initial_formula;
+		mintermized_aut.final_formula = aut->final_formula;
+		mintermized_aut.initial_enumerated = aut->initial_enumerated;
+		mintermized_aut.final_enumerated = aut->final_enumerated;
 
 		if (aut->is_nfa()) {
 			minterms_to_aut_nfa(mintermized_aut, *aut, partition.minterms_of_source);
