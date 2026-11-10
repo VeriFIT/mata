@@ -663,7 +663,8 @@ TEST_CASE("mata::nfa differential: the revert variants agree with epsilon transi
 		std::mt19937 rng{seed};
 		const size_t num_of_states{2 + seed % 5};
 		const size_t num_of_symbols{1 + seed % 3};
-		auto alphabet{std::make_shared<EnumAlphabet>()};
+		// Separate allocation avoids GCC 16.0.1's false array-bounds diagnostics in alphabet destruction.
+		auto alphabet{std::shared_ptr<EnumAlphabet>{new EnumAlphabet{}}};
 		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) { alphabet->add_new_symbol(std::to_string(symbol)); }
 		const Nfa nfa{random_nfa(rng, num_of_states, num_of_symbols, alphabet, EPSILON)};
 		INFO(describe(seed, nfa));
