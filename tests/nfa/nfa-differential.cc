@@ -311,6 +311,13 @@ void check_epsilon_removal(
 	const Nfa without_epsilon{remove_epsilon(nfa, epsilon)};
 	CHECK(same_language_on(without_epsilon, nfa, words, epsilon));
 	CHECK(same_language_on(determinize(without_epsilon), nfa, words, epsilon));
+
+	// In place, the removal gives the same automaton.
+	Nfa in_place{nfa};
+	in_place.remove_epsilon(epsilon);
+	CHECK(in_place.delta == without_epsilon.delta);
+	CHECK(in_place.initial == without_epsilon.initial);
+	CHECK(in_place.final == without_epsilon.final);
 }
 
 /// The forward direct simulation as a naive greatest fixpoint: @c result[p][q] iff @c q simulates @c p. A final

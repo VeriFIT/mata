@@ -616,66 +616,318 @@ bool mata::nfa::Nfa::make_complete(const OrdVector<Symbol>& symbols, const std::
 	return transition_added;
 }
 
-Nfa mata::nfa::remove_epsilon(const Nfa& aut, const Symbol epsilon) {
-	const size_t num_of_states{aut.num_of_states()};
-	Nfa result{Delta{}, aut.initial, aut.final, aut.alphabet};
-	std::vector<StatePost> posts(num_of_states);
-	// The result delta ends at its last source or target state, as when it was built transition by transition.
-	size_t num_of_delta_states{0};
-	const auto cover{[&](const State state, const StatePost& post) {
-		if (post.empty()) { return; }
-		num_of_delta_states = std::max(num_of_delta_states, size_t{state} + 1);
-		for (const SymbolPost& symbol_post : post) {
-			num_of_delta_states = std::max(num_of_delta_states, size_t{symbol_post.targets.back()} + 1);
-		}
-	}};
+namespace {
 
-	const std::vector<Symbol> epsilons{epsilon};
-	PostWorkspace workspace{};
-	SynchronizedExistentialSymbolPostIterator sync_iterator{};
-	for (State state{0}; state < num_of_states; ++state) {
-		const StatePost& post{aut.delta[state]};
-		StatePost& result_post{posts[state]};
-		if (post.find(epsilon) == post.end()) {
-			// An epsilon-free post stays as it is, without the symbol posts that have no target.
-			if (std::ranges::none_of(post, &SymbolPost::empty)) {
-				result_post = post;
-			} else {
-				for (const SymbolPost& symbol_post : post) {
-					if (!symbol_post.empty()) { result_post.push_back(symbol_post); }
-				}
-			}
-			cover(state, result_post);
-			continue;
-		}
+/// Marks a state that is not in an epsilon component.
+constexpr uint32_t NO_COMPONENT = std::numeric_limits<uint32_t>::max();
 
-		// The state takes over the finality and the non-epsilon posts of every state of its epsilon closure. Symbols
-		//  above a non-default epsilon are ordinary, so the posts around the epsilon one are merged on both sides.
-		sync_iterator.reset();
-		for (const State closure_state : aut.delta.epsilon_closure(StateSet{state}, epsilons, workspace)) {
-			if (aut.final[closure_state]) { result.final.insert(state); }
-			const StatePost& closure_post{aut.delta[closure_state]};
-			const auto epsilon_it{closure_post.find(epsilon)};
-			if (epsilon_it == closure_post.end()) {
-				sync_iterator.push_back(closure_post.begin(), closure_post.end());
-			} else {
-				sync_iterator.push_back(closure_post.begin(), epsilon_it);
-				sync_iterator.push_back(std::next(epsilon_it), closure_post.end());
-			}
+using PostRange = std::ranges::subrange<StatePost::const_iterator>;
+
+/// SCC of the epsilon graph with Tarjan's algorithm.
+struct EpsilonComponents {
+	std::vector<State> members{}; ///< States grouped by component.
+	std::vector<size_t> ends{}; ///< End of each component in @c members.
+	std::vector<uint32_t> component_of{}; ///< Component of each state with an epsilon post, else @c NO_COMPONENT.
+
+	size_t size() const { return ends.size(); }
+	std::span<const State> members_of(const size_t component) const {
+		const size_t begin = component == 0 ? 0 : ends[component - 1];
+		return {members.data() + begin, ends[component] - begin};
+	}
+};
+
+/// Iterative Tarjan's algorithm over the states with an epsilon post.
+/// Targets without one are left out as they are singleton components that need no work.
+EpsilonComponents find_epsilon_components(const Delta& delta, const Symbol epsilon) {
+	constexpr uint32_t unvisited = std::numeric_limits<uint32_t>::max();
+	const size_t num_of_states = delta.num_of_states();
+	std::vector<const SymbolPost*> epsilon_posts(num_of_states, nullptr);
+
+	for (State state = 0; state < num_of_states; ++state) {
+		const StatePost& post = delta[state];
+		if (const auto it = Delta::epsilon_symbol_posts(post, epsilon); it != post.end()) {
+			epsilon_posts[state] = &*it;
 		}
-		while (sync_iterator.advance()) {
-			const StateSet targets{sync_iterator.unify_targets()};
-			if (targets.empty()) { continue; }
-			// The iterator yields the symbols in increasing order, so appending keeps the post sorted.
-			result_post.push_back(
-				SymbolPost{sync_iterator.get_current_minimum()->symbol, std::span<const State>{targets}}
-			);
-		}
-		cover(state, result_post);
 	}
 
-	result.delta.reserve(num_of_delta_states);
-	for (size_t state{0}; state < num_of_delta_states; ++state) { result.delta.emplace_back(std::move(posts[state])); }
+	EpsilonComponents components;
+	components.component_of.assign(num_of_states, NO_COMPONENT);
+	std::vector<uint32_t> index(num_of_states, unvisited);
+	std::vector<uint32_t> low(num_of_states, 0);
+	std::vector<State> stack;
+
+	struct Frame {
+		State state;
+		size_t next_target;
+	};
+
+	std::vector<Frame> frames;
+	uint32_t next_index = 0;
+	const auto visit = [&](const State state) {
+		index[state] = next_index;
+		low[state] = next_index;
+		++next_index;
+		stack.push_back(state);
+		frames.push_back({.state = state, .next_target = 0});
+	};
+
+	for (State root = 0; root < num_of_states; ++root) {
+		if (epsilon_posts[root] == nullptr || index[root] != unvisited) { continue; }
+		visit(root);
+
+		while (!frames.empty()) {
+			Frame& frame = frames.back();
+			const SmallStateSet& targets = epsilon_posts[frame.state]->targets;
+
+			if (frame.next_target < targets.size()) {
+				const State target = targets[frame.next_target];
+				++frame.next_target;
+				if (target >= num_of_states || epsilon_posts[target] == nullptr) { continue; }
+				if (index[target] == unvisited) {
+					visit(target);
+				} else if (components.component_of[target] == NO_COMPONENT) {
+					low[frame.state] = std::min(low[frame.state], index[target]);
+				}
+				continue;
+			}
+
+			const State state = frame.state;
+			frames.pop_back();
+
+			if (!frames.empty()) { low[frames.back().state] = std::min(low[frames.back().state], low[state]); }
+			if (low[state] != index[state]) { continue; }
+
+			const auto component = static_cast<uint32_t>(components.size());
+			State member;
+
+			do {
+				member = stack.back();
+				stack.pop_back();
+				components.component_of[member] = component;
+				components.members.push_back(member);
+			} while (member != state);
+
+			components.ends.push_back(components.members.size());
+		}
+	}
+	return components;
+}
+
+/// Appends the symbol posts of @p range that have a target.
+void append_nonempty(const PostRange range, StatePost& result) {
+	result.reserve(range.size());
+	for (const SymbolPost& symbol_post : range) {
+		if (!symbol_post.empty()) { result.push_back(symbol_post); }
+	}
+}
+
+/// Union of symbol-sorted ranges of symbol posts
+class PostUnion {
+  public:
+	/// Union of @p ranges in symbol order, without symbol posts that have no target.
+	StatePost unite(const std::span<const PostRange> ranges) {
+		StatePost result;
+		const PostRange* first = nullptr;
+		const PostRange* second = nullptr;
+		size_t num_of_nonempty = 0;
+
+		for (const PostRange& range : ranges) {
+			if (range.empty()) { continue; }
+			++num_of_nonempty;
+
+			if (first == nullptr) {
+				first = &range;
+			} else if (second == nullptr) {
+				second = &range;
+			}
+		}
+
+		if (num_of_nonempty == 1) {
+			append_nonempty(*first, result);
+		} else if (num_of_nonempty == 2) {
+			merge_two(*first, *second, result);
+		} else if (num_of_nonempty > 2) {
+			// Synchronize the iterators over the ranges, so that the symbol posts of the same symbol are unified.
+			sync_iterator_.reset();
+
+			for (const PostRange& range : ranges) { sync_iterator_.push_back(range.begin(), range.end()); }
+
+			while (sync_iterator_.advance()) {
+				const StateSet targets = sync_iterator_.unify_targets();
+
+				if (!targets.empty()) {
+					result.emplace_back(sync_iterator_.get_current_minimum()->symbol, std::span<const State>{targets});
+				}
+			}
+		}
+
+		return result;
+	}
+
+  private:
+	SynchronizedExistentialSymbolPostIterator sync_iterator_{};
+	std::vector<State> targets_{};
+
+	/// Buffer for at least @p size targets, so that a target set is built in one copy.
+	State* target_buffer(const size_t size) {
+		if (targets_.size() < size) { targets_.resize(size); }
+		return targets_.data();
+	}
+
+	/// Appends the union of two symbol posts over the same symbol if it has a target.
+	void push_union(const SymbolPost& lhs, const SymbolPost& rhs, StatePost& result) {
+		if (lhs.empty() && rhs.empty()) { return; }
+		State* const first = target_buffer(lhs.targets.size() + rhs.targets.size());
+		State* const last = std::ranges::set_union(lhs.targets, rhs.targets, first).out;
+		result.emplace_back(lhs.symbol, std::span<const State>{first, last});
+	}
+
+	void merge_two(const PostRange lhs, const PostRange rhs, StatePost& result) {
+		result.reserve(lhs.size() + rhs.size());
+		auto lhs_it = lhs.begin();
+		auto rhs_it = rhs.begin();
+
+		while (lhs_it != lhs.end() && rhs_it != rhs.end()) {
+			if (lhs_it->symbol < rhs_it->symbol) {
+				if (!lhs_it->empty()) { result.push_back(*lhs_it); }
+				++lhs_it;
+			} else if (rhs_it->symbol < lhs_it->symbol) {
+				if (!rhs_it->empty()) { result.push_back(*rhs_it); }
+				++rhs_it;
+			} else {
+				push_union(*lhs_it, *rhs_it, result);
+				++lhs_it;
+				++rhs_it;
+			}
+		}
+
+		append_nonempty({lhs_it, lhs.end()}, result);
+		append_nonempty({rhs_it, rhs.end()}, result);
+	}
+};
+
+/**
+ * @brief Writes to @p result the non-epsilon posts of the epsilon closure in @p source of every state with an epsilon
+ * post, and adds the state to @p final when its closure holds a final state.
+ *
+ * All states of a SCC of the epsilon graph have the same closure. The closure post of a component is the union of the
+ * posts of its members and of the closure posts of its successors, which Tarjan's algorithm finishes first, so every
+ * closure post is merged once. @p source may be @p result, so a post is read before it is written.
+ */
+void write_epsilon_closures(const Delta& source, Delta& result, SparseSet<State>& final, const Symbol epsilon) {
+	const EpsilonComponents components = find_epsilon_components(source, epsilon);
+
+	mata::BoolVector is_final(components.size(), false);
+	std::vector<uint32_t> merged_into(source.num_of_states(), NO_COMPONENT);
+	std::vector<PostRange> ranges;
+
+	PostUnion post_union;
+	for (size_t component = 0; component < components.size(); ++component) {
+		const auto marker = static_cast<uint32_t>(component);
+		const std::span<const State> members = components.members_of(component);
+		bool closure_is_final = false;
+		ranges.clear();
+
+		for (const State member : members) {
+			closure_is_final = closure_is_final || final.contains(member);
+			const StatePost& post = source[member];
+			const auto epsilon_it = Delta::epsilon_symbol_posts(post, epsilon);
+
+			ranges.emplace_back(post.begin(), epsilon_it);
+			ranges.emplace_back(std::next(epsilon_it), post.end());
+
+			for (const State target : epsilon_it->targets) {
+				const uint32_t target_component = components.component_of[target];
+				if (target_component == marker) { continue; }
+				// A component is marked by its first member, which already holds the closure post.
+				const bool in_component = target_component != NO_COMPONENT;
+				const State marked = in_component ? components.members_of(target_component).front() : target;
+
+				if (merged_into[marked] == marker) { continue; }
+
+				merged_into[marked] = marker;
+				const StatePost& target_post = in_component ? result[marked] : source[target];
+
+				ranges.emplace_back(target_post.begin(), target_post.end());
+				closure_is_final =
+					closure_is_final || (in_component ? is_final[target_component] != 0 : final.contains(target));
+			}
+		}
+
+		is_final[component] = closure_is_final;
+		StatePost closure_post = post_union.unite(ranges);
+
+		// The last member takes the post, the others copy it.
+		for (const State member : members.first(members.size() - 1)) {
+			result.mutable_state_post(member) = closure_post;
+		}
+
+		result.mutable_state_post(members.back()) = std::move(closure_post);
+	}
+
+	// Final states are added in increasing order.
+	for (State state = 0; state < components.component_of.size(); ++state) {
+		if (const uint32_t component = components.component_of[state];
+			component != NO_COMPONENT && is_final[component] != 0) {
+			final.insert(state);
+		}
+	}
+}
+
+/// Drops the trailing state posts after the last source or target state.
+void drop_unused_trailing_posts(Delta& delta) {
+	const size_t num_of_states = delta.num_of_states();
+	if (num_of_states == 0 || !delta[static_cast<State>(num_of_states - 1)].empty()) { return; }
+
+	size_t used = 0;
+	for (State state = 0; state < num_of_states; ++state) {
+		const StatePost& post = delta[state];
+		if (post.empty()) { continue; }
+		used = std::max(used, size_t{state} + 1);
+
+		for (const SymbolPost& symbol_post : post) { used = std::max(used, size_t{symbol_post.targets.back()} + 1); }
+	}
+
+	Delta shrunk;
+	shrunk.reserve(used);
+
+	for (State state = 0; state < used; ++state) { shrunk.emplace_back(std::move(delta.mutable_state_post(state))); }
+
+	delta = std::move(shrunk);
+}
+
+} // namespace
+
+// In-place version
+void mata::nfa::Nfa::remove_epsilon(const Symbol epsilon) {
+	// The states without an epsilon post keep their posts as they are.
+	write_epsilon_closures(delta, delta, final, epsilon);
+	drop_unused_trailing_posts(delta);
+}
+
+// Copying version
+Nfa mata::nfa::remove_epsilon(const Nfa& aut, const Symbol epsilon) {
+	// Copying the automaton without the epsilon posts, so that the result has no epsilon transitions.
+	// The states without an epsilon post keep their posts without the symbol posts that have no target.
+	Delta epsilon_free;
+	epsilon_free.reserve(aut.delta.num_of_states());
+	for (const StatePost& post : aut.delta) {
+		StatePost& post_copy = epsilon_free.emplace_back();
+
+		if (Delta::epsilon_symbol_posts(post, epsilon) != post.end()) { continue; }
+
+		if (std::ranges::none_of(post, &SymbolPost::empty)) {
+			post_copy = post;
+		} else {
+			append_nonempty({post.begin(), post.end()}, post_copy);
+		}
+	}
+
+	Nfa result{std::move(epsilon_free), aut.initial, aut.final, aut.alphabet};
+
+	write_epsilon_closures(aut.delta, result.delta, result.final, epsilon);
+	drop_unused_trailing_posts(result.delta);
+
 	return result;
 }
 

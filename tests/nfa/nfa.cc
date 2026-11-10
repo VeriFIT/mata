@@ -5289,6 +5289,69 @@ TEST_CASE("mata::nfa::remove_epsilon() merges the posts of whole epsilon closure
 	}
 }
 
+TEST_CASE("mata::nfa::Nfa::remove_epsilon() in place") {
+	// The result has the language of @p regex and equals the copying removal.
+	const auto check_in_place = [](Nfa aut, const Symbol epsilon, const std::string& regex) {
+		const Nfa copied = remove_epsilon(aut, epsilon);
+		aut.remove_epsilon(epsilon);
+
+		// Check copy === in-place removal.
+		CHECK(aut.delta == copied.delta);
+		CHECK(aut.initial == copied.initial);
+		CHECK(aut.final == copied.final);
+		CHECK(aut.num_of_states() == copied.num_of_states());
+		CHECK(!aut.delta.get_used_symbols().contains(epsilon));
+
+		CHECK(are_equivalent(aut, builder::create_from_regex(regex)));
+	};
+
+	SECTION("epsilon cycles, a final state reached by epsilon and an epsilon self-loop") {
+		Nfa aut(6);
+		aut.initial.insert(0);
+		aut.final.insert(4);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, EPSILON, 2);
+		aut.delta.add(2, EPSILON, 1);
+		aut.delta.add(2, 'b', 3);
+		aut.delta.add(3, EPSILON, 4);
+		aut.delta.add(4, 'c', 5);
+		aut.delta.add(5, EPSILON, 5);
+		check_in_place(aut, EPSILON, "ab");
+	}
+
+	SECTION("states that lose all transitions") {
+		Nfa aut(3);
+		aut.initial.insert(0);
+		aut.final.insert(0);
+		aut.delta.add(0, 'a', 0);
+		aut.delta.add(2, EPSILON, 1);
+		check_in_place(aut, EPSILON, "a*");
+	}
+
+	SECTION("a non-default epsilon between ordinary symbols") {
+		// The epsilon 'b' lies between the ordinary symbols 'a' and 'c'.
+		Nfa aut(4);
+		aut.initial.insert(0);
+		aut.final.insert(3);
+		aut.delta.add(0, 'a', 0);
+		aut.delta.add(0, 'b', 1);
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(1, 'b', 2);
+		aut.delta.add(1, 'c', 3);
+		aut.delta.add(2, 'c', 0);
+		check_in_place(aut, 'b', "[ac]*c");
+	}
+
+	SECTION("without epsilon transitions") {
+		Nfa aut(3);
+		aut.initial.insert(0);
+		aut.final.insert(2);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		check_in_place(aut, EPSILON, "ab");
+	}
+}
+
 TEST_CASE("Profile mata::nfa::remove_epsilon()", "[.profiling]") {
 	for (size_t n{}; n < 100'000; ++n) {
 		Nfa aut{20};
