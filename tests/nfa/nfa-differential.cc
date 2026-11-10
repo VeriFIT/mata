@@ -311,6 +311,13 @@ void check_epsilon_removal(
 	const Nfa without_epsilon{remove_epsilon(nfa, epsilon)};
 	CHECK(same_language_on(without_epsilon, nfa, words, epsilon));
 	CHECK(same_language_on(determinize(without_epsilon), nfa, words, epsilon));
+
+	// In place, the removal gives the same automaton.
+	Nfa in_place{nfa};
+	in_place.remove_epsilon(epsilon);
+	CHECK(in_place.delta == without_epsilon.delta);
+	CHECK(in_place.initial == without_epsilon.initial);
+	CHECK(in_place.final == without_epsilon.final);
 }
 
 /// The forward direct simulation as a naive greatest fixpoint: @c result[p][q] iff @c q simulates @c p. A final
@@ -656,7 +663,8 @@ TEST_CASE("mata::nfa differential: the revert variants agree with epsilon transi
 		std::mt19937 rng{seed};
 		const size_t num_of_states{2 + seed % 5};
 		const size_t num_of_symbols{1 + seed % 3};
-		auto alphabet{std::make_shared<EnumAlphabet>()};
+		// Separate allocation avoids GCC 16.0.1's false array-bounds diagnostics in alphabet destruction.
+		auto alphabet{std::shared_ptr<EnumAlphabet>{new EnumAlphabet{}}};
 		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) { alphabet->add_new_symbol(std::to_string(symbol)); }
 		const Nfa nfa{random_nfa(rng, num_of_states, num_of_symbols, alphabet, EPSILON)};
 		INFO(describe(seed, nfa));

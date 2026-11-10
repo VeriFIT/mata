@@ -34,8 +34,6 @@ void mata::nfa::throw_state_overflow() {
 	);
 }
 
-void Nfa::remove_epsilon(const Symbol epsilon) { *this = mata::nfa::remove_epsilon(*this, epsilon); }
-
 Run Nfa::get_shortest_accepting_run_from_state(State state, const std::vector<State>& distances_to_final) const {
 	Run result{.word = {}, .path = {state}};
 	while (!final[state]) {
