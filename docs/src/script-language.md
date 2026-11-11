@@ -1,8 +1,9 @@
-# Automata script language
+# (Auto)Mata Script Language
 
-**Status: design only.** Nothing described on this page is implemented yet. The page records the agreed design of a
-small language for scripting Mata, so that the interpreter and the command-line interface can be built against it.
-The language has no final name and no file extension yet; see [Open questions](#open-questions).
+**Status: design only.** Nothing described on this page is implemented yet. The page records the agreed design of
+**Mata Script**, a small, library-independent language for describing automata operations, with Mata as its intended
+first implementation. Mata Script programs use the **`.matasc`** file extension, as in `email-filter.matasc`; `.mata`
+remains the extension for automata files.
 
 A script loads automata, applies a sequence of automata operations to them, and reports the outcome: a verdict, a
 witness, a printed automaton, or timing records. It replaces two things that exist today:
@@ -749,7 +750,6 @@ A script that works on an input of either kind:
 
 ## Open questions
 
-- **Name and file extension** of the language.
 - **Command-line interface.** How a script and its inputs are given, how an input is named, how an option or the
   default of a hint is set from the command line, and how the results of checking, including the termination report,
   are shown. A script written inline in a shell command or in a `pycobench` job needs care, because both can replace
