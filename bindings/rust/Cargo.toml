@@ -1,5 +1,5 @@
 [workspace]
-members = ["mata-sys", "mata"]
+members = ["mata-sys", "mata", "mata-cli"]
 resolver = "3"
 
 [workspace.package]

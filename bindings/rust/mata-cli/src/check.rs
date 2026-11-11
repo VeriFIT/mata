@@ -1,0 +1,1124 @@
+// Copyright (c) 2026 VeriFIT. GNU GPL v3. See LICENSE in the project root.
+
+use std::collections::{HashMap, HashSet};
+
+use crate::Error;
+use crate::ast::{Expr, FormKind, Kind, Parameter, Spanned};
+use crate::eval::Engine;
+
+/// What `mata scripts check` reports besides its errors.
+pub(crate) struct Report {
+	/// Whether the script is guaranteed to terminate, provided the library operations it calls do.
+	pub(crate) termination: bool,
+	/// Report lines: unused declarations and portability warnings, in the order they were found.
+	pub(crate) warnings: Vec<String>,
+}
+
+/// Special forms a call may name, besides the operations of `ops::OPERATIONS`.
+const SPECIAL_FORMS: &[&str] = &[
+	"->", "and", "as", "cond", "do", "else", "if", "lambda", "let", "loop", "or", "recur", "time",
+	"witness",
+];
+
+const OPTIONS: &[&str] = &[
+	"alphabet",
+	"default",
+	"loops-and-recursion",
+	"optimize",
+	"produce-witnesses",
+	"time-operations",
+	"trace",
+];
+
+/// Operations a portable core script may call; `script-language.md`, "Portable core".
+const CORE_OPERATIONS: &[&str] = &[
+	"nfa:load",
+	"nfa:union-nondeterministic",
+	"nfa:intersection",
+	"nfa:complement",
+	"nfa:concatenate",
+	"nfa:determinize",
+	"nfa:minimize",
+	"nfa:language-empty?",
+	"nfa:included?",
+	"nfa:equivalent?",
+	"nfa:universal?",
+	"script-alphabet",
+];
+
+/// Sorts a portable core script may use; `script-language.md`, "Portable core".
+const CORE_SORTS: &[&str] = &["Nfa", "Alphabet", "Bool", "Int", "String"];
+
+const SIMPLE_SORTS: &[&str] = &[
+	"Nfa",
+	"Nft",
+	"Automaton",
+	"IntermediateAutomaton",
+	"Alphabet",
+	"Symbol",
+	"Word",
+	"Run",
+	"Bool",
+	"Int",
+	"String",
+	"Function",
+];
+
+/// Static check: names, shapes, arities, sorts where known, declarations, and the termination report.
+/// It never loads an input and never calls a library operation.
+pub(crate) fn check(forms: &[Spanned<FormKind>], engine: &Engine) -> Result<Report, Error> {
+	let mut checker = Checker::new(engine);
+	for form in forms {
+		checker.form(form);
+	}
+	checker.result()
+}
+
+/// One lexical scope, holding what is known statically about the names it binds.
+#[derive(Default)]
+struct Frame {
+	/// Sort of each name bound here, `None` when the sort is not known.
+	sorts: HashMap<String, Option<String>>,
+	/// Parameter count of each function defined here, when it is known.
+	arities: HashMap<String, usize>,
+}
+
+/// The flags of the profile check: the portable core profile and its declaration rules.
+struct Profile {
+	/// The script turned on the portable core profile.
+	core: bool,
+	/// Declarations may still come; set by the first form that is not `set-option` or `set-info`.
+	declarations_open: bool,
+	/// A `declare-inputs` was seen, so no declaration may follow it.
+	declared_variadic: bool,
+}
+
+/// What checking a special form concluded.
+enum Special {
+	/// `head` names no special form.
+	NotSpecial,
+	/// `head` names a special form; its sort, when the form knows one.
+	Form(Option<String>),
+}
+
+struct Checker<'a> {
+	engine: &'a Engine,
+	frames: Vec<Frame>,
+	/// Declared inputs that the script uses.
+	used: HashSet<String>,
+	/// Declared inputs in declaration order, for the unused report.
+	declarations: Vec<String>,
+	errors: Vec<Error>,
+	warnings: Vec<String>,
+	termination: bool,
+	/// The profile and declaration state of the script.
+	profile: Profile,
+	/// Self-call errors are reported once per function.
+	recursion_reported: bool,
+	/// Open `push` forms, for a `pop` without a matching `push`.
+	pushes: usize,
+}
+
+impl<'a> Checker<'a> {
+	fn new(engine: &'a Engine) -> Checker<'a> {
+		Checker {
+			engine,
+			frames: vec![Frame::default()],
+			used: HashSet::new(),
+			declarations: Vec::new(),
+			errors: Vec::new(),
+			warnings: Vec::new(),
+			termination: true,
+			profile: Profile {
+				core: false,
+				declarations_open: true,
+				declared_variadic: false,
+			},
+			recursion_reported: false,
+			pushes: 0,
+		}
+	}
+
+	fn result(mut self) -> Result<Report, Error> {
+		for name in &self.declarations {
+			if !self.used.contains(name) {
+				self.warnings.push(format!("unused declaration '{name}'"));
+			}
+		}
+		if self.errors.is_empty() {
+			Ok(Report {
+				termination: self.termination,
+				warnings: self.warnings,
+			})
+		} else {
+			Err(Error::plain(
+				self.errors
+					.iter()
+					.map(Error::render)
+					.collect::<Vec<_>>()
+					.join("; "),
+			))
+		}
+	}
+
+	// Environment -----------------------------------------------------------------------------------
+
+	/// Whether `name` is bound anywhere the script can see.
+	fn known(&self, name: &str) -> bool {
+		self.frames
+			.iter()
+			.rev()
+			.any(|frame| frame.sorts.contains_key(name))
+			|| self.engine.scope.lookup(name).is_some()
+	}
+
+	/// The sort of `name` when it is known: annotations, engine values, and the results of operations.
+	fn sort_of(&self, name: &str) -> Option<String> {
+		for frame in self.frames.iter().rev() {
+			if let Some(sort) = frame.sorts.get(name) {
+				return sort.clone();
+			}
+		}
+		match name {
+			"epsilon" | "dont-care" => Some("Symbol".to_owned()),
+			"inputs" => Some("(List String)".to_owned()),
+			_ => crate::ops::operation(name).and_then(|operation| {
+				(!operation.result.is_empty()).then(|| operation.result.to_owned())
+			}),
+		}
+	}
+
+	fn defined_here(&self, name: &str) -> bool {
+		self.frames
+			.last()
+			.is_some_and(|frame| frame.sorts.contains_key(name))
+	}
+
+	fn bind(&mut self, name: &str, sort: Option<String>, arity: Option<usize>) {
+		let frame = self.frames.last_mut().expect("the checker has a frame");
+		frame.sorts.insert(name.to_owned(), sort);
+		if let Some(arity) = arity {
+			frame.arities.insert(name.to_owned(), arity);
+		}
+	}
+
+	fn arity_of(&self, name: &str) -> Option<usize> {
+		for frame in self.frames.iter().rev() {
+			if frame.sorts.contains_key(name) {
+				return frame.arities.get(name).copied();
+			}
+		}
+		None
+	}
+
+	fn reject(&mut self, expression: &Expr, message: String) {
+		self.errors.push(expression.at(message));
+	}
+
+	fn reject_form(&mut self, form: &Spanned<FormKind>, message: String) {
+		self.reject_at(form.line, form.column, message);
+	}
+
+	fn reject_at(&mut self, line: usize, column: usize, message: String) {
+		self.errors.push(Error::at(message, line, column));
+	}
+
+	/// A function value in a position that the termination guarantee does not allow.
+	fn consumed(&mut self, sort: Option<&str>, list_function: bool) {
+		if sort == Some("Function") && !list_function {
+			self.termination = false;
+		}
+	}
+
+	// Forms -----------------------------------------------------------------------------------------
+
+	fn form(&mut self, form: &Spanned<FormKind>) {
+		match &form.node {
+			FormKind::Declare {
+				name,
+				sort,
+				variadic,
+			} => self.declaration(form, name, sort, *variadic),
+			FormKind::SetOption { keyword, value } => self.option(form, keyword, value),
+			FormKind::GetOption { keyword } => {
+				if !OPTIONS.contains(&keyword.as_str()) {
+					self.reject_form(form, format!("unknown option ':{keyword}'"));
+				}
+			}
+			FormKind::SetInfo { keyword, value } => {
+				if keyword == "profile"
+					&& let Kind::String(profile) = &value.node
+				{
+					if profile == "core" {
+						self.profile.core = true;
+					} else {
+						self.warnings.push(format!("unknown profile '{profile}'"));
+					}
+				} else {
+					let _ = self.expression(value, None);
+				}
+			}
+			FormKind::GetInfo { keyword: _ } => {}
+			FormKind::Push => {
+				self.profile.declarations_open = false;
+				self.pushes += 1;
+			}
+			FormKind::Pop => {
+				self.profile.declarations_open = false;
+				if self.pushes == 0 {
+					self.reject_form(form, "'pop' without a matching 'push'".into());
+				} else {
+					self.pushes -= 1;
+				}
+			}
+			FormKind::Reset => {
+				self.profile.declarations_open = false;
+				self.pushes = 0;
+				self.frames.truncate(1);
+				self.frames[0] = Frame::default();
+			}
+			FormKind::Exit => self.profile.declarations_open = false,
+			FormKind::Define {
+				name,
+				parameters,
+				sort,
+				body,
+			} => {
+				self.profile.declarations_open = false;
+				if let Some(sort) = sort {
+					self.check_sort_name(form.line, form.column, sort);
+				}
+				self.definition(name, parameters.as_deref(), body, form.line, form.column);
+			}
+			FormKind::Expression(expression) => {
+				self.profile.declarations_open = false;
+				let _ = self.expression(expression, None);
+			}
+		}
+	}
+
+	fn check_sort_name(&mut self, line: usize, column: usize, sort: &str) {
+		if !valid_sort(sort) {
+			self.reject_at(line, column, format!("unknown sort '{sort}'"));
+			return;
+		}
+		if self.profile.core && !portable_sort(sort) {
+			self.warnings
+				.push(format!("sort '{sort}' is not in the portable core"));
+		}
+	}
+
+	fn declaration(&mut self, form: &Spanned<FormKind>, name: &str, sort: &str, variadic: bool) {
+		if !self.profile.declarations_open {
+			self.reject_form(
+				form,
+				"declarations must come before every other form except set-option and set-info"
+					.into(),
+			);
+		}
+		if self.known(name) {
+			self.reject_form(form, format!("declaration '{name}' is already defined"));
+		}
+		if self.profile.declared_variadic {
+			self.reject_form(form, "'declare-inputs' must come last".into());
+		}
+		let element = match compound(sort) {
+			Some(("List", element)) => Some(element),
+			_ => None,
+		};
+		if variadic {
+			self.profile.declared_variadic = true;
+			match element {
+				Some("Nfa" | "Nft" | "Automaton") => {}
+				_ => self.reject_form(
+					form,
+					"declare-inputs needs a list of Nfa, Nft, or Automaton".into(),
+				),
+			}
+		} else if element.is_none() && !matches!(sort, "Nfa" | "Nft" | "Automaton") {
+			self.reject_form(
+				form,
+				format!("a declared input must be Nfa, Nft, or Automaton; '{sort}' is not"),
+			);
+		}
+		self.check_sort_name(form.line, form.column, sort);
+		self.bind(name, Some(sort.to_owned()), None);
+		self.declarations.push(name.to_owned());
+	}
+
+	fn option(&mut self, form: &Spanned<FormKind>, keyword: &str, value: &Expr) {
+		if !OPTIONS.contains(&keyword) {
+			self.reject_form(form, format!("unknown option ':{keyword}'"));
+			return;
+		}
+		match keyword {
+			"alphabet" => {
+				self.expect_sort(value, "String", form);
+				if let Kind::String(name) = &value.node
+					&& !matches!(name.as_str(), "on-the-fly" | "bytes")
+				{
+					self.reject_form(form, format!("unknown alphabet '{name}'"));
+				}
+			}
+			"produce-witnesses" | "time-operations" => self.expect_sort(value, "Bool", form),
+			"optimize" | "trace" => {
+				self.expect_sort(value, "Bool", form);
+				if matches!(value.node, Kind::Bool(true)) {
+					self.reject_form(form, format!("option :{keyword} is not implemented"));
+				}
+			}
+			"loops-and-recursion" => {
+				let _ = self.expression(value, None);
+				self.reject_form(
+					form,
+					"option :loops-and-recursion is not implemented".into(),
+				);
+			}
+			_ => {
+				let _ = self.expression(value, None);
+				self.reject_form(form, format!("option :{keyword} is not implemented"));
+			}
+		}
+	}
+
+	fn expect_sort(&mut self, value: &Expr, expected: &str, form: &Spanned<FormKind>) {
+		if let Some(sort) = self.expression(value, None)
+			&& !accepts(expected, &sort)
+		{
+			self.reject_form(form, format!("expected {expected}, found {sort}"));
+		}
+	}
+
+	fn definition(
+		&mut self,
+		name: &str,
+		parameters: Option<&[Parameter]>,
+		body: &[Expr],
+		line: usize,
+		column: usize,
+	) {
+		if self.defined_here(name) {
+			self.reject_at(line, column, format!("'{name}' is already defined"));
+		}
+		let sort = match parameters {
+			None => self.body(body, None),
+			Some(parameters) => {
+				if self.profile.core {
+					self.reject_at(
+						line,
+						column,
+						"a portable core script cannot define a function".into(),
+					);
+				}
+				self.frames.push(Frame::default());
+				for parameter in parameters {
+					if let Some(sort) = &parameter.sort {
+						self.check_sort_name(line, column, sort);
+					}
+					self.bind(&parameter.name, parameter.sort.clone(), None);
+				}
+				let result = self.body(body, Some(name));
+				self.frames.pop();
+				if result.as_deref() == Some("Function") {
+					self.termination = false;
+				}
+				Some("Function".to_owned())
+			}
+		};
+		let arity = parameters.map(<[Parameter]>::len);
+		self.bind(name, sort, arity);
+	}
+
+	/// Checks a body in a fresh scope and returns the sort of its last expression.
+	fn body(&mut self, items: &[Expr], self_name: Option<&str>) -> Option<String> {
+		self.frames.push(Frame::default());
+		let result = self.sequence(items, self_name);
+		self.frames.pop();
+		result
+	}
+
+	/// Checks each expression in the current scope and returns the sort of the last one.
+	fn sequence(&mut self, items: &[Expr], self_name: Option<&str>) -> Option<String> {
+		let mut result = None;
+		for item in items {
+			result = Some(self.expression(item, self_name));
+		}
+		result.flatten()
+	}
+
+	// Expressions -----------------------------------------------------------------------------------
+
+	fn expression(&mut self, expression: &Expr, self_name: Option<&str>) -> Option<String> {
+		match &expression.node {
+			Kind::Bool(_) => Some("Bool".into()),
+			Kind::Int(_) => Some("Int".into()),
+			Kind::String(_) | Kind::Input(_) => Some("String".into()),
+			Kind::None => Some("none".into()),
+			Kind::Name(name) => {
+				if Some(name.as_str()) == self_name {
+					if !self.recursion_reported {
+						self.recursion_reported = true;
+						self.reject(
+							expression,
+							format!(
+								"'{name}' calls itself; recursion needs :loops-and-recursion, which is not implemented"
+							),
+						);
+					}
+					self.termination = false;
+					return Some("Function".into());
+				}
+				if !self.known(name) {
+					self.reject(expression, format!("unknown name '{name}'"));
+					return None;
+				}
+				self.used.insert(name.clone());
+				self.sort_of(name)
+			}
+			Kind::List(items) => self.list(items, expression, self_name),
+			Kind::Lambda { parameters, body } => {
+				if self.profile.core {
+					self.reject(
+						expression,
+						"a portable core script cannot use a lambda".into(),
+					);
+				}
+				self.frames.push(Frame::default());
+				for parameter in parameters {
+					if let Some(sort) = &parameter.sort {
+						self.check_sort_expression(expression, sort);
+					}
+					self.bind(&parameter.name, parameter.sort.clone(), None);
+				}
+				let result = self.body(body, self_name);
+				self.frames.pop();
+				if result.as_deref() == Some("Function") {
+					self.termination = false;
+				}
+				Some("Function".into())
+			}
+			Kind::Definition {
+				name,
+				parameters,
+				body,
+			} => {
+				self.definition(
+					name,
+					parameters.as_deref(),
+					body,
+					expression.line,
+					expression.column,
+				);
+				None
+			}
+			Kind::Call { .. } => self.call(expression, self_name),
+			Kind::Literal { name, arguments } => Some(self.literal(name, arguments, expression)),
+		}
+	}
+
+	fn check_sort_expression(&mut self, expression: &Expr, sort: &str) {
+		if !valid_sort(sort) {
+			self.reject(expression, format!("unknown sort '{sort}'"));
+		}
+		if self.profile.core && !portable_sort(sort) {
+			self.warnings
+				.push(format!("sort '{sort}' is not in the portable core"));
+		}
+	}
+
+	fn literal(&mut self, name: &str, arguments: &[(String, Expr)], expression: &Expr) -> String {
+		if self.profile.core {
+			self.reject(expression, format!("'{name}' is not in the portable core"));
+		}
+		let allowed: &[&str] = if name == "nfa:literal" {
+			&["initial", "final", "transitions"]
+		} else {
+			&["initial", "final", "levels", "states", "transitions"]
+		};
+		let mut seen = HashSet::new();
+		for (keyword, _) in arguments {
+			if !allowed.contains(&keyword.as_str()) {
+				self.reject(expression, format!("'{name}' has no keyword ':{keyword}'"));
+			} else if !seen.insert(keyword.as_str()) {
+				self.reject(expression, format!("duplicate keyword ':{keyword}'"));
+			}
+		}
+		let mut required: Vec<&str> = vec!["initial", "final"];
+		if name == "nft:literal" {
+			required.push("levels");
+		}
+		for keyword in required {
+			if !seen.contains(keyword) {
+				self.reject(expression, format!("{name} needs :{keyword}"));
+			}
+		}
+		if name == "nfa:literal" {
+			"Nfa".to_owned()
+		} else {
+			"Nft".to_owned()
+		}
+	}
+
+	fn list(
+		&mut self,
+		items: &[Expr],
+		expression: &Expr,
+		self_name: Option<&str>,
+	) -> Option<String> {
+		let Some(Kind::Name(head)) = items.first().map(|item| &item.node) else {
+			self.reject(expression, "expected a function or special form".into());
+			return None;
+		};
+		match head.as_str() {
+			"let" => self.list_let(&items[1..], expression, self_name),
+			"cond" => self.list_cond(&items[1..], expression, self_name),
+			"loop" => {
+				self.termination = false;
+				self.reject(
+					expression,
+					"'loop' needs :loops-and-recursion, which is not implemented".into(),
+				);
+				None
+			}
+			_ => {
+				let arguments = items[1..].to_vec();
+				self.call_head(head, &arguments, &[], expression, self_name)
+			}
+		}
+	}
+
+	fn list_let(
+		&mut self,
+		parts: &[Expr],
+		expression: &Expr,
+		self_name: Option<&str>,
+	) -> Option<String> {
+		let Some(Kind::List(bindings)) = parts.first().map(|part| &part.node) else {
+			self.reject(expression, "let needs a binding list".into());
+			return None;
+		};
+		if parts.len() < 2 {
+			self.reject(expression, "let needs a body".into());
+			return None;
+		}
+		self.frames.push(Frame::default());
+		for binding in bindings {
+			let Kind::List(pair) = &binding.node else {
+				self.reject(binding, "a let binding must be (name value)".into());
+				continue;
+			};
+			if pair.len() != 2 {
+				self.reject(binding, "a let binding must be (name value)".into());
+				continue;
+			}
+			let Kind::Name(name) = &pair[0].node else {
+				self.reject(binding, "a let binding needs a name".into());
+				continue;
+			};
+			let sort = self.expression(&pair[1], self_name);
+			let arity = match &pair[1].node {
+				Kind::Lambda { parameters, .. }
+				| Kind::Definition {
+					parameters: Some(parameters),
+					..
+				} => Some(parameters.len()),
+				_ => None,
+			};
+			self.bind(name, sort, arity);
+		}
+		let result = self.body(&parts[1..], self_name);
+		self.frames.pop();
+		result
+	}
+
+	fn list_cond(
+		&mut self,
+		clauses: &[Expr],
+		expression: &Expr,
+		self_name: Option<&str>,
+	) -> Option<String> {
+		if clauses.is_empty() {
+			self.reject(expression, "cond needs at least one clause".into());
+			return None;
+		}
+		let mut sorts = Vec::new();
+		let last = clauses.len() - 1;
+		for (index, clause) in clauses.iter().enumerate() {
+			let Kind::List(pair) = &clause.node else {
+				self.reject(clause, "a cond clause must be a list".into());
+				sorts.push(None);
+				continue;
+			};
+			if pair.len() != 2 {
+				self.reject(clause, "a cond clause needs a condition and a value".into());
+				sorts.push(None);
+				continue;
+			}
+			let is_else = matches!(&pair[0].node, Kind::Name(name) if name == "else");
+			if is_else {
+				if index != last {
+					self.reject(clause, "'else' must be the last cond clause".into());
+				}
+			} else if let Some(sort) = self.expression(&pair[0], self_name)
+				&& !accepts("Bool", &sort)
+			{
+				self.reject(
+					&pair[0],
+					format!("cond needs Bool conditions, found {sort}"),
+				);
+			}
+			sorts.push(self.expression(&pair[1], self_name));
+		}
+		let mut sorts = sorts.into_iter();
+		let first = sorts.next().flatten()?;
+		if sorts.all(|sort| sort.as_deref() == Some(first.as_str())) {
+			Some(first)
+		} else {
+			None
+		}
+	}
+
+	fn call(&mut self, expression: &Expr, self_name: Option<&str>) -> Option<String> {
+		let Kind::Call {
+			function,
+			arguments,
+			keywords,
+		} = &expression.node
+		else {
+			unreachable!()
+		};
+		if let Kind::Name(head) = &function.node {
+			return self.call_head(head, arguments, keywords, expression, self_name);
+		}
+		if let Some(sort) = self.expression(function, self_name)
+			&& !accepts("Function", &sort)
+		{
+			self.reject(
+				function,
+				"the first element of an application must be a function".into(),
+			);
+		}
+		for argument in arguments {
+			let sort = self.expression(argument, self_name);
+			self.consumed(sort.as_deref(), false);
+		}
+		for (_, value) in keywords {
+			let _ = self.expression(value, self_name);
+		}
+		None
+	}
+
+	fn call_head(
+		&mut self,
+		head: &str,
+		arguments: &[Expr],
+		keywords: &[(String, Expr)],
+		expression: &Expr,
+		self_name: Option<&str>,
+	) -> Option<String> {
+		if Some(head) == self_name {
+			if !self.recursion_reported {
+				self.recursion_reported = true;
+				self.reject(
+					expression,
+					format!(
+						"'{head}' calls itself; recursion needs :loops-and-recursion, which is not implemented"
+					),
+				);
+			}
+			self.termination = false;
+			for argument in arguments {
+				let _ = self.expression(argument, self_name);
+			}
+			return None;
+		}
+		let special = self.special(head, arguments, keywords, expression, self_name);
+		if let Special::Form(result) = special {
+			return result;
+		}
+		if let Some(operation) = crate::ops::operation(head) {
+			if !keywords.is_empty() {
+				self.reject(expression, format!("'{head}' takes no keyword arguments"));
+			}
+			if self.profile.core && !core_call(head) {
+				self.reject(expression, format!("'{head}' is not in the portable core"));
+			}
+			if !crate::ops::accepts(operation, arguments.len()) {
+				self.reject(
+					expression,
+					crate::ops::arity_message(operation, arguments.len()),
+				);
+			}
+			let list_function = head.starts_with("list:");
+			let operands: Vec<&str> = operation.operands.split(',').collect();
+			for (index, argument) in arguments.iter().enumerate() {
+				let sort = self.expression(argument, self_name);
+				if let Some(expected) = operands.get(index).filter(|entry| !entry.is_empty())
+					&& let Some(actual) = &sort
+					&& !accepts(expected, actual)
+				{
+					self.reject(
+						argument,
+						format!(
+							"argument {} of '{head}' must be {expected}, found {actual}",
+							index + 1
+						),
+					);
+				}
+				self.consumed(sort.as_deref(), list_function);
+			}
+			return (!operation.result.is_empty()).then(|| operation.result.to_owned());
+		}
+		if SPECIAL_FORMS.contains(&head) {
+			// A special form is handled above; reaching here means it is not allowed in this position.
+			self.reject(expression, format!("'{head}' is not allowed here"));
+			return None;
+		}
+		if !self.known(head) {
+			self.reject(expression, format!("unknown name '{head}'"));
+			return None;
+		}
+		let sort = self.sort_of(head);
+		if let Some(sort) = &sort
+			&& !accepts("Function", sort)
+		{
+			self.reject(
+				expression,
+				"the first element of an application must be a function".into(),
+			);
+			return None;
+		}
+		if !keywords.is_empty() {
+			self.reject(
+				expression,
+				"a defined function takes no keyword arguments".to_owned(),
+			);
+		}
+		if let Some(expected) = self.arity_of(head)
+			&& expected != arguments.len()
+		{
+			self.reject(
+				expression,
+				format!(
+					"the function expects {expected} arguments, {} given",
+					arguments.len()
+				),
+			);
+		}
+		for argument in arguments {
+			let sort = self.expression(argument, self_name);
+			self.consumed(sort.as_deref(), false);
+		}
+		for (_, value) in keywords {
+			let _ = self.expression(value, self_name);
+		}
+		None
+	}
+
+	/// Checks a special form named by `head`; `NotSpecial` when `head` names no special form.
+	fn special(
+		&mut self,
+		head: &str,
+		arguments: &[Expr],
+		keywords: &[(String, Expr)],
+		expression: &Expr,
+		self_name: Option<&str>,
+	) -> Special {
+		if !keywords.is_empty() && SPECIAL_FORMS.contains(&head) {
+			self.reject(expression, format!("'{head}' takes no keyword arguments"));
+		}
+		match head {
+			"if" => self.special_if(arguments, expression, self_name),
+			"do" => Special::Form(self.sequence(arguments, self_name)),
+			"and" | "or" => self.special_logic(head, arguments, self_name),
+			"->" => Special::Form(self.pipeline(arguments, expression, self_name)),
+			"as" => self.special_as(arguments, expression, self_name),
+			"time" => self.special_time(arguments, expression, self_name),
+			"witness" => self.special_witness(arguments, expression, self_name),
+			"recur" => {
+				self.termination = false;
+				self.reject(
+					expression,
+					"'recur' needs :loops-and-recursion, which is not implemented".into(),
+				);
+				Special::Form(None)
+			}
+			"else" => {
+				self.reject(
+					expression,
+					"'else' is only allowed as the last cond clause".into(),
+				);
+				Special::Form(None)
+			}
+			_ => Special::NotSpecial,
+		}
+	}
+
+	/// Checks `if`: a Bool condition and two branches of one sort.
+	fn special_if(
+		&mut self,
+		arguments: &[Expr],
+		expression: &Expr,
+		self_name: Option<&str>,
+	) -> Special {
+		if arguments.len() != 3 {
+			self.reject(expression, "if needs a condition and two branches".into());
+			return Special::Form(None);
+		}
+		if let Some(sort) = self.expression(&arguments[0], self_name)
+			&& !accepts("Bool", &sort)
+		{
+			self.reject(
+				&arguments[0],
+				format!("if needs a Bool condition, found {sort}"),
+			);
+		}
+		let then = self.expression(&arguments[1], self_name);
+		let otherwise = self.expression(&arguments[2], self_name);
+		if then.is_some() && then == otherwise {
+			Special::Form(then)
+		} else {
+			Special::Form(None)
+		}
+	}
+
+	/// Checks `and` or `or`: Bool operands, Bool result.
+	fn special_logic(
+		&mut self,
+		head: &str,
+		arguments: &[Expr],
+		self_name: Option<&str>,
+	) -> Special {
+		for argument in arguments {
+			if let Some(sort) = self.expression(argument, self_name)
+				&& !accepts("Bool", &sort)
+			{
+				self.reject(
+					argument,
+					format!("{head} needs Bool operands, found {sort}"),
+				);
+			}
+		}
+		Special::Form(Some("Bool".into()))
+	}
+
+	/// Checks `as`: a value and the sort it must conform to.
+	fn special_as(
+		&mut self,
+		arguments: &[Expr],
+		expression: &Expr,
+		self_name: Option<&str>,
+	) -> Special {
+		if arguments.len() != 2 {
+			self.reject(expression, "as needs a value and a sort".into());
+			return Special::Form(None);
+		}
+		let Some(sort) = sort_expression(&arguments[1]) else {
+			self.reject(&arguments[1], "expected a sort".into());
+			return Special::Form(None);
+		};
+		self.check_sort_expression(&arguments[1], &sort);
+		let actual = self.expression(&arguments[0], self_name);
+		if let Some(actual) = &actual
+			&& !accepts(&sort, actual)
+		{
+			self.reject(&arguments[0], format!("expected {sort}, found {actual}"));
+		}
+		Special::Form(Some(sort))
+	}
+
+	/// Checks `time`: a String label followed by the expressions it measures.
+	fn special_time(
+		&mut self,
+		arguments: &[Expr],
+		expression: &Expr,
+		self_name: Option<&str>,
+	) -> Special {
+		if arguments.len() < 2 {
+			self.reject(expression, "time needs a label and an expression".into());
+			return Special::Form(None);
+		}
+		if let Some(sort) = self.expression(&arguments[0], self_name)
+			&& !accepts("String", &sort)
+		{
+			self.reject(
+				&arguments[0],
+				format!("the time label must be a String, found {sort}"),
+			);
+		}
+		Special::Form(self.sequence(&arguments[1..], self_name))
+	}
+
+	/// Checks `witness`: a decision operation whose counterexample is run.
+	fn special_witness(
+		&mut self,
+		arguments: &[Expr],
+		expression: &Expr,
+		self_name: Option<&str>,
+	) -> Special {
+		if arguments.len() != 1 {
+			self.reject(expression, "witness takes one application".into());
+			return Special::Form(None);
+		}
+		if let Some(sort) = self.expression(&arguments[0], self_name)
+			&& !accepts("Bool", &sort)
+		{
+			self.reject(
+				&arguments[0],
+				"witness applies to a decision operation".into(),
+			);
+		}
+		Special::Form(Some("Run".into()))
+	}
+
+	fn pipeline(
+		&mut self,
+		steps: &[Expr],
+		expression: &Expr,
+		self_name: Option<&str>,
+	) -> Option<String> {
+		let Some(first) = steps.first() else {
+			self.reject(expression, "a pipeline needs a value".into());
+			return None;
+		};
+		let sort = self.expression(first, self_name);
+		if sort.as_deref() == Some("Function") {
+			self.termination = false;
+		}
+		for step in &steps[1..] {
+			match &step.node {
+				Kind::Name(name) => self.pipeline_name(name, step),
+				Kind::Call {
+					function,
+					arguments,
+					keywords,
+				} => {
+					if let Kind::Name(head) = &function.node {
+						self.pipeline_name(head, step);
+						for argument in arguments {
+							let sort = self.expression(argument, self_name);
+							self.consumed(sort.as_deref(), head.starts_with("list:"));
+						}
+						for (_, value) in keywords {
+							let _ = self.expression(value, self_name);
+						}
+						if let Some(operation) = crate::ops::operation(head)
+							&& !crate::ops::accepts(operation, arguments.len() + 1)
+						{
+							self.reject(
+								step,
+								crate::ops::arity_message(operation, arguments.len() + 1),
+							);
+						}
+					} else {
+						self.reject(
+							step,
+							"a pipeline step must be a name or an application".into(),
+						);
+					}
+				}
+				_ => self.reject(
+					step,
+					"a pipeline step must be a name or an application".into(),
+				),
+			}
+		}
+		None
+	}
+
+	fn pipeline_name(&mut self, name: &str, step: &Expr) {
+		if !self.known(name) {
+			self.reject(step, format!("unknown name '{name}'"));
+			return;
+		}
+		if let Some(operation) = crate::ops::operation(name) {
+			if self.profile.core && !core_call(name) {
+				self.reject(step, format!("'{name}' is not in the portable core"));
+			}
+			if !crate::ops::accepts(operation, 1) {
+				self.reject(step, crate::ops::arity_message(operation, 1));
+			}
+		} else if let Some(expected) = self.arity_of(name)
+			&& expected != 1
+		{
+			self.reject(
+				step,
+				format!("the function expects {expected} arguments, 1 given"),
+			);
+		}
+	}
+}
+
+/// Splits `(List Nfa)` into `("List", "Nfa")`; `None` for a simple sort.
+fn compound(sort: &str) -> Option<(&str, &str)> {
+	let inner = sort.strip_prefix('(')?.strip_suffix(')')?.trim();
+	let mut parts = inner.splitn(2, char::is_whitespace);
+	let name = parts.next()?;
+	let argument = parts.next().unwrap_or("").trim();
+	(!argument.is_empty()).then_some((name, argument))
+}
+
+fn valid_sort(sort: &str) -> bool {
+	if SIMPLE_SORTS.contains(&sort) {
+		return true;
+	}
+	match compound(sort) {
+		Some(("List" | "Option", argument)) => valid_sort(argument),
+		_ => false,
+	}
+}
+
+/// Whether a portable core script may call `name`: the core operations, the `list:` functions, and the
+/// reporting forms that the core allows.
+fn core_call(name: &str) -> bool {
+	CORE_OPERATIONS.contains(&name)
+		|| name.starts_with("list:")
+		|| matches!(name, "assert" | "check" | "echo" | "print")
+}
+
+fn portable_sort(sort: &str) -> bool {
+	if CORE_SORTS.contains(&sort) {
+		return true;
+	}
+	matches!(compound(sort), Some(("List", argument)) if portable_sort(argument))
+}
+
+/// The sort written as an expression, as in `(as value (List Nfa))`.
+fn sort_expression(expression: &Expr) -> Option<String> {
+	match &expression.node {
+		Kind::Name(name) => Some(name.clone()),
+		Kind::List(items) => {
+			let mut parts = Vec::new();
+			for item in items {
+				parts.push(sort_expression(item)?);
+			}
+			Some(format!("({})", parts.join(" ")))
+		}
+		_ => None,
+	}
+}
+
+/// Whether a value of sort `actual` fits where `expected` is required. An empty or `Any` expected sort,
+/// and an unknown actual sort, fit everywhere.
+fn accepts(expected: &str, actual: &str) -> bool {
+	if expected.is_empty() || expected == "Any" || actual.is_empty() || actual == "unknown" {
+		return true;
+	}
+	if expected.contains('|') {
+		return expected
+			.split('|')
+			.any(|alternative| accepts(alternative.trim(), actual));
+	}
+	if expected == actual {
+		return true;
+	}
+	if expected == "Automaton" && matches!(actual, "Nfa" | "Nft") {
+		return true;
+	}
+	match (compound(expected), compound(actual)) {
+		(Some(("Option", _)), _) if actual == "none" => true,
+		(Some(("Option", expected)), Some(("Option", actual)))
+		| (Some(("List", expected)), Some(("List", actual))) => accepts(expected, actual),
+		_ => false,
+	}
+}

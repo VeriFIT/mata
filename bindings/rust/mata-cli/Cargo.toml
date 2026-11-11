@@ -1,0 +1,22 @@
+[package]
+name = "mata-cli"
+version = "0.1.0"
+description = "Mata Script interpreter and Mata automata command-line interface"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories = ["command-line-utilities"]
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+mata = { path = "../mata" }
+
+[[bin]]
+name = "mata"
+path = "src/main.rs"
