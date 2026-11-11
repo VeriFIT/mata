@@ -13,6 +13,7 @@ Mata automata library
    introduction
    benchmarking
    automata-format
+   script-language
    contributing
    automaton
    nfa
