@@ -148,6 +148,35 @@ StateSet Delta::post(
 	return StateSet{gathered};
 }
 
+StateSet Delta::post_adopt_buffer(
+	const StateSet& states,
+	const Symbol symbol,
+	const EpsilonClosureOpt epsilon_closure_opt,
+	const std::vector<Symbol>& epsilons,
+	PostWorkspace& workspace
+) const {
+	if (closes_before(epsilon_closure_opt)) {
+		workspace.sources.assign(states.begin(), states.end());
+		close_over_epsilons(*this, epsilons, workspace.sources, workspace);
+	}
+	const std::vector<State>& sources{closes_before(epsilon_closure_opt) ? workspace.sources : states.to_vector()};
+
+	std::vector<State>& gathered{workspace.gathered};
+	gathered.clear();
+	// Stepping over epsilon with a closure requested means the source states are reachable as well.
+	if (symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::None) {
+		gathered.assign(states.begin(), states.end());
+	}
+	for (const State state : sources) {
+		const StatePost& state_post{(*this)[state]};
+		const auto symbol_post_it{state_post.find(symbol)};
+		if (symbol_post_it == state_post.end()) { continue; }
+		gathered.insert(gathered.end(), symbol_post_it->targets.begin(), symbol_post_it->targets.end());
+	}
+	if (closes_after(epsilon_closure_opt)) { close_over_epsilons(*this, epsilons, gathered, workspace); }
+	return StateSet{std::move(gathered)};
+}
+
 StateSet
 	Delta::get_successors(const State state, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
 	PostWorkspace workspace{};

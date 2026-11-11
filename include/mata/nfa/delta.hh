@@ -957,6 +957,16 @@ class Delta {
 	Symbol get_max_symbol() const;
 
   private:
+	/// Fast path for Nfa::post(): its fresh workspace permits adopting the result buffer.
+	StateSet post_adopt_buffer(
+		const StateSet& states,
+		Symbol symbol,
+		EpsilonClosureOpt epsilon_closure_opt,
+		const std::vector<Symbol>& epsilons,
+		PostWorkspace& workspace
+	) const;
+	friend class Nfa;
+
 	/// Monotonic counter of mutating calls; lets clients of @c Delta invalidate their own derived data.
 	uint64_t mutation_epoch_{0};
 	/// Exact number of transitions whenever @c count_dirty_ is false. Both are atomic because concurrent const

@@ -372,7 +372,7 @@ void Nfa::get_one_letter_aut(Nfa& result) const { result = get_one_letter_aut();
 
 StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
 	PostWorkspace workspace{};
-	return delta.post(states, symbol, epsilon_closure_opt, {EPSILON}, workspace);
+	return delta.post_adopt_buffer(states, symbol, epsilon_closure_opt, {EPSILON}, workspace);
 }
 
 Nfa& Nfa::unify_initial(const bool force_new_state) {
