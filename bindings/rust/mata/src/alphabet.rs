@@ -152,6 +152,35 @@ impl Alphabet {
 		Ok(symbol)
 	}
 
+	/// Binds `name` to exactly `symbol`, as Mata's `OnTheFlyAlphabet::add_new_symbol(name, value)` does.
+	/// Nothing changes if the name or the symbol is already in the alphabet; the first binding is kept.
+	///
+	/// Unlike [`insert_name`], the symbol is given instead of the next free one, and a name that consists
+	/// only of decimal digits is accepted: the `"bytes"` script alphabet names the byte symbols `"0"`…`"9"`.
+	/// Such a name is safe, because Mata's parser resolves a token to a name before it reads it as a number.
+	///
+	/// # Errors
+	///
+	/// [`AlphabetError::Epsilon`] if `symbol` is [`Symbol::EPSILON`],
+	/// [`AlphabetError::ReservedName`] if `name` is `<dntcr>`, and
+	/// [`AlphabetError::Full`] if `symbol` is [`DONT_CARE`](crate::nft::DONT_CARE).
+	pub fn insert_named(&mut self, name: &str, symbol: Symbol) -> Result<(), AlphabetError> {
+		if symbol.is_epsilon() {
+			return Err(AlphabetError::Epsilon);
+		}
+		if name == DONT_CARE_NAME {
+			return Err(AlphabetError::ReservedName);
+		}
+		if symbol >= DONT_CARE_VALUE {
+			return Err(AlphabetError::Full);
+		}
+		if self.by_name.contains_key(name) || self.symbols.contains_key(&symbol) {
+			return Ok(());
+		}
+		self.add_named(name.to_owned(), symbol);
+		Ok(())
+	}
+
 	/// The checks that every way of naming a symbol shares: the reserved names, and a name that
 	/// printing would write as the number of a symbol. Returns `Some` for a known name.
 	fn insert_new_name(&self, name: &str) -> Result<Option<Symbol>, AlphabetError> {
