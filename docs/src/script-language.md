@@ -1,9 +1,11 @@
 # (Auto)Mata Script Language
 
-**Status: design only.** Nothing described on this page is implemented yet. The page records the agreed design of
-**Mata Script**, a small, library-independent language for describing automata operations, with Mata as its intended
-first implementation. Mata Script programs use the **`.matasc`** file extension, as in `email-filter.matasc`; `.mata`
-remains the extension for automata files.
+**Status: specification, partly implemented.** The page records the agreed design of **Mata Script**, a small,
+library-independent language for describing automata operations, with Mata as its first implementation. The `mata`
+command runs scripts today; [The `mata` command](cli) lists under its implementation notes which operations and
+options of this page the current interpreter does not have, and it rejects those by name rather than approximating
+them. Mata Script programs use the **`.matasc`** file extension, as in `email-filter.matasc`; `.mata` remains the
+extension for automata files.
 
 A script loads automata, applies a sequence of automata operations to them, and reports the outcome: a verdict, a
 witness, a printed automaton, or timing records. It replaces two things that exist today:
@@ -305,6 +307,8 @@ loop above as a function:
 
 Two functions still cannot call each other by name, because the second one is not visible in the first.
 
+(script-termination)=
+
 ### Termination
 
 The checker reports, for each script, whether it is guaranteed to terminate, provided that the library operations it
@@ -395,6 +399,8 @@ error.
 
 The steps are available separately as `intermediate:parse-from-mata`, `intermediate:mintermize` and `nfa:construct` /
 `nft:construct`.
+
+(script-alphabets)=
 
 ## Alphabets
 
@@ -584,6 +590,8 @@ In an interactive session, the value of every top-level expression is shown, wit
 kind and size rather than printed in full. When a script is run, the value of a top-level expression is dropped.
 
 Results and timing records go to standard output; errors and the [trace](#options) go to standard error.
+
+(script-exit-status)=
 
 ### Exit status
 

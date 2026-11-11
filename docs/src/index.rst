@@ -14,6 +14,7 @@ Mata automata library
    benchmarking
    automata-format
    script-language
+   cli
    contributing
    automaton
    nfa
