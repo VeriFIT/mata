@@ -48,8 +48,8 @@ true
    out, so the API reference documents the script operations too.
 5. **Scripts are checked before they run.** Everything that can be decided without loading an input is decided first,
    so a misspelled name is not reported after an hour of determinization.
-6. **Every script terminates if the operations it calls do.** There are no loops and no recursion, and the
-   restrictions on [functions](#definitions-functions-and-conditionals) rule out recursion in disguise.
+6. **Functions are ordinary values.** A function can be defined inside another function, passed as an argument,
+   returned as a result and stored in a list; see [Functions](#functions).
 7. **Evaluation is sequential.** Nothing is evaluated in parallel.
 
 ## Lexical structure
@@ -74,7 +74,8 @@ script      = { form } ;
 form        = definition | declaration | directive | expression ;
 
 definition  = "(" "define" name [ sort ] expression ")"
-            | "(" "define" "(" name { parameter } ")" expression { expression } ")" ;
+            | "(" "define" "(" name { parameter } ")" body ")" ;
+body        = { definition } expression { expression } ;
 parameter   = name | "(" name sort ")" ;
 declaration = "(" "declare-input" name sort ")"
             | "(" "declare-inputs" name sort ")" ;
@@ -84,8 +85,8 @@ directive   = "(" "set-option" keyword expression ")" | "(" "get-option" keyword
 
 expression  = constant | integer | string | name | input-reference
             | "(" expression { expression } { keyword expression } ")"
-            | "(" "let" "(" { "(" name expression ")" } ")" expression { expression } ")"
-            | "(" "lambda" "(" { parameter } ")" expression { expression } ")"
+            | "(" "let" "(" { "(" name expression ")" } ")" body ")"
+            | "(" "lambda" "(" { parameter } ")" body ")"
             | "(" "if" expression expression expression ")"
             | "(" "cond" { "(" expression expression ")" } "(" "else" expression ")" ")"
             | "(" "do" expression { expression } ")"
@@ -100,36 +101,37 @@ sort        = name | "(" name { sort } ")" ;
 literal-data = name | integer | "(" { literal-data } ")" ;
 ```
 
-Definitions, declarations and directives are allowed only at the top level. Everything else is an expression and can
-be nested.
+Declarations and directives are allowed only at the top level. A definition is allowed at the top level and at the
+start of a body, where it is local to that body. Everything else is an expression and can be nested.
 
 ## Values and sorts
 
-| Sort                    | Value                                                                      |
-| ----------------------- | -------------------------------------------------------------------------- |
-| `Nfa`                   | `mata::nfa::Nfa`                                                           |
-| `Nft`                   | `mata::nft::Nft`                                                           |
-| `Automaton`             | Either an `Nfa` or an `Nft`; which one is known only when the script runs  |
-| `IntermediateAutomaton` | `mata::IntermediateAut`: a parsed automaton that is not constructed yet    |
-| `Alphabet`              | `mata::Alphabet`                                                           |
-| `Symbol`                | `mata::Symbol`; `epsilon` and `dont-care` are predefined                   |
-| `Word`                  | `mata::Word`                                                               |
-| `Run`                   | `mata::nfa::Run`: a word and a path                                        |
-| `Bool`, `Int`, `String` |                                                                            |
-| `(List T)`              | A list of values of sort `T`                                               |
-| `(Option T)`            | Either a `T` or `none`, for operations that return `std::optional`         |
-| `Function`              | An operation, a defined function or a `lambda`; see the restrictions below |
+| Sort                    | Value                                                                     |
+| ----------------------- | ------------------------------------------------------------------------- |
+| `Nfa`                   | `mata::nfa::Nfa`                                                          |
+| `Nft`                   | `mata::nft::Nft`                                                          |
+| `Automaton`             | Either an `Nfa` or an `Nft`; which one is known only when the script runs |
+| `IntermediateAutomaton` | `mata::IntermediateAut`: a parsed automaton that is not constructed yet   |
+| `Alphabet`              | `mata::Alphabet`                                                          |
+| `Symbol`                | `mata::Symbol`; `epsilon` and `dont-care` are predefined                  |
+| `Word`                  | `mata::Word`                                                              |
+| `Run`                   | `mata::nfa::Run`: a word and a path                                       |
+| `Bool`, `Int`, `String` |                                                                           |
+| `(List T)`              | A list of values of sort `T`                                              |
+| `(Option T)`            | Either a `T` or `none`, for operations that return `std::optional`        |
+| `Function`              | An operation, a defined function or a `lambda`                            |
 
 ### Checking
 
 Checking is static where the sorts are known and dynamic where they are not.
 
-- **Before the script runs:** syntax, unknown names, the number of arguments, unknown keywords, and the number of
-  declared inputs against the inputs given.
+- **Before the script runs:** syntax, unknown names, unknown keywords, the number of arguments in a call of a named
+  operation or function, and the number of declared inputs against the inputs given.
 - **Before the script runs, where sorts are known:** every operation in the `nfa:` and `nft:` namespaces has fixed
   sorts, so `(nfa:determinize t)` with `t` declared as `Nft` is rejected without running anything.
-- **When the script runs:** the kind of a loaded file, operations in the `automaton:` namespace, and function
-  parameters without a sort.
+- **When the script runs:** the kind of a loaded file, operations in the `automaton:` namespace, function parameters
+  without a sort, and every call of a function that arrived as a value.
+- **As a report:** whether the script is guaranteed to terminate; see [Termination](#termination).
 
 `(as value Sort)` narrows a value and fails at that point if the value is of another sort:
 
@@ -153,13 +155,57 @@ Checking is static where the sorts are known and dynamic where they are not.
 - `define` binds a name once; binding it again in the same scope is an error. `push` opens a scope, `pop` closes it
   and drops its definitions and option changes, and `reset` returns to the initial state.
 - `let` binds names for the extent of its body, each binding seeing the previous ones.
-- A function may use only names defined before it. A function value can be bound to a name, called, and given to a
-  `list:` function as the function to apply. It cannot be an argument or a result of a defined function or a
-  `lambda`, and it cannot be an element of a list. Together, these rules mean that a function can never reach itself,
-  which is what keeps scripts terminating.
 - `if` and `cond` evaluate only the chosen branch. `and` and `or` stop at the first operand that decides the result.
   This matters because it decides which library calls are made.
 - `do` evaluates its expressions in order and returns the last value.
+
+### Functions
+
+A function is an ordinary value. It can be defined inside another function, passed as an argument, returned as a
+result, and stored in a list.
+
+```scheme
+(define (minimal-image (transducer Nft) (language Nfa))
+  (define (normalize (automaton Nfa))             ; visible only inside minimal-image
+    (-> automaton nfa:determinize nfa:minimize))
+  (normalize (nft:to-nfa (nft:apply transducer language))))
+
+(define (included-with (algorithm String))        ; returns a function
+  (lambda (smaller bigger) (nfa:included? smaller bigger :algorithm algorithm)))
+
+(define relations (list (included-with "naive") (included-with "antichains")))
+(list:map (lambda (included?) (included? lhs rhs)) relations)
+```
+
+- **Body.** The body of a function, of a `lambda` and of a `let` is a sequence of definitions followed by
+  expressions. The definitions are local to the body, and the value of the body is the value of its last expression.
+- **Parameters** are positional. A parameter that takes a function can be given the sort `Function`.
+- **Scope.** A function sees its parameters, its local definitions, and every name that was visible where the
+  function was written. It keeps those names for as long as it exists: the function returned by `included-with` still
+  knows `algorithm` after `included-with` has returned.
+- **Order.** A name is visible after its definition, and not inside it. A function therefore cannot call itself by
+  name, and two functions cannot call each other.
+- **Hiding.** An inner scope may define a name that an outer scope already has. The inner one is used inside that
+  scope.
+
+#### Termination
+
+The language has no loop and no recursion by name. A script can still run forever, because a function can be passed
+to itself, as in `((lambda (f) (f f)) (lambda (f) (f f)))`.
+
+The checker therefore reports, for each script, whether it is guaranteed to terminate, provided that the library
+operations it calls do. The guarantee is given when every function in the script is used in these ways only:
+
+- it is bound to a name,
+- it is called, or
+- it is given to a `list:` function as the function to apply.
+
+A script gets no guarantee when it passes a function to a defined function or to a `lambda`, returns a function from
+one, or puts a function into a list. The example above is such a script: `included-with` returns a function, and
+`relations` is a list of functions.
+
+This is a report, not an error: the script runs either way. The checker is conservative, so a script without the
+guarantee may still terminate.
 
 ### Pipelines
 
@@ -562,6 +608,8 @@ checker rejects anything outside of it:
   `nfa:determinize`, `nfa:minimize`, `nfa:language-empty?`, `nfa:included?`, `nfa:equivalent?`, `nfa:universal?`,
   `(script-alphabet)`, and the `list:` functions.
 
+A script in the portable core is always guaranteed to [terminate](#termination).
+
 An interpreter for another library must reject an operation it does not have. It may ignore a hint it does not know,
 with a warning, because a hint only selects how a result is computed.
 
@@ -611,10 +659,14 @@ A script that works on an input of either kind:
 ## Open questions
 
 - **Name and file extension** of the language.
-- **Command-line interface.** How a script and its inputs are given, how an input is named, and how an option or the
-  default of a hint is set from the command line. A script written inline in a shell command or in a `pycobench` job
-  needs care, because both can replace `$1` themselves before the interpreter sees it.
-- **Loops and recursion** are left out for now. `loop`, `recur` and `while` are reserved so that they can be added
-  without breaking scripts.
+- **Command-line interface.** How a script and its inputs are given, how an input is named, how an option or the
+  default of a hint is set from the command line, and how the results of checking, including the termination report,
+  are shown. A script written inline in a shell command or in a `pycobench` job needs care, because both can replace
+  `$1` themselves before the interpreter sees it.
+- **Loops and recursion by name** are left out. A loop would serve a computation whose number of rounds depends on the
+  automata computed so far, such as a fixpoint. `loop` and `recur` are reserved so that one can be added without
+  breaking scripts.
+- **Runaway scripts.** A script without the termination guarantee can run forever. Whether the interpreter should
+  limit the depth of calls is open.
 - **Alternating automata** are not covered, as the library does not support them.
 - **The exact set of rewrites** of the optimizer, and whether the list of forms that show structure is the right one.
