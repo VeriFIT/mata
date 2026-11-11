@@ -709,6 +709,7 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 	//  then appended to its post in order.
 	Nft result{Nft::with_levels(nft.levels, Delta{}, nft.initial, nft.final, nft.alphabets)};
 	std::vector<std::pair<Symbol, State>> moves{};
+	const bool projected_moves_are_discarded{seq_start_idx == 1};
 	for (State src_state{0}; src_state < num_of_states_in_delta; src_state++) { // For every state.
 		const Level src_level{nft.levels[src_state]};
 		if (!is_projected_out(src_state) && std::ranges::none_of(nft.delta[src_state], [&](const SymbolPost& move) {
@@ -725,6 +726,25 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 			closure[src_state].empty() ? std::span<const State>{&src_state, 1}
 									   : std::span<const State>{closure[src_state]}
 		};
+		if (projected_moves_are_discarded && is_projected_out(src_state)) {
+			// Projected states contribute no moves when every nonzero level is projected.
+			State retained_state{};
+			size_t retained_states{};
+			for (const State cls_state : closure_of_src) {
+				if (!is_projected_out(cls_state)) {
+					retained_state = cls_state;
+					if (++retained_states > 1) { break; }
+				}
+			}
+			if (retained_states == 1) {
+				// Its post is sorted and deduplicated, so rebuilding it is unnecessary.
+				for (const State cls_state : closure_of_src) {
+					if (nft.final[cls_state] && can_be_final(src_state)) { result.final.insert(src_state); }
+				}
+				result.delta.emplace_back(nft.delta[retained_state]);
+				continue;
+			}
+		}
 		for (const State cls_state : closure_of_src) { // For every state in its epsilon closure.
 			if (nft.final[cls_state] && can_be_final(src_state)) { result.final.insert(src_state); }
 			for (const SymbolPost& move : nft.delta[cls_state]) {
