@@ -223,7 +223,7 @@ The second pipeline is `(write (nfa:trim (nfa:intersection lhs rhs)) "product.ma
 ### Lists
 
 `(list a b c)` builds a list. The list functions are `list:length`, `list:nth` (from 0), `list:take`, `list:drop`,
-`list:map`, `list:filter`, `list:reduce` and `list:fold`:
+`list:range`, `list:map`, `list:filter`, `list:reduce` and `list:fold`:
 
 ```scheme
 (list:map nfa:determinize automata)
@@ -232,7 +232,25 @@ The second pipeline is `(write (nfa:trim (nfa:intersection lhs rhs)) "product.ma
 (list:fold nfa:union-nondeterministic empty-language automata) ; starts from empty-language
 ```
 
-`list:reduce` and `list:fold` combine from left to right, one call per element.
+`list:reduce` and `list:fold` combine from left to right, one call per element. The function gets the value combined
+so far as its first argument and the next element as its second.
+
+`(list:range start end)` is the list of integers from `start` up to, but not including, `end`; it is empty when
+`start` is not smaller than `end`. There is no loop in the language. Repeating something a number of times that is
+known before the repetition starts is a `list:map` or a `list:fold` over a range:
+
+```scheme
+(list:range 0 3)                                  ; the list 0 1 2
+
+; measure the same check five times: five records labelled "inclusion"
+(list:map (lambda (round) (time "inclusion" (nfa:included? lhs rhs)))
+          (list:range 0 5))
+
+; the image of a language under four applications of a transducer
+(list:fold (lambda (language round) (nft:to-nfa (nft:apply step language)))
+           initial
+           (list:range 0 4))
+```
 
 ## Inputs
 
