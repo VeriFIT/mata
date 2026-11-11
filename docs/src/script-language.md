@@ -50,7 +50,9 @@ true
    so a misspelled name is not reported after an hour of determinization.
 6. **Functions are ordinary values.** A function can be defined inside another function, passed as an argument,
    returned as a result and stored in a list; see [Functions](#functions).
-7. **Evaluation is sequential.** Nothing is evaluated in parallel.
+7. **Loops and recursion are opt-in.** They are off unless the script turns them on, and an interpreter may leave them
+   out; see [Loops and recursion](#loops-and-recursion).
+8. **Evaluation is sequential.** Nothing is evaluated in parallel.
 
 ## Lexical structure
 
@@ -87,6 +89,8 @@ expression  = constant | integer | string | name | input-reference
             | "(" expression { expression } { keyword expression } ")"
             | "(" "let" "(" { "(" name expression ")" } ")" body ")"
             | "(" "lambda" "(" { parameter } ")" body ")"
+            | "(" "loop" "(" { "(" name expression ")" } ")" body ")"
+            | "(" "recur" { expression } ")"
             | "(" "if" expression expression expression ")"
             | "(" "cond" { "(" expression expression ")" } "(" "else" expression ")" ")"
             | "(" "do" expression { expression } ")"
@@ -102,7 +106,8 @@ literal-data = name | integer | "(" { literal-data } ")" ;
 ```
 
 Declarations and directives are allowed only at the top level. A definition is allowed at the top level and at the
-start of a body, where it is local to that body. Everything else is an expression and can be nested.
+start of a body, where it is local to that body. Everything else is an expression and can be nested. `loop` and
+`recur` need the option described in [Loops and recursion](#loops-and-recursion).
 
 ## Values and sorts
 
@@ -161,8 +166,8 @@ Checking is static where the sorts are known and dynamic where they are not.
 
 ### Functions
 
-A function is an ordinary value. It can be defined inside another function, passed as an argument, returned as a
-result, and stored in a list.
+A function can call every function that is defined before it. A function is also an ordinary value: it can be defined
+inside another function, passed as an argument, returned as a result, and stored in a list.
 
 ```scheme
 (define (minimal-image (transducer Nft) (language Nfa))
@@ -183,29 +188,13 @@ result, and stored in a list.
 - **Scope.** A function sees its parameters, its local definitions, and every name that was visible where the
   function was written. It keeps those names for as long as it exists: the function returned by `included-with` still
   knows `algorithm` after `included-with` has returned.
-- **Order.** A name is visible after its definition, and not inside it. A function therefore cannot call itself by
-  name, and two functions cannot call each other.
+- **Order.** A name is visible after its definition, and not inside it. A function can therefore call the functions
+  defined before it, but it cannot call itself by name, and two functions cannot call each other.
+  [Loops and recursion](#loops-and-recursion) describes the option that lets a function call itself.
+- **Own name.** Using the name of a function inside its own body is an error without that option, even when an outer
+  scope defines the same name. Turning the option on therefore never changes what an accepted script means.
 - **Hiding.** An inner scope may define a name that an outer scope already has. The inner one is used inside that
   scope.
-
-#### Termination
-
-The language has no loop and no recursion by name. A script can still run forever, because a function can be passed
-to itself, as in `((lambda (f) (f f)) (lambda (f) (f f)))`.
-
-The checker therefore reports, for each script, whether it is guaranteed to terminate, provided that the library
-operations it calls do. The guarantee is given when every function in the script is used in these ways only:
-
-- it is bound to a name,
-- it is called, or
-- it is given to a `list:` function as the function to apply.
-
-A script gets no guarantee when it passes a function to a defined function or to a `lambda`, returns a function from
-one, or puts a function into a list. The example above is such a script: `included-with` returns a function, and
-`relations` is a list of functions.
-
-This is a report, not an error: the script runs either way. The checker is conservative, so a script without the
-guarantee may still terminate.
 
 ### Pipelines
 
@@ -236,8 +225,8 @@ The second pipeline is `(write (nfa:trim (nfa:intersection lhs rhs)) "product.ma
 so far as its first argument and the next element as its second.
 
 `(list:range start end)` is the list of integers from `start` up to, but not including, `end`; it is empty when
-`start` is not smaller than `end`. There is no loop in the language. Repeating something a number of times that is
-known before the repetition starts is a `list:map` or a `list:fold` over a range:
+`start` is not smaller than `end`. Repeating something a number of times that is known before the repetition starts
+needs no loop. It is a `list:map` or a `list:fold` over a range:
 
 ```scheme
 (list:range 0 3)                                  ; the list 0 1 2
@@ -251,6 +240,88 @@ known before the repetition starts is a `list:map` or a `list:fold` over a range
            initial
            (list:range 0 4))
 ```
+
+### Loops and recursion
+
+Loops and functions that call themselves are part of the language, but they are off by default. A script turns them
+on for the whole file:
+
+```scheme
+(set-option :loops-and-recursion true)
+```
+
+- The option must be set before the first form that is not `set-option` or `set-info`. It cannot be changed
+  afterwards, and `pop` and `reset` leave it as it is.
+- Without the option, a `loop`, a `recur`, and a function that uses its own name in its body are errors, reported
+  before the script runs. `loop` and `recur` cannot be used as names in any script.
+- An interpreter may leave the option unimplemented. It then rejects the `set-option` form before running anything.
+  The first version of the Mata interpreter is planned without it.
+
+Everything else on this page works without the option, including functions that call other functions and functions
+used as values.
+
+Loops and recursion are meant for a computation whose number of rounds depends on the automata computed so far, such
+as a fixpoint. A number of rounds that is known in advance needs only [`list:range`](#lists).
+
+`loop` binds names to initial values and evaluates its body. `(recur value …)` starts the body again with the names
+bound to the new values. When the body finishes without a `recur`, the loop ends and the value of the body is the
+value of the loop.
+
+```scheme
+(set-option :loops-and-recursion true)
+
+(declare-input initial Nfa)
+(declare-input step Nft)
+(declare-input bad Nfa)
+
+; the configurations reachable from `initial` under the transition relation `step`
+(define reachable
+  (loop ((reached initial))
+    (define next
+      (nfa:union-nondeterministic reached (nft:to-nfa (nft:apply step reached))))
+    (if (nfa:included? next reached) reached (recur next))))
+
+(check (nfa:intersection-empty? reachable bad))
+```
+
+- `recur` takes one value for each name of the loop, of the sort that the name started with.
+- `recur` must be the last thing the body evaluates: the last expression of the body, or a branch of an `if` or a
+  `cond` in that place, or the last expression of a `let` or a `do` in that place.
+- `recur` restarts the innermost `loop` around it. It cannot be written inside a function that is defined in the body
+  of the loop.
+
+With the option, a function defined with `define` is also visible inside its own body, so it can call itself. The
+loop above as a function:
+
+```scheme
+(define (saturate (reached Nfa))
+  (define next
+    (nfa:union-nondeterministic reached (nft:to-nfa (nft:apply step reached))))
+  (if (nfa:included? next reached) reached (saturate next)))
+
+(define reachable (saturate initial))
+```
+
+Two functions still cannot call each other by name, because the second one is not visible in the first.
+
+### Termination
+
+The checker reports, for each script, whether it is guaranteed to terminate, provided that the library operations it
+calls do. This is a report, not an error: the script runs either way.
+
+The guarantee is given when the script has no `loop` and no function that calls itself, and every function in it is
+used in these ways only:
+
+- it is bound to a name,
+- it is called, or
+- it is given to a `list:` function as the function to apply.
+
+A script gets no guarantee when it passes a function to a defined function or to a `lambda`, returns a function from
+one, or puts a function into a list. A function can then be passed to itself, as in
+`((lambda (f) (f f)) (lambda (f) (f f)))`, which runs forever without any loop. The example in
+[Functions](#functions) is such a script: `included-with` returns a function, and `relations` is a list of functions.
+
+The checker is conservative, so a script without the guarantee may still terminate.
 
 ## Inputs
 
@@ -577,14 +648,15 @@ emptiness: 0.0007
 
 ## Options
 
-| Option               | Values                              | Meaning                                                                   |
-| -------------------- | ----------------------------------- | ------------------------------------------------------------------------- |
-| `:alphabet`          | `"on-the-fly"` (default), `"bytes"` | The [script alphabet](#alphabets)                                         |
-| `:default`           | An application with only hints      | Changes the default of a hint; see [Arguments](#arguments)                |
-| `:produce-witnesses` | `false` (default), `true`           | See [Witnesses](#witnesses)                                               |
-| `:time-operations`   | `false` (default), `true`           | See [Timing](#timing)                                                     |
-| `:optimize`          | `false` (default), `true`           | See [Optimizer](#optimizer)                                               |
-| `:trace`             | `false` (default), `true`           | Prints every library call that is made, with its hints, to standard error |
+| Option                 | Values                              | Meaning                                                                                                               |
+| ---------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `:alphabet`            | `"on-the-fly"` (default), `"bytes"` | The [script alphabet](#alphabets)                                                                                     |
+| `:default`             | An application with only hints      | Changes the default of a hint; see [Arguments](#arguments)                                                            |
+| `:produce-witnesses`   | `false` (default), `true`           | See [Witnesses](#witnesses)                                                                                           |
+| `:time-operations`     | `false` (default), `true`           | See [Timing](#timing)                                                                                                 |
+| `:optimize`            | `false` (default), `true`           | See [Optimizer](#optimizer)                                                                                           |
+| `:trace`               | `false` (default), `true`           | Prints every library call that is made, with its hints, to standard error                                             |
+| `:loops-and-recursion` | `false` (default), `true`           | Allows `loop` and functions that call themselves, for the whole file; see [Loops and recursion](#loops-and-recursion) |
 
 `set-info` attaches information that does not change evaluation, such as `(set-info :profile "core")`.
 
@@ -620,7 +692,8 @@ starts with `(set-info :profile "core")` promises to stay within a subset that a
 checker rejects anything outside of it:
 
 - **Forms:** `declare-input`, `declare-inputs`, `define` of a value, `let`, `->`, `time`, `check`, `assert`, `print`,
-  `echo`, `set-option`, `set-info`; no defined functions, no `lambda` and no conditionals.
+  `echo`, `set-option`, `set-info`; no defined functions, no `lambda`, no conditionals, and no loops or recursion:
+  `:loops-and-recursion` cannot be turned on.
 - **Sorts:** `Nfa`, `Alphabet`, `Bool`, `Int`, `String`, `(List T)`.
 - **Operations:** `nfa:load`, `nfa:union-nondeterministic`, `nfa:intersection`, `nfa:complement`, `nfa:concatenate`,
   `nfa:determinize`, `nfa:minimize`, `nfa:language-empty?`, `nfa:included?`, `nfa:equivalent?`, `nfa:universal?`,
@@ -681,10 +754,9 @@ A script that works on an input of either kind:
   default of a hint is set from the command line, and how the results of checking, including the termination report,
   are shown. A script written inline in a shell command or in a `pycobench` job needs care, because both can replace
   `$1` themselves before the interpreter sees it.
-- **Loops and recursion by name** are left out. A loop would serve a computation whose number of rounds depends on the
-  automata computed so far, such as a fixpoint. `loop` and `recur` are reserved so that one can be added without
-  breaking scripts.
+- **Loops and recursion** are designed as an option that the first interpreter leaves out. Whether two functions
+  should be able to call each other by name is open.
 - **Runaway scripts.** A script without the termination guarantee can run forever. Whether the interpreter should
-  limit the depth of calls is open.
+  limit the depth of calls and the number of rounds of a loop is open.
 - **Alternating automata** are not covered, as the library does not support them.
 - **The exact set of rewrites** of the optimizer, and whether the list of forms that show structure is the right one.
