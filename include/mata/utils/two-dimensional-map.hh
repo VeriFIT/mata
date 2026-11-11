@@ -49,6 +49,9 @@ template <typename T, bool TrackInverted = true, size_t MaxMatrixBytes = 200'000
 	using Map = std::unordered_map<std::pair<T, T>, T, PairHash<T, T>>;
 	/// A matrix cell stores the value incremented by one; zero denotes a missing value.
 	using Cell = std::conditional_t<(sizeof(T) < sizeof(uint32_t)), T, uint32_t>;
+	/// A row is a dynamically sized array: its length is a runtime value, so 'std::array' does not apply, and
+	///  'std::vector' would add a second size and capacity per row.
+	// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays): runtime-sized array, see above.
 	using Row = std::unique_ptr<Cell[]>;
 	using MatrixStorage = std::vector<Row>;
 	/// A slot of the hash table used for large dimensions: the packed pair of keys and its value.
@@ -122,6 +125,7 @@ template <typename T, bool TrackInverted = true, size_t MaxMatrixBytes = 200'000
 			MATA_ASSERT(value <= max_value, "value {} does not fit into a matrix cell", value);
 			Row& row{matrix_storage_[first]};
 			// std::make_unique<Cell[]>() value-initialises the cells, marking the whole row as empty.
+			// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays): see 'Row' above.
 			if (row == nullptr) { row = std::make_unique<Cell[]>(second_dim_size_); }
 			row[second] = static_cast<Cell>(value + 1);
 		} else {
@@ -148,6 +152,55 @@ template <typename T, bool TrackInverted = true, size_t MaxMatrixBytes = 200'000
 			first_dim_inverted_[value] = first;
 			second_dim_inverted_[value] = second;
 		}
+	}
+
+	/**
+	 * @brief Insert @p value for the pair of keys, unless the pair already has a value.
+	 *
+	 * One probe of the hash table decides whether the pair is new, so a caller that would look the pair up and then
+	 *  insert it pays for a single probe, not two.
+	 *
+	 * @param first First key.
+	 * @param second Second key.
+	 * @param value Value to associate with the pair when it has none yet.
+	 * @return The value stored for the pair (the new one, or the one inserted earlier) and whether @p value was
+	 *  inserted.
+	 */
+	std::pair<T, bool> insert_if_absent(const T first, const T second, const T value) {
+		MATA_ASSERT(first < first_dim_size_);
+		MATA_ASSERT(second < second_dim_size_);
+		if (!is_large_) {
+			MATA_ASSERT(value <= max_value, "value {} does not fit into a matrix cell", value);
+			Row& row{matrix_storage_[first]};
+			// NOLINTNEXTLINE(cppcoreguidelines-avoid-c-arrays,modernize-avoid-c-arrays): see 'Row' above.
+			if (row == nullptr) { row = std::make_unique<Cell[]>(second_dim_size_); }
+			Cell& cell{row[second]};
+			if (cell != 0) { return {static_cast<T>(cell - 1), false}; }
+			cell = static_cast<Cell>(value + 1);
+		} else {
+			const uint64_t key{pack(first, second)};
+			size_t index{find_slot(key)};
+			if (hash_storage_[index].key == key) { return {hash_storage_[index].value, false}; }
+			// Keep the load factor at most 1/2 so that the probe sequences stay short.
+			if (2 * (hash_size_ + 1) > hash_storage_.size()) {
+				grow_hash_storage();
+				index = find_slot(key);
+			}
+			hash_storage_[index].key = key;
+			hash_storage_[index].value = value;
+			++hash_size_;
+		}
+		if constexpr (TrackInverted) {
+			// The inverted arrays only ever grow: resizing them to value + 1 unconditionally would drop the
+			// entries of all larger values inserted before.
+			if (first_dim_inverted_.size() <= value) {
+				first_dim_inverted_.resize(value + 1);
+				second_dim_inverted_.resize(value + 1);
+			}
+			first_dim_inverted_[value] = first;
+			second_dim_inverted_[value] = second;
+		}
+		return {value, true};
 	}
 
 	/**
@@ -184,7 +237,7 @@ template <typename T, bool TrackInverted = true, size_t MaxMatrixBytes = 200'000
 	static constexpr size_t min_hash_capacity{16};
 
 	uint64_t pack(const T first, const T second) const noexcept {
-		return static_cast<uint64_t>(first) * second_dim_size_ + second;
+		return (static_cast<uint64_t>(first) * second_dim_size_) + second;
 	}
 
 	/**
@@ -201,7 +254,7 @@ template <typename T, bool TrackInverted = true, size_t MaxMatrixBytes = 200'000
 
 	/// Double the number of slots of the hash table and reinsert the stored pairs.
 	void grow_hash_storage() {
-		HashStorage old_storage{
+		const HashStorage old_storage{
 			std::exchange(hash_storage_, HashStorage(2 * hash_storage_.size(), Slot{.key = empty_key, .value = 0}))
 		};
 		--hash_shift_;
@@ -210,9 +263,9 @@ template <typename T, bool TrackInverted = true, size_t MaxMatrixBytes = 200'000
 		}
 	}
 
-	const bool is_large_;
-	const size_t first_dim_size_;
-	const size_t second_dim_size_;
+	bool is_large_;
+	size_t first_dim_size_;
+	size_t second_dim_size_;
 	MatrixStorage matrix_storage_{};
 	HashStorage hash_storage_{};
 	/// Number of pairs stored in the hash table.

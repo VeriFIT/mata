@@ -29,12 +29,18 @@ stdenv.mkDerivation {
     doxygen
   ];
 
-  cmakeFlags = [ "-DFETCHCONTENT_FULLY_DISCONNECTED=ON" ];
+  cmakeFlags = [
+    "-DFETCHCONTENT_FULLY_DISCONNECTED=ON"
+    "-DMATA_USE_MIMALLOC=ON"
+  ];
 
   buildInputs = with pkgs; [
     catch2_3
     graphviz
   ];
+
+  # The installed CMake target links mimalloc into the final executable.
+  propagatedBuildInputs = [ pkgs.mimalloc ];
 
   meta = {
     description = "A fast and simple automata library";

@@ -313,13 +313,24 @@ protected:
 		}
 	}
 
+	/// Grow `mask` to `size`, never shrink it: a mask reused across the calls of one simulation is
+	///  allocated once and only grows, as the partition it indexes only ever appends blocks.
+	static void ensure_mask_size(std::vector<bool>& mask, size_t size)
+	{
+		if (mask.size() < size)
+		{
+			mask.resize(size, false);
+		}
+	}
+
 	template <class T>
 	void build_pre(
 		T&               pre,
 		StateListElem*   states,
-		size_t           label) const
+		size_t           label,
+		std::vector<bool>& blockMask) const
 	{
-		std::vector<bool> blockMask(this->partition_.size(), false);
+		ensure_mask_size(blockMask, this->partition_.size());
 
 		auto elem = states;
 
@@ -350,7 +361,8 @@ protected:
 	template <class T1, class T2>
 	void internal_split(T1& modifiedBlocks, const T2& remove)
 	{
-		std::vector<bool> blockMask(this->partition_.size(), false);
+		std::vector<bool>& blockMask = this->internal_split_mask_;
+		ensure_mask_size(blockMask, this->partition_.size());
 
 		for (auto& q : remove)
 		{
@@ -372,6 +384,11 @@ protected:
 
 			blockMask[block->index()] = true;
 			modifiedBlocks.push_back(block);
+		}
+
+		for (auto& block : modifiedBlocks)
+		{
+			blockMask[block->index()] = false;
 		}
 	}
 
@@ -495,11 +512,27 @@ protected:
 
 		assert(remove);
 
-		std::vector<Block*> preList;
-		std::vector<bool> removeMask(this->lts_.states());
-		std::vector<size_t> removedBlocks;
-		this->build_pre(preList, block->states_, label);
+		std::vector<Block*>& preList = this->pre_list_;
+		std::vector<bool>& removeMask = this->remove_mask_;
+		std::vector<size_t>& removedBlocks = this->removed_blocks_;
+		preList.clear();
+		removedBlocks.clear();
+		ensure_mask_size(removeMask, this->lts_.states());
+		this->build_pre(preList, block->states_, label, this->build_pre_mask_);
 		this->split(removeMask, removedBlocks, *remove);
+
+		// The masks are reused across the calls: clear the entries this call set.
+		const auto clear_scratch = [&] {
+			for (auto& b2 : removedBlocks)
+			{
+				removeMask[b2] = false;
+			}
+
+			for (auto& b1 : preList)
+			{
+				this->build_pre_mask_[b1->index_] = false;
+			}
+		};
 
 		remove->unsafe_release(
 		[this](RemoveList *list) {
@@ -526,12 +559,9 @@ protected:
 
 		if (columnsSize < rowsSize)
 		{
-			std::vector<bool> preMask(this->partition_.size());
-
-			for (auto& b1 : preList)
-			{
-				preMask[b1->index_] = true;
-			}
+			// build_pre() marked exactly the blocks of preList; split() appended blocks after that.
+			std::vector<bool>& preMask = this->build_pre_mask_;
+			ensure_mask_size(preMask, this->partition_.size());
 
 			for (auto& b2 : removedBlocks)
 			{
@@ -545,6 +575,8 @@ protected:
 					}
 				}
 			}
+
+			clear_scratch();
 
 			return;
 		}
@@ -561,6 +593,8 @@ protected:
 				}
 			}
 		}
+
+		clear_scratch();
 	}
 
 	static bool is_partition(
@@ -638,6 +672,15 @@ private:
 	RemoveQueue queue_;
 	std::vector<size_t> key_;
 	std::vector<std::pair<size_t, size_t>> label_map_;
+
+	// Scratch buffers reused across the calls of one simulation: a call allocates nothing and clears
+	//  only the entries it set, instead of zeroing a vector the size of the automaton or of the
+	//  partition per removal.
+	std::vector<bool> build_pre_mask_;
+	std::vector<bool> internal_split_mask_;
+	std::vector<bool> remove_mask_;
+	std::vector<Block*> pre_list_;
+	std::vector<size_t> removed_blocks_;
 
 	static size_t get_row_size(size_t states)
 	{

@@ -7,7 +7,7 @@ import libmata.nfa.nfa as mata_nfa
 import libmata.nfa.strings as mata_strings
 import libmata.utils as mata_utils
 import pytest
-from libmata import alphabets
+from libmata import alphabets, parser
 
 __author__ = "Tomas Fiedor"
 
@@ -914,6 +914,26 @@ def test_to_mata_str():
     assert named.to_mata_str() == header + "q0 b q1\n"
 
 
+def test_to_mata_str_quotes_symbol_names(tmp_path):
+    """A symbol name the reader would not read as one token prints quoted and reads back (#1021)."""
+    alphabet = alphabets.OnTheFlyAlphabet.for_symbol_names(["foo bar"])
+    named = mata_nfa.Nfa(2, alphabet=alphabet)
+    named.make_initial_state(0)
+    named.make_final_state(1)
+    named.add_transition(0, alphabet.translate_symbol("foo bar"), 1)
+
+    mata_str = named.to_mata_str()
+    assert 'q0 "foo bar" q1' in mata_str
+    # `from_mata` reads with `keep_quotes`, so the names come back in their quoted form.
+    mata_file = tmp_path / "quoted.mata"
+    mata_file.write_text(mata_str, encoding="utf-8")
+    read_alphabet = alphabets.OnTheFlyAlphabet()
+    read_back = parser.from_mata(str(mata_file), read_alphabet)
+    assert read_alphabet.get_symbol_map() == {'"foo bar"': alphabet.translate_symbol("foo bar")}
+    assert read_back.get_num_of_transitions() == named.get_num_of_transitions()
+    assert read_back.has_transition(0, alphabet.translate_symbol("foo bar"), 1)
+
+
 def test_copy_and_deepcopy(prepare_automaton_a):
     """`copy.copy` and `copy.deepcopy` copy the automaton; only `deepcopy` copies the label as well."""
     import copy
@@ -1076,7 +1096,11 @@ def _build_threaded_nfa(seed=42, num_states=60, num_transitions=240, num_symbols
     rng = random.Random(seed)
     aut = mata_nfa.Nfa(num_states)
     for _ in range(num_transitions):
-        aut.add_transition(rng.randrange(num_states), rng.randrange(num_symbols), rng.randrange(num_states))
+        aut.add_transition(
+            rng.randrange(num_states),
+            rng.randrange(num_symbols),
+            rng.randrange(num_states),
+        )
     aut.make_initial_state(0)
     aut.make_final_state(num_states - 1)
     aut.make_final_state(num_states // 2)
@@ -1705,7 +1729,12 @@ def test_pickle_refuses_an_unpicklable_alphabet():
 
 
 def _summarise_nfa(aut):
-    return aut.num_of_states(), aut.get_num_of_transitions(), aut.initial_states, aut.final_states
+    return (
+        aut.num_of_states(),
+        aut.get_num_of_transitions(),
+        aut.initial_states,
+        aut.final_states,
+    )
 
 
 def test_nfa_passes_to_a_multiprocessing_worker(prepare_automaton_a):

@@ -1,6 +1,8 @@
 /* nft-concatenation.cc -- Concatenation of NFTs
  */
 
+#include <algorithm>
+#include <span>
 #include <type_traits>
 #include <utility>
 
@@ -28,6 +30,7 @@ bool concatenation_is_empty(const Nft& lhs, const Nft& rhs) {
 template <typename RhsNft>
 Nft concatenate_eps_consuming(
 	Nft&& lhs,
+	// A forwarding reference only to take a const operand or one to consume, which is used in place.
 	RhsNft&& rhs,
 	const Symbol& epsilon,
 	const bool use_epsilon,
@@ -85,13 +88,24 @@ Nft concatenate_eps_consuming(
 		++result_state_index;
 	}
 
-	// Add epsilon transitions connecting lhs and rhs automata.
-	// The epsilon transitions lead from lhs original final states to rhs original initial states.
-	const std::vector<Symbol> nft_epsilon(result.levels.num_of_levels, epsilon);
-	for (const State& lhs_final_state : lhs_final_states) {
-		for (const State& rhs_initial_state : rhs.initial) {
-			result.add_transition_by_levels(lhs_final_state, nft_epsilon, rhs_states_renaming[rhs_initial_state]);
+	// Share one epsilon chain per lhs final state across all rhs initial states.
+	std::vector<State> shifted_rhs_initials{};
+	shifted_rhs_initials.reserve(rhs.initial.size());
+	for (const State rhs_initial_state : rhs.initial) {
+		shifted_rhs_initials.push_back(rhs_states_renaming[rhs_initial_state]);
+	}
+	std::ranges::sort(shifted_rhs_initials);
+	for (const State lhs_final_state : lhs_final_states) {
+		State source{lhs_final_state};
+		Level level{result.levels[source]};
+		for (size_t level_index{1}; level_index < num_of_levels; ++level_index) {
+			level = result.levels.next_level_after(level);
+			const State inner_state{result.add_state_with_level(level)};
+			result.delta.add(source, epsilon, inner_state);
+			source = inner_state;
 		}
+		// Sorted above because SparseSet iteration is unordered; rhs.initial also makes the targets duplicate-free.
+		result.delta.add(source, epsilon, std::span<const State>{shifted_rhs_initials});
 	}
 
 	// Make result final states.
@@ -144,8 +158,8 @@ Nft& Nft::concatenate(const Nft& aut) {
 	auto upd_fnc = [&](const State st) { return static_cast<State>(st + n); };
 
 	// copy the information about aut to save the case when this is the same object as aut.
-	utils::SparseSet<mata::nft::State> aut_initial = aut.initial;
-	utils::SparseSet<mata::nft::State> aut_final = aut.final;
+	const utils::SparseSet<mata::nft::State> aut_initial = aut.initial;
+	const utils::SparseSet<mata::nft::State> aut_final = aut.final;
 
 	this->delta.allocate(n);
 	this->delta.append_shifted(aut.delta, static_cast<State>(n));
@@ -178,6 +192,7 @@ Nft& Nft::concatenate(Nft&& aut) {
 	MATA_ASSERT(levels.num_of_levels == aut.levels.num_of_levels);
 	if (this == &aut) {
 		// Self-concatenation: one controlled snapshot of the operand; `this` keeps its own content.
+		// NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
 		const Nft snapshot{aut};
 		return concatenate(snapshot);
 	}
@@ -247,6 +262,7 @@ Nft algorithms::concatenate_eps(
 ) {
 	if (&lhs == &rhs) {
 		// Self-concatenation: one controlled snapshot of the right operand, then the consuming path.
+		// NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
 		const Nft rhs_snapshot{rhs};
 		return concatenate_eps_consuming(
 			std::move(lhs), rhs_snapshot, epsilon, use_epsilon, lhs_state_renaming, rhs_state_renaming
@@ -286,7 +302,7 @@ Nft concatenate_nth_power(Nft nft_to_concatenate, unsigned power) {
 	// Then square `base` for the next bit.
 	while (power > 0) {
 		// If current least-significant bit is set, append `base` to `result`.
-		if (power & 1u) { result.concatenate(base); }
+		if (power & 1U) { result.concatenate(base); }
 
 		// Shift to the next bit.
 		power >>= 1;

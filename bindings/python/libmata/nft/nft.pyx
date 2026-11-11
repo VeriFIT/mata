@@ -75,6 +75,7 @@ class CompositionNormalization(IntEnum):
     GeneratedOnly = <int>mata_nft.CompositionNormalizationGeneratedOnly
     Full = <int>mata_nft.CompositionNormalizationFull
     Auto = <int>mata_nft.CompositionNormalizationAuto
+    Trim = <int>mata_nft.CompositionNormalizationTrim
 
 
 cdef CJumpMode _c_jump_mode(jump_mode):
@@ -569,6 +570,9 @@ cdef class Nft:
         :param State state: The state where the identity transition will be inserted (both source and target).
         :param symbols_or_alphabet: Either a single symbol, a list of symbols, an `alph.Alphabet` (resolved via
           `resolve_alphabet`), or `None` (also resolved via `resolve_alphabet`).
+        :param JumpMode jump_mode: `RepeatSymbol` inserts one self-loop jump per symbol spanning all levels; `NoJump`
+          and `AppendDontCares` insert an explicit loop with one transition per level. Use `NoJump` for an NFT read
+          by jump-free algorithms such as `noodlify_for_transducer`.
         :return: Self with the identity transition(s) inserted.
         """
         cdef vector[Symbol] c_symbols

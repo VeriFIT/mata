@@ -70,8 +70,23 @@ This process helps ensure that:
 
 ## Pull Request Process
 
-1. Ensure your code builds successfully. <!-- 2. If you have made a change to the dependencies then update the `nix/vendor-hash` file. -->
+1. Ensure your code builds successfully.
 2. (Optional) Submit your pull request with screenshots (if applicable).
+
+### Commit messages
+
+Commit subjects follow the format `scope[,scope...]: +tag [+tag...] Message`, e.g.,
+`nfa: +perf Store the element and set metadata of Hopcroft's refinable partition together`.
+
+- **scope**: the affected part of the project (e.g., `nfa`, `nft`, `alphabet`, `python`, `rust`, `docs`, `ci`).
+- **tag**: the kind of change: `+feat`, `+fix`, `+perf`, `+refactor`, `+test`, `+docs`, `+fmt`, `+lint`, `+chore`.
+- **Message**: an imperative sentence starting with a capital letter, without a trailing period.
+
+### Referencing issues
+
+In commit messages and pull request descriptions, use `Part of #<issue>` when the change resolves an issue only
+partially. Use a closing keyword (`Fixes #<issue>`, `Resolves #<issue>`, `Closes #<issue>`, etc.) only when the change
+resolves the whole issue completely, including all its optional tasks, as GitHub closes the issue on merge.
 
 ## Code and design style
 

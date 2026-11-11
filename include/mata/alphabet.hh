@@ -4,6 +4,8 @@
 #ifndef MATA_ALPHABET_HH
 #define MATA_ALPHABET_HH
 
+#include <algorithm>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
@@ -35,6 +37,16 @@ constexpr std::string_view DONT_CARE_NAME{"<dntcr>"};
 constexpr bool is_reserved_symbol_name(const std::string_view name) {
 	return name == EPSILON_NAME || name == DONT_CARE_NAME;
 }
+
+/**
+ * @brief Returns @p name written as a single token of the .mata format.
+ *
+ * Quotes the name when it is empty, contains white space, a quote, or a character the reader treats specially
+ * (@c "#@%()!&|\\"), writing an inner @c " as @c \", the only escape the reader knows.
+ * A name ending in @c \\ cannot be quoted this way, because the reader reads the closing @c \" as an escaped
+ * quote; such a name never reads back to the same symbol.
+ */
+std::string quote_symbol_name(const std::string_view name);
 
 /**
  * The abstract interface for NFA alphabets.
@@ -85,6 +97,12 @@ class Alphabet {
 	 */
 	virtual std::ostream& print(std::ostream& /*os*/) const { throw std::runtime_error("Unimplemented"); }
 
+	Alphabet() = default;
+	Alphabet(const Alphabet&) = default;
+	Alphabet(Alphabet&&) = default;
+	Alphabet& operator=(const Alphabet&) = default;
+	Alphabet& operator=(Alphabet&&) = default;
+	/// Virtual: alphabets are owned and deleted through 'Alphabet*' (see 'Nfa::alphabet').
 	virtual ~Alphabet() = default;
 
 	/**
@@ -147,8 +165,12 @@ class IntAlphabet : public Alphabet {
 	}
 
 	IntAlphabet(const IntAlphabet&) = default;
+	IntAlphabet(IntAlphabet&&) = default;
 
 	IntAlphabet& operator=(const IntAlphabet& int_alphabet) = delete;
+	IntAlphabet& operator=(IntAlphabet&&) = delete;
+
+	~IntAlphabet() override = default;
 
 	bool empty() const override { return false; }
 
@@ -182,6 +204,8 @@ class IntAlphabet : public Alphabet {
 		IntAlphabetSingleton() = default;
 	}; // class IntAlphabetSingleton.
 
+	// A reference to the process-wide singleton: it blocks assignment of 'IntAlphabet', which is intended -- every
+	//  instance denotes the same alphabet.
 	IntAlphabetSingleton& alphabet_instance_;
 }; // class IntAlphabet.
 
@@ -225,6 +249,8 @@ class EnumAlphabet : public Alphabet {
 	EnumAlphabet& operator=(const EnumAlphabet& rhs) = default;
 	EnumAlphabet& operator=(EnumAlphabet&& rhs) = default;
 
+	~EnumAlphabet() override = default;
+
 	/**
 	 * @brief Expand alphabet by symbols from the passed @p symbols.
 	 *
@@ -242,7 +268,7 @@ class EnumAlphabet : public Alphabet {
 
 	EnumAlphabet(const std::initializer_list<Symbol> symbols) : EnumAlphabet(symbols.begin(), symbols.end()) {}
 	template <class InputIt> EnumAlphabet(InputIt first, InputIt last) : EnumAlphabet() {
-		for (; first != last; ++first) { add_new_symbol(*first); }
+		std::for_each(first, last, [&](const auto& symbol) { add_new_symbol(symbol); });
 	}
 	EnumAlphabet(const std::initializer_list<std::string> l) : EnumAlphabet(l.begin(), l.end()) {}
 
@@ -351,7 +377,7 @@ class OnTheFlyAlphabet : public Alphabet {
 	}
 
 	template <class InputIt> OnTheFlyAlphabet(InputIt first, InputIt last) {
-		for (; first != last; ++first) { add_new_symbol(*first, next_symbol_value_); }
+		std::for_each(first, last, [this](const auto& name) { add_new_symbol(name, next_symbol_value_); });
 	}
 	OnTheFlyAlphabet(std::initializer_list<std::pair<std::string, Symbol>> name_symbol_map) : symbol_map_{} {
 		for (auto&& [name, symbol] : name_symbol_map) { add_new_symbol(name, symbol); }
@@ -369,6 +395,8 @@ class OnTheFlyAlphabet : public Alphabet {
   public:
 	OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
 	OnTheFlyAlphabet& operator=(OnTheFlyAlphabet&& rhs) = default;
+
+	~OnTheFlyAlphabet() override = default;
 
 	/**
 	 * @brief Expand alphabet by symbols from the passed @p symbol_names.
@@ -467,6 +495,8 @@ class OnTheFlyAlphabet : public Alphabet {
 	Symbol next_symbol_value_{}; ///< Next value to be used for a newly added symbol.
 
 	const SymbolNames* find_names(Symbol symbol) const;
+	/// The names of @p symbol, which has to be a symbol of @c symbol_map_.
+	SymbolNames& indexed_names(Symbol symbol);
 	void index_name(StringToSymbolMap::const_iterator name_it);
 	/// Remove @p name_it from the reverse index; call before erasing it from @c symbol_map_.
 	void unindex_name(StringToSymbolMap::const_iterator name_it);
@@ -541,7 +571,7 @@ class OnTheFlyAlphabet : public Alphabet {
 class AlphabetLevels {
   public:
 	/// Operating mode of the @c AlphabetLevels instance.
-	enum class Mode {
+	enum class Mode : std::uint8_t {
 		Global, ///< @c alphabets[0] is used for every level; level argument is ignored.
 		MultiLevel, ///< Each level uses its own alphabet from @c alphabets[level]; level argument is required.
 	};
@@ -583,6 +613,8 @@ class AlphabetLevels {
 	AlphabetLevels(AlphabetLevels&& other) noexcept = default;
 	AlphabetLevels& operator=(const AlphabetLevels& other) = default;
 	AlphabetLevels& operator=(AlphabetLevels&& other) noexcept = default;
+
+	~AlphabetLevels() = default;
 
 	/**
 	 * @brief Equality of two @c AlphabetLevels instances.

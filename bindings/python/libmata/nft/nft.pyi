@@ -34,6 +34,7 @@ class CompositionNormalization(IntEnum):
     GeneratedOnly = 1
     Full = 2
     Auto = 3
+    Trim = 4
 
 class Levels:
     """Wrapper over the per-state levels of an NFT (`mata::nft::Levels`)."""
@@ -209,7 +210,8 @@ class Nft:
         symbols_or_alphabet: Symbol | list[Symbol] | alph.Alphabet | None = None,
         jump_mode: JumpMode = JumpMode.RepeatSymbol,
     ) -> Self:
-        """Insert identity transition(s) at `state`."""
+        """Insert identity transition(s) at `state`: one self-loop jump per symbol for `RepeatSymbol`, an explicit
+        loop with one transition per level otherwise."""
     def contains_jump_transitions(self) -> bool:
         """Check if the transducer contains any jump transition."""
     def trim(self) -> Self:

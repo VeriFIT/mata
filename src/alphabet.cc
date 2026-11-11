@@ -6,9 +6,27 @@
 #include <mata/nft/types.hh>
 #include <mata/utils/assert.hh>
 
+#include <algorithm>
+#include <cctype>
+
 using mata::AlphabetLevels;
 using mata::OnTheFlyAlphabet;
 using mata::Symbol;
+
+std::string mata::quote_symbol_name(const std::string_view name) {
+	const bool needs_quotes{name.empty() || name.back() == '\\' || std::ranges::any_of(name, [](const char ch) {
+								return std::isspace(static_cast<unsigned char>(ch)) != 0 ||
+									   std::string_view{"\"#()!&|\\@%"}.find(ch) != std::string_view::npos;
+							})};
+	if (!needs_quotes) { return std::string{name}; }
+	std::string output{'"'};
+	for (const char ch : name) {
+		if (ch == '"') { output += '\\'; }
+		output += ch;
+	}
+	output += '"';
+	return output;
+}
 
 OnTheFlyAlphabet::OnTheFlyAlphabet(const OnTheFlyAlphabet& alphabet)
 	: Alphabet(alphabet),
@@ -40,7 +58,7 @@ OnTheFlyAlphabet& OnTheFlyAlphabet::operator=(const OnTheFlyAlphabet& rhs) {
 void OnTheFlyAlphabet::redirect_copied_index() {
 	// The copied pointers still point into the source map, whose names equal ours.
 	for (const auto& [name, symbol] : symbol_map_) {
-		auto& names{*const_cast<SymbolNames*>(find_names(symbol))};
+		auto& names{indexed_names(symbol)};
 		if (*names.name == name) { names.name = &name; }
 	}
 }
@@ -54,10 +72,16 @@ const OnTheFlyAlphabet::SymbolNames* OnTheFlyAlphabet::find_names(const Symbol s
 	return names_it == sparse_names_.end() ? nullptr : &names_it->second;
 }
 
+OnTheFlyAlphabet::SymbolNames& OnTheFlyAlphabet::indexed_names(const Symbol symbol) {
+	// Every symbol of 'symbol_map_' has its names indexed, so the lookup cannot fail; '*this' is non-const here.
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast, clang-analyzer-core.NullDereference)
+	return *const_cast<SymbolNames*>(find_names(symbol));
+}
+
 void OnTheFlyAlphabet::index_name(const StringToSymbolMap::const_iterator name_it) {
 	const Symbol symbol{name_it->second};
 	// Grow the dense index while it stays proportional to the number of names; a few huge symbols go to the sparse one.
-	if (symbol >= dense_names_.size() && symbol < 2 * symbol_map_.size() + 64) {
+	if (symbol >= dense_names_.size() && symbol < (2 * symbol_map_.size()) + 64) {
 		Symbol covered{static_cast<Symbol>(dense_names_.size())};
 		dense_names_.resize(symbol + 1);
 		// Move the sparse symbols now covered by the dense index. Looking up the newly covered symbols rather than
@@ -80,7 +104,7 @@ void OnTheFlyAlphabet::index_name(const StringToSymbolMap::const_iterator name_i
 
 void OnTheFlyAlphabet::unindex_name(const StringToSymbolMap::const_iterator name_it) {
 	const Symbol symbol{name_it->second};
-	SymbolNames& names{*const_cast<SymbolNames*>(find_names(symbol))};
+	SymbolNames& names{indexed_names(symbol)};
 	if (--names.num_of_names == 0) {
 		if (symbol < dense_names_.size()) {
 			names.name = nullptr;
@@ -207,7 +231,7 @@ void mata::OnTheFlyAlphabet::update_next_symbol_value(const Symbol value) {
 std::ostream& mata::OnTheFlyAlphabet::print(std::ostream& os) const {
 	// symbol_map_ is unordered and names may share a value; sort by (value, name) so that the output is deterministic.
 	std::vector<std::pair<std::string, Symbol>> pairs{symbol_map_.begin(), symbol_map_.end()};
-	std::sort(pairs.begin(), pairs.end(), [](const auto& lhs, const auto& rhs) {
+	std::ranges::sort(pairs, [](const auto& lhs, const auto& rhs) {
 		return std::tie(lhs.second, lhs.first) < std::tie(rhs.second, rhs.first);
 	});
 	os << '{';
@@ -246,7 +270,7 @@ Symbol mata::IntAlphabet::translate_symb(const std::string& symb) {
 }
 
 std::string mata::EnumAlphabet::reverse_translate_symbol(const Symbol symbol) const {
-	if (symbols_.find(symbol) == symbols_.end()) {
+	if (!symbols_.contains(symbol)) {
 		throw std::runtime_error("Symbol '" + std::to_string(symbol) + "' is out of range of enumeration.");
 	}
 	return std::to_string(symbol);
@@ -259,7 +283,7 @@ Symbol mata::EnumAlphabet::translate_symb(const std::string& str) {
 	if (stream.fail() || !stream.eof()) {
 		throw std::runtime_error("Cannot translate string '" + str + "' to symbol.");
 	}
-	if (symbols_.find(symbol) == symbols_.end()) {
+	if (!symbols_.contains(symbol)) {
 		throw std::runtime_error("Unknown symbol'" + str + "' to be translated to Symbol.");
 	}
 
@@ -275,9 +299,7 @@ mata::Word mata::EnumAlphabet::translate_word(const mata::WordName& word_name) c
 	for (const auto& str_symbol : word_name) {
 		stream << str_symbol;
 		stream >> symbol;
-		if (symbols_.find(symbol) == symbols_.end()) {
-			throw std::runtime_error("Unknown symbol \'" + str_symbol + "\'");
-		}
+		if (!symbols_.contains(symbol)) { throw std::runtime_error("Unknown symbol \'" + str_symbol + "\'"); }
 		word.push_back(symbol);
 	}
 	return word;
@@ -347,10 +369,9 @@ mata::utils::OrdVector<Symbol> AlphabetLevels::get_complement(
 bool AlphabetLevels::empty(const std::optional<mata::Level> level) const {
 	if (mode_ == Mode::MultiLevel && !level.has_value()) {
 		// MultiLevel + nullopt: empty iff every underlying alphabet is empty.
-		for (const auto& alphabet : alphabets_) {
-			if (alphabet != nullptr && !alphabet->empty()) { return false; }
-		}
-		return true;
+		return std::ranges::all_of(alphabets_, [](const auto& alphabet) {
+			return alphabet == nullptr || alphabet->empty();
+		});
 	}
 	return for_level(level)->empty();
 }
@@ -395,6 +416,9 @@ const std::shared_ptr<mata::Alphabet>& AlphabetLevels::for_level(const std::opti
 }
 
 std::shared_ptr<mata::Alphabet>& AlphabetLevels::for_level(const std::optional<mata::Level> level) {
+	// The const overload above does the lookup; '*this' is known to be non-const here, so casting its constness
+	//  away is safe.
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
 	return const_cast<std::shared_ptr<Alphabet>&>(std::as_const(*this).for_level(level));
 }
 
@@ -429,7 +453,7 @@ mata::Word mata::encode_word_utf8(const mata::Word& word) {
 mata::Word mata::decode_word_utf8(const mata::Word& word) {
 	mata::Word decoded_word;
 	for (size_t i = 0; i < word.size(); i++) {
-		if (Symbol symbol = word[i]; (symbol & 0x80) == 0) {
+		if (const Symbol symbol = word[i]; (symbol & 0x80) == 0) {
 			// U+0000   to U+007F  : 0xxxxxxx
 			decoded_word.push_back(symbol);
 		} else if ((symbol & 0xE0) == 0xC0) {

@@ -148,13 +148,18 @@ class Nfa : public Automaton {
 	 */
 	Nfa(const Nfa& other) = default;
 
+	// Only the 'Automaton' base of 'other' is moved from before its own members are.
+	// NOLINTBEGIN(bugprone-use-after-move)
 	Nfa(Nfa&& other) noexcept
 		: Automaton{std::move(other)},
 		  alphabet{std::move(other.alphabet)},
 		  attributes{std::move(other.attributes)} {}
+	// NOLINTEND(bugprone-use-after-move)
 
 	Nfa& operator=(const Nfa& other) = default;
 	Nfa& operator=(Nfa&& other) noexcept;
+
+	~Nfa() = default;
 
 	/**
 	 * Add a new (fresh) state to the automaton.
@@ -653,11 +658,11 @@ class Nfa : public Automaton {
 	 *
 	 * If the automaton is nondeterministic, the result is undefined.
 	 *
-	 * @param word The word to read.
+	 * @param run The run whose word is read.
 	 *
 	 * @return The reachable state after reading the word or std::nullopt if the word cannot be read.
 	 */
-	std::optional<State> read_word_det(const Run& word) const;
+	std::optional<State> read_word_det(const Run& run) const;
 
 	/**
 	 * @brief Read a word and return the state the deterministic automaton ends up in.
@@ -1009,6 +1014,68 @@ Nfa intersection(
  * @return True iff there is no word accepted by both @p lhs and @p rhs.
  */
 bool is_intersection_empty(const Nfa& lhs, const Nfa& rhs, Run* witness = nullptr, Symbol first_epsilon = EPSILON);
+
+/**
+ * @brief Compute the left quotient of the language of @p nfa by the language of @p prefixes.
+ *
+ * The left quotient (derivative by a language) is `{ w | there is u in L(prefixes) with u.w in L(nfa) }`: the words
+ *  of @p nfa with a prefix from @p prefixes removed. With @p prefixes accepting a single word `u`, this is the
+ *  Brzozowski derivative of @p nfa by `u`.
+ *
+ * The result is @p nfa with its initial states replaced by the states of @p nfa reachable by reading a word of
+ *  @p prefixes. These are found by exploring the reachable pairs `(state_of_prefixes, state_of_nfa)` directly,
+ *  without materializing the product, and pairs with a useless state of @p prefixes are never explored. The
+ *  result is not trimmed: call `Nfa::trim()` to remove the states no longer reachable.
+ *
+ * Symbols at or above @p first_epsilon move one side only, as in `intersection(lhs, rhs, first_epsilon)`, so
+ *  epsilon transitions of both automata are supported. The epsilon transitions of @p nfa are kept in the result.
+ *
+ * @param[in] nfa NFA whose language is quotiented.
+ * @param[in] prefixes NFA accepting the prefixes to remove.
+ * @param[in] first_epsilon Smallest symbol treated as a one-sided (epsilon) move.
+ * @return NFA for the left quotient of @p nfa by @p prefixes.
+ */
+Nfa left_quotient(const Nfa& nfa, const Nfa& prefixes, Symbol first_epsilon = EPSILON);
+
+/**
+ * @brief Compute the left quotient of the language of @p nfa by the language of @p prefixes, consuming @p nfa.
+ *
+ * The transitions of @p nfa are moved into the result instead of copied. @p nfa and @p prefixes may be the same
+ *  automaton. @p nfa is moved from.
+ * @see left_quotient(const Nfa&, const Nfa&, Symbol)
+ */
+Nfa left_quotient(Nfa&& nfa, const Nfa& prefixes, Symbol first_epsilon = EPSILON);
+
+/**
+ * @brief Compute the right quotient of the language of @p nfa by the language of @p suffixes.
+ *
+ * The right quotient is `{ u | there is w in L(suffixes) with u.w in L(nfa) }`: the words of @p nfa with a suffix
+ *  from @p suffixes removed.
+ *
+ * The result is @p nfa with its final states replaced by the states of @p nfa from which @p nfa accepts a word of
+ *  @p suffixes. These are found as in `left_quotient()`, but backward: pairs of a state of the reverted @p suffixes
+ *  and a state of @p nfa are explored from the final states of both, moving @p nfa against its transitions over an
+ *  index of predecessors, without reverting @p nfa or materializing the product. The result is not trimmed: call
+ *  `Nfa::trim()` to remove the states that no longer reach a final state.
+ *
+ * Symbols at or above @p first_epsilon move one side only, as in `intersection(lhs, rhs, first_epsilon)`, so
+ *  epsilon transitions of both automata are supported. The epsilon transitions of @p nfa are kept in the result.
+ *
+ * @param[in] nfa NFA whose language is quotiented.
+ * @param[in] suffixes NFA accepting the suffixes to remove.
+ * @param[in] first_epsilon Smallest symbol treated as a one-sided (epsilon) move.
+ * @return NFA for the right quotient of @p nfa by @p suffixes.
+ */
+Nfa right_quotient(const Nfa& nfa, const Nfa& suffixes, Symbol first_epsilon = EPSILON);
+
+/**
+ * @brief Compute the right quotient of the language of @p nfa by the language of @p suffixes, consuming @p nfa.
+ *
+ * The transitions of @p nfa are moved into the result instead of copied. @p nfa and @p suffixes may be the same
+ *  automaton. @p nfa is moved from.
+ * @see right_quotient(const Nfa&, const Nfa&, Symbol)
+ */
+Nfa right_quotient(Nfa&& nfa, const Nfa& suffixes, Symbol first_epsilon = EPSILON);
 
 /**
  * @brief Concatenate two NFAs.

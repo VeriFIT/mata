@@ -27,16 +27,8 @@ namespace {
 void restrict_to_symbols(Nfa& aut, const OrdVector<mata::Symbol>& symbols) {
 	for (State state{0}; state < aut.num_of_states(); ++state) {
 		StatePost& state_post{aut.delta.mutable_state_post(state)};
-		// Use erase-remove idiom to drop SymbolPosts over foreign symbols.
-		//  std::remove_if moves elements to drop to the end and returns the new end iterator;
-		//  erase removes them.
-		state_post.erase(
-			std::remove_if(
-				state_post.begin(), state_post.end(),
-				[&symbols](const SymbolPost& symbol_post) { return !haskey(symbols, symbol_post.symbol); }
-			),
-			state_post.end()
-		);
+		// Drop the SymbolPosts over foreign symbols.
+		state_post.filter([&symbols](const SymbolPost& symbol_post) { return haskey(symbols, symbol_post.symbol); });
 	}
 }
 

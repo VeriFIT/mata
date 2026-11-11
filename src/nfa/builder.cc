@@ -10,6 +10,7 @@
 
 #include <cmath>
 #include <fstream>
+#include <numeric>
 #include <random>
 #include <unordered_set>
 
@@ -41,12 +42,11 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 	//  a new name never gets its identifier while the transitions are only gathered
 	auto get_state_name = [&state_map, &aut](const std::string& str) {
 		if (!state_map->contains(str)) {
-			State state = aut.add_state();
+			const State state = aut.add_state();
 			state_map->insert({str, state});
 			return state;
-		} else {
-			return aut.add_state((*state_map)[str]);
 		}
+		return aut.add_state((*state_map)[str]);
 	};
 
 	auto it = parsec.dict.find("Initial");
@@ -67,15 +67,14 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 		if (body_line.size() != 3) {
 			if (body_line.size() == 2) {
 				throw std::runtime_error("Epsilon transitions not supported: " + std::to_string(body_line));
-			} else {
-				throw std::runtime_error("Invalid transition: " + std::to_string(body_line));
 			}
+			throw std::runtime_error("Invalid transition: " + std::to_string(body_line));
 		}
 
 		// Sequenced, so that a mapped source is allocated before a new target gets an identifier.
-		const State src_state{get_state_name(body_line[0])};
-		const Symbol symbol{translate_symbol_name(alphabet, body_line[1])};
-		const State tgt_state{get_state_name(body_line[2])};
+		const State src_state{get_state_name(body_line[0].token)};
+		const Symbol symbol{translate_symbol_name(alphabet, body_line[1].token)};
+		const State tgt_state{get_state_name(body_line[2].token)};
 		transitions.emplace_back(src_state, symbol, tgt_state);
 	}
 	aut.delta.add(std::move(transitions));
@@ -97,16 +96,15 @@ Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, Nam
 	// a lambda for translating state names to identifiers, see the ParsedSection overload above
 	auto get_state_name = [&state_map, &aut](const std::string& str) {
 		if (!state_map->contains(str)) {
-			State state = aut.add_state();
+			const State state = aut.add_state();
 			state_map->insert({str, state});
 			return state;
-		} else {
-			return aut.add_state((*state_map)[str]);
 		}
+		return aut.add_state((*state_map)[str]);
 	};
 
 	for (const auto& str : inter_aut.initial_formula.collect_node_names()) {
-		State state = get_state_name(str);
+		const State state = get_state_name(str);
 		aut.initial.insert(state);
 	}
 
@@ -115,11 +113,8 @@ Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, Nam
 	transitions.reserve(inter_aut.transitions.size());
 	for (const auto& [formula_node, formula_graph] : inter_aut.transitions) {
 		if (formula_graph.children.size() != 2) {
-			if (formula_graph.children.size() == 1) {
-				throw std::runtime_error("Epsilon transitions not supported");
-			} else {
-				throw std::runtime_error("Invalid transition");
-			}
+			if (formula_graph.children.size() == 1) { throw std::runtime_error("Epsilon transitions not supported"); }
+			throw std::runtime_error("Invalid transition");
 		}
 
 		const State src_state{get_state_name(formula_node.name)};
@@ -145,7 +140,7 @@ Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, Nam
 	} else {
 		// we add all states in final_formula_nodes to final states
 		for (const auto& str : final_formula_nodes) {
-			State state = get_state_name(str);
+			const State state = get_state_name(str);
 			aut.final.insert(state);
 		}
 	}
@@ -178,7 +173,7 @@ Nfa builder::create_single_word_nfa(const std::vector<std::string>& word, std::s
 
 Nfa builder::create_empty_string_nfa() { return Nfa{1, {0}, {0}}; }
 
-Nfa builder::create_sigma_star_nfa(std::shared_ptr<Alphabet> alphabet) {
+Nfa builder::create_sigma_star_nfa(const std::shared_ptr<Alphabet>& alphabet) {
 	Nfa nfa{1, {0}, {0}, alphabet};
 	for (const Symbol& symbol : alphabet->get_alphabet_symbols()) { nfa.delta.add(0, symbol, 0); }
 	return nfa;
@@ -195,6 +190,9 @@ Nfa builder::create_random_nfa_tabakov_vardi(
 	//  `get_symbols_to_work_with()`, which prefers the attached alphabet over the symbols actually used, and would
 	//  thus break printing, completeness checks and completion.
 	std::vector<Symbol> alphabet_symbols(alphabet_size);
+	// 'std::ranges::iota' would read better, but it is unavailable in older libc++ releases, while CMake still
+	// supports Clang 18.
+	// NOLINTNEXTLINE(modernize-use-ranges)
 	std::iota(alphabet_symbols.begin(), alphabet_symbols.end(), 0);
 	auto alphabet{std::make_shared<EnumAlphabet>(alphabet_symbols.begin(), alphabet_symbols.end())};
 
@@ -217,6 +215,9 @@ Nfa builder::create_random_nfa_tabakov_vardi(
 
 	// Unique final state generator
 	std::vector<State> states(num_of_states);
+	// 'std::ranges::iota' would read better, but it is unavailable in older libc++ releases, while CMake still
+	// supports Clang 18.
+	// NOLINTNEXTLINE(modernize-use-ranges)
 	std::iota(states.begin(), states.end(), 0);
 	std::shuffle(states.begin() + 1, states.end(), gen); // Starting from 1, because 0 is allways final state.
 
@@ -275,7 +276,7 @@ Nfa builder::parse_from_mata(std::istream& nfa_stream) {
 			"The number of sections in the input file is '" + std::to_string(parsed.size()) + "'. Required is '1'.\n"
 		);
 	}
-	if (const std::string automaton_type{parsed[0].type}; automaton_type.compare(0, nfa_str.length(), nfa_str) != 0) {
+	if (const std::string automaton_type{parsed[0].type}; !automaton_type.starts_with(nfa_str)) {
 		throw std::runtime_error("The type of input automaton is '" + automaton_type + "'. Required is 'NFA'\n");
 	}
 	IntAlphabet alphabet;

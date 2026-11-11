@@ -422,6 +422,26 @@ jobs:
           else
               echo "Code is properly formatted."
           fi
+  # The only check of the Nix outputs and of uv.lock, which only the development shells are built from.
+  nix-flake-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: cachix/install-nix-action@v31
+      # Pull only: pull requests build unreviewed dependency updates, so they never get the write token. `nix-cache.yml`
+      #  pushes after a merge.
+      - uses: cachix/cachix-action@v17
+        with:
+          name: mata
+          skipPush: true
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Build all packages and run the flake checks
+        run: nix flake check --print-build-logs
+      - name: Build the development shells
+        run: nix build --no-link --print-build-logs .#devShells.x86_64-linux.{default,clang,gcc}
   sanitizers:
     runs-on: ubuntu-latest
     steps:

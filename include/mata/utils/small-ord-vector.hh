@@ -37,6 +37,10 @@ namespace mata::utils {
  *
  * Iterators are plain pointers; any operation that grows the set may invalidate them.
  */
+// The class is the raw storage itself: the inline keys share a union with the heap block, and both are walked by
+//  pointer.
+// NOLINTBEGIN(cppcoreguidelines-pro-type-union-access,
+// cppcoreguidelines-avoid-c-arrays, modernize-avoid-c-arrays, cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 template <class Key, std::size_t InlineCapacity = std::max<std::size_t>(1, sizeof(std::uintptr_t) / sizeof(Key))>
 class SmallOrdVector {
 	static_assert(std::is_trivially_copyable_v<Key> && std::is_trivially_destructible_v<Key>);
@@ -152,6 +156,8 @@ class SmallOrdVector {
 			push_back(key);
 			return {end() - 1, true};
 		}
+		// Returned as the mutable 'iterator' of the pair below, which the check does not follow.
+		// NOLINTNEXTLINE(misc-const-correctness)
 		Key* pos{std::lower_bound(data(), data() + n, key)};
 		if (*pos == key) { return {pos, false}; }
 		const auto index{static_cast<size_type>(pos - data())};
@@ -250,7 +256,7 @@ class SmallOrdVector {
 	template <class Pred> size_type erase_if(Pred&& should_erase) {
 		Key* const first{data()};
 		Key* const last{first + size()};
-		Key* const new_last{std::remove_if(first, last, std::forward<Pred>(should_erase))};
+		const Key* const new_last{std::remove_if(first, last, std::forward<Pred>(should_erase))};
 		const auto erased{static_cast<size_type>(last - new_last)};
 		set_size(static_cast<size_type>(new_last - first));
 		return erased;
@@ -344,6 +350,8 @@ class SmallOrdVector {
 		size_ = static_cast<std::uint32_t>(size << 1) | (size_ & heap_flag);
 	}
 }; // class SmallOrdVector.
+// NOLINTEND(cppcoreguidelines-pro-type-union-access,
+// cppcoreguidelines-avoid-c-arrays, modernize-avoid-c-arrays, cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 
 } // namespace mata::utils.
 

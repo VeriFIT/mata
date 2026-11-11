@@ -6,6 +6,7 @@
 
 #include "mata/alphabet.hh"
 #include "mata/applications/strings.hh"
+#include "mata/nft/algorithms.hh"
 #include "mata/nft/builder.hh"
 #include "mata/nft/nft.hh"
 #include "mata/utils/assert.hh"
@@ -72,7 +73,7 @@ void handle_last_symbol_replacement(
 		case ReplaceMode::Single: {
 			const State state_lvl0{nft.add_state_with_level(0)};
 			nft.delta.add(state_lvl1, replacement, state_lvl0);
-			nft.insert_identity(state_lvl0, alphabet_symbols.to_vector());
+			nft.insert_identity(state_lvl0, alphabet_symbols.to_vector(), JumpMode::RepeatSymbol);
 			state_lvl1 = nft.add_state_with_level(1);
 			nft.delta.add(state_lvl0, end_marker, state_lvl1);
 			nft.delta.add(state_lvl1, EPSILON, *nft.final.begin());
@@ -222,7 +223,7 @@ Nft mata::applications::strings::replace::create_identity(const Alphabet* const 
 	// const size_t additional_states_per_symbol_num{ num_of_levels - 1 };
 	// const size_t num_of_states{ alphabet_symbols.size() * additional_states_per_symbol_num + 1 };
 	Nft nft{Nft::with_levels({num_of_levels, {0}}, 1, {0}, {0})};
-	nft.insert_identity(0, alphabet_symbols.to_vector());
+	nft.insert_identity(0, alphabet_symbols.to_vector(), JumpMode::NoJump);
 	return nft;
 }
 
@@ -263,7 +264,7 @@ Nft applications::strings::replace::create_identity_with_single_symbol_replace(
 			nft.delta.add(
 				state_lvl1, replacement_it == replacement_end ? EPSILON : *replacement_it, after_replace_state
 			);
-			nft.insert_identity(after_replace_state, alphabet->get_alphabet_symbols().to_vector());
+			nft.insert_identity(after_replace_state, alphabet->get_alphabet_symbols().to_vector(), JumpMode::NoJump);
 			nft.final.insert(after_replace_state);
 			break;
 		}
@@ -300,7 +301,7 @@ Nft mata::applications::strings::replace::replace_reluctant_regex(
 
 nfa::Nfa ReluctantReplace::end_marker_dfa(nfa::Nfa regex) {
 	regex = as_dfa(std::move(regex));
-	std::vector<State> orig_finals(regex.final.begin(), regex.final.end());
+	const std::vector<State> orig_finals(regex.final.begin(), regex.final.end());
 	for (const State orig_final : orig_finals) {
 		const State new_final = regex.add_state();
 		regex.final.insert(new_final);
@@ -317,7 +318,7 @@ Nft ReluctantReplace::marker_nft(const nfa::Nfa& marker_dfa, const Symbol marker
 	std::vector<std::pair<State, State>> epsilon_moves;
 	for (State source{0}; source < dft_marker_num_of_states; ++source) {
 		for (const auto& [symbol, target] : dft_marker.delta[source].moves_epsilons()) {
-			epsilon_moves.push_back({source, target});
+			epsilon_moves.emplace_back(source, target);
 		}
 	}
 	for (const auto& [source, target] : epsilon_moves) {
@@ -348,7 +349,7 @@ nfa::Nfa ReluctantReplace::generic_marker_dfa(nfa::Nfa regex, const Alphabet* co
 
 	std::vector<State> worklist{0};
 	while (!worklist.empty()) {
-		State source{worklist.back()};
+		const State source{worklist.back()};
 		worklist.pop_back();
 
 		if (StateSet& source_label{labeling[source]}; regex.final.intersects_with(source_label)) {
@@ -374,7 +375,7 @@ nfa::Nfa ReluctantReplace::begin_marker_nfa(const std::string& regex, const Alph
 
 nfa::Nfa ReluctantReplace::begin_marker_nfa(nfa::Nfa regex, const Alphabet* const alphabet) {
 	regex = revert(regex);
-	nfa::Nfa dfa_generic_end_marker{generic_marker_dfa(std::move(regex), alphabet)};
+	const nfa::Nfa dfa_generic_end_marker{generic_marker_dfa(std::move(regex), alphabet)};
 	return revert_delta(dfa_generic_end_marker);
 }
 
@@ -393,8 +394,9 @@ Nft ReluctantReplace::end_marker_dft(const nfa::Nfa& end_marker_dfa, const Symbo
 	return marker_nft(end_marker_dfa, end_marker);
 }
 
-nfa::Nfa
-	ReluctantReplace::reluctant_nfa_with_marker(nfa::Nfa nfa, const Symbol marker, const Alphabet* const alphabet) {
+nfa::Nfa ReluctantReplace::reluctant_nfa_with_marker(
+	const nfa::Nfa& nfa, const Symbol marker, const Alphabet* const alphabet
+) {
 	// Accept begin markers inside the shortest match but never after it, so that the next begin marker stays for the
 	//  next replace. This is the reluctant NFA intersected with a guard NFA over {after a letter, after a marker}. In
 	//  that product, (q, after a marker) has the same successors as (q, after a letter) and is never final, so the
@@ -453,15 +455,15 @@ Nft ReluctantReplace::reluctant_leftmost_nft(
 	const Word& replacement,
 	const ReplaceMode replace_mode
 ) {
-	nfa = reluctant_nfa_with_marker(std::move(nfa), begin_marker, alphabet);
+	nfa = reluctant_nfa_with_marker(nfa, begin_marker, alphabet);
 	Nft nft_reluctant_leftmost{nft::builder::from_nfa_with_levels_zero(nfa, 2, true, {EPSILON})};
 	const size_t regex_num_of_states{nft_reluctant_leftmost.num_of_states()};
 	const utils::OrdVector<Symbol> alphabet_symbols{alphabet->get_alphabet_symbols()};
-	nft_reluctant_leftmost.levels.resize(regex_num_of_states + replacement.size() * 2 + alphabet_symbols.size() + 4);
+	nft_reluctant_leftmost.levels.resize(regex_num_of_states + (replacement.size() * 2) + 4);
 
 	// Create self-loop on the new initial state.
 	const State initial{nft_reluctant_leftmost.add_state_with_level(0)};
-	nft_reluctant_leftmost.insert_identity(initial, alphabet_symbols.to_vector());
+	nft_reluctant_leftmost.insert_identity(initial, alphabet_symbols.to_vector(), JumpMode::RepeatSymbol);
 
 	// Move to replace mode when begin marker is encountered.
 	auto curr_state{static_cast<State>(nft_reluctant_leftmost.num_of_states())};
@@ -483,10 +485,10 @@ Nft ReluctantReplace::reluctant_leftmost_nft(
 			break;
 		};
 		case ReplaceMode::Single: { // End the replacement mode.
-			nft_reluctant_leftmost.levels.resize(nft_reluctant_leftmost.levels.size() + alphabet_symbols.size() + 1);
+			nft_reluctant_leftmost.levels.resize(nft_reluctant_leftmost.levels.size() + 1);
 			const State final{nft_reluctant_leftmost.add_state_with_level(0)};
 			nft_reluctant_leftmost.final.insert(final);
-			nft_reluctant_leftmost.insert_identity(final, alphabet_symbols.to_vector());
+			nft_reluctant_leftmost.insert_identity(final, alphabet_symbols.to_vector(), JumpMode::RepeatSymbol);
 			nft_reluctant_leftmost.insert_word_by_levels(final, {{begin_marker}, {EPSILON}}, final);
 			replacement_end = final;
 			break;
@@ -593,7 +595,9 @@ Nft ReluctantReplace::replace_regex(
 	const Nft nft_reluctant_replace{
 		reluctant_leftmost_nft(std::move(aut), alphabet, begin_marker, replacement, replace_mode)
 	};
-	return compose(dft_begin_marker, nft_reluctant_replace, 1, 0, true, mata::nft::JumpMode::NoJump);
+	return nft::algorithms::compose_fast(
+		dft_begin_marker, nft_reluctant_replace, 1, 0, true, mata::nft::JumpMode::RepeatSymbol
+	);
 }
 
 Nft ReluctantReplace::replace_literal(
@@ -631,7 +635,9 @@ Nft ReluctantReplace::replace_literal(
 		return nft_end_marker_val;
 	}()};
 	const Nft nft_literal_replace{replace_literal_nft(literal, replacement, alphabet, end_marker, replace_mode)};
-	return compose(nft_end_marker, nft_literal_replace, 1, 0, true, mata::nft::JumpMode::NoJump);
+	return nft::algorithms::compose_fast(
+		nft_end_marker, nft_literal_replace, 1, 0, true, mata::nft::JumpMode::RepeatSymbol
+	);
 }
 
 Nft ReluctantReplace::replace_symbol(

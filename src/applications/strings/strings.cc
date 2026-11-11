@@ -5,8 +5,11 @@
 #include "mata/nfa/builder.hh"
 #include "mata/utils/assert.hh"
 
+#include <algorithm>
+#include <iterator>
 #include <limits>
 #include <optional>
+#include <span>
 #include <stdexcept>
 #include <unordered_map>
 
@@ -106,11 +109,193 @@ void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWo
 	act.first = dst.first + 1;
 }
 
+namespace {
+/// The length of the longest word to a final state, of a state that is useless or not visited yet.
+constexpr State NO_LONGEST_WORD{Limits::max_state};
+
+/// The length of the longest word from each useful state to a final state (@c NO_LONGEST_WORD for useless states), or
+///  @c std::nullopt if a cycle passes through a useful state, i.e., the language is infinite.
+/// An iterative depth-first search over the useful states: a successor still on the stack closes a cycle, and a state
+///  leaves the stack only after all its successors, so its length is complete then.
+std::optional<std::vector<State>> get_longest_word_lengths(const Nfa& nfa) {
+	const size_t num_of_states{nfa.num_of_states()};
+	const mata::BoolVector useful{nfa.get_useful_states()};
+	std::vector<State> longest(num_of_states, NO_LONGEST_WORD);
+	mata::BoolVector on_stack(num_of_states, false);
+	struct Frame {
+		State state;
+		State longest; ///< The longest word to a final state over the successors searched so far.
+		SuccessorCursor::const_iterator successor;
+	};
+	std::vector<Frame> stack{};
+	const auto push{[&](const State state) {
+		on_stack[state] = true;
+		// The analyzer loses track of the 'nfa' reference captured by the lambda and reports a null call.
+		// NOLINTNEXTLINE(clang-analyzer-core.CallAndMessage)
+		stack.push_back({.state = state, .longest = 0, .successor = SuccessorCursor{nfa.delta[state]}.begin()});
+	}};
+
+	for (const State initial_state : nfa.initial) {
+		if (!useful[initial_state] || longest[initial_state] != NO_LONGEST_WORD) { continue; }
+		push(initial_state);
+		while (!stack.empty()) {
+			Frame& frame{stack.back()};
+			for (; frame.successor != std::default_sentinel; ++frame.successor) {
+				const State target{*frame.successor};
+				if (!useful[target]) { continue; }
+				if (on_stack[target]) { return std::nullopt; }
+				if (longest[target] == NO_LONGEST_WORD) { break; }
+				frame.longest = std::max(frame.longest, static_cast<State>(longest[target] + 1));
+			}
+			// The parent advances past the target once the target is finished.
+			if (frame.successor != std::default_sentinel) {
+				push(*frame.successor);
+				continue;
+			}
+
+			// A useful state is final or has a useful successor, so a length of 0 means a final state.
+			const State state{frame.state};
+			longest[state] = frame.longest;
+			on_stack[state] = false;
+			stack.pop_back();
+			if (!stack.empty()) {
+				Frame& parent{stack.back()};
+				parent.longest = std::max(parent.longest, static_cast<State>(longest[state] + 1));
+				++parent.successor;
+			}
+		}
+	}
+	return longest;
+}
+
+/// The search behind @c get_longest_words() and @c get_longest_words_lazy(), depth-first in lexicographic order over
+///  one shared word. The node of a word of length d is the macrostate of the states reached by the word whose longest
+///  word to a final state has length @c length_ - d, so every branch ends in a longest word: a path spelling a
+///  longest word passes through no other state. The macrostates, determinized on the fly, visit every word once
+///  however many accepting paths spell it.
+/// A node keeps one cursor over the symbol posts of each of its states, all nodes in one stack, so a search as deep as
+///  the automaton is large allocates nothing per node.
+class LongestWordSearch {
+  public:
+	LongestWordSearch(const Nfa& nfa, std::vector<State> longest) : nfa_{nfa}, longest_{std::move(longest)} {
+		for (const State state : nfa_.initial) {
+			if (const State length{longest_[state]}; length != NO_LONGEST_WORD) {
+				if (macrostate_.empty() || length > length_) {
+					macrostate_.clear();
+					length_ = length;
+				}
+				if (length == length_) { macrostate_.push_back(state); }
+			}
+		}
+		word_.reserve(length_);
+	}
+
+	/// The next longest word, or @c nullptr once the search is exhausted. Valid until the next call.
+	const mata::Word* next() {
+		if (!started_) {
+			started_ = true;
+			if (macrostate_.empty()) { return nullptr; }
+			if (length_ == 0) { return &word_; }
+			enter();
+		}
+		while (!node_begins_.empty()) {
+			const size_t depth{node_begins_.size() - 1};
+			const std::span<Cursor> cursors{std::span{cursors_}.subspan(node_begins_.back())};
+			word_.resize(depth);
+			mata::Symbol symbol{0};
+			bool enabled{false};
+			for (const Cursor& cursor : cursors) {
+				if (cursor.position != cursor.end && (!enabled || cursor.position->symbol < symbol)) {
+					symbol = cursor.position->symbol;
+					enabled = true;
+				}
+			}
+			if (!enabled) {
+				cursors_.resize(node_begins_.back());
+				node_begins_.pop_back();
+				continue;
+			}
+
+			const State target_length{static_cast<State>(length_ - depth - 1)};
+			size_t num_of_symbol_posts{0};
+			macrostate_.clear();
+			for (Cursor& cursor : cursors) {
+				if (cursor.position == cursor.end || cursor.position->symbol != symbol) { continue; }
+				for (const State target : cursor.position->targets) {
+					if (longest_[target] == target_length) { macrostate_.push_back(target); }
+				}
+				++cursor.position;
+				++num_of_symbol_posts;
+			}
+			if (macrostate_.empty()) { continue; }
+			if (num_of_symbol_posts > 1) {
+				std::ranges::sort(macrostate_);
+				macrostate_.erase(std::ranges::unique(macrostate_).begin(), macrostate_.end());
+			}
+			word_.push_back(symbol);
+			if (target_length == 0) { return &word_; }
+			enter();
+		}
+		return nullptr;
+	}
+
+  private:
+	/// The symbol posts of a state not visited yet by its search node.
+	struct Cursor {
+		StatePost::const_iterator position{};
+		StatePost::const_iterator end{};
+	};
+
+	/// Push the search node of @c macrostate_.
+	void enter() {
+		node_begins_.push_back(cursors_.size());
+		for (const State state : macrostate_) {
+			const StatePost& state_post{nfa_.delta[state]};
+			cursors_.push_back({.position = state_post.begin(), .end = state_post.end()});
+		}
+	}
+
+	const Nfa& nfa_;
+	/// The length of the longest word from each state to a final state, see @c get_longest_word_lengths().
+	const std::vector<State> longest_;
+	State length_{0}; ///< The length of the longest words.
+	mata::Word word_{}; ///< The word of the current search node.
+	std::vector<State> macrostate_{}; ///< The macrostate of the node being entered.
+	std::vector<Cursor> cursors_{}; ///< The cursors of all nodes on the search path, the deepest node last.
+	std::vector<size_t> node_begins_{}; ///< The first cursor of each node on the search path.
+	bool started_{false};
+};
+
+#if MATA_HAS_GENERATOR_SUPPORT
+std::generator<mata::Word> longest_words(LongestWordSearch search) {
+	while (const mata::Word* word{search.next()}) { co_yield *word; }
+}
+#endif
+} // namespace
+
+std::optional<std::set<mata::Word>> mata::applications::strings::get_longest_words(const Nfa& nfa) {
+	std::optional<std::vector<State>> longest{get_longest_word_lengths(nfa)};
+	if (!longest.has_value()) { return std::nullopt; }
+	LongestWordSearch search{nfa, std::move(*longest)};
+	std::set<Word> result{};
+	// The words come in lexicographic order, so each is appended in constant time.
+	while (const Word* word{search.next()}) { result.emplace_hint(result.end(), *word); }
+	return result;
+}
+
+#if MATA_HAS_GENERATOR_SUPPORT
+std::optional<std::generator<mata::Word>> mata::applications::strings::get_longest_words_lazy(const Nfa& nfa) {
+	std::optional<std::vector<State>> longest{get_longest_word_lengths(nfa)};
+	if (!longest.has_value()) { return std::nullopt; }
+	return longest_words(LongestWordSearch{nfa, std::move(*longest)});
+}
+#endif
+
 std::set<mata::Symbol> mata::applications::strings::get_accepted_symbols(const Nfa& nfa) {
 	std::set<mata::Symbol> accepted_symbols;
 	for (const State init : nfa.initial) {
 		for (const SymbolPost& symbol_post_init : nfa.delta[init]) {
-			mata::Symbol sym = symbol_post_init.symbol;
+			const mata::Symbol sym = symbol_post_init.symbol;
 			if (auto symbol_it = accepted_symbols.lower_bound(sym);
 				(symbol_it == accepted_symbols.end() || *symbol_it != sym) &&
 				nfa.final.intersects_with(symbol_post_init.targets)) {
@@ -143,7 +328,7 @@ std::set<std::pair<int, int>> mata::applications::strings::get_word_lengths(cons
 	while (curr_state.has_value()) {
 		visited.insert(curr_state.value());
 		handles[curr_state.value()] = cnt++;
-		nfa::StatePost post = one_letter.delta[curr_state.value()];
+		const nfa::StatePost post = one_letter.delta[curr_state.value()];
 
 		curr_state.reset();
 		MATA_ASSERT(post.size() <= 1);
@@ -173,11 +358,9 @@ bool mata::applications::strings::is_lang_eps(const Nfa& nfa) {
 	Nfa tr_aut{nfa};
 	tr_aut.trim();
 	if (tr_aut.initial.empty()) { return false; }
-	for (const auto& ini : tr_aut.initial) {
-		if (!tr_aut.final[ini]) { return false; }
-		if (!tr_aut.delta[ini].empty()) { return false; }
-	}
-	return true;
+	return std::ranges::all_of(tr_aut.initial, [&](const auto& ini) {
+		return tr_aut.delta[ini].empty() && tr_aut.final[ini];
+	});
 }
 
 namespace {
@@ -313,9 +496,9 @@ std::optional<std::vector<mata::Word>>
 		}
 		const Symbol symbol{frame.symbol_post->symbol};
 		const State target{*frame.target};
-		++frame.target;
+		frame.target = std::next(frame.target);
 		const size_t new_counts{symbol == nft::EPSILON ? frame.counts : frame.counts + radix[frame.level]};
-		const size_t new_config{target * num_of_counts + new_counts};
+		const size_t new_config{(target * num_of_counts) + new_counts};
 		if (!visit(new_config, SearchNode{.prev = frame.config, .symbol = symbol, .level = frame.level})) { continue; }
 		if (new_counts == full_counts && nft.final[target]) { return words_leading_to(new_config); }
 		enter(new_config); // Invalidates 'frame'.

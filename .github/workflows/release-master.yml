@@ -156,19 +156,14 @@ jobs:
             --json number \
             --jq '.[0].number')
           gh pr merge "$PR_NUMBER" --auto --merge
-  deploy-docs:
+  deploy-website:
     needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.merge_commit_sha }}
-      - uses: ./.github/workflows/actions/docs
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: docs/_build/html
+    permissions:
+      contents: write
+    uses: ./.github/workflows/website.yml
+    with:
+      ref: ${{ github.event.pull_request.merge_commit_sha }}
+      version: master
   deploy-pypi:
     needs: release
     runs-on: ubuntu-latest

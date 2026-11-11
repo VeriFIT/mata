@@ -47,7 +47,7 @@ Nfa create_empty_string_nfa();
  * @param[in] alphabet Alphabet to construct sigma star automaton with. When alphabet is left empty, the default empty
  *  alphabet is used, creating an automaton accepting only the empty string.
  */
-Nfa create_sigma_star_nfa(std::shared_ptr<Alphabet> alphabet = std::make_shared<OnTheFlyAlphabet>());
+Nfa create_sigma_star_nfa(const std::shared_ptr<Alphabet>& alphabet = std::make_shared<OnTheFlyAlphabet>());
 
 /**
  * Creates Tabakov-Vardi random NFA.

@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Mata playground</title>
+    <meta
+      name="description"
+      content="Build finite automata from regular expressions or the .mata format, transform and combine them, and check emptiness, inclusion and equivalence with Mata, running in your browser."
+    />
+    <link
+      rel="canonical"
+      href="https://verifit.github.io/mata/master/playground/"
+    />
+    <meta
+      name="theme-color"
+      content="#F4F6F9"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#111A30"
+      media="(prefers-color-scheme: dark)"
+    />
+    <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml" />
+    <link
+      rel="preload"
+      href="../assets/fonts/ibm-plex-sans-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="../assets/fonts/ibm-plex-mono-400-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="../assets/site.css" />
+    <link rel="stylesheet" href="playground.css" />
+    <script src="../assets/theme.js"></script>
+    <script src="../assets/site.js" defer></script>
+    <script src="playground.js" type="module"></script>
+  </head>
+  <body class="playground-page">
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="masthead">
+      <div class="masthead-inner">
+        <a class="wordmark" href="../" aria-label="Mata home">
+          <svg class="wordmark-glyph" viewBox="0 0 32 32" aria-hidden="true">
+            <circle cx="16" cy="16" r="12.5" />
+            <circle cx="16" cy="16" r="8.5" />
+          </svg>
+          <span>Mata</span>
+        </a>
+        <nav class="site-nav" aria-label="Main">
+          <a href="./" aria-current="page">Playground</a>
+          <a href="../docs/">Documentation</a>
+          <a href="https://github.com/VeriFIT/mata">GitHub</a>
+        </nav>
+        <button
+          class="theme-toggle"
+          type="button"
+          aria-label="Switch between light and dark theme"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.5" />
+            <path d="M12 3.5a8.5 8.5 0 0 1 0 17z" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main id="main" class="playground">
+      <div class="playground-head">
+        <div>
+          <h1>Playground</h1>
+          <p class="playground-lead">
+            Mata compiled to WebAssembly and running in your browser. Change an
+            automaton or an operation, and the result follows.
+          </p>
+        </div>
+        <div class="head-actions">
+          <label class="visually-hidden" for="example">Example</label>
+          <select id="example" class="select">
+            <option value="">Load an example…</option>
+          </select>
+          <button id="copy-link" class="button button-small" type="button">
+            Copy link
+          </button>
+        </div>
+      </div>
+
+      <div class="workbench">
+        <form
+          class="controls"
+          id="controls"
+          autocomplete="off"
+          spellcheck="false"
+        >
+          <fieldset class="automaton-input" id="input-a">
+            <legend>Automaton A</legend>
+            <div
+              class="format-switch"
+              role="radiogroup"
+              aria-label="Format of A"
+            >
+              <label
+                ><input type="radio" name="aFormat" value="regex" checked />
+                Regular expression</label
+              >
+              <label
+                ><input type="radio" name="aFormat" value="mata" /> .mata</label
+              >
+            </div>
+            <textarea
+              id="a-text"
+              name="aText"
+              rows="2"
+              aria-describedby="a-hint a-error"
+            ></textarea>
+            <p class="hint" id="a-hint"></p>
+            <p class="field-error" id="a-error" hidden></p>
+          </fieldset>
+
+          <fieldset class="automaton-input" id="input-b">
+            <legend>Automaton B</legend>
+            <div
+              class="format-switch"
+              role="radiogroup"
+              aria-label="Format of B"
+            >
+              <label
+                ><input type="radio" name="bFormat" value="regex" checked />
+                Regular expression</label
+              >
+              <label
+                ><input type="radio" name="bFormat" value="mata" /> .mata</label
+              >
+            </div>
+            <textarea
+              id="b-text"
+              name="bText"
+              rows="2"
+              aria-describedby="b-hint b-error"
+            ></textarea>
+            <p class="hint" id="b-hint"></p>
+            <p class="field-error" id="b-error" hidden></p>
+          </fieldset>
+
+          <fieldset class="operations">
+            <legend>Operation</legend>
+            <div class="operation-group" role="group" aria-labelledby="ops-a">
+              <h2 class="group-title" id="ops-a">On A</h2>
+              <div class="chips">
+                <label class="chip"
+                  ><input type="radio" name="operation" value="show" /><span
+                    >Show</span
+                  ></label
+                >
+                <label class="chip"
+                  ><input
+                    type="radio"
+                    name="operation"
+                    value="determinize"
+                  /><span>Determinize</span></label
+                >
+                <label class="chip"
+                  ><input type="radio" name="operation" value="minimize" /><span
+                    >Minimize</span
+                  ></label
+                >
+                <label class="chip"
+                  ><input type="radio" name="operation" value="reduce" /><span
+                    >Reduce</span
+                  ></label
+                >
+                <label class="chip"
+                  ><input type="radio" name="operation" value="trim" /><span
+                    >Trim</span
+                  ></label
+                >
+                <label class="chip"
+                  ><input
+                    type="radio"
+                    name="operation"
+                    value="complement"
+                  /><span>Complement</span></label
+                >
+                <label class="chip"
+                  ><input type="radio" name="operation" value="reverse" /><span
+                    >Reverse</span
+                  ></label
+                >
+                <label class="chip"
+                  ><input
+                    type="radio"
+                    name="operation"
+                    value="remove_epsilon"
+                  /><span>Remove ε</span></label
+                >
+              </div>
+            </div>
+            <div class="operation-group" role="group" aria-labelledby="ops-ab">
+              <h2 class="group-title" id="ops-ab">On A and B</h2>
+              <div class="chips">
+                <label class="chip"
+                  ><input
+                    type="radio"
+                    name="operation"
+                    value="intersection"
+                  /><span>Intersection</span></label
+                >
+                <label class="chip"
+                  ><input type="radio" name="operation" value="union" /><span
+                    >Union</span
+                  ></label
+                >
+                <label class="chip"
+                  ><input
+                    type="radio"
+                    name="operation"
+                    value="concatenation"
+                  /><span>Concatenation</span></label
+                >
+                <label class="chip"
+                  ><input
+                    type="radio"
+                    name="operation"
+                    value="difference"
+                  /><span>Difference</span></label
+                >
+              </div>
+            </div>
+            <div class="operation-group" role="group" aria-labelledby="ops-q">
+              <h2 class="group-title" id="ops-q">Questions</h2>
+              <div class="chips">
+                <label class="chip"
+                  ><input type="radio" name="operation" value="is_empty" /><span
+                    >Is A empty?</span
+                  ></label
+                >
+                <label class="chip"
+                  ><input
+                    type="radio"
+                    name="operation"
+                    value="is_universal"
+                  /><span>Is A universal?</span></label
+                >
+                <label class="chip"
+                  ><input
+                    type="radio"
+                    name="operation"
+                    value="is_included"
+                  /><span>Is A included in B?</span></label
+                >
+                <label class="chip"
+                  ><input
+                    type="radio"
+                    name="operation"
+                    value="are_equivalent"
+                  /><span>Are A and B equivalent?</span></label
+                >
+                <label class="chip"
+                  ><input
+                    type="radio"
+                    name="operation"
+                    value="is_in_lang"
+                  /><span>Does A accept <i>w</i>?</span></label
+                >
+              </div>
+            </div>
+
+            <div class="option" id="word-option" hidden>
+              <label for="word">Word <i>w</i></label>
+              <input
+                id="word"
+                name="word"
+                type="text"
+                aria-describedby="word-hint word-error"
+              />
+              <p class="hint" id="word-hint">
+                Type the word character by character; write \xHH for any byte.
+                Leave it empty for the empty word.
+              </p>
+              <p class="field-error" id="word-error" hidden></p>
+            </div>
+
+            <div class="option" id="alphabet-option" hidden>
+              <label for="alphabet">Alphabet</label>
+              <select
+                id="alphabet"
+                name="alphabet"
+                class="select"
+                aria-describedby="alphabet-hint"
+              >
+                <option value="used">The symbols that occur in A</option>
+                <option value="bytes">All 256 bytes</option>
+              </select>
+              <p class="hint" id="alphabet-hint">
+                The complement and universality depend on the alphabet.
+              </p>
+            </div>
+          </fieldset>
+        </form>
+
+        <section class="output" aria-labelledby="output-title">
+          <div class="output-head">
+            <h2 id="output-title">Result</h2>
+            <p class="status" id="status" role="status"></p>
+          </div>
+          <div class="verdict-box" id="verdict" hidden></div>
+          <div class="notes" id="notes" hidden></div>
+          <div class="views" id="views" hidden>
+            <div
+              class="tab-list view-tabs"
+              role="tablist"
+              aria-label="Automaton"
+            ></div>
+            <div class="view-panels"></div>
+          </div>
+          <div class="message" id="message"></div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="colophon">
+      <div class="colophon-inner">
+        <p>
+          The playground runs <a href="https://github.com/VeriFIT/mata">Mata</a
+          ><span id="revision"></span> and
+          <a href="https://graphviz.org/">Graphviz</a> (through
+          <a href="https://github.com/mdaines/viz-js">Viz.js</a>), compiled to
+          WebAssembly. Your automata stay in your browser. Regular expressions
+          follow the
+          <a href="https://github.com/google/re2/wiki/Syntax">RE2 syntax</a>,
+          and automata the
+          <a href="../docs/automata-format.html"><code>.mata</code> format</a>.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

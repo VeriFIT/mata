@@ -30,3 +30,21 @@ def test_conversions(fa_one_divisible_by_two):
     assert len(G) == 0
     assert list(G.nodes) == []
     assert list(G.edges) == []
+
+
+def test_to_networkx_graph_keeps_parallel_symbols():
+    """All symbols between a pair of states have to survive the conversion."""
+    nfa = mata_nfa.Nfa(2)
+    for symbol in (2, 0, 1):
+        nfa.add_transition(0, symbol, 1)
+    nfa.add_transition(1, 7, 1)
+
+    G = nfa.to_networkx_graph()
+
+    # Plain (source, target) edges, so that unpacking `G.edges` keeps working.
+    assert list(G.edges) == [(0, 1), (1, 1)]
+    assert G[0][1]["symbols"] == [0, 1, 2]
+    # A single-symbol edge keeps the scalar attribute; an ambiguous one must not.
+    assert "symbol" not in G[0][1]
+    assert G[1][1]["symbols"] == [7]
+    assert G[1][1]["symbol"] == 7

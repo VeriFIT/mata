@@ -49,6 +49,15 @@ TEST_CASE("mata::nft::Nft()") {
 	CHECK(nft.levels == std::vector<Level>{0, 3, 1});
 }
 
+TEST_CASE("mata::nft::Nft() from a moved NFA keeps the state count of its own members") {
+	const nfa::Nfa nfa{3, {0}, {2}};
+	// Used to abort: the assertion read 'other.num_of_states()' after the members had been moved out of it.
+	const Nft nft{nfa::Nfa{nfa}, Levels{2, {0, 1, 0}}};
+	CHECK(nft.num_of_states() == 3);
+	CHECK(nft.levels.num_of_levels == 2);
+	CHECK(nft.levels == std::vector<Level>{0, 1, 0});
+}
+
 TEST_CASE("mata::nft::Nft per-level alphabets are initialized and updated correctly") {
 	auto shared_alphabet = std::make_shared<IntAlphabet>();
 	auto input_alphabet = std::make_shared<IntAlphabet>();
@@ -221,16 +230,19 @@ TEST_CASE("mata::nft::Nft::add_state() does not reset the level of an existing s
 	CHECK(nft.levels[q1] == 1);
 	CHECK(nft.levels[q2] == 1);
 
+	// insert_word() adds max(source, target) internally; that must not reset the level of an existing target, or the
+	//  level comparison throws. The word has to span a whole level cycle to land on level 1 again.
+	REQUIRE_NOTHROW(nft.insert_word(q1, Word{5, 6, 7}, q2));
+	CHECK(nft.levels[q1] == 1);
+	CHECK(nft.levels[q2] == 1);
+	CHECK(nft.num_of_states() == 5);
+
 	// Adding an existing state again is a no-op for its level.
 	nft.add_state(q1);
 	nft.add_state(q2);
 	CHECK(nft.levels[q1] == 1);
 	CHECK(nft.levels[q2] == 1);
-	CHECK(nft.num_of_states() == 3);
-
-	// insert_word() between two level-1 states now compares their true levels instead of the levels
-	//  add_state() used to reset; the word has to span a whole level cycle to land on level 1 again.
-	REQUIRE_NOTHROW(nft.insert_word(q1, Word{5, 6, 7}, q2));
+	CHECK(nft.num_of_states() == 5);
 }
 
 TEST_CASE("mata::nft::Trans::operator<<") {
@@ -768,7 +780,7 @@ TEST_CASE("mata::nft::construct() correct calls") { // {{{
 		parsec.type = nft::TYPE_NFT;
 		parsec.dict.insert({"Initial", {"q1"}});
 		parsec.dict.insert({"Final", {"q2"}});
-		parsec.body = {{"q1", "a", "q2"}};
+		parsec.body = {mata::parser::BodyLine{{"q1", "a", "q2"}}};
 
 		aut = builder::construct(parsec, &alphabet);
 		CHECK(aut.levels.num_of_levels == DEFAULT_NUM_OF_LEVELS);
@@ -786,21 +798,21 @@ TEST_CASE("mata::nft::construct() correct calls") { // {{{
 		parsec.type = nft::TYPE_NFT;
 		parsec.dict.insert({"Initial", {"q1", "q3"}});
 		parsec.dict.insert({"Final", {"q5"}});
-		parsec.body.push_back({"q1", "a", "q3"});
-		parsec.body.push_back({"q1", "a", "q10"});
-		parsec.body.push_back({"q1", "b", "q7"});
-		parsec.body.push_back({"q3", "a", "q7"});
-		parsec.body.push_back({"q3", "b", "q9"});
-		parsec.body.push_back({"q9", "a", "q9"});
-		parsec.body.push_back({"q7", "b", "q1"});
-		parsec.body.push_back({"q7", "a", "q3"});
-		parsec.body.push_back({"q7", "c", "q3"});
-		parsec.body.push_back({"q10", "a", "q7"});
-		parsec.body.push_back({"q10", "b", "q7"});
-		parsec.body.push_back({"q10", "c", "q7"});
-		parsec.body.push_back({"q7", "a", "q5"});
-		parsec.body.push_back({"q5", "a", "q5"});
-		parsec.body.push_back({"q5", "c", "q9"});
+		parsec.body.push_back(mata::parser::BodyLine{{"q1", "a", "q3"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q1", "a", "q10"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q1", "b", "q7"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q3", "a", "q7"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q3", "b", "q9"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q9", "a", "q9"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q7", "b", "q1"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q7", "a", "q3"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q7", "c", "q3"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q10", "a", "q7"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q10", "b", "q7"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q10", "c", "q7"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q7", "a", "q5"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q5", "a", "q5"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q5", "c", "q9"}});
 
 		aut = builder::construct(parsec, &alphabet);
 
@@ -828,14 +840,14 @@ TEST_CASE("mata::nft::construct() invalid calls") { // {{{
 
 	SECTION("construct() call with an epsilon transition") {
 		parsec.type = nft::TYPE_NFT;
-		parsec.body = {{"q1", "q2"}};
+		parsec.body = {mata::parser::BodyLine{{"q1"}, {"q2"}}};
 
 		CHECK_THROWS_WITH(builder::construct(parsec), Catch::Matchers::ContainsSubstring("Epsilon transition"));
 	}
 
 	SECTION("construct() call with a nonsense transition") {
 		parsec.type = nft::TYPE_NFT;
-		parsec.body = {{"q1", "a", "q2", "q3"}};
+		parsec.body = {mata::parser::BodyLine{{"q1", "a", "q2", "q3"}}};
 
 		CHECK_THROWS_WITH(plumbing::construct(&aut, parsec), Catch::Matchers::ContainsSubstring("Invalid transition"));
 	}
@@ -1628,6 +1640,19 @@ TEST_CASE("mata::nft::is_included()") { // {{{
 		CHECK_NOTHROW(is_included(smaller, bigger, &alph));
 	}
 } // }}}
+
+TEST_CASE("mata::nft::is_included() and are_equivalent() with a jump over 2^32 - 1 levels") {
+	// The lazy exploration of jumps must not allocate per level of a jump the search does not read: no final state is
+	//  reachable here, so it reads none.
+	Nft nft{Nft::with_levels(std::numeric_limits<Level>::max())};
+	nft.add_state_with_level(0);
+	nft.add_state_with_level(0);
+	nft.initial.insert(0);
+	nft.delta.add(0, DONT_CARE, 1);
+	nft.delta.add(1, 0, 0);
+	CHECK(is_included(nft, nft));
+	CHECK(are_equivalent(nft, nft));
+}
 
 TEST_CASE("mata::nft::are_equivalent") {
 	Nft smaller(10);
@@ -4098,6 +4123,24 @@ TEST_CASE("mata::nft::print_to_mata()") {
 	CHECK(are_equivalent(aut_big, nft::builder::parse_from_mata(aut_big.print_to_mata())));
 }
 
+TEST_CASE("mata::nft::print_to_mata() with names that need quoting (#1021)") {
+	for (const std::string name :
+		 {"foo bar", "#", "a|b", "(x)", "x\"y", "@at", "%p", "!", "&", "|", "a@b", "a%b", "q5", "n5", ""}) {
+		// A name ending in a backslash cannot be quoted: the reader reads the closing \" as an escaped quote.
+		auto alphabet{std::make_shared<OnTheFlyAlphabet>()};
+		alphabet->add_new_symbol(name);
+		Nft nft{Nft::with_levels(Levels{2, {0, 1}}, 2, {0}, {1}, std::make_shared<AlphabetLevels>(alphabet))};
+		nft.delta.add(0, alphabet->translate_symb(name), 1);
+		const std::string printed{nft.print_to_mata()};
+
+		auto read_alphabet{std::make_shared<OnTheFlyAlphabet>()};
+		// The section-based construct() reads the %Levels lines, which the IntermediateAut-based one drops.
+		const Nft read_back{nft::builder::construct(mata::parser::parse_mf(printed)[0], read_alphabet.get())};
+		CHECK(are_equivalent(read_back, nft));
+		CHECK(read_alphabet->get_symbol_map().contains(name));
+	}
+}
+
 TEST_CASE("mata::nft::Nft::trim() bug") {
 	Nft aut(5, {0}, {4});
 	aut.delta.add(0, 122, 1);
@@ -5306,6 +5349,28 @@ TEST_CASE("mata::nft::project_to()") {
 		expected.delta.add(7, 11, 0);
 		CHECK(nft::are_equivalent(projection, expected));
 	}
+
+	SECTION("self-loop of a state reached over projected levels") {
+		nft = Nft::with_levels(2);
+		const State p = nft.add_state_with_level(0);
+		const State s = nft.add_state_with_level(1);
+		const State c = nft.add_state_with_level(0);
+		const State d = nft.add_state_with_level(0);
+		const State f = nft.add_state_with_level(0);
+		nft.initial.insert(p);
+		nft.final.insert(f);
+		nft.delta.add(p, 'x', s);
+		nft.delta.add(s, 'y', c);
+		nft.delta.add(s, 'z', d);
+		nft.delta.add(c, 'a', c);
+		nft.delta.add(c, 'e', f);
+		nft.delta.add(d, 'b', f);
+		projection = project_to(nft, 0);
+		// The loop of c must not let 'b' follow 'a'.
+		expected = Nft{nfa::builder::create_from_regex("(xa*e)|(xb)")};
+		CHECK(nft::are_equivalent(projection, expected));
+		CHECK(!projection.is_in_lang_by_levels({{'x', 'a', 'b'}}));
+	}
 }
 
 TEST_CASE("mata::nft::project_out() and mata::nft::project_to() keep per-level alphabets in sync") {
@@ -6295,6 +6360,60 @@ TEST_CASE("mata::nft::Nft::insert_identity()") {
 	}
 }
 
+TEST_CASE("mata::nft::Nft::insert_identity() honours the jump mode - issue #791") {
+	for (const JumpMode jump_mode : {JumpMode::RepeatSymbol, JumpMode::AppendDontCares, JumpMode::NoJump}) {
+		for (const size_t num_of_levels : {size_t{1}, size_t{2}, size_t{3}, size_t{4}}) {
+			CAPTURE(static_cast<int>(jump_mode), num_of_levels);
+			Nft nft{Nft::with_levels({num_of_levels, {0}}, 1, {0}, {0})};
+			nft.insert_identity(0, {'a', 'b'}, jump_mode);
+
+			// The explicit word loop through fresh inner states, one transition per level.
+			Nft word_loop{Nft::with_levels({num_of_levels, {0}}, 1, {0}, {0})};
+			word_loop.insert_word(0, Word(num_of_levels, 'a'), 0);
+			word_loop.insert_word(0, Word(num_of_levels, 'b'), 0);
+			CHECK(are_equivalent(nft, word_loop, jump_mode));
+
+			if (jump_mode == JumpMode::RepeatSymbol || num_of_levels == 1) {
+				// One full-span self-loop per symbol.
+				CHECK(nft.num_of_states() == 1);
+				CHECK(nft.delta.num_of_transitions() == 2);
+				CHECK(nft.contains_jump_transitions() == (num_of_levels > 1));
+			} else {
+				CHECK(nft.num_of_states() == 1 + 2 * (num_of_levels - 1));
+				CHECK(nft.delta.num_of_transitions() == 2 * num_of_levels);
+				CHECK(!nft.contains_jump_transitions());
+			}
+
+			for (const Word& word : {Word{}, Word{'a'}, Word{'b', 'a'}, Word{'a', 'a', 'b'}}) {
+				CHECK(nft.is_in_lang_by_levels(std::vector<Word>(num_of_levels, word), false, jump_mode));
+			}
+			// Each level must read the same word: no DONT_CARE padding, no shifted or shortened copy.
+			if (num_of_levels > 1) {
+				for (const auto& [first, rest] : std::vector<std::pair<Word, Word>>{
+						 {{'a'}, {'b'}}, {{'a', 'b'}, {'b', 'a'}}, {{'a'}, {'a', 'a'}}, {{'a'}, {}}, {{'c'}, {'c'}}
+					 }) {
+					std::vector<Word> level_words(num_of_levels, rest);
+					level_words[0] = first;
+					CHECK(!nft.is_in_lang_by_levels(level_words, false, jump_mode));
+				}
+			}
+		}
+	}
+
+	SECTION("A state on a nonzero level gets the explicit loop in every mode") {
+		for (const JumpMode jump_mode : {JumpMode::RepeatSymbol, JumpMode::AppendDontCares, JumpMode::NoJump}) {
+			CAPTURE(static_cast<int>(jump_mode));
+			Nft nft{Nft::with_levels({2, {0, 1}}, 2, {0}, {0})};
+			nft.delta.add(0, 'x', 1);
+			nft.delta.add(1, 'y', 0);
+			nft.insert_identity(1, 'c', jump_mode);
+			CHECK(!nft.contains_jump_transitions());
+			CHECK(nft.is_in_lang_by_levels({{'x', 'c'}, {'c', 'y'}}, false, jump_mode));
+			CHECK(!nft.is_in_lang_by_levels({{'x', 'c'}, {'y'}}, false, jump_mode));
+		}
+	}
+}
+
 TEST_CASE("mata::nft::Nft::add_transition() using a symbol name") {
 	// 3-level NFT, source at level 0 and a pre-existing target at level 2: a jump spanning levels 0 and 1.
 	Nft nft{Nft::with_levels({3, {0, 0, 2}}, 3)};
@@ -6867,7 +6986,7 @@ TEST_CASE("mata::nft::Nft::apply()") {
 	SECTION("apply with 5 tapes") {
 		Nfa nfa = nfa::builder::create_from_regex("(a|b)*");
 		Nft nft{Nft::with_levels({5, {0, 0}}, 1, {0}, {0})};
-		nft.insert_identity(0, 'a');
+		nft.insert_identity(0, 'a', JumpMode::NoJump);
 		CHECK(nft.apply(nfa, 0, true, JumpMode::NoJump).levels.num_of_levels == 4);
 		CHECK(nft.apply(nfa, 3, false, JumpMode::NoJump).levels.num_of_levels == 5);
 	}
@@ -6910,6 +7029,63 @@ TEST_CASE("mata::nft::Nft::unwind_jumps() validates level metadata") {
 	}
 }
 
+TEST_CASE("mata::nft inclusion and equivalence validate level metadata") {
+	// The two-level relation {(a, a)}.
+	Nft valid{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+	valid.delta.add(0, 'a', 1);
+	valid.delta.add(1, 'a', 2);
+	const auto require_rejected = [&](const Nft& malformed) {
+		for (const std::string algorithm : {"naive", "antichains"}) {
+			const ParameterMap params{{"algorithm", algorithm}};
+			CHECK_THROWS_AS(
+				is_included(malformed, valid, nullptr, JumpMode::RepeatSymbol, params), std::invalid_argument
+			);
+			CHECK_THROWS_AS(
+				is_included(valid, malformed, nullptr, JumpMode::RepeatSymbol, params), std::invalid_argument
+			);
+			CHECK_THROWS_AS(are_equivalent(malformed, valid, JumpMode::RepeatSymbol, params), std::invalid_argument);
+			CHECK_THROWS_AS(are_equivalent(valid, malformed, JumpMode::RepeatSymbol, params), std::invalid_argument);
+		}
+	};
+
+	SECTION("the operands are well-formed") {
+		CHECK(is_included(valid, valid));
+		CHECK(are_equivalent(valid, valid));
+	}
+
+	SECTION("a missing level vector is rejected") {
+		Nft missing{Nft::with_levels(2)};
+		missing.delta.add(0, 'a', 1);
+		missing.delta.add(1, 'a', 2);
+		missing.initial = {0};
+		missing.final = {2};
+		REQUIRE(missing.levels.empty());
+		require_rejected(missing);
+	}
+
+	SECTION("a short level vector is rejected") {
+		Nft short_levels{Nft::with_levels({2, {0, 1}}, 2, {0}, {2})};
+		short_levels.delta.add(0, 'a', 1);
+		short_levels.delta.add(1, 'a', 2);
+		require_rejected(short_levels);
+	}
+
+	SECTION("a level at or above the number of levels is rejected") {
+		Nft out_of_range{valid};
+		out_of_range.levels[1] = static_cast<Level>(out_of_range.levels.num_of_levels);
+		require_rejected(out_of_range);
+	}
+
+	SECTION("malformed levels are rejected before the level counts are compared") {
+		Nft out_of_range{Nft::with_levels({3, {0, 1, 2, 0}}, 4, {0}, {3})};
+		out_of_range.delta.add(0, 'a', 1);
+		out_of_range.delta.add(1, 'a', 2);
+		out_of_range.delta.add(2, 'a', 3);
+		out_of_range.levels[2] = 3;
+		require_rejected(out_of_range);
+	}
+}
+
 TEST_CASE("mata::nft::Nft::unwind_jumps() on a transducer without jumps or DONT_CARE") {
 	// Every transition advances exactly one level and no DONT_CARE is expanded: unwinding is an identity.
 	Nft nft{Nft::with_levels({3, {0, 1, 2, 0}}, 4, {0}, {3})};
@@ -6920,4 +7096,44 @@ TEST_CASE("mata::nft::Nft::unwind_jumps() on a transducer without jumps or DONT_
 	CHECK(unwound.is_lang_empty() == nft.is_lang_empty());
 	CHECK(unwound.num_of_states() == nft.num_of_states());
 	CHECK(unwound.delta.num_of_transitions() == nft.delta.num_of_transitions());
+}
+
+TEST_CASE("mata::nft::Nft::to_nfa_update_copy() flattens exactly as unwind_jumps()") {
+	const OrdVector<Symbol> symbols{'a', 'b'};
+	const auto require_flattened_as_unwound = [&](const Nft& nft, const OrdVector<Symbol>& replacements) {
+		for (const JumpMode jump_mode : {JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+			const mata::nfa::Nfa flattened{nft.to_nfa_update_copy(replacements, jump_mode)};
+			const mata::nfa::Nfa unwound{nft.unwind_jumps(replacements, jump_mode).to_nfa_copy()};
+			CHECK(flattened.is_identical(unwound));
+		}
+	};
+	// The three-level relation {(a, b, a)} plus DONT_CARE on the second level.
+	Nft nft{Nft::with_levels({3, {0, 1, 2, 0}}, 4, {0}, {3})};
+	nft.delta.add(0, 'a', 1);
+	nft.delta.add(1, 'b', 2);
+	nft.delta.add(2, 'a', 3);
+
+	SECTION("nothing to unwind: a copy of the transducer") {
+		require_flattened_as_unwound(nft, symbols);
+		CHECK(nft.to_nfa_update_copy(symbols).is_identical(nft.to_nfa_copy()));
+	}
+
+	SECTION("DONT_CARE kept as its own replacement") {
+		nft.delta.add(1, DONT_CARE, 2);
+		require_flattened_as_unwound(nft, {DONT_CARE});
+		CHECK(nft.to_nfa_update_copy({DONT_CARE}).is_identical(nft.to_nfa_copy()));
+	}
+
+	SECTION("DONT_CARE spelled out") {
+		nft.delta.add(1, DONT_CARE, 2);
+		require_flattened_as_unwound(nft, symbols);
+		// 1 -b-> 2 and 1 -DONT_CARE-> 2 become 1 -a-> 2 and 1 -b-> 2.
+		CHECK(nft.to_nfa_update_copy(symbols).delta.num_of_transitions() == 4);
+	}
+
+	SECTION("a jump") {
+		nft.delta.add(0, 'b', 3);
+		require_flattened_as_unwound(nft, symbols);
+		CHECK(nft.to_nfa_update_copy(symbols).num_of_states() == 6);
+	}
 }

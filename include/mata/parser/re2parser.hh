@@ -5,13 +5,14 @@
 #ifndef MATA_RE2_PARSER_HH
 #define MATA_RE2_PARSER_HH
 
+#include <cstdint>
 #include <string>
 
 #include "mata/nfa/nfa.hh"
 
 // Encoding for the regular expression
 // Encoding mirrors re2::Regexp::ParseFlags; enum class cannot be included in public header.
-enum class Encoding { Utf8 = 0, Latin1 = 1 << 5 };
+enum class Encoding : std::uint8_t { Utf8 = 0, Latin1 = 1 << 5 };
 
 namespace mata::parser {
 /**

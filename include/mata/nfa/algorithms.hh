@@ -346,10 +346,10 @@ Nfa concatenate_eps(
 /**
  * @brief Reduce NFA using (forward) simulation.
  *
- * @param[in] nfa NFA to reduce
+ * @param[in] aut NFA to reduce
  * @param[out] state_renaming Map mapping original states to the reduced states.
  */
-Nfa reduce_simulation(const Nfa& nfa, StateRenaming& state_renaming);
+Nfa reduce_simulation(const Nfa& aut, StateRenaming& state_renaming);
 
 /**
  * @brief Quotient an NFA, or a successor-closed part of it, by its forward simulation.

@@ -71,6 +71,15 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 #
 html_theme = "alabaster"
 
+# Links from the sidebar to the pages built from the same branch.
+website_url = os.environ.get("MATA_WEBSITE_URL", "https://verifit.github.io/mata/master/")
+html_theme_options = {
+    "extra_nav_links": {
+        "Mata website": website_url,
+        "Playground": f"{website_url}playground/",
+    },
+}
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".

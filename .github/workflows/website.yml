@@ -1,0 +1,150 @@
+name: Website
+# Builds the landing page, playground and documentation of one branch under master/ or devel/. The root page lets
+#  visitors choose between them. Releases deploy their branch; pull requests only check that the master version builds.
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit to build the website from.
+        type: string
+        required: true
+      version:
+        description: Branch directory to publish.
+        type: string
+        default: master
+      deploy:
+        description: Deploy the website to GitHub Pages.
+        type: boolean
+        default: true
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Branch directory to publish.
+        type: choice
+        options:
+          - master
+          - devel
+        default: master
+      deploy:
+        description: Deploy the website to GitHub Pages.
+        type: boolean
+        default: true
+  pull_request:
+    paths:
+      - site/**
+      - bindings/wasm/**
+      - .github/workflows/website.yml
+permissions:
+  contents: read
+env:
+  WEBSITE_VERSION: ${{ inputs.version || 'master' }}
+  MATA_WEBSITE_URL: https://verifit.github.io/mata/${{ inputs.version || 'master' }}/
+  # Releases and pull requests build their triggering revision; manual runs build the selected branch.
+  WEBSITE_SOURCE_REF: ${{ inputs.ref || github.event.pull_request.head.sha || (github.event_name == 'workflow_dispatch' && inputs.version) || github.sha }}
+  # The same release of Emscripten as the WebAssembly tests of the Rust bindings in code-quality.yml.
+  EMSCRIPTEN_VERSION: 6.0.13
+  # Viz.js, the build of Graphviz that draws automata in the playground.
+  VIZ_VERSION: 3.31.0
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ env.WEBSITE_SOURCE_REF }}
+      - uses: ./.github/workflows/actions/docs
+      - uses: actions/upload-artifact@v7
+        with:
+          name: docs
+          path: docs/_build/html
+  playground:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ env.WEBSITE_SOURCE_REF }}
+      - name: Install Emscripten
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$HOME/emsdk"
+          "$HOME/emsdk/emsdk" install "$EMSCRIPTEN_VERSION"
+          "$HOME/emsdk/emsdk" activate "$EMSCRIPTEN_VERSION"
+      - name: Build Mata for the playground
+        run: |
+          source "$HOME/emsdk/emsdk_env.sh"
+          emcmake cmake -S bindings/wasm -B build-wasm -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-wasm --parallel
+      - name: Test the build under Node
+        run: |
+          source "$HOME/emsdk/emsdk_env.sh"
+          node bindings/wasm/smoke-test.mjs build-wasm/mata-playground.js
+      - name: Download Viz.js
+        run: |
+          npm pack "@viz-js/viz@$VIZ_VERSION" --pack-destination "$RUNNER_TEMP"
+          tar -xzf "$RUNNER_TEMP/viz-js-viz-$VIZ_VERSION.tgz" -C "$RUNNER_TEMP"
+      - name: Collect the generated files of the playground
+        run: |
+          mkdir -p "$RUNNER_TEMP/playground/vendor"
+          cp build-wasm/mata-playground.js build-wasm/mata-playground.wasm "$RUNNER_TEMP/playground/"
+          # A single module with Graphviz inlined; its header carries the copyright notices.
+          cp "$RUNNER_TEMP/package/dist/viz.js" "$RUNNER_TEMP/playground/vendor/viz.js"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: playground
+          path: ${{ runner.temp }}/playground
+  site:
+    needs: [docs, playground]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.WEBSITE_SOURCE_REF }}
+      - name: Copy the pages
+        run: |
+          mkdir -p "_site/$WEBSITE_VERSION"
+          cp -r site/. "_site/$WEBSITE_VERSION/"
+          sed --in-place "s|https://verifit.github.io/mata/master/|$MATA_WEBSITE_URL|g" \
+            "_site/$WEBSITE_VERSION/index.html" "_site/$WEBSITE_VERSION/playground/index.html"
+          rm "_site/$WEBSITE_VERSION/site.just" "_site/$WEBSITE_VERSION/serve.py" \
+            "_site/$WEBSITE_VERSION/selector.html" "_site/$WEBSITE_VERSION/404.html"
+          cp site/selector.html _site/index.html
+          cp site/404.html _site/404.html
+      - uses: actions/download-artifact@v8
+        with:
+          name: docs
+          path: _site/${{ env.WEBSITE_VERSION }}/docs
+      - uses: actions/download-artifact@v8
+        with:
+          name: playground
+          path: _site/${{ env.WEBSITE_VERSION }}/playground
+      - uses: actions/upload-artifact@v7
+        with:
+          name: website
+          path: _site
+  deploy:
+    needs: site
+    # Pull requests leave the input unset.
+    if: inputs.deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v8
+        with:
+          name: website
+          path: _site
+      # GitHub Pages would otherwise build the site with Jekyll, which leaves out the directories of the documentation
+      #  that start with an underscore.
+      - name: Turn off Jekyll
+        run: touch _site/.nojekyll
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: _site
+          # Each branch owns the root selector and its directory; preserve the other branch's current deployment.
+          clean-exclude: ${{ env.WEBSITE_VERSION == 'master' && 'devel' || 'master' }}

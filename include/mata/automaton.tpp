@@ -63,7 +63,7 @@ template <typename Self> bool Automaton::is_lang_empty(this const Self& self, nf
 		}
 
 		// No `delta.empty()` guard: `for_each_successor()` of an empty or unallocated state post already
-		//  does nothing, while `Delta::empty()` walks state posts until it finds a nonempty one.
+		//  does nothing.
 		self.delta.for_each_successor(state, [&](const nfa::State target) {
 			if (predecessors[target] != nfa::Limits::max_state) { return; }
 			predecessors[target] = state;

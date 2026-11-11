@@ -31,6 +31,10 @@ target_link_libraries (libmata PRIVATE Threads::Threads)
 
 target_link_libraries (libmata PUBLIC cudd_headers simlib_headers)
 
+if (MATA_USE_MIMALLOC)
+	target_link_libraries (libmata PRIVATE mimalloc)
+endif ()
+
 target_include_directories (
 	libmata
 	PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>

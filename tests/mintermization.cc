@@ -618,3 +618,59 @@ TEST_CASE("mata::Mintermization::mintermization produces correct symbol renaming
 	CHECK(result_edges.size() > 1);
 	CHECK(result_edges == reference_edges);
 }
+
+TEST_CASE("mata::Mintermization::mintermization preserves non-transition fields") {
+	/// Compare formula node metadata and all descendants recursively.
+	const auto formulas_equal = [](const auto& self, const mata::FormulaGraph& lhs,
+								   const mata::FormulaGraph& rhs) -> bool {
+		if (lhs.node.type != rhs.node.type || lhs.node.raw != rhs.node.raw || lhs.node.name != rhs.node.name ||
+			lhs.node.operator_type != rhs.node.operator_type || lhs.node.operand_type != rhs.node.operand_type ||
+			lhs.children.size() != rhs.children.size()) {
+			return false;
+		}
+		for (size_t i{0}; i < lhs.children.size(); ++i) {
+			if (!self(self, lhs.children[i], rhs.children[i])) { return false; }
+		}
+		return true;
+	};
+
+	for (const std::string automaton_type : {"NFA", "AFA"}) {
+		DYNAMIC_SECTION(automaton_type) {
+			std::string file = "@" + automaton_type +
+							   "-bits\n"
+							   "%States-enum q r\n"
+							   "%Alphabet-enum a1 a2\n"
+							   "%Nodes-enum n1 n2\n"
+							   "%Initial q r\n"
+							   "%Final r q\n";
+			file += automaton_type == "NFA" ? "q (a1 | a2) r\n" : "q ((a1 & r) | (a2 & q))\n";
+
+			Parsed parsed = parse_mf(file);
+			std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
+			REQUIRE(auts.size() == 1);
+			const mata::IntermediateAut& aut = auts.front();
+			REQUIRE(aut.state_naming == mata::IntermediateAut::Naming::Enum);
+			REQUIRE(aut.symbol_naming == mata::IntermediateAut::Naming::Enum);
+			REQUIRE(aut.node_naming == mata::IntermediateAut::Naming::Enum);
+			REQUIRE(aut.initial_enumerated);
+			REQUIRE(aut.final_enumerated);
+			REQUIRE(aut.initial_formula.node.operator_type == mata::FormulaNode::OperatorType::Or);
+			REQUIRE(aut.final_formula.node.operator_type == mata::FormulaNode::OperatorType::Or);
+
+			mata::Mintermization mintermization{};
+			const mata::IntermediateAut mintermized_aut = mintermization.mintermize(aut);
+			CHECK(mintermized_aut.state_naming == aut.state_naming);
+			CHECK(mintermized_aut.symbol_naming == aut.symbol_naming);
+			CHECK(mintermized_aut.node_naming == aut.node_naming);
+			CHECK(mintermized_aut.alphabet_type == mata::IntermediateAut::AlphabetType::Explicit);
+			CHECK(mintermized_aut.automaton_type == aut.automaton_type);
+			CHECK(mintermized_aut.states_names == std::unordered_set<std::string>{"q", "r"});
+			CHECK(mintermized_aut.symbols_names == std::unordered_set<std::string>{"a1", "a2"});
+			CHECK(mintermized_aut.nodes_names == std::unordered_set<std::string>{"n1", "n2"});
+			CHECK(formulas_equal(formulas_equal, mintermized_aut.initial_formula, aut.initial_formula));
+			CHECK(formulas_equal(formulas_equal, mintermized_aut.final_formula, aut.final_formula));
+			CHECK(mintermized_aut.initial_enumerated);
+			CHECK(mintermized_aut.final_enumerated);
+		}
+	}
+}

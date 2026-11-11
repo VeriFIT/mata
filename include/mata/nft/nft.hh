@@ -302,6 +302,7 @@ class Nft : public mata::Automaton {
 		return delta.get_successors(state, symbol);
 	}
 	Nft& operator=(Nft&& other) noexcept;
+	~Nft() = default;
 
 	/**
 	 * @brief Construct a new NFT with @p num_of_levels levels from NFA.
@@ -362,7 +363,8 @@ class Nft : public mata::Automaton {
 	explicit Nft(nfa::Nfa&& other, Levels levels)
 		: Automaton{std::move(other.delta), std::move(other.initial), std::move(other.final)},
 		  levels{std::move(levels)} {
-		MATA_ASSERT(other.num_of_states() == this->levels.size(), "NFA and levels must have the same number of states");
+		// The NFA members were moved from above, so their count lives on in 'this' now.
+		MATA_ASSERT(this->num_of_states() == this->levels.size(), "NFA and levels must have the same number of states");
 	}
 
 	/**
@@ -558,41 +560,49 @@ class Nft : public mata::Automaton {
 	/**
 	 * Inserts identity transitions into the NFT.
 	 *
+	 * For each symbol, the result reads the symbol on every level and returns to @p state, so the inserted loops
+	 *  accept exactly the tuples (w, w, ..., w). The representation depends on @p jump_mode:
+	 *  - @c JumpMode::RepeatSymbol: one jump transition @c state -symbol-> @c state spanning all levels, which repeats
+	 *    the symbol on every level. Read the result with @c JumpMode::RepeatSymbol, not with @c JumpMode::NoJump or
+	 *    by the fast composition (@c CompositionMode::FastNoJump), which require jump-free NFTs.
+	 *  - @c JumpMode::NoJump and @c JumpMode::AppendDontCares: an explicit loop of @c num_of_levels single-level
+	 *    transitions through fresh inner states. A jump under @c AppendDontCares would pad the symbol with @c
+	 * DONT_CARE, which is no identity.
+	 *
+	 * A one-level NFT gets a single self-loop in every mode. A @p state on a nonzero level always gets the explicit
+	 *  loop, as a jump must start and end on level 0.
+	 *
 	 * @param state The state where the identity transition will be inserted. @p state serves as both the source and
 	 *  target state.
 	 * @param symbols The vector of symbols used for the identity transition. Identity will be created for each symbol
 	 * in the vector.
-	 * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
-	 * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
-	 * sequence of @c DONT_CARE symbols. Currently ignored: the identity is always inserted as one transition per level.
+	 * @param jump_mode How to represent the identity, see above.
 	 * @return Self with inserted identity.
 	 */
 	Nft& insert_identity(State state, const std::vector<Symbol>& symbols, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 	/**
-	 * Inserts identity transitions into the NFT.
+	 * Inserts identity transitions into the NFT, represented according to @p jump_mode as described at
+	 *  @c insert_identity(State, const std::vector<Symbol>&, JumpMode).
 	 *
 	 * @param state The state where the identity transition will be inserted. @p state serves as both the source and
 	 *  target state.
 	 * @param alphabet The alphabet with symbols used for the identity transition. Identity will be created for each
 	 *  symbol in the alphabet resolved via @c get_symbols_to_work_with(alphabet, levels[state]) (see
 	 *  @c resolve_alphabet for the resolution order).
-	 * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
-	 * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
-	 * sequence of @c DONT_CARE symbols. Currently ignored: the identity is always inserted as one transition per level.
+	 * @param jump_mode How to represent the identity.
 	 * @return Self with inserted identity.
 	 */
 	Nft& insert_identity(State state, const Alphabet* alphabet = nullptr, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 	/**
-	 * Inserts an identity transition into the NFT.
+	 * Inserts an identity transition into the NFT, represented according to @p jump_mode as described at
+	 *  @c insert_identity(State, const std::vector<Symbol>&, JumpMode).
 	 *
 	 * @param state The state where the identity transition will be inserted. @p state serves as both the source and
 	 *  target state.
 	 * @param symbol The symbol used for the identity transition.
-	 * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
-	 * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
-	 * sequence of @c DONT_CARE symbols. Currently ignored: the identity is always inserted as one transition per level.
+	 * @param jump_mode How to represent the identity.
 	 * @return Self with inserted identity.
 	 */
 	Nft& insert_identity(State state, Symbol symbol, JumpMode jump_mode = JumpMode::RepeatSymbol);
@@ -990,7 +1000,7 @@ class Nft : public mata::Automaton {
 	}
 
 	/**
-	 * @brief Get the set of states reachable from the given set of @p states over the given vector of @p words
+	 * @brief Get the set of states reachable from the given set of @p states over the given vector of @p level_words
 	 * (index corresponds to the level). Levels with the corresponding @p use_level set to false will be ignored.
 	 *
 	 * This post uses a bitmask @p use_level to determine which levels to use.
@@ -998,7 +1008,7 @@ class Nft : public mata::Automaton {
 	 * It is a general post method that is used by all of its overloads.
 	 *
 	 * @param states Set of states to compute the post set from.
-	 * @param words Vector of words (w_1, w_2, ..., w_num_of_levels) to compute the post set for.
+	 * @param level_words Vector of words (w_1, w_2, ..., w_num_of_levels), one per level, to compute the post set for.
 	 * The index of the word in the vector corresponds to the level (tape) on which the word is used.
 	 * The length of the vector must be equal to the number of levels in the NFT.
 	 * @param use_level Bitmask indicating which levels and their corresponding words to use.
@@ -1017,7 +1027,7 @@ class Nft : public mata::Automaton {
 	 */
 	StateSet post(
 		const StateSet& states,
-		const std::vector<Word>& words,
+		const std::vector<Word>& level_words,
 		const BoolVector& use_level,
 		StateSet* visited_zero_level_states = nullptr,
 		bool epsilon_closure_after = true,
@@ -1027,12 +1037,13 @@ class Nft : public mata::Automaton {
 
 	/**
 	 * @brief Get the set of zero-level states reachable from the given set of zero-level @p states over the given
-	 * vector of @p words (index corresponds to the level). All words on all levels are used and have to be specified.
+	 * vector of @p level_words (index corresponds to the level). All words on all levels are used and have to be
+	 * specified.
 	 *
 	 * This post uses all words on all levels.
 	 *
 	 * @param states Set of zero-level states to compute the post set from.
-	 * @param words Vector of words (w_1, w_2, ..., w_num_of_levels) to compute the post set for.
+	 * @param level_words Vector of words (w_1, w_2, ..., w_num_of_levels), one per level, to compute the post set for.
 	 * The index of the word in the vector corresponds to the level (tape) on which the word is used.
 	 * The length of the vector must be equal to the number of levels in the NFT.
 	 * @param visited_zero_level_states Pointer to a set of states that will be filled with the zero-level states that
@@ -1045,26 +1056,27 @@ class Nft : public mata::Automaton {
 	 */
 	StateSet post(
 		const StateSet& states,
-		const std::vector<Word>& words,
+		const std::vector<Word>& level_words,
 		StateSet* visited_zero_level_states = nullptr,
 		const bool epsilon_closure_after = true,
 		const JumpMode jump_mode = JumpMode::RepeatSymbol,
 		const std::function<bool(State, const std::vector<size_t>&)>& is_early_exit_config = {}
 	) const {
 		return post(
-			states, words, BoolVector(words.size(), true), visited_zero_level_states, epsilon_closure_after, jump_mode,
-			is_early_exit_config
+			states, level_words, BoolVector(level_words.size(), true), visited_zero_level_states, epsilon_closure_after,
+			jump_mode, is_early_exit_config
 		);
 	}
 
 	/**
 	 * @brief Get the set of zero-level states reachable from the given zero-level @p state over the given
-	 * vector of @p words (index corresponds to the level). All words on all levels are used and have to be specified.
+	 * vector of @p level_words (index corresponds to the level). All words on all levels are used and have to be
+	 * specified.
 	 *
 	 * This post uses all words on all levels.
 	 *
 	 * @param state Zero-level state to compute the post set from.
-	 * @param words Vector of words (w_1, w_2, ..., w_num_of_levels) to compute the post set for.
+	 * @param level_words Vector of words (w_1, w_2, ..., w_num_of_levels), one per level, to compute the post set for.
 	 * The index of the word in the vector corresponds to the level (tape) on which the word is used.
 	 * The length of the vector must be equal to the number of levels in the NFT.
 	 * @param visited_zero_level_states Pointer to a set of states that will be filled with the zero-level states that
@@ -1077,29 +1089,30 @@ class Nft : public mata::Automaton {
 	 */
 	StateSet post(
 		const State state,
-		const std::vector<Word>& words,
+		const std::vector<Word>& level_words,
 		StateSet* visited_zero_level_states = nullptr,
 		const bool epsilon_closure_after = true,
 		const JumpMode jump_mode = JumpMode::RepeatSymbol
 	) const {
 		return post(
-			StateSet{state}, words, BoolVector(words.size(), true), visited_zero_level_states, epsilon_closure_after,
-			jump_mode
+			StateSet{state}, level_words, BoolVector(level_words.size(), true), visited_zero_level_states,
+			epsilon_closure_after, jump_mode
 		);
 	}
 
 	/**
 	 * @brief Get the set of zero-level states reachable from the given set of @p states over the given
-	 * vector of @p words. The levels of the words are specified in @p word_levels vector. The post is computed only
-	 * for the words that have a level corresponding to the level of the state. Levels not specified in @p word_levels
-	 * are ignored (projected-out)
+	 * vector of @p level_words. The levels of the words are specified in @p word_levels vector. The post is computed
+	 * only for the words that have a level corresponding to the level of the state. Levels not specified in
+	 * @p word_levels are ignored (projected-out)
 	 *
 	 * This post uses a vector @p word_levels to specify levels of used words.
 	 * Note: Use of @p word_levels is similar to applying a projection of levels from the vector @p word_levels.
 	 *
 	 * @param states Set of zero-level states to compute the post set from.
-	 * @param words Vector of words to compute the post set for.
-	 * @param word_levels Vector of levels corresponding to the words in @p words (has to be the same size as @p words).
+	 * @param level_words Vector of words to compute the post set for.
+	 * @param word_levels Vector of levels corresponding to the words in @p level_words (has to be the same size as
+	 * @p level_words).
 	 * Levels not specified in @p word_levels are ignored/projected-out (any transition on such a level is taken).
 	 * @param visited_zero_level_states Pointer to a set of states that will be filled with the zero-level states that
 	 * were visited during the post operation. If nullptr, this set will not be filled.
@@ -1111,7 +1124,7 @@ class Nft : public mata::Automaton {
 	 */
 	StateSet post(
 		const StateSet& states,
-		const std::vector<Word>& words,
+		const std::vector<Word>& level_words,
 		const std::vector<Level>& word_levels,
 		StateSet* visited_zero_level_states = nullptr,
 		bool epsilon_closure_after = true,
@@ -1120,16 +1133,17 @@ class Nft : public mata::Automaton {
 
 	/**
 	 * @brief Get the set of zero-level states reachable from the given zero-level @p state over the given
-	 * vector of @p words. The levels of the words are specified in @p word_levels vector. The post is computed only
-	 * for the words that have a level corresponding to the level of the state. Levels not specified in @p word_levels
-	 * are ignored (projected-out).
+	 * vector of @p level_words. The levels of the words are specified in @p word_levels vector. The post is computed
+	 * only for the words that have a level corresponding to the level of the state. Levels not specified in
+	 * @p word_levels are ignored (projected-out).
 	 *
 	 * This post uses a vector @p word_levels to specify levels of used words.
 	 * Note: Use of @p word_levels is similar to applying a projection of levels from the vector @p word_levels.
 	 *
 	 * @param state Zero-level state to compute the post set from.
-	 * @param words Vector of words to compute the post set for.
-	 * @param word_levels Vector of levels corresponding to the words in @p words (has to be the same size as @p words).
+	 * @param level_words Vector of words to compute the post set for.
+	 * @param word_levels Vector of levels corresponding to the words in @p level_words (has to be the same size as
+	 * @p level_words).
 	 * Levels not specified in @p word_levels are ignored/projected-out (any transition on such a level is taken).
 	 * @param visited_zero_level_states Pointer to a set of states that will be filled with the zero-level states that
 	 * were visited during the post operation. If nullptr, this set will not be filled.
@@ -1141,13 +1155,15 @@ class Nft : public mata::Automaton {
 	 */
 	StateSet post(
 		const State state,
-		const std::vector<Word>& words,
+		const std::vector<Word>& level_words,
 		const std::vector<Level>& word_levels,
 		StateSet* visited_zero_level_states = nullptr,
 		const bool epsilon_closure_after = true,
 		JumpMode jump_mode = JumpMode::RepeatSymbol
 	) const {
-		return post(StateSet{state}, words, word_levels, visited_zero_level_states, epsilon_closure_after, jump_mode);
+		return post(
+			StateSet{state}, level_words, word_levels, visited_zero_level_states, epsilon_closure_after, jump_mode
+		);
 	}
 
 	/// Is the language of the automaton universal?
@@ -1509,7 +1525,9 @@ class Nft : public mata::Automaton {
 	 * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
 	 * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a
 	 * sequence of @c DONT_CARE symbols.
-	 * @return A newly created NFA with copied members from NFT with updated transitions.
+	 * @return A newly created NFA with copied members from NFT with updated transitions; a plain copy when there is
+	 *  nothing to unwind.
+	 * @throw std::invalid_argument when the level vector does not cover all states or a level is out of range.
 	 */
 	nfa::Nfa to_nfa_update_copy(
 		const utils::OrdVector<Symbol>& dont_care_symbol_replacements = {DONT_CARE},
@@ -1754,10 +1772,11 @@ Nft intersection(
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  * of @c DONT_CARE.
- * @param[in] composition_mode Mode of composition to use. Default is Auto, which selects the best mode based
- *                             on the presence of jump transitions. General mode supports all NFTs, while FastNoJump
- *                             mode is optimized for NFTs without jump transitions and with only one synchronization
- * level.
+ * @param[in] composition_mode Mode of composition to use. Default is Auto, which takes FastNoJump for one
+ *                             synchronization level per NFT when @p jump_mode is NoJump, or when neither NFT has a
+ *                             jump transition, EPSILON or DONT_CARE (the jump mode then does not matter), and General
+ *                             otherwise. General mode supports all NFTs, while FastNoJump mode is optimized for NFTs
+ *                             without jump transitions and with only one synchronization level.
  * @param[in] normalization How to normalize the result after the construction; see @c CompositionNormalization.
  *
  * @pre The synchronization level vectors are non-empty, of equal size and strictly increasing, every level is below
@@ -1826,10 +1845,11 @@ std::shared_ptr<mata::AlphabetLevels> compose_alphabets(
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  * of @c DONT_CARE.
- * @param[in] composition_mode Mode of composition to use. Default is Auto, which selects the best mode based
- *                             on the presence of jump transitions. General mode supports all NFTs, while FastNoJump
- *                             mode is optimized for NFTs without jump transitions and with only one synchronization
- * level.
+ * @param[in] composition_mode Mode of composition to use. Default is Auto, which takes FastNoJump for one
+ *                             synchronization level per NFT when @p jump_mode is NoJump, or when neither NFT has a
+ *                             jump transition, EPSILON or DONT_CARE (the jump mode then does not matter), and General
+ *                             otherwise. General mode supports all NFTs, while FastNoJump mode is optimized for NFTs
+ *                             without jump transitions and with only one synchronization level.
  * @param[in] normalization How to normalize the result after the construction; see @c CompositionNormalization.
  *
  * @return A new NFT after the composition.
@@ -2005,6 +2025,8 @@ Nft reduce(
  * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
+ * @throw std::invalid_argument when the level vector of an operand does not cover all its states or holds a level
+ *  that is out of range.
  */
 bool is_included(
 	const Nft& smaller,
@@ -2027,6 +2049,8 @@ bool is_included(
  * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
+ * @throw std::invalid_argument when the level vector of an operand does not cover all its states or holds a level
+ *  that is out of range.
  */
 inline bool is_included(
 	const Nft& smaller,
@@ -2050,6 +2074,8 @@ inline bool is_included(
  * @param[in] params[ Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
+ * @throw std::invalid_argument when the level vector of an operand does not cover all its states or holds a level
+ *  that is out of range.
  */
 bool are_equivalent(
 	const Nft& lhs,
@@ -2078,6 +2104,8 @@ bool are_equivalent(
  * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
+ * @throw std::invalid_argument when the level vector of an operand does not cover all its states or holds a level
+ *  that is out of range.
  */
 bool are_equivalent(
 	const Nft& lhs,

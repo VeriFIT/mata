@@ -6,6 +6,7 @@
 #define MATA_NFT_TYPES_HH
 
 #include <concepts>
+#include <cstdint>
 #include <optional>
 #include <utility>
 
@@ -57,13 +58,13 @@ using Limits = mata::nfa::Limits;
 
 class Nft; ///< A non-deterministic finite transducer.
 
-enum class JumpMode {
+enum class JumpMode : std::uint8_t {
 	RepeatSymbol, ///< Repeat the symbol on the jump.
 	AppendDontCares, ///< Append a sequence of DONT_CAREs to the symbol on the jump.
 	NoJump ///< No jumps are allowed.
 };
 
-enum class CompositionMode {
+enum class CompositionMode : std::uint8_t {
 	General, ///< General composition mode for arbitrary number or synchronization levels and jump modes.
 	FastNoJump, ///< Fast composition mode for a single synchronization level and no jumps.
 	Auto ///< Automatically select the best composition mode based on the parameters.
@@ -75,7 +76,7 @@ enum class CompositionMode {
  * Every mode keeps the relation and the level of every state; state numbering is not part of the contract, and
  *  neither is the placement of EPSILON, which @c are_equivalent() reads as a letter.
  */
-enum class CompositionNormalization {
+enum class CompositionNormalization : std::uint8_t {
 	None, ///< Return the result as constructed (trimmed when the synchronization levels are projected out).
 	/// Rewrite only the states the fast composer generated itself (EPSILON padding, bridges over a replaced
 	///  synchronization, and waiting states): close the whole-round EPSILON runs through generated states with exactly
@@ -89,7 +90,14 @@ enum class CompositionNormalization {
 	Full,
 	/// @c None: @c GeneratedOnly costs more in the composition than it saves in a following composition on the
 	///  transducers of string constraints, whose results it shrinks by a few percent.
-	Auto
+	Auto,
+	/// @c None, then trimmed, also when the synchronization levels are kept. The fast composer then builds the result
+	///  forward and from the final states (by composing the reverted operands) in turns with a growing state budget
+	///  and keeps whichever finishes first: on the transducers of string constraints, either direction can build tens
+	///  of times more states that the trim removes than the other. Under @c None and @c Auto it builds forward only,
+	///  which is cheaper when the forward direction wins, as it does on most compositions. Operands it reads through
+	///  the cursors of their jump transitions are composed forward only.
+	Trim
 };
 
 using ProductFinalStateCondition = mata::nfa::ProductFinalStateCondition;
@@ -123,7 +131,11 @@ class Levels : std::vector<Level> {
 		 * This ordering is used when handling intermediate states (with non-zero levels) in NFTs for determining the
 		 * next lowest level of the next state.
 		 */
-		static bool Next(const Level lhs, const Level rhs) { return lhs == 0 ? false : rhs == 0 ? true : lhs < rhs; }
+		static bool Next(const Level lhs, const Level rhs) {
+			if (lhs == 0) { return false; }
+			if (rhs == 0) { return true; }
+			return lhs < rhs;
+		}
 	};
 
 	/**
@@ -154,6 +166,7 @@ class Levels : std::vector<Level> {
 	Levels(Levels&& other) = default;
 	Levels& operator=(const Levels& other) = default;
 	Levels& operator=(Levels&& other) = default;
+	~Levels() = default;
 	/**
 	 * @brief Assign levels from @p other to @c this.
 	 *

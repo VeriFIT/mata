@@ -105,11 +105,11 @@ std::shared_ptr<const Nfa> make_empty_segment_automaton() {
 std::optional<seg_nfa::NoodleSegment> make_whole_segment(Nfa&& segment, const bool include_empty) {
 	if (segment.initial.empty()) {
 		if (!include_empty) { return std::nullopt; }
-		return seg_nfa::NoodleSegment{make_empty_segment_automaton(), 0};
+		return seg_nfa::NoodleSegment{.automaton = make_empty_segment_automaton(), .initial = 0};
 	}
 	segment.unify_initial();
 	const State initial{*segment.initial.begin()};
-	return seg_nfa::NoodleSegment{std::make_shared<const Nfa>(std::move(segment)), initial};
+	return seg_nfa::NoodleSegment{.automaton = std::make_shared<const Nfa>(std::move(segment)), .initial = initial};
 }
 } // namespace
 
@@ -125,7 +125,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify(const SegNfa& aut, const Symbol e
 		return {};
 	}
 
-	auto unused_state{static_cast<State>(aut.num_of_states())}; // get some State not used in aut
+	const auto unused_state{static_cast<State>(aut.num_of_states())}; // get some State not used in aut
 	std::map<std::pair<State, State>, NoodleSegment> segments_one_initial_final;
 	segs_one_initial_final(segments, include_empty, unused_state, segments_one_initial_final);
 
@@ -214,7 +214,7 @@ template <class Emit>
 void share_per_initial_state(
 	const Nfa& segment,
 	const std::optional<std::reference_wrapper<const mata::utils::SparseSet<State>>> final_states,
-	Emit&& emit
+	Emit emit
 ) {
 	mata::nfa::StateRenaming to_useful;
 	const Nfa useful{trim(segment, &to_useful, std::nullopt, final_states)};
@@ -222,7 +222,11 @@ void share_per_initial_state(
 	const auto reduced{std::make_shared<const Nfa>(mata::nfa::algorithms::reduce_simulation(useful, to_reduced))};
 	for (const State init_state : segment.initial) {
 		if (const auto useful_init{to_useful.find(init_state)}; useful_init != to_useful.end()) {
-			emit(init_state, std::optional{seg_nfa::NoodleSegment{reduced, to_reduced.at(useful_init->second)}});
+			emit(
+				init_state, std::optional{seg_nfa::NoodleSegment{
+								.automaton = reduced, .initial = to_reduced.at(useful_init->second)
+							}}
+			);
 		} else {
 			emit(init_state, std::optional<seg_nfa::NoodleSegment>{});
 		}
@@ -242,7 +246,9 @@ void seg_nfa::segs_one_initial_final(
 			out.insert_or_assign(std::make_pair(init_state, final_state), std::move(*segment));
 		} else if (include_empty) {
 			if (!empty_automaton) { empty_automaton = make_empty_segment_automaton(); }
-			out.insert_or_assign(std::make_pair(init_state, final_state), NoodleSegment{empty_automaton, 0});
+			out.insert_or_assign(
+				std::make_pair(init_state, final_state), NoodleSegment{.automaton = empty_automaton, .initial = 0}
+			);
 		}
 	};
 
@@ -337,7 +343,10 @@ class NoodleEnumerator {
 	}
 
 	NoodleEnumerator(const NoodleEnumerator&) = delete;
+	NoodleEnumerator(NoodleEnumerator&&) = delete;
 	NoodleEnumerator& operator=(const NoodleEnumerator&) = delete;
+	NoodleEnumerator& operator=(NoodleEnumerator&&) = delete;
+	~NoodleEnumerator() = default;
 
 	/// The next noodle, or std::nullopt if there is none left.
 	std::optional<seg_nfa::NoodleWithEpsilonsCounter> next() {
@@ -550,7 +559,7 @@ class NoodleEnumerator {
 		part.state_of_initial.reserve(segment.initial.size());
 		share_per_initial_state(segment, part_finals, [&](State, std::optional<seg_nfa::NoodleSegment>&& seg) {
 			if (seg) {
-				part.automaton = seg->automaton;
+				part.automaton = std::move(seg->automaton);
 				part.state_of_initial.push_back(seg->initial);
 			} else {
 				part.state_of_initial.push_back(Limits::max_state);
@@ -565,10 +574,10 @@ class NoodleEnumerator {
 		if (part_of_fin.automaton != nullptr) {
 			state = part_of_fin.state_of_initial[seg_id == 0 ? 0 : initial_position_[init]];
 		}
-		if (state != Limits::max_state) { return {part_of_fin.automaton, state}; }
+		if (state != Limits::max_state) { return {.automaton = part_of_fin.automaton, .initial = state}; }
 		// Only the pairs of `include_empty_` reach no final state.
 		if (!empty_automaton_) { empty_automaton_ = make_empty_segment_automaton(); }
-		return {empty_automaton_, 0};
+		return {.automaton = empty_automaton_, .initial = 0};
 	}
 
 	void push_segment(const size_t seg_id, const State init, const State fin) {
@@ -601,8 +610,10 @@ class NoodleEnumerator {
 	}
 };
 
-#ifdef __cpp_lib_generator
+#if MATA_HAS_GENERATOR_SUPPORT
+MATA_GENERATOR_COROUTINE_BEGIN
 template <class T> std::generator<T> no_noodles() { co_return; }
+MATA_GENERATOR_COROUTINE_END
 #endif
 } // namespace
 
@@ -614,12 +625,14 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter>
 	return noodles;
 }
 
-#ifdef __cpp_lib_generator
+#if MATA_HAS_GENERATOR_SUPPORT
+MATA_GENERATOR_COROUTINE_BEGIN
 std::generator<seg_nfa::NoodleWithEpsilonsCounter>
 	seg_nfa::noodlify_mult_eps_lazy(SegNfa aut, std::set<Symbol> epsilons, bool include_empty, NoodleOrder order) {
 	NoodleEnumerator enumerator{aut, epsilons, include_empty, order};
 	while (auto noodle{enumerator.next()}) { co_yield std::move(*noodle); }
 }
+MATA_GENERATOR_COROUTINE_END
 #endif
 
 std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
@@ -718,8 +731,8 @@ std::optional<Nfa> equation_product(
 	unify_initial_and_final_states(rhs_automata, unified_nfas);
 
 	// Automata representing the left/right side concatenated over different epsilon transitions.
-	Nfa concatenated_lhs = concatenate_with(lhs_automata, mata::nfa::EPSILON);
-	Nfa concatenated_rhs = concatenate_with(rhs_automata, mata::nfa::EPSILON - 1);
+	const Nfa concatenated_lhs = concatenate_with(lhs_automata, mata::nfa::EPSILON);
+	const Nfa concatenated_rhs = concatenate_with(rhs_automata, mata::nfa::EPSILON - 1);
 
 	Nfa product_pres_eps_trans{intersection(concatenated_lhs, concatenated_rhs, mata::nfa::EPSILON - 1)};
 	product_pres_eps_trans.trim();
@@ -752,7 +765,8 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
 	return noodlify_mult_eps(*product, {mata::nfa::EPSILON, mata::nfa::EPSILON - 1}, include_empty);
 }
 
-#ifdef __cpp_lib_generator
+#if MATA_HAS_GENERATOR_SUPPORT
+MATA_GENERATOR_COROUTINE_BEGIN
 std::generator<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation_lazy(
 	const std::vector<std::shared_ptr<Nfa>>& lhs_automata,
 	const std::vector<std::shared_ptr<Nfa>>& rhs_automata,
@@ -766,6 +780,7 @@ std::generator<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equatio
 		std::move(*product), {mata::nfa::EPSILON, mata::nfa::EPSILON - 1}, include_empty, order
 	);
 }
+MATA_GENERATOR_COROUTINE_END
 #endif
 
 seg_nfa::VisitedEpsilonsCounterVector seg_nfa::process_eps_map(const VisitedEpsilonsCounterMap& eps_cnt) {
@@ -778,8 +793,8 @@ namespace mata::applications::strings::seg_nfa {
 namespace {
 // delimiters, we cannot use mata::nfa::EPSILON, because that is normal mata::nfa::EPSILON which can be used in nft
 // (non-preserving lengths nfts are allowed) and mata::nfa::EPSILON-1 is DONT_CARE
-constexpr Symbol input_delimiter{nfa::EPSILON - 2};
-constexpr Symbol output_delimiter{nfa::EPSILON - 3};
+constexpr Symbol INPUT_DELIMITER{nfa::EPSILON - 2};
+constexpr Symbol OUTPUT_DELIMITER{nfa::EPSILON - 3};
 
 /// The segment automaton whose noodles noodlify_for_transducer() turns into transducer noodles; std::nullopt if its
 ///  language is empty.
@@ -799,8 +814,8 @@ std::optional<Nfa> transducer_product(
 
 	// concatenate input and output automata to one input/output automaton connected with
 	// INPUT_DELIMITER/OUTPUT_DELIMITER
-	Nfa concatenated_input = concatenate_with(input_automata, input_delimiter);
-	Nfa concatenated_output = concatenate_with(output_automata, output_delimiter);
+	Nfa concatenated_input = concatenate_with(input_automata, INPUT_DELIMITER);
+	Nfa concatenated_output = concatenate_with(output_automata, OUTPUT_DELIMITER);
 
 	// we will work with nfts, so we just transfer nfas to nfts
 	const Nft concatenated_input_nft(std::move(concatenated_input));
@@ -836,17 +851,19 @@ std::optional<Nfa> transducer_product(
 		for (size_t i = 1; i < input_automata.size(); ++i) {
 			const Nft composition =
 				mata::nft::compose(mata::nft::Nft(*input_automata[i]), *nft, 0, 0, false, mata::nft::JumpMode::NoJump);
-			concatenation = mata::nft::algorithms::concatenate_eps(concatenation, composition, input_delimiter, true);
+			concatenation = mata::nft::algorithms::concatenate_eps(concatenation, composition, INPUT_DELIMITER, true);
 		}
 		intersection = std::move(concatenation);
 	} else {
 		intersection = *nft;
 		// we intersect input nfa with nft on the input track, but we need to add INPUT_DELIMITER as an "epsilon
 		// transition" of nft
-		add_self_loop_for_every_default_state(intersection, input_delimiter);
+		add_self_loop_for_every_default_state(intersection, INPUT_DELIMITER);
 
-		intersection =
-			mata::nft::compose(concatenated_input_nft, intersection, 0, 0, false, mata::nft::JumpMode::NoJump);
+		intersection = mata::nft::compose(
+			concatenated_input_nft, intersection, 0, 0, false, mata::nft::JumpMode::NoJump,
+			mata::nft::CompositionMode::Auto, mata::nft::CompositionNormalization::Trim
+		);
 	}
 	intersection.trim();
 
@@ -855,10 +872,12 @@ std::optional<Nfa> transducer_product(
 	// We intersect output nfa with nft on the output track, but we need to add OUTPUT_DELIMITER as an
 	//  "epsilon transition" of nft.
 	// We also need to INPUT_DELIMITER as "epsilon transition" of the output nfa, so that we do not lose it.
-	add_self_loop_for_every_default_state(concatenated_output_nft, input_delimiter);
-	add_self_loop_for_every_default_state(intersection, output_delimiter);
-	intersection = mata::nft::compose(concatenated_output_nft, intersection, 0, 1, false, mata::nft::JumpMode::NoJump);
-	intersection.trim();
+	add_self_loop_for_every_default_state(concatenated_output_nft, INPUT_DELIMITER);
+	add_self_loop_for_every_default_state(intersection, OUTPUT_DELIMITER);
+	intersection = mata::nft::compose(
+		concatenated_output_nft, intersection, 0, 1, false, mata::nft::JumpMode::NoJump,
+		mata::nft::CompositionMode::Auto, mata::nft::CompositionNormalization::Trim
+	);
 
 	if (intersection.final.empty()) { return {}; }
 
@@ -884,7 +903,7 @@ std::optional<Nfa> transducer_product(
 	std::map<State, std::vector<Transition>> middle_state_to_delimiter_transition_as_source;
 	// maps middle state to each "middle ---DELIMITER---> target" transition
 	for (const Transition& trans : intersection.delta.transitions()) {
-		if (trans.symbol == input_delimiter || trans.symbol == output_delimiter) {
+		if (trans.symbol == INPUT_DELIMITER || trans.symbol == OUTPUT_DELIMITER) {
 			if (intersection.levels[trans.source] == nft::DEFAULT_LEVEL) {
 				// source ---DELIMITER---> middle
 				middle_state_to_delimiter_transition_as_target[trans.target].push_back(trans);
@@ -976,12 +995,14 @@ class TransducerElements {
 	std::map<std::pair<const Nfa*, State>, std::weak_ptr<Element>> elements_{};
 };
 
-#ifdef __cpp_lib_generator
+#if MATA_HAS_GENERATOR_SUPPORT
+MATA_GENERATOR_COROUTINE_BEGIN
 std::generator<TransducerNoodle> transducer_noodles(Nfa product, const NoodleOrder order) {
-	NoodleEnumerator noodles{product, {input_delimiter, output_delimiter}, false, order};
+	NoodleEnumerator noodles{product, {INPUT_DELIMITER, OUTPUT_DELIMITER}, false, order};
 	TransducerElements elements{};
 	while (auto noodle{noodles.next()}) { co_yield elements.make(*noodle); }
 }
+MATA_GENERATOR_COROUTINE_END
 #endif
 } // namespace
 
@@ -996,14 +1017,15 @@ std::vector<TransducerNoodle> noodlify_for_transducer(
 		transducer_product(nft, input_automata, output_automata, reduce_intersection, use_homomorphic_heuristic)
 	};
 	if (!product) { return {}; }
-	NoodleEnumerator noodles{*product, {input_delimiter, output_delimiter}, false, NoodleOrder{}};
+	NoodleEnumerator noodles{*product, {INPUT_DELIMITER, OUTPUT_DELIMITER}, false, NoodleOrder{}};
 	TransducerElements elements{};
 	std::vector<TransducerNoodle> result;
 	while (auto noodle{noodles.next()}) { result.push_back(elements.make(*noodle)); }
 	return result;
 }
 
-#ifdef __cpp_lib_generator
+#if MATA_HAS_GENERATOR_SUPPORT
+MATA_GENERATOR_COROUTINE_BEGIN
 std::generator<TransducerNoodle> noodlify_for_transducer_lazy(
 	const std::shared_ptr<Nft>& nft,
 	const std::vector<std::shared_ptr<Nfa>>& input_automata,
@@ -1018,5 +1040,6 @@ std::generator<TransducerNoodle> noodlify_for_transducer_lazy(
 	if (!product) { return no_noodles<TransducerNoodle>(); }
 	return transducer_noodles(std::move(*product), order);
 }
+MATA_GENERATOR_COROUTINE_END
 #endif
 } // namespace mata::applications::strings::seg_nfa

@@ -34,8 +34,6 @@ void mata::nfa::throw_state_overflow() {
 	);
 }
 
-void Nfa::remove_epsilon(const Symbol epsilon) { *this = mata::nfa::remove_epsilon(*this, epsilon); }
-
 Run Nfa::get_shortest_accepting_run_from_state(State state, const std::vector<State>& distances_to_final) const {
 	Run result{.word = {}, .path = {state}};
 	while (!final[state]) {
@@ -164,6 +162,8 @@ void Nfa::print_to_dot(
 			case '\\':
 				return "\\\\";
 			default:
+				// Not a braced initializer list: '{1, c}' would build the two-character string "\x01c".
+				// NOLINTNEXTLINE(modernize-return-braced-init-list)
 				return std::string(1, static_cast<char>(symbol));
 		}
 	};
@@ -182,9 +182,8 @@ void Nfa::print_to_dot(
 			// Reverse lookups may scan the whole alphabet; translate each symbol once.
 			if (const auto it{symbol_names.find(symbol)}; it != symbol_names.end()) { return it->second; }
 			return symbol_names.emplace(symbol, used_alphabet->reverse_translate_symbol(symbol)).first->second;
-		} else {
-			return std::to_string(symbol);
 		}
+		return std::to_string(symbol);
 	};
 
 	auto vec_of_symbols_to_string = [&](const OrdVector<Symbol>& symbols) {
@@ -245,7 +244,7 @@ void Nfa::print_to_dot(
 		tgt_symbols_map.clear();
 		for (const SymbolPost& move : delta[source]) {
 			is_state_drawn[source] = true;
-			for (State target : move.targets) {
+			for (const State target : move.targets) {
 				is_state_drawn[target] = true;
 				tgt_symbols_map[target].insert(move.symbol);
 			}
@@ -258,7 +257,7 @@ void Nfa::print_to_dot(
 
 			std::string label =
 				(use_intervals) ? vec_of_symbols_to_string_with_intervals(symbols) : vec_of_symbols_to_string(symbols);
-			std::string on_hover_label = utils::replace_all(utils::replace_all(label, "<", "&lt;"), ">", "&gt;");
+			const std::string on_hover_label = utils::replace_all(utils::replace_all(label, "<", "&lt;"), ">", "&gt;");
 			bool is_shortened = false;
 			if (max_label_length > 0 && label.length() > static_cast<size_t>(max_label_length)) {
 				label.replace(static_cast<size_t>(max_label_length), std::string::npos, "...");
@@ -334,7 +333,12 @@ void Nfa::print_to_mata(std::ostream& output, const Alphabet* alphabet) const {
 		} else if (used_alphabet != nullptr) {
 			auto it{symbol_names.find(trans.symbol)};
 			if (it == symbol_names.end()) {
-				it = symbol_names.emplace(trans.symbol, used_alphabet->reverse_translate_symbol(trans.symbol)).first;
+				it =
+					symbol_names
+						.emplace(
+							trans.symbol, mata::quote_symbol_name(used_alphabet->reverse_translate_symbol(trans.symbol))
+						)
+						.first;
 			}
 			output << it->second;
 		} else {
@@ -368,7 +372,7 @@ void Nfa::get_one_letter_aut(Nfa& result) const { result = get_one_letter_aut();
 
 StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
 	PostWorkspace workspace{};
-	return delta.post(states, symbol, epsilon_closure_opt, {EPSILON}, workspace);
+	return delta.post_adopt_buffer(states, symbol, epsilon_closure_opt, {EPSILON}, workspace);
 }
 
 Nfa& Nfa::unify_initial(const bool force_new_state) {
@@ -425,6 +429,8 @@ Nfa& Nfa::unify_final(const bool force_new_state) {
 Nfa& Nfa::operator=(Nfa&& other) noexcept {
 	if (this != &other) {
 		Automaton::operator=(std::move(other));
+		// Only the 'Automaton' base of 'other' has been moved from; its own members are intact.
+		// NOLINTNEXTLINE(bugprone-use-after-move)
 		alphabet = std::move(other.alphabet);
 		attributes = std::move(other.attributes);
 	}
@@ -518,6 +524,7 @@ Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& nfa) {
 Nfa& Nfa::unite_nondet_with(Nfa&& nfa) {
 	if (this == &nfa) {
 		// Self-union: one controlled snapshot of the operand; `this` keeps its own content.
+		// NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
 		const Nfa snapshot{nfa};
 		return unite_nondet_with(snapshot);
 	}
@@ -563,7 +570,7 @@ Nfa Nfa::decode_utf8() const {
 
 	// Pushes a set of states to the worklist and marks them as used.
 	auto push_state_set = [&](const std::span<const State> set) {
-		for (State state : set) {
+		for (const State state : set) {
 			if (used[state]) { continue; }
 			worklist.push(state);
 			used[state] = true;

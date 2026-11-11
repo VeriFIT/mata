@@ -498,7 +498,7 @@ TEST_CASE("mata::nfa::is_lang_empty_cex()") {
 }
 
 // `is_lang_empty()`, `get_word_for_path()` and `is_complete()` used to guard their inner loop with
-//  `delta.empty()`, which walks state posts until it finds a nonempty one. The guard was redundant:
+//  `delta.empty()`, which walked state posts until it found a nonempty one. The guard was redundant:
 //  a state post that is empty, or not allocated at all, already yields nothing. Pin the answers on
 //  deltas whose low-numbered states carry no transitions.
 TEST_CASE("mata::nfa::Nfa queries on a delta with an empty prefix") {
@@ -1725,7 +1725,7 @@ TEST_CASE("mata::nfa::construct() correct calls") { // {{{
 		parsec.type = nfa::TYPE_NFA;
 		parsec.dict.insert({"Initial", {"q1"}});
 		parsec.dict.insert({"Final", {"q2"}});
-		parsec.body = {{"q1", "a", "q2"}};
+		parsec.body = {mata::parser::BodyLine{{"q1", "a", "q2"}}};
 
 		aut = builder::construct(parsec, &alphabet);
 
@@ -1742,21 +1742,21 @@ TEST_CASE("mata::nfa::construct() correct calls") { // {{{
 		parsec.type = nfa::TYPE_NFA;
 		parsec.dict.insert({"Initial", {"q1", "q3"}});
 		parsec.dict.insert({"Final", {"q5"}});
-		parsec.body.push_back({"q1", "a", "q3"});
-		parsec.body.push_back({"q1", "a", "q10"});
-		parsec.body.push_back({"q1", "b", "q7"});
-		parsec.body.push_back({"q3", "a", "q7"});
-		parsec.body.push_back({"q3", "b", "q9"});
-		parsec.body.push_back({"q9", "a", "q9"});
-		parsec.body.push_back({"q7", "b", "q1"});
-		parsec.body.push_back({"q7", "a", "q3"});
-		parsec.body.push_back({"q7", "c", "q3"});
-		parsec.body.push_back({"q10", "a", "q7"});
-		parsec.body.push_back({"q10", "b", "q7"});
-		parsec.body.push_back({"q10", "c", "q7"});
-		parsec.body.push_back({"q7", "a", "q5"});
-		parsec.body.push_back({"q5", "a", "q5"});
-		parsec.body.push_back({"q5", "c", "q9"});
+		parsec.body.push_back(mata::parser::BodyLine{{"q1", "a", "q3"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q1", "a", "q10"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q1", "b", "q7"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q3", "a", "q7"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q3", "b", "q9"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q9", "a", "q9"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q7", "b", "q1"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q7", "a", "q3"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q7", "c", "q3"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q10", "a", "q7"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q10", "b", "q7"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q10", "c", "q7"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q7", "a", "q5"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q5", "a", "q5"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q5", "c", "q9"}});
 
 		aut = builder::construct(parsec, &alphabet);
 
@@ -1783,14 +1783,14 @@ TEST_CASE("mata::nfa::construct() invalid calls") { // {{{
 
 	SECTION("construct() call with an epsilon transition") {
 		parsec.type = nfa::TYPE_NFA;
-		parsec.body = {{"q1", "q2"}};
+		parsec.body = {mata::parser::BodyLine{{"q1"}, {"q2"}}};
 
 		CHECK_THROWS_WITH(builder::construct(parsec), Catch::Matchers::ContainsSubstring("Epsilon transition"));
 	}
 
 	SECTION("construct() call with a nonsense transition") {
 		parsec.type = nfa::TYPE_NFA;
-		parsec.body = {{"q1", "a", "q2", "q3"}};
+		parsec.body = {mata::parser::BodyLine{{"q1", "a", "q2", "q3"}}};
 
 		CHECK_THROWS_WITH(plumbing::construct(&aut, parsec), Catch::Matchers::ContainsSubstring("Invalid transition"));
 	}
@@ -1800,7 +1800,7 @@ TEST_CASE("mata::nfa::construct() invalid calls") { // {{{
 		parsec.body.clear();
 		parsec.dict.insert({"Initial", {"q0"}});
 		parsec.dict.insert({"Final", {"q1"}});
-		parsec.body = {{"q0", "x", "q1"}}; // 'x' is not numeric
+		parsec.body = {mata::parser::BodyLine{{"q0", "x", "q1"}}}; // 'x' is not numeric
 		mata::IntAlphabet int_alphabet;
 
 		// The symbol translation throws; the temporary NameStateMap is a stack object, so it is released while the
@@ -2030,7 +2030,10 @@ TEST_CASE("mata::nfa::construct() with a partly filled state map") { // {{{
 	SECTION("from ParsedSection") {
 		mata::parser::ParsedSection parsec;
 		parsec.type = nfa::TYPE_NFA;
-		parsec.body = {{"0", "a", "1"}, {"1", "b", "2"}, {"3", "c", "4"}};
+		parsec.body = {
+			mata::parser::BodyLine{{"0", "a", "1"}}, mata::parser::BodyLine{{"1", "b", "2"}},
+			mata::parser::BodyLine{{"3", "c", "4"}}
+		};
 		aut = builder::construct(parsec, &alphabet, &state_map);
 	}
 	SECTION("from IntermediateAut") {
@@ -5305,6 +5308,91 @@ TEST_CASE("mata::nfa::remove_epsilon() merges the posts of whole epsilon closure
 	}
 }
 
+TEST_CASE("mata::nfa::Nfa::remove_epsilon() in place") {
+	// The result has the language of @p regex and equals the copying removal.
+	const auto check_in_place = [](Nfa aut, const Symbol epsilon, const std::string& regex) {
+		const Nfa copied = remove_epsilon(aut, epsilon);
+		aut.remove_epsilon(epsilon);
+
+		// Check copy === in-place removal.
+		CHECK(aut.delta == copied.delta);
+		CHECK(aut.initial == copied.initial);
+		CHECK(aut.final == copied.final);
+		CHECK(aut.num_of_states() == copied.num_of_states());
+		CHECK(!aut.delta.get_used_symbols().contains(epsilon));
+
+		CHECK(are_equivalent(aut, builder::create_from_regex(regex)));
+	};
+
+	SECTION("epsilon cycles, a final state reached by epsilon and an epsilon self-loop") {
+		Nfa aut(6);
+		aut.initial.insert(0);
+		aut.final.insert(4);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, EPSILON, 2);
+		aut.delta.add(2, EPSILON, 1);
+		aut.delta.add(2, 'b', 3);
+		aut.delta.add(3, EPSILON, 4);
+		aut.delta.add(4, 'c', 5);
+		aut.delta.add(5, EPSILON, 5);
+		check_in_place(aut, EPSILON, "ab");
+	}
+
+	SECTION("states that lose all transitions") {
+		Nfa aut(3);
+		aut.initial.insert(0);
+		aut.final.insert(0);
+		aut.delta.add(0, 'a', 0);
+		aut.delta.add(2, EPSILON, 1);
+		check_in_place(aut, EPSILON, "a*");
+	}
+
+	SECTION("a non-default epsilon between ordinary symbols") {
+		// The epsilon 'b' lies between the ordinary symbols 'a' and 'c'.
+		Nfa aut(4);
+		aut.initial.insert(0);
+		aut.final.insert(3);
+		aut.delta.add(0, 'a', 0);
+		aut.delta.add(0, 'b', 1);
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(1, 'b', 2);
+		aut.delta.add(1, 'c', 3);
+		aut.delta.add(2, 'c', 0);
+		check_in_place(aut, 'b', "[ac]*c");
+	}
+
+	SECTION("an unallocated final epsilon target") {
+		Nfa aut{};
+		aut.initial.insert(0);
+		aut.final.insert(2);
+		aut.delta.add(1, 'a', 0);
+		aut.delta.mutable_state_post(0).push_back(SymbolPost{EPSILON, 2});
+		REQUIRE(aut.delta.num_of_states() == 2);
+		check_in_place(aut, EPSILON, "");
+	}
+
+	SECTION("symbol posts without targets") {
+		// States 1 and 2 have no epsilon post and keep a symbol post without targets; state 3 is unused.
+		Nfa aut(4);
+		aut.initial.insert(0);
+		aut.final.insert(1);
+		aut.delta.add(0, EPSILON, 1);
+		aut.delta.add(1, 'a', 1);
+		aut.delta.mutable_state_post(1).emplace_back('b');
+		aut.delta.mutable_state_post(2).emplace_back('a');
+		check_in_place(aut, EPSILON, "a*");
+	}
+
+	SECTION("without epsilon transitions") {
+		Nfa aut(3);
+		aut.initial.insert(0);
+		aut.final.insert(2);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		check_in_place(aut, EPSILON, "ab");
+	}
+}
+
 TEST_CASE("Profile mata::nfa::remove_epsilon()", "[.profiling]") {
 	for (size_t n{}; n < 100'000; ++n) {
 		Nfa aut{20};
@@ -6000,6 +6088,30 @@ TEST_CASE("mata::nfa:: print_to_mata") {
 		builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(aut_big_mata))[0], &int_alph);
 
 	CHECK(are_equivalent(aut_big, aut_big_from_mata));
+}
+
+TEST_CASE("mata::nfa:: print_to_mata with names that need quoting (#1021)") {
+	for (const std::string name :
+		 {"foo bar", "#", "a|b", "(x)", "x\"y", "@at", "%p", "!", "&", "|", "a@b", "a%b", "q5", "n5", ""}) {
+		// A name ending in a backslash cannot be quoted: the reader reads the closing \" as an escaped quote.
+		OnTheFlyAlphabet alphabet{};
+		std::string escaped_name{};
+		for (const char ch : name) {
+			if (ch == '"' || ch == '\\') { escaped_name += '\\'; }
+			escaped_name += ch;
+		}
+		const std::string input{"@NFA-explicit\n%Alphabet-auto\n%Initial s\n%Final f\ns \"" + escaped_name + "\" f\n"};
+		const Nfa nfa{builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(input))[0], &alphabet)};
+		const std::string printed{nfa.print_to_mata(&alphabet)};
+
+		OnTheFlyAlphabet read_alphabet{};
+		const Nfa read_back{
+			builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(printed))[0], &read_alphabet)
+		};
+		CHECK(are_equivalent(read_back, nfa));
+		// The name prints as one token and reads back as the same name.
+		CHECK(read_alphabet.get_symbol_map().contains(name));
+	}
 }
 
 TEST_CASE("mata::nfa::Nfa::trim() bug") {
@@ -7294,12 +7406,13 @@ TEST_CASE("mata::Automaton::distances_to_final matches the reverted BFS - #740")
 	for (size_t iteration{0}; iteration < 30; ++iteration) {
 		const size_t num_states{std::uniform_int_distribution<size_t>(2, 40)(gen)};
 		Nfa nfa{num_states};
+		const auto max_state{static_cast<State>(num_states - 1)};
 		for (State state{0}; state + 1 < num_states; ++state) {
 			const size_t out_degree{std::uniform_int_distribution<size_t>(0, 4)(gen)};
 			for (size_t i{0}; i < out_degree; ++i) {
 				nfa.delta.add(
 					state, std::uniform_int_distribution<mata::Symbol>(0, 3)(gen),
-					num_states > 1 ? std::uniform_int_distribution<mata::nfa::State>(0, num_states - 1)(gen) : 0
+					num_states > 1 ? std::uniform_int_distribution<mata::nfa::State>(0, max_state)(gen) : 0
 				);
 			}
 			if (std::uniform_int_distribution<int>(0, 2)(gen) == 0) { nfa.final.insert(state); }
@@ -7448,11 +7561,12 @@ TEST_CASE("mata::nfa::get_useful_states() with brute-force oracle") {
 			// Random initials and finals
 			const size_t num_init = std::max(size_t(1), num_states / 4);
 			const size_t num_final = std::max(size_t(1), num_states / 4);
+			const auto max_state{static_cast<State>(num_states - 1)};
 			for (size_t i = 0; i < num_init; ++i) {
-				aut.initial.insert(std::uniform_int_distribution<State>(0, num_states - 1)(gen));
+				aut.initial.insert(std::uniform_int_distribution<State>(0, max_state)(gen));
 			}
 			for (size_t i = 0; i < num_final; ++i) {
-				aut.final.insert(std::uniform_int_distribution<State>(0, num_states - 1)(gen));
+				aut.final.insert(std::uniform_int_distribution<State>(0, max_state)(gen));
 			}
 
 			// Random edges (allow duplicates, the delta will ignore them)
@@ -7460,8 +7574,8 @@ TEST_CASE("mata::nfa::get_useful_states() with brute-force oracle") {
 				num_states / 2 + std::uniform_int_distribution<size_t>(num_states, 2 * num_states)(gen)
 			};
 			for (size_t i = 0; i < num_edges; ++i) {
-				State src = std::uniform_int_distribution<State>(0, num_states - 1)(gen);
-				State tgt = std::uniform_int_distribution<State>(0, num_states - 1)(gen);
+				State src = std::uniform_int_distribution<State>(0, max_state)(gen);
+				State tgt = std::uniform_int_distribution<State>(0, max_state)(gen);
 				Symbol sym = std::uniform_int_distribution<Symbol>(0, 255)(gen);
 				aut.delta.add(src, sym, tgt);
 			}
