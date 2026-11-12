@@ -4,8 +4,8 @@
 use std::collections::BTreeSet;
 
 use mata::{
-	Alphabet, CheckAlgorithm, Complementation, Direction, LimitExceeded, Limits, Minimization, Nfa,
-	Reduction, ResidualConstruction, Side, State, Symbol, Transition, Word,
+	Alphabet, CheckAlgorithm, Complementation, Determinization, Direction, LimitExceeded, Limits,
+	Minimization, Nfa, Reduction, ResidualConstruction, Side, State, Symbol, Transition, Word,
 };
 use proptest::prelude::*;
 use proptest::test_runner::FileFailurePersistence;
@@ -221,6 +221,12 @@ proptest! {
 		let dfa = nfa.determinize();
 		prop_assert!(dfa.is_deterministic());
 		assert_language(&dfa, |w| m.accepts(w), "determinize");
+		// The classical construction, the same size and language
+		let classical = nfa.determinize_with(Determinization::Classical);
+		prop_assert!(classical.is_deterministic());
+		prop_assert_eq!(classical.num_states(), dfa.num_states());
+		prop_assert_eq!(classical.num_transitions(), dfa.num_transitions());
+		assert_language(&classical, |w| m.accepts(w), "determinize classical");
 
 		let brzozowski = nfa.minimize_with(Minimization::Brzozowski);
 		let hopcroft = nfa.minimize_with(Minimization::Hopcroft);

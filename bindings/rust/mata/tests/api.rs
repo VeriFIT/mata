@@ -1,8 +1,8 @@
 //! Behaviour of the public API on hand-written cases.
 
 use mata::{
-	Alphabet, AlphabetError, CheckAlgorithm, Complementation, Error, LimitExceeded, Limits,
-	Minimization, Nfa, Side, State, Symbol, Transition, word_from_bytes,
+	Alphabet, AlphabetError, CheckAlgorithm, Complementation, Determinization, Error,
+	LimitExceeded, Limits, Minimization, Nfa, Side, State, Symbol, Transition, word_from_bytes,
 };
 
 fn q(index: u32) -> State {
@@ -117,6 +117,56 @@ fn epsilon_is_handled_as_the_empty_word() -> Result<(), Error> {
 	assert!(!eps_a.complement(&sigma).accepts(&[a]));
 	let words: Vec<_> = eps_a.words_up_to(4).collect();
 	assert_eq!(words, [vec![a]]);
+	Ok(())
+}
+
+/// (a|b)* a (a|b)^k over a = 0 and b = 1.
+fn nth_symbol_from_the_end(k: u32) -> Result<Nfa, Error> {
+	let (a, b) = (Symbol::new(0), Symbol::new(1));
+	let mut nfa = Nfa::with_states(k as usize + 2);
+	nfa.add_initial(q(0))?;
+	nfa.add_final(q(k + 1))?;
+	nfa.add_transition(q(0), a, q(0))?;
+	nfa.add_transition(q(0), b, q(0))?;
+	nfa.add_transition(q(0), a, q(1))?;
+	for state in 1..=k {
+		nfa.add_transition(q(state), a, q(state + 1))?;
+		nfa.add_transition(q(state), b, q(state + 1))?;
+	}
+	Ok(nfa)
+}
+
+#[test]
+fn determinization_algorithms() -> Result<(), Error> {
+	// The same DFA up to the numbering of its states; the default is Four Russians.
+	let nfa = nth_symbol_from_the_end(3)?;
+	let four_russians = nfa.determinize_with(Determinization::FourRussians);
+	let classical = nfa.determinize_with(Determinization::Classical);
+	for dfa in [&four_russians, &classical] {
+		assert!(dfa.is_deterministic());
+		assert_eq!(dfa.num_states(), 16);
+		assert!(dfa.is_equivalent_to(&nfa));
+	}
+	assert!(nfa.determinize().is_identical(&four_russians));
+	Ok(())
+}
+
+#[test]
+fn determinize_the_largest_symbol() -> Result<(), Error> {
+	// The largest symbol but epsilon: its bit in the used symbols must not overflow when usize has
+	// 32 bits (wasm32).
+	let symbol = Symbol::new(u32::MAX - 1);
+	let mut nfa = Nfa::with_states(2);
+	nfa.add_initial(q(0))?;
+	nfa.add_final(q(1))?;
+	nfa.add_transition(q(0), symbol, q(0))?;
+	nfa.add_transition(q(0), symbol, q(1))?;
+	for algorithm in [Determinization::FourRussians, Determinization::Classical] {
+		let dfa = nfa.determinize_with(algorithm);
+		assert!(dfa.is_deterministic());
+		assert_eq!(dfa.num_states(), 2, "{algorithm:?}");
+		assert!(dfa.accepts(&[symbol]) && dfa.accepts(&[symbol, symbol]) && !dfa.accepts(&[]));
+	}
 	Ok(())
 }
 

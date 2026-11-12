@@ -1227,15 +1227,37 @@ Nfa minimize(const Nfa& aut, const ParameterMap& params = {{"algorithm", "auto"}
  * @param[in] restrict_to_symbols When not @c nullptr, determinize over these symbols only. Transitions over any other
  *  symbol are ignored, so the macrostates reachable only over such a transition are never constructed. The caller
  *  gets the determinization of @p aut with its transitions restricted to @p restrict_to_symbols.
+ * @param[in] params Optional parameters to control the determinization algorithm:
+ * - "algorithm" (required in @p params, which is {"algorithm": "four_russians"} by default):
+ *      - "four_russians": The "Four Russians" subset construction, see @c algorithms::determinize_four_russians().
+ *      - "classical": The classical subset construction, see @c algorithms::determinize_classical().
+ * - "reduction":
+ *      - "none" (default): No reduction.
+ *      - "bisimulation", "simulation", "adaptive": A smaller DFA for the same language, not always minimal, see
+ *        @c algorithms::DeterminizationReduction. It is no longer the subset construction, so in @p subset_map, merged
+ *        states appear as one of them, and @p macrostate_discover is not allowed.
+ *
  * @return Determinized automaton.
+ * @note With the same reduction, both give the same DFA, but they may number its states differently.
  * @todo: TODO: Add support for specifying first epsilon symbol and compute epsilon closure during determinization.
  */
 Nfa determinize(
 	const Nfa& aut,
 	std::unordered_map<StateSet, State>* subset_map = nullptr,
 	std::optional<std::function<bool(const Nfa&, State, const StateSet&)>> macrostate_discover = std::nullopt,
-	const utils::OrdVector<Symbol>* restrict_to_symbols = nullptr
+	const utils::OrdVector<Symbol>* restrict_to_symbols = nullptr,
+	const ParameterMap& params = {{"algorithm", "four_russians"}}
 );
+
+/**
+ * @brief Determinize automaton by the algorithm of @p params.
+ *
+ * See @c determinize(const Nfa&, std::unordered_map<StateSet, State>*, std::optional<std::function<bool(const Nfa&,
+ *  State, const StateSet&)>>, const utils::OrdVector<Symbol>*, const ParameterMap&).
+ */
+inline Nfa determinize(const Nfa& aut, const ParameterMap& params) {
+	return determinize(aut, nullptr, std::nullopt, nullptr, params);
+}
 
 /**
  * @brief Return a deterministic version of @p aut, avoiding the determinization machinery when possible.

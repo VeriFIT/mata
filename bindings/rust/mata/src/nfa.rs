@@ -14,9 +14,9 @@ use crate::types::{
 	Lines, raw_state_count, sorted, states_from_raw, states_from_vec, symbols_to_raw, word_from_raw,
 };
 use crate::{
-	Alphabet, CheckAlgorithm, Complementation, Direction, Distinction, InvalidAutomaton,
-	LimitExceeded, Limits, Minimization, NoSuchState, ParseError, Reduction, RegexError,
-	ResidualConstruction, Run, Side, State, Symbol, Transition, Word, check,
+	Alphabet, CheckAlgorithm, Complementation, Determinization, Direction, Distinction,
+	InvalidAutomaton, LimitExceeded, Limits, Minimization, NoSuchState, ParseError, Reduction,
+	RegexError, ResidualConstruction, Run, Side, State, Symbol, Transition, Word, check,
 };
 
 /// A nondeterministic finite automaton with epsilon transitions: Mata's `mata::nfa::Nfa`.
@@ -675,14 +675,21 @@ impl Nfa {
 		})
 	}
 
-	/// An equivalent DFA, by the subset construction. Its states are the reachable sets of states.
+	/// An equivalent DFA, by the subset construction, using [`Determinization::default`]. Its states are
+	/// the reachable sets of states.
 	///
 	/// # Complexity
 	///
 	/// Exponential in the worst case. [`Nfa::determinize_within`] stops at a limit.
 	#[must_use = "returns a new automaton and leaves `self` unchanged"]
 	pub fn determinize(&self) -> Nfa {
-		new_nfa(ffi::determinize(self.raw()))
+		self.determinize_with(Determinization::default())
+	}
+
+	/// [`Nfa::determinize`] with an explicit algorithm.
+	#[must_use = "returns a new automaton and leaves `self` unchanged"]
+	pub fn determinize_with(&self, algorithm: Determinization) -> Nfa {
+		new_nfa(ffi::determinize(self.raw(), algorithm.into()))
 	}
 
 	/// [`Nfa::determinize`] within `limits`.

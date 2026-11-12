@@ -20,7 +20,8 @@ pub use error::{
 pub use limits::Limits;
 pub use nfa::Nfa;
 pub use options::{
-	CheckAlgorithm, Complementation, Direction, Minimization, Reduction, ResidualConstruction,
+	CheckAlgorithm, Complementation, Determinization, Direction, Minimization, Reduction,
+	ResidualConstruction,
 };
 pub use types::{Distinction, Run, Side, State, Symbol, Transition, Word, word_from_bytes};
 

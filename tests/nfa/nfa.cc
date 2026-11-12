@@ -6,6 +6,7 @@
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "utils.hh"
@@ -535,12 +536,16 @@ TEST_CASE("mata::nfa::Nfa queries on a delta with an empty prefix") {
 }
 
 TEST_CASE("mata::nfa::determinize()") {
+	// Both algorithms; they give the same DFA up to the numbering of its states, and the same numbering here.
+	const std::string algorithm = GENERATE("four_russians", "classical");
+	CAPTURE(algorithm);
+	const ParameterMap params{{"algorithm", algorithm}};
 	Nfa aut(3);
 	Nfa result;
 	std::unordered_map<StateSet, State> subset_map;
 
 	SECTION("empty automaton") {
-		result = determinize(aut);
+		result = determinize(aut, params);
 
 		REQUIRE(result.final.empty());
 		REQUIRE(result.delta.empty());
@@ -550,10 +555,10 @@ TEST_CASE("mata::nfa::determinize()") {
 	SECTION("simple automaton 1") {
 		aut.initial = {1};
 		aut.final = {1};
-		result = determinize(aut, &subset_map);
+		result = determinize(aut, &subset_map, std::nullopt, nullptr, params);
 
-		REQUIRE(result.initial[subset_map[{1}]]);
-		REQUIRE(result.final[subset_map[{1}]]);
+		REQUIRE(result.initial[subset_map.at({1})]);
+		REQUIRE(result.final[subset_map.at({1})]);
 		REQUIRE(result.delta.empty());
 	}
 
@@ -561,7 +566,7 @@ TEST_CASE("mata::nfa::determinize()") {
 		aut.initial = {1};
 		aut.final = {2};
 		aut.delta.add(1, 'a', 2);
-		result = determinize(aut, &subset_map);
+		result = determinize(aut, &subset_map, std::nullopt, nullptr, params);
 
 		REQUIRE(result.initial[subset_map[{1}]]);
 		REQUIRE(result.final[subset_map[{2}]]);
@@ -584,7 +589,7 @@ TEST_CASE("mata::nfa::determinize()") {
 		x.delta.add(2, 2, 2);
 		x.delta.add(2, 0, 4);
 		OnTheFlyAlphabet alphabet{};
-		auto complement_result{determinize(x)};
+		auto complement_result{determinize(x, params)};
 	}
 
 	SECTION("subset map and discovery callback see every macrostate exactly once") {
@@ -598,11 +603,15 @@ TEST_CASE("mata::nfa::determinize()") {
 		nfa.delta.add(3, 'a', 1);
 		nfa.delta.add(3, 'a', 2);
 		std::vector<StateSet> discovered;
-		result = determinize(nfa, &subset_map, [&](const Nfa&, const State state, const StateSet& macrostate) {
-			CHECK(subset_map.at(macrostate) == state);
-			discovered.push_back(macrostate);
-			return true;
-		});
+		result = determinize(
+			nfa, &subset_map,
+			[&](const Nfa&, const State state, const StateSet& macrostate) {
+				CHECK(subset_map.at(macrostate) == state);
+				discovered.push_back(macrostate);
+				return true;
+			},
+			nullptr, params
+		);
 		CHECK(result.num_of_states() == 3);
 		CHECK(subset_map == std::unordered_map<StateSet, State>{{{0}, 0}, {{1, 2}, 1}, {{3}, 2}});
 		CHECK(discovered == std::vector<StateSet>{{0}, {1, 2}, {3}});
@@ -611,10 +620,14 @@ TEST_CASE("mata::nfa::determinize()") {
 		subset_map.clear();
 		discovered.clear();
 		// Stopping on the first new macrostate leaves it in the result, without exploring it.
-		result = determinize(nfa, &subset_map, [&](const Nfa&, const State, const StateSet& macrostate) {
-			discovered.push_back(macrostate);
-			return discovered.size() < 2;
-		});
+		result = determinize(
+			nfa, &subset_map,
+			[&](const Nfa&, const State, const StateSet& macrostate) {
+				discovered.push_back(macrostate);
+				return discovered.size() < 2;
+			},
+			nullptr, params
+		);
 		CHECK(discovered == std::vector<StateSet>{{0}, {1, 2}});
 		CHECK(result.num_of_states() == 2);
 		CHECK(result.delta.num_of_transitions() == 1);
@@ -632,7 +645,7 @@ TEST_CASE("mata::nfa::determinize()") {
 		nfa.delta.add(3, 'a', 1);
 		REQUIRE(!nfa.is_deterministic());
 
-		result = determinize(nfa, nullptr, std::nullopt, &symbols);
+		result = determinize(nfa, nullptr, std::nullopt, &symbols, params);
 		CHECK(result.num_of_states() == 2);
 		CHECK(result.delta.get_used_symbols() == OrdVector<Symbol>{'a'});
 		CHECK(result.is_in_lang(Word{'a'}));
@@ -649,7 +662,7 @@ TEST_CASE("mata::nfa::determinize()") {
 		dfa.delta.add(2, 'a', 1);
 		REQUIRE(dfa.is_deterministic());
 
-		result = determinize(dfa, nullptr, std::nullopt, &symbols);
+		result = determinize(dfa, nullptr, std::nullopt, &symbols, params);
 		CHECK(result.num_of_states() == 2);
 		CHECK(result.delta.get_used_symbols() == OrdVector<Symbol>{'a'});
 		CHECK(result.is_in_lang(Word{'a'}));
@@ -668,13 +681,17 @@ TEST_CASE("mata::nfa::determinize()") {
 		REQUIRE(aut.is_deterministic());
 
 		std::vector<StateSet> discovered{};
-		result = determinize(aut, &subset_map, [&discovered](const Nfa&, const State, const StateSet& set) -> bool {
-			discovered.push_back(set);
-			return true;
-		});
+		result = determinize(
+			aut, &subset_map,
+			[&discovered](const Nfa&, const State, const StateSet& set) -> bool {
+				discovered.push_back(set);
+				return true;
+			},
+			nullptr, params
+		);
 
-		// Depth-first renumbering: initial {1} -> 0, first-seen a- and b-targets {2} -> 1, {3} -> 1's
-		//  sibling 2; unreachable state 4 never appears.
+		// Depth-first renumbering (breadth-first in the Four Russians construction, the same here): initial {1} -> 0,
+		//  first-seen a- and b-targets {2} -> 1, {3} -> 1's sibling 2; unreachable state 4 never appears.
 		CHECK(result.num_of_states() == 3);
 		CHECK(result.initial.contains(0));
 		CHECK(result.initial.size() == 1);
@@ -694,9 +711,11 @@ TEST_CASE("mata::nfa::determinize()") {
 		aut.delta.add(0, 'a', 1);
 		aut.delta.add(1, 'a', 2);
 		aut.final = {2};
-		result = determinize(aut, nullptr, [](const Nfa&, const State, const StateSet& set) -> bool {
-			return set.size() == 1 && set.front() == 0;
-		});
+		result = determinize(
+			aut, nullptr,
+			[](const Nfa&, const State, const StateSet& set) -> bool { return set.size() == 1 && set.front() == 0; },
+			nullptr, params
+		);
 		// The stop fires on discovering {1}: the state and the 0-a->1 edge were already emitted, but {1}
 		//  is never expanded and the final {2} is never reached.
 		CHECK(result.num_of_states() == 2);

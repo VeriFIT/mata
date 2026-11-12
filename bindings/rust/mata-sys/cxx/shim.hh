@@ -33,6 +33,7 @@ static_assert(
 // Shared types, defined by the bridge in src/lib.rs.
 struct Limits;
 enum class Complementation : std::uint8_t;
+enum class Determinization : std::uint8_t;
 enum class Minimization : std::uint8_t;
 enum class Reduction : std::uint8_t;
 enum class ResidualConstruction : std::uint8_t;
@@ -147,7 +148,7 @@ std::unique_ptr<Nfa> intersection(const Nfa& lhs, const Nfa& rhs);
 std::unique_ptr<Nfa> concatenate(const Nfa& lhs, const Nfa& rhs);
 std::unique_ptr<Nfa> difference(const Nfa& lhs, const Nfa& rhs);
 std::unique_ptr<Nfa> complement(const Nfa& nfa, rust::Slice<const Symbol> symbols, Complementation algorithm);
-std::unique_ptr<Nfa> determinize(const Nfa& nfa);
+std::unique_ptr<Nfa> determinize(const Nfa& nfa, Determinization algorithm);
 std::unique_ptr<Nfa> minimize(const Nfa& nfa, Minimization algorithm);
 std::unique_ptr<Nfa>
 	reduce(const Nfa& nfa, Reduction algorithm, ResidualConstruction construction, Direction direction);
