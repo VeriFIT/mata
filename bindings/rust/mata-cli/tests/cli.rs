@@ -1499,3 +1499,142 @@ fn parameter_values_are_checked_before_any_input_is_loaded() {
 		stderr(&missing)
 	);
 }
+
+// Review of #1039: DOT reader and writer
+
+fn dot_to_mata(dot: &str) -> Output {
+	mata_with_stdin(["convert", "--from", "dot", "--to", "mata", "-"], dot)
+}
+
+#[test]
+fn a_dot_state_number_beyond_the_states_drawn_is_an_error() {
+	for state in ["4294967295", "4000000000"] {
+		let output = dot_to_mata(&format!("digraph finiteAutomaton {{\n{state};\n}}\n"));
+		assert_eq!(status(&output), 2, "{}", stderr(&output));
+		assert!(
+			stderr(&output).contains("states are numbered from 0 without a gap"),
+			"{}",
+			stderr(&output)
+		);
+	}
+}
+
+#[test]
+fn a_numbered_dot_label_reads_back_and_keeps_its_number_from_names() {
+	let workspace = Workspace::new("dot-numbers");
+	let nfa = workspace.file(
+		"a.mata",
+		"@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a q1\nq1 3 q0\n",
+	);
+	let mata_text = stdout(&mata(["convert", "--to", "mata", &nfa]));
+	let dot = stdout(&mata(["convert", &nfa]));
+	assert!(dot.contains("[label=\"1\"]"), "{dot}");
+	let back = dot_to_mata(&dot);
+	assert_eq!(status(&back), 0, "{}", stderr(&back));
+	assert_eq!(stdout(&back), mata_text);
+
+	let later_number = dot_to_mata(
+		"digraph finiteAutomaton {\n0 -> 1 [label=\"a\"];\n1 -> 0 [label=\"0\"];\ni0 -> 0;\n}\n",
+	);
+	assert_eq!(status(&later_number), 0, "{}", stderr(&later_number));
+	let text = stdout(&later_number);
+	assert!(
+		text.contains("q0 a q1\n") && text.contains("q1 0 q0\n"),
+		"{text}"
+	);
+}
+
+#[test]
+fn a_dot_input_holds_one_graph() {
+	let workspace = Workspace::new("dot-graphs");
+	let nfa = workspace.file("a.mata", NFA);
+	let two = stdout(&mata(["convert", &nfa, &nfa]));
+	let output = dot_to_mata(&two);
+	assert_eq!(status(&output), 2, "{}", stderr(&output));
+	assert!(
+		stderr(&output).contains("an input holds one graph"),
+		"{}",
+		stderr(&output)
+	);
+	let unclosed = dot_to_mata("digraph finiteAutomaton {\n0;\n");
+	assert_eq!(status(&unclosed), 2, "{}", stderr(&unclosed));
+}
+
+#[test]
+fn a_dot_round_trip_keeps_the_level_count_of_a_transducer() {
+	let workspace = Workspace::new("dot-levels");
+	for (name, nft) in [
+		(
+			"word.mata",
+			"@NFT-explicit\n%Alphabet-auto\n%Initial q0\n%Final q0\n%Levels q0:0\n%LevelsNum 2\n",
+		),
+		(
+			"empty.mata",
+			"@NFT-explicit\n%Alphabet-auto\n%LevelsNum 2\n",
+		),
+	] {
+		let path = workspace.file(name, nft);
+		let dot = stdout(&mata(["convert", &path]));
+		assert!(dot.contains("num_of_levels=2;"), "{dot}");
+		let back = dot_to_mata(&dot);
+		assert_eq!(status(&back), 0, "{}", stderr(&back));
+		assert_eq!(stdout(&back), nft);
+	}
+}
+
+#[test]
+fn dot_labels_keep_names_with_commas_brackets_and_angles() {
+	let workspace = Workspace::new("dot-names");
+	let nfa = workspace.file(
+		"a.mata",
+		"@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a,b q1\nq0 [a-c] q1\nq0 <5> q1\n",
+	);
+	let mata_text = stdout(&mata(["convert", "--to", "mata", &nfa]));
+	let back = dot_to_mata(&stdout(&mata(["convert", &nfa])));
+	assert_eq!(status(&back), 0, "{}", stderr(&back));
+	assert_eq!(stdout(&back), mata_text);
+}
+
+#[test]
+fn dot_attributes_are_read_by_name_not_by_their_text() {
+	let output =
+		dot_to_mata("digraph finiteAutomaton {\n0 [tooltip=\"doublecircle\"];\ni0 -> 0;\n}\n");
+	assert_eq!(status(&output), 2, "{}", stdout(&output));
+	assert!(
+		stderr(&output).contains("unsupported node attribute 'tooltip=doublecircle'"),
+		"{}",
+		stderr(&output)
+	);
+	let colored = dot_to_mata("digraph finiteAutomaton {\n0 -> 0 [label=\"a\", color=red];\n}\n");
+	assert_eq!(status(&colored), 2, "{}", stdout(&colored));
+}
+
+#[test]
+fn a_dot_edge_without_a_label_is_symbol_zero() {
+	let output =
+		dot_to_mata("digraph finiteAutomaton {\n0 -> 1;\n1 -> 0 [label=\"a\"];\ni0 -> 0;\n}\n");
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	let text = stdout(&output);
+	assert!(
+		text.contains("q0 0 q1\n") && text.contains("q1 a q0\n"),
+		"{text}"
+	);
+	let empty = dot_to_mata("digraph finiteAutomaton {\n0 -> 1 [label=\"\"];\n}\n");
+	assert_eq!(status(&empty), 2, "{}", stdout(&empty));
+}
+
+#[test]
+fn a_dot_label_decodes_its_escapes() {
+	let dot = "digraph finiteAutomaton {\nnode [shape=circle];\n0 -> 0 [label=\"a\\\"b\"];\n\
+		node [shape=none, label=\"\"];\ni0 -> 0;\n}\n";
+	let again = mata_with_stdin(["convert", "--from", "dot", "--to", "dot", "-"], dot);
+	assert_eq!(status(&again), 0, "{}", stderr(&again));
+	assert_eq!(stdout(&again), dot);
+	let unknown = dot_to_mata("digraph finiteAutomaton {\n0 -> 0 [label=\"a\\nb\"];\n}\n");
+	assert_eq!(status(&unknown), 2, "{}", stdout(&unknown));
+	assert!(
+		stderr(&unknown).contains("unsupported escape"),
+		"{}",
+		stderr(&unknown)
+	);
+}

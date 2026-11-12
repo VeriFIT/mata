@@ -240,8 +240,8 @@ mata convert [--from mata|dot] [--to mata|dot] [--kind nfa|nft]
   directions are available.
 - `--kind` selects what the input is parsed as. It defaults to detecting the kind from the first automaton's
   `%LevelsNum` heading: `@NFA-explicit` without levels is an NFA, `@NFT-explicit` or any section with `%LevelsNum` is
-  an NFT; a DOT graph with state labels is an NFT. All inputs of one invocation must have the same kind; mixed kinds
-  are an error.
+  an NFT; a DOT graph with state labels, `forcelabels=true` or `num_of_levels` is an NFT. All inputs of one invocation
+  must have the same kind; mixed kinds are an error.
 - Every input is converted in order to the output stream, or to one file per input when `--output PATH` names a
   directory; with several inputs and no `--output`, each converted automaton follows the previous one, separated by a
   blank line, as the `.mata` format allows several sections. Two inputs that would be written to the same file in the
@@ -267,23 +267,34 @@ under fixed conventions, so anything outside them is an error; unsupported const
 | `s -> t [label="a,b"]`, `[label="[a-c]"]`            | One transition under each listed symbol                |
 | `s -> t` without `label`                             | A transition under the abstract symbol `0`             |
 | `[tooltip="…"]` on an edge                           | Ignored; it repeats the full label of a shortened one  |
-| `forcelabels=true`                                   | Ignored; the transducer writer emits it for the labels |
+| `forcelabels=true`                                   | A transducer; its writer emits it for the state labels |
+| `num_of_levels=N`                                    | A transducer with `N` levels                           |
 | states `0`, `1`, `…`                                 | State numbers; state names must be numbers             |
+
+An input holds exactly one graph, and every state from `0` to the highest appears in a statement, as the writer draws
+every state. The library's DOT carries no level count, so `mata convert`, `nfa:print-to-dot` and `nft:print-to-dot`
+add `num_of_levels=N` after the `digraph` line of a transducer; without it the level count is the highest state level
+plus one.
 
 The symbol label is the reverse of the {ref}`script alphabet <script-alphabets>`; `mata convert`, `nfa:print-to-dot` and
 `nft:print-to-dot` all write symbol names, so their outputs agree:
 
 - A plain name such as `a` or `q0` is looked up, and inserted under the next free symbol if new.
-- `<eps>` is epsilon, `<dntcr>` is the don't-care symbol, and `<n>` is the symbol number `n`.
+- `<eps>` is epsilon, `<dntcr>` is the don't-care symbol, and `<n>` is the symbol number `n`. A number `n` that is not
+  a known name is symbol `n` too, as the library writes a symbol without a name. A new name never takes the number of
+  a symbol the graph lists.
 - A range `[a-c]` expands to every symbol it names; `a,b` expands to the two symbols `a` and `b`.
 - An empty label is an error.
-- Escaped characters are not decoded; `\\` and `\"` in a DOT label are the two characters `\` and `"`, not `a`.
+- `\\`, `\"`, `\,`, `\[` and `\<` are the characters `\`, `"`, `,`, `[` and `<` inside a name, as Graphviz shows
+  them; any other escape is an error. The writers escape these characters in names and write a name of digits or with
+  a control character as `<n>`, so every label reads back as the same symbols.
 
-A DOT graph that uses anything else is rejected with the construct and its line: subgraphs, clusters, node or edge
-attributes other than `shape`, `label` and `tooltip`, `strict`, undirected `graph`, HTML labels, ports, `rank`,
-`constraint`, a node label that is not `N:level` for the node's own number, another graph attribute, a state name that
-is not a number, a marker edge not of the form `iN -> N`, or an edge label with no listed symbols. Nothing is
-skipped, guessed or approximated.
+A DOT graph that uses anything else is rejected with the construct and its line: subgraphs, clusters, node attributes
+other than `shape` and `label`, edge attributes other than `label` and `tooltip`, attributes on a marker edge, `strict`,
+undirected `graph`, HTML labels, ports, `rank`, `constraint`, a node label that is not `N:level` for the node's own
+number, a level not below `num_of_levels`, another graph attribute, a state name that is not a number, a gap in the
+state numbers, a second graph, a graph without its closing `}`, a marker edge not of the form `iN -> N`, or an edge
+label with no listed symbols. Nothing is skipped, guessed or approximated.
 
 ## Output conventions
 

@@ -1137,9 +1137,7 @@ fn dispatch_nfa_inspection(
 		"nfa_print_to_dot" => {
 			let [value] = take(arguments, name)?;
 			let nfa = expect_nfa(&value)?;
-			Ok(Value::String(
-				nfa.dot().alphabet(&engine.script_alphabet).to_string(),
-			))
+			Ok(Value::String(crate::dot::write_nfa(&nfa, engine)))
 		}
 		"nfa_num_states" => {
 			let [value] = take(arguments, name)?;
@@ -1461,9 +1459,7 @@ fn dispatch_nft_inspection(
 		"nft_print_to_dot" => {
 			let [value] = take(arguments, name)?;
 			let nft = expect_nft(&value)?;
-			Ok(Value::String(
-				nft.dot().alphabet(&engine.script_alphabet).to_string(),
-			))
+			Ok(Value::String(crate::dot::write_nft(&nft, engine)))
 		}
 		"nft_num_states" => {
 			let [value] = take(arguments, name)?;

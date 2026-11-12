@@ -195,8 +195,8 @@ fn parse_input(
 	engine: &mut Engine,
 ) -> Result<(crate::eval::Value, String), Error> {
 	if options.from == "dot" {
-		// DOT carries no heading, so the kind shows only once the graph is read: a state label
-		// makes it a transducer.
+		// DOT carries no heading, so the kind shows only once the graph is read: a state label or a
+		// transducer's graph attribute makes it a transducer.
 		let value =
 			crate::dot::parse(source, engine).map_err(|e| Error::plain(format!("{input}: {e}")))?;
 		let detected = kind_of(&value).to_owned();
@@ -228,13 +228,12 @@ fn write_stream(text: &str, output: Option<&str>) -> Result<(), Error> {
 
 fn render(value: &crate::eval::Value, engine: &Engine, to: &str) -> Result<String, Error> {
 	if to == "dot" {
-		let alphabet = &engine.script_alphabet;
 		return Ok(match value {
-			crate::eval::Value::Nfa(nfa) => nfa.dot().alphabet(alphabet).to_string(),
-			crate::eval::Value::Nft(nft) => nft.dot().alphabet(alphabet).to_string(),
+			crate::eval::Value::Nfa(nfa) => crate::dot::write_nfa(nfa, engine),
+			crate::eval::Value::Nft(nft) => crate::dot::write_nft(nft, engine),
 			crate::eval::Value::Automaton(automaton) => match &**automaton {
-				crate::eval::AutomatonKind::Nfa(nfa) => nfa.dot().alphabet(alphabet).to_string(),
-				crate::eval::AutomatonKind::Nft(nft) => nft.dot().alphabet(alphabet).to_string(),
+				crate::eval::AutomatonKind::Nfa(nfa) => crate::dot::write_nfa(nfa, engine),
+				crate::eval::AutomatonKind::Nft(nft) => crate::dot::write_nft(nft, engine),
 			},
 			_ => return Err(Error::plain("the input holds no automaton".into())),
 		});
