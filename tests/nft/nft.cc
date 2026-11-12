@@ -5190,6 +5190,37 @@ TEST_CASE("mata::nft::project_out(jump_mode == JumpMode::RepeatSymbol)") {
 	}
 }
 
+TEST_CASE("mata::nft::project_out() preserves a sole retained post when projecting all nonzero levels") {
+	const Nft input{[] {
+		Nft nft{Nft::with_levels({3, {0, 1, 2, 2, 0, 0}}, 6, {0}, {5})};
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(1, EPSILON, 2);
+		nft.delta.add(2, EPSILON, 2);
+		nft.delta.add(2, EPSILON, 3);
+		nft.delta.add(3, 'b', 4);
+		nft.delta.add(4, 'c', 5);
+		return nft;
+	}()};
+	Nft expected{Nft::with_levels({1, {0, 0, 0}}, 3, {0}, {2})};
+	expected.delta.add(0, 'a', 1);
+	expected.delta.add(1, 'c', 2);
+
+	for (const JumpMode jump_mode : {JumpMode::AppendDontCares, JumpMode::RepeatSymbol}) {
+		const Nft actual{project_out(input, OrdVector<Level>{1, 2}, jump_mode)};
+		CHECK(are_equivalent(actual, expected, jump_mode));
+	}
+}
+
+TEST_CASE("mata::nft::project_out() preserves a sole empty retained post when projecting a nonzero level") {
+	for (const JumpMode jump_mode : {JumpMode::AppendDontCares, JumpMode::RepeatSymbol}) {
+		Nft empty_retained{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {0})};
+		empty_retained.delta.add(0, EPSILON, 1);
+		empty_retained.delta.add(1, EPSILON, 2);
+		Nft expected_epsilon{Nft::with_levels({1, {0}}, 1, {0}, {0})};
+		CHECK(are_equivalent(project_out(empty_retained, OrdVector<Level>{1}, jump_mode), expected_epsilon, jump_mode));
+	}
+}
+
 TEST_CASE("mata::nft::project_out() closure fixpoint does not use-after-free") {
 	constexpr State A = 0, B = 1, Z = 2;
 	constexpr size_t NUM_LEAVES = 32;
