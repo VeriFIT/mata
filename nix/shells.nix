@@ -6,6 +6,12 @@
       devShells =
         let
           pythonEnv = pkgs.callPackage ./python-env.nix { inherit inputs; };
+          rustToolchain = inputs.fenix.packages.${pkgs.stdenv.hostPlatform.system}.stable.withComponents [
+            "cargo"
+            "clippy"
+            "rustc"
+            "rustfmt"
+          ];
           devShellEnv =
             {
               compiler ? "gcc",
@@ -89,6 +95,9 @@
                     # gnumake
                     pkgs.gcc
                     pkgs.clang
+
+                    # Rust bindings.
+                    rustToolchain
 
                     # TODO: Enable building documentation through Nix.
                     sphinxygen

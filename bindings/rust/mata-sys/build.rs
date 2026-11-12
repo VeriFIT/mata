@@ -61,6 +61,11 @@ fn main() {
 	if !build_type.eq_ignore_ascii_case("Debug") {
 		shim.define("NDEBUG", None);
 	}
+	// Toolchains that always define `_FORTIFY_SOURCE` (Nix's cc wrapper, hardened distributions) warn
+	// about each file compiled at `-O0`; `-Og` silences them and stays debuggable.
+	if env::var("OPT_LEVEL").is_ok_and(|level| level == "0") {
+		shim.opt_level_str("g");
+	}
 	if emscripten {
 		shim.flag(WASM_EXCEPTIONS);
 	}

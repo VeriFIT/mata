@@ -1,3 +1,4 @@
+{ inputs, ... }:
 {
   perSystem =
     {
@@ -27,7 +28,10 @@
           };
 
           clang-format.enable = true;
-          rustfmt.enable = true;
+          rustfmt = {
+            enable = true;
+            package = inputs.fenix.packages.${pkgs.stdenv.hostPlatform.system}.stable.rustfmt;
+          };
           cmake-format = {
             enable = true;
             # 'CMakeLists.txt' alone matches only the root one, and '**/' does not match the root.

@@ -38,6 +38,7 @@ For development:
 nix develop github:VeriFIT/mata
 ```
 
+The development shell includes Cargo, rustc, Clippy, and rustfmt from a lockfile-pinned stable Rust toolchain.
 The Python environment of the development shell is built from `uv.lock`, the same versions `uv sync` installs, with the
 bindings installed editable from the checkout. Build their extensions in place with `just bindings python build`.
 
