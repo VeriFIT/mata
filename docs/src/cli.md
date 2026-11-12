@@ -73,7 +73,7 @@ mata script run [options] [SCRIPT] [INPUT…]
   or with `--expression` has no file, so its paths are relative to the current directory too.
 - `--output PATH` redirects the script's standard output: `print`, `echo`, `check`, timing records and REPL values are
   written to `PATH` instead of standard output. `--output -` is standard output, the default. Errors always go to
-  standard error.
+  standard error. An output that is the file of an input is an error, before anything is written.
 
 The whole script is checked, as [`mata script check`](#mata-script-check) does, before its first form runs, so a
 misspelled operation in the last line stops the run before any output and before any automaton is loaded. Its declared
@@ -157,7 +157,8 @@ mata script repl [--output PATH]
 Reads Mata Script forms from standard input and prints the value of every top-level expression, one line per value, to
 the output stream; an automaton is shown by its kind and size, as `#<Nfa with 3 states and 2 transitions>`, and `print`
 shows it in full. Errors print a diagnostic on standard error and end the current form only, and the session goes on.
-The session keeps definitions and options until it ends. Every form that can appear at the top level of a script can be
+A form may go on over several lines, and it is evaluated once it is complete. `(exit)` ends the session. The session
+keeps definitions and options until it ends. Every form that can appear at the top level of a script can be
 typed. A session has no inputs to pass on its command line, so `$1`, `$name` and `inputs` are errors there,
 `mata: no positional input 1`, and loading an automaton needs a path in the script, as `(nfa:load "a.mata")`.
 

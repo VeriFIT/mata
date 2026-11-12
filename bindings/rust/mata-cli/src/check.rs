@@ -738,8 +738,12 @@ impl<'a> Checker<'a> {
 			Kind::Definition {
 				name,
 				parameters,
+				sort,
 				body,
 			} => {
+				if let Some(sort) = sort {
+					self.check_sort_name(expression.line, expression.column, sort);
+				}
 				self.definition(
 					name,
 					parameters.as_deref(),

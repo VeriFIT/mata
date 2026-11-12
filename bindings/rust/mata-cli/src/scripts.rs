@@ -73,9 +73,8 @@ pub(crate) fn run(
 	engine.parameters = inputs.parameters;
 	engine.set_base_dir(base_dir);
 	if let Some(path) = output.filter(|path| *path != "-") {
-		let file = std::fs::File::create(path)
-			.map_err(|e| Error::plain(format!("cannot write '{path}': {e}")))?;
-		engine.sink = Sink::File(std::io::BufWriter::new(file));
+		let given = inputs.positional.iter().chain(inputs.named.values());
+		engine.sink = create_output(path, given.map(String::as_str))?;
 	}
 	let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
 		let bound = bind_declarations(&mut engine, &forms, &inputs.positional)?;
@@ -119,8 +118,8 @@ pub(crate) fn check(source: &Source) -> Result<Exit, Error> {
 
 pub(crate) fn repl(output: Option<&str>) -> Result<Exit, Error> {
 	let mut engine = Engine::new();
-	if output.is_some_and(|path| path != "-") {
-		engine.sink = Sink::Buffer(String::new());
+	if let Some(path) = output.filter(|path| *path != "-") {
+		engine.sink = create_output(path, [])?;
 	}
 	let interactive = std::io::stdin().is_terminal();
 	let mut failed = false;
@@ -174,13 +173,13 @@ pub(crate) fn repl(output: Option<&str>) -> Result<Exit, Error> {
 					failed = true;
 				}
 			}
+			if engine.exit {
+				break;
+			}
 		}
-	}
-	if let (Some(path), Sink::Buffer(text)) = (output, &engine.sink)
-		&& path != "-"
-	{
-		std::fs::write(path, text)
-			.map_err(|e| Error::plain(format!("cannot write '{path}': {e}")))?;
+		if engine.exit {
+			break;
+		}
 	}
 	Ok(if failed {
 		Exit::Usage
@@ -189,6 +188,22 @@ pub(crate) fn repl(output: Option<&str>) -> Result<Exit, Error> {
 	} else {
 		Exit::Success
 	})
+}
+
+/// Opens the `--output` file at once, so every value is written as it is printed. The file must not
+/// be one of `inputs`, which opening it would empty before they are read.
+fn create_output<'a>(path: &str, inputs: impl IntoIterator<Item = &'a str>) -> Result<Sink, Error> {
+	if let Ok(output) = std::fs::canonicalize(path)
+		&& let Some(input) = inputs.into_iter().find(|input| {
+			*input != "-" && std::fs::canonicalize(input).is_ok_and(|input| input == output)
+		}) {
+		return Err(Error::plain(format!(
+			"the output '{path}' is the input '{input}'"
+		)));
+	}
+	let file = std::fs::File::create(path)
+		.map_err(|e| Error::plain(format!("cannot write '{path}': {e}")))?;
+	Ok(Sink::File(std::io::BufWriter::new(file)))
 }
 
 /// The value of a REPL form: an automaton by its kind and size, so that a large one does not flood the

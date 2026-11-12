@@ -1114,3 +1114,155 @@ fn script_check_takes_short_options_and_a_separator() {
 		stderr(&output)
 	);
 }
+
+// Review of #1039: parser incompleteness, header versions, REPL exit and output
+
+#[test]
+fn the_repl_reads_a_form_that_goes_on_over_several_lines() {
+	let output = mata_with_stdin(
+		["script", "repl"],
+		"(let ((x 1)\n  ) x)\n\
+		 (cond ((= 1 1) 2)\n  (else 3))\n\
+		 (nfa:literal :initial (q0) :final (q1) :transitions ((q0 a q1)\n  ))\n\
+		 \"a\nb\"\n\
+		 (define (g a\n  b) b)\n\
+		 (g 1 4)\n",
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(
+		stdout(&output),
+		"1\n2\n#<Nfa with 2 states and 1 transitions>\na\nb\n4\n"
+	);
+}
+
+#[test]
+fn a_broken_form_is_reported_at_its_place_and_the_repl_reads_on() {
+	let output = mata_with_stdin(["script", "repl"], "(define (f x))\n(+ 1 2)\n");
+	assert_eq!(status(&output), 2);
+	assert_eq!(stdout(&output), "3\n");
+	assert_eq!(stderr(&output), "mata: expected function body at 1:14\n");
+	let output = mata(["script", "run", "--expression", "(define (f x))\n\n"]);
+	assert_eq!(status(&output), 2);
+	assert_eq!(stderr(&output), "mata: expected function body at 1:14\n");
+}
+
+#[test]
+fn a_local_definition_keeps_its_sort() {
+	let output = mata([
+		"script",
+		"run",
+		"--no-check",
+		"--expression",
+		"(define (f) (define x Nfa 1) x)\n(print (f))",
+	]);
+	assert_eq!(status(&output), 2);
+	assert!(stdout(&output).is_empty(), "{}", stdout(&output));
+	assert!(
+		stderr(&output).contains("expected Nfa, found Int"),
+		"{}",
+		stderr(&output)
+	);
+	let output = mata([
+		"script",
+		"check",
+		"--expression",
+		"(define (f) (define x (List Nfaa) (list 1)) x)",
+	]);
+	assert_eq!(status(&output), 2);
+	assert_eq!(
+		stderr(&output),
+		"mata: unknown sort '(List Nfaa)' at 1:13\n"
+	);
+}
+
+#[test]
+fn every_header_has_its_version_checked() {
+	for script in [
+		"(;\n mata-script \"9.0.0\")\n(print 1)",
+		"(mata-script ; the version\n \"9.0.0\")\n(print @)",
+	] {
+		let output = mata(["script", "run", "--expression", script]);
+		assert_eq!(status(&output), 2, "{script}");
+		assert!(stdout(&output).is_empty(), "{script}: {}", stdout(&output));
+		assert!(
+			stderr(&output).contains("the script needs Mata Script 9.0.0"),
+			"{script}: {}",
+			stderr(&output)
+		);
+	}
+	let output = mata([
+		"script",
+		"run",
+		"--expression",
+		"(mata-script ; the version\n \"0.1.0\")\n(print 1)",
+	]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "1\n");
+	let output = mata_with_stdin(["script", "repl"], "(mata-script \"9.0.0\")\n");
+	assert_eq!(status(&output), 2);
+	assert!(
+		stderr(&output).contains("the script needs Mata Script 9.0.0"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
+fn exit_ends_the_repl_session() {
+	let output = mata_with_stdin(["script", "repl"], "(+ 1 1)\n(exit) (+ 2 2)\n(+ 3 3)\n");
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "2\n");
+}
+
+#[test]
+fn the_repl_writes_its_output_file_as_it_prints() {
+	let workspace = Workspace::new("repl-output");
+	let path = workspace.join("out.txt");
+	let mut child = Command::new(env!("CARGO_BIN_EXE_mata"))
+		.args(["script", "repl", "--output", &path])
+		.stdin(Stdio::piped())
+		.stdout(Stdio::piped())
+		.stderr(Stdio::piped())
+		.spawn()
+		.expect("the mata binary runs");
+	let mut stdin = child.stdin.take().expect("a piped standard input");
+	// The error of the second form shows that the first one has run.
+	stdin
+		.write_all(b"(+ 1 1)\n(undefined)\n")
+		.expect("the forms are written");
+	let mut stderr = std::io::BufReader::new(child.stderr.take().expect("a piped standard error"));
+	let mut line = String::new();
+	std::io::BufRead::read_line(&mut stderr, &mut line).expect("a line");
+	assert!(line.starts_with("mata: "), "{line}");
+	assert_eq!(workspace.read("out.txt"), "2\n");
+	drop(stdin);
+	assert_eq!(child.wait().expect("the session ends").code(), Some(2));
+}
+
+#[test]
+fn the_output_cannot_be_an_input() {
+	let workspace = Workspace::new("output-input");
+	let a = workspace.file("a.mata", NFA);
+	for arguments in [vec!["a.mata"], vec!["--input", "a=./a.mata"]] {
+		let output = Command::new(env!("CARGO_BIN_EXE_mata"))
+			.current_dir(&workspace.path)
+			.args([
+				"script",
+				"run",
+				"--expression",
+				"(declare-input a Nfa)\n(print (nfa:number-of-states a))",
+				"--output",
+				&a,
+			])
+			.args(&arguments)
+			.output()
+			.expect("the mata binary runs");
+		assert_eq!(status(&output), 2, "{arguments:?}");
+		assert!(
+			stderr(&output).contains("is the input"),
+			"{arguments:?}: {}",
+			stderr(&output)
+		);
+		assert_eq!(workspace.read("a.mata"), NFA, "{arguments:?}");
+	}
+}

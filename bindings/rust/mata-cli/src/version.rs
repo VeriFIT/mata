@@ -86,23 +86,17 @@ pub(crate) fn declared(source: &str) -> Result<Option<Version>, Error> {
 	if rest.starts_with("#!") {
 		rest = rest.find('\n').map_or("", |end| &rest[end..]);
 	}
-	loop {
-		rest = rest.trim_start();
-		if !rest.starts_with(';') {
-			break;
-		}
-		rest = rest.find('\n').map_or("", |end| &rest[end..]);
-	}
+	rest = skip_layout(rest);
 	let Some(after) = rest.strip_prefix('(') else {
 		return Ok(None);
 	};
-	let Some(after) = after.trim_start().strip_prefix("mata-script") else {
+	let Some(after) = skip_layout(after).strip_prefix("mata-script") else {
 		return Ok(None);
 	};
-	if !after.starts_with(char::is_whitespace) {
+	if after.starts_with(crate::lexer::is_name_char) {
 		return Ok(None);
 	}
-	let after = after.trim_start();
+	let after = skip_layout(after);
 	let start = source.len() - after.len();
 	let (line, column) = place(source, start);
 	let text = after
@@ -116,6 +110,26 @@ pub(crate) fn declared(source: &str) -> Result<Option<Version>, Error> {
 				column,
 			)
 		})?;
+	supported(text, line, column).map(Some)
+}
+
+/// Whitespace and `;` comments, which may stand between any two tokens of the header.
+fn skip_layout(mut rest: &str) -> &str {
+	loop {
+		rest = rest.trim_start();
+		if !rest.starts_with(';') {
+			return rest;
+		}
+		rest = rest.find('\n').map_or("", |end| &rest[end..]);
+	}
+}
+
+/// Reads the version `text` of a header at `line` and `column`.
+///
+/// # Errors
+///
+/// The version is not `MAJOR.MINOR.PATCH`, or this interpreter does not run it.
+pub(crate) fn supported(text: &str, line: usize, column: usize) -> Result<Version, Error> {
 	let version = Version::parse(text).ok_or_else(|| {
 		Error::at(
 			format!("invalid language version '{text}'; expected MAJOR.MINOR.PATCH"),
@@ -133,7 +147,7 @@ pub(crate) fn declared(source: &str) -> Result<Option<Version>, Error> {
 			column,
 		));
 	}
-	Ok(Some(version))
+	Ok(version)
 }
 
 /// The one-based line and column of the byte `offset` of `source`.

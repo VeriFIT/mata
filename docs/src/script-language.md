@@ -794,10 +794,10 @@ A script names the version of the language it is written for in a header, the fi
 ```
 
 - **The framing never changes.** In every version, a script is an optional `#!` line, whitespace and `;` comments,
-  then `(mata-script "MAJOR.MINOR.PATCH" …)`. An interpreter reads the version from this framing before it parses
-  the rest, so a script for a version it does not run is rejected with the version it needs, as
-  `the script needs Mata Script 0.2.0; this mata runs Mata Script 0.1.x`, never with a syntax error about something
-  that version added.
+  then `(mata-script "MAJOR.MINOR.PATCH" …)`, with whitespace and comments allowed between its tokens. An interpreter
+  reads the version from this framing before it parses the rest, so a script for a version it does not run is
+  rejected with the version it needs, as `the script needs Mata Script 0.2.0; this mata runs Mata Script 0.1.x`, never
+  with a syntax error about something that version added. A header typed into a REPL session is checked the same way.
 - **A major version may break anything:** syntax, the meaning of a form, a removed or renamed operation, the printed
   formats, the exit statuses. An interpreter runs one major version.
 - **A minor version only adds,** from `1.0.0` on: an interpreter of `1.4` runs scripts for `1.0` to `1.4`, and rejects

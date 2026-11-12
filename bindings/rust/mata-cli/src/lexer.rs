@@ -127,7 +127,10 @@ impl Lexer<'_> {
 				_ => value.push(c),
 			}
 		}
-		Err(Error::at("unterminated string".to_owned(), line, column))
+		// A string may span lines, so the REPL reads on.
+		let mut error = Error::at("unterminated string".to_owned(), line, column);
+		error.incomplete = true;
+		Err(error)
 	}
 
 	fn take_name(&mut self) -> String {
@@ -169,7 +172,7 @@ impl Lexer<'_> {
 	}
 }
 
-fn is_name_char(c: char) -> bool {
+pub(crate) fn is_name_char(c: char) -> bool {
 	c.is_alphanumeric()
 		|| matches!(
 			c,

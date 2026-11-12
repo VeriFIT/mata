@@ -36,6 +36,7 @@ pub(crate) enum Kind {
 		name: String,
 		/// `None` for a value definition; `Some` holds the parameters, which may be empty.
 		parameters: Option<Vec<Parameter>>,
+		sort: Option<String>,
 		body: Vec<Expr>,
 	},
 	Lambda {
@@ -73,7 +74,7 @@ pub(crate) enum FormKind {
 		default: Option<Expr>,
 	},
 	/// `(mata-script "MAJOR.MINOR.PATCH" :requires (feature …) :profile name)`, only as the first form.
-	/// The version itself is read before parsing, by `version::declared`.
+	/// `version::declared` reads the version before parsing; the parser checks it again.
 	Header {
 		requires: Vec<String>,
 		profile: Option<String>,
@@ -205,13 +206,15 @@ impl Parser {
 	/// `(mata-script "VERSION" {:requires (feature …) | :profile name})`, after the head.
 	fn header(&mut self) -> Result<FormKind, Error> {
 		let token = self.next();
-		let TokenKind::String(_) = token.kind else {
-			return Err(Error::at(
+		let TokenKind::String(text) = &token.kind else {
+			return Err(Self::error_at(
+				&token,
 				"mata-script needs the language version as a string, such as \"0.1.0\"".to_owned(),
-				token.line,
-				token.column,
 			));
 		};
+		// `version::declared` reads a header in the framing before parsing; one it cannot see, such as
+		// in the REPL, is checked here.
+		crate::version::supported(text, token.line, token.column)?;
 		let mut requires = None;
 		let mut profile = None;
 		while let TokenKind::Keyword(keyword) = self.peek().clone() {
@@ -434,7 +437,9 @@ impl Parser {
 				self.current += 1;
 				Kind::List(items)
 			}
-			_ => return Err(Error::at("expected literal data".to_owned(), line, column)),
+			_ => {
+				return Err(Self::error_at(&token, "expected literal data".to_owned()));
+			}
 		};
 		Ok(Expr { node, line, column })
 	}
@@ -446,10 +451,9 @@ impl Parser {
 		while self.peek() != &TokenKind::RightParen {
 			let binding = self.next();
 			if binding.kind != TokenKind::LeftParen {
-				return Err(Error::at(
+				return Err(Self::error_at(
+					&binding,
 					format!("a {head} binding must be (name expression)"),
-					binding.line,
-					binding.column,
 				));
 			}
 			let name = self.name()?;
@@ -510,10 +514,9 @@ impl Parser {
 		while self.peek() != &TokenKind::RightParen {
 			let clause = self.next();
 			if clause.kind != TokenKind::LeftParen {
-				return Err(Error::at(
+				return Err(Self::error_at(
+					&clause,
 					"a cond clause must be (condition expression)".to_owned(),
-					clause.line,
-					clause.column,
 				));
 			}
 			let condition = self.next();
@@ -621,8 +624,8 @@ impl Parser {
 						FormKind::Define {
 							name,
 							parameters,
+							sort,
 							body: definition,
-							..
 						},
 					line,
 					column,
@@ -634,6 +637,7 @@ impl Parser {
 					node: Kind::Definition {
 						name,
 						parameters,
+						sort,
 						body: definition,
 					},
 					line,
@@ -683,11 +687,7 @@ impl Parser {
 				self.current += 1;
 				Ok(format!("({name} {})", sorts.join(" ")))
 			}
-			_ => Err(Error::at(
-				"expected a sort".to_owned(),
-				token.line,
-				token.column,
-			)),
+			_ => Err(Self::error_at(&token, "expected a sort".to_owned())),
 		}
 	}
 
@@ -703,11 +703,7 @@ impl Parser {
 		if let TokenKind::Name(name) = token.kind {
 			Ok(name)
 		} else {
-			Err(Error::at(
-				"expected a name".to_owned(),
-				token.line,
-				token.column,
-			))
+			Err(Self::error_at(&token, "expected a name".to_owned()))
 		}
 	}
 	fn keyword(&mut self) -> Result<String, Error> {
@@ -715,11 +711,7 @@ impl Parser {
 		if let TokenKind::Keyword(keyword) = token.kind {
 			Ok(keyword)
 		} else {
-			Err(Error::at(
-				"expected a keyword".to_owned(),
-				token.line,
-				token.column,
-			))
+			Err(Self::error_at(&token, "expected a keyword".to_owned()))
 		}
 	}
 	fn close(&mut self, name: &str) -> Result<(), Error> {
@@ -733,13 +725,16 @@ impl Parser {
 		}
 	}
 	fn expected<T>(&self, what: &str) -> Result<T, Error> {
-		let token = self.tokens.last().unwrap();
-		let mut error = Error::at(format!("expected {what}"), token.line, token.column);
-		error.incomplete = matches!(token.kind, TokenKind::Eof);
-		Err(error)
+		Err(self.here(format!("expected {what}")))
 	}
 	fn here(&self, message: String) -> Error {
-		Error::at(message, self.peek_token().line, self.peek_token().column)
+		Self::error_at(self.peek_token(), message)
+	}
+	/// An error at `token`; one at the end of the input is incomplete, so the REPL reads on.
+	fn error_at(token: &Token, message: String) -> Error {
+		let mut error = Error::at(message, token.line, token.column);
+		error.incomplete = token.kind == TokenKind::Eof;
+		error
 	}
 	fn peek(&self) -> &TokenKind {
 		&self.peek_token().kind

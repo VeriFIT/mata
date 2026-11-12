@@ -111,14 +111,12 @@ pub(crate) struct Options {
 	pub(crate) time_operations: bool,
 }
 
-/// Where the values a script prints go: written as they are printed, or kept for the caller.
+/// Where the values a script prints go, written as they are printed.
 pub(crate) enum Sink {
 	/// Standard output, flushed after every value so a run that is killed keeps what it printed.
 	Stdout,
 	/// A file opened once, written after every value.
 	File(std::io::BufWriter<fs::File>),
-	/// Kept in memory, as the REPL does with `--output`.
-	Buffer(String),
 }
 
 pub(crate) struct Engine {
@@ -217,10 +215,6 @@ impl Engine {
 				.write_all(text.as_bytes())
 				.and_then(|()| file.flush())
 				.map_err(|e| Error::plain(format!("cannot write the output file: {e}"))),
-			Sink::Buffer(buffer) => {
-				buffer.push_str(text);
-				Ok(())
-			}
 		}
 	}
 
@@ -942,6 +936,7 @@ impl Engine {
 			if let Kind::Definition {
 				name,
 				parameters,
+				sort,
 				body,
 			} = &item.node
 			{
@@ -956,6 +951,9 @@ impl Engine {
 						environment: self.scope.snapshot(),
 					})),
 				};
+				if let Some(sort) = sort {
+					check_sort(&value, sort, item)?;
+				}
 				self.scope.define(name.clone(), value);
 			}
 		}
