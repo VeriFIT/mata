@@ -475,9 +475,16 @@ protected:
 		assert(b1->index_ != b2->index_);
 		this->relation_.erase(element);
 
-		for (auto a : b2->inset_)
+		const auto& labels{
+			(b1->inset_.size() < b2->inset_.size()) ? b1->inset_ : b2->inset_
+		};
+		const auto& other_labels{
+			(b1->inset_.size() < b2->inset_.size()) ? b2->inset_ : b1->inset_
+		};
+
+		for (auto a : labels)
 		{
-			if (!b1->inset_.contains(a))
+			if (!other_labels.contains(a))
 			{
 				continue;
 			}
