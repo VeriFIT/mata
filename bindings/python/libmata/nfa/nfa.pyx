@@ -1362,7 +1362,7 @@ def determinize_with_subset_map(Nfa lhs, params = None):
     :param Dict params: Additional parameters for the determinization:
       - "algorithm":
         - "four_russians": The "Four Russians" subset construction, see `determinize_four_russians()`. This is the
-          default when params is None; in params, the key "algorithm" is required.
+          default when params is None or empty; in other params, the key "algorithm" is required.
         - "classical": The classical subset construction.
         With the same reduction, both give the same DFA, but they may number its states differently.
       - "reduction":
@@ -1388,7 +1388,7 @@ def determinize(Nfa lhs, params = None):
     :param Dict params: Additional parameters for the determinization:
       - "algorithm":
         - "four_russians": The "Four Russians" subset construction, see `determinize_four_russians()`. This is the
-          default when params is None; in params, the key "algorithm" is required.
+          default when params is None or empty; in other params, the key "algorithm" is required.
         - "classical": The classical subset construction.
         With the same reduction, both give the same DFA, but they may number its states differently.
       - "reduction":
