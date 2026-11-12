@@ -12,6 +12,7 @@ fn main() {
 		"MATA_DIR",
 		"MATA_SOURCE_DIR",
 		"MATA_CMAKE_BUILD_TYPE",
+		"MATA_VERSION",
 		"DOCS_RS",
 		// Read by the cmake crate, which does not ask cargo to rerun when they change.
 		"CMAKE",
@@ -45,10 +46,8 @@ fn main() {
 	let include = prefix.join("include");
 	check_state_bits(&include);
 	check_thread_safe(&include);
-	println!(
-		"cargo::rustc-env=MATA_LIBRARY_VERSION={}",
-		library_version(&lib)
-	);
+	let version = env::var("MATA_VERSION").unwrap_or_else(|_| library_version(&lib));
+	println!("cargo::rustc-env=MATA_LIBRARY_VERSION={version}");
 
 	println!("cargo::metadata=root={}", prefix.display());
 	println!("cargo::metadata=include={}", include.display());

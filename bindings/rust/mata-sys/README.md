@@ -17,11 +17,12 @@ Native build of [Mata](https://github.com/VeriFIT/mata), the finite automata lib
 
 Requirements: CMake 3.23 or newer and a C++23 compiler: GCC 14 or newer, or Clang 18 or newer (on macOS, Homebrew's LLVM; Apple's Clang is too old). Tested on 64-bit Linux and on WebAssembly ([below](#webassembly)).
 
-| Variable                | Effect                                                                                                 |
-| ----------------------- | ------------------------------------------------------------------------------------------------------ |
-| `MATA_DIR`              | Use an installed Mata (`include/` and `lib/libmata.a` or `lib64/libmata.a`) instead of building one.   |
-| `MATA_SOURCE_DIR`       | Build this Mata source tree instead.                                                                   |
-| `MATA_CMAKE_BUILD_TYPE` | CMake build type of Mata, `Release` by default. `Debug` turns on Mata's assertions (the shim follows). |
+| Variable                | Effect                                                                                                                                             |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MATA_DIR`              | Use an installed Mata (`include/` and `lib/libmata.a` or `lib64/libmata.a`) instead of building one.                                               |
+| `MATA_SOURCE_DIR`       | Build this Mata source tree instead.                                                                                                               |
+| `MATA_CMAKE_BUILD_TYPE` | CMake build type of Mata, `Release` by default. `Debug` turns on Mata's assertions (the shim follows).                                             |
+| `MATA_VERSION`          | The version `LIBRARY_VERSION` reports, for builds whose source has no git tags or `VERSION` file. By default, the version of Mata's CMake package. |
 
 The build script refuses a Mata that the bridge cannot use safely:
 
