@@ -527,6 +527,14 @@ impl Nft {
 		Ok(check(ffi::nft_are_equivalent(self.raw(), other.raw())))
 	}
 
+	/// Whether the transducer is deterministic on its encoding: one initial state and, from every state,
+	/// at most one edge per symbol. [`DONT_CARE`] overlaps every symbol except [`Symbol::EPSILON`], so
+	/// it may share a state only with edges that reach the same target.
+	#[must_use]
+	pub fn is_deterministic(&self) -> bool {
+		check(ffi::nft_is_deterministic(self.raw()))
+	}
+
 	// ── Operations ────────────────────────────────────────────────────────────────────────────────
 
 	/// Removes the states that are not useful (unreachable from an initial state, or reaching no final

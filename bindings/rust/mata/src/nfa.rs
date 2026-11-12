@@ -815,7 +815,17 @@ impl Nfa {
 	/// PSPACE-complete.
 	#[must_use]
 	pub fn is_universal(&self, alphabet: &Alphabet) -> bool {
-		self.find_rejected_word(alphabet).is_none()
+		self.is_universal_with(alphabet, CheckAlgorithm::default())
+	}
+
+	/// [`Nfa::is_universal`] with an explicit algorithm.
+	#[must_use]
+	pub fn is_universal_with(&self, alphabet: &Alphabet, algorithm: CheckAlgorithm) -> bool {
+		check(ffi::decide_universal(
+			self.raw(),
+			&alphabet.raw_symbols(),
+			algorithm.into(),
+		))
 	}
 
 	/// A word over `alphabet` that is not accepted, or `None` if the automaton is universal over it.
@@ -850,7 +860,17 @@ impl Nfa {
 	#[doc(alias = "is_included")]
 	#[doc(alias = "is_subset")]
 	pub fn is_included_in(&self, other: &Nfa) -> bool {
-		self.find_word_not_in(other).is_none()
+		self.is_included_in_with(other, CheckAlgorithm::default())
+	}
+
+	/// [`Nfa::is_included_in`] with an explicit algorithm.
+	#[must_use]
+	pub fn is_included_in_with(&self, other: &Nfa, algorithm: CheckAlgorithm) -> bool {
+		check(ffi::decide_included(
+			self.raw(),
+			other.raw(),
+			algorithm.into(),
+		))
 	}
 
 	/// A word accepted by `self` but not by `other`, or `None` if L(self) ⊆ L(other).
@@ -881,7 +901,7 @@ impl Nfa {
 	#[doc(alias = "is_intersection_empty")]
 	#[doc(alias = "is_disjoint")]
 	pub fn is_disjoint_from(&self, other: &Nfa) -> bool {
-		self.find_common_word(other).is_none()
+		check(ffi::decide_disjoint(self.raw(), other.raw()))
 	}
 
 	/// A word accepted by both `self` and `other` (not necessarily the shortest), or `None` if their
@@ -901,7 +921,13 @@ impl Nfa {
 	#[must_use]
 	#[doc(alias = "are_equivalent")]
 	pub fn is_equivalent_to(&self, other: &Nfa) -> bool {
-		self.find_distinguishing_word(other).is_none()
+		self.is_equivalent_to_with(other, CheckAlgorithm::default())
+	}
+
+	/// [`Nfa::is_equivalent_to`] with an explicit algorithm.
+	#[must_use]
+	pub fn is_equivalent_to_with(&self, other: &Nfa, algorithm: CheckAlgorithm) -> bool {
+		self.is_included_in_with(other, algorithm) && other.is_included_in_with(self, algorithm)
 	}
 
 	/// A word accepted by exactly one of the automata, or `None` if they are equivalent.

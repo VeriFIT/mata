@@ -93,6 +93,7 @@ std::unique_ptr<mata::nfa::Nfa>
 // Decision procedures.
 bool nft_is_included(const Nft& smaller, const Nft& bigger);
 bool nft_are_equivalent(const Nft& lhs, const Nft& rhs);
+bool nft_is_deterministic(const Nft& nft);
 
 // Printing.
 rust::String

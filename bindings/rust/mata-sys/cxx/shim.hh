@@ -162,15 +162,18 @@ std::unique_ptr<Nfa> complement_within(
 std::unique_ptr<Nfa> determinize_within(const Nfa& nfa, const Limits& limits);
 std::unique_ptr<Nfa> minimize_within(const Nfa& nfa, Minimization algorithm, const Limits& limits);
 
-// Decision procedures. A `false` from the checks fills `counterexample`.
+// Decision procedures. A `false` from the checks fills `counterexample`; the `decide_` variants compute none.
 bool accepting_run(const Nfa& nfa, rust::Vec<Symbol>& word, rust::Vec<State>& path);
 bool some_word(const Nfa& nfa, rust::Vec<Symbol>& word);
 bool shortest_word(const Nfa& nfa, rust::Vec<Symbol>& word);
 bool is_universal(
 	const Nfa& nfa, rust::Slice<const Symbol> symbols, CheckAlgorithm algorithm, rust::Vec<Symbol>& counterexample
 );
+bool decide_universal(const Nfa& nfa, rust::Slice<const Symbol> symbols, CheckAlgorithm algorithm);
 bool is_included(const Nfa& smaller, const Nfa& bigger, CheckAlgorithm algorithm, rust::Vec<Symbol>& counterexample);
+bool decide_included(const Nfa& smaller, const Nfa& bigger, CheckAlgorithm algorithm);
 bool is_disjoint(const Nfa& lhs, const Nfa& rhs, rust::Vec<Symbol>& common_word);
+bool decide_disjoint(const Nfa& lhs, const Nfa& rhs);
 
 // Words.
 std::unique_ptr<WordStream> words(const Nfa& nfa, std::size_t max_length);

@@ -547,6 +547,11 @@ bool nft_are_equivalent(const Nft& lhs, const Nft& rhs) {
 	return mata::nft::are_equivalent(without_jumps(lhs, lhs_storage), without_jumps(rhs, rhs_storage));
 }
 
+bool nft_is_deterministic(const Nft& nft) {
+	auto storage = std::optional<Nft>();
+	return without_jumps(nft, storage).is_deterministic();
+}
+
 // Printing.
 
 rust::String nft_print_mata(

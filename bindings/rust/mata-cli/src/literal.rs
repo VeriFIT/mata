@@ -180,6 +180,16 @@ fn state(number: usize) -> Result<mata::State, String> {
 	Ok(mata::State::new(number))
 }
 
+/// The symbol of a transition: `epsilon` is the ε-transition, every other name goes through the
+/// script alphabet.
+fn transition_symbol(name: &str, engine: &mut Engine) -> Result<mata::Symbol, String> {
+	if name == "epsilon" {
+		Ok(mata::Symbol::EPSILON)
+	} else {
+		engine.intern_name(name)
+	}
+}
+
 fn build_nfa(parts: &Parts, engine: &mut Engine) -> Result<crate::eval::Value, String> {
 	let state_numbers = numbers(parts);
 	let mut nfa = mata::Nfa::with_states(state_numbers.len());
@@ -192,7 +202,7 @@ fn build_nfa(parts: &Parts, engine: &mut Engine) -> Result<crate::eval::Value, S
 			.map_err(|e| e.to_string())?;
 	}
 	for (source, symbol, target) in &parts.transitions {
-		let symbol = engine.intern_name(symbol)?;
+		let symbol = transition_symbol(symbol, engine)?;
 		nfa.add_transition(
 			state(state_numbers[source])?,
 			symbol,
@@ -273,6 +283,9 @@ fn build_nft_simple(
 ) -> Result<crate::eval::Value, String> {
 	let state_numbers = numbers(parts);
 	let mut nft = mata::nft::Nft::new(levels).map_err(|e| e.to_string())?;
+	for _ in 0..state_numbers.len() {
+		nft.add_state();
+	}
 	for name in &parts.initial {
 		nft.add_initial(state(state_numbers[name])?)
 			.map_err(|e| e.to_string())?;
@@ -282,7 +295,7 @@ fn build_nft_simple(
 			.map_err(|e| e.to_string())?;
 	}
 	for (source, symbol, target) in &parts.transitions {
-		let symbols = vec![engine.intern_name(symbol)?; levels];
+		let symbols = vec![transition_symbol(symbol, engine)?; levels];
 		nft.add_transition(
 			state(state_numbers[source])?,
 			&symbols,

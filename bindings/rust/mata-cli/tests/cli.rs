@@ -1638,3 +1638,101 @@ fn a_dot_label_decodes_its_escapes() {
 		stderr(&unknown)
 	);
 }
+
+// Review of #1039: operations and literals
+
+#[test]
+fn an_nfa_literal_reads_epsilon_as_an_epsilon_transition() {
+	let output = mata([
+		"script",
+		"run",
+		"--expression",
+		"(define a (nfa:literal :initial (q0) :final (q1) :transitions ((q0 epsilon q1))))\n\
+		 (print (nfa:in-language? a (word)))\n(print (nfa:in-language? a (word \"epsilon\")))",
+	]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "true\nfalse\n");
+}
+
+#[test]
+fn an_nft_literal_without_state_levels_has_its_states() {
+	let output = mata([
+		"script",
+		"run",
+		"--expression",
+		"(print (nft:number-of-states (nft:literal :levels 1 :initial (q0) :final (q0))))\n\
+		 (define t (nft:literal :levels 1 :initial (q0) :final (q1) :transitions ((q0 a q1))))\n\
+		 (print (nft:in-language-by-levels? t (list (word \"a\"))))",
+	]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "1\ntrue\n");
+}
+
+#[test]
+fn nft_determinism_sees_dont_care_overlap_a_symbol() {
+	let workspace = Workspace::new("nft-dont-care");
+	let t = workspace.file(
+		"t.mata",
+		"@NFT-explicit\n%Alphabet-auto\n%LevelsNum 1\n%Initial q0\n%Final q1 q2\nq0 a q1\nq0 <dntcr> q2\n",
+	);
+	let output = mata([
+		"script",
+		"run",
+		"--expression",
+		&format!(
+			"(define t (nft:load \"{t}\"))\n(print (nfa:deterministic? (nft:to-nfa t)))\n\
+			 (print (nft:deterministic? t))"
+		),
+	]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "true\nfalse\n");
+}
+
+#[test]
+fn a_single_word_nft_of_the_empty_word_relates_the_empty_word() {
+	let output = mata([
+		"script",
+		"run",
+		"--expression",
+		"(define t (nft:create-single-word-nft (word)))\n\
+		 (print (nft:in-language-by-levels? t (list (word))))\n\
+		 (print (nft:in-language-by-levels? t (list (word \"a\"))))",
+	]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "true\nfalse\n");
+}
+
+#[test]
+fn a_witness_is_a_word_that_the_checker_types_as_one() {
+	let script = "(define a (nfa:literal :initial (q0) :final (q1) :transitions ((q0 a q1) (q0 b q1))))\n\
+		 (define b (nfa:literal :initial (q0) :final (q1) :transitions ((q0 a q1))))\n\
+		 (print (witness (nfa:included? a b)))\n(print (witness (nfa:universal? b)))\n\
+		 (print (witness (nfa:language-empty? a)))\n(print (witness (nfa:included? b a)))";
+	let output = mata(["script", "run", "--expression", script]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "b\nε\na\nnone\n");
+	let narrowed = format!("{script}\n(print (as (witness (nfa:included? a b)) Run))");
+	let output = mata(["script", "check", "--expression", &narrowed]);
+	assert_eq!(status(&output), 2);
+	assert!(
+		stderr(&output).contains("expected Run, found (Option Word)"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
+fn witnesses_are_kept_only_when_the_script_asks_for_them() {
+	let output = mata([
+		"script",
+		"run",
+		"--expression",
+		"(define a (nfa:literal :initial (q0) :final (q1) :transitions ((q0 a q1) (q0 b q1))))\n\
+		 (define b (nfa:literal :initial (q0) :final (q1) :transitions ((q0 a q1))))\n\
+		 (print (nfa:included? a b))\n(print (get-witness))\n\
+		 (set-option :produce-witnesses true)\n\
+		 (print (nfa:included? a b))\n(print (get-witness))",
+	]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "false\nnone\nfalse\nb\n");
+}

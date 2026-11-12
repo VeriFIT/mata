@@ -25,8 +25,9 @@ fn is_numeric(name: &str) -> bool {
 /// it for one call, and [`Nfa::parse_mata`](crate::Nfa::parse_mata) adds the symbol names it reads.
 ///
 /// [`Symbol::EPSILON`] is never a member. The name `<eps>` stands for it, and `<dntcr>` is reserved.
-/// Names that consist only of decimal digits are rejected: printing would write such a name as the
-/// number of a symbol, so a round trip through the `.mata` format would resolve it to that symbol.
+/// [`insert_name`](Alphabet::insert_name) rejects names that consist only of decimal digits: printing
+/// would write such a name as the number of a symbol, so a round trip through the `.mata` format
+/// would resolve it to that symbol. [`insert_named`](Alphabet::insert_named) binds them.
 ///
 /// ```
 /// use mata::{Alphabet, Symbol};
@@ -155,17 +156,18 @@ impl Alphabet {
 	/// Binds `name` to exactly `symbol`, as Mata's `OnTheFlyAlphabet::add_new_symbol(name, value)` does.
 	/// Nothing changes if the name or the symbol is already in the alphabet; the first binding is kept.
 	///
-	/// Unlike [`insert_name`], the symbol is given instead of the next free one, and a name that consists
-	/// only of decimal digits is accepted: the `"bytes"` script alphabet names the byte symbols `"0"`…`"9"`.
+	/// Unlike [`insert_name`](Alphabet::insert_name), the symbol is given instead of the next free one, and a
+	/// name that consists only of decimal digits is accepted: the `"bytes"` script alphabet names the byte
+	/// symbols `"0"`…`"9"`.
 	/// Such a name is safe, because Mata's parser resolves a token to a name before it reads it as a number.
 	///
 	/// # Errors
 	///
-	/// [`AlphabetError::Epsilon`] if `symbol` is [`Symbol::EPSILON`],
+	/// [`AlphabetError::Epsilon`] if `symbol` is [`Symbol::EPSILON`] or `name` is `<eps>`,
 	/// [`AlphabetError::ReservedName`] if `name` is `<dntcr>`, and
 	/// [`AlphabetError::Full`] if `symbol` is [`DONT_CARE`](crate::nft::DONT_CARE).
 	pub fn insert_named(&mut self, name: &str, symbol: Symbol) -> Result<(), AlphabetError> {
-		if symbol.is_epsilon() {
+		if symbol.is_epsilon() || name == EPSILON_NAME {
 			return Err(AlphabetError::Epsilon);
 		}
 		if name == DONT_CARE_NAME {
@@ -411,7 +413,7 @@ impl fmt::Display for DisplayWord<'_> {
 mod serde_impl {
 	use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-	use super::{Alphabet, is_numeric};
+	use super::Alphabet;
 	use crate::Symbol;
 
 	/// An alphabet serializes as a list of `(symbol, name)` pairs in ascending order of symbols.
@@ -442,11 +444,7 @@ mod serde_impl {
 							"the name {name} is reserved"
 						)));
 					}
-					Some(name) if is_numeric(&name) => {
-						return Err(serde::de::Error::custom(format!(
-							"the name {name} is only digits"
-						)));
-					}
+					// Numeric names are accepted, as `insert_named` binds them.
 					Some(name) if alphabet.by_name.contains_key(&name) => {
 						return Err(serde::de::Error::custom(format!(
 							"name {name:?} appears twice"

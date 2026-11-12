@@ -123,6 +123,8 @@ pub(crate) struct Engine {
 	pub(crate) script_alphabet: mata::Alphabet,
 	pub(crate) options: Options,
 	pub(crate) last_witness: Option<Value>,
+	/// Set while `witness` evaluates its application, which then searches a counterexample.
+	pub(crate) witness_requested: bool,
 	pub(crate) assertions_failed: bool,
 	pub(crate) exit: bool,
 	pub(crate) sink: Sink,
@@ -179,6 +181,7 @@ impl Engine {
 			script_alphabet: mata::Alphabet::new(),
 			options: Options::default(),
 			last_witness: None,
+			witness_requested: false,
 			assertions_failed: false,
 			exit: false,
 			sink: Sink::Stdout,
@@ -722,7 +725,10 @@ impl Engine {
 		if parts.len() != 1 {
 			return Err(expression.at("witness takes one application".into()));
 		}
-		let value = self.evaluate(&parts[0])?;
+		let requested = std::mem::replace(&mut self.witness_requested, true);
+		let value = self.evaluate(&parts[0]);
+		self.witness_requested = requested;
+		let value = value?;
 		if !matches!(value, Value::Bool(_)) {
 			return Err(parts[0].at("witness applies to a decision operation".into()));
 		}

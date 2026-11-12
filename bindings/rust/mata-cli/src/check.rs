@@ -1322,7 +1322,7 @@ impl<'a> Checker<'a> {
 		Special::Form(self.sequence(&arguments[1..], self_name))
 	}
 
-	/// Checks `witness`: a decision operation whose counterexample is run.
+	/// Checks `witness`: a decision operation whose counterexample word is returned.
 	fn special_witness(
 		&mut self,
 		arguments: &[Expr],
@@ -1341,7 +1341,7 @@ impl<'a> Checker<'a> {
 				"witness applies to a decision operation".into(),
 			);
 		}
-		Special::Form(Some("Run".into()))
+		Special::Form(Some("(Option Word)".into()))
 	}
 
 	fn pipeline(

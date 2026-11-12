@@ -151,6 +151,9 @@ pub mod ffi {
 		fn nft_is_included(smaller: &Nft, bigger: &Nft) -> Result<bool>;
 		/// Whether the relations are equal.
 		fn nft_are_equivalent(lhs: &Nft, rhs: &Nft) -> Result<bool>;
+		/// Mata's `Nft::is_deterministic`: one initial state and at most one edge per state and symbol,
+		/// where `DONT_CARE` overlaps every symbol but epsilon unless both edges reach the same state.
+		fn nft_is_deterministic(nft: &Nft) -> Result<bool>;
 
 		// Printing.
 

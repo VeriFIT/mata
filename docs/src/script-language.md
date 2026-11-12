@@ -621,15 +621,15 @@ alphabet; `(script-alphabet)`.
 
 ## Reporting results
 
-| Form                        | Effect                                                                          | Value        |
-| --------------------------- | ------------------------------------------------------------------------------- | ------------ |
-| `(check condition)`         | Prints `true` or `false`                                                        | The `Bool`   |
-| `(check "label" condition)` | Prints the record `label: true` or `label: false`                               | The `Bool`   |
-| `(assert condition)`        | Reports a failure and its place if the condition is false; the script continues | The `Bool`   |
-| `(print value)`             | Prints the value to standard output                                             | The value    |
-| `(write value path)`        | Writes the value to a file                                                      | The value    |
-| `(echo string)`             | Prints the string                                                               | The string   |
-| `(get-witness)`             | See [Witnesses](#witnesses)                                                     | `Option Run` |
+| Form                        | Effect                                                                          | Value         |
+| --------------------------- | ------------------------------------------------------------------------------- | ------------- |
+| `(check condition)`         | Prints `true` or `false`                                                        | The `Bool`    |
+| `(check "label" condition)` | Prints the record `label: true` or `label: false`                               | The `Bool`    |
+| `(assert condition)`        | Reports a failure and its place if the condition is false; the script continues | The `Bool`    |
+| `(print value)`             | Prints the value to standard output                                             | The value     |
+| `(write value path)`        | Writes the value to a file                                                      | The value     |
+| `(echo string)`             | Prints the string                                                               | The string    |
+| `(get-witness)`             | See [Witnesses](#witnesses)                                                     | `Option Word` |
 
 `print` and `write` return their argument, so they can stand in the middle of a pipeline. An automaton is printed in
 the `.mata` format; use `nfa:print-to-dot` to print a DOT graph instead: `(print (nfa:print-to-dot a))`.
@@ -661,7 +661,7 @@ get it.
 
 Each of these procedures has one verdict that a word can explain: inclusion, equivalence and universality when they
 do not hold, and the two emptiness checks when the language is not empty. `(witness application)` makes the call with
-the output parameter and returns the stored `Run` for that verdict, and `none` for the other one. The call is made
+the output parameter and returns the stored `Word` for that verdict, and `none` for the other one. The call is made
 once, so the verdict is not computed separately:
 
 ```scheme
@@ -675,10 +675,12 @@ the witness of the most recent one. This is the convenient form in an interactiv
 ```scheme
 (set-option :produce-witnesses true)
 (check (nfa:included? smaller bigger))   ; false
-(get-witness)                            ; (run :word ("a" "b" "b") :path (0 3 4 7))
+(get-witness)                            ; a b b
 ```
 
-Asking for a witness can make a decision procedure slower, so `:produce-witnesses` is off by default.
+Asking for a witness can make a decision procedure slower, so `:produce-witnesses` is off by default. Without it, a
+call outside `witness` computes no witness, and `(get-witness)` returns `none` after it. A witness is a word only: the
+states of an accepting run come from `nfa:get-accepting-run`.
 
 ## Timing
 

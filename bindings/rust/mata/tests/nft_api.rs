@@ -225,6 +225,22 @@ fn dont_care_matches_any_symbol() -> Result<(), Error> {
 }
 
 #[test]
+fn dont_care_overlaps_other_symbols_for_determinism() -> Result<(), Error> {
+	let mut t = Nft::new(1)?;
+	let (p, q, r) = (t.add_state(), t.add_state(), t.add_state());
+	t.add_initial(p)?;
+	t.add_final(q)?;
+	t.add_final(r)?;
+	t.add_transition(p, &[Symbol::from(b'a')], q)?;
+	assert!(t.is_deterministic());
+	// The encoding as an NFA keeps DONT_CARE a symbol of its own, so only the transducer sees the overlap.
+	t.add_transition(p, &[DONT_CARE], r)?;
+	assert!(t.to_nfa().is_deterministic());
+	assert!(!t.is_deterministic());
+	Ok(())
+}
+
+#[test]
 fn identity_and_empty_word() -> Result<(), Error> {
 	let nfa = Nfa::from_regex("ab*")?;
 	let identity = Nft::identity(&nfa, 3)?;

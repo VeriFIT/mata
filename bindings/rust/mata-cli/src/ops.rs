@@ -217,7 +217,14 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 	op("write", "write", 2, Some(2), ",String", ""),
 	op("check", "check", 1, Some(2), "", "Bool"),
 	op("assert", "assert", 1, Some(1), "Bool", "Bool"),
-	op("get-witness", "get_witness", 0, Some(0), "", ""),
+	op(
+		"get-witness",
+		"get_witness",
+		0,
+		Some(0),
+		"",
+		"(Option Word)",
+	),
 	op(
 		"script-alphabet",
 		"script_alphabet",
@@ -1256,6 +1263,23 @@ fn dispatch_nfa_transformations(
 	}
 }
 
+/// The verdict of a decision that `holds` makes without a counterexample, or, when the script asks for
+/// witnesses, that `find` makes by searching one; the counterexample becomes the witness.
+fn decide(
+	engine: &mut Engine,
+	holds: impl FnOnce(&Engine) -> bool,
+	find: impl FnOnce(&Engine) -> Option<Word>,
+) -> Value {
+	if !(engine.options.produce_witnesses || engine.witness_requested) {
+		engine.last_witness = None;
+		return Value::Bool(holds(engine));
+	}
+	let word = find(engine);
+	let result = word.is_none();
+	engine.last_witness = word.map(Value::Word);
+	Value::Bool(result)
+}
+
 /// Serves the operations that decide a property of an `Nfa` and keep the witness when they fail:
 /// `nfa:language-empty?` through `nfa:acyclic?`.
 fn dispatch_nfa_predicates(
@@ -1268,46 +1292,56 @@ fn dispatch_nfa_predicates(
 		"nfa_lang_empty" => {
 			let [value] = take(arguments, name)?;
 			let nfa = expect_nfa(&value)?;
-			let run = nfa.find_accepting_run();
-			let result = run.is_none();
-			engine.last_witness = run.map(|r| Value::Run(Rc::new(r)));
-			Ok(Value::Bool(result))
+			Ok(decide(
+				engine,
+				|_| nfa.is_lang_empty(),
+				|_| nfa.find_accepted_word(),
+			))
 		}
 		"nfa_disjoint" => {
 			let [lhs, rhs] = take(arguments, name)?;
 			let lhs = expect_nfa(&lhs)?;
 			let rhs = expect_nfa(&rhs)?;
-			let common = lhs.find_common_word(&rhs);
-			let result = common.is_none();
-			engine.last_witness = common.map(Value::Word);
-			Ok(Value::Bool(result))
+			Ok(decide(
+				engine,
+				|_| lhs.is_disjoint_from(&rhs),
+				|_| lhs.find_common_word(&rhs),
+			))
 		}
 		"nfa_included" => {
 			let [lhs, rhs] = take(arguments, name)?;
 			let lhs = expect_nfa(&lhs)?;
 			let rhs = expect_nfa(&rhs)?;
-			let word = lhs.find_word_not_in_with(&rhs, check_algorithm(engine, name));
-			let result = word.is_none();
-			engine.last_witness = word.map(Value::Word);
-			Ok(Value::Bool(result))
+			let algorithm = check_algorithm(engine, name);
+			Ok(decide(
+				engine,
+				|_| lhs.is_included_in_with(&rhs, algorithm),
+				|_| lhs.find_word_not_in_with(&rhs, algorithm),
+			))
 		}
 		"nfa_equivalent" => {
 			let [lhs, rhs] = take(arguments, name)?;
 			let lhs = expect_nfa(&lhs)?;
 			let rhs = expect_nfa(&rhs)?;
-			let word = lhs.find_distinguishing_word_with(&rhs, check_algorithm(engine, name));
-			let result = word.is_none();
-			engine.last_witness = word.map(|distinction| Value::Word(distinction.word));
-			Ok(Value::Bool(result))
+			let algorithm = check_algorithm(engine, name);
+			Ok(decide(
+				engine,
+				|_| lhs.is_equivalent_to_with(&rhs, algorithm),
+				|_| {
+					lhs.find_distinguishing_word_with(&rhs, algorithm)
+						.map(|distinction| distinction.word)
+				},
+			))
 		}
 		"nfa_universal" => {
 			let [value] = take(arguments, name)?;
 			let nfa = expect_nfa(&value)?;
-			let word =
-				nfa.find_rejected_word_with(&engine.script_alphabet, check_algorithm(engine, name));
-			let result = word.is_none();
-			engine.last_witness = word.map(Value::Word);
-			Ok(Value::Bool(result))
+			let algorithm = check_algorithm(engine, name);
+			Ok(decide(
+				engine,
+				|engine| nfa.is_universal_with(&engine.script_alphabet, algorithm),
+				|engine| nfa.find_rejected_word_with(&engine.script_alphabet, algorithm),
+			))
 		}
 		"nfa_in_lang" => {
 			let [value, word] = take(arguments, name)?;
@@ -1603,10 +1637,7 @@ fn dispatch_nft_predicates(
 		}
 		"nft_deterministic" => {
 			let [value] = take(arguments, name)?;
-			let nft = expect_nft(&value)?;
-			Ok(Value::Bool(
-				nft.initial_states().len() == 1 && nft.to_nfa().is_deterministic(),
-			))
+			Ok(Value::Bool(expect_nft(&value)?.is_deterministic()))
 		}
 		"nft_to_nfa" => {
 			let [value] = take(arguments, name)?;
@@ -1625,6 +1656,11 @@ fn dispatch_nft_predicates(
 		"nft_single_word" => {
 			let [word] = take(arguments, name)?;
 			let word = expect_word(&word)?;
+			// A path must read something, so the empty word gets Mata's empty-word transducer.
+			if word.iter().all(|symbol| symbol.is_epsilon()) {
+				let nft = Nft::empty_word(1).map_err(|e| Error::plain(e.to_string()))?;
+				return Ok(Value::Nft(Rc::new(nft)));
+			}
 			let mut nft = Nft::new(1).map_err(|e| Error::plain(e.to_string()))?;
 			let source = nft.add_state();
 			let target = nft.add_state();

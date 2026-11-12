@@ -282,16 +282,30 @@ fn numeric_names_are_rejected() -> Result<(), Error> {
 		Alphabet::from_names(["7"]),
 		Err(AlphabetError::NumericName { name: "7".into() })
 	);
+	// `insert_named` binds a numeric name (the "bytes" script alphabet does), so it must reload.
 	#[cfg(feature = "serde")]
 	{
-		let error = serde_json::from_str::<Alphabet>("[[1, \"1\"]]").unwrap_err();
-		assert!(error.to_string().contains("only digits"), "{error}");
+		let mut bytes = Alphabet::new();
+		bytes.insert_named("1", Symbol::new(49))?;
+		let text = serde_json::to_string(&bytes).unwrap();
+		assert_eq!(serde_json::from_str::<Alphabet>(&text).unwrap(), bytes);
 	}
 	// The empty name is digits-and-nothing: not numeric, still rejected by round-trip rules as before.
 	let mut empty = Alphabet::new();
 	let symbol = empty.insert_name("")?;
 	assert_eq!(u32::from(symbol), 0);
 	Ok(())
+}
+
+#[test]
+fn insert_named_rejects_the_epsilon_name() {
+	let mut sigma = Alphabet::new();
+	assert_eq!(
+		sigma.insert_named("<eps>", Symbol::new(5)),
+		Err(AlphabetError::Epsilon)
+	);
+	assert_eq!(sigma.name(Symbol::new(5)), None);
+	assert!(sigma.is_empty());
 }
 
 #[test]

@@ -597,35 +597,57 @@ bool shortest_word(const Nfa& nfa, rust::Vec<Symbol>& word) {
 	return true;
 }
 
+namespace {
+
+/// Mata's universality check; a null `run` asks for no counterexample, which saves its bookkeeping.
+bool universal(
+	const Nfa& nfa, const rust::Slice<const Symbol> symbols, const CheckAlgorithm algorithm, Run* const run
+) {
+	auto storage = std::optional<Nfa>();
+	const auto alphabet = mata::EnumAlphabet(to_symbol_set(symbols));
+	return without_epsilon(nfa, storage).is_universal(alphabet, run, params_of(algorithm));
+}
+
+/// Mata's inclusion check; a null `run` asks for no counterexample, which saves its bookkeeping.
+bool included(const Nfa& smaller, const Nfa& bigger, const CheckAlgorithm algorithm, Run* const run) {
+	auto smaller_storage = std::optional<Nfa>();
+	auto bigger_storage = std::optional<Nfa>();
+	const mata::Alphabet* const no_alphabet = nullptr;
+	return mata::nfa::is_included(
+		without_epsilon(smaller, smaller_storage), without_epsilon(bigger, bigger_storage), run, no_alphabet,
+		params_of(algorithm)
+	);
+}
+
+} // namespace
+
 bool is_universal(
 	const Nfa& nfa,
 	const rust::Slice<const Symbol> symbols,
 	const CheckAlgorithm algorithm,
 	rust::Vec<Symbol>& counterexample
 ) {
-	auto storage = std::optional<Nfa>();
-	const auto alphabet = mata::EnumAlphabet(to_symbol_set(symbols));
 	auto run = Run();
-	if (without_epsilon(nfa, storage).is_universal(alphabet, &run, params_of(algorithm))) { return true; }
+	if (universal(nfa, symbols, algorithm, &run)) { return true; }
 	assign(counterexample, run.word);
 	return false;
+}
+
+bool decide_universal(const Nfa& nfa, const rust::Slice<const Symbol> symbols, const CheckAlgorithm algorithm) {
+	return universal(nfa, symbols, algorithm, nullptr);
 }
 
 bool is_included(
 	const Nfa& smaller, const Nfa& bigger, const CheckAlgorithm algorithm, rust::Vec<Symbol>& counterexample
 ) {
-	auto smaller_storage = std::optional<Nfa>();
-	auto bigger_storage = std::optional<Nfa>();
 	auto run = Run();
-	const mata::Alphabet* const no_alphabet = nullptr;
-	if (mata::nfa::is_included(
-			without_epsilon(smaller, smaller_storage), without_epsilon(bigger, bigger_storage), &run, no_alphabet,
-			params_of(algorithm)
-		)) {
-		return true;
-	}
+	if (included(smaller, bigger, algorithm, &run)) { return true; }
 	assign(counterexample, run.word);
 	return false;
+}
+
+bool decide_included(const Nfa& smaller, const Nfa& bigger, const CheckAlgorithm algorithm) {
+	return included(smaller, bigger, algorithm, nullptr);
 }
 
 bool is_disjoint(const Nfa& lhs, const Nfa& rhs, rust::Vec<Symbol>& common_word) {
@@ -635,6 +657,8 @@ bool is_disjoint(const Nfa& lhs, const Nfa& rhs, rust::Vec<Symbol>& common_word)
 	assign(common_word, witness.word);
 	return false;
 }
+
+bool decide_disjoint(const Nfa& lhs, const Nfa& rhs) { return mata::nfa::is_intersection_empty(lhs, rhs); }
 
 // Words.
 

@@ -321,6 +321,8 @@ pub mod ffi {
 			algorithm: CheckAlgorithm,
 			counterexample: &mut Vec<u32>,
 		) -> Result<bool>;
+		/// [`is_universal`] without a counterexample, which Mata decides with less bookkeeping.
+		fn decide_universal(nfa: &Nfa, symbols: &[u32], algorithm: CheckAlgorithm) -> Result<bool>;
 		/// Whether L(smaller) ⊆ L(bigger); otherwise writes a word of L(smaller) \ L(bigger).
 		fn is_included(
 			smaller: &Nfa,
@@ -328,8 +330,12 @@ pub mod ffi {
 			algorithm: CheckAlgorithm,
 			counterexample: &mut Vec<u32>,
 		) -> Result<bool>;
+		/// [`is_included`] without a counterexample, which Mata decides with less bookkeeping.
+		fn decide_included(smaller: &Nfa, bigger: &Nfa, algorithm: CheckAlgorithm) -> Result<bool>;
 		/// Whether L(lhs) ∩ L(rhs) = ∅, without building the product; otherwise writes a common word.
 		fn is_disjoint(lhs: &Nfa, rhs: &Nfa, common_word: &mut Vec<u32>) -> Result<bool>;
+		/// [`is_disjoint`] without a common word, which Mata decides with less bookkeeping.
+		fn decide_disjoint(lhs: &Nfa, rhs: &Nfa) -> Result<bool>;
 
 		// Words.
 
