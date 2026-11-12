@@ -143,3 +143,14 @@ impl From<CheckAlgorithm> for ffi::CheckAlgorithm {
 		}
 	}
 }
+
+/// When [`Nfa::product`](crate::Nfa::product) makes a pair of states final (Mata's
+/// `ProductFinalStateCondition`).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum ProductFinalCondition {
+	/// Both states are final: the intersection.
+	#[default]
+	And,
+	/// Either state is final.
+	Or,
+}

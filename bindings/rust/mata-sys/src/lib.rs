@@ -364,6 +364,52 @@ pub mod ffi {
 		/// L(lhs) · L(rhs), joined by epsilon transitions from the final states of `lhs` to the initial
 		/// states of `rhs`.
 		fn concatenate_over_epsilon(lhs: &Nfa, rhs: &Nfa) -> Result<UniquePtr<Nfa>>;
+		/// The automaton itself (copied) when it is deterministic, otherwise its subset construction.
+		fn as_dfa(nfa: &Nfa) -> Result<UniquePtr<Nfa>>;
+		/// L(nfa) concatenated `power` times; `power` 0 gives the empty word.
+		fn concatenate_nth_power(nfa: &Nfa, power: u32) -> Result<UniquePtr<Nfa>>;
+		/// L(lhs) ∪ L(rhs) as a DFA, by the product with either state final. Throws unless both are
+		/// deterministic and complete over `symbols`.
+		fn union_det_complete(lhs: &Nfa, rhs: &Nfa, symbols: &[u32]) -> Result<UniquePtr<Nfa>>;
+		/// The product: a pair of states is final when both are (`either_final` false) or either is.
+		/// Symbols from `first_epsilon` up move one side only.
+		fn product(
+			lhs: &Nfa,
+			rhs: &Nfa,
+			either_final: bool,
+			first_epsilon: u32,
+		) -> Result<UniquePtr<Nfa>>;
+		/// The words of `nfa` with a prefix from L(prefixes) removed; not trimmed.
+		fn left_quotient(nfa: &Nfa, prefixes: &Nfa, first_epsilon: u32) -> Result<UniquePtr<Nfa>>;
+		/// The words of `nfa` with a suffix from L(suffixes) removed; not trimmed.
+		fn right_quotient(nfa: &Nfa, suffixes: &Nfa, first_epsilon: u32) -> Result<UniquePtr<Nfa>>;
+		/// The automaton over code points of a UTF-8-encoded byte automaton. Throws where a multi-byte
+		/// sequence does not end with a continuation byte.
+		fn decode_utf8(nfa: &Nfa) -> Result<UniquePtr<Nfa>>;
+		/// The automaton with every transition relabelled to `abstract_symbol`.
+		fn one_letter_automaton(nfa: &Nfa, abstract_symbol: u32) -> Result<UniquePtr<Nfa>>;
+		/// Whether every strongly connected component is a simple cycle.
+		fn is_flat(nfa: &Nfa) -> Result<bool>;
+		/// Whether some prefix of `word` is accepted; `use_epsilon` follows epsilon transitions.
+		fn accepts_prefix(nfa: &Nfa, word: &[u32], use_epsilon: bool) -> Result<bool>;
+		/// A word over `symbols` that is not accepted, by a lazy complement; false if there is none.
+		fn word_from_complement(nfa: &Nfa, symbols: &[u32], word: &mut Vec<u32>) -> Result<bool>;
+		/// A word of L(included) \ L(excluded), by a lazy difference; false if there is none.
+		fn word_from_difference(
+			included: &Nfa,
+			excluded: &Nfa,
+			word: &mut Vec<u32>,
+		) -> Result<bool>;
+		/// Tabakov and Vardi's random automaton over the symbols `0..alphabet_size`. Throws unless
+		/// `transition_ratio` is in `[0, num_states]` and `final_density` in `[0, 1]`.
+		fn random_tabakov_vardi(
+			num_states: usize,
+			alphabet_size: usize,
+			transition_ratio: f64,
+			final_density: f64,
+			has_seed: bool,
+			seed: u32,
+		) -> Result<UniquePtr<Nfa>>;
 	}
 }
 

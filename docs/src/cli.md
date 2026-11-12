@@ -396,17 +396,14 @@ language page specifies but this build does not have are listed in the
 - Every operation of the catalogue records the language version that added it. A script sees the operations of the
   version its header declares, and the names of all of them are reserved, so an operation added later can never clash
   with a name a script defined.
-- The interpreter implements 100 operations: the portable core of the language, the script forms that a direct command
+- The interpreter implements 113 operations: the portable core of the language, the script forms that a direct command
   needs, and the NFA and NFT operations `bindings/rust/mata` covers. An operation outside that table is rejected by
   name and never approximated: a script reports `unknown name 'nft:complement'` and a direct command reports
-  `unknown operation 'nft:complement'`, both exiting `2`. These 51 operations of the
+  `unknown operation 'nft:complement'`, both exiting `2`. These 38 operations of the
   [script language](script-language) page are absent and need new `mata-sys` bridge functions:
   `automaton:determinize`, `automaton:included?`, `automaton:intersection`, `automaton:load`, `automaton:parse`,
-  `intermediate:mintermize`, `intermediate:parse-from-mata`, `nfa:as-dfa`, `nfa:concatenate-nth-power`,
-  `nfa:construct`, `nfa:create-random-nfa-tabakov-vardi`, `nfa:decode-utf8`, `nfa:flat?`,
-  `nfa:get-one-letter-automaton`, `nfa:get-word-from-complement`, `nfa:get-word-from-language-difference`,
-  `nfa:in-language-prefix?`, `nfa:left-quotient`, `nfa:product`, `nfa:right-quotient`,
-  `nfa:union-deterministic-complete`, `nft:complement`, `nft:complete?`, `nft:concatenate-nth-power`,
+  `intermediate:mintermize`, `intermediate:parse-from-mata`,
+  `nfa:construct`, `nft:complement`, `nft:complete?`, `nft:concatenate-nth-power`,
   `nft:construct`, `nft:contains-jump-transitions?`, `nft:create-sigma-star-nft`,
   `nft:from-nfa-with-levels-advancing`, `nft:has-epsilon-cycle?`, `nft:identical?`, `nft:in-language?`,
   `nft:insert-level`, `nft:insert-levels`, `nft:reduce`, `nft:revert`, `nft:to-nfa-update`, `nft:universal?`,
@@ -425,7 +422,12 @@ language page specifies but this build does not have are listed in the
   given by its name, a `String`, as in `(symbol "a")`. A direct command takes them as `--hint NAME=VALUE`, as
   `--hint use-epsilon=true`, and `(set-option :default …)` changes their defaults too; a call without one gets the
   library default. `mata nfa --help` and `mata nft --help` list them with their sorts. The parameters this build
-  takes are `:use-epsilon` of `nfa:concatenate`.
+  takes are `:use-epsilon` of `nfa:concatenate` and of `nfa:in-language-prefix?`, `:final-condition` (`"and"` or
+  `"or"`) and `:first-epsilon` of `nfa:product`, `:first-epsilon` of `nfa:left-quotient` and of
+  `nfa:right-quotient`, `:abstract-symbol` of `nfa:get-one-letter-automaton`, and `:seed` of
+  `nfa:create-random-nfa-tabakov-vardi`. The language has no sort for a real number, so the transition ratio and the
+  final state density of that builder are decimal strings, as in `(nfa:create-random-nfa-tabakov-vardi 4 2 "1"
+"0.5")`.
 - Of the script options, `:alphabet` with `on-the-fly` or `bytes`, `:produce-witnesses`, `:time-operations` and
   `:default` work. `:optimize` and `:trace` are accepted only as `false`; `true` is rejected as
   `option :<name> is not implemented`, and `:loops-and-recursion` is always rejected, so `loop`, `recur` and self-calls

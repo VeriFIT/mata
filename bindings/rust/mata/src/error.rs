@@ -27,6 +27,9 @@ pub enum Error {
 	/// An automaton from other C++ code that breaks Mata's invariants.
 	#[error(transparent)]
 	InvalidAutomaton(#[from] InvalidAutomaton),
+	/// An operand or argument that does not meet a requirement of the operation.
+	#[error(transparent)]
+	UnmetRequirement(#[from] UnmetRequirement),
 }
 
 /// Error from parsing the `.mata` format. It carries Mata's message.
@@ -177,6 +180,29 @@ pub struct InvalidAutomaton {
 impl InvalidAutomaton {
 	pub(crate) fn new(message: impl Into<String>) -> InvalidAutomaton {
 		InvalidAutomaton {
+			message: message.into(),
+		}
+	}
+
+	/// The shim's message.
+	#[must_use]
+	pub fn message(&self) -> &str {
+		&self.message
+	}
+}
+
+/// An operand or argument that does not meet a requirement of the operation, such as a deterministic
+/// and complete automaton for [`Nfa::union_det_complete`](crate::Nfa::union_det_complete). It carries
+/// the shim's message.
+#[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
+#[error("{message}")]
+pub struct UnmetRequirement {
+	message: String,
+}
+
+impl UnmetRequirement {
+	pub(crate) fn new(message: impl Into<String>) -> UnmetRequirement {
+		UnmetRequirement {
 			message: message.into(),
 		}
 	}

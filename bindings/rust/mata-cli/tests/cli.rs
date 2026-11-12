@@ -1982,3 +1982,147 @@ fn optional_parameters_are_keyword_arguments_of_their_sort() {
 		stdout(&help)
 	);
 }
+
+// NFA operations served by the bridge functions added with them
+#[test]
+fn nfa_operations_of_the_whole_bridge_run_in_a_script() {
+	let script = "(define ab (nfa:create-single-word-nfa (word \"a\" \"b\")))\n\
+	              (print (nfa:deterministic? (nfa:as-dfa (nfa:create-from-regex \"a|b\"))))\n\
+	              (print (nfa:in-language? (nfa:concatenate-nth-power ab 2) (word \"a\" \"b\" \"a\" \"b\")))\n\
+	              (print (nfa:in-language? (nfa:left-quotient ab (nfa:create-single-word-nfa (word \"a\"))) (word \"b\")))\n\
+	              (print (nfa:in-language? (nfa:right-quotient ab (nfa:create-single-word-nfa (word \"b\"))) (word \"a\")))\n\
+	              (print (nfa:in-language? (nfa:get-one-letter-automaton ab :abstract-symbol \"x\") (word \"x\" \"x\")))\n\
+	              (print (nfa:flat? ab))\n\
+	              (print (nfa:flat? (nfa:create-from-regex \"(a|b)*\")))\n\
+	              (print (nfa:in-language-prefix? ab (word \"a\" \"b\" \"c\")))\n\
+	              (print (nfa:number-of-states (nfa:create-random-nfa-tabakov-vardi 4 2 \"1\" \"0.5\" :seed 3)))";
+	let output = run_script(script, true, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(
+		stdout(&output),
+		"true\ntrue\ntrue\ntrue\ntrue\ntrue\nfalse\ntrue\n4\n"
+	);
+}
+
+#[test]
+fn nfa_operations_report_a_requirement_of_the_library() {
+	let incomplete = "(print (nfa:union-deterministic-complete (nfa:create-single-word-nfa (word \"a\")) \
+	                  (nfa:create-single-word-nfa (word \"b\"))))";
+	let output = run_script(incomplete, true, &[]);
+	assert_eq!(status(&output), 2);
+	assert!(
+		stderr(&output).contains("union_det_complete requires automata complete over the alphabet"),
+		"{}",
+		stderr(&output)
+	);
+
+	let not_utf8 = "(set-option :alphabet \"bytes\")\n\
+	                 (print (nfa:decode-utf8 (nfa:create-single-word-nfa (word \"\\xC4\" \"A\"))))";
+	let output = run_script(not_utf8, true, &[]);
+	assert_eq!(status(&output), 2);
+	assert!(
+		stderr(&output).contains("the automaton is not UTF-8 encoded"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
+fn nfa_operations_take_their_optional_parameters_as_keywords() {
+	let product = "(define a (nfa:create-single-word-nfa (word \"a\")))\n\
+	               (print (nfa:in-language? (nfa:product (nfa:make-complete a) (nfa:make-complete a) \
+	               :final-condition \"or\") (word \"a\")))";
+	let output = run_script(product, true, &[]);
+	assert_eq!((status(&output), stdout(&output)), (0, "true\n".to_owned()));
+
+	let unknown_value = run_script(
+		"(nfa:product (nfa:create-empty-string-nfa) (nfa:create-empty-string-nfa) :final-condition \"nand\")",
+		true,
+		&[],
+	);
+	assert_eq!(status(&unknown_value), 2);
+	assert!(
+		stderr(&unknown_value)
+			.contains(":final-condition of nfa:product is \"and\" or \"or\", not \"nand\""),
+		"{}",
+		stderr(&unknown_value)
+	);
+
+	let wrong_sort = run_script(
+		"(nfa:product (nfa:create-empty-string-nfa) (nfa:create-empty-string-nfa) :final-condition 3)",
+		true,
+		&[],
+	);
+	assert_eq!(status(&wrong_sort), 2);
+	assert!(
+		stderr(&wrong_sort)
+			.contains("the value of :final-condition must be of sort String, found Int"),
+		"{}",
+		stderr(&wrong_sort)
+	);
+
+	let seed = run_script(
+		"(nfa:create-random-nfa-tabakov-vardi 2 1 \"0\" \"0\" :seed 4294967296)",
+		true,
+		&[],
+	);
+	assert_eq!(status(&seed), 2);
+	assert!(
+		stderr(&seed).contains(":seed of nfa:create-random-nfa-tabakov-vardi must be below 2^32"),
+		"{}",
+		stderr(&seed)
+	);
+
+	let direct = mata([
+		"nfa",
+		"create-random-nfa-tabakov-vardi",
+		"3",
+		"2",
+		"1",
+		"0.5",
+		"--hint",
+		"seed=7",
+	]);
+	assert_eq!(status(&direct), 0, "{}", stderr(&direct));
+	assert!(
+		stdout(&direct).starts_with("@NFA-explicit\n"),
+		"{}",
+		stdout(&direct)
+	);
+}
+
+#[test]
+fn nfa_queries_of_the_whole_bridge_report_their_words() {
+	let workspace = Workspace::new("nfa-whole-bridge");
+	let a = workspace.file("a.mata", NFA);
+	let ab = workspace.file(
+		"ab.mata",
+		"@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q2\nq0 a q1\nq1 b q2\n",
+	);
+
+	let difference = mata(["nfa", "get-word-from-language-difference", &a, &ab]);
+	assert_eq!(status(&difference), 0, "{}", stderr(&difference));
+	assert_eq!(stdout(&difference), "a\n");
+
+	let complement = mata(["nfa", "get-word-from-complement", &a]);
+	assert_eq!(status(&complement), 0, "{}", stderr(&complement));
+	assert_eq!(stdout(&complement), "ε\n");
+
+	let prefix = mata(["nfa", "in-language-prefix?", &a, "b"]);
+	assert_eq!(
+		(status(&prefix), stdout(&prefix)),
+		(1, "false\n".to_owned())
+	);
+
+	let flat = mata(["nfa", "flat?", &a]);
+	assert_eq!((status(&flat), stdout(&flat)), (0, "true\n".to_owned()));
+
+	let help = mata(["nfa", "--help"]);
+	assert!(
+		stdout(&help).contains(
+			"product NFA NFA [--hint final-condition=String] [--hint first-epsilon=Symbol]"
+		),
+		"{}",
+		stdout(&help)
+	);
+}

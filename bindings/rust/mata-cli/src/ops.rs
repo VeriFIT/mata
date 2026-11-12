@@ -3,7 +3,8 @@
 use std::rc::Rc;
 
 use mata::{
-	CheckAlgorithm, Complementation, Direction, Minimization, Reduction, ResidualConstruction,
+	CheckAlgorithm, Complementation, Direction, Minimization, ProductFinalCondition, Reduction,
+	ResidualConstruction, UnmetRequirement,
 };
 use mata::{Nfa, Symbol, Word, nft::Nft};
 
@@ -138,11 +139,48 @@ impl OptionalParameter {
 	}
 }
 
-pub(crate) const OPTIONAL_PARAMETERS: &[OptionalParameter] = &[OptionalParameter {
-	operation: "nfa:concatenate",
-	name: "use-epsilon",
-	sort: "Bool",
-}];
+pub(crate) const OPTIONAL_PARAMETERS: &[OptionalParameter] = &[
+	OptionalParameter {
+		operation: "nfa:concatenate",
+		name: "use-epsilon",
+		sort: "Bool",
+	},
+	OptionalParameter {
+		operation: "nfa:in-language-prefix?",
+		name: "use-epsilon",
+		sort: "Bool",
+	},
+	OptionalParameter {
+		operation: "nfa:product",
+		name: "final-condition",
+		sort: "String",
+	},
+	OptionalParameter {
+		operation: "nfa:product",
+		name: "first-epsilon",
+		sort: "Symbol",
+	},
+	OptionalParameter {
+		operation: "nfa:left-quotient",
+		name: "first-epsilon",
+		sort: "Symbol",
+	},
+	OptionalParameter {
+		operation: "nfa:right-quotient",
+		name: "first-epsilon",
+		sort: "Symbol",
+	},
+	OptionalParameter {
+		operation: "nfa:get-one-letter-automaton",
+		name: "abstract-symbol",
+		sort: "Symbol",
+	},
+	OptionalParameter {
+		operation: "nfa:create-random-nfa-tabakov-vardi",
+		name: "seed",
+		sort: "Int",
+	},
+];
 
 /// The optional parameter `name` of `operation`, if it takes one.
 pub(crate) fn optional_parameter(
@@ -805,6 +843,89 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 		"Int",
 		"Nft",
 	),
+	op("nfa:as-dfa", "nfa_as_dfa", 1, Some(1), "Nfa", "Nfa"),
+	op(
+		"nfa:concatenate-nth-power",
+		"nfa_nth_power",
+		2,
+		Some(2),
+		"Nfa,Int",
+		"Nfa",
+	),
+	op(
+		"nfa:union-deterministic-complete",
+		"nfa_union_det_complete",
+		2,
+		Some(2),
+		"Nfa,Nfa",
+		"Nfa",
+	),
+	op("nfa:product", "nfa_product", 2, Some(2), "Nfa,Nfa", "Nfa"),
+	op(
+		"nfa:left-quotient",
+		"nfa_left_quotient",
+		2,
+		Some(2),
+		"Nfa,Nfa",
+		"Nfa",
+	),
+	op(
+		"nfa:right-quotient",
+		"nfa_right_quotient",
+		2,
+		Some(2),
+		"Nfa,Nfa",
+		"Nfa",
+	),
+	op(
+		"nfa:decode-utf8",
+		"nfa_decode_utf8",
+		1,
+		Some(1),
+		"Nfa",
+		"Nfa",
+	),
+	op(
+		"nfa:get-one-letter-automaton",
+		"nfa_one_letter",
+		1,
+		Some(1),
+		"Nfa",
+		"Nfa",
+	),
+	op("nfa:flat?", "nfa_flat", 1, Some(1), "Nfa", "Bool"),
+	op(
+		"nfa:in-language-prefix?",
+		"nfa_in_lang_prefix",
+		2,
+		Some(2),
+		"Nfa,Word",
+		"Bool",
+	),
+	op(
+		"nfa:get-word-from-complement",
+		"nfa_word_from_complement",
+		1,
+		Some(1),
+		"Nfa",
+		"(Option Word)",
+	),
+	op(
+		"nfa:get-word-from-language-difference",
+		"nfa_word_from_language_difference",
+		2,
+		Some(2),
+		"Nfa,Nfa",
+		"(Option Word)",
+	),
+	op(
+		"nfa:create-random-nfa-tabakov-vardi",
+		"nfa_random_tabakov_vardi",
+		4,
+		Some(4),
+		"Int,Int,String,String",
+		"Nfa",
+	),
 ];
 
 /// The operation a script of language version `script` calls by `name`, if it sees one.
@@ -1434,6 +1555,93 @@ fn dispatch_nfa_transformations(
 			nfa.make_complete(&engine.script_alphabet);
 			Ok(Value::Nfa(Rc::new(nfa)))
 		}
+		_ => dispatch_nfa_bridge_transformations(handler, name, arguments, engine),
+	}
+}
+
+/// Serves the transformations the `mata` crate gained with the bridge functions of these operations:
+/// `nfa:as-dfa` through `nfa:get-one-letter-automaton`.
+fn dispatch_nfa_bridge_transformations(
+	handler: &str,
+	name: &str,
+	arguments: Vec<Value>,
+	engine: &mut Engine,
+) -> Result<Value, Error> {
+	match handler {
+		"nfa_as_dfa" => {
+			let [value] = take(arguments, name)?;
+			Ok(Value::Nfa(Rc::new(expect_nfa(&value)?.as_dfa())))
+		}
+		"nfa_nth_power" => {
+			let [value, power] = take(arguments, name)?;
+			let power = u32::try_from(length(
+				as_int(&power)?,
+				"nfa:concatenate-nth-power needs a non-negative power".into(),
+			)?)
+			.map_err(|_| {
+				Error::plain("nfa:concatenate-nth-power takes a power below 2^32".into())
+			})?;
+			Ok(Value::Nfa(Rc::new(
+				expect_nfa(&value)?.concatenate_nth_power(power),
+			)))
+		}
+		"nfa_union_det_complete" => {
+			let [lhs, rhs] = take(arguments, name)?;
+			let nfa = expect_nfa(&lhs)?
+				.union_det_complete(&*expect_nfa(&rhs)?, &engine.script_alphabet)
+				.map_err(|error| unmet(&error))?;
+			Ok(Value::Nfa(Rc::new(nfa)))
+		}
+		"nfa_product" => {
+			let [lhs, rhs] = take(arguments, name)?;
+			let condition = match optional::<String>(engine, "final-condition").as_deref() {
+				None | Some("and") => ProductFinalCondition::And,
+				Some("or") => ProductFinalCondition::Or,
+				Some(other) => {
+					return Err(Error::plain(format!(
+						":final-condition of nfa:product is \"and\" or \"or\", not \"{other}\""
+					)));
+				}
+			};
+			let first_epsilon =
+				optional::<Symbol>(engine, "first-epsilon").unwrap_or(Symbol::EPSILON);
+			Ok(Value::Nfa(Rc::new(expect_nfa(&lhs)?.product(
+				&*expect_nfa(&rhs)?,
+				condition,
+				first_epsilon,
+			))))
+		}
+		"nfa_left_quotient" => {
+			let [lhs, rhs] = take(arguments, name)?;
+			let first_epsilon =
+				optional::<Symbol>(engine, "first-epsilon").unwrap_or(Symbol::EPSILON);
+			Ok(Value::Nfa(Rc::new(
+				expect_nfa(&lhs)?.left_quotient(&*expect_nfa(&rhs)?, first_epsilon),
+			)))
+		}
+		"nfa_right_quotient" => {
+			let [lhs, rhs] = take(arguments, name)?;
+			let first_epsilon =
+				optional::<Symbol>(engine, "first-epsilon").unwrap_or(Symbol::EPSILON);
+			Ok(Value::Nfa(Rc::new(
+				expect_nfa(&lhs)?.right_quotient(&*expect_nfa(&rhs)?, first_epsilon),
+			)))
+		}
+		"nfa_decode_utf8" => {
+			let [value] = take(arguments, name)?;
+			let nfa = expect_nfa(&value)?
+				.decode_utf8()
+				.map_err(|error| unmet(&error))?;
+			Ok(Value::Nfa(Rc::new(nfa)))
+		}
+		"nfa_one_letter" => {
+			let [value] = take(arguments, name)?;
+			let abstract_symbol = optional::<Symbol>(engine, "abstract-symbol")
+				.unwrap_or_else(|| Symbol::new(u32::from(b'x')));
+			Ok(Value::Nfa(Rc::new(
+				expect_nfa(&value)?.one_letter_automaton(abstract_symbol),
+			)))
+		}
 		_ => dispatch_nfa_predicates(handler, name, arguments, engine),
 	}
 }
@@ -1456,7 +1664,7 @@ fn decide(
 }
 
 /// Serves the operations that decide a property of an `Nfa` and keep the witness when they fail:
-/// `nfa:language-empty?` through `nfa:acyclic?`.
+/// `nfa:language-empty?` through `nfa:in-language-prefix?`.
 fn dispatch_nfa_predicates(
 	handler: &str,
 	name: &str,
@@ -1548,6 +1756,17 @@ fn dispatch_nfa_predicates(
 			let [value] = take(arguments, name)?;
 			Ok(Value::Bool(expect_nfa(&value)?.is_acyclic()))
 		}
+		"nfa_flat" => {
+			let [value] = take(arguments, name)?;
+			Ok(Value::Bool(expect_nfa(&value)?.is_flat()))
+		}
+		"nfa_in_lang_prefix" => {
+			let [value, word] = take(arguments, name)?;
+			let nfa = expect_nfa(&value)?;
+			let word = expect_word(&word)?;
+			let use_epsilon = optional::<bool>(engine, "use-epsilon").unwrap_or(false);
+			Ok(Value::Bool(nfa.is_in_language_prefix(&word, use_epsilon)))
+		}
 		_ => dispatch_nfa_queries(handler, name, arguments, engine),
 	}
 }
@@ -1589,6 +1808,54 @@ fn dispatch_nfa_queries(
 			Ok(expect_nfa(&value)?
 				.find_accepting_run()
 				.map_or(Value::None, |run| Value::Run(Rc::new(run))))
+		}
+		_ => dispatch_nfa_bridge_queries(handler, name, arguments, engine),
+	}
+}
+
+/// Serves the queries the `mata` crate gained with the bridge functions of these operations:
+/// `nfa:get-word-from-complement` through `nfa:create-random-nfa-tabakov-vardi`.
+fn dispatch_nfa_bridge_queries(
+	handler: &str,
+	name: &str,
+	arguments: Vec<Value>,
+	engine: &mut Engine,
+) -> Result<Value, Error> {
+	match handler {
+		"nfa_word_from_complement" => {
+			let [value] = take(arguments, name)?;
+			Ok(expect_nfa(&value)?
+				.find_word_from_complement(&engine.script_alphabet)
+				.map_or(Value::None, Value::Word))
+		}
+		"nfa_word_from_language_difference" => {
+			let [lhs, rhs] = take(arguments, name)?;
+			Ok(expect_nfa(&lhs)?
+				.find_word_from_language_difference(&*expect_nfa(&rhs)?)
+				.map_or(Value::None, Value::Word))
+		}
+		"nfa_random_tabakov_vardi" => {
+			let [states, symbols, ratio, density] = take(arguments, name)?;
+			let states = length(
+				as_int(&states)?,
+				"nfa:create-random-nfa-tabakov-vardi needs a non-negative number of states".into(),
+			)?;
+			let symbols = length(
+				as_int(&symbols)?,
+				"nfa:create-random-nfa-tabakov-vardi needs a non-negative alphabet size".into(),
+			)?;
+			let ratio = as_decimal(&ratio, name, "the transition ratio")?;
+			let density = as_decimal(&density, name, "the final state density")?;
+			let seed = optional::<i64>(engine, "seed")
+				.map(|seed| {
+					u32::try_from(seed).map_err(|_| {
+						Error::plain(format!(":seed of {name} must be below 2^32, not {seed}"))
+					})
+				})
+				.transpose()?;
+			let nfa = Nfa::random_tabakov_vardi(states, symbols, ratio, density, seed)
+				.map_err(|error| unmet(&error))?;
+			Ok(Value::Nfa(Rc::new(nfa)))
 		}
 		"nfa_regex" => {
 			let [pattern] = take(arguments, name)?;
@@ -1871,6 +2138,22 @@ fn take<const N: usize>(values: Vec<Value>, name: &str) -> Result<[Value; N], Er
 			values.len()
 		))
 	})
+}
+
+/// A number a parameter of a library function takes as a floating-point value, written as a decimal string
+/// in `operation`; `what` names the parameter in the error.
+fn as_decimal(value: &Value, operation: &str, what: &str) -> Result<f64, Error> {
+	let text = as_string(value)?;
+	text.parse().map_err(|_| {
+		Error::plain(format!(
+			"{what} of {operation} is a decimal number, not \"{text}\""
+		))
+	})
+}
+
+/// A library call that a requirement of its operation stopped, as an error of the interpreter.
+fn unmet(error: &UnmetRequirement) -> Error {
+	Error::plain(error.message().to_owned())
 }
 
 /// A count as the script integer type; counts beyond `i64` are rejected rather than truncated.

@@ -1,6 +1,8 @@
 #include "mata-sys/cxx/shim.hh"
 
 #include <algorithm>
+#include <cmath>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -693,6 +695,181 @@ rust::String print_dot(
 
 std::unique_ptr<Nfa> concatenate_over_epsilon(const Nfa& lhs, const Nfa& rhs) {
 	return boxed(mata::nfa::concatenate(lhs, rhs, /*use_epsilon=*/true));
+}
+
+std::unique_ptr<Nfa> as_dfa(const Nfa& nfa) {
+	auto storage = std::optional<Nfa>();
+	return boxed(mata::nfa::as_dfa(without_epsilon(nfa, storage)));
+}
+
+std::unique_ptr<Nfa> concatenate_nth_power(const Nfa& nfa, const std::uint32_t power) {
+	return boxed(mata::nfa::concatenate_nth_power(nfa, power));
+}
+
+std::unique_ptr<Nfa> union_det_complete(const Nfa& lhs, const Nfa& rhs, const rust::Slice<const Symbol> symbols) {
+	// Mata checks completeness over the symbols each automaton uses; over the given ones, the product is the union.
+	for (const Nfa* const operand : {&lhs, &rhs}) {
+		if (operand->initial.empty() || !is_deterministic(*operand)) {
+			throw std::invalid_argument("union_det_complete requires deterministic automata");
+		}
+		if (!is_complete(*operand, symbols)) {
+			throw std::invalid_argument("union_det_complete requires automata complete over the alphabet");
+		}
+	}
+	return boxed(mata::nfa::union_det_complete(lhs, rhs));
+}
+
+std::unique_ptr<Nfa> product(const Nfa& lhs, const Nfa& rhs, const bool either_final, const Symbol first_epsilon) {
+	using mata::nfa::ProductFinalStateCondition;
+	const auto condition = either_final ? ProductFinalStateCondition::Or : ProductFinalStateCondition::And;
+	return boxed(mata::nfa::product(lhs, rhs, condition, first_epsilon));
+}
+
+std::unique_ptr<Nfa> left_quotient(const Nfa& nfa, const Nfa& prefixes, const Symbol first_epsilon) {
+	return boxed(mata::nfa::left_quotient(nfa, prefixes, first_epsilon));
+}
+
+std::unique_ptr<Nfa> right_quotient(const Nfa& nfa, const Nfa& suffixes, const Symbol first_epsilon) {
+	return boxed(mata::nfa::right_quotient(nfa, suffixes, first_epsilon));
+}
+
+namespace {
+
+/// Throws where `Nfa::decode_utf8()` asserts, by its own traversal: after a byte that starts a sequence of two, three
+///  or four bytes, the last byte of the sequence must be a continuation byte `10xxxxxx`.
+void check_utf8(const Nfa& nfa) {
+	std::vector<bool> used(nfa.num_of_states(), false);
+	std::vector<State> worklist{};
+	const auto push = [&](const auto& states) {
+		for (const State state : states) {
+			if (used[state]) { continue; }
+			used[state] = true;
+			worklist.push_back(state);
+		}
+	};
+	const auto fail = [](const State state) {
+		throw std::invalid_argument(
+			"the automaton is not UTF-8 encoded: a multi-byte sequence from state " + std::to_string(state) +
+			" does not end with a continuation byte"
+		);
+	};
+	push(nfa.initial);
+	while (!worklist.empty()) {
+		const State q1 = worklist.back();
+		worklist.pop_back();
+		for (const auto& sp1 : nfa.delta[q1]) {
+			const Symbol s1 = sp1.symbol;
+			if ((s1 & 0x80) == 0x00) {
+				push(sp1.targets);
+				continue;
+			}
+			for (const State q2 : sp1.targets) {
+				for (const auto& sp2 : nfa.delta[q2]) {
+					const Symbol s2 = sp2.symbol;
+					if ((s1 & 0xE0) == 0xC0) {
+						if ((s2 & 0xC0) != 0x80) { fail(q1); }
+						if ((((s1 & 0x1F) << 6) | (s2 & 0x3F)) >= 0x80) { push(sp2.targets); }
+						continue;
+					}
+					for (const State q3 : sp2.targets) {
+						for (const auto& sp3 : nfa.delta[q3]) {
+							const Symbol s3 = sp3.symbol;
+							if ((s1 & 0xF0) == 0xE0) {
+								if ((s3 & 0xC0) != 0x80) { fail(q1); }
+								if ((((s1 & 0x0F) << 12) | ((s2 & 0x3F) << 6) | (s3 & 0x3F)) >= 0x8'00) {
+									push(sp3.targets);
+								}
+								continue;
+							}
+							for (const State q4 : sp3.targets) {
+								for (const auto& sp4 : nfa.delta[q4]) {
+									const Symbol s4 = sp4.symbol;
+									if ((s1 & 0xF8) != 0xF0 || (s4 & 0xC0) != 0x80) { fail(q1); }
+									const Symbol symbol =
+										((s1 & 0x07) << 18) | ((s2 & 0x3F) << 12) | ((s3 & 0x3F) << 6) | (s4 & 0x3F);
+									if (symbol >= 0x1'00'00 && symbol <= 0x10'FF'FF) { push(sp4.targets); }
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+} // namespace
+
+std::unique_ptr<Nfa> decode_utf8(const Nfa& nfa) {
+	auto storage = std::optional<Nfa>();
+	const Nfa& input = without_epsilon(nfa, storage);
+	check_utf8(input);
+	return boxed(input.decode_utf8());
+}
+
+std::unique_ptr<Nfa> one_letter_automaton(const Nfa& nfa, const Symbol abstract_symbol) {
+	return boxed(nfa.get_one_letter_aut(abstract_symbol));
+}
+
+bool is_flat(const Nfa& nfa) { return nfa.is_flat(); }
+
+bool accepts_prefix(const Nfa& nfa, const rust::Slice<const Symbol> word, const bool use_epsilon) {
+	return nfa.is_in_lang_prefix(to_word(word), use_epsilon);
+}
+
+bool word_from_complement(const Nfa& nfa, const rust::Slice<const Symbol> symbols, rust::Vec<Symbol>& word) {
+	auto storage = std::optional<Nfa>();
+	const auto alphabet = mata::EnumAlphabet(to_symbol_set(symbols));
+	const auto found = without_epsilon(nfa, storage).get_word_from_complement(&alphabet);
+	if (!found.has_value()) { return false; }
+	assign(word, *found);
+	return true;
+}
+
+bool word_from_difference(const Nfa& included, const Nfa& excluded, rust::Vec<Symbol>& word) {
+	auto included_storage = std::optional<Nfa>();
+	auto excluded_storage = std::optional<Nfa>();
+	const auto found = mata::nfa::get_word_from_lang_difference(
+		without_epsilon(included, included_storage), without_epsilon(excluded, excluded_storage)
+	);
+	if (!found.has_value()) { return false; }
+	assign(word, *found);
+	return true;
+}
+
+std::unique_ptr<Nfa> random_tabakov_vardi(
+	const std::size_t num_states,
+	const std::size_t alphabet_size,
+	const double transition_ratio,
+	const double final_density,
+	const bool has_seed,
+	const std::uint32_t seed
+) {
+	if (num_states >= std::numeric_limits<State>::max()) {
+		throw std::invalid_argument(
+			"the number of states must be below " + std::to_string(std::numeric_limits<State>::max())
+		);
+	}
+	// The symbols are 0 to alphabet_size - 1, all below epsilon.
+	if (alphabet_size > mata::nfa::EPSILON) {
+		throw std::invalid_argument("the alphabet size must be at most " + std::to_string(mata::nfa::EPSILON));
+	}
+	// Mata ignores the ratio and the density without states, and otherwise truncates the ratio to an integer, which
+	//  is undefined out of range.
+	if (num_states == 0) { return boxed(mata::nfa::builder::create_random_nfa_tabakov_vardi(0, alphabet_size, 0, 0)); }
+	if (!std::isfinite(transition_ratio) || transition_ratio < 0 ||
+		transition_ratio > static_cast<double>(num_states)) {
+		throw std::invalid_argument("the transition ratio must be in the range [0, number of states]");
+	}
+	if (!std::isfinite(final_density) || final_density < 0 || final_density > 1) {
+		throw std::invalid_argument("the final state density must be in the range [0, 1]");
+	}
+	return boxed(
+		mata::nfa::builder::create_random_nfa_tabakov_vardi(
+			num_states, alphabet_size, transition_ratio, final_density,
+			has_seed ? std::optional<unsigned int>{seed} : std::nullopt
+		)
+	);
 }
 
 } // namespace mata_sys

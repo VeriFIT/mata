@@ -192,5 +192,25 @@ rust::String print_dot(
 
 // Further operations of the library.
 std::unique_ptr<Nfa> concatenate_over_epsilon(const Nfa& lhs, const Nfa& rhs);
+std::unique_ptr<Nfa> as_dfa(const Nfa& nfa);
+std::unique_ptr<Nfa> concatenate_nth_power(const Nfa& nfa, std::uint32_t power);
+std::unique_ptr<Nfa> union_det_complete(const Nfa& lhs, const Nfa& rhs, rust::Slice<const Symbol> symbols);
+std::unique_ptr<Nfa> product(const Nfa& lhs, const Nfa& rhs, bool either_final, Symbol first_epsilon);
+std::unique_ptr<Nfa> left_quotient(const Nfa& nfa, const Nfa& prefixes, Symbol first_epsilon);
+std::unique_ptr<Nfa> right_quotient(const Nfa& nfa, const Nfa& suffixes, Symbol first_epsilon);
+std::unique_ptr<Nfa> decode_utf8(const Nfa& nfa);
+std::unique_ptr<Nfa> one_letter_automaton(const Nfa& nfa, Symbol abstract_symbol);
+bool is_flat(const Nfa& nfa);
+bool accepts_prefix(const Nfa& nfa, rust::Slice<const Symbol> word, bool use_epsilon);
+bool word_from_complement(const Nfa& nfa, rust::Slice<const Symbol> symbols, rust::Vec<Symbol>& word);
+bool word_from_difference(const Nfa& included, const Nfa& excluded, rust::Vec<Symbol>& word);
+std::unique_ptr<Nfa> random_tabakov_vardi(
+	std::size_t num_states,
+	std::size_t alphabet_size,
+	double transition_ratio,
+	double final_density,
+	bool has_seed,
+	std::uint32_t seed
+);
 
 } // namespace mata_sys
