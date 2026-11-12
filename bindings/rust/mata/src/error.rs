@@ -1,6 +1,6 @@
 //! Error types.
 
-use crate::State;
+use crate::{State, Symbol};
 
 /// Any error of this crate, for code that propagates several kinds with `?`.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
@@ -30,6 +30,9 @@ pub enum Error {
 	/// An operand or argument that does not meet a requirement of the operation.
 	#[error(transparent)]
 	UnmetRequirement(#[from] UnmetRequirement),
+	/// An argument that a replace transducer cannot be built from.
+	#[error(transparent)]
+	Replace(#[from] ReplaceError),
 }
 
 /// Error from parsing the `.mata` format. It carries Mata's message.
@@ -189,6 +192,34 @@ pub enum NftError {
 	/// A transducer with a cycle of epsilon edges where the caller promised none.
 	#[error("the transducer has a cycle of epsilon transitions")]
 	EpsilonCycle,
+	/// Word lengths that span more configurations of a search than can be indexed.
+	#[error("the word lengths span too many configurations")]
+	TooManyConfigurations,
+}
+
+/// Error from an argument of a [`strings`](crate::strings) transducer construction.
+#[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
+pub enum ReplaceError {
+	/// The symbol to replace is not in the alphabet.
+	#[error("symbol {symbol} is not in the alphabet")]
+	SymbolNotInAlphabet {
+		/// The symbol that was passed.
+		symbol: Symbol,
+	},
+	/// The alphabet contains a symbol that the construction gives another meaning:
+	/// [`DONT_CARE`](crate::nft::DONT_CARE), or the marker of the call.
+	#[error("the alphabet contains symbol {symbol}, which the construction reserves")]
+	ReservedSymbol {
+		/// The reserved symbol.
+		symbol: Symbol,
+	},
+	/// Invalid regular expression.
+	#[error(transparent)]
+	Regex(#[from] RegexError),
+	/// A number of levels that a transducer cannot have.
+	#[error(transparent)]
+	Nft(#[from] NftError),
 }
 
 /// An automaton from other C++ code that breaks Mata's invariants. It carries the shim's message.

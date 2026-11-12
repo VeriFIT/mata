@@ -8,6 +8,7 @@
 
 #include "mata-sys/cxx/common.hh"
 #include "mata-sys/src/nft.rs.h"
+#include "mata/applications/strings.hh"
 #include "mata/nft/builder.hh"
 #include "mata/parser/parser.hh"
 
@@ -550,6 +551,136 @@ bool nft_are_equivalent(const Nft& lhs, const Nft& rhs) {
 bool nft_is_deterministic(const Nft& nft) {
 	auto storage = std::optional<Nft>();
 	return without_jumps(nft, storage).is_deterministic();
+}
+
+// Strings.
+
+namespace {
+
+using mata::applications::strings::replace::ReplaceMode;
+
+ReplaceMode replace_mode(const bool single) { return single ? ReplaceMode::Single : ReplaceMode::All; }
+
+/// The alphabet of a replace transducer. Throws on epsilon, `DONT_CARE` and `marker`, which the construction
+///  gives another meaning.
+mata::EnumAlphabet
+	replace_alphabet(const rust::Slice<const Symbol> symbols, const std::optional<Symbol> marker = std::nullopt) {
+	if (marker.has_value() && std::ranges::find(symbols, *marker) != symbols.end()) {
+		throw std::invalid_argument(
+			"the alphabet cannot contain the marker symbol " + std::to_string(*marker) + " of the replace"
+		);
+	}
+	return mata::EnumAlphabet(detail::to_symbol_set(symbols));
+}
+
+/// Wraps a transducer that a library construction built, checked as one from other C++ code.
+std::unique_ptr<Nft> built(Nft&& nft) {
+	nft_check_well_formed(nft);
+	return boxed(std::move(nft));
+}
+
+} // namespace
+
+Symbol strings_begin_marker() { return mata::applications::strings::replace::BEGIN_MARKER; }
+
+Symbol strings_end_marker() { return mata::applications::strings::replace::END_MARKER; }
+
+bool strings_words_of_lengths(
+	const Nft& nft,
+	const rust::Slice<const std::uint32_t> lengths,
+	rust::Vec<Symbol>& symbols,
+	rust::Vec<std::size_t>& word_lengths
+) {
+	auto storage = std::optional<Nft>();
+	const auto words = mata::applications::strings::get_words_of_lengths(
+		without_jumps(nft, storage), std::vector<unsigned>(lengths.begin(), lengths.end())
+	);
+	if (!words.has_value()) { return false; }
+	detail::assign_words(symbols, word_lengths, *words);
+	return true;
+}
+
+std::unique_ptr<Nft> strings_create_identity(const rust::Slice<const Symbol> alphabet, const std::size_t num_levels) {
+	check_num_levels(num_levels);
+	const auto symbols = replace_alphabet(alphabet);
+	return built(mata::applications::strings::replace::create_identity(&symbols, num_levels));
+}
+
+// The overloads taking a `Symbol` replacement build `Word{replacement}`, so the bridge has only the `Word` ones.
+std::unique_ptr<Nft> strings_identity_with_replace(
+	const rust::Slice<const Symbol> alphabet,
+	const Symbol from_symbol,
+	const rust::Slice<const Symbol> replacement,
+	const bool single
+) {
+	const auto symbols = replace_alphabet(alphabet);
+	return built(
+		mata::applications::strings::replace::create_identity_with_single_symbol_replace(
+			&symbols, from_symbol, to_word(replacement), replace_mode(single)
+		)
+	);
+}
+
+std::unique_ptr<Nft> strings_replace_regex(
+	const rust::Str regex,
+	const rust::Slice<const Symbol> replacement,
+	const rust::Slice<const Symbol> alphabet,
+	const bool single,
+	const Symbol begin_marker
+) {
+	const auto symbols = replace_alphabet(alphabet, begin_marker);
+	return built(
+		mata::applications::strings::replace::replace_reluctant_regex(
+			std::string(regex), to_word(replacement), &symbols, replace_mode(single), begin_marker
+		)
+	);
+}
+
+std::unique_ptr<Nft> strings_replace_regex_nfa(
+	const mata::nfa::Nfa& regex,
+	const rust::Slice<const Symbol> replacement,
+	const rust::Slice<const Symbol> alphabet,
+	const bool single,
+	const Symbol begin_marker
+) {
+	const auto symbols = replace_alphabet(alphabet, begin_marker);
+	// The library needs a deterministic automaton, as the String form builds it.
+	auto dfa = mata::nfa::remove_epsilon(regex);
+	if (!dfa.is_deterministic()) { dfa = mata::nfa::determinize(dfa); }
+	return built(
+		mata::applications::strings::replace::replace_reluctant_regex(
+			std::move(dfa), to_word(replacement), &symbols, replace_mode(single), begin_marker
+		)
+	);
+}
+
+std::unique_ptr<Nft> strings_replace_literal(
+	const rust::Slice<const Symbol> literal,
+	const rust::Slice<const Symbol> replacement,
+	const rust::Slice<const Symbol> alphabet,
+	const bool single,
+	const Symbol end_marker
+) {
+	const auto symbols = replace_alphabet(alphabet, end_marker);
+	return built(
+		mata::applications::strings::replace::replace_reluctant_literal(
+			to_word(literal), to_word(replacement), &symbols, replace_mode(single), end_marker
+		)
+	);
+}
+
+std::unique_ptr<Nft> strings_replace_symbol(
+	const Symbol from_symbol,
+	const rust::Slice<const Symbol> replacement,
+	const rust::Slice<const Symbol> alphabet,
+	const bool single
+) {
+	const auto symbols = replace_alphabet(alphabet);
+	return built(
+		mata::applications::strings::replace::replace_reluctant_single_symbol(
+			from_symbol, to_word(replacement), &symbols, replace_mode(single)
+		)
+	);
 }
 
 // Printing.

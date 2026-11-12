@@ -49,6 +49,7 @@ fn dispatch(arguments: &[String]) -> Result<Exit, Error> {
 		"script" => script(&arguments[1..]),
 		"nfa" => direct(&arguments[1..], "nfa"),
 		"nft" => direct(&arguments[1..], "nft"),
+		"strings" => direct(&arguments[1..], "strings"),
 		"convert" => crate::convert::main(&arguments[1..]),
 		"version" | "--version" => {
 			print!("{}", version());
@@ -82,6 +83,7 @@ fn help(arguments: &[String]) -> Result<Exit, Error> {
 		},
 		Some("nfa") => print!("{}", direct_help("nfa")),
 		Some("nft") => print!("{}", direct_help("nft")),
+		Some("strings") => print!("{}", direct_help("strings")),
 		Some("convert") => println!("{}", crate::convert::help()),
 		Some("formats") => println!("{}", formats_help()),
 		Some("version") => print!("{}", version()),
@@ -99,6 +101,7 @@ commands:
   script run|check|repl    run, check, or interactively evaluate a Mata Script
   nfa <operation> …        one NFA operation on automata in the .mata format
   nft <operation> …        one NFT operation on automata in the .mata format
+  strings <operation> …    one string-solving operation on automata in the .mata format
   convert [options]        convert automata between the .mata and DOT formats
   formats                  list the supported formats, features, and every operation
   version                  print the versions of this command, the language, and the library
@@ -165,15 +168,20 @@ options:
 }
 
 fn direct_help(namespace: &str) -> String {
-	let kind = if namespace == "nft" { "NFT" } else { "NFA" };
+	let kind = match namespace {
+		"nft" => "NFT",
+		"strings" => "string-solving",
+		_ => "NFA",
+	};
 	let mut text = format!(
 		"usage: mata {namespace} <operation> [options] [OPERAND…]
 
 performs one {kind} operation. An automaton operand is a file in the .mata format,
 or `-` for standard input; a file with several automata gives one operand each.
 A Word operand is symbol names separated by spaces, a String operand is the text
-itself, an Int operand a number. A query exits 0 for true and 1 for false; its name
-may leave out the trailing `?`.
+itself, an Int operand a number, and a (LIST INT) operand numbers separated by
+commas or spaces. A query exits 0 for true and 1 for false; its name may leave out
+the trailing `?`.
 
 options:
   --output PATH        write the result to PATH instead of standard output; `-` is standard output

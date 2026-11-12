@@ -179,6 +179,15 @@ bool decide_disjoint(const Nfa& lhs, const Nfa& rhs);
 std::unique_ptr<WordStream> words(const Nfa& nfa, std::size_t max_length);
 bool next_word(WordStream& stream, rust::Vec<Symbol>& word);
 
+// Strings (`mata::applications::strings`). Words are returned concatenated, with their lengths.
+void strings_shortest_words(const Nfa& nfa, rust::Vec<Symbol>& symbols, rust::Vec<std::size_t>& lengths);
+bool strings_longest_words(const Nfa& nfa, rust::Vec<Symbol>& symbols, rust::Vec<std::size_t>& lengths);
+rust::Vec<Symbol> strings_accepted_symbols(const Nfa& nfa);
+rust::Vec<std::size_t> strings_word_lengths(const Nfa& nfa);
+bool strings_is_lang_eps(const Nfa& nfa);
+std::unique_ptr<ParsedNfas> strings_segments(const Nfa& nfa, rust::Slice<const Symbol> epsilons);
+std::unique_ptr<Nfa> strings_reluctant_nfa(const Nfa& nfa);
+
 // Printing.
 rust::String print_mata(const Nfa& nfa, rust::Slice<const rust::String> names, rust::Slice<const Symbol> symbols);
 rust::String print_dot(

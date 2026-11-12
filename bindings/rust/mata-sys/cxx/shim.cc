@@ -3,12 +3,14 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <utility>
 
 #include "mata-sys/cxx/common.hh"
 #include "mata-sys/src/lib.rs.h"
+#include "mata/applications/strings.hh"
 #include "mata/nfa/builder.hh"
 
 namespace mata_sys {
@@ -669,6 +671,58 @@ std::unique_ptr<WordStream> words(const Nfa& nfa, const std::size_t max_length) 
 }
 
 bool next_word(WordStream& stream, rust::Vec<Symbol>& word) { return stream.next(word); }
+
+// Strings. The word queries work on the language, so they remove epsilon transitions first, as the decision
+//  procedures do; the segmentation is the one operation that reads the given epsilon symbols.
+
+void strings_shortest_words(const Nfa& nfa, rust::Vec<Symbol>& symbols, rust::Vec<std::size_t>& lengths) {
+	auto storage = std::optional<Nfa>();
+	detail::assign_words(
+		symbols, lengths, mata::applications::strings::get_shortest_words(without_epsilon(nfa, storage))
+	);
+}
+
+bool strings_longest_words(const Nfa& nfa, rust::Vec<Symbol>& symbols, rust::Vec<std::size_t>& lengths) {
+	auto storage = std::optional<Nfa>();
+	const auto words = mata::applications::strings::get_longest_words(without_epsilon(nfa, storage));
+	if (!words.has_value()) { return false; }
+	detail::assign_words(symbols, lengths, *words);
+	return true;
+}
+
+rust::Vec<Symbol> strings_accepted_symbols(const Nfa& nfa) {
+	auto storage = std::optional<Nfa>();
+	auto symbols = rust::Vec<Symbol>();
+	assign(symbols, mata::applications::strings::get_accepted_symbols(without_epsilon(nfa, storage)));
+	return symbols;
+}
+
+rust::Vec<std::size_t> strings_word_lengths(const Nfa& nfa) {
+	auto storage = std::optional<Nfa>();
+	auto pairs = rust::Vec<std::size_t>();
+	// Both numbers of a pair are a state index or a cycle length, so never negative.
+	for (const auto& [offset, period] : mata::applications::strings::get_word_lengths(without_epsilon(nfa, storage))) {
+		pairs.push_back(static_cast<std::size_t>(offset));
+		pairs.push_back(static_cast<std::size_t>(period));
+	}
+	return pairs;
+}
+
+bool strings_is_lang_eps(const Nfa& nfa) {
+	auto storage = std::optional<Nfa>();
+	return mata::applications::strings::is_lang_eps(without_epsilon(nfa, storage));
+}
+
+std::unique_ptr<ParsedNfas> strings_segments(const Nfa& nfa, const rust::Slice<const Symbol> epsilons) {
+	auto segmentation =
+		mata::applications::strings::seg_nfa::Segmentation(nfa, std::set<Symbol>(epsilons.begin(), epsilons.end()));
+	return std::make_unique<ParsedNfas>(segmentation.get_segments());
+}
+
+std::unique_ptr<Nfa> strings_reluctant_nfa(const Nfa& nfa) {
+	auto storage = std::optional<Nfa>();
+	return boxed(mata::applications::strings::replace::reluctant_nfa(Nfa(without_epsilon(nfa, storage))));
+}
 
 // Printing.
 

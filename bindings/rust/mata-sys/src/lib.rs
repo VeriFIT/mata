@@ -345,6 +345,35 @@ pub mod ffi {
 		/// Writes the next word; false at the end.
 		fn next_word(stream: Pin<&mut WordStream>, word: &mut Vec<u32>) -> Result<bool>;
 
+		// Strings (`mata::applications::strings`). Word sets are written as all their symbols concatenated
+		// (`symbols`) and the length of each word (`lengths`), in ascending order of the words. The word
+		// queries remove epsilon transitions first.
+
+		/// The shortest accepted words (`get_shortest_words`).
+		fn strings_shortest_words(
+			nfa: &Nfa,
+			symbols: &mut Vec<u32>,
+			lengths: &mut Vec<usize>,
+		) -> Result<()>;
+		/// The longest accepted words (`get_longest_words`); false if the language is infinite.
+		fn strings_longest_words(
+			nfa: &Nfa,
+			symbols: &mut Vec<u32>,
+			lengths: &mut Vec<usize>,
+		) -> Result<bool>;
+		/// The accepted words of length one, ascending (`get_accepted_symbols`).
+		fn strings_accepted_symbols(nfa: &Nfa) -> Result<Vec<u32>>;
+		/// The pairs (offset, period) of `get_word_lengths`, flattened and ascending: the words have the
+		/// lengths offset + k · period for all k ≥ 0, over all pairs.
+		fn strings_word_lengths(nfa: &Nfa) -> Result<Vec<usize>>;
+		/// Whether the language is {ε} (`is_lang_eps`).
+		fn strings_is_lang_eps(nfa: &Nfa) -> Result<bool>;
+		/// The trimmed segments of a segment automaton between the transitions over `epsilons`, from the
+		/// initial to the final states (`seg_nfa::Segmentation::get_segments`).
+		fn strings_segments(nfa: &Nfa, epsilons: &[u32]) -> Result<UniquePtr<ParsedNfas>>;
+		/// The automaton without the transitions leaving final states (`replace::reluctant_nfa`).
+		fn strings_reluctant_nfa(nfa: &Nfa) -> Result<UniquePtr<Nfa>>;
+
 		// Printing.
 
 		/// The `.mata` text, with names from (`names`, `symbols`) and numbers for other symbols.

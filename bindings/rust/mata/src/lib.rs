@@ -9,13 +9,14 @@ pub mod nft;
 mod options;
 #[cfg(feature = "serde")]
 mod serde_impl;
+pub mod strings;
 mod transitions;
 mod types;
 
 pub use alphabet::Alphabet;
 pub use error::{
 	AlphabetError, Error, InvalidAutomaton, LimitExceeded, NftError, NoSuchState, ParseError,
-	RegexError, UnmetRequirement,
+	RegexError, ReplaceError, UnmetRequirement,
 };
 pub use limits::Limits;
 pub use nfa::Nfa;

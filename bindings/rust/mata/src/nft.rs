@@ -116,7 +116,7 @@ fn flatten<W: AsRef<[Symbol]>>(words: &[W]) -> (Vec<u32>, Vec<usize>) {
 
 impl Nft {
 	/// Wraps a transducer that the shim built (so it is non-null, well formed and jump-free).
-	fn from_owned(inner: UniquePtr<ffi::Nft>) -> Nft {
+	pub(crate) fn from_owned(inner: UniquePtr<ffi::Nft>) -> Nft {
 		assert!(!inner.is_null(), "mata-sys returned a null transducer");
 		Nft { inner }
 	}

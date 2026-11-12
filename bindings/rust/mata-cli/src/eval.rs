@@ -1265,7 +1265,10 @@ pub(crate) fn witness_message() -> String {
 
 /// Whether a call of `name` is a library operation that `:time-operations` measures.
 fn is_timed(name: &str) -> bool {
-	name.starts_with("nfa:") || name.starts_with("nft:") || name.starts_with("alphabet:")
+	name.starts_with("nfa:")
+		|| name.starts_with("nft:")
+		|| name.starts_with("alphabet:")
+		|| name.starts_with("strings:")
 }
 
 /// Why `name` cannot be defined by a script, or `None` when it can. Every namespaced name is reserved,

@@ -51,6 +51,19 @@ template <class T, class Range> void assign(rust::Vec<T>& out, const Range& valu
 	for (const auto value : values) { out.push_back(value); }
 }
 
+/// Writes `words` as the bridge returns them: all symbols concatenated into `symbols`, and the length of each word
+///  into `lengths`.
+template <class Words>
+void assign_words(rust::Vec<Symbol>& symbols, rust::Vec<std::size_t>& lengths, const Words& words) {
+	symbols.clear();
+	lengths.clear();
+	lengths.reserve(std::size(words));
+	for (const Word& word : words) {
+		for (const Symbol symbol : word) { symbols.push_back(symbol); }
+		lengths.push_back(word.size());
+	}
+}
+
 /// Throws unless `state` is a state of `automaton` (Mata would grow the automaton instead).
 inline void check_state(const mata::Automaton& automaton, const State state) {
 	if (state >= automaton.num_of_states()) {

@@ -26,16 +26,17 @@ mata <command> [arguments]
 | `mata script repl`           | Starts an interactive Mata Script session reading from standard input |
 | `mata nfa <operation> …`     | Performs one NFA operation directly, with automata as files           |
 | `mata nft <operation> …`     | Performs one NFT operation directly                                   |
+| `mata strings <operation> …` | Performs one string-solving operation directly                        |
 | `mata convert …`             | Converts automata between the `.mata` and DOT formats                 |
 | `mata formats`               | Lists the supported formats, language features and every operation    |
 | `mata version`               | Prints the versions of the command, of Mata Script and of the library |
 | `mata help [command]`        | Prints usage; `--help` works everywhere                               |
 
-`mata script run` is the entry point for whole computations; `mata nfa`, `mata nft` and `mata convert` are for one
-operation whose script would be a single form. They share one executable, one Rust implementation and the same
-[bindings](https://mata.pages.fit.vutbr.cz/rust/mata/), so a script, an interactive session and a one-off query give the
-same answer to the same library call. The subcommand is `script`, singular, because it acts on one Mata Script, as
-`mata nfa` acts on one automaton.
+`mata script run` is the entry point for whole computations; `mata nfa`, `mata nft`, `mata strings` and `mata convert`
+are for one operation whose script would be a single form. They share one executable, one Rust implementation and the
+same [bindings](https://mata.pages.fit.vutbr.cz/rust/mata/), so a script, an interactive session and a one-off query
+give the same answer to the same library call. The subcommand is `script`, singular, because it acts on one Mata
+Script, as `mata nfa` acts on one automaton.
 
 Options and operands are separated by `--` where either side accepts file names; after `--`, every argument is an
 operand. A path operand of `-` means standard input, except where a script file name is expected and standard input is
@@ -184,6 +185,7 @@ The direct commands are for one operation whose script would be a single form.
 ```console
 mata nfa <operation> [--hint NAME=VALUE]… [--output PATH] OPERAND…
 mata nft <operation> [--hint NAME=VALUE]… [--output PATH] OPERAND…
+mata strings <operation> [--hint NAME=VALUE]… [--output PATH] OPERAND…
 ```
 
 For example:
@@ -194,18 +196,24 @@ $ mata nfa intersection a.mata b.mata c.mata | mata nfa determinize -
 …
 $ mata nfa included small.mata big.mata --hint algorithm=naive
 true
+$ mata strings get-accepted-symbols a.mata
+a
 ```
 
-- Operations mirror the script names exactly, but without the `nfa:` or `nft:` prefix: `mata nfa determinize`,
-  `mata nfa intersection`, `mata nft compose`. A query may leave out its trailing `?`, which a shell would otherwise
-  read as a pattern: `mata nfa included` is `nfa:included?`.
+- Operations mirror the script names exactly, but without the `nfa:`, `nft:` or `strings:` prefix: `mata nfa
+determinize`, `mata nfa intersection`, `mata nft compose`, `mata strings get-accepted-symbols`. A query may leave out
+  its trailing `?`, which a shell would otherwise read as a pattern: `mata nfa included` is `nfa:included?` and
+  `mata strings language-epsilon` is `strings:language-epsilon?`.
 - Each operand is read as the sort its position takes. An automaton operand is a file in the
   [`.mata` format](automata-format), or `-` for standard input, which can be read once; a file with several automata
   gives one operand each. A `Word` operand is symbol names separated by spaces, as `mata nfa in-language a.mata 'a b'`,
   and an empty operand `''` is the empty word; `ε`, as printed for the empty word, is read as a symbol named `ε`.
   A `String` operand is the text itself, as `mata nfa create-from-regex 'a(b|c)*'`; an `Int` operand is a number.
 - An operation whose operands a command line cannot give, such as a function or `nfa:literal`, is not a direct
-  command; `mata nfa --help` lists exactly the operations that are, each with its operands and hints.
+  command; `mata nfa --help`, `mata nft --help` and `mata strings --help` list exactly the operations that are, each
+  with its operands and hints. The `strings:` operations that take an alphabet or a list of symbols are therefore
+  script-only: `strings:create-identity` takes the alphabet to build the identity transducer over, and
+  `strings:get-segments` the symbols whose segments it reports, both as a value a command line cannot spell.
 - A binary operation of the algebra, such as `intersection`, `union-nondeterministic`, `concatenate` or `compose`, takes
   more than two operands and folds them from the left, as in a script.
 - `--hint NAME=VALUE` gives a hint or an optional parameter of the operation, as
@@ -365,7 +373,8 @@ The command is implemented in Rust on top of the existing Rust bindings because:
   library works.
 - The bindings already cover the operations a first Mata Script interpreter needs: construction from regular
   expressions and words, `.mata` parsing with a shared alphabet, the NFA algebra, determinization, minimization,
-  reduction, decisions, witnesses, DOT output and a substantial part of the NFT API.
+  reduction, decisions, witnesses, DOT output, a substantial part of the NFT API and the string-solving constructions
+  for identity and reluctant replacement.
 - A command-line program in Rust needs no new binding surface and no new dependency: the standard library is enough
   for the parser and the argument handling. A C++ implementation would have to add a lexer, a parser and argument
   parsing beside a build that has no command-line executable today, and would duplicate the safe API the Rust crate
@@ -391,42 +400,46 @@ language page specifies but this build does not have are listed in the
   together.
 - The DOT reader is a new parser in the CLI crate, because the library has none; it rejects everything outside
   [DOT conventions](#dot-conventions) and writes only the `.mata` format.
-- `mata nfa`, `mata nft` and `mata convert` call the same evaluator functions as the script interpreter, so a direct
-  command and a one-line script cannot disagree.
+- `mata nfa`, `mata nft`, `mata strings` and `mata convert` call the same evaluator functions as the script
+  interpreter, so a direct command and a one-line script cannot disagree.
 - Every operation of the catalogue records the language version that added it. A script sees the operations of the
   version its header declares, and the names of all of them are reserved, so an operation added later can never clash
   with a name a script defined.
-- The interpreter implements 129 operations: the portable core of the language, the script forms that a direct command
-  needs, and the NFA and NFT operations `bindings/rust/mata` covers. An operation outside that table is rejected by
-  name and never approximated: a script reports `unknown name 'strings:get-segments'` and a direct command reports
-  `unknown operation 'strings:get-segments'`, both exiting `2`. These 22 operations of the
+- The interpreter implements 142 operations: the portable core of the language, the script forms that a direct command
+  needs, and the NFA, NFT and string-solving operations `bindings/rust/mata` covers. An operation outside that table is
+  rejected by name and never approximated: a script reports `unknown name 'automaton:load'` and a direct command
+  reports `unknown operation 'automaton:load'`, both exiting `2`. These 9 operations of the
   [script language](script-language) page are absent and need new `mata-sys` bridge functions:
   `automaton:determinize`, `automaton:included?`, `automaton:intersection`, `automaton:load`, `automaton:parse`,
-  `intermediate:mintermize`, `intermediate:parse-from-mata`, `nfa:construct`, `nft:construct`,
-  `strings:create-identity`, `strings:create-identity-with-single-symbol-replace`,
-  `strings:get-accepted-symbols`, `strings:get-longest-words`, `strings:get-segments`,
-  `strings:get-shortest-words`, `strings:get-word-lengths`, `strings:get-words-of-lengths`,
-  `strings:language-epsilon?`, `strings:reluctant-nfa`, `strings:replace-reluctant-literal`,
-  `strings:replace-reluctant-regex`, `strings:replace-reluctant-single-symbol`.
+  `intermediate:mintermize`, `intermediate:parse-from-mata`, `nfa:construct`, `nft:construct`.
   `nft:minimize` is not one of them: the library declares it only under `MATA_NFT_NOT_IMPLEMENTED`.
 - The hints are those the bindings expose: `:algorithm` of `nfa:complement` (`"classical"`, `"brzozowski"`),
   `nfa:minimize` (`"hopcroft"`, `"brzozowski"`) and `nfa:reduce` (`"simulation"`, `"residual"`, with `:type` `"after"`
   or `"with"` and `:direction` `"forward"` or `"backward"`), and `:algorithm` `"antichains"` or `"naive"` of
-  `nfa:included?`, `nfa:equivalent?` and `nfa:universal?`. `(set-option :default …)` changes the default of any of
+  `nfa:included?`, `nfa:equivalent?` and `nfa:universal?`, and `:replace-mode` of
+  `strings:create-identity-with-single-symbol-replace`, `strings:replace-reluctant-regex`,
+  `strings:replace-reluctant-literal` and `strings:replace-reluctant-single-symbol`, whose `"all"` replaces every
+  occurrence and `"single"` only the first. `(set-option :default …)` changes the default of any of
   them. The other operations take no hints yet.
 - Optional parameters of the library functions are keyword arguments of their sort, named after the parameter:
   `(nfa:concatenate a b :use-epsilon true)`. A `Bool` is `true` or `false`, an `Int` a number, and a `Symbol` is
   given by its name, a `String`, as in `(symbol "a")`. A direct command takes them as `--hint NAME=VALUE`, as
   `--hint use-epsilon=true`, and `(set-option :default …)` changes their defaults too; a call without one gets the
-  library default. `mata nfa --help` and `mata nft --help` list them with their sorts. The parameters this build
-  takes are `:use-epsilon` of `nfa:concatenate` and of `nfa:in-language-prefix?`, `:final-condition` (`"and"` or
-  `"or"`) and `:first-epsilon` of `nfa:product`, `:first-epsilon` of `nfa:left-quotient` and of
-  `nfa:right-quotient`, `:abstract-symbol` of `nfa:get-one-letter-automaton`, `:seed` of
-  `nfa:create-random-nfa-tabakov-vardi`, and `:match-prefix` and `:has-epsilon-cycles` of `nft:in-language?`. The
-  last one defaults to `true`, which only allows a transducer that has such a cycle; `false` on one that has it is the
-  error `the transducer has a cycle of epsilon transitions`. The language has no sort for a real number, so the
-  transition ratio and the final state density of that builder are decimal strings, as in
+  library default. `mata nfa --help`, `mata nft --help` and `mata strings --help` list them with their sorts. The
+  parameters this build takes are `:use-epsilon` of `nfa:concatenate` and of `nfa:in-language-prefix?`,
+  `:final-condition` (`"and"` or `"or"`) and `:first-epsilon` of `nfa:product`, `:first-epsilon` of
+  `nfa:left-quotient` and of `nfa:right-quotient`, `:abstract-symbol` of `nfa:get-one-letter-automaton`, `:seed` of
+  `nfa:create-random-nfa-tabakov-vardi`, `:match-prefix` and `:has-epsilon-cycles` of `nft:in-language?`, and
+  `:num-of-levels` of `strings:create-identity` (2 when omitted), `:begin-marker` of
+  `strings:replace-reluctant-regex` and `:end-marker` of `strings:replace-reluctant-literal`. `:has-epsilon-cycles`
+  defaults to `true`, which only allows a transducer that has such a cycle; `false` on one that has it is the error
+  `the transducer has a cycle of epsilon transitions`. The language has no sort for a real number, so the transition
+  ratio and the final state density of that builder are decimal strings, as in
   `(nfa:create-random-nfa-tabakov-vardi 4 2 "1" "0.5")`.
+- `strings:get-words-of-lengths` takes one length per level of the transducer it searches, so a two-level identity
+  wants two. A direct command spells that `(List Int)` operand as numbers separated by commas or spaces:
+  `mata strings get-words-of-lengths pair.mata 1,1`; a list of the wrong length is the error
+  `expected 2 levels, found 1`.
 - Of the script options, `:alphabet` with `on-the-fly` or `bytes`, `:produce-witnesses`, `:time-operations` and
   `:default` work. `:optimize` and `:trace` are accepted only as `false`; `true` is rejected as
   `option :<name> is not implemented`, and `:loops-and-recursion` is always rejected, so `loop`, `recur` and self-calls

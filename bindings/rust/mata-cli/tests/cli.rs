@@ -2263,3 +2263,143 @@ fn nft_operations_take_their_optional_parameters_as_keywords() {
 		stdout(&help)
 	);
 }
+
+// Strings operations served by the bridge functions added with them
+#[test]
+fn strings_operations_of_the_whole_bridge_run_in_a_script() {
+	let script = "(set-option :alphabet \"bytes\")\n\
+	              (define nfa (nfa:create-from-regex \"ab|b\"))\n\
+	              (print (strings:get-shortest-words nfa))\n\
+	              (print (strings:get-longest-words nfa))\n\
+	              (print (list:length (strings:get-accepted-symbols nfa)))\n\
+	              (print (list:nth (strings:get-accepted-symbols nfa) 0))\n\
+	              (print (strings:language-epsilon? (nfa:create-empty-string-nfa)))\n\
+	              (print (list:length (strings:get-word-lengths nfa)))\n\
+	              (print (nft:number-of-states (strings:create-identity \
+	              (script-alphabet) :num-of-levels 1)))\n\
+	              (print (nft:number-of-states (strings:create-identity (script-alphabet))))\n\
+	              (print (nfa:number-of-states (nft:to-nfa-update \
+	              (strings:replace-reluctant-literal (word \"b\") (word \"a\") (script-alphabet)))))\n\
+	              (print (list:length (strings:get-segments \
+	              (nfa:create-from-regex \"a\") (list (symbol \"b\")))))\n\
+	              (print (nfa:number-of-states (strings:reluctant-nfa nfa)))\n\
+	              (print (nft:number-of-states (strings:create-identity-with-single-symbol-replace \
+	              (script-alphabet) (symbol \"a\") (word \"b\"))))\n\
+	              (print (nft:number-of-states (strings:replace-reluctant-regex \
+	              \"a+\" (word \"b\") (script-alphabet))))\n\
+	              (print (nft:number-of-states (strings:replace-reluctant-single-symbol \
+	              (symbol \"a\") (word \"b\") (script-alphabet))))\n\
+	              (print (strings:get-words-of-lengths \
+	              (strings:create-identity (script-alphabet)) (list 1 1)))";
+	let output = run_script(script, true, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(
+		stdout(&output),
+		"b\na b\n1\nb\ntrue\n2\n1\n257\n261\n1\n3\n257\n266\n257\n\\x00\n\\x00\n"
+	);
+}
+
+#[test]
+fn strings_operations_take_their_optional_parameters_as_keywords() {
+	let levels = run_script(
+		"(set-option :alphabet \"bytes\")\n\
+		 (print (nft:number-of-states (strings:create-identity \
+		 (script-alphabet) :num-of-levels 1)))\n\
+		 (print (nft:number-of-states (strings:create-identity \
+		 (script-alphabet) :num-of-levels 3)))",
+		true,
+		&[],
+	);
+	assert_eq!(
+		(status(&levels), stdout(&levels)),
+		(0, "1\n513\n".to_owned()),
+		"{}",
+		stderr(&levels)
+	);
+
+	let wrong_sort = run_script(
+		"(strings:create-identity (script-alphabet) :num-of-levels \"two\")",
+		true,
+		&[],
+	);
+	assert_eq!(status(&wrong_sort), 2);
+	assert!(
+		stderr(&wrong_sort)
+			.contains("the value of :num-of-levels must be of sort Int, found String"),
+		"{}",
+		stderr(&wrong_sort)
+	);
+
+	// The lengths of `get-words-of-lengths` are one per level of the transducer.
+	let mismatch = run_script(
+		"(strings:get-words-of-lengths (strings:create-identity (script-alphabet)) (list 1))",
+		true,
+		&[],
+	);
+	assert_eq!(status(&mismatch), 2);
+	assert!(
+		stderr(&mismatch).contains("expected 2 levels, found 1"),
+		"{}",
+		stderr(&mismatch)
+	);
+}
+
+#[test]
+fn time_operations_records_the_strings_calls() {
+	let output = run_script(
+		"(set-option :time-operations true)\n\
+		 (strings:language-epsilon? (nfa:create-empty-string-nfa))",
+		true,
+		&[],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	let text = stdout(&output);
+	let labels: Vec<&str> = text
+		.lines()
+		.map(|line| line.split_once(": ").expect("a record").0)
+		.collect();
+	assert_eq!(
+		labels,
+		["nfa:create-empty-string-nfa", "strings:language-epsilon?"]
+	);
+}
+
+#[test]
+fn strings_direct_commands_read_an_automaton_from_a_file() {
+	let workspace = Workspace::new("strings-direct");
+	let nfa = workspace.file("nfa.mata", NFA);
+
+	for operation in ["get-shortest-words", "get-accepted-symbols"] {
+		let output = mata(["strings", operation, &nfa]);
+		assert_eq!(
+			(status(&output), stdout(&output)),
+			(0, "a\n".to_owned()),
+			"{}",
+			stderr(&output)
+		);
+	}
+
+	let epsilon = mata(["strings", "language-epsilon", &nfa]);
+	assert_eq!(
+		(status(&epsilon), stdout(&epsilon)),
+		(1, "false\n".to_owned()),
+		"{}",
+		stderr(&epsilon)
+	);
+
+	let help = mata(["strings", "--help"]);
+	assert!(
+		stdout(&help).contains("\n  get-accepted-symbols NFA\n"),
+		"{}",
+		stdout(&help)
+	);
+
+	let alphabet = mata(["strings", "create-identity", &nfa]);
+	assert_eq!(status(&alphabet), 2);
+	assert!(
+		stderr(&alphabet)
+			.contains("takes operands that a command line cannot give; use it in a script"),
+		"{}",
+		stderr(&alphabet)
+	);
+}

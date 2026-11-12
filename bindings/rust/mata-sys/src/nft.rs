@@ -4,6 +4,12 @@
 /// The most levels a transducer may have (the shim unwinds jumps into one state per level).
 pub const MAX_LEVELS: usize = 1024;
 
+/// The library's default begin marker of a regex replace (`strings::replace::BEGIN_MARKER`).
+pub const BEGIN_MARKER: u32 = u32::MAX - 100;
+
+/// The library's default end marker of a literal replace (`strings::replace::END_MARKER`).
+pub const END_MARKER: u32 = u32::MAX - 99;
+
 /// The NFT bridge.
 #[cxx::bridge(namespace = "mata_sys")]
 pub mod ffi {
@@ -155,6 +161,73 @@ pub mod ffi {
 		/// where `DONT_CARE` overlaps every symbol but epsilon unless both edges reach the same state.
 		fn nft_is_deterministic(nft: &Nft) -> Result<bool>;
 
+		// Strings (`mata::applications::strings`). `alphabet` lists the symbols of the library's
+		// `const Alphabet*` parameter; it must not contain epsilon, `DONT_CARE` or the marker of the call.
+		// `single` chooses `ReplaceMode::Single` over `ReplaceMode::All`.
+
+		/// The library's `replace::BEGIN_MARKER`, [`BEGIN_MARKER`](super::BEGIN_MARKER).
+		fn strings_begin_marker() -> u32;
+		/// The library's `replace::END_MARKER`, [`END_MARKER`](super::END_MARKER).
+		fn strings_end_marker() -> u32;
+		/// One word per level with the lengths `lengths` whose tuple is in the relation
+		/// (`get_words_of_lengths`), written as `symbols` and `word_lengths` as for `nft_insert_words`;
+		/// false if there is none. Throws unless there is one length per level, or if the lengths span
+		/// too many configurations.
+		fn strings_words_of_lengths(
+			nft: &Nft,
+			lengths: &[u32],
+			symbols: &mut Vec<u32>,
+			word_lengths: &mut Vec<usize>,
+		) -> Result<bool>;
+		/// The identity relation on all words over `alphabet` with `num_levels` levels
+		/// (`replace::create_identity`).
+		fn strings_create_identity(alphabet: &[u32], num_levels: usize) -> Result<UniquePtr<Nft>>;
+		/// The two-level identity over `alphabet` that writes `replacement` for `from_symbol`
+		/// (`replace::create_identity_with_single_symbol_replace`; its `Symbol` overload is this one with a
+		/// one-letter word). Throws unless `from_symbol` is in `alphabet`.
+		fn strings_identity_with_replace(
+			alphabet: &[u32],
+			from_symbol: u32,
+			replacement: &[u32],
+			single: bool,
+		) -> Result<UniquePtr<Nft>>;
+		/// The reluctant leftmost replace of the RE2 pattern `regex` by `replacement`
+		/// (`replace::replace_reluctant_regex`). Throws on an invalid pattern.
+		fn strings_replace_regex(
+			regex: &str,
+			replacement: &[u32],
+			alphabet: &[u32],
+			single: bool,
+			begin_marker: u32,
+		) -> Result<UniquePtr<Nft>>;
+		/// As `strings_replace_regex`, with the language of `regex` to replace; the automaton is made
+		/// epsilon-free and deterministic first, as the library requires.
+		fn strings_replace_regex_nfa(
+			regex: &Nfa,
+			replacement: &[u32],
+			alphabet: &[u32],
+			single: bool,
+			begin_marker: u32,
+		) -> Result<UniquePtr<Nft>>;
+		/// The reluctant leftmost replace of the word `literal` by `replacement`
+		/// (`replace::replace_reluctant_literal`).
+		fn strings_replace_literal(
+			literal: &[u32],
+			replacement: &[u32],
+			alphabet: &[u32],
+			single: bool,
+			end_marker: u32,
+		) -> Result<UniquePtr<Nft>>;
+		/// The reluctant leftmost replace of `from_symbol` by `replacement`
+		/// (`replace::replace_reluctant_single_symbol`; its `Symbol` overload is this one with a one-letter
+		/// word). Throws unless `from_symbol` is in `alphabet`.
+		fn strings_replace_symbol(
+			from_symbol: u32,
+			replacement: &[u32],
+			alphabet: &[u32],
+			single: bool,
+		) -> Result<UniquePtr<Nft>>;
+
 		// Printing.
 
 		/// The `.mata` text (`@NFT-explicit`), with names from (`names`, `symbols`).
@@ -240,5 +313,11 @@ mod tests {
 	#[test]
 	fn max_levels_agrees_with_the_shim() {
 		assert_eq!(super::ffi::nft_max_levels(), super::MAX_LEVELS);
+	}
+
+	#[test]
+	fn replace_markers_agree_with_the_library() {
+		assert_eq!(super::ffi::strings_begin_marker(), super::BEGIN_MARKER);
+		assert_eq!(super::ffi::strings_end_marker(), super::END_MARKER);
 	}
 }

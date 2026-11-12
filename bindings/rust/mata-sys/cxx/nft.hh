@@ -95,6 +95,50 @@ bool nft_is_included(const Nft& smaller, const Nft& bigger);
 bool nft_are_equivalent(const Nft& lhs, const Nft& rhs);
 bool nft_is_deterministic(const Nft& nft);
 
+// Strings (`mata::applications::strings`). `alphabet` is the symbols of the `const Alphabet*` parameter.
+mata::Symbol strings_begin_marker();
+mata::Symbol strings_end_marker();
+bool strings_words_of_lengths(
+	const Nft& nft,
+	rust::Slice<const std::uint32_t> lengths,
+	rust::Vec<mata::Symbol>& symbols,
+	rust::Vec<std::size_t>& word_lengths
+);
+std::unique_ptr<Nft> strings_create_identity(rust::Slice<const mata::Symbol> alphabet, std::size_t num_levels);
+std::unique_ptr<Nft> strings_identity_with_replace(
+	rust::Slice<const mata::Symbol> alphabet,
+	mata::Symbol from_symbol,
+	rust::Slice<const mata::Symbol> replacement,
+	bool single
+);
+std::unique_ptr<Nft> strings_replace_regex(
+	rust::Str regex,
+	rust::Slice<const mata::Symbol> replacement,
+	rust::Slice<const mata::Symbol> alphabet,
+	bool single,
+	mata::Symbol begin_marker
+);
+std::unique_ptr<Nft> strings_replace_regex_nfa(
+	const mata::nfa::Nfa& regex,
+	rust::Slice<const mata::Symbol> replacement,
+	rust::Slice<const mata::Symbol> alphabet,
+	bool single,
+	mata::Symbol begin_marker
+);
+std::unique_ptr<Nft> strings_replace_literal(
+	rust::Slice<const mata::Symbol> literal,
+	rust::Slice<const mata::Symbol> replacement,
+	rust::Slice<const mata::Symbol> alphabet,
+	bool single,
+	mata::Symbol end_marker
+);
+std::unique_ptr<Nft> strings_replace_symbol(
+	mata::Symbol from_symbol,
+	rust::Slice<const mata::Symbol> replacement,
+	rust::Slice<const mata::Symbol> alphabet,
+	bool single
+);
+
 // Printing.
 rust::String
 	nft_print_mata(const Nft& nft, rust::Slice<const rust::String> names, rust::Slice<const mata::Symbol> symbols);

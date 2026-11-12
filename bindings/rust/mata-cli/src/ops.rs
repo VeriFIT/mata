@@ -2,6 +2,7 @@
 
 use std::rc::Rc;
 
+use mata::strings::{self, ReplaceMode};
 use mata::{
 	CheckAlgorithm, Complementation, Direction, Minimization, ProductFinalCondition, Reduction,
 	ResidualConstruction, UnmetRequirement,
@@ -63,6 +64,9 @@ pub(crate) struct Hint {
 
 const CHECK_ALGORITHMS: &[&str] = &["antichains", "naive"];
 
+/// `strings::replace::ReplaceMode`, the default `All` first.
+const REPLACE_MODES: &[&str] = &["all", "single"];
+
 pub(crate) const HINTS: &[Hint] = &[
 	Hint {
 		operation: "nfa:complement",
@@ -103,6 +107,26 @@ pub(crate) const HINTS: &[Hint] = &[
 		operation: "nfa:universal?",
 		name: "algorithm",
 		values: CHECK_ALGORITHMS,
+	},
+	Hint {
+		operation: "strings:create-identity-with-single-symbol-replace",
+		name: "replace-mode",
+		values: REPLACE_MODES,
+	},
+	Hint {
+		operation: "strings:replace-reluctant-regex",
+		name: "replace-mode",
+		values: REPLACE_MODES,
+	},
+	Hint {
+		operation: "strings:replace-reluctant-literal",
+		name: "replace-mode",
+		values: REPLACE_MODES,
+	},
+	Hint {
+		operation: "strings:replace-reluctant-single-symbol",
+		name: "replace-mode",
+		values: REPLACE_MODES,
 	},
 ];
 
@@ -189,6 +213,21 @@ pub(crate) const OPTIONAL_PARAMETERS: &[OptionalParameter] = &[
 		operation: "nft:in-language?",
 		name: "has-epsilon-cycles",
 		sort: "Bool",
+	},
+	OptionalParameter {
+		operation: "strings:create-identity",
+		name: "num-of-levels",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "strings:replace-reluctant-regex",
+		name: "begin-marker",
+		sort: "Symbol",
+	},
+	OptionalParameter {
+		operation: "strings:replace-reluctant-literal",
+		name: "end-marker",
+		sort: "Symbol",
 	},
 ];
 
@@ -1027,6 +1066,110 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 		1,
 		Some(1),
 		"Nft",
+		"Nft",
+	),
+	op(
+		"strings:get-shortest-words",
+		"strings_shortest_words",
+		1,
+		Some(1),
+		"Nfa",
+		"(List Word)",
+	),
+	op(
+		"strings:get-longest-words",
+		"strings_longest_words",
+		1,
+		Some(1),
+		"Nfa",
+		"(Option (List Word))",
+	),
+	op(
+		"strings:get-words-of-lengths",
+		"strings_words_of_lengths",
+		2,
+		Some(2),
+		"Nft,(List Int)",
+		"(Option (List Word))",
+	),
+	op(
+		"strings:get-accepted-symbols",
+		"strings_accepted_symbols",
+		1,
+		Some(1),
+		"Nfa",
+		"(List Symbol)",
+	),
+	op(
+		"strings:get-word-lengths",
+		"strings_word_lengths",
+		1,
+		Some(1),
+		"Nfa",
+		"(List (List Int))",
+	),
+	op(
+		"strings:language-epsilon?",
+		"strings_lang_eps",
+		1,
+		Some(1),
+		"Nfa",
+		"Bool",
+	),
+	op(
+		"strings:get-segments",
+		"strings_segments",
+		2,
+		Some(2),
+		"Nfa,(List Symbol)",
+		"(List Nfa)",
+	),
+	op(
+		"strings:reluctant-nfa",
+		"strings_reluctant_nfa",
+		1,
+		Some(1),
+		"Nfa",
+		"Nfa",
+	),
+	op(
+		"strings:create-identity",
+		"strings_identity",
+		1,
+		Some(1),
+		"Alphabet",
+		"Nft",
+	),
+	op(
+		"strings:create-identity-with-single-symbol-replace",
+		"strings_identity_replace",
+		3,
+		Some(3),
+		"Alphabet,Symbol,Symbol|Word",
+		"Nft",
+	),
+	op(
+		"strings:replace-reluctant-regex",
+		"strings_replace_regex",
+		3,
+		Some(3),
+		"String|Nfa,Word,Alphabet",
+		"Nft",
+	),
+	op(
+		"strings:replace-reluctant-literal",
+		"strings_replace_literal",
+		3,
+		Some(3),
+		"Word,Word,Alphabet",
+		"Nft",
+	),
+	op(
+		"strings:replace-reluctant-single-symbol",
+		"strings_replace_symbol",
+		3,
+		Some(3),
+		"Symbol,Symbol|Word,Alphabet",
 		"Nft",
 	),
 ];
@@ -2362,9 +2505,206 @@ fn dispatch_nft_shape(
 			let [value] = take(arguments, name)?;
 			Ok(Value::Nft(Rc::new(expect_nft(&value)?.unwind_jumps())))
 		}
+		_ => dispatch_strings(handler, name, arguments, engine),
+	}
+}
+
+/// Serves the queries of `strings:`: the words, symbols and segments of an automaton, that is Mata's
+/// `mata::applications::strings` with its `seg_nfa` namespace.
+fn dispatch_strings(
+	handler: &str,
+	name: &str,
+	arguments: Vec<Value>,
+	engine: &mut Engine,
+) -> Result<Value, Error> {
+	match handler {
+		"strings_shortest_words" => {
+			let [value] = take(arguments, name)?;
+			Ok(word_list(strings::shortest_words(&*expect_nfa(&value)?)))
+		}
+		"strings_longest_words" => {
+			let [value] = take(arguments, name)?;
+			Ok(strings::longest_words(&*expect_nfa(&value)?).map_or(Value::None, word_list))
+		}
+		"strings_words_of_lengths" => {
+			let [value, lengths] = take(arguments, name)?;
+			let nft = expect_nft(&value)?;
+			let mut converted = Vec::new();
+			for item in as_list(&lengths).map_err(Error::plain)? {
+				converted.push(length(
+					as_int(&item)?,
+					format!("{name} needs non-negative lengths"),
+				)?);
+			}
+			let words = strings::words_of_lengths(&nft, &converted)
+				.map_err(|e| Error::plain(e.to_string()))?;
+			Ok(words.map_or(Value::None, word_list))
+		}
+		"strings_accepted_symbols" => {
+			let [value] = take(arguments, name)?;
+			let symbols = strings::accepted_symbols(&*expect_nfa(&value)?);
+			Ok(Value::List(Rc::new(
+				symbols.into_iter().map(Value::Symbol).collect(),
+			)))
+		}
+		"strings_word_lengths" => {
+			let [value] = take(arguments, name)?;
+			let mut pairs = Vec::new();
+			for (offset, period) in strings::word_lengths(&*expect_nfa(&value)?) {
+				pairs.push(Value::List(Rc::new(vec![
+					integer(offset)?,
+					integer(period)?,
+				])));
+			}
+			Ok(Value::List(Rc::new(pairs)))
+		}
+		"strings_lang_eps" => {
+			let [value] = take(arguments, name)?;
+			Ok(Value::Bool(strings::is_lang_eps(&*expect_nfa(&value)?)))
+		}
+		"strings_segments" => {
+			let [value, epsilons] = take(arguments, name)?;
+			let mut symbols = Vec::new();
+			for item in as_list(&epsilons).map_err(Error::plain)? {
+				symbols.push(expect_symbol(&item)?);
+			}
+			let segments = strings::segments(&*expect_nfa(&value)?, &symbols);
+			Ok(Value::List(Rc::new(
+				segments
+					.into_iter()
+					.map(|segment| Value::Nfa(Rc::new(segment)))
+					.collect(),
+			)))
+		}
+		"strings_reluctant_nfa" => {
+			let [value] = take(arguments, name)?;
+			Ok(Value::Nfa(Rc::new(strings::reluctant_nfa(&*expect_nfa(
+				&value,
+			)?))))
+		}
+		_ => dispatch_strings_replace(handler, name, arguments, engine),
+	}
+}
+
+/// Serves the constructions of `strings:`: the identity and the replace transducers, Mata's
+/// `mata::applications::strings::replace`.
+fn dispatch_strings_replace(
+	handler: &str,
+	name: &str,
+	arguments: Vec<Value>,
+	engine: &mut Engine,
+) -> Result<Value, Error> {
+	let mode = || {
+		if hint_value(engine, name, "replace-mode") == "single" {
+			ReplaceMode::Single
+		} else {
+			ReplaceMode::All
+		}
+	};
+	let replace = |result: Result<Nft, mata::ReplaceError>| {
+		result
+			.map(|nft| Value::Nft(Rc::new(nft)))
+			.map_err(|e| Error::plain(e.to_string()))
+	};
+	match handler {
+		"strings_identity" => {
+			let [alphabet] = take(arguments, name)?;
+			let levels = match optional::<i64>(engine, "num-of-levels") {
+				Some(levels) => length(levels, format!("{name} needs a level count"))?,
+				None => 2,
+			};
+			replace(strings::create_identity(
+				&*expect_alphabet(&alphabet)?,
+				levels,
+			))
+		}
+		"strings_identity_replace" => {
+			let [alphabet, from, replacement] = take(arguments, name)?;
+			replace(strings::create_identity_with_single_symbol_replace(
+				&*expect_alphabet(&alphabet)?,
+				expect_symbol(&from)?,
+				&symbol_or_word(&replacement)?,
+				mode(),
+			))
+		}
+		"strings_replace_regex" => {
+			let [regex, replacement, alphabet] = take(arguments, name)?;
+			let replacement = expect_word(&replacement)?;
+			let alphabet = expect_alphabet(&alphabet)?;
+			let marker =
+				optional::<Symbol>(engine, "begin-marker").unwrap_or(strings::BEGIN_MARKER);
+			replace(match &regex {
+				Value::String(pattern) => strings::replace_reluctant_regex(
+					pattern,
+					&replacement,
+					&alphabet,
+					mode(),
+					marker,
+				),
+				other => strings::replace_reluctant_regex_nfa(
+					&*expect_nfa(other)?,
+					&replacement,
+					&alphabet,
+					mode(),
+					marker,
+				),
+			})
+		}
+		"strings_replace_literal" => {
+			let [literal, replacement, alphabet] = take(arguments, name)?;
+			let marker = optional::<Symbol>(engine, "end-marker").unwrap_or(strings::END_MARKER);
+			replace(strings::replace_reluctant_literal(
+				&expect_word(&literal)?,
+				&expect_word(&replacement)?,
+				&*expect_alphabet(&alphabet)?,
+				mode(),
+				marker,
+			))
+		}
+		"strings_replace_symbol" => {
+			let [from, replacement, alphabet] = take(arguments, name)?;
+			replace(strings::replace_reluctant_single_symbol(
+				expect_symbol(&from)?,
+				&symbol_or_word(&replacement)?,
+				&*expect_alphabet(&alphabet)?,
+				mode(),
+			))
+		}
 		_ => Err(Error::plain(format!(
 			"operation '{name}' is not available in the Rust bindings"
 		))),
+	}
+}
+
+fn word_list(words: Vec<Word>) -> Value {
+	Value::List(Rc::new(words.into_iter().map(Value::Word).collect()))
+}
+
+fn expect_alphabet(value: &Value) -> Result<Rc<mata::Alphabet>, String> {
+	match value {
+		Value::Alphabet(alphabet) => Ok(alphabet.clone()),
+		_ => Err(format!(
+			"expected an Alphabet, found {}",
+			crate::eval::value_sort(value)
+		)),
+	}
+}
+
+fn expect_symbol(value: &Value) -> Result<Symbol, String> {
+	match value {
+		Value::Symbol(symbol) => Ok(*symbol),
+		_ => Err(format!(
+			"expected a Symbol, found {}",
+			crate::eval::value_sort(value)
+		)),
+	}
+}
+
+/// A `Symbol` operand of a library overload pair as the one-letter word of the `Word` overload.
+fn symbol_or_word(value: &Value) -> Result<Word, String> {
+	match value {
+		Value::Symbol(symbol) => Ok(vec![*symbol]),
+		other => expect_word(other),
 	}
 }
 
