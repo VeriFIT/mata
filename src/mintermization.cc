@@ -218,13 +218,15 @@ mata::Mintermization::OptionalBdd mata::Mintermization::graph_to_bdd_afa(const F
 	const FormulaNode& node = graph.node;
 	if (node.is_operand()) {
 		if (node.is_state()) { return OptionalBdd(OptionalBdd::Type::NothingE); }
-		if (symbol_to_bddvar_.contains(node.name)) { return OptionalBdd(symbol_to_bddvar_.at(node.name)); }
+		if (const auto it{symbol_to_bddvar_.find(node.name)}; it != symbol_to_bddvar_.end()) {
+			return OptionalBdd(it->second);
+		}
 		const BDD res = [this, &node] {
 			if (node.is_true()) { return bdd_mng_.bddOne(); }
 			if (node.is_false()) { return bdd_mng_.bddZero(); }
 			return bdd_mng_.bddVar();
 		}();
-		symbol_to_bddvar_[node.name] = res;
+		symbol_to_bddvar_.emplace(node.name, res);
 		return OptionalBdd(res);
 	}
 
@@ -256,13 +258,13 @@ mata::Mintermization::OptionalBdd mata::Mintermization::graph_to_bdd_afa(const F
 BDD mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph& graph) {
 	const FormulaNode& node = graph.node;
 	if (node.is_operand()) {
-		if (symbol_to_bddvar_.contains(node.name)) { return symbol_to_bddvar_.at(node.name); }
+		if (const auto it{symbol_to_bddvar_.find(node.name)}; it != symbol_to_bddvar_.end()) { return it->second; }
 		const BDD res = [this, &node] {
 			if (node.is_true()) { return bdd_mng_.bddOne(); }
 			if (node.is_false()) { return bdd_mng_.bddZero(); }
 			return bdd_mng_.bddVar();
 		}();
-		symbol_to_bddvar_[node.name] = res;
+		symbol_to_bddvar_.emplace(node.name, res);
 		return res;
 	}
 
