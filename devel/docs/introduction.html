@@ -67,7 +67,8 @@
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>nix<span class="w"> </span>develop<span class="w"> </span>github:VeriFIT/mata
 </pre></div>
 </div>
-<p>The Python environment of the development shell is built from <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code>, the same versions <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span></code> installs, with the
+<p>The development shell includes Cargo, rustc, Clippy, and rustfmt from a lockfile-pinned stable Rust toolchain.
+The Python environment of the development shell is built from <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code>, the same versions <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span></code> installs, with the
 bindings installed editable from the checkout. Build their extensions in place with <code class="docutils literal notranslate"><span class="pre">just</span> <span class="pre">bindings</span> <span class="pre">python</span> <span class="pre">build</span></code>.</p>
 </section>
 <section id="download-pre-built-binaries-from-github">
