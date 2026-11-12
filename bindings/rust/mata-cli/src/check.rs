@@ -280,16 +280,29 @@ impl<'a> Checker<'a> {
 		self.errors.push(Error::at(message, line, column));
 	}
 
-	/// A function value in a position that the termination guarantee does not allow.
-	fn consumed(&mut self, sort: Option<&str>, list_function: bool) {
-		if sort == Some("Function") && !list_function {
+	/// A function value in a position that the termination guarantee does not allow; `to_apply` is the
+	/// position of the function a `list:` function applies, the only one it allows.
+	fn consumed(&mut self, sort: Option<&str>, to_apply: bool) {
+		if sort == Some("Function") && !to_apply {
 			self.termination = false;
+		}
+	}
+
+	/// A special form outside of the portable core, in a script that promised to stay within it.
+	fn core_form(&mut self, name: &str, expression: &Expr) {
+		if self.profile.core {
+			self.reject(expression, format!("'{name}' is not in the portable core"));
 		}
 	}
 
 	// Forms -----------------------------------------------------------------------------------------
 
 	fn form(&mut self, form: &Spanned<FormKind>) {
+		if self.profile.core
+			&& let Some(directive) = outside_core(&form.node)
+		{
+			self.reject_form(form, format!("'{directive}' is not in the portable core"));
+		}
 		match &form.node {
 			FormKind::Header { requires, profile } => {
 				for feature in requires {
@@ -344,6 +357,7 @@ impl<'a> Checker<'a> {
 			FormKind::Push => {
 				self.profile.declarations_open = false;
 				self.pushes += 1;
+				self.frames.push(Frame::default());
 			}
 			FormKind::Pop => {
 				self.profile.declarations_open = false;
@@ -351,6 +365,7 @@ impl<'a> Checker<'a> {
 					self.reject_form(form, "'pop' without a matching 'push'".into());
 				} else {
 					self.pushes -= 1;
+					self.frames.pop();
 				}
 			}
 			FormKind::Reset => {
@@ -367,10 +382,14 @@ impl<'a> Checker<'a> {
 				body,
 			} => {
 				self.profile.declarations_open = false;
-				if let Some(sort) = sort {
-					self.check_sort_name(form.line, form.column, sort);
-				}
-				self.definition(name, parameters.as_deref(), body, form.line, form.column);
+				self.definition(
+					name,
+					sort.as_deref(),
+					parameters.as_deref(),
+					body,
+					form.line,
+					form.column,
+				);
 			}
 			FormKind::Expression(expression) => {
 				self.profile.declarations_open = false;
@@ -380,7 +399,8 @@ impl<'a> Checker<'a> {
 	}
 
 	/// Matches the inputs a run is given against the declarations: every declaration needs an input,
-	/// every named input a declaration, and every positional input a declaration that takes it.
+	/// every named input a declaration when the script declares inputs, every positional input a
+	/// declaration that takes it, and every parameter a value of its sort.
 	fn match_inputs(&mut self, forms: &[Spanned<FormKind>], inputs: &Inputs) {
 		let mut takers = 0;
 		let mut variadic = false;
@@ -388,30 +408,44 @@ impl<'a> Checker<'a> {
 		let mut parameters = HashSet::new();
 		for form in forms {
 			match &form.node {
-				FormKind::Declare {
-					name,
-					variadic: true,
-					..
-				} => {
-					variadic = true;
-					declared.insert(name.as_str());
-				}
+				// `declare-inputs` takes only the positional inputs that are left, never a named one.
+				FormKind::Declare { variadic: true, .. } => variadic = true,
 				FormKind::Declare { name, .. } => {
 					declared.insert(name.as_str());
 					if !inputs.named.contains_key(name) {
 						takers += 1;
 					}
 				}
-				FormKind::Parameter { name, .. } => {
+				FormKind::Parameter {
+					name,
+					sort,
+					default,
+				} => {
 					parameters.insert(name.as_str());
+					// The run binds parameters after it loads the inputs; a bad value fails here first.
+					match inputs.parameters.get(name) {
+						Some(text) if matches!(sort.as_str(), "String" | "Int" | "Bool") => {
+							if let Err(message) = crate::eval::parameter_value(text, sort) {
+								self.reject_form(form, format!("--param {name}: {message}"));
+							}
+						}
+						None if default.is_none() => self.reject_form(
+							form,
+							format!(
+								"no value for parameter '{name}'; give it with --param {name}=VALUE"
+							),
+						),
+						_ => {}
+					}
 				}
 				_ => {}
 			}
 		}
+		// A script without declarations reads a named input as $name.
 		let mut named: Vec<&String> = inputs.named.keys().collect();
 		named.sort();
 		for name in named {
-			if !declared.contains(name.as_str()) {
+			if (variadic || !declared.is_empty()) && !declared.contains(name.as_str()) {
 				self.errors.push(Error::plain(format!(
 					"--input {name}: the script declares no input '{name}'"
 				)));
@@ -478,8 +512,11 @@ impl<'a> Checker<'a> {
 			return;
 		}
 		if self.profile.core && !portable_sort(sort) {
-			self.warnings
-				.push(format!("sort '{sort}' is not in the portable core"));
+			self.reject_at(
+				line,
+				column,
+				format!("sort '{sort}' is not in the portable core"),
+			);
 		}
 	}
 
@@ -512,7 +549,7 @@ impl<'a> Checker<'a> {
 					"declare-inputs needs a list of Nfa, Nft, or Automaton".into(),
 				),
 			}
-		} else if element.is_none() && !matches!(sort, "Nfa" | "Nft" | "Automaton") {
+		} else if !matches!(sort, "Nfa" | "Nft" | "Automaton") {
 			self.reject_form(
 				form,
 				format!("a declared input must be Nfa, Nft, or Automaton; '{sort}' is not"),
@@ -619,9 +656,11 @@ impl<'a> Checker<'a> {
 		}
 	}
 
+	/// Checks `(define name [sort] value)` or `(define (name parameters…) body…)` and binds `name`.
 	fn definition(
 		&mut self,
 		name: &str,
+		annotation: Option<&str>,
 		parameters: Option<&[Parameter]>,
 		body: &[Expr],
 		line: usize,
@@ -631,6 +670,9 @@ impl<'a> Checker<'a> {
 			self.reject_at(line, column, message);
 		} else if self.defined_here(name) {
 			self.reject_at(line, column, format!("'{name}' is already defined"));
+		}
+		if let Some(annotation) = annotation {
+			self.check_sort_name(line, column, annotation);
 		}
 		let sort = match parameters {
 			None => self.body(body, None),
@@ -659,6 +701,26 @@ impl<'a> Checker<'a> {
 				}
 				Some("Function".to_owned())
 			}
+		};
+		// The annotation narrows like `as`: only a sort that cannot hold the value is an error.
+		let sort = match (annotation, sort) {
+			(Some(expected), Some(actual)) if actual == "Function" => {
+				self.reject_at(
+					line,
+					column,
+					format!("'{name}' is a function, not a {expected}"),
+				);
+				Some(expected.to_owned())
+			}
+			(Some(expected), Some(actual)) if accepts(expected, &actual) => Some(actual),
+			(Some(expected), Some(actual)) => {
+				if !accepts(&actual, expected) {
+					self.reject_at(line, column, format!("expected {expected}, found {actual}"));
+				}
+				Some(expected.to_owned())
+			}
+			(Some(expected), None) => Some(expected.to_owned()),
+			(None, sort) => sort,
 		};
 		let arity = parameters.map(<[Parameter]>::len);
 		self.bind(name, sort, arity);
@@ -741,11 +803,9 @@ impl<'a> Checker<'a> {
 				sort,
 				body,
 			} => {
-				if let Some(sort) = sort {
-					self.check_sort_name(expression.line, expression.column, sort);
-				}
 				self.definition(
 					name,
+					sort.as_deref(),
 					parameters.as_deref(),
 					body,
 					expression.line,
@@ -756,6 +816,7 @@ impl<'a> Checker<'a> {
 			Kind::Call { .. } => self.call(expression, self_name),
 			Kind::Literal { name, arguments } => Some(self.literal(name, arguments, expression)),
 			Kind::GetOption(keyword) => {
+				self.core_form("get-option", expression);
 				if OPTIONS.contains(&keyword.as_str()) && keyword != "default" {
 					Some(
 						if keyword == "alphabet" {
@@ -771,6 +832,7 @@ impl<'a> Checker<'a> {
 				}
 			}
 			Kind::GetInfo(keyword) => {
+				self.core_form("get-info", expression);
 				if !keyword.starts_with("x-")
 					&& !crate::eval::INFO_KEYS.iter().any(|(key, _)| key == keyword)
 				{
@@ -784,10 +846,13 @@ impl<'a> Checker<'a> {
 	fn check_sort_expression(&mut self, expression: &Expr, sort: &str) {
 		if !valid_sort(sort) {
 			self.reject(expression, format!("unknown sort '{sort}'"));
+			return;
 		}
 		if self.profile.core && !portable_sort(sort) {
-			self.warnings
-				.push(format!("sort '{sort}' is not in the portable core"));
+			self.reject(
+				expression,
+				format!("sort '{sort}' is not in the portable core"),
+			);
 		}
 	}
 
@@ -836,7 +901,10 @@ impl<'a> Checker<'a> {
 		};
 		match head.as_str() {
 			"let" => self.list_let(&items[1..], expression, self_name),
-			"cond" => self.list_cond(&items[1..], expression, self_name),
+			"cond" => {
+				self.core_form("cond", expression);
+				self.list_cond(&items[1..], expression, self_name)
+			}
 			"loop" => {
 				self.termination = false;
 				self.reject(
@@ -1063,45 +1131,58 @@ impl<'a> Checker<'a> {
 		expression: &Expr,
 		self_name: Option<&str>,
 	) -> Option<String> {
-		let head = operation.name;
-		self.hints(head, keywords);
-		if self.profile.core && !core_call(head) {
-			self.reject(expression, format!("'{head}' is not in the portable core"));
-		}
-		if !crate::ops::accepts(operation, arguments.len()) {
-			self.reject(
-				expression,
-				crate::ops::arity_message(operation, arguments.len()),
-			);
-		}
-		let list_function = head.starts_with("list:");
+		self.hints(operation.name, keywords);
+		self.operation_shape(operation, arguments.len(), expression);
 		for (index, argument) in arguments.iter().enumerate() {
 			let sort = self.expression(argument, self_name);
-			let expected = if head == "check" {
-				// `(check condition)` or `(check "label" condition)`.
-				Some(if index + 1 == arguments.len() {
-					"Bool"
-				} else {
-					"String"
-				})
-			} else {
-				crate::ops::operand_sort(operation, index)
-			};
-			if let Some(expected) = expected
-				&& let Some(actual) = &sort
-				&& !accepts(expected, actual)
-			{
-				self.reject(
-					argument,
-					format!(
-						"argument {} of '{head}' must be {expected}, found {actual}",
-						index + 1
-					),
-				);
-			}
-			self.consumed(sort.as_deref(), list_function);
+			self.operand(operation, index, arguments.len(), sort.as_deref(), argument);
 		}
 		(!operation.result.is_empty()).then(|| operation.result.to_owned())
+	}
+
+	/// Checks that a portable core script may call `operation` and that it takes `given` operands.
+	fn operation_shape(&mut self, operation: &crate::ops::Operation, given: usize, at: &Expr) {
+		let head = operation.name;
+		if self.profile.core && !core_call(head) {
+			self.reject(at, format!("'{head}' is not in the portable core"));
+		}
+		if !crate::ops::accepts(operation, given) {
+			self.reject(at, crate::ops::arity_message(operation, given));
+		}
+	}
+
+	/// Checks operand `index` of the `given` operands of `operation`, of sort `sort` when known.
+	fn operand(
+		&mut self,
+		operation: &crate::ops::Operation,
+		index: usize,
+		given: usize,
+		sort: Option<&str>,
+		at: &Expr,
+	) {
+		let head = operation.name;
+		let expected = if head == "check" {
+			// `(check condition)` or `(check "label" condition)`.
+			Some(if index + 1 == given { "Bool" } else { "String" })
+		} else {
+			crate::ops::operand_sort(operation, index)
+		};
+		if let Some(expected) = expected
+			&& let Some(actual) = sort
+			&& !accepts(expected, actual)
+		{
+			self.reject(
+				at,
+				format!(
+					"argument {} of '{head}' must be {expected}, found {actual}",
+					index + 1
+				),
+			);
+		}
+		self.consumed(
+			sort,
+			head.starts_with("list:") && expected == Some("Function"),
+		);
 	}
 
 	/// Checks a special form named by `head`; `NotSpecial` when `head` names no special form.
@@ -1115,6 +1196,9 @@ impl<'a> Checker<'a> {
 	) -> Special {
 		if !keywords.is_empty() && SPECIAL_FORMS.contains(&head) {
 			self.reject(expression, format!("'{head}' takes no keyword arguments"));
+		}
+		if matches!(head, "if" | "do" | "and" | "or" | "as" | "witness") {
+			self.core_form(head, expression);
 		}
 		match head {
 			"if" => self.special_if(arguments, expression, self_name),
@@ -1270,69 +1354,83 @@ impl<'a> Checker<'a> {
 			self.reject(expression, "a pipeline needs a value".into());
 			return None;
 		};
-		let sort = self.expression(first, self_name);
-		if sort.as_deref() == Some("Function") {
-			self.termination = false;
-		}
+		let mut sort = self.expression(first, self_name);
 		for step in &steps[1..] {
-			match &step.node {
-				Kind::Name(name) => self.pipeline_step(name, 1, step),
+			let named = match &step.node {
+				Kind::Name(name) => Some((name, &[][..], &[][..])),
 				Kind::Call {
 					function,
 					arguments,
 					keywords,
-				} => {
-					if let Kind::Name(head) = &function.node {
-						// The piped value is the first argument, before the written ones.
-						self.pipeline_step(head, arguments.len() + 1, step);
-						for argument in arguments {
-							let sort = self.expression(argument, self_name);
-							self.consumed(sort.as_deref(), head.starts_with("list:"));
-						}
-						if crate::ops::visible(head, self.engine.language).is_some() {
-							self.hints(head, keywords);
-						} else {
-							for (_, value) in keywords {
-								let _ = self.expression(value, self_name);
-							}
-						}
-					} else {
-						self.reject(
-							step,
-							"a pipeline step must be a name or an application".into(),
-						);
-					}
-				}
-				_ => self.reject(
+				} => match &function.node {
+					Kind::Name(head) => Some((head, &arguments[..], &keywords[..])),
+					_ => None,
+				},
+				_ => None,
+			};
+			sort = if let Some((name, arguments, keywords)) = named {
+				self.pipeline_step(name, sort.as_deref(), arguments, keywords, step, self_name)
+			} else {
+				self.reject(
 					step,
 					"a pipeline step must be a name or an application".into(),
-				),
-			}
+				);
+				None
+			};
 		}
-		None
+		sort
 	}
 
-	/// Checks one pipeline step that calls `name` with `given` arguments, the piped value included.
-	fn pipeline_step(&mut self, name: &str, given: usize, step: &Expr) {
-		if !self.known(name) {
+	/// Checks one pipeline step that calls `name` with the piped value of sort `piped` followed by
+	/// `arguments`, and returns the sort of its result when known.
+	fn pipeline_step(
+		&mut self,
+		name: &str,
+		piped: Option<&str>,
+		arguments: &[Expr],
+		keywords: &[(String, Expr)],
+		step: &Expr,
+		self_name: Option<&str>,
+	) -> Option<String> {
+		let given = arguments.len() + 1;
+		let operation = if self.known(name) {
+			self.used.insert(name.to_owned());
+			crate::ops::visible(name, self.engine.language)
+		} else {
 			self.reject(step, format!("unknown name '{name}'"));
-			return;
+			None
+		};
+		if let Some(operation) = operation {
+			self.operation_shape(operation, given, step);
+			self.operand(operation, 0, given, piped, step);
+		} else {
+			if let Some(expected) = self.arity_of(name)
+				&& expected != given
+			{
+				self.reject(
+					step,
+					format!("the function expects {expected} arguments, {given} given"),
+				);
+			}
+			self.consumed(piped, false);
 		}
-		self.used.insert(name.to_owned());
-		if let Some(operation) = crate::ops::visible(name, self.engine.language) {
-			if self.profile.core && !core_call(name) {
-				self.reject(step, format!("'{name}' is not in the portable core"));
+		// The written arguments follow the piped value.
+		for (index, argument) in arguments.iter().enumerate() {
+			let sort = self.expression(argument, self_name);
+			if let Some(operation) = operation {
+				self.operand(operation, index + 1, given, sort.as_deref(), argument);
+			} else {
+				self.consumed(sort.as_deref(), false);
 			}
-			if !crate::ops::accepts(operation, given) {
-				self.reject(step, crate::ops::arity_message(operation, given));
+		}
+		if let Some(operation) = operation {
+			self.hints(operation.name, keywords);
+			(!operation.result.is_empty()).then(|| operation.result.to_owned())
+		} else {
+			for (_, value) in keywords {
+				let _ = self.expression(value, self_name);
 			}
-		} else if let Some(expected) = self.arity_of(name)
-			&& expected != given
-		{
-			self.reject(
-				step,
-				format!("the function expects {expected} arguments, {given} given"),
-			);
+			None
 		}
 	}
 }
@@ -1364,6 +1462,18 @@ fn core_call(name: &str) -> bool {
 		|| matches!(name, "assert" | "check" | "echo" | "print")
 }
 
+/// The name of a directive outside of the portable core.
+fn outside_core(form: &FormKind) -> Option<&'static str> {
+	match form {
+		FormKind::Parameter { .. } => Some("declare-param"),
+		FormKind::Push => Some("push"),
+		FormKind::Pop => Some("pop"),
+		FormKind::Reset => Some("reset"),
+		FormKind::Exit => Some("exit"),
+		_ => None,
+	}
+}
+
 fn portable_sort(sort: &str) -> bool {
 	if CORE_SORTS.contains(&sort) {
 		return true;
@@ -1387,9 +1497,15 @@ fn sort_expression(expression: &Expr) -> Option<String> {
 }
 
 /// Whether a value of sort `actual` fits where `expected` is required. An empty or `Any` expected sort,
-/// and an unknown actual sort, fit everywhere.
+/// and an unknown actual sort, fit everywhere; an `Any` actual sort, as the elements of the list a
+/// generic `list:` function returns, is unknown.
 fn accepts(expected: &str, actual: &str) -> bool {
-	if expected.is_empty() || expected == "Any" || actual.is_empty() || actual == "unknown" {
+	if expected.is_empty()
+		|| expected == "Any"
+		|| actual.is_empty()
+		|| actual == "unknown"
+		|| actual == "Any"
+	{
 		return true;
 	}
 	if expected.contains('|') {

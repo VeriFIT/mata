@@ -1266,3 +1266,236 @@ fn the_output_cannot_be_an_input() {
 		assert_eq!(workspace.read("a.mata"), NFA, "{arguments:?}");
 	}
 }
+
+// Review of #1039: checker
+
+#[test]
+fn the_check_drops_the_definitions_of_a_popped_scope() {
+	let redefined = mata([
+		"script",
+		"run",
+		"--expression",
+		"(push) (define x 1) (pop) (define x 2) (print x)",
+	]);
+	assert_eq!(status(&redefined), 0, "{}", stderr(&redefined));
+	assert_eq!(stdout(&redefined), "2\n");
+	let dropped = mata([
+		"script",
+		"check",
+		"--expression",
+		"(push) (define x 1) (pop) (print x)",
+	]);
+	assert_eq!(status(&dropped), 2);
+	assert!(
+		stderr(&dropped).contains("unknown name 'x'"),
+		"{}",
+		stderr(&dropped)
+	);
+}
+
+#[test]
+fn the_check_compares_a_define_annotation_with_the_value() {
+	let wrong = mata([
+		"script",
+		"run",
+		"--expression",
+		"(print 1) (define x Nfa 2)",
+	]);
+	assert_eq!(status(&wrong), 2);
+	assert!(stdout(&wrong).is_empty(), "{}", stdout(&wrong));
+	assert!(
+		stderr(&wrong).contains("expected Nfa, found Int"),
+		"{}",
+		stderr(&wrong)
+	);
+	// An annotation narrows a value that may hold the sort, as `as` does.
+	let narrowed = mata([
+		"script",
+		"check",
+		"--expression",
+		"(declare-input a Automaton) (define b Nfa a) (print (nfa:determinize b))",
+	]);
+	assert_eq!(status(&narrowed), 0, "{}", stderr(&narrowed));
+}
+
+#[test]
+fn a_declare_input_takes_one_automaton_so_a_list_sort_is_an_error() {
+	let output = mata([
+		"script",
+		"check",
+		"--expression",
+		"(declare-input x (List Nfa)) (print (list:length x))",
+	]);
+	assert_eq!(status(&output), 2);
+	assert!(
+		stderr(&output).contains("a declared input must be Nfa, Nft, or Automaton"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
+fn only_the_function_a_list_function_applies_keeps_the_termination_guarantee() {
+	let termination = |script: &str| {
+		let output = mata(["script", "check", "--expression", script]);
+		assert_eq!(status(&output), 0, "{script}: {}", stderr(&output));
+		stderr(&output)
+			.lines()
+			.next()
+			.unwrap_or_default()
+			.to_owned()
+	};
+	assert_eq!(
+		termination("(print (list:fold (lambda (a x) (+ a x)) 0 (list:range 0 3)))"),
+		"termination: guaranteed"
+	);
+	assert_eq!(
+		termination("(define g (lambda (acc x) (acc acc x))) (list:fold g g (list:range 0 1))"),
+		"termination: not-guaranteed"
+	);
+	assert_eq!(
+		termination("(define f (lambda (x) x)) (print (-> f (list:fold f (list 1))))"),
+		"termination: not-guaranteed"
+	);
+}
+
+#[test]
+fn the_portable_core_rejects_forms_and_sorts_outside_of_it() {
+	let core = "(mata-script \"0.1.0\" :profile core)\n";
+	for (script, message) in [
+		("(print (if true 1 2))", "'if' is not in the portable core"),
+		(
+			"(print (cond (true 1) (else 2)))",
+			"'cond' is not in the portable core",
+		),
+		("(print (do 1 2))", "'do' is not in the portable core"),
+		(
+			"(print (get-option :alphabet))",
+			"'get-option' is not in the portable core",
+		),
+		("(push)", "'push' is not in the portable core"),
+		(
+			"(declare-input t Nft)\n(print t)",
+			"sort 'Nft' is not in the portable core",
+		),
+	] {
+		let output = mata([
+			"script",
+			"check",
+			"--expression",
+			&format!("{core}{script}"),
+		]);
+		assert_eq!(status(&output), 2, "{script}");
+		assert!(
+			stderr(&output).contains(message),
+			"{script}: {}",
+			stderr(&output)
+		);
+	}
+	let within = mata([
+		"script",
+		"check",
+		"--expression",
+		&format!(
+			"{core}(declare-inputs xs (List Nfa))\n\
+			 (define m (-> (list:nth xs 0) nfa:determinize nfa:minimize))\n\
+			 (let ((a 1)) (print a))\n(check (time \"t\" (nfa:universal? m)))"
+		),
+	]);
+	assert_eq!(status(&within), 0, "{}", stderr(&within));
+}
+
+#[test]
+fn a_script_without_declarations_reads_a_named_input_as_a_dollar_name() {
+	let workspace = Workspace::new("named-undeclared");
+	let a = workspace.file("a.mata", NFA);
+	let named = format!("spec={a}");
+	let output = mata([
+		"script",
+		"run",
+		"--expression",
+		"(print $spec)",
+		"--input",
+		&named,
+	]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), format!("{a}\n"));
+	// `declare-inputs` takes only positional inputs.
+	let variadic = format!("xs={a}");
+	let output = mata([
+		"script",
+		"run",
+		"--expression",
+		"(declare-inputs xs (List Nfa)) (print 1)",
+		"--input",
+		&variadic,
+	]);
+	assert_eq!(status(&output), 2);
+	assert_eq!(
+		stderr(&output),
+		"mata: --input xs: the script declares no input 'xs'\n"
+	);
+}
+
+#[test]
+fn the_check_follows_sorts_through_a_pipeline() {
+	let output = mata(["script", "run", "--expression", "(print 1) (-> 2 nfa:trim)"]);
+	assert_eq!(status(&output), 2);
+	assert!(stdout(&output).is_empty(), "{}", stdout(&output));
+	assert!(
+		stderr(&output).contains("argument 1 of 'nfa:trim' must be Nfa, found Int"),
+		"{}",
+		stderr(&output)
+	);
+	let result = mata([
+		"script",
+		"check",
+		"--expression",
+		"(print (nfa:determinize (-> 2 (+ 1))))",
+	]);
+	assert_eq!(status(&result), 2);
+	assert!(
+		stderr(&result).contains("argument 1 of 'nfa:determinize' must be Nfa, found Int"),
+		"{}",
+		stderr(&result)
+	);
+}
+
+#[test]
+fn the_elements_of_a_generic_list_result_fit_any_list() {
+	let output = mata([
+		"script",
+		"run",
+		"--expression",
+		"(print (nfa:encode-word (list:take (list \"a\") 1)))",
+	]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "a\n");
+}
+
+#[test]
+fn parameter_values_are_checked_before_any_input_is_loaded() {
+	let script = "(declare-input a Nfa) (declare-param n Int) (print n)";
+	let bad = mata([
+		"script",
+		"run",
+		"--expression",
+		script,
+		"missing.mata",
+		"--param",
+		"n=five",
+	]);
+	assert_eq!(status(&bad), 2);
+	assert!(
+		stderr(&bad).contains("--param n: 'five' is not an Int"),
+		"{}",
+		stderr(&bad)
+	);
+	let missing = mata(["script", "run", "--expression", script, "missing.mata"]);
+	assert_eq!(status(&missing), 2);
+	assert!(
+		stderr(&missing).contains("no value for parameter 'n'"),
+		"{}",
+		stderr(&missing)
+	);
+}

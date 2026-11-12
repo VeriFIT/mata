@@ -1123,7 +1123,7 @@ pub(crate) fn reserved(name: &str) -> Option<String> {
 }
 
 /// The value of `--param NAME=TEXT` for a parameter of sort `sort`.
-fn parameter_value(text: &str, sort: &str) -> Result<Value, String> {
+pub(crate) fn parameter_value(text: &str, sort: &str) -> Result<Value, String> {
 	match sort {
 		"String" => Ok(Value::String(text.to_owned())),
 		"Int" => text

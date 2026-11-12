@@ -62,12 +62,12 @@ mata script run [options] [SCRIPT] [INPUT…]
   that name. A name can be given at most once, and `--input` can be repeated.
 - Each `--param NAME=VALUE` gives the parameter that the script declares with `(declare-param NAME Sort [default])`.
   The value is read as the parameter's sort, `String`, `Int` or `Bool`, so `--param count=five` for an `Int` parameter
-  is an error before the script runs.
+  is an error before the script runs, and so is a parameter without a default that is given no value.
 - Positional inputs are consumed by `declare-input` first, then by `declare-inputs`; named inputs are always found by
   name. A file with several automata gives one automaton to each declaration in turn. When a script declares inputs,
   every input on the command line must be taken by a declaration: an extra positional input, an `--input` the script
   does not declare and a `--param` it does not declare are errors, reported before anything runs. A script without
-  declarations reads its inputs as `$1`, `$2`, … or `inputs`.
+  declarations reads its inputs as `$1`, `$2`, …, `inputs` or `$name`.
 - A path given on the command line is relative to the current directory, as in every other command. A path written in
   the script, as in `(nfa:load "local.mata")`, is relative to the directory of the script file; a script given as `-`
   or with `--expression` has no file, so its paths are relative to the current directory too.

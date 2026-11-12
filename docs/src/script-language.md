@@ -184,6 +184,8 @@ Checking is static where the sorts are known and dynamic where they are not.
 
 - `define` binds a name once; binding it again in the same scope is an error. `push` opens a scope, `pop` closes it
   and drops its definitions and option changes, and `reset` returns to the initial state.
+- The sort in `(define name Sort value)` narrows the value as `as` does: a value that cannot be of that sort is an
+  error before the script runs, and a value whose sort is known only when the script runs is checked then.
 - `let` binds names for the extent of its body, each binding seeing the previous ones.
 - `if` and `cond` evaluate only the chosen branch. `and` and `or` stop at the first operand that decides the result.
   This matters because it decides which library calls are made.
@@ -372,9 +374,9 @@ asks:
 (declare-inputs rest (List Nfa))
 ```
 
-- Each `declare-input` takes the input given under its name, or else the next positional input. A file with several
-  automata gives one automaton to each `declare-input` in turn. `declare-inputs` takes all the positional inputs that
-  are left, every automaton of every file, and must come last.
+- Each `declare-input` declares one automaton, `Nfa`, `Nft` or `Automaton`, and takes the input given under its name,
+  or else the next positional input. A file with several automata gives one automaton to each `declare-input` in turn.
+  `declare-inputs` takes all the positional inputs that are left, every automaton of every file, and must come last.
 - Declarations must come before every other form except `set-option` and `set-info`, which run in order with them, so
   `(set-option :alphabet "bytes")` before a declaration applies to the automaton it loads.
 - All declared inputs are loaded before the first other form runs. A file whose kind does not match the declared sort
@@ -393,7 +395,9 @@ seeds or labels:
 ```
 
 A parameter is `String`, `Int` or `Bool`; the value given on the command line is read as that sort, and an optional
-default makes the parameter optional. Parameters are declarations, so they come first, with the inputs.
+default makes the parameter optional. Parameters are declarations, so they come first, with the inputs. The check
+reports a value that is not of the sort, and a missing value of a parameter without a default, before any input is
+loaded.
 
 **Paths written in the script** are loaded with the same operations: `(nfa:load "automata/a.mata")`. A relative path
 is resolved against the directory of the script, so a script and the automata beside it move together. A path given on
