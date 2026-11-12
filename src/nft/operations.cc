@@ -625,13 +625,17 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 	// Checks if a given state is being projected out based on the levels_to_project vector.
 	auto is_projected_out = [&](const State state) { return is_level_projected[nft.levels[state]]; };
 
+	// The first unprojected level at or after each level answers range queries in constant time.
+	std::vector<Level> next_unprojected(nft.levels.num_of_levels + 1, static_cast<Level>(nft.levels.num_of_levels));
+	for (Level level{static_cast<Level>(nft.levels.num_of_levels)}; level != 0;) {
+		--level;
+		next_unprojected[level] = is_level_projected[level] ? next_unprojected[level + 1] : level;
+	}
+
 	// Checks if each level between given states is being projected out.
 	auto is_projected_along_path = [&](const State src, const State tgt) {
 		const Level stop_lvl = (nft.levels[tgt] == 0) ? static_cast<Level>(nft.levels.num_of_levels) : nft.levels[tgt];
-		for (Level lvl{nft.levels[src]}; lvl < stop_lvl; lvl++) {
-			if (!is_level_projected[lvl]) { return false; }
-		}
-		return true;
+		return next_unprojected[nft.levels[src]] >= stop_lvl;
 	};
 
 	// Determines the transition length between two states based on their levels.
