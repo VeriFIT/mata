@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 
 using mata::AlphabetLevels;
 using mata::OnTheFlyAlphabet;
@@ -260,6 +261,15 @@ std::ostream& mata::IntAlphabet::print(std::ostream& os) const { return os << "I
 std::ostream& std::operator<<(std::ostream& os, const mata::Alphabet& alphabet) { return alphabet.print(os); }
 
 Symbol mata::IntAlphabet::translate_symb(const std::string& symb) {
+	// A plain decimal number of up to 9 digits always fits and reads the same as through the stream below, which
+	//  costs much more.
+	if (!symb.empty() && symb.size() <= 9 && symb.front() >= '0' && symb.front() <= '9') {
+		Symbol symbol{};
+		const char* const end{symb.data() + symb.size()};
+		if (const auto [ptr, error]{std::from_chars(symb.data(), end, symbol)}; error == std::errc{} && ptr == end) {
+			return symbol;
+		}
+	}
 	Symbol symbol;
 	std::istringstream stream{symb};
 	stream >> symbol;
