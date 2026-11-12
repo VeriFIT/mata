@@ -168,6 +168,27 @@ pub enum NftError {
 	/// A path whose words are all empty.
 	#[error("at least one word of a path must be nonempty")]
 	EmptyPath,
+	/// An interleaved word whose length is not a multiple of the number of levels.
+	#[error("a word of {length} symbols does not interleave {num_levels} levels")]
+	InterleavedLength {
+		/// The length of the word.
+		length: usize,
+		/// The number of levels of the transducer.
+		num_levels: usize,
+	},
+	/// An automaton that does not encode a transducer: a state would get two levels, or a final state a
+	/// level other than 0.
+	#[error("the automaton does not encode a transducer with that many levels")]
+	InconsistentLevels,
+	/// A transducer with epsilon edges, which the operation does not support.
+	#[error("the operation needs a transducer without epsilon transitions")]
+	EpsilonTransitions,
+	/// A reachable state has an edge under a symbol outside the alphabet.
+	#[error("the transducer reads a symbol outside the alphabet")]
+	NotInAlphabet,
+	/// A transducer with a cycle of epsilon edges where the caller promised none.
+	#[error("the transducer has a cycle of epsilon transitions")]
+	EpsilonCycle,
 }
 
 /// An automaton from other C++ code that breaks Mata's invariants. It carries the shim's message.

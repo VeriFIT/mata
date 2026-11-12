@@ -720,7 +720,6 @@ impl Nft {
 	/// The relation with every word reversed in place: (*w*₀, …, *w*ₙ₋₁) becomes (*w*₀ reversed, …,
 	/// *w*ₙ₋₁ reversed).
 	#[must_use = "returns a new transducer and leaves `self` unchanged"]
-	#[doc(alias = "revert")]
 	pub fn reverse(&self) -> Nft {
 		new_nft(ffi::nft_reverse(self.raw()))
 	}
@@ -749,6 +748,203 @@ impl Nft {
 	pub fn to_nfa_over(&self, alphabet: &Alphabet) -> Nfa {
 		let symbols = alphabet.raw_symbols();
 		Nfa::from_owned(check(ffi::nft_to_nfa(self.raw(), true, &symbols)))
+	}
+
+	// ── More of Mata's transducer operations ──────────────────────────────────────────────────────
+
+	/// Mata's `create_sigma_star_nft(num_levels)`: one state with a [`DONT_CARE`] loop on every level,
+	/// relating every tuple of `num_levels` words of equal length.
+	///
+	/// # Errors
+	///
+	/// [`NftError::InvalidNumLevels`] if `num_levels` is 0 or more than [`MAX_LEVELS`].
+	#[doc(alias = "create_sigma_star_nft")]
+	pub fn sigma_star(num_levels: usize) -> Result<Nft, NftError> {
+		check_num_levels(num_levels)?;
+		Ok(new_nft(ffi::nft_sigma_star(num_levels)))
+	}
+
+	/// The transducer whose interleaved encoding (see [`Nft::to_nfa`]) is `nfa`: Mata's
+	/// `from_nfa_with_levels_advancing`, which gives the initial states level 0 and every successor of a
+	/// level-*i* state level *i* + 1 modulo `num_levels`. States unreachable from an initial state get
+	/// level 0.
+	///
+	/// # Errors
+	///
+	/// [`NftError::InvalidNumLevels`] if `num_levels` is 0 or more than [`MAX_LEVELS`], and
+	/// [`NftError::InconsistentLevels`] if a state would get two levels or a final state a level other
+	/// than 0.
+	#[doc(alias = "from_nfa_with_levels_advancing")]
+	pub fn from_interleaved(nfa: &Nfa, num_levels: usize) -> Result<Nft, NftError> {
+		check_num_levels(num_levels)?;
+		ffi::nft_from_nfa_with_levels_advancing(nfa.as_ffi(), num_levels)
+			.map(Nft::from_owned)
+			.map_err(|_| NftError::InconsistentLevels)
+	}
+
+	/// Mata's `complement` (the classical algorithm) over the symbols of `alphabet`: determinizes, makes
+	/// the transducer complete on every level and swaps the final and non-final states of level 0. A
+	/// [`DONT_CARE`] edge is read as one edge per symbol of `alphabet`.
+	///
+	/// # Errors
+	///
+	/// [`NftError::EpsilonTransitions`] if the transducer has an epsilon edge, which Mata's complement
+	/// does not support.
+	///
+	/// # Panics
+	///
+	/// If `alphabet` contains [`DONT_CARE`], which is not a letter.
+	///
+	/// # Complexity
+	///
+	/// Determinizes: exponential in the worst case.
+	pub fn complement(&self, alphabet: &Alphabet) -> Result<Nft, NftError> {
+		if mata_sys::ffi::has_epsilon_transitions(self.automaton()) {
+			return Err(NftError::EpsilonTransitions);
+		}
+		Ok(new_nft(ffi::nft_complement(
+			self.raw(),
+			&alphabet.raw_symbols(),
+		)))
+	}
+
+	/// Mata's `Nft::is_complete`: whether every reachable state has an edge under every symbol of
+	/// `alphabet`; a [`DONT_CARE`] edge covers them all.
+	///
+	/// # Errors
+	///
+	/// [`NftError::NotInAlphabet`] if a reachable state has an edge under a symbol outside `alphabet`.
+	///
+	/// # Panics
+	///
+	/// If `alphabet` contains [`DONT_CARE`], which is not a letter.
+	pub fn is_complete(&self, alphabet: &Alphabet) -> Result<bool, NftError> {
+		assert!(
+			!alphabet.contains(DONT_CARE),
+			"DONT_CARE is not a letter of an alphabet"
+		);
+		ffi::nft_is_complete(self.raw(), &alphabet.raw_symbols())
+			.map_err(|_| NftError::NotInAlphabet)
+	}
+
+	/// The relation concatenated with itself `power` times (Mata's `concatenate_nth_power`); power 0 is
+	/// the tuple of empty words.
+	#[must_use = "returns a new transducer and leaves `self` unchanged"]
+	#[doc(alias = "concatenate_nth_power")]
+	pub fn concat_power(&self, power: u32) -> Nft {
+		new_nft(ffi::nft_concatenate_nth_power(self.raw(), power))
+	}
+
+	/// Mata's `Nft::contains_jump_transitions`: whether an edge skips a level. Always `false` for an
+	/// `Nft` of this crate, which unwinds every jump into one edge per level.
+	#[must_use]
+	#[doc(alias = "contains_jump_transitions")]
+	pub fn contains_jumps(&self) -> bool {
+		check(ffi::nft_contains_jump_transitions(self.raw()))
+	}
+
+	/// Mata's `Nft::unwind_jumps` with its defaults: every jump becomes one edge per level, repeating its
+	/// symbol. An `Nft` of this crate has no jumps, so the result is a copy.
+	#[must_use = "returns a new transducer and leaves `self` unchanged"]
+	pub fn unwind_jumps(&self) -> Nft {
+		new_nft(ffi::nft_unwind_jumps(self.raw()))
+	}
+
+	/// Mata's `has_epsilon_cycle`: whether a cycle of edges reads epsilon only.
+	#[must_use]
+	pub fn has_epsilon_cycle(&self) -> bool {
+		check(ffi::nft_has_epsilon_cycle(self.raw()))
+	}
+
+	/// Structural equality: the same number of states, levels of the states, initial and final states,
+	/// and edges. For equality of relations, use [`Nft::is_equivalent_to`].
+	#[must_use]
+	pub fn is_identical(&self, other: &Nft) -> bool {
+		check(ffi::nft_is_identical(self.raw(), other.raw()))
+	}
+
+	/// Mata's `Nft::is_in_lang`: whether the interleaved `word` (see [`Nft::to_nfa`]) is accepted, its
+	/// symbol *i* read on level *i* modulo the number of levels. With `match_prefix`, accepting a prefix
+	/// suffices. `has_epsilon_cycles` `false` promises [`Nft::has_epsilon_cycle`] is `false`, which lets
+	/// Mata use a faster search.
+	///
+	/// # Errors
+	///
+	/// [`NftError::InterleavedLength`] if the length of `word` is not a multiple of the number of levels,
+	/// and [`NftError::EpsilonCycle`] if `has_epsilon_cycles` is `false` but there is one.
+	#[doc(alias = "is_in_lang")]
+	pub fn accepts_interleaved(
+		&self,
+		word: &[Symbol],
+		match_prefix: bool,
+		has_epsilon_cycles: bool,
+	) -> Result<bool, NftError> {
+		let num_levels = self.num_levels();
+		if !word.len().is_multiple_of(num_levels) {
+			return Err(NftError::InterleavedLength {
+				length: word.len(),
+				num_levels,
+			});
+		}
+		if !has_epsilon_cycles && self.has_epsilon_cycle() {
+			return Err(NftError::EpsilonCycle);
+		}
+		Ok(expect(ffi::nft_is_in_lang(
+			self.raw(),
+			symbols_to_raw(word),
+			match_prefix,
+			has_epsilon_cycles,
+		)))
+	}
+
+	/// Mata's `insert_level`: a new level `level`, which reads [`DONT_CARE`] in every transition; the
+	/// levels from `level` on move one up. A `level` past the last one appends new levels up to it.
+	///
+	/// # Errors
+	///
+	/// [`NftError::InvalidNumLevels`] if the result would have more than [`MAX_LEVELS`] levels.
+	pub fn insert_level(&self, level: usize) -> Result<Nft, NftError> {
+		check_num_levels(self.num_levels().max(level) + 1)?;
+		Ok(new_nft(ffi::nft_insert_level(self.raw(), level)))
+	}
+
+	/// Mata's `insert_levels`: the result has a level per entry of `mask`, the existing levels in order at
+	/// the `false` entries and a new level, as in [`Nft::insert_level`], at every `true` entry.
+	///
+	/// # Errors
+	///
+	/// [`NftError::LevelMismatch`] unless `mask` has one `false` per level, and
+	/// [`NftError::InvalidNumLevels`] if it has more than [`MAX_LEVELS`] entries.
+	pub fn insert_levels(&self, mask: &[bool]) -> Result<Nft, NftError> {
+		self.check_arity(mask.iter().filter(|&&inserted| !inserted).count())?;
+		check_num_levels(mask.len())?;
+		Ok(new_nft(ffi::nft_insert_levels(self.raw(), mask)))
+	}
+
+	/// Mata's `reduce`: a transducer with the same relation and states merged by simulation.
+	#[must_use = "returns a new transducer and leaves `self` unchanged"]
+	pub fn reduce(&self) -> Nft {
+		new_nft(ffi::nft_reduce(self.raw()))
+	}
+
+	/// Mata's `revert`: every edge reversed, initial and final states swapped. A state of level *i* gets
+	/// level *n* − *i* modulo *n*, so every word is reversed and the levels come in reverse order: level
+	/// *k* of the result is level *n* − 1 − *k* of `self`. [`Nft::reverse`] keeps their order.
+	#[must_use = "returns a new transducer and leaves `self` unchanged"]
+	pub fn revert(&self) -> Nft {
+		new_nft(ffi::nft_revert(self.raw()))
+	}
+
+	/// Mata's `Nft::is_universal` (antichains): whether the interleaved encoding (see [`Nft::to_nfa`])
+	/// accepts every word over `alphabet`. Epsilon edges are removed first (Mata's `remove_epsilon`),
+	/// as Mata's check takes no epsilon closure.
+	///
+	/// # Panics
+	///
+	/// If `alphabet` contains [`DONT_CARE`], which is not a letter.
+	#[must_use]
+	pub fn is_universal(&self, alphabet: &Alphabet) -> bool {
+		check(ffi::nft_is_universal(self.raw(), &alphabet.raw_symbols()))
 	}
 
 	// ── Printing ──────────────────────────────────────────────────────────────────────────────────

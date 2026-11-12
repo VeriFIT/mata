@@ -579,4 +579,103 @@ rust::String nft_print_dot(
 	return rust::String(nft.print_to_dot(ascii_labels, intervals, max_label_length, alphabet));
 }
 
+// The other operations of the script language's `nft:` namespace.
+
+namespace {
+
+bool has_epsilon_edge(const Nft& nft) {
+	return std::ranges::any_of(nft.delta, [](const mata::nfa::StatePost& state_post) {
+		return state_post.find(mata::nft::EPSILON) != state_post.end();
+	});
+}
+
+} // namespace
+
+std::unique_ptr<Nft> nft_complement(const Nft& nft, const rust::Slice<const Symbol> symbols) {
+	const auto alphabet = detail::to_symbol_set(symbols);
+	// Mata documents the precondition but does not check it.
+	if (has_epsilon_edge(nft)) {
+		throw std::invalid_argument("the complement needs a transducer without epsilon transitions");
+	}
+	if (!uses_dont_care(nft)) { return boxed(mata::nft::complement(nft, alphabet)); }
+	// Mata's determinization reads DONT_CARE as one more symbol: spell it out over the alphabet first.
+	auto spelled = Nft(nft);
+	spelled.levels.resize(spelled.num_of_states());
+	spelled.unwind_jumps_inplace(alphabet, mata::nft::JumpMode::RepeatSymbol);
+	return boxed(mata::nft::complement(spelled, alphabet));
+}
+
+bool nft_is_complete(const Nft& nft, const rust::Slice<const Symbol> symbols) {
+	return nft.is_complete(detail::to_symbol_set(symbols));
+}
+
+std::unique_ptr<Nft> nft_concatenate_nth_power(const Nft& nft, const std::uint32_t power) {
+	return boxed(mata::nft::concatenate_nth_power(Nft(nft), power));
+}
+
+bool nft_contains_jump_transitions(const Nft& nft) { return nft.contains_jump_transitions(); }
+
+std::unique_ptr<Nft> nft_sigma_star(const std::size_t num_levels) {
+	check_num_levels(num_levels);
+	return boxed(mata::nft::builder::create_sigma_star_nft(num_levels));
+}
+
+std::unique_ptr<Nft> nft_from_nfa_with_levels_advancing(const mata::nfa::Nfa& nfa, const std::size_t num_levels) {
+	check_num_levels(num_levels);
+	auto nft = mata::nft::builder::from_nfa_with_levels_advancing(nfa, num_levels);
+	nft_adopt(nft);
+	return std::make_unique<Nft>(std::move(nft));
+}
+
+bool nft_has_epsilon_cycle(const Nft& nft) { return mata::nft::has_epsilon_cycle(nft); }
+
+// Mata's is_identical() ignores the number of states.
+bool nft_is_identical(const Nft& lhs, const Nft& rhs) {
+	return lhs.num_of_states() == rhs.num_of_states() && lhs.is_identical(rhs);
+}
+
+bool nft_is_in_lang(
+	const Nft& nft, const rust::Slice<const Symbol> word, const bool match_prefix, const bool has_epsilon_cycles
+) {
+	// Mata only asserts this: told there is no epsilon cycle, its search would follow one forever.
+	if (!has_epsilon_cycles && mata::nft::has_epsilon_cycle(nft)) {
+		throw std::invalid_argument("the transducer has a cycle of epsilon transitions");
+	}
+	return nft.is_in_lang(to_word(word), match_prefix, mata::nft::JumpMode::RepeatSymbol, has_epsilon_cycles);
+}
+
+std::unique_ptr<Nft> nft_insert_level(const Nft& nft, const std::size_t level) {
+	// A level past the last one appends every level up to it.
+	check_num_levels(std::max(nft.levels.num_of_levels, level) + 1);
+	return boxed(mata::nft::insert_level(nft, static_cast<Level>(level)));
+}
+
+std::unique_ptr<Nft> nft_insert_levels(const Nft& nft, const rust::Slice<const bool> mask) {
+	const auto kept = static_cast<std::size_t>(std::count(mask.begin(), mask.end(), false));
+	// Mata asserts these.
+	if (kept != nft.levels.num_of_levels) {
+		throw std::invalid_argument(
+			"the mask keeps " + std::to_string(kept) + " levels, but the transducer has " +
+			std::to_string(nft.levels.num_of_levels)
+		);
+	}
+	check_num_levels(mask.size());
+	auto new_levels_mask = mata::BoolVector(mask.size(), false);
+	std::copy(mask.begin(), mask.end(), new_levels_mask.begin());
+	return boxed(mata::nft::insert_levels(nft, new_levels_mask));
+}
+
+std::unique_ptr<Nft> nft_reduce(const Nft& nft) { return boxed(mata::nft::reduce(nft)); }
+
+std::unique_ptr<Nft> nft_revert(const Nft& nft) { return boxed(mata::nft::revert(nft)); }
+
+bool nft_is_universal(const Nft& nft, const rust::Slice<const Symbol> symbols) {
+	const auto alphabet = mata::EnumAlphabet(detail::to_symbol_set(symbols));
+	// Mata's check takes no epsilon closure, so remove the epsilon transitions first, as for NFAs.
+	if (!has_epsilon_edge(nft)) { return nft.is_universal(alphabet); }
+	return mata::nft::remove_epsilon(nft).is_universal(alphabet);
+}
+
+std::unique_ptr<Nft> nft_unwind_jumps(const Nft& nft) { return boxed(nft.unwind_jumps()); }
+
 } // namespace mata_sys

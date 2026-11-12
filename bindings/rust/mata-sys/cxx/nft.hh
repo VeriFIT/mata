@@ -107,4 +107,21 @@ rust::String nft_print_dot(
 	rust::Slice<const mata::Symbol> symbols
 );
 
+// The other operations of the script language's `nft:` namespace.
+std::unique_ptr<Nft> nft_complement(const Nft& nft, rust::Slice<const mata::Symbol> symbols);
+bool nft_is_complete(const Nft& nft, rust::Slice<const mata::Symbol> symbols);
+std::unique_ptr<Nft> nft_concatenate_nth_power(const Nft& nft, std::uint32_t power);
+bool nft_contains_jump_transitions(const Nft& nft);
+std::unique_ptr<Nft> nft_sigma_star(std::size_t num_levels);
+std::unique_ptr<Nft> nft_from_nfa_with_levels_advancing(const mata::nfa::Nfa& nfa, std::size_t num_levels);
+bool nft_has_epsilon_cycle(const Nft& nft);
+bool nft_is_identical(const Nft& lhs, const Nft& rhs);
+bool nft_is_in_lang(const Nft& nft, rust::Slice<const mata::Symbol> word, bool match_prefix, bool has_epsilon_cycles);
+std::unique_ptr<Nft> nft_insert_level(const Nft& nft, std::size_t level);
+std::unique_ptr<Nft> nft_insert_levels(const Nft& nft, rust::Slice<const bool> mask);
+std::unique_ptr<Nft> nft_reduce(const Nft& nft);
+std::unique_ptr<Nft> nft_revert(const Nft& nft);
+bool nft_is_universal(const Nft& nft, rust::Slice<const mata::Symbol> symbols);
+std::unique_ptr<Nft> nft_unwind_jumps(const Nft& nft);
+
 } // namespace mata_sys

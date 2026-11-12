@@ -168,6 +168,53 @@ pub mod ffi {
 			names: &[String],
 			symbols: &[u32],
 		) -> Result<String>;
+
+		// The other operations of the script language's `nft:` namespace.
+
+		/// Mata's `complement` (classical) over `symbols`, after spelling out `DONT_CARE` over them.
+		/// Throws if the transducer has epsilon transitions, which Mata's complement does not support.
+		fn nft_complement(nft: &Nft, symbols: &[u32]) -> Result<UniquePtr<Nft>>;
+		/// Mata's `Nft::is_complete` over `symbols`. Throws if a reachable state reads a symbol outside them.
+		fn nft_is_complete(nft: &Nft, symbols: &[u32]) -> Result<bool>;
+		/// Mata's `concatenate_nth_power`: the relation concatenated with itself `power` times.
+		fn nft_concatenate_nth_power(nft: &Nft, power: u32) -> Result<UniquePtr<Nft>>;
+		/// Mata's `Nft::contains_jump_transitions`.
+		fn nft_contains_jump_transitions(nft: &Nft) -> Result<bool>;
+		/// Mata's `create_sigma_star_nft(num_levels)`: a `DONT_CARE` loop on every level.
+		fn nft_sigma_star(num_levels: usize) -> Result<UniquePtr<Nft>>;
+		/// Mata's `from_nfa_with_levels_advancing`. Throws if a state would get two levels or a final
+		/// state a level other than 0.
+		fn nft_from_nfa_with_levels_advancing(
+			nfa: &Nfa,
+			num_levels: usize,
+		) -> Result<UniquePtr<Nft>>;
+		/// Mata's `has_epsilon_cycle`.
+		fn nft_has_epsilon_cycle(nft: &Nft) -> Result<bool>;
+		/// Mata's `Nft::is_identical`, which also compares the levels, and the same number of states.
+		fn nft_is_identical(lhs: &Nft, rhs: &Nft) -> Result<bool>;
+		/// Mata's `Nft::is_in_lang` of an interleaved word (symbol `i` on level `i` modulo the number of
+		/// levels), optionally of a prefix. Throws if its length is not a multiple of the number of levels,
+		/// or if `has_epsilon_cycles` is false but there is one (Mata would search forever).
+		fn nft_is_in_lang(
+			nft: &Nft,
+			word: &[u32],
+			match_prefix: bool,
+			has_epsilon_cycles: bool,
+		) -> Result<bool>;
+		/// Mata's `insert_level`. Throws if the result would have more than `MAX_LEVELS` levels.
+		fn nft_insert_level(nft: &Nft, level: usize) -> Result<UniquePtr<Nft>>;
+		/// Mata's `insert_levels`: `true` in `mask` is a new level. Throws unless `mask` has one `false`
+		/// per level and at most `MAX_LEVELS` entries.
+		fn nft_insert_levels(nft: &Nft, mask: &[bool]) -> Result<UniquePtr<Nft>>;
+		/// Mata's `reduce` (simulation).
+		fn nft_reduce(nft: &Nft) -> Result<UniquePtr<Nft>>;
+		/// Mata's `revert`: every transition reversed, which also reverses the order of the levels.
+		fn nft_revert(nft: &Nft) -> Result<UniquePtr<Nft>>;
+		/// Mata's `Nft::is_universal` (antichains) over `symbols`, after Mata's `remove_epsilon`, as for
+		/// NFAs: the check itself takes no epsilon closure.
+		fn nft_is_universal(nft: &Nft, symbols: &[u32]) -> Result<bool>;
+		/// Mata's `Nft::unwind_jumps` with its defaults.
+		fn nft_unwind_jumps(nft: &Nft) -> Result<UniquePtr<Nft>>;
 	}
 }
 

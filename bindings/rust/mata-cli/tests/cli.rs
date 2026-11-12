@@ -2126,3 +2126,140 @@ fn nfa_queries_of_the_whole_bridge_report_their_words() {
 		stdout(&help)
 	);
 }
+
+// NFT operations served by the bridge functions added with them
+#[test]
+fn nft_operations_of_the_whole_bridge_run_in_a_script() {
+	let script = "(set-option :alphabet \"bytes\")\n\
+	              (define one (nft:create-single-word-nft (word \"a\")))\n\
+	              (print (nft:in-language? one (word \"a\")))\n\
+	              (print (nft:in-language? one (word \"b\")))\n\
+	              (print (nft:in-language? one (word \"a\" \"b\") :match-prefix true))\n\
+	              (print (nft:in-language? one (word \"a\" \"b\")))\n\
+	              (print (nft:has-epsilon-cycle? one))\n\
+	              (print (nft:identical? one one))\n\
+	              (print (nft:contains-jump-transitions? (nft:create-sigma-star-nft 2)))\n\
+	              (print (nft:complete? (nft:create-sigma-star-nft 2)))\n\
+	              (print (nft:universal? (nft:create-sigma-star-nft 2)))\n\
+	              (print (nft:number-of-states (nft:complement one)))\n\
+	              (print (nft:number-of-states (nft:concatenate-nth-power one 2)))\n\
+	              (print (nft:number-of-states (nft:reduce one)))\n\
+	              (print (nft:number-of-states (nft:revert one)))\n\
+	              (print (nfa:number-of-states (nft:to-nfa-update one)))\n\
+	              (print (nft:number-of-states (nft:insert-level one 0)))\n\
+	              (print (nft:number-of-states (nft:insert-levels one (list false true))))\n\
+	              (print (nft:number-of-states (nft:unwind-jumps one)))\n\
+	              (define pair (nft:from-nfa-with-levels-advancing \
+	              (nfa:create-single-word-nfa (word \"a\" \"b\")) 2))\n\
+	              (print (nft:number-of-states pair))\n\
+	              (print (nft:in-language-by-levels? pair (list (word \"a\") (word \"b\"))))";
+	let output = run_script(script, true, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(
+		stdout(&output),
+		"true\nfalse\ntrue\nfalse\nfalse\ntrue\nfalse\ntrue\nfalse\n3\n5\n2\n2\n2\n3\n3\n2\n3\ntrue\n"
+	);
+}
+
+#[test]
+fn nft_operations_take_their_optional_parameters_as_keywords() {
+	let cycle = "(define cycle (nft:literal :levels 1 :initial (q0) :final (q1) \
+	             :transitions ((q0 epsilon q1) (q1 epsilon q0))))";
+	let allowed = run_script(
+		&format!("{cycle}\n(print (nft:in-language? cycle (word) :has-epsilon-cycles true))"),
+		true,
+		&[],
+	);
+	assert_eq!(
+		(status(&allowed), stdout(&allowed)),
+		(0, "true\n".to_owned()),
+		"{}",
+		stderr(&allowed)
+	);
+
+	let refused = run_script(
+		&format!("{cycle}\n(print (nft:in-language? cycle (word) :has-epsilon-cycles false))"),
+		true,
+		&[],
+	);
+	assert_eq!(status(&refused), 2);
+	assert!(
+		stderr(&refused).contains("the transducer has a cycle of epsilon transitions"),
+		"{}",
+		stderr(&refused)
+	);
+
+	for name in ["match-prefix", "has-epsilon-cycles"] {
+		let wrong_sort = run_script(
+			&format!(
+				"(nft:in-language? (nft:create-single-word-nft (word \"a\")) (word \"a\") \
+				 :{name} 1)"
+			),
+			true,
+			&[],
+		);
+		assert_eq!(status(&wrong_sort), 2);
+		assert!(
+			stderr(&wrong_sort).contains(&format!(
+				"the value of :{name} must be of sort Bool, found Int"
+			)),
+			"{}",
+			stderr(&wrong_sort)
+		);
+	}
+
+	let interleaving = run_script(
+		"(nft:in-language? (nft:from-nfa-with-levels-advancing \
+		 (nfa:create-single-word-nfa (word \"a\" \"b\")) 2) (word \"a\"))",
+		true,
+		&[],
+	);
+	assert_eq!(status(&interleaving), 2);
+	assert!(
+		stderr(&interleaving).contains("a word of 1 symbols does not interleave 2 levels"),
+		"{}",
+		stderr(&interleaving)
+	);
+
+	let mask = run_script(
+		"(nft:insert-levels (nft:create-single-word-nft (word \"a\")) (list true))",
+		true,
+		&[],
+	);
+	assert_eq!(status(&mask), 2);
+	assert!(
+		stderr(&mask).contains("expected 1 levels, found 0"),
+		"{}",
+		stderr(&mask)
+	);
+
+	let workspace = Workspace::new("nft-keywords");
+	let one = workspace.file(
+		"one.mata",
+		"@NFT-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\n%Levels q0:0 q1:0\n%LevelsNum 1\n\
+		 q0 a q1\n",
+	);
+	let direct = mata([
+		"nft",
+		"in-language?",
+		&one,
+		"a",
+		"--hint",
+		"match-prefix=true",
+	]);
+	assert_eq!(
+		(status(&direct), stdout(&direct)),
+		(0, "true\n".to_owned()),
+		"{}",
+		stderr(&direct)
+	);
+
+	let help = mata(["nft", "--help"]);
+	assert!(
+		stdout(&help).contains(
+			"in-language? NFT WORD [--hint match-prefix=Bool] [--hint has-epsilon-cycles=Bool]"
+		),
+		"{}",
+		stdout(&help)
+	);
+}

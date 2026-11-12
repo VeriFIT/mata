@@ -396,22 +396,19 @@ language page specifies but this build does not have are listed in the
 - Every operation of the catalogue records the language version that added it. A script sees the operations of the
   version its header declares, and the names of all of them are reserved, so an operation added later can never clash
   with a name a script defined.
-- The interpreter implements 113 operations: the portable core of the language, the script forms that a direct command
+- The interpreter implements 129 operations: the portable core of the language, the script forms that a direct command
   needs, and the NFA and NFT operations `bindings/rust/mata` covers. An operation outside that table is rejected by
-  name and never approximated: a script reports `unknown name 'nft:complement'` and a direct command reports
-  `unknown operation 'nft:complement'`, both exiting `2`. These 38 operations of the
+  name and never approximated: a script reports `unknown name 'strings:get-segments'` and a direct command reports
+  `unknown operation 'strings:get-segments'`, both exiting `2`. These 22 operations of the
   [script language](script-language) page are absent and need new `mata-sys` bridge functions:
   `automaton:determinize`, `automaton:included?`, `automaton:intersection`, `automaton:load`, `automaton:parse`,
-  `intermediate:mintermize`, `intermediate:parse-from-mata`,
-  `nfa:construct`, `nft:complement`, `nft:complete?`, `nft:concatenate-nth-power`,
-  `nft:construct`, `nft:contains-jump-transitions?`, `nft:create-sigma-star-nft`,
-  `nft:from-nfa-with-levels-advancing`, `nft:has-epsilon-cycle?`, `nft:identical?`, `nft:in-language?`,
-  `nft:insert-level`, `nft:insert-levels`, `nft:reduce`, `nft:revert`, `nft:to-nfa-update`, `nft:universal?`,
-  `nft:unwind-jumps`, `strings:create-identity`, `strings:create-identity-with-single-symbol-replace`,
+  `intermediate:mintermize`, `intermediate:parse-from-mata`, `nfa:construct`, `nft:construct`,
+  `strings:create-identity`, `strings:create-identity-with-single-symbol-replace`,
   `strings:get-accepted-symbols`, `strings:get-longest-words`, `strings:get-segments`,
   `strings:get-shortest-words`, `strings:get-word-lengths`, `strings:get-words-of-lengths`,
   `strings:language-epsilon?`, `strings:reluctant-nfa`, `strings:replace-reluctant-literal`,
   `strings:replace-reluctant-regex`, `strings:replace-reluctant-single-symbol`.
+  `nft:minimize` is not one of them: the library declares it only under `MATA_NFT_NOT_IMPLEMENTED`.
 - The hints are those the bindings expose: `:algorithm` of `nfa:complement` (`"classical"`, `"brzozowski"`),
   `nfa:minimize` (`"hopcroft"`, `"brzozowski"`) and `nfa:reduce` (`"simulation"`, `"residual"`, with `:type` `"after"`
   or `"with"` and `:direction` `"forward"` or `"backward"`), and `:algorithm` `"antichains"` or `"naive"` of
@@ -424,10 +421,12 @@ language page specifies but this build does not have are listed in the
   library default. `mata nfa --help` and `mata nft --help` list them with their sorts. The parameters this build
   takes are `:use-epsilon` of `nfa:concatenate` and of `nfa:in-language-prefix?`, `:final-condition` (`"and"` or
   `"or"`) and `:first-epsilon` of `nfa:product`, `:first-epsilon` of `nfa:left-quotient` and of
-  `nfa:right-quotient`, `:abstract-symbol` of `nfa:get-one-letter-automaton`, and `:seed` of
-  `nfa:create-random-nfa-tabakov-vardi`. The language has no sort for a real number, so the transition ratio and the
-  final state density of that builder are decimal strings, as in `(nfa:create-random-nfa-tabakov-vardi 4 2 "1"
-"0.5")`.
+  `nfa:right-quotient`, `:abstract-symbol` of `nfa:get-one-letter-automaton`, `:seed` of
+  `nfa:create-random-nfa-tabakov-vardi`, and `:match-prefix` and `:has-epsilon-cycles` of `nft:in-language?`. The
+  last one defaults to `true`, which only allows a transducer that has such a cycle; `false` on one that has it is the
+  error `the transducer has a cycle of epsilon transitions`. The language has no sort for a real number, so the
+  transition ratio and the final state density of that builder are decimal strings, as in
+  `(nfa:create-random-nfa-tabakov-vardi 4 2 "1" "0.5")`.
 - Of the script options, `:alphabet` with `on-the-fly` or `bytes`, `:produce-witnesses`, `:time-operations` and
   `:default` work. `:optimize` and `:trace` are accepted only as `false`; `true` is rejected as
   `option :<name> is not implemented`, and `:loops-and-recursion` is always rejected, so `loop`, `recur` and self-calls

@@ -180,6 +180,16 @@ pub(crate) const OPTIONAL_PARAMETERS: &[OptionalParameter] = &[
 		name: "seed",
 		sort: "Int",
 	},
+	OptionalParameter {
+		operation: "nft:in-language?",
+		name: "match-prefix",
+		sort: "Bool",
+	},
+	OptionalParameter {
+		operation: "nft:in-language?",
+		name: "has-epsilon-cycles",
+		sort: "Bool",
+	},
 ];
 
 /// The optional parameter `name` of `operation`, if it takes one.
@@ -925,6 +935,99 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 		Some(4),
 		"Int,Int,String,String",
 		"Nfa",
+	),
+	op("nft:complement", "nft_complement", 1, Some(1), "Nft", "Nft"),
+	op("nft:complete?", "nft_complete", 1, Some(1), "Nft", "Bool"),
+	op(
+		"nft:concatenate-nth-power",
+		"nft_concat_power",
+		2,
+		Some(2),
+		"Nft,Int",
+		"Nft",
+	),
+	op(
+		"nft:contains-jump-transitions?",
+		"nft_contains_jumps",
+		1,
+		Some(1),
+		"Nft",
+		"Bool",
+	),
+	op(
+		"nft:create-sigma-star-nft",
+		"nft_sigma_star",
+		1,
+		Some(1),
+		"Int",
+		"Nft",
+	),
+	op(
+		"nft:from-nfa-with-levels-advancing",
+		"nft_from_interleaved",
+		2,
+		Some(2),
+		"Nfa,Int",
+		"Nft",
+	),
+	op(
+		"nft:has-epsilon-cycle?",
+		"nft_epsilon_cycle",
+		1,
+		Some(1),
+		"Nft",
+		"Bool",
+	),
+	op(
+		"nft:identical?",
+		"nft_identical",
+		2,
+		Some(2),
+		"Nft,Nft",
+		"Bool",
+	),
+	op(
+		"nft:in-language?",
+		"nft_in_lang",
+		2,
+		Some(2),
+		"Nft,Word",
+		"Bool",
+	),
+	op(
+		"nft:insert-level",
+		"nft_insert_level",
+		2,
+		Some(2),
+		"Nft,Int",
+		"Nft",
+	),
+	op(
+		"nft:insert-levels",
+		"nft_insert_levels",
+		2,
+		Some(2),
+		"Nft,(List Bool)",
+		"Nft",
+	),
+	op("nft:reduce", "nft_reduce", 1, Some(1), "Nft", "Nft"),
+	op("nft:revert", "nft_revert", 1, Some(1), "Nft", "Nft"),
+	op(
+		"nft:to-nfa-update",
+		"nft_to_nfa_update",
+		1,
+		Some(1),
+		"Nft",
+		"Nfa",
+	),
+	op("nft:universal?", "nft_universal", 1, Some(1), "Nft", "Bool"),
+	op(
+		"nft:unwind-jumps",
+		"nft_unwind_jumps",
+		1,
+		Some(1),
+		"Nft",
+		"Nft",
 	),
 ];
 
@@ -2046,7 +2149,7 @@ fn dispatch_nft_predicates(
 	handler: &str,
 	name: &str,
 	arguments: Vec<Value>,
-	_engine: &mut Engine,
+	engine: &mut Engine,
 ) -> Result<Value, Error> {
 	match handler {
 		"nft_lang_empty" => {
@@ -2123,6 +2226,141 @@ fn dispatch_nft_predicates(
 			)?;
 			let nft = Nft::empty_word(levels).map_err(|e| Error::plain(e.to_string()))?;
 			Ok(Value::Nft(Rc::new(nft)))
+		}
+		_ => dispatch_nft_properties(handler, name, arguments, engine),
+	}
+}
+
+/// Serves `nft:complement` through `nft:in-language?`: the alphabet-based transformations, the
+/// constructors of a fixed relation, and the membership and equality predicates.
+fn dispatch_nft_properties(
+	handler: &str,
+	name: &str,
+	arguments: Vec<Value>,
+	engine: &mut Engine,
+) -> Result<Value, Error> {
+	let nft_error = |e: mata::NftError| Error::plain(e.to_string());
+	match handler {
+		"nft_complement" => {
+			let [value] = take(arguments, name)?;
+			let complement = expect_nft(&value)?
+				.complement(&engine.script_alphabet)
+				.map_err(nft_error)?;
+			Ok(Value::Nft(Rc::new(complement)))
+		}
+		"nft_complete" => {
+			let [value] = take(arguments, name)?;
+			let complete = expect_nft(&value)?
+				.is_complete(&engine.script_alphabet)
+				.map_err(nft_error)?;
+			Ok(Value::Bool(complete))
+		}
+		"nft_concat_power" => {
+			let [value, power] = take(arguments, name)?;
+			let power = u32::try_from(as_int(&power)?).map_err(|_| {
+				Error::plain(format!(
+					"nft:concatenate-nth-power needs a power from 0 to {}",
+					u32::MAX
+				))
+			})?;
+			Ok(Value::Nft(Rc::new(expect_nft(&value)?.concat_power(power))))
+		}
+		"nft_contains_jumps" => {
+			let [value] = take(arguments, name)?;
+			Ok(Value::Bool(expect_nft(&value)?.contains_jumps()))
+		}
+		"nft_sigma_star" => {
+			let [levels] = take(arguments, name)?;
+			let levels = length(
+				as_int(&levels)?,
+				"nft:create-sigma-star-nft needs a level count".into(),
+			)?;
+			let nft = Nft::sigma_star(levels).map_err(nft_error)?;
+			Ok(Value::Nft(Rc::new(nft)))
+		}
+		"nft_from_interleaved" => {
+			let [value, levels] = take(arguments, name)?;
+			let nfa = expect_nfa(&value)?;
+			let levels = length(
+				as_int(&levels)?,
+				"nft:from-nfa-with-levels-advancing needs a level count".into(),
+			)?;
+			let nft = Nft::from_interleaved(&nfa, levels).map_err(nft_error)?;
+			Ok(Value::Nft(Rc::new(nft)))
+		}
+		"nft_epsilon_cycle" => {
+			let [value] = take(arguments, name)?;
+			Ok(Value::Bool(expect_nft(&value)?.has_epsilon_cycle()))
+		}
+		"nft_identical" => {
+			let [lhs, rhs] = take(arguments, name)?;
+			Ok(Value::Bool(
+				expect_nft(&lhs)?.is_identical(&*expect_nft(&rhs)?),
+			))
+		}
+		"nft_in_lang" => {
+			let [value, word] = take(arguments, name)?;
+			let word = expect_word(&word)?;
+			// The library defaults: the whole word, and possibly epsilon cycles.
+			let match_prefix = optional::<bool>(engine, "match-prefix").unwrap_or(false);
+			let has_epsilon_cycles = optional::<bool>(engine, "has-epsilon-cycles").unwrap_or(true);
+			let accepted = expect_nft(&value)?
+				.accepts_interleaved(word.as_ref(), match_prefix, has_epsilon_cycles)
+				.map_err(nft_error)?;
+			Ok(Value::Bool(accepted))
+		}
+		_ => dispatch_nft_shape(handler, name, arguments, engine),
+	}
+}
+
+/// Serves `nft:insert-level` through `nft:unwind-jumps`: the transformations of the levels and of
+/// the edges of a transducer.
+fn dispatch_nft_shape(
+	handler: &str,
+	name: &str,
+	arguments: Vec<Value>,
+	engine: &mut Engine,
+) -> Result<Value, Error> {
+	let nft_error = |e: mata::NftError| Error::plain(e.to_string());
+	match handler {
+		"nft_insert_level" => {
+			let [value, level] = take(arguments, name)?;
+			let level = length(as_int(&level)?, "levels must be non-negative".into())?;
+			let inserted = expect_nft(&value)?.insert_level(level).map_err(nft_error)?;
+			Ok(Value::Nft(Rc::new(inserted)))
+		}
+		"nft_insert_levels" => {
+			let [value, mask] = take(arguments, name)?;
+			let mask = as_list(&mask)?
+				.iter()
+				.map(as_bool)
+				.collect::<Result<Vec<bool>, String>>()?;
+			let inserted = expect_nft(&value)?
+				.insert_levels(&mask)
+				.map_err(nft_error)?;
+			Ok(Value::Nft(Rc::new(inserted)))
+		}
+		"nft_reduce" => {
+			let [value] = take(arguments, name)?;
+			Ok(Value::Nft(Rc::new(expect_nft(&value)?.reduce())))
+		}
+		"nft_revert" => {
+			let [value] = take(arguments, name)?;
+			Ok(Value::Nft(Rc::new(expect_nft(&value)?.revert())))
+		}
+		"nft_to_nfa_update" => {
+			let [value] = take(arguments, name)?;
+			Ok(Value::Nfa(Rc::new(expect_nft(&value)?.to_nfa())))
+		}
+		"nft_universal" => {
+			let [value] = take(arguments, name)?;
+			Ok(Value::Bool(
+				expect_nft(&value)?.is_universal(&engine.script_alphabet),
+			))
+		}
+		"nft_unwind_jumps" => {
+			let [value] = take(arguments, name)?;
+			Ok(Value::Nft(Rc::new(expect_nft(&value)?.unwind_jumps())))
 		}
 		_ => Err(Error::plain(format!(
 			"operation '{name}' is not available in the Rust bindings"
