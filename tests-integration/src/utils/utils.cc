@@ -1,7 +1,10 @@
 #include "utils.hh"
+#include "mata/nfa/builder.hh"
 #include "mata/nfa/types.hh"
 #include "mata/parser/inter-aut.hh"
 #include <algorithm>
+#include <iterator>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -42,29 +45,11 @@ const BuildTypeAnnouncement build_type_announcement{};
 int load_automaton(
 	const std::string& filename, Nfa& aut, mata::OnTheFlyAlphabet& alphabet, const bool mintermize_automata
 ) {
-	std::vector<mata::IntermediateAut> inter_auts;
-	TIME_BEGIN(parsing);
-	if (load_intermediate_automaton(filename, inter_auts) != EXIT_SUCCESS) {
-		std::cerr << "Could not load intermediate autotomaton from \'" << filename << "'\n";
-		return EXIT_FAILURE;
-	}
-	TIME_END(parsing);
-	if (reject_unmintermized_bitvector(inter_auts, mintermize_automata)) { return EXIT_FAILURE; }
-	try {
-		if (!has_bitvector_alphabet(inter_auts)) {
-			aut = mata::nfa::builder::construct(inter_auts[0], &alphabet);
-		} else {
-			mata::Mintermization mintermization;
-			TIME_BEGIN(mintermization);
-			mata::IntermediateAut mintermized = mintermization.mintermize(inter_auts[0]);
-			TIME_END(mintermization);
-			aut = mata::nfa::builder::construct(mintermized, &alphabet);
-		}
-		return EXIT_SUCCESS;
-	} catch (const std::exception& ex) {
-		std::cerr << "error: " << ex.what() << "\n";
-		return EXIT_FAILURE;
-	}
+	std::vector<std::string> filenames{filename};
+	std::vector<Nfa> auts;
+	if (load_automata(filenames, auts, alphabet, mintermize_automata) != EXIT_SUCCESS) { return EXIT_FAILURE; }
+	aut = std::move(auts[0]);
+	return EXIT_SUCCESS;
 }
 
 int load_automata(
@@ -73,32 +58,52 @@ int load_automata(
 	mata::OnTheFlyAlphabet& alphabet,
 	const bool mintermize_automata
 ) {
+	// The inputs the fast reader of explicit alphabets reads are constructed right away; the others go through the
+	//  general reader, and those with a bitvector alphabet are mintermized together.
+	std::vector<std::optional<Nfa>> loaded;
 	std::vector<mata::IntermediateAut> inter_auts;
 	TIME_BEGIN(parsing);
-	for (const std::string& filename : filenames) {
-		if (load_intermediate_automaton(filename, inter_auts) != EXIT_SUCCESS) {
-			std::cerr << "Could not load intermediate autotomaton from \'" << filename << "'\n";
-			return EXIT_FAILURE;
+	try {
+		for (const std::string& filename : filenames) {
+			std::ifstream file{filename};
+			if (!file) {
+				std::cerr << "Could not open file \'" << filename << "'\n";
+				return EXIT_FAILURE;
+			}
+			const std::string input{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
+			loaded.push_back(mata::nfa::builder::parse_explicit_from_mata(input, &alphabet, nullptr, true));
+			if (loaded.back().has_value()) { continue; }
+			if (load_intermediate_automaton(filename, inter_auts) != EXIT_SUCCESS) {
+				std::cerr << "Could not load intermediate autotomaton from \'" << filename << "'\n";
+				return EXIT_FAILURE;
+			}
+			if (!inter_auts.back().is_bitvector()) {
+				loaded.back() = mata::nfa::builder::construct(inter_auts.back(), &alphabet);
+				inter_auts.pop_back();
+			}
 		}
+	} catch (const std::exception& ex) {
+		std::cerr << "error: " << ex.what() << "\n";
+		return EXIT_FAILURE;
 	}
 	TIME_END(parsing);
 	if (reject_unmintermized_bitvector(inter_auts, mintermize_automata)) { return EXIT_FAILURE; }
 	try {
-		// Decided for the whole batch, not from `inter_auts[0]`: an explicit-alphabet input may come
-		//  first and a bitvector input after it.
-		if (!has_bitvector_alphabet(inter_auts)) {
-			for (mata::IntermediateAut& inter_aut : inter_auts) {
-				auts.push_back(mata::nfa::builder::construct(inter_aut, &alphabet));
-			}
-		} else {
+		std::vector<mata::IntermediateAut> mintermized;
+		if (!inter_auts.empty()) {
 			mata::Mintermization mintermization;
 			TIME_BEGIN(mintermization);
-			std::vector<mata::IntermediateAut> mintermized = mintermization.mintermize(inter_auts);
+			mintermized = mintermization.mintermize(inter_auts);
 			TIME_END(mintermization);
-			for (mata::IntermediateAut& inter_aut : mintermized) {
+		}
+		auto next_mintermized{mintermized.begin()};
+		for (std::optional<Nfa>& aut : loaded) {
+			if (aut.has_value()) {
+				auts.push_back(std::move(*aut));
+			} else {
 				// Mintermization always rewrites the alphabet to Explicit (see Mintermization::mintermize()).
-				assert(inter_aut.alphabet_type == mata::IntermediateAut::AlphabetType::Explicit);
-				auts.push_back(mata::nfa::builder::construct(inter_aut, &alphabet));
+				assert(next_mintermized->alphabet_type == mata::IntermediateAut::AlphabetType::Explicit);
+				auts.push_back(mata::nfa::builder::construct(*next_mintermized++, &alphabet));
 			}
 		}
 		return EXIT_SUCCESS;

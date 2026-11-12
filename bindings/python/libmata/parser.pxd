@@ -1,8 +1,10 @@
 from libcpp cimport bool
+from libcpp.optional cimport optional
 from libcpp.string cimport string
+from libcpp.unordered_map cimport unordered_map
 from libcpp.vector cimport vector
 
-from libmata.nfa.nfa cimport CNfa
+from libmata.nfa.nfa cimport CNfa, State
 from libmata.alphabets cimport CAlphabet, Symbol
 
 cdef extern from "<iostream>" namespace "std":
@@ -31,7 +33,11 @@ cdef extern from "mata/parser/inter-aut.hh" namespace "mata":
 
 
 cdef extern from "mata/nfa/builder.hh" namespace "mata::nfa::builder":
+    ctypedef unordered_map[string, State] NameStateMap
+
     cdef void construct(CNfa*, CInterAut&, CAlphabet*) except +
+    cdef CNfa parse_from_mata(string, CAlphabet*, NameStateMap*, bool) except +
+    cdef optional[CNfa] parse_explicit_from_mata(string, CAlphabet*, NameStateMap*, bool) except +
 
 cdef extern from "mata/parser/parser.hh" namespace "mata::parser":
     cdef struct CParsedSection "mata::parser::ParsedSection":
