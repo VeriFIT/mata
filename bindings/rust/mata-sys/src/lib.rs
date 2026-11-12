@@ -358,6 +358,9 @@ pub mod ffi {
 /// Mata's epsilon symbol, `u32::MAX`.
 pub const EPSILON: u32 = u32::MAX;
 
+/// The version of the `libmata` this crate links, as its CMake package declares it.
+pub const LIBRARY_VERSION: &str = env!("MATA_LIBRARY_VERSION");
+
 impl std::fmt::Debug for ffi::Automaton {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		f.debug_struct("Automaton")

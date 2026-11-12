@@ -28,6 +28,7 @@ fn main() {
 
 	// Documentation needs no native code.
 	if env::var_os("DOCS_RS").is_some() {
+		println!("cargo::rustc-env=MATA_LIBRARY_VERSION=unknown");
 		return;
 	}
 
@@ -44,6 +45,10 @@ fn main() {
 	let include = prefix.join("include");
 	check_state_bits(&include);
 	check_thread_safe(&include);
+	println!(
+		"cargo::rustc-env=MATA_LIBRARY_VERSION={}",
+		library_version(&lib)
+	);
 
 	println!("cargo::metadata=root={}", prefix.display());
 	println!("cargo::metadata=include={}", include.display());
@@ -203,6 +208,23 @@ fn installed_mata(prefix: PathBuf) -> (PathBuf, PathBuf) {
 		prefix.join("include").display()
 	);
 	(prefix, lib)
+}
+
+/// The version the installed CMake package of Mata declares, or `unknown` when it has no version file.
+fn library_version(lib: &Path) -> String {
+	let file = lib.join("cmake/mata/mataConfigVersion.cmake");
+	println!("cargo::rerun-if-changed={}", file.display());
+	fs::read_to_string(&file)
+		.ok()
+		.and_then(|text| {
+			text.lines().find_map(|line| {
+				line.trim()
+					.strip_prefix("set(PACKAGE_VERSION \"")?
+					.strip_suffix("\")")
+					.map(str::to_owned)
+			})
+		})
+		.unwrap_or_else(|| "unknown".to_owned())
 }
 
 /// Fails unless Mata was configured with 32-bit states (`MATA_STATE_BITS` in `mata/config.hh`).
