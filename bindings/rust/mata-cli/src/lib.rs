@@ -83,6 +83,7 @@ pub(crate) fn display_value(value: &Value, engine: &eval::Engine) -> String {
 			AutomatonKind::Nfa(nfa) => automaton_text(&nfa.display_with(&engine.script_alphabet)),
 			AutomatonKind::Nft(nft) => automaton_text(&nft.display_with(&engine.script_alphabet)),
 		},
+		Value::Intermediate(automaton) => automaton_text(automaton),
 		Value::List(list) => list
 			.iter()
 			.map(|element| display_value(element, engine))

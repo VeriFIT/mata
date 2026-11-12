@@ -809,4 +809,26 @@ bool nft_is_universal(const Nft& nft, const rust::Slice<const Symbol> symbols) {
 
 std::unique_ptr<Nft> nft_unwind_jumps(const Nft& nft) { return boxed(nft.unwind_jumps()); }
 
+// Intermediate automata.
+
+std::unique_ptr<Nft> intermediate_construct_nft(
+	const mata::IntermediateAut& automaton,
+	const rust::Slice<const rust::String> names,
+	const rust::Slice<const Symbol> named_symbols,
+	const Symbol next_symbol,
+	rust::Vec<rust::String>& new_names,
+	rust::Vec<Symbol>& new_symbols
+) {
+	if (!automaton.is_nft()) { throw std::runtime_error("the intermediate automaton is not an NFT"); }
+	if (automaton.is_bitvector()) {
+		throw std::runtime_error("the intermediate automaton has a bit-vector alphabet, which transducers cannot have");
+	}
+	auto alphabet = detail::ParseAlphabet(false, names, named_symbols, next_symbol);
+	auto nft = mata::nft::builder::construct(automaton, alphabet.get());
+	nft.alphabets = nullptr;
+	nft_check_well_formed(nft);
+	alphabet.report_new_names(new_names, new_symbols);
+	return boxed(std::move(nft));
+}
+
 } // namespace mata_sys

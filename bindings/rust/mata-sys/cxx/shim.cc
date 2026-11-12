@@ -4,6 +4,7 @@
 #include <cmath>
 #include <limits>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -12,6 +13,7 @@
 #include "mata-sys/src/lib.rs.h"
 #include "mata/applications/strings.hh"
 #include "mata/nfa/builder.hh"
+#include "mata/parser/parser.hh"
 
 namespace mata_sys {
 
@@ -924,6 +926,64 @@ std::unique_ptr<Nfa> random_tabakov_vardi(
 			has_seed ? std::optional<unsigned int>{seed} : std::nullopt
 		)
 	);
+}
+
+// Intermediate automata.
+
+std::unique_ptr<mata::IntermediateAut> IntermediateAuts::take(const std::size_t index) {
+	if (index >= automata_.size()) { throw std::out_of_range("intermediate automaton index out of range"); }
+	if (taken_[index]) {
+		throw std::runtime_error("intermediate automaton " + std::to_string(index) + " was already taken");
+	}
+	taken_[index] = true;
+	return std::make_unique<mata::IntermediateAut>(std::move(automata_[index]));
+}
+
+std::unique_ptr<IntermediateAuts> intermediate_parse_mata(const rust::Str text) {
+	return std::make_unique<IntermediateAuts>(
+		mata::IntermediateAut::parse_from_mf(mata::parser::parse_mf(std::string(text)))
+	);
+}
+
+std::size_t intermediate_auts_len(const IntermediateAuts& automata) { return automata.size(); }
+
+std::unique_ptr<mata::IntermediateAut> intermediate_auts_take(IntermediateAuts& automata, const std::size_t index) {
+	return automata.take(index);
+}
+
+std::unique_ptr<IntermediateRefs> intermediate_refs_new() { return std::make_unique<IntermediateRefs>(); }
+
+void intermediate_refs_push(IntermediateRefs& refs, const mata::IntermediateAut& automaton) {
+	refs.automata.push_back(&automaton);
+}
+
+std::unique_ptr<IntermediateAuts> intermediate_mintermize(const IntermediateRefs& refs) {
+	return std::make_unique<IntermediateAuts>(detail::mintermize(refs.automata));
+}
+
+std::unique_ptr<Nfa> intermediate_construct_nfa(
+	const mata::IntermediateAut& automaton,
+	const rust::Slice<const rust::String> names,
+	const rust::Slice<const Symbol> named_symbols,
+	const Symbol next_symbol,
+	rust::Vec<rust::String>& new_names,
+	rust::Vec<Symbol>& new_symbols
+) {
+	if (!automaton.is_nfa()) { throw std::runtime_error("the intermediate automaton is not an NFA"); }
+	// construct() would read the formulas of a bit-vector transition as symbol names.
+	if (automaton.is_bitvector()) {
+		throw std::runtime_error("the intermediate automaton has a bit-vector alphabet; mintermize it first");
+	}
+	auto alphabet = detail::ParseAlphabet(false, names, named_symbols, next_symbol);
+	auto nfa = mata::nfa::builder::construct(automaton, alphabet.get());
+	alphabet.report_new_names(new_names, new_symbols);
+	return boxed(std::move(nfa));
+}
+
+rust::String intermediate_print(const mata::IntermediateAut& automaton) {
+	auto stream = std::ostringstream();
+	stream << automaton;
+	return rust::String(stream.str());
 }
 
 } // namespace mata_sys

@@ -10,6 +10,7 @@
 
 #include "mata/automaton.hh"
 #include "mata/nfa/nfa.hh"
+#include "mata/parser/inter-aut.hh"
 #include "mata/utils/generator-support.hh"
 #include "rust/cxx.h"
 
@@ -221,5 +222,44 @@ std::unique_ptr<Nfa> random_tabakov_vardi(
 	bool has_seed,
 	std::uint32_t seed
 );
+
+// Intermediate automata: parsed `.mata` sections that are not constructed yet.
+
+/// Intermediate automata of one parse or one mintermization, taken out one by one with `intermediate_auts_take()`.
+class IntermediateAuts {
+  public:
+	explicit IntermediateAuts(std::vector<mata::IntermediateAut> automata)
+		: automata_(std::move(automata)),
+		  taken_(automata_.size(), false) {}
+
+	std::size_t size() const { return automata_.size(); }
+	std::unique_ptr<mata::IntermediateAut> take(std::size_t index);
+
+  private:
+	std::vector<mata::IntermediateAut> automata_;
+	std::vector<bool> taken_;
+};
+
+/// Borrowed intermediate automata to mintermize together; the caller keeps them alive.
+class IntermediateRefs {
+  public:
+	std::vector<const mata::IntermediateAut*> automata = {};
+};
+
+std::unique_ptr<IntermediateAuts> intermediate_parse_mata(rust::Str text);
+std::size_t intermediate_auts_len(const IntermediateAuts& automata);
+std::unique_ptr<mata::IntermediateAut> intermediate_auts_take(IntermediateAuts& automata, std::size_t index);
+std::unique_ptr<IntermediateRefs> intermediate_refs_new();
+void intermediate_refs_push(IntermediateRefs& refs, const mata::IntermediateAut& automaton);
+std::unique_ptr<IntermediateAuts> intermediate_mintermize(const IntermediateRefs& refs);
+std::unique_ptr<Nfa> intermediate_construct_nfa(
+	const mata::IntermediateAut& automaton,
+	rust::Slice<const rust::String> names,
+	rust::Slice<const Symbol> named_symbols,
+	Symbol next_symbol,
+	rust::Vec<rust::String>& new_names,
+	rust::Vec<Symbol>& new_symbols
+);
+rust::String intermediate_print(const mata::IntermediateAut& automaton);
 
 } // namespace mata_sys

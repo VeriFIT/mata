@@ -305,15 +305,25 @@ impl Alphabet {
 		self.next_symbol().value()
 	}
 
-	/// Records the names that the parser added. Skips names that printing would write as the number
-	/// of a symbol: the shim only mints such names for a numeric token that already names a symbol,
-	/// where the parser has resolved it to that symbol.
+	/// Records the names that the parser added, with the symbols it gave them. Skips names that printing
+	/// would write as the number of a symbol: the shim only mints such a name for a numeric token that
+	/// already names a symbol, where the parser has resolved it to that symbol.
 	pub(crate) fn add_parsed_names(&mut self, names: Vec<String>, symbols: &[u32]) {
+		self.add_names(names, symbols, false);
+	}
+
+	/// Records the names that a construction added, numeric ones included: a mintermized section names
+	/// its minterms `0`, `1`, …, and two constructions over one alphabet must read them as the same
+	/// symbols.
+	pub(crate) fn add_minterm_names(&mut self, names: Vec<String>, symbols: &[u32]) {
+		self.add_names(names, symbols, true);
+	}
+
+	fn add_names(&mut self, names: Vec<String>, symbols: &[u32], keep_numeric: bool) {
 		for (name, &symbol) in names.into_iter().zip(symbols) {
-			if is_numeric(&name) {
-				continue;
+			if keep_numeric || !is_numeric(&name) {
+				self.add_named(name, Symbol::new(symbol));
 			}
-			self.add_named(name, Symbol::new(symbol));
 		}
 	}
 }

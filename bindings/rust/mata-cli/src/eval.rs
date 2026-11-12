@@ -20,6 +20,7 @@ pub(crate) enum Value {
 	Nfa(Rc<Nfa>),
 	Nft(Rc<Nft>),
 	Automaton(Rc<AutomatonKind>),
+	Intermediate(Rc<mata::IntermediateAutomaton>),
 	List(Rc<Vec<Value>>),
 	Alphabet(Rc<mata::Alphabet>),
 	Word(Word),
@@ -1247,6 +1248,9 @@ pub(crate) const WITNESS_OPERATIONS: &[&str] = &[
 	"nfa:included?",
 	"nfa:equivalent?",
 	"nfa:universal?",
+	"automaton:language-empty?",
+	"automaton:included?",
+	"automaton:equivalent?",
 ];
 
 /// Whether `expression` is an application of a witness operation.
@@ -1269,6 +1273,8 @@ fn is_timed(name: &str) -> bool {
 		|| name.starts_with("nft:")
 		|| name.starts_with("alphabet:")
 		|| name.starts_with("strings:")
+		|| name.starts_with("automaton:")
+		|| name.starts_with("intermediate:")
 }
 
 /// Why `name` cannot be defined by a script, or `None` when it can. Every namespaced name is reserved,
@@ -1414,6 +1420,7 @@ pub(crate) fn value_sort(value: &Value) -> String {
 		Value::Nfa(_) => "Nfa".into(),
 		Value::Nft(_) => "Nft".into(),
 		Value::Automaton(_) => "Automaton".into(),
+		Value::Intermediate(_) => "IntermediateAutomaton".into(),
 		Value::List(list) => {
 			let mut sorts = list.iter().map(value_sort);
 			let element = match sorts.next() {

@@ -7,7 +7,7 @@ use mata::{
 	CheckAlgorithm, Complementation, Direction, Minimization, ProductFinalCondition, Reduction,
 	ResidualConstruction, UnmetRequirement,
 };
-use mata::{Nfa, Symbol, Word, nft::Nft};
+use mata::{IntermediateAutomaton, Nfa, Symbol, Word, nft::Nft};
 
 use crate::Error;
 use crate::eval::Engine;
@@ -127,6 +127,16 @@ pub(crate) const HINTS: &[Hint] = &[
 		operation: "strings:replace-reluctant-single-symbol",
 		name: "replace-mode",
 		values: REPLACE_MODES,
+	},
+	Hint {
+		operation: "automaton:included?",
+		name: "algorithm",
+		values: CHECK_ALGORITHMS,
+	},
+	Hint {
+		operation: "automaton:equivalent?",
+		name: "algorithm",
+		values: CHECK_ALGORITHMS,
 	},
 ];
 
@@ -1170,6 +1180,167 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 		3,
 		Some(3),
 		"Symbol,Symbol|Word,Alphabet",
+		"Nft",
+	),
+	// The `automaton:` operations call the `nfa:` or `nft:` operation of the same name.
+	op(
+		"automaton:load",
+		"automaton_load",
+		1,
+		Some(1),
+		"String",
+		"Automaton",
+	),
+	op(
+		"automaton:parse",
+		"automaton_parse",
+		1,
+		Some(1),
+		"String",
+		"Automaton",
+	),
+	op(
+		"automaton:print-to-mata",
+		"automaton",
+		1,
+		Some(1),
+		"Automaton",
+		"String",
+	),
+	op(
+		"automaton:print-to-dot",
+		"automaton",
+		1,
+		Some(1),
+		"Automaton",
+		"String",
+	),
+	op(
+		"automaton:number-of-states",
+		"automaton",
+		1,
+		Some(1),
+		"Automaton",
+		"Int",
+	),
+	op(
+		"automaton:number-of-transitions",
+		"automaton",
+		1,
+		Some(1),
+		"Automaton",
+		"Int",
+	),
+	op(
+		"automaton:union-nondeterministic",
+		"automaton",
+		2,
+		None,
+		"Automaton,Automaton*",
+		"Automaton",
+	),
+	op(
+		"automaton:intersection",
+		"automaton",
+		2,
+		None,
+		"Automaton,Automaton*",
+		"Automaton",
+	),
+	op(
+		"automaton:concatenate",
+		"automaton",
+		2,
+		None,
+		"Automaton,Automaton*",
+		"Automaton",
+	),
+	op(
+		"automaton:determinize",
+		"automaton",
+		1,
+		Some(1),
+		"Automaton",
+		"Automaton",
+	),
+	op(
+		"automaton:remove-epsilon",
+		"automaton",
+		1,
+		Some(1),
+		"Automaton",
+		"Automaton",
+	),
+	op(
+		"automaton:trim",
+		"automaton",
+		1,
+		Some(1),
+		"Automaton",
+		"Automaton",
+	),
+	op(
+		"automaton:language-empty?",
+		"automaton",
+		1,
+		Some(1),
+		"Automaton",
+		"Bool",
+	),
+	op(
+		"automaton:included?",
+		"automaton",
+		2,
+		Some(2),
+		"Automaton,Automaton",
+		"Bool",
+	),
+	op(
+		"automaton:equivalent?",
+		"automaton",
+		2,
+		Some(2),
+		"Automaton,Automaton",
+		"Bool",
+	),
+	op(
+		"automaton:deterministic?",
+		"automaton",
+		1,
+		Some(1),
+		"Automaton",
+		"Bool",
+	),
+	op(
+		"intermediate:parse-from-mata",
+		"intermediate_parse",
+		1,
+		Some(1),
+		"String",
+		"(List IntermediateAutomaton)",
+	),
+	op(
+		"intermediate:mintermize",
+		"intermediate_mintermize",
+		1,
+		Some(1),
+		"IntermediateAutomaton|(List IntermediateAutomaton)",
+		"",
+	),
+	op(
+		"nfa:construct",
+		"nfa_construct",
+		1,
+		Some(1),
+		"IntermediateAutomaton",
+		"Nfa",
+	),
+	op(
+		"nft:construct",
+		"nft_construct",
+		1,
+		Some(1),
+		"IntermediateAutomaton",
 		"Nft",
 	),
 ];
@@ -2670,6 +2841,90 @@ fn dispatch_strings_replace(
 				mode(),
 			))
 		}
+		_ => dispatch_automaton(handler, name, arguments, engine),
+	}
+}
+
+/// Serves the `automaton:` operations, which call the `nfa:` or `nft:` operation of the same name by
+/// the kind of their operands, and the operations on intermediate automata: `intermediate:` and
+/// `nfa:construct` / `nft:construct`.
+fn dispatch_automaton(
+	handler: &str,
+	name: &str,
+	arguments: Vec<Value>,
+	engine: &mut Engine,
+) -> Result<Value, Error> {
+	match handler {
+		"automaton" => {
+			let rest = name
+				.strip_prefix("automaton:")
+				.expect("an automaton: operation");
+			let target = format!("{}:{rest}", automaton_namespace(name, &arguments)?);
+			// A default set for the `automaton:` operation does not apply to a kind without the hint.
+			let defaults = engine.defaults_of(name);
+			let mut hints = Vec::new();
+			for (key, value) in &engine.hints {
+				match check_hint(&target, key, value) {
+					Ok(()) => hints.push((key.clone(), value.clone())),
+					Err(_) if defaults.contains(&(key.clone(), value.clone())) => {}
+					Err(message) => return Err(Error::plain(message)),
+				}
+			}
+			Ok(match call(&target, arguments, &hints, engine)? {
+				Value::Nfa(nfa) => Value::Automaton(Rc::new(AutomatonKind::Nfa(nfa))),
+				Value::Nft(nft) => Value::Automaton(Rc::new(AutomatonKind::Nft(nft))),
+				other => other,
+			})
+		}
+		"automaton_load" => {
+			let [path] = take(arguments, name)?;
+			let path = as_string(&path).map_err(Error::plain)?;
+			engine.load_file(&path, "automaton")
+		}
+		"automaton_parse" => {
+			let [text] = take(arguments, name)?;
+			let text = as_string(&text).map_err(Error::plain)?;
+			engine.parse_text(&text, "automaton")
+		}
+		"intermediate_parse" => {
+			let [text] = take(arguments, name)?;
+			let text = as_string(&text).map_err(Error::plain)?;
+			let parsed = IntermediateAutomaton::parse_mata_all(&text)
+				.map_err(|e| Error::plain(e.to_string()))?;
+			Ok(intermediate_list(parsed))
+		}
+		"intermediate_mintermize" => {
+			let [value] = take(arguments, name)?;
+			if let Value::List(items) = &value {
+				let automata = items
+					.iter()
+					.map(intermediate_of)
+					.collect::<Result<Vec<_>, _>>()?;
+				let mintermized = IntermediateAutomaton::mintermize(&automata)
+					.map_err(|e| Error::plain(e.to_string()))?;
+				return Ok(intermediate_list(mintermized));
+			}
+			let mintermized = IntermediateAutomaton::mintermize(&[intermediate_of(&value)?])
+				.map_err(|e| Error::plain(e.to_string()))?
+				.into_iter()
+				.next()
+				.expect("one mintermized automaton per input");
+			Ok(Value::Intermediate(Rc::new(mintermized)))
+		}
+		"nfa_construct" => {
+			let [value] = take(arguments, name)?;
+			let nfa = intermediate_of(&value)?
+				.construct_nfa(&mut engine.script_alphabet)
+				.map_err(|e| Error::plain(e.to_string()))?;
+			Ok(Value::Nfa(Rc::new(nfa)))
+		}
+		"nft_construct" => {
+			let [value] = take(arguments, name)?;
+			let nft = intermediate_of(&value)?
+				.construct_nft(&mut engine.script_alphabet)
+				.map_err(|e| Error::plain(e.to_string()))?;
+			Ok(Value::Nft(Rc::new(nft)))
+		}
 		_ => Err(Error::plain(format!(
 			"operation '{name}' is not available in the Rust bindings"
 		))),
@@ -2705,6 +2960,49 @@ fn symbol_or_word(value: &Value) -> Result<Word, String> {
 	match value {
 		Value::Symbol(symbol) => Ok(vec![*symbol]),
 		other => expect_word(other),
+	}
+}
+
+/// The namespace of the operation that `automaton:` operation `name` calls: `nfa` or `nft`, as its
+/// automaton operands are, which must all be of one kind.
+fn automaton_namespace(name: &str, arguments: &[Value]) -> Result<&'static str, Error> {
+	let mut namespace = None;
+	for argument in arguments {
+		let kind = match argument {
+			Value::Nfa(_) => "nfa",
+			Value::Nft(_) => "nft",
+			Value::Automaton(automaton) => match **automaton {
+				AutomatonKind::Nfa(_) => "nfa",
+				AutomatonKind::Nft(_) => "nft",
+			},
+			_ => continue,
+		};
+		if namespace.is_some_and(|known| known != kind) {
+			return Err(Error::plain(format!(
+				"'{name}' got an Nfa and an Nft; convert one with nft:from-nfa-with-levels-zero or nft:to-nfa"
+			)));
+		}
+		namespace = Some(kind);
+	}
+	namespace.ok_or_else(|| Error::plain(format!("'{name}' needs an Nfa or an Nft operand")))
+}
+
+fn intermediate_list(automata: Vec<IntermediateAutomaton>) -> Value {
+	Value::List(Rc::new(
+		automata
+			.into_iter()
+			.map(|automaton| Value::Intermediate(Rc::new(automaton)))
+			.collect(),
+	))
+}
+
+fn intermediate_of(value: &Value) -> Result<&IntermediateAutomaton, String> {
+	match value {
+		Value::Intermediate(automaton) => Ok(automaton.as_ref()),
+		_ => Err(format!(
+			"expected an IntermediateAutomaton, found {}",
+			crate::eval::value_sort(value)
+		)),
 	}
 }
 

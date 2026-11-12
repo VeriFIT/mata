@@ -439,6 +439,49 @@ pub mod ffi {
 			has_seed: bool,
 			seed: u32,
 		) -> Result<UniquePtr<Nfa>>;
+
+		// Intermediate automata: parsed `.mata` sections that are not constructed yet.
+
+		/// `mata::IntermediateAut`.
+		#[namespace = "mata"]
+		type IntermediateAut;
+		/// The intermediate automata of one parse or one mintermization.
+		type IntermediateAuts;
+		/// Intermediate automata borrowed for `'a`, to mintermize together.
+		type IntermediateRefs<'a>;
+
+		/// Mata's `parse_mf` followed by `IntermediateAut::parse_from_mf`: every section of a `.mata`
+		/// text, bit-vector sections left as they are.
+		fn intermediate_parse_mata(text: &str) -> Result<UniquePtr<IntermediateAuts>>;
+		/// The number of intermediate automata.
+		fn intermediate_auts_len(automata: &IntermediateAuts) -> usize;
+		/// Moves out the intermediate automaton at `index`; taking one twice is an error.
+		fn intermediate_auts_take(
+			automata: Pin<&mut IntermediateAuts>,
+			index: usize,
+		) -> Result<UniquePtr<IntermediateAut>>;
+		/// An empty list of borrowed intermediate automata.
+		fn intermediate_refs_new<'a>() -> UniquePtr<IntermediateRefs<'a>>;
+		/// Appends `automaton`.
+		fn intermediate_refs_push<'a>(
+			refs: Pin<&mut IntermediateRefs<'a>>,
+			automaton: &'a IntermediateAut,
+		);
+		/// `Mintermization::mintermize` of the automata of `refs` together, so that they share their
+		/// minterms. Throws unless every one is an NFA or AFA with a bit-vector alphabet.
+		fn intermediate_mintermize(refs: &IntermediateRefs) -> Result<UniquePtr<IntermediateAuts>>;
+		/// `nfa::builder::construct` of an explicit NFA section, with symbol names as in
+		/// [`parse_mata`].
+		fn intermediate_construct_nfa(
+			automaton: &IntermediateAut,
+			names: &[String],
+			named_symbols: &[u32],
+			next_symbol: u32,
+			new_names: &mut Vec<String>,
+			new_symbols: &mut Vec<u32>,
+		) -> Result<UniquePtr<Nfa>>;
+		/// Mata's `operator<<` of an intermediate automaton.
+		fn intermediate_print(automaton: &IntermediateAut) -> Result<String>;
 	}
 }
 
@@ -478,5 +521,25 @@ impl std::fmt::Debug for ffi::ParsedNfas {
 impl std::fmt::Debug for ffi::WordStream {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		f.debug_struct("WordStream").finish_non_exhaustive()
+	}
+}
+
+impl std::fmt::Debug for ffi::IntermediateAut {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("IntermediateAut").finish_non_exhaustive()
+	}
+}
+
+impl std::fmt::Debug for ffi::IntermediateAuts {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("IntermediateAuts")
+			.field("len", &ffi::intermediate_auts_len(self))
+			.finish()
+	}
+}
+
+impl std::fmt::Debug for ffi::IntermediateRefs<'_> {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("IntermediateRefs").finish_non_exhaustive()
 	}
 }

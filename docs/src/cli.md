@@ -405,14 +405,24 @@ language page specifies but this build does not have are listed in the
 - Every operation of the catalogue records the language version that added it. A script sees the operations of the
   version its header declares, and the names of all of them are reserved, so an operation added later can never clash
   with a name a script defined.
-- The interpreter implements 142 operations: the portable core of the language, the script forms that a direct command
-  needs, and the NFA, NFT and string-solving operations `bindings/rust/mata` covers. An operation outside that table is
-  rejected by name and never approximated: a script reports `unknown name 'automaton:load'` and a direct command
-  reports `unknown operation 'automaton:load'`, both exiting `2`. These 9 operations of the
-  [script language](script-language) page are absent and need new `mata-sys` bridge functions:
-  `automaton:determinize`, `automaton:included?`, `automaton:intersection`, `automaton:load`, `automaton:parse`,
-  `intermediate:mintermize`, `intermediate:parse-from-mata`, `nfa:construct`, `nft:construct`.
-  `nft:minimize` is not one of them: the library declares it only under `MATA_NFT_NOT_IMPLEMENTED`.
+- The interpreter implements 162 operations: the portable core of the language, the script forms that a direct command
+  needs, and the NFA, NFT, string-solving, automaton and intermediate-automaton operations `bindings/rust/mata` covers,
+  so every operation of the [script language](script-language) page runs. An operation outside that table is rejected
+  by name and never approximated: a script reports `unknown name 'nft:minimize'` and a direct command reports
+  `unknown operation 'nft:minimize'`, both exiting `2`. `nft:minimize` is the one operation name of the page that is
+  rejected: the library declares it only under `MATA_NFT_NOT_IMPLEMENTED`.
+- `automaton:` operations are the names that exist under both `nfa:` and `nft:`, and the kind of their automaton
+  operands picks one: `(automaton:determinize a)` is `nfa:determinize` for an NFA and `nft:determinize` for a
+  transducer, and the result is an automaton of that kind. The operands must be of one kind: a call that gets both
+  reports `'automaton:intersection' got an Nfa and an Nft; convert one with nft:from-nfa-with-levels-zero or nft:to-nfa`,
+  and a call with no automaton operand reports `'automaton:determinize' needs an Nfa or an Nft operand`. A hint the
+  `nfa:` operation of that name does not take is an error, as for the `nfa:` name itself.
+- The load-in-separate-steps path is served whole: `intermediate:parse-from-mata` returns the intermediate automata of
+  the sections of a `.mata` text, `intermediate:mintermize` returns the mintermized automata of one intermediate
+  automaton or of a list of them (mintermized together when given together), and `nfa:construct` / `nft:construct`
+  build the automaton of an intermediate one over the script alphabet, as
+  {ref}`loading <script-loading>` does. Two automata mintermized together therefore intersect as the
+  predicates they came from: the constructed automata read `0` and `1` in the alphabet of the run.
 - The hints are those the bindings expose: `:algorithm` of `nfa:complement` (`"classical"`, `"brzozowski"`),
   `nfa:minimize` (`"hopcroft"`, `"brzozowski"`) and `nfa:reduce` (`"simulation"`, `"residual"`, with `:type` `"after"`
   or `"with"` and `:direction` `"forward"` or `"backward"`), and `:algorithm` `"antichains"` or `"naive"` of

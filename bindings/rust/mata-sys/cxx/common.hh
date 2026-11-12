@@ -93,6 +93,9 @@ class NameTable final : public mata::Alphabet {
 	std::unordered_map<std::string, Symbol> by_name_ = {};
 };
 
+/// Mata's `Mintermization::mintermize()` of `automata` together, one thread at a time.
+std::vector<mata::IntermediateAut> mintermize(const std::vector<const mata::IntermediateAut*>& automata);
+
 /// Parses the automaton sections of a `.mata` text, mintermizing the bit-vector sections together.
 std::vector<mata::IntermediateAut> parse_sections(rust::Str text);
 

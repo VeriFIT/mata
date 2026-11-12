@@ -201,7 +201,7 @@ pub(crate) const FEATURES: &[Feature] = &[
 	},
 	Feature {
 		name: "automaton",
-		implemented: false,
+		implemented: true,
 	},
 	Feature {
 		name: "strings",
@@ -209,7 +209,7 @@ pub(crate) const FEATURES: &[Feature] = &[
 	},
 	Feature {
 		name: "intermediate",
-		implemented: false,
+		implemented: true,
 	},
 ];
 

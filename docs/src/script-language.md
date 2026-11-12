@@ -427,6 +427,8 @@ In `nfa:literal` and `nft:literal`, states and symbols are names, as in the [`.m
 are not evaluated. `epsilon` in the symbol position is an ε-transition. `:states` of `nft:literal` gives the level of
 each state that is not on level 0.
 
+(script-loading)=
+
 ### What loading does
 
 `nfa:load`, `nft:load` and `automaton:load` are the one place where a script operation is more than one library call.

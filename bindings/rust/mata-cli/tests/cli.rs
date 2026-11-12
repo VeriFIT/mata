@@ -2365,6 +2365,84 @@ fn time_operations_records_the_strings_calls() {
 }
 
 #[test]
+fn automaton_operations_call_the_operation_of_the_operand_kind() {
+	let workspace = Workspace::new("automaton-namespace");
+	let nfa = workspace.file("a.mata", NFA);
+	let nft = workspace.file("t.mata", NFT);
+	let script = "(declare-input a Nfa)\n(declare-input t Nft)\n\
+	              (print (automaton:deterministic? (automaton:determinize a)))\n\
+	              (print (automaton:number-of-states t))\n\
+	              (print (automaton:number-of-transitions t))";
+	let output = run_script(script, true, &[&nfa, &nft]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "true\n2\n2\n");
+
+	let mixed = run_script(
+		"(declare-input a Nfa)\n(declare-input t Nft)\n(print (automaton:intersection a t))",
+		true,
+		&[&nfa, &nft],
+	);
+	assert_eq!(status(&mixed), 2, "{}", stdout(&mixed));
+	assert!(
+		stderr(&mixed).contains(
+			"'automaton:intersection' got an Nfa and an Nft; convert one with \
+			 nft:from-nfa-with-levels-zero or nft:to-nfa"
+		),
+		"{}",
+		stderr(&mixed)
+	);
+}
+
+#[test]
+fn intermediate_automata_construct_into_their_minterms() {
+	let script = format!(
+		"(define a (list:nth (intermediate:parse-from-mata \"{BITS_A}\") 0))\n\
+		 (define b (list:nth (intermediate:parse-from-mata \"{BITS_B}\") 0))\n\
+		 (define both (intermediate:mintermize (list a b)))\n\
+		 (print (nfa:construct (list:nth both 0)))\n\
+		 (print (nfa:construct (list:nth both 1)))\n\
+		 (check (nfa:intersection-empty? (nfa:construct (list:nth both 0)) \
+		 (nfa:construct (list:nth both 1))))"
+	);
+	let output = run_script(&script, true, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	let automaton = |symbol: char| {
+		format!("@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 {symbol} q1\n")
+	};
+	assert_eq!(
+		stdout(&output),
+		format!("{}{}true\n", automaton('0'), automaton('1'))
+	);
+}
+
+#[test]
+fn time_operations_records_the_automaton_and_intermediate_calls() {
+	let script = format!(
+		"(set-option :time-operations true)\n\
+		 (print (automaton:number-of-states (nfa:create-from-regex \"a\")))\n\
+		 (define one (list:nth (intermediate:parse-from-mata \"{NFA}\") 0))\n\
+		 (print (nfa:construct one))"
+	);
+	let output = run_script(&script, true, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	let text = stdout(&output);
+	let labels: Vec<&str> = text
+		.lines()
+		.filter_map(|line| line.split_once(": "))
+		.map(|(label, _)| label)
+		.collect();
+	assert_eq!(
+		labels,
+		[
+			"nfa:create-from-regex",
+			"automaton:number-of-states",
+			"intermediate:parse-from-mata",
+			"nfa:construct"
+		]
+	);
+}
+
+#[test]
 fn strings_direct_commands_read_an_automaton_from_a_file() {
 	let workspace = Workspace::new("strings-direct");
 	let nfa = workspace.file("nfa.mata", NFA);

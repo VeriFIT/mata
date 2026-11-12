@@ -288,6 +288,24 @@ pub mod ffi {
 		fn nft_is_universal(nft: &Nft, symbols: &[u32]) -> Result<bool>;
 		/// Mata's `Nft::unwind_jumps` with its defaults.
 		fn nft_unwind_jumps(nft: &Nft) -> Result<UniquePtr<Nft>>;
+
+		// Intermediate automata.
+
+		/// `mata::IntermediateAut`, from the main bridge.
+		#[namespace = "mata"]
+		type IntermediateAut = crate::ffi::IntermediateAut;
+
+		/// `nft::builder::construct` of an explicit NFT section, with symbol names as in
+		/// `crate::ffi::parse_mata`. Mata reads no `%Levels` there: every state is on level 0 of a
+		/// two-level transducer.
+		fn intermediate_construct_nft(
+			automaton: &IntermediateAut,
+			names: &[String],
+			named_symbols: &[u32],
+			next_symbol: u32,
+			new_names: &mut Vec<String>,
+			new_symbols: &mut Vec<u32>,
+		) -> Result<UniquePtr<Nft>>;
 	}
 }
 

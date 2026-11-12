@@ -38,6 +38,14 @@ SymbolSet NameTable::get_alphabet_symbols() const {
 	return SymbolSet(std::move(symbols));
 }
 
+std::vector<mata::IntermediateAut> mintermize(const std::vector<const mata::IntermediateAut*>& automata) {
+	// CUDD swaps a process-wide out-of-memory handler, so one thread at a time.
+	static auto cudd_mutex = std::mutex();
+	const auto cudd_lock = std::lock_guard(cudd_mutex);
+	auto mintermization = mata::Mintermization();
+	return mintermization.mintermize(automata);
+}
+
 std::vector<mata::IntermediateAut> parse_sections(const rust::Str text) {
 	auto sections = mata::IntermediateAut::parse_from_mf(mata::parser::parse_mf(std::string(text)));
 
@@ -46,11 +54,7 @@ std::vector<mata::IntermediateAut> parse_sections(const rust::Str text) {
 		if (section.is_bitvector()) { bitvector_sections.push_back(&section); }
 	}
 	if (!bitvector_sections.empty()) {
-		// CUDD swaps a process-wide out-of-memory handler, so one thread at a time.
-		static auto cudd_mutex = std::mutex();
-		const auto cudd_lock = std::lock_guard(cudd_mutex);
-		auto mintermization = mata::Mintermization();
-		auto mintermized = mintermization.mintermize(bitvector_sections);
+		auto mintermized = mintermize(bitvector_sections);
 		auto next_mintermized = mintermized.begin();
 		for (auto& section : sections) {
 			if (section.is_bitvector()) { section = std::move(*next_mintermized++); }

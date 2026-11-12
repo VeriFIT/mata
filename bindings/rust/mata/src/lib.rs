@@ -3,6 +3,7 @@
 
 pub mod alphabet;
 mod error;
+mod intermediate;
 mod limits;
 pub mod nfa;
 pub mod nft;
@@ -18,6 +19,7 @@ pub use error::{
 	AlphabetError, Error, InvalidAutomaton, LimitExceeded, NftError, NoSuchState, ParseError,
 	RegexError, ReplaceError, UnmetRequirement,
 };
+pub use intermediate::IntermediateAutomaton;
 pub use limits::Limits;
 pub use nfa::Nfa;
 pub use options::{

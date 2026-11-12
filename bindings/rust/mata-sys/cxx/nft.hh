@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "mata/nft/nft.hh"
+#include "mata/parser/inter-aut.hh"
 #include "rust/cxx.h"
 
 namespace mata_sys {
@@ -167,5 +168,15 @@ std::unique_ptr<Nft> nft_reduce(const Nft& nft);
 std::unique_ptr<Nft> nft_revert(const Nft& nft);
 bool nft_is_universal(const Nft& nft, rust::Slice<const mata::Symbol> symbols);
 std::unique_ptr<Nft> nft_unwind_jumps(const Nft& nft);
+
+// Intermediate automata.
+std::unique_ptr<Nft> intermediate_construct_nft(
+	const mata::IntermediateAut& automaton,
+	rust::Slice<const rust::String> names,
+	rust::Slice<const mata::Symbol> named_symbols,
+	mata::Symbol next_symbol,
+	rust::Vec<rust::String>& new_names,
+	rust::Vec<mata::Symbol>& new_symbols
+);
 
 } // namespace mata_sys
