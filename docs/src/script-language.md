@@ -19,22 +19,34 @@ results, and interactive sessions, including the playground on the website.
 
 ## A first example
 
-The script below is the `email-filter` benchmark: it intersects the first four input automata and checks whether the
-intersection is included in the fifth one.
+The script below is the `email-filter` benchmark: it intersects the first four input automata and checks, once with
+each inclusion algorithm, whether the intersection is included in the fifth one.
 
 ```scheme
+#!/usr/bin/env -S mata script run
+(mata-script "0.1.0")
+(set-info :name "email-filter")
 (declare-inputs automata (List Nfa))
 
 (define filters (list:reduce nfa:intersection (list:take automata 4)))
-(check (time "inclusion" (nfa:included? filters (list:nth automata 4))))
+(define (included-with algorithm)
+  (time (concat algorithm "-time")
+    (nfa:included? filters (list:nth automata 4) :algorithm algorithm)))
+(check "naive" (included-with "naive"))
+(check "antichains" (included-with "antichains"))
 ```
 
-Run on five `.mata` files, it prints one timing record and the verdict, for example:
+Run on five `.mata` files, it prints a timing record and a verdict for each algorithm, for example:
 
 ```text
-inclusion: 0.0123
-true
+naive-time: 0.048100
+naive: true
+antichains-time: 0.001200
+antichains: true
 ```
+
+Every record of a run has its own label, so a program that reads the records, such as `pycobench`, can key them by
+label.
 
 ## Design principles
 
@@ -50,18 +62,22 @@ true
 4. **Operation names are the names of the library.** A name is the C++ name in kebab-case with abbreviations written
    out, so the API reference documents the script operations too.
 5. **Scripts are checked before they run.** Everything that can be decided without loading an input is decided first,
-   so a misspelled name is not reported after an hour of determinization.
+   so a misspelled name is not reported after an hour of determinization. `mata script run` checks the whole script
+   before its first form runs.
 6. **Functions are ordinary values.** A function can be defined inside another function, passed as an argument,
    returned as a result and stored in a list; see [Functions](#functions).
 7. **Loops and recursion are opt-in.** They are off unless the script turns them on, and an interpreter may leave them
    out; see [Loops and recursion](#loops-and-recursion).
 8. **Evaluation is sequential.** Nothing is evaluated in parallel.
+9. **A script names its language version.** A `mata-script` header declares the version a script is written for, so
+   a later version can change the language without changing what an existing script means; see
+   [Versions](#versions).
 
 ## Lexical structure
 
 | Token           | Form                                                                   | Examples                     |
 | --------------- | ---------------------------------------------------------------------- | ---------------------------- |
-| Comment         | `;` to the end of the line                                             | `; intersect the filters`    |
+| Comment         | `;` to the end of the line; a `#!` first line is skipped too           | `; intersect the filters`    |
 | Name            | Letters, digits and `- _ ? ! * + / < = > .`, not starting with a digit | `filters`, `list:take`       |
 | Namespaced name | `namespace:name`                                                       | `nfa:intersection`           |
 | Keyword         | `:name`                                                                | `:algorithm`                 |
@@ -70,12 +86,15 @@ true
 | String          | Between `"`; the only escape is `""` for one `"`; may span lines       | `"a(b\|c)*"`, `"say ""hi"""` |
 | Constant        | `true`, `false`, `none`                                                |                              |
 
-Backslash has no meaning in a string, so regular expressions and `.mata` text can be written without doubling it.
+Backslash has no meaning in a string, so regular expressions and `.mata` text can be written without doubling it. A
+namespaced name always names an operation: a script cannot define one, so an operation added to a later version never
+clashes with a name a script chose.
 
 ## Grammar
 
 ```ebnf
-script      = { form } ;
+script      = [ shebang ] [ header ] { form } ;
+header      = "(" "mata-script" string { ":requires" "(" { name } ")" | ":profile" name } ")" ;
 form        = definition | declaration | directive | expression ;
 
 definition  = "(" "define" name [ sort ] expression ")"
@@ -83,9 +102,9 @@ definition  = "(" "define" name [ sort ] expression ")"
 body        = { definition } expression { expression } ;
 parameter   = name | "(" name sort ")" ;
 declaration = "(" "declare-input" name sort ")"
-            | "(" "declare-inputs" name sort ")" ;
-directive   = "(" "set-option" keyword expression ")" | "(" "get-option" keyword ")"
-            | "(" "set-info" keyword expression ")"   | "(" "get-info" keyword ")"
+            | "(" "declare-inputs" name sort ")"
+            | "(" "declare-param" name sort [ expression ] ")" ;
+directive   = "(" "set-option" keyword expression ")" | "(" "set-info" keyword expression ")"
             | "(" "push" ")" | "(" "pop" ")" | "(" "reset" ")" | "(" "exit" ")" ;
 
 expression  = constant | integer | string | name | input-reference
@@ -102,15 +121,17 @@ expression  = constant | integer | string | name | input-reference
             | "(" "as" expression sort ")"
             | "(" "time" expression expression { expression } ")"
             | "(" "witness" expression ")"
+            | "(" ( "get-option" | "get-info" ) keyword ")"
             | "(" ( "nfa:literal" | "nft:literal" ) { keyword literal-data } ")" ;
 step        = name | "(" expression { expression } { keyword expression } ")" ;
 sort        = name | "(" name { sort } ")" ;
 literal-data = name | integer | "(" { literal-data } ")" ;
 ```
 
-Declarations and directives are allowed only at the top level. A definition is allowed at the top level and at the
-start of a body, where it is local to that body. Everything else is an expression and can be nested. `loop` and
-`recur` need the option described in [Loops and recursion](#loops-and-recursion).
+The header, when present, is the first form. Declarations and directives are allowed only at the top level. A
+definition is allowed at the top level and at the start of a body, where it is local to that body. Everything else is
+an expression and can be nested; `get-option` and `get-info` are expressions, so `(print (get-option :alphabet))`
+works. `loop` and `recur` need the option described in [Loops and recursion](#loops-and-recursion).
 
 ## Values and sorts
 
@@ -133,8 +154,9 @@ start of a body, where it is local to that body. Everything else is an expressio
 
 Checking is static where the sorts are known and dynamic where they are not.
 
-- **Before the script runs:** syntax, unknown names, unknown keywords, the number of arguments in a call of a named
-  operation or function, and the number of declared inputs against the inputs given.
+- **Before the script runs:** the language version, syntax, unknown names, unknown keywords and hints, the number of
+  arguments in a call of a named operation or function, a name that is reserved, and the declared inputs and
+  parameters against the ones given.
 - **Before the script runs, where sorts are known:** every operation in the `nfa:` and `nft:` namespaces has fixed
   sorts, so `(nfa:determinize t)` with `t` declared as `Nft` is rejected without running anything.
 - **When the script runs:** the kind of a loaded file, operations in the `automaton:` namespace, function parameters
@@ -330,7 +352,7 @@ The checker is conservative, so a script without the guarantee may still termina
 
 ## Inputs
 
-A script gets its automata from four sources.
+A script gets its automata from four sources, and its other values from parameters.
 
 **Inputs given on the command line** are paths. `$1`, `$2`, … are the positional inputs, `inputs` is the list of all
 of them, and `$name` is the input given under that name. All of them are strings; nothing is loaded until the script
@@ -350,15 +372,32 @@ asks:
 (declare-inputs rest (List Nfa))
 ```
 
-- Each `declare-input` takes the input given under its name, or else the next positional input. `declare-inputs`
-  takes all the positional inputs that are left and must come last.
-- Declarations must come before every other form except `set-option` and `set-info`.
-- All declared inputs are loaded together, when the first other form is reached. A file whose kind does not match the
-  declared sort is an error at that point. Declaring an input as `Automaton` accepts either kind.
-- The loading done by declarations is never part of a [timing record](#timing).
+- Each `declare-input` takes the input given under its name, or else the next positional input. A file with several
+  automata gives one automaton to each `declare-input` in turn. `declare-inputs` takes all the positional inputs that
+  are left, every automaton of every file, and must come last.
+- Declarations must come before every other form except `set-option` and `set-info`, which run in order with them, so
+  `(set-option :alphabet "bytes")` before a declaration applies to the automaton it loads.
+- All declared inputs are loaded before the first other form runs. A file whose kind does not match the declared sort
+  is an error at that point. Declaring an input as `Automaton` accepts either kind.
+- When a script declares inputs, every input given on the command line must be taken by a declaration; an input left
+  over is an error, so a mistyped command line is not ignored.
+- The loading done by declarations is part of a [timing record](#timing) only under `:time-operations`, as `parsing`.
+
+**Parameters** are values given on the command line, for a script that is run several times with different sizes,
+seeds or labels:
+
+```scheme
+(declare-param count Int 3)        ; --param count=5, or 3 without one
+(declare-param label String)       ; --param label=…, required
+(echo (concat label ": " (to-string count)))
+```
+
+A parameter is `String`, `Int` or `Bool`; the value given on the command line is read as that sort, and an optional
+default makes the parameter optional. Parameters are declarations, so they come first, with the inputs.
 
 **Paths written in the script** are loaded with the same operations: `(nfa:load "automata/a.mata")`. A relative path
-is resolved against the directory of the script.
+is resolved against the directory of the script, so a script and the automata beside it move together. A path given on
+the command line is resolved against the current directory, as for any other command.
 
 **Literals** make a script complete without any file:
 
@@ -451,7 +490,9 @@ The namespace tells where the function lives:
 - **Optional parameters** are keyword arguments named after the parameter:
   `(nfa:concatenate lhs rhs :use-epsilon true)`.
 - **Entries of the `ParameterMap`** are keyword arguments too: `(nfa:included? lhs rhs :algorithm "naive")`. They are
-  called _hints_. Their values are strings, as in the library.
+  called _hints_. Their values are strings, as in the library. Each operation lists the hints it takes and the values
+  each accepts, and the checker rejects any other one before the script runs; a value written as an expression rather
+  than a string literal is checked when the call is made.
 - **Enumerations** are strings in kebab-case: `:jump-mode "append-dont-cares"` is `JumpMode::AppendDontCares`.
 - **Not available:** callbacks, such as `macrostate_discover`, and output parameters, such as `prod_map`,
   `state_renaming` and `subset_map`. Counterexample output parameters are available through
@@ -485,7 +526,8 @@ Each application is one library call, with these exceptions:
   operation for all of them. A named operand is passed by reference and an unnamed intermediate result is moved, so
   the overload that runs can be read from the script.
 - With more than two operands, `(nfa:intersection a b c)` is `(nfa:intersection (nfa:intersection a b) c)`. This holds
-  for every operation whose library function takes two automata and returns one.
+  for every operation whose library function takes two automata and returns one: `union-nondeterministic`,
+  `intersection` and `concatenate` of both namespaces, and `nft:compose`.
 
 ### NFA operations
 
@@ -568,20 +610,22 @@ is not part of the language.
 
 ### Core functions
 
-`not`, `=`, `<`, `<=`, `+`, `-` on `Bool`, `Int`, `String` and `Word` as applicable; `none?` and `get` on an
-`Option`; `list`; `(word "a" "b")` and `(symbol "a")`, which translate names through the script alphabet;
-`(script-alphabet)`.
+`not`, `=`, `<`, `<=`, `+`, `-` on `Bool`, `Int`, `String` and `Word` as applicable; `(concat string…)`, which joins
+strings; `(to-string value)`, which shows any value as one line, the way `print` would; `(string->int string)`; `none?`
+and `get` on an `Option`; `list`; `(word "a" "b")` and `(symbol "a")`, which translate names through the script
+alphabet; `(script-alphabet)`.
 
 ## Reporting results
 
-| Form                 | Effect                                                            | Value        |
-| -------------------- | ----------------------------------------------------------------- | ------------ |
-| `(check condition)`  | Prints `true` or `false`                                          | The `Bool`   |
-| `(assert condition)` | Reports a failure if the condition is false; the script continues | The `Bool`   |
-| `(print value)`      | Prints the value to standard output                               | The value    |
-| `(write value path)` | Writes the value to a file                                        | The value    |
-| `(echo string)`      | Prints the string                                                 | The string   |
-| `(get-witness)`      | See [Witnesses](#witnesses)                                       | `Option Run` |
+| Form                        | Effect                                                                          | Value        |
+| --------------------------- | ------------------------------------------------------------------------------- | ------------ |
+| `(check condition)`         | Prints `true` or `false`                                                        | The `Bool`   |
+| `(check "label" condition)` | Prints the record `label: true` or `label: false`                               | The `Bool`   |
+| `(assert condition)`        | Reports a failure and its place if the condition is false; the script continues | The `Bool`   |
+| `(print value)`             | Prints the value to standard output                                             | The value    |
+| `(write value path)`        | Writes the value to a file                                                      | The value    |
+| `(echo string)`             | Prints the string                                                               | The string   |
+| `(get-witness)`             | See [Witnesses](#witnesses)                                                     | `Option Run` |
 
 `print` and `write` return their argument, so they can stand in the middle of a pipeline. An automaton is printed in
 the `.mata` format; use `nfa:print-to-dot` to print a DOT graph instead: `(print (nfa:print-to-dot a))`.
@@ -589,7 +633,8 @@ the `.mata` format; use `nfa:print-to-dot` to print a DOT graph instead: `(print
 In an interactive session, the value of every top-level expression is shown, with an automaton summarised by its
 kind and size rather than printed in full. When a script is run, the value of a top-level expression is dropped.
 
-Results and timing records go to standard output; errors and the [trace](#options) go to standard error.
+Results and timing records go to standard output, each written as soon as it is printed, so a run stopped by a time
+limit keeps what it printed; errors and the [trace](#options) go to standard error.
 
 (script-exit-status)=
 
@@ -602,7 +647,7 @@ Results and timing records go to standard output; errors and the [trace](#option
 | 2      | An error stopped the script: a failed check of the script, a file, a sort, the library |
 
 `check` never changes the status. A one-off query that should fail a shell command uses `assert`. In an interactive
-session, an error ends the form, not the session.
+session, an error ends the form, not the session, and makes the session end with status `2`.
 
 ### Witnesses
 
@@ -646,14 +691,15 @@ intersection: 0.0481
 emptiness: 0.0007
 ```
 
-- A record is a line `label: seconds`, measured with a monotonic clock. This is the format the benchmark binaries in
-  `tests-integration/src/` print today.
-- The label is a string expression. A `time` form that is evaluated several times prints several records.
-- Loading is measured only when it is written inside a `time` form: `(time "parsing" (nfa:load $1))`. The loading done
-  by declarations cannot be inside one, so the usual benchmark script, declarations followed by timed operations, does
-  not measure loading.
+- A record is a line `label: seconds`, measured with a monotonic clock, with six fractional digits. This is the format
+  the benchmark binaries in `tests-integration/src/` print today.
+- Every record of a run has its own label: a reader of the records, such as `pycobench`, keys them by label, so a label
+  printed twice is an error. A `time` form that is evaluated several times needs a label that differs each time, as
+  `(time (concat "round-" (to-string i)) …)`.
+- Loading is measured when it is written inside a `time` form: `(time "parsing" (nfa:load $1))`.
 - `(set-option :time-operations true)` prints a record for every operation that is called, labelled by the name of
-  the operation, without any `time` form in the script.
+  the operation, without any `time` form in the script; a repeated operation gets `#2`, `#3`, … after its name. Set
+  before the declarations, it also records their loading, as `parsing`, as the benchmark binaries do.
 
 ## Options
 
@@ -667,7 +713,7 @@ emptiness: 0.0007
 | `:trace`               | `false` (default), `true`           | Prints every library call that is made, with its hints, to standard error                                             |
 | `:loops-and-recursion` | `false` (default), `true`           | Allows `loop` and functions that call themselves, for the whole file; see [Loops and recursion](#loops-and-recursion) |
 
-`set-info` attaches information that does not change evaluation, such as `(set-info :profile "core")`.
+`set-info` attaches information that does not change evaluation; see [Script information](#script-information).
 
 ## Optimizer
 
@@ -696,9 +742,9 @@ A benchmark that measures one specific operation should leave the optimizer off.
 
 ## Portable core
 
-The `.emp` programs were interpreted by several automata libraries, to compare them on the same inputs. A script that
-starts with `(set-info :profile "core")` promises to stay within a subset that another library can implement, and the
-checker rejects anything outside of it:
+The `.emp` programs were interpreted by several automata libraries, to compare them on the same inputs. A script whose
+header says `:profile core`, as `(mata-script "0.1.0" :profile core)`, promises to stay within a subset that another
+library can implement, and the checker rejects anything outside of it, before `check` reports and before `run` runs:
 
 - **Forms:** `declare-input`, `declare-inputs`, `define` of a value, `let`, `->`, `time`, `check`, `assert`, `print`,
   `echo`, `set-option`, `set-info`; no defined functions, no `lambda`, no conditionals, and no loops or recursion:
@@ -713,11 +759,76 @@ A script in the portable core is always guaranteed to [terminate](#termination).
 An interpreter for another library must reject an operation it does not have. It may ignore a hint it does not know,
 with a warning, because a hint only selects how a result is computed.
 
+(script-information)=
+
+## Script information
+
+`set-info` attaches information to a script that does not change what it computes; `get-info` reads it back, and is
+`none` for a key the script did not set. The keys are fixed, so that a tool reading a set of scripts finds the same
+fact under the same key:
+
+| Key            | Sort     | Meaning                                                                     |
+| -------------- | -------- | --------------------------------------------------------------------------- |
+| `:name`        | `String` | A short name, as `"email-filter"`                                           |
+| `:description` | `String` | What the script computes                                                    |
+| `:source`      | `String` | Where the script or its benchmark comes from, as `"CADE'23, b-regex"`       |
+| `:license`     | `String` | The license of the script                                                   |
+| `:authors`     | `String` | Who wrote it                                                                |
+| `:expects`     | `Bool`   | The verdict the script is expected to print, as SMT-LIB's `:status`         |
+| `:x-…`         | Any      | Free for any use, as `:x-timeout`; never given a meaning by a later version |
+
+Any other key is an error, and so is a value of the wrong sort. The profile is not information: it changes what the
+checker accepts, so it is part of the header.
+
+(versions)=
+
+## Versions
+
+A script names the version of the language it is written for in a header, the first form of the file:
+
+```scheme
+#!/usr/bin/env -S mata script run
+(mata-script "0.1.0"
+  :requires (hints witnesses)   ; optional features the script needs
+  :profile core)                ; optional: the portable core
+```
+
+- **The framing never changes.** In every version, a script is an optional `#!` line, whitespace and `;` comments,
+  then `(mata-script "MAJOR.MINOR.PATCH" …)`. An interpreter reads the version from this framing before it parses
+  the rest, so a script for a version it does not run is rejected with the version it needs, as
+  `the script needs Mata Script 0.2.0; this mata runs Mata Script 0.1.x`, never with a syntax error about something
+  that version added.
+- **A major version may break anything:** syntax, the meaning of a form, a removed or renamed operation, the printed
+  formats, the exit statuses. An interpreter runs one major version.
+- **A minor version only adds,** from `1.0.0` on: an interpreter of `1.4` runs scripts for `1.0` to `1.4`, and rejects
+  a script for `1.5`. Before `1.0.0`, every minor version may break, so an interpreter of `0.1` runs only `0.1` scripts.
+- **A patch version** never changes what a script means; an interpreter of `0.1.0` runs a script that declares
+  `0.1.7`.
+- **A version selects the names a script sees.** Every operation records the version that added it, and a script
+  sees only those of its declared version. Every namespaced name and every name of the language is reserved, whether
+  the declared version has it yet or not, so adding an operation cannot change the meaning of a script that defined a
+  name of its own.
+- **`:requires`** lists optional parts of the language that the script needs: `hints`, `witnesses`, `transducers`,
+  `loops-and-recursion`, `optimizer`, `trace`, `automaton`, `strings` and `intermediate`. An interpreter without one
+  of them rejects the script before running it, naming the feature, rather than failing at the first form that needs
+  it. `mata formats` lists the features and whether the build implements them.
+- **`:profile`** selects a [profile](#portable-core); `core` is the only one, and any other name is an error.
+- **A script without a header** is read as the version of the interpreter that runs it. That suits a one-line
+  `--expression` and an interactive session, but a script kept in a file should name its version; `mata script check`
+  warns about one that does not.
+- **Deprecation.** A minor version may deprecate a name with a warning; the name is removed only in the next major
+  version.
+
+The language starts at `0.1.0`. The version describes the language only: the behaviour of the library, such as the
+numbering of states or the default algorithm of an operation, and the options of the `mata` command have versions of
+their own, which `mata version` prints beside it.
+
 ## Examples
 
 A regression specification that needs no input file:
 
 ```scheme
+(mata-script "0.1.0")
 (set-option :alphabet "bytes")
 
 (define language (nfa:create-from-regex "a(b|c)*"))
@@ -732,6 +843,7 @@ A regression specification that needs no input file:
 The image of a language under a transducer, checked against a specification, with a function:
 
 ```scheme
+(mata-script "0.1.0")
 (declare-input transducer Nft)
 (declare-input language Nfa)
 (declare-input specification Nfa)
@@ -749,6 +861,7 @@ The image of a language under a transducer, checked against a specification, wit
 A script that works on an input of either kind:
 
 ```scheme
+(mata-script "0.1.0" :requires (automaton))
 (declare-input a Automaton)
 (declare-input b Automaton)
 
@@ -758,10 +871,10 @@ A script that works on an input of either kind:
 
 ## Open questions
 
-- **Command-line interface.** How a script and its inputs are given, how an input is named, how an option or the
-  default of a hint is set from the command line, and how the results of checking, including the termination report,
-  are shown. A script written inline in a shell command or in a `pycobench` job needs care, because both can replace
-  `$1` themselves before the interpreter sees it.
+- **Command-line interface.** Settled in [The `mata` command](cli): inputs are positional or named with `--input`,
+  values come from `declare-param` and `--param`, options and hint defaults are set in the script only, and `check`
+  writes its report to standard error. A script written inline in a shell command or in a `pycobench` job still needs
+  care, because both can replace `$1` themselves before the interpreter sees it.
 - **Loops and recursion** are designed as an option that the first interpreter leaves out. Whether two functions
   should be able to call each other by name is open.
 - **Runaway scripts.** A script without the termination guarantee can run forever. Whether the interpreter should
