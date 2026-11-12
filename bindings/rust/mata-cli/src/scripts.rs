@@ -50,7 +50,14 @@ fn parse(source: &str) -> Result<(Vec<Spanned<FormKind>>, crate::version::Versio
 	Ok((ast::parse(source)?, version))
 }
 
-pub(crate) fn run(source: &Source, inputs: Inputs, output: Option<&str>) -> Result<Exit, Error> {
+/// Runs a script; `checked` runs the static check of `mata script check` first, so nothing runs
+/// when the check fails.
+pub(crate) fn run(
+	source: &Source,
+	inputs: Inputs,
+	output: Option<&str>,
+	checked: bool,
+) -> Result<Exit, Error> {
 	let (_, text, base_dir) = source.read()?;
 	if matches!(source, Source::Stdin) && inputs.positional.iter().any(|input| input == "-") {
 		return Err(Error::plain(
@@ -59,7 +66,9 @@ pub(crate) fn run(source: &Source, inputs: Inputs, output: Option<&str>) -> Resu
 	}
 	let (forms, version) = parse(&text)?;
 	let mut engine = Engine::for_language(version);
-	crate::check::check(&forms, &engine, Some(&inputs))?;
+	if checked {
+		crate::check::check(&forms, &engine, Some(&inputs))?;
+	}
 	engine.set_inputs(inputs.positional.clone(), inputs.named.clone());
 	engine.parameters = inputs.parameters;
 	engine.set_base_dir(base_dir);

@@ -395,7 +395,10 @@ impl Engine {
 				sort,
 				default,
 			} => self.bind_parameter(name, sort, default.as_ref(), form),
-			FormKind::Header { .. } => Ok(Value::None),
+			FormKind::Header { requires, profile } => {
+				check_header(requires, profile.as_deref()).map_err(|message| form.at(message))?;
+				Ok(Value::None)
+			}
 			FormKind::SetOption { keyword, value } => self.apply_option(keyword, value, form),
 			FormKind::SetInfo { keyword, value } => {
 				let value = self.evaluate(value)?;
@@ -1282,5 +1285,20 @@ fn byte_name(byte: u8) -> String {
 		(byte as char).to_string()
 	} else {
 		format!("\\x{byte:02X}")
+	}
+}
+
+/// Rejects a header that requires a feature this build lacks or names an unknown profile. The
+/// checker reports these first; repeated here for `script run --no-check`.
+fn check_header(requires: &[String], profile: Option<&str>) -> Result<(), String> {
+	if let Some(message) = requires
+		.iter()
+		.find_map(|feature| crate::version::missing_feature(feature))
+	{
+		return Err(message);
+	}
+	match profile {
+		None | Some("core") => Ok(()),
+		Some(other) => Err(format!("unknown profile '{other}'")),
 	}
 }

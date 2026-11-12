@@ -510,6 +510,36 @@ fn run_checks_the_whole_script_before_it_runs_anything() {
 }
 
 #[test]
+fn run_without_the_check_runs_forms_until_one_fails() {
+	let output = mata([
+		"script",
+		"run",
+		"--no-check",
+		"--expression",
+		"(print 1)\n(nfa:determinizee 2)\n(print 3)",
+	]);
+	assert_eq!(status(&output), 2);
+	assert_eq!(stdout(&output), "1\n");
+	assert_eq!(
+		stderr(&output),
+		"mata: unknown name 'nfa:determinizee' at 2:1\n"
+	);
+}
+
+#[test]
+fn run_without_the_check_still_rejects_a_required_feature_it_lacks() {
+	let output = mata([
+		"script",
+		"run",
+		"--no-check",
+		"--expression",
+		"(mata-script \"0.1.0\" :requires (loops-and-recursion))\n(print 1)",
+	]);
+	assert_eq!(status(&output), 2);
+	assert!(stdout(&output).is_empty(), "{}", stdout(&output));
+}
+
+#[test]
 fn a_pipeline_application_step_counts_the_piped_value_as_its_first_argument() {
 	let script = "(mata-script \"0.1.0\")\n(set-option :alphabet \"bytes\")\n(define a (nfa:create-from-regex \"a\"))\n\
 	              (print (-> a nfa:determinize (nfa:in-language? (word \"a\"))))";

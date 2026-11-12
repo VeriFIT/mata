@@ -80,6 +80,11 @@ misspelled operation in the last line stops the run before any output and before
 inputs are then loaded in order with the `set-option` and `set-info` forms between them, so `(set-option :alphabet
 "bytes")` before the declarations applies to the automata they load.
 
+`--no-check` skips that check: the forms run in order until one fails, and an error is reported when it is reached,
+after the output of the forms before it. The header is still read, so a script for another language version or one
+that `:requires` a feature this build lacks is still rejected before anything runs; the `:profile core` restrictions,
+which only the check enforces, are not. The option is for scripts the checker rejects but that run correctly.
+
 Options set at run time go through the script's `set-option` form, not through command-line options; an option cannot
 be different from the one the script asks for, except that `--output` redirects only where the output goes. This keeps
 one script runnable the same way everywhere and keeps a benchmark script's meaning in the script itself. A value that

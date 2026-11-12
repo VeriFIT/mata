@@ -128,6 +128,7 @@ options:
   --input NAME=PATH   bind the input at PATH to NAME, which is $NAME in the script
   --param NAME=VALUE  give the parameter NAME that the script declares with declare-param
   --output PATH       write the output to PATH instead of standard output; `-` is standard output
+  --no-check          skip the static check: run forms until one fails at run time
   --help              print this text
   --                  every following argument is an operand
 
@@ -359,6 +360,7 @@ impl ScriptChoice {
 fn script_run(arguments: &[String]) -> Result<Exit, Error> {
 	let mut choice = ScriptChoice::default();
 	let mut output = None;
+	let mut checked = true;
 	let mut inputs = Inputs {
 		positional: Vec::new(),
 		named: HashMap::new(),
@@ -391,6 +393,7 @@ fn script_run(arguments: &[String]) -> Result<Exit, Error> {
 				output = Some(option_value(arguments, index, "--output")?.clone());
 				index += 1;
 			}
+			"--no-check" => checked = false,
 			"--input" => {
 				insert_pair(
 					&mut inputs.named,
@@ -419,7 +422,7 @@ fn script_run(arguments: &[String]) -> Result<Exit, Error> {
 		}
 	}
 	let source = choice.source()?;
-	crate::scripts::run(&source, inputs, output.as_deref())
+	crate::scripts::run(&source, inputs, output.as_deref(), checked)
 }
 
 fn script_check(arguments: &[String]) -> Result<Exit, Error> {

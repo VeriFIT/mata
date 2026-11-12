@@ -63,7 +63,7 @@ label.
    out, so the API reference documents the script operations too.
 5. **Scripts are checked before they run.** Everything that can be decided without loading an input is decided first,
    so a misspelled name is not reported after an hour of determinization. `mata script run` checks the whole script
-   before its first form runs.
+   before its first form runs, unless it is given `--no-check`.
 6. **Functions are ordinary values.** A function can be defined inside another function, passed as an argument,
    returned as a result and stored in a list; see [Functions](#functions).
 7. **Loops and recursion are opt-in.** They are off unless the script turns them on, and an interpreter may leave them
