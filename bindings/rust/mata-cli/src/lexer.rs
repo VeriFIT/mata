@@ -24,15 +24,21 @@ pub(crate) enum TokenKind {
 	Eof,
 }
 
-/// Tokenizes `source`, without interpreting backslashes in strings.
+/// Tokenizes `source`, without interpreting backslashes in strings. A first line starting with `#!` is
+/// skipped, so a script can be an executable file.
 pub(crate) fn lex(source: &str) -> Result<Vec<Token>, Error> {
-	Lexer {
+	let mut lexer = Lexer {
 		source,
 		offset: 0,
 		line: 1,
 		column: 1,
+	};
+	if source.starts_with("#!") {
+		while lexer.peek().is_some_and(|c| c != '\n') {
+			lexer.bump();
+		}
 	}
-	.tokens()
+	lexer.tokens()
 }
 
 struct Lexer<'a> {

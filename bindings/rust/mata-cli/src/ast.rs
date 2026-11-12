@@ -46,6 +46,10 @@ pub(crate) enum Kind {
 		name: String,
 		arguments: Vec<(String, Expr)>,
 	},
+	/// `(get-option :keyword)`.
+	GetOption(String),
+	/// `(get-info :keyword)`.
+	GetInfo(String),
 }
 
 #[derive(Clone, Debug)]
@@ -62,19 +66,25 @@ pub(crate) enum FormKind {
 		sort: String,
 		variadic: bool,
 	},
+	/// `(declare-param name sort [default])`: a value given on the command line with `--param`.
+	Parameter {
+		name: String,
+		sort: String,
+		default: Option<Expr>,
+	},
+	/// `(mata-script "MAJOR.MINOR.PATCH" :requires (feature …) :profile name)`, only as the first form.
+	/// The version itself is read before parsing, by `version::declared`.
+	Header {
+		requires: Vec<String>,
+		profile: Option<String>,
+	},
 	SetOption {
 		keyword: String,
 		value: Expr,
 	},
-	GetOption {
-		keyword: String,
-	},
 	SetInfo {
 		keyword: String,
 		value: Expr,
-	},
-	GetInfo {
-		keyword: String,
 	},
 	Push,
 	Pop,
@@ -108,13 +118,13 @@ pub(crate) fn parse_complete(source: &str) -> Result<Option<Vec<Spanned<FormKind
 
 /// Heads of the forms that are directives rather than applications.
 const DIRECTIVES: [&str; 11] = [
+	"mata-script",
 	"define",
 	"declare-input",
 	"declare-inputs",
+	"declare-param",
 	"set-option",
-	"get-option",
 	"set-info",
-	"get-info",
 	"push",
 	"pop",
 	"reset",
@@ -154,25 +164,34 @@ impl Parser {
 		let (line, column) = (start.line, start.column);
 		self.current += 1; // the head token; directive handlers start after it
 		let node = match name.as_str() {
+			"mata-script" => self.header()?,
 			"define" => self.define()?,
 			"declare-input" => self.declaration(false)?,
 			"declare-inputs" => self.declaration(true)?,
+			"declare-param" => {
+				let name = self.name()?;
+				let sort = self.sort()?;
+				let default = if self.peek() == &TokenKind::RightParen {
+					None
+				} else {
+					Some(self.expression()?)
+				};
+				FormKind::Parameter {
+					name,
+					sort,
+					default,
+				}
+			}
 			"set-option" => {
 				let keyword = self.keyword()?;
 				let value = self.expression()?;
 				FormKind::SetOption { keyword, value }
 			}
-			"get-option" => FormKind::GetOption {
-				keyword: self.keyword()?,
-			},
 			"set-info" => {
 				let keyword = self.keyword()?;
 				let value = self.expression()?;
 				FormKind::SetInfo { keyword, value }
 			}
-			"get-info" => FormKind::GetInfo {
-				keyword: self.keyword()?,
-			},
 			"push" => FormKind::Push,
 			"pop" => FormKind::Pop,
 			"reset" => FormKind::Reset,
@@ -181,6 +200,53 @@ impl Parser {
 		};
 		self.close(&name)?;
 		Ok(Spanned { node, line, column })
+	}
+
+	/// `(mata-script "VERSION" {:requires (feature …) | :profile name})`, after the head.
+	fn header(&mut self) -> Result<FormKind, Error> {
+		let token = self.next();
+		let TokenKind::String(_) = token.kind else {
+			return Err(Error::at(
+				"mata-script needs the language version as a string, such as \"0.1.0\"".to_owned(),
+				token.line,
+				token.column,
+			));
+		};
+		let mut requires = None;
+		let mut profile = None;
+		while let TokenKind::Keyword(keyword) = self.peek().clone() {
+			let place = self.next();
+			let duplicate = match keyword.as_str() {
+				"requires" => {
+					self.open(":requires features")?;
+					let mut features = Vec::new();
+					while self.peek() != &TokenKind::RightParen {
+						features.push(self.name()?);
+					}
+					self.current += 1;
+					requires.replace(features).is_some()
+				}
+				"profile" => profile.replace(self.name()?).is_some(),
+				_ => {
+					return Err(Error::at(
+						format!("mata-script has no keyword ':{keyword}'"),
+						place.line,
+						place.column,
+					));
+				}
+			};
+			if duplicate {
+				return Err(Error::at(
+					format!("duplicate keyword ':{keyword}'"),
+					place.line,
+					place.column,
+				));
+			}
+		}
+		Ok(FormKind::Header {
+			requires: requires.unwrap_or_default(),
+			profile,
+		})
 	}
 
 	fn form_expression(&mut self, start: &Token) -> Result<Spanned<FormKind>, Error> {
@@ -275,6 +341,21 @@ impl Parser {
 				"let" | "loop" => return self.binding_application(start, &head),
 				"lambda" => return self.lambda_application(start),
 				"cond" => return self.cond_application(start),
+				"get-option" | "get-info" => {
+					self.current += 1;
+					let keyword = self.keyword()?;
+					self.close(&head)?;
+					let node = if head == "get-option" {
+						Kind::GetOption(keyword)
+					} else {
+						Kind::GetInfo(keyword)
+					};
+					return Ok(Expr {
+						node,
+						line: start.line,
+						column: start.column,
+					});
+				}
 				_ => {}
 			}
 		}

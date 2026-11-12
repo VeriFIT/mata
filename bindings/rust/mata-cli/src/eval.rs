@@ -2,7 +2,6 @@
 
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
@@ -112,18 +111,40 @@ pub(crate) struct Options {
 	pub(crate) time_operations: bool,
 }
 
+/// Where the values a script prints go: written as they are printed, or kept for the caller.
+pub(crate) enum Sink {
+	/// Standard output, flushed after every value so a run that is killed keeps what it printed.
+	Stdout,
+	/// A file opened once, written after every value.
+	File(std::io::BufWriter<fs::File>),
+	/// Kept in memory, as the REPL does with `--output`.
+	Buffer(String),
+}
+
 pub(crate) struct Engine {
 	pub(crate) script_alphabet: mata::Alphabet,
 	pub(crate) options: Options,
 	pub(crate) last_witness: Option<Value>,
 	pub(crate) assertions_failed: bool,
 	pub(crate) exit: bool,
-	pub(crate) output: String,
+	pub(crate) sink: Sink,
 	pub(crate) base_dir: Option<PathBuf>,
 	pub(crate) info: HashMap<String, Value>,
 	pub(crate) scope: Scope,
 	pub(crate) inputs: Vec<String>,
 	pub(crate) named_inputs: HashMap<String, String>,
+	/// `--param NAME=VALUE` texts, read by `declare-param`.
+	pub(crate) parameters: HashMap<String, String>,
+	/// The language version the script declares, which selects the operations it sees.
+	pub(crate) language: crate::version::Version,
+	/// The hint defaults set with `(set-option :default …)`, per operation.
+	pub(crate) defaults: HashMap<String, Vec<(String, String)>>,
+	/// The hints of the operation being called.
+	pub(crate) hints: Vec<(String, String)>,
+	/// Labels of the records printed so far; a label is printed once.
+	labels: std::collections::HashSet<String>,
+	/// The form being evaluated, so that a failure at run time names its place.
+	pub(crate) place: Option<(usize, usize)>,
 }
 
 /// A synthetic expression for calling a function value outside of syntax, e.g. from `list:map`.
@@ -137,14 +158,21 @@ pub(crate) fn dummy_expr() -> Expr {
 
 impl Engine {
 	pub(crate) fn new() -> Engine {
+		Engine::for_language(crate::version::LANGUAGE)
+	}
+
+	/// An engine for a script that declares `language`: it sees the operations of that version only.
+	pub(crate) fn for_language(language: crate::version::Version) -> Engine {
 		let scope = Scope::new();
 		for operation in crate::ops::OPERATIONS {
-			scope.define(
-				operation.name.to_owned(),
-				Value::Function(Rc::new(Function::Native {
-					name: operation.name.to_owned(),
-				})),
-			);
+			if operation.since.visible_in(language) {
+				scope.define(
+					operation.name.to_owned(),
+					Value::Function(Rc::new(Function::Native {
+						name: operation.name.to_owned(),
+					})),
+				);
+			}
 		}
 		// Predefined symbols (script-language.md sorts table).
 		scope.define("epsilon".to_string(), Value::Symbol(mata::Symbol::EPSILON));
@@ -155,13 +183,111 @@ impl Engine {
 			last_witness: None,
 			assertions_failed: false,
 			exit: false,
-			output: String::new(),
+			sink: Sink::Stdout,
 			base_dir: None,
 			info: HashMap::new(),
 			scope,
 			inputs: Vec::new(),
 			named_inputs: HashMap::new(),
+			parameters: HashMap::new(),
+			language,
+			defaults: HashMap::new(),
+			hints: Vec::new(),
+			labels: std::collections::HashSet::new(),
+			place: None,
 		}
+	}
+
+	/// Writes printed values to the sink at once.
+	///
+	/// # Errors
+	///
+	/// The output file cannot be written.
+	pub(crate) fn emit(&mut self, text: &str) -> Result<(), Error> {
+		use std::io::Write as _;
+		match &mut self.sink {
+			Sink::Stdout => {
+				let mut stdout = std::io::stdout().lock();
+				stdout
+					.write_all(text.as_bytes())
+					.and_then(|()| stdout.flush())
+					.map_err(|e| Error::plain(format!("cannot write standard output: {e}")))
+			}
+			Sink::File(file) => file
+				.write_all(text.as_bytes())
+				.and_then(|()| file.flush())
+				.map_err(|e| Error::plain(format!("cannot write the output file: {e}"))),
+			Sink::Buffer(buffer) => {
+				buffer.push_str(text);
+				Ok(())
+			}
+		}
+	}
+
+	/// A `label: value` record line; a label already printed is an error, because a reader of the
+	/// records keys them by label.
+	///
+	/// # Errors
+	///
+	/// The label was printed before, or it holds a line break.
+	pub(crate) fn record(&mut self, label: &str, value: &str) -> Result<String, Error> {
+		if label.contains('\n') {
+			return Err(Error::plain(format!(
+				"the record label {label:?} spans lines"
+			)));
+		}
+		if !self.labels.insert(label.to_owned()) {
+			return Err(Error::plain(format!(
+				"the record label '{label}' is already printed; give each record its own label"
+			)));
+		}
+		Ok(format!("{label}: {value}\n"))
+	}
+
+	/// Records a failed assertion and reports its place on standard error.
+	pub(crate) fn fail_assertion(&mut self) {
+		self.assertions_failed = true;
+		match self.place {
+			Some((line, column)) => eprintln!("mata: assertion failed at {line}:{column}"),
+			None => eprintln!("mata: assertion failed"),
+		}
+	}
+
+	/// The hint defaults of `operation` set by `(set-option :default …)`.
+	pub(crate) fn defaults_of(&self, operation: &str) -> Vec<(String, String)> {
+		self.defaults.get(operation).cloned().unwrap_or_default()
+	}
+
+	/// Times `work` as a record labelled `label` when `:time-operations` is on.
+	///
+	/// # Errors
+	///
+	/// The error of `work`, or of printing the record.
+	pub(crate) fn timed<T>(
+		&mut self,
+		label: &str,
+		work: impl FnOnce(&mut Engine) -> Result<T, Error>,
+	) -> Result<T, Error> {
+		if !self.options.time_operations {
+			return work(self);
+		}
+		let started = Instant::now();
+		let value = work(self)?;
+		let seconds = format!("{:.6}", started.elapsed().as_secs_f64());
+		let line = self.record_repeatable(label, &seconds)?;
+		self.emit(&line)?;
+		Ok(value)
+	}
+
+	/// A record whose label may repeat: every repetition after the first gets a `#2`, `#3`, … suffix.
+	fn record_repeatable(&mut self, label: &str, value: &str) -> Result<String, Error> {
+		let mut unique = label.to_owned();
+		let mut count = 1;
+		while self.labels.contains(&unique) {
+			count += 1;
+			unique = format!("{label}#{count}");
+		}
+		self.record(&unique, value)
 	}
 
 	pub(crate) fn set_inputs(&mut self, positional: Vec<String>, named: HashMap<String, String>) {
@@ -175,15 +301,11 @@ impl Engine {
 		self.named_inputs = named;
 	}
 
-	/// One input by name for a declaration reached outside the pre-bound script path.
-	fn load_input_for(&mut self, name: &str) -> Option<Value> {
-		let path = self.named_inputs.get(name)?.clone();
-		self.load_file(&path, "automaton").ok()
-	}
 	pub(crate) fn set_base_dir<P: Into<PathBuf>>(&mut self, path: Option<P>) {
 		self.base_dir = path.map(Into::into);
 	}
 
+	/// A path written in the script: relative to the script's directory.
 	fn resolve_path(&self, path: &str) -> PathBuf {
 		let path = Path::new(path);
 		if path.is_absolute() {
@@ -206,7 +328,18 @@ impl Engine {
 		Ok(())
 	}
 
+	/// Evaluates one top-level form; a failure without a place of its own gets the form's place.
 	pub(crate) fn execute_form(&mut self, form: &Spanned<FormKind>) -> Result<Value, Error> {
+		self.place = Some((form.line, form.column));
+		self.execute_form_at(form).map_err(|mut error| {
+			if error.at.is_none() {
+				error.at = Some((form.line, form.column));
+			}
+			error
+		})
+	}
+
+	fn execute_form_at(&mut self, form: &Spanned<FormKind>) -> Result<Value, Error> {
 		match &form.node {
 			FormKind::Define {
 				name,
@@ -214,9 +347,7 @@ impl Engine {
 				body,
 				sort,
 			} => {
-				if self.scope.defines(name) {
-					return Err(form.at(format!("'{name}' is already defined")));
-				}
+				self.check_definable(name, form)?;
 				let value = match parameters {
 					None => self.evaluate_sequence(body)?,
 					Some(parameters) => Value::Function(Rc::new(Function::User {
@@ -237,31 +368,40 @@ impl Engine {
 				self.scope.define(name.clone(), value.clone());
 				Ok(Value::None)
 			}
-			FormKind::Declare { name, .. } => {
-				// scripts.rs binds declared inputs before execution; a declaration reached at
-				// run time (REPL, nested) rebinds the same name from the stored inputs.
+			FormKind::Declare {
+				name,
+				sort,
+				variadic,
+			} => {
+				// A script binds its declared inputs before it runs; a declaration typed into a REPL
+				// binds the input given under its name.
 				if self.scope.lookup(name).is_some() {
 					return Ok(Value::None);
 				}
-				let value = self
-					.load_input_for(name)
-					.ok_or_else(|| Error::plain(format!("no input for '{name}'")))?;
+				if *variadic {
+					return Err(form.at("declare-inputs needs inputs from the command line".into()));
+				}
+				let path = self
+					.named_inputs
+					.get(name)
+					.cloned()
+					.ok_or_else(|| form.at(format!("no input for '{name}'")))?;
+				let value = self.load_input(&path, kind_of(sort))?;
 				self.scope.define(name.clone(), value);
 				Ok(Value::None)
 			}
-			FormKind::SetOption { keyword, value } => {
-				let value = self.evaluate(value)?;
-				self.apply_option(keyword, &value, form)
-			}
-			FormKind::GetOption { keyword } => self.get_option(keyword),
+			FormKind::Parameter {
+				name,
+				sort,
+				default,
+			} => self.bind_parameter(name, sort, default.as_ref(), form),
+			FormKind::Header { .. } => Ok(Value::None),
+			FormKind::SetOption { keyword, value } => self.apply_option(keyword, value, form),
 			FormKind::SetInfo { keyword, value } => {
-				// Information that does not change evaluation; kept for get-info.
 				let value = self.evaluate(value)?;
+				check_info(keyword, &value).map_err(|message| form.at(message))?;
 				self.info.insert(keyword.clone(), value);
 				Ok(Value::None)
-			}
-			FormKind::GetInfo { keyword } => {
-				Ok(self.info.get(keyword).cloned().unwrap_or(Value::None))
 			}
 			FormKind::Push => {
 				self.scope.push();
@@ -274,12 +414,16 @@ impl Engine {
 				Ok(Value::None)
 			}
 			FormKind::Reset => {
-				let mut fresh = Engine::new();
+				let mut fresh = Engine::for_language(self.language);
 				fresh.set_inputs(
 					std::mem::take(&mut self.inputs),
 					std::mem::take(&mut self.named_inputs),
 				);
+				fresh.parameters = std::mem::take(&mut self.parameters);
 				fresh.set_base_dir(self.base_dir.clone());
+				fresh.sink = std::mem::replace(&mut self.sink, Sink::Stdout);
+				fresh.assertions_failed = self.assertions_failed;
+				fresh.labels = std::mem::take(&mut self.labels);
 				*self = fresh;
 				Ok(Value::None)
 			}
@@ -291,16 +435,61 @@ impl Engine {
 		}
 	}
 
+	/// A name an operation of the catalogue owns cannot be defined, whether or not the script's
+	/// language version sees it, so that a later version adding an operation breaks no script.
+	fn check_definable(&self, name: &str, form: &Spanned<FormKind>) -> Result<(), Error> {
+		if let Some(message) = reserved(name) {
+			return Err(form.at(message));
+		}
+		if self.scope.defines(name) {
+			return Err(form.at(format!("'{name}' is already defined")));
+		}
+		Ok(())
+	}
+
+	/// Binds a `declare-param` to its `--param` value, or to its default.
+	fn bind_parameter(
+		&mut self,
+		name: &str,
+		sort: &str,
+		default: Option<&Expr>,
+		form: &Spanned<FormKind>,
+	) -> Result<Value, Error> {
+		if self.scope.lookup(name).is_some() {
+			return Ok(Value::None);
+		}
+		let value = match (self.parameters.get(name).cloned(), default) {
+			(Some(text), _) => parameter_value(&text, sort)
+				.map_err(|message| form.at(format!("--param {name}: {message}")))?,
+			(None, Some(default)) => {
+				let value = self.evaluate(default)?;
+				check_sort(&value, sort, default)?;
+				value
+			}
+			(None, None) => {
+				return Err(form.at(format!(
+					"no value for parameter '{name}'; give it with --param {name}=VALUE"
+				)));
+			}
+		};
+		self.scope.define(name.to_owned(), value);
+		Ok(Value::None)
+	}
+
 	fn apply_option(
 		&mut self,
 		keyword: &str,
-		value: &Value,
+		expression: &Expr,
 		form: &Spanned<FormKind>,
 	) -> Result<Value, Error> {
 		let keyword = keyword.trim_start_matches(':');
+		if keyword == "default" {
+			return self.set_default(expression);
+		}
+		let value = self.evaluate(expression)?;
 		match keyword {
 			"alphabet" => {
-				let name = as_string(value).map_err(|e| form.at(e.clone()))?;
+				let name = as_string(&value).map_err(|e| form.at(e.clone()))?;
 				match name.as_str() {
 					"on-the-fly" => self.options.bytes_alphabet = false,
 					"bytes" => {
@@ -319,13 +508,13 @@ impl Engine {
 				}
 			}
 			"produce-witnesses" => {
-				self.options.produce_witnesses = as_bool(value).map_err(|e| form.at(e.clone()))?;
+				self.options.produce_witnesses = as_bool(&value).map_err(|e| form.at(e.clone()))?;
 			}
 			"time-operations" => {
-				self.options.time_operations = as_bool(value).map_err(|e| form.at(e.clone()))?;
+				self.options.time_operations = as_bool(&value).map_err(|e| form.at(e.clone()))?;
 			}
 			"optimize" | "trace" => {
-				let enabled = as_bool(value).map_err(|e| form.at(e.clone()))?;
+				let enabled = as_bool(&value).map_err(|e| form.at(e.clone()))?;
 				if !enabled {
 					return Ok(Value::None);
 				}
@@ -334,14 +523,46 @@ impl Engine {
 			"loops-and-recursion" => {
 				return Err(form.at("option :loops-and-recursion is not implemented".into()));
 			}
-			"default" => return Err(form.at("option :default is not implemented".into())),
-			_ => return Err(form.at(format!("unknown option '{keyword}'"))),
+			_ => return Err(form.at(format!("unknown option ':{keyword}'"))),
 		}
 		Ok(Value::None)
 	}
 
-	fn get_option(&self, keyword: &str) -> Result<Value, Error> {
-		let keyword = keyword.trim_start_matches(':');
+	/// `(set-option :default (operation :hint value …))`: the hints of later calls of the operation.
+	fn set_default(&mut self, expression: &Expr) -> Result<Value, Error> {
+		let Kind::Call {
+			function,
+			arguments,
+			keywords,
+		} = &expression.node
+		else {
+			return Err(expression.at(
+				":default needs an operation with only hints, as (nfa:included? :algorithm \"naive\")"
+					.into(),
+			));
+		};
+		let Kind::Name(operation) = &function.node else {
+			return Err(function.at(":default needs an operation name".into()));
+		};
+		if !arguments.is_empty() || keywords.is_empty() {
+			return Err(expression.at(":default needs an operation with only hints".into()));
+		}
+		if crate::ops::visible(operation, self.language).is_none() {
+			return Err(function.at(format!("unknown operation '{operation}'")));
+		}
+		let mut chosen = self.defaults_of(operation);
+		for (name, value) in keywords {
+			let text = as_string(&self.evaluate(value)?)
+				.map_err(|_| value.at(format!("the value of hint :{name} must be a String")))?;
+			crate::ops::check_hint(operation, name, &text).map_err(|message| value.at(message))?;
+			chosen.retain(|(known, _)| known != name);
+			chosen.push((name.clone(), text));
+		}
+		self.defaults.insert(operation.clone(), chosen);
+		Ok(Value::None)
+	}
+
+	fn get_option(&self, keyword: &str) -> Result<Value, String> {
 		Ok(match keyword {
 			"alphabet" => Value::String(if self.options.bytes_alphabet {
 				"bytes".into()
@@ -351,8 +572,7 @@ impl Engine {
 			"produce-witnesses" => Value::Bool(self.options.produce_witnesses),
 			"time-operations" => Value::Bool(self.options.time_operations),
 			"optimize" | "trace" | "loops-and-recursion" => Value::Bool(false),
-			"default" => Value::None,
-			_ => return Err(Error::plain(format!("unknown option '{keyword}'"))),
+			_ => return Err(format!("unknown option ':{keyword}'")),
 		})
 	}
 
@@ -393,6 +613,10 @@ impl Engine {
 			Kind::Definition { .. } => Err(expression.at("define is not allowed here".into())),
 			Kind::Call { .. } => self.evaluate_call(expression),
 			Kind::Literal { .. } => self.evaluate_literal(expression),
+			Kind::GetOption(keyword) => self
+				.get_option(keyword)
+				.map_err(|message| expression.at(message)),
+			Kind::GetInfo(keyword) => Ok(self.info.get(keyword).cloned().unwrap_or(Value::None)),
 		}
 	}
 
@@ -489,12 +713,11 @@ impl Engine {
 		};
 		let started = Instant::now();
 		let value = self.evaluate_sequence(&parts[1..])?;
-		writeln!(
-			self.output,
-			"{label}: {:.6}",
-			started.elapsed().as_secs_f64()
-		)
-		.expect("writing to a String cannot fail");
+		let seconds = format!("{:.6}", started.elapsed().as_secs_f64());
+		let line = self
+			.record(&label, &seconds)
+			.map_err(|error| parts[0].at(error.message))?;
+		self.emit(&line)?;
 		Ok(value)
 	}
 
@@ -644,12 +867,29 @@ impl Engine {
 		};
 		match &*function {
 			Function::Native { name } => {
-				if !keywords.is_empty() {
-					return Err(
-						expression.at(format!("operation {name} takes no keyword arguments here"))
-					);
+				let mut hints = Vec::with_capacity(keywords.len());
+				for (key, value) in keywords {
+					let text = as_string(&self.evaluate(value)?).map_err(|_| {
+						value.at(format!("the value of hint :{key} must be a String"))
+					})?;
+					hints.push((key.clone(), text));
 				}
-				crate::ops::call(name, arguments, self)
+				let located = |error: Error| {
+					if error.at.is_some() || expression.line == 0 {
+						error
+					} else {
+						expression.at(error.message)
+					}
+				};
+				if is_timed(name) {
+					let label = name.clone();
+					self.timed(&label, |engine| {
+						crate::ops::call(&label, arguments, &hints, engine)
+					})
+					.map_err(located)
+				} else {
+					crate::ops::call(name, arguments, &hints, self).map_err(located)
+				}
 			}
 			Function::User {
 				parameters,
@@ -740,11 +980,32 @@ impl Engine {
 			.map_err(|e| e.to_string())
 	}
 
+	/// Loads one automaton from a path written in the script, relative to the script's directory.
 	pub(crate) fn load_file(&mut self, path: &str, kind: &str) -> Result<Value, Error> {
 		let resolved = self.resolve_path(path);
-		let text = fs::read_to_string(&resolved)
-			.map_err(|e| Error::plain(format!("cannot read '{}': {}", resolved.display(), e)))?;
-		self.parse_text(&text, kind)
+		let text = read_text(&resolved.to_string_lossy())?;
+		self.timed("parsing", |engine| engine.parse_text(&text, kind))
+	}
+
+	/// Loads one automaton from a path given on the command line, relative to the current directory,
+	/// or from standard input for `-`.
+	pub(crate) fn load_input(&mut self, path: &str, kind: &str) -> Result<Value, Error> {
+		let mut automata = self.load_inputs(path, kind)?;
+		if automata.len() == 1 {
+			Ok(automata.remove(0))
+		} else {
+			Err(Error::plain(format!(
+				"'{path}' holds {} automata; a declare-input takes one",
+				automata.len()
+			)))
+		}
+	}
+
+	/// Loads every automaton section of a command-line input; standard input for `-`.
+	pub(crate) fn load_inputs(&mut self, path: &str, kind: &str) -> Result<Vec<Value>, Error> {
+		let text = read_text(path)?;
+		self.timed("parsing", |engine| engine.parse_all(&text, kind))
+			.map_err(|error| Error::plain(format!("{path}: {}", error.message)))
 	}
 
 	pub(crate) fn parse_text(&mut self, text: &str, kind: &str) -> Result<Value, Error> {
@@ -760,8 +1021,7 @@ impl Engine {
 				Ok(Value::Nft(Rc::new(nft)))
 			}
 			"automaton" => {
-				let trimmed = text.trim_start();
-				if trimmed.starts_with("@NFT") || trimmed.contains("%LevelsNum") {
+				if holds_transducer(text) {
 					let nft = Nft::parse_mata(text, &mut self.script_alphabet)
 						.map_err(|e| Error::plain(e.to_string()))?;
 					Ok(Value::Automaton(Rc::new(AutomatonKind::Nft(Rc::new(nft)))))
@@ -775,11 +1035,148 @@ impl Engine {
 		}
 	}
 
-	// Automata are normalized to Value::Automaton at parse time, so no conversion helper is needed.
+	/// Every automaton section of `text`; bitvector sections are mintermized together.
+	fn parse_all(&mut self, text: &str, kind: &str) -> Result<Vec<Value>, Error> {
+		let transducer = match kind {
+			"nfa" => false,
+			"nft" => true,
+			_ => holds_transducer(text),
+		};
+		let wrap = |value: Value| match (kind, value) {
+			("automaton", Value::Nfa(nfa)) => Value::Automaton(Rc::new(AutomatonKind::Nfa(nfa))),
+			("automaton", Value::Nft(nft)) => Value::Automaton(Rc::new(AutomatonKind::Nft(nft))),
+			(_, value) => value,
+		};
+		let values: Vec<Value> = if transducer {
+			Nft::parse_mata_all(text, &mut self.script_alphabet)
+				.map_err(|e| Error::plain(e.to_string()))?
+				.into_iter()
+				.map(|nft| wrap(Value::Nft(Rc::new(nft))))
+				.collect()
+		} else {
+			Nfa::parse_mata_all(text, &mut self.script_alphabet)
+				.map_err(|e| Error::plain(e.to_string()))?
+				.into_iter()
+				.map(|nfa| wrap(Value::Nfa(Rc::new(nfa))))
+				.collect()
+		};
+		if values.is_empty() {
+			return Err(Error::plain("no automaton in the input".into()));
+		}
+		Ok(values)
+	}
 
 	pub(crate) fn path_for_write(&self, path: &str) -> PathBuf {
 		self.resolve_path(path)
 	}
+}
+
+/// Whether a `.mata` text holds a transducer: an `@NFT` section, or levels.
+pub(crate) fn holds_transducer(text: &str) -> bool {
+	text.trim_start().starts_with("@NFT") || text.contains("%LevelsNum")
+}
+
+/// The text of a file, or of standard input for `-`.
+///
+/// # Errors
+///
+/// The file or standard input cannot be read.
+pub(crate) fn read_text(path: &str) -> Result<String, Error> {
+	if path == "-" {
+		let mut text = String::new();
+		std::io::Read::read_to_string(&mut std::io::stdin(), &mut text)
+			.map_err(|e| Error::plain(format!("cannot read standard input: {e}")))?;
+		return Ok(text);
+	}
+	fs::read_to_string(path).map_err(|e| Error::plain(format!("cannot read '{path}': {e}")))
+}
+
+/// The kind a declared sort loads as.
+pub(crate) fn kind_of(sort: &str) -> &'static str {
+	if sort.contains("Nft") {
+		"nft"
+	} else if sort.contains("Automaton") {
+		"automaton"
+	} else {
+		"nfa"
+	}
+}
+
+/// Whether a call of `name` is a library operation that `:time-operations` measures.
+fn is_timed(name: &str) -> bool {
+	name.starts_with("nfa:") || name.starts_with("nft:") || name.starts_with("alphabet:")
+}
+
+/// Why `name` cannot be defined by a script, or `None` when it can. Every namespaced name is reserved,
+/// as are the names of the core functions and of the special forms.
+pub(crate) fn reserved(name: &str) -> Option<String> {
+	if name.contains(':') {
+		return Some(format!(
+			"'{name}' is reserved: a namespaced name belongs to an operation"
+		));
+	}
+	if crate::ops::operation(name).is_some() || crate::check::RESERVED_NAMES.contains(&name) {
+		return Some(format!("'{name}' is reserved for the language"));
+	}
+	None
+}
+
+/// The value of `--param NAME=TEXT` for a parameter of sort `sort`.
+fn parameter_value(text: &str, sort: &str) -> Result<Value, String> {
+	match sort {
+		"String" => Ok(Value::String(text.to_owned())),
+		"Int" => text
+			.parse::<i64>()
+			.map(Value::Int)
+			.map_err(|_| format!("'{text}' is not an Int")),
+		"Bool" => match text {
+			"true" => Ok(Value::Bool(true)),
+			"false" => Ok(Value::Bool(false)),
+			_ => Err(format!("'{text}' is not a Bool; use true or false")),
+		},
+		_ => Err(format!(
+			"a parameter must be String, Int, or Bool; '{sort}' is not"
+		)),
+	}
+}
+
+/// The keys `set-info` knows, with the sort of their value. Other keys are an error unless they start
+/// with `x-`, which is free for any use.
+pub(crate) const INFO_KEYS: &[(&str, &str)] = &[
+	("name", "String"),
+	("description", "String"),
+	("source", "String"),
+	("license", "String"),
+	("authors", "String"),
+	("expects", "Bool"),
+];
+
+/// Checks a `set-info` key and the sort of its value.
+pub(crate) fn check_info(keyword: &str, value: &Value) -> Result<(), String> {
+	if keyword.starts_with("x-") {
+		return Ok(());
+	}
+	let Some((_, sort)) = INFO_KEYS.iter().find(|(key, _)| *key == keyword) else {
+		return Err(info_key_message(keyword));
+	};
+	let actual = value_sort(value);
+	if actual == *sort {
+		Ok(())
+	} else {
+		Err(format!("info :{keyword} must be a {sort}, found {actual}"))
+	}
+}
+
+/// The error for an unknown `set-info` key.
+pub(crate) fn info_key_message(keyword: &str) -> String {
+	format!(
+		"unknown info key ':{keyword}'; the known keys are {}, and keys starting with x- are free",
+		INFO_KEYS
+			.iter()
+			.map(|(key, _)| format!(":{key}"))
+			.collect::<Vec<_>>()
+			.join(", ")
+	)
 }
 
 fn parse_sort(expression: &Expr) -> Result<String, Error> {

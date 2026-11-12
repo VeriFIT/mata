@@ -5,8 +5,9 @@ use std::collections::{HashMap, HashSet};
 use crate::Error;
 use crate::ast::{Expr, FormKind, Kind, Parameter, Spanned};
 use crate::eval::Engine;
+use crate::scripts::Inputs;
 
-/// What `mata scripts check` reports besides its errors.
+/// What `mata script check` reports besides its errors.
 pub(crate) struct Report {
 	/// Whether the script is guaranteed to terminate, provided the library operations it calls do.
 	pub(crate) termination: bool,
@@ -18,6 +19,40 @@ pub(crate) struct Report {
 const SPECIAL_FORMS: &[&str] = &[
 	"->", "and", "as", "cond", "do", "else", "if", "lambda", "let", "loop", "or", "recur", "time",
 	"witness",
+];
+
+/// Names a script cannot define: the special forms, the directives, and the predefined names.
+pub(crate) const RESERVED_NAMES: &[&str] = &[
+	"->",
+	"and",
+	"as",
+	"cond",
+	"do",
+	"else",
+	"if",
+	"lambda",
+	"let",
+	"loop",
+	"or",
+	"recur",
+	"time",
+	"witness",
+	"get-option",
+	"get-info",
+	"mata-script",
+	"define",
+	"declare-input",
+	"declare-inputs",
+	"declare-param",
+	"set-option",
+	"set-info",
+	"push",
+	"pop",
+	"reset",
+	"exit",
+	"inputs",
+	"epsilon",
+	"dont-care",
 ];
 
 const OPTIONS: &[&str] = &[
@@ -65,11 +100,31 @@ const SIMPLE_SORTS: &[&str] = &[
 ];
 
 /// Static check: names, shapes, arities, sorts where known, declarations, and the termination report.
-/// It never loads an input and never calls a library operation.
-pub(crate) fn check(forms: &[Spanned<FormKind>], engine: &Engine) -> Result<Report, Error> {
+/// It never loads an input and never calls a library operation. With `inputs`, the inputs a run is
+/// given are matched against the declarations too.
+pub(crate) fn check(
+	forms: &[Spanned<FormKind>],
+	engine: &Engine,
+	inputs: Option<&Inputs>,
+) -> Result<Report, Error> {
 	let mut checker = Checker::new(engine);
-	for form in forms {
+	if !forms
+		.first()
+		.is_some_and(|form| matches!(form.node, FormKind::Header { .. }))
+	{
+		checker.warnings.push(format!(
+			"no (mata-script \"{}\") header; the script is read as the version of this mata",
+			crate::version::LANGUAGE
+		));
+	}
+	for (index, form) in forms.iter().enumerate() {
+		if index > 0 && matches!(form.node, FormKind::Header { .. }) {
+			checker.reject_form(form, "mata-script must be the first form".into());
+		}
 		checker.form(form);
+	}
+	if let Some(inputs) = inputs {
+		checker.match_inputs(forms, inputs);
 	}
 	checker.result()
 }
@@ -163,16 +218,20 @@ impl<'a> Checker<'a> {
 
 	// Environment -----------------------------------------------------------------------------------
 
-	/// Whether `name` is bound anywhere the script can see.
+	/// Whether `name` is bound anywhere the script can see. `inputs` is bound by every run, after the
+	/// check.
 	fn known(&self, name: &str) -> bool {
-		self.frames
-			.iter()
-			.rev()
-			.any(|frame| frame.sorts.contains_key(name))
+		name == "inputs"
+			|| self
+				.frames
+				.iter()
+				.rev()
+				.any(|frame| frame.sorts.contains_key(name))
 			|| self.engine.scope.lookup(name).is_some()
 	}
 
-	/// The sort of `name` when it is known: annotations, engine values, and the results of operations.
+	/// The sort of `name` used as a value, when it is known: annotations, the predefined names, and
+	/// operations, which are functions.
 	fn sort_of(&self, name: &str) -> Option<String> {
 		for frame in self.frames.iter().rev() {
 			if let Some(sort) = frame.sorts.get(name) {
@@ -182,9 +241,7 @@ impl<'a> Checker<'a> {
 		match name {
 			"epsilon" | "dont-care" => Some("Symbol".to_owned()),
 			"inputs" => Some("(List String)".to_owned()),
-			_ => crate::ops::operation(name).and_then(|operation| {
-				(!operation.result.is_empty()).then(|| operation.result.to_owned())
-			}),
+			_ => crate::ops::visible(name, self.engine.language).map(|_| "Function".to_owned()),
 		}
 	}
 
@@ -234,31 +291,56 @@ impl<'a> Checker<'a> {
 
 	fn form(&mut self, form: &Spanned<FormKind>) {
 		match &form.node {
+			FormKind::Header { requires, profile } => {
+				for feature in requires {
+					if let Some(message) = crate::version::missing_feature(feature) {
+						self.reject_form(form, message);
+					}
+				}
+				match profile.as_deref() {
+					None => {}
+					Some("core") => self.profile.core = true,
+					Some(other) => self.reject_form(form, format!("unknown profile '{other}'")),
+				}
+			}
 			FormKind::Declare {
 				name,
 				sort,
 				variadic,
 			} => self.declaration(form, name, sort, *variadic),
+			FormKind::Parameter {
+				name,
+				sort,
+				default,
+			} => self.parameter(form, name, sort, default.as_ref()),
 			FormKind::SetOption { keyword, value } => self.option(form, keyword, value),
-			FormKind::GetOption { keyword } => {
-				if !OPTIONS.contains(&keyword.as_str()) {
-					self.reject_form(form, format!("unknown option ':{keyword}'"));
-				}
-			}
 			FormKind::SetInfo { keyword, value } => {
-				if keyword == "profile"
-					&& let Kind::String(profile) = &value.node
+				if keyword == "profile" {
+					self.reject_form(
+						form,
+						"the profile is set in the header: (mata-script \"…\" :profile core)"
+							.into(),
+					);
+				} else if !keyword.starts_with("x-")
+					&& !crate::eval::INFO_KEYS.iter().any(|(key, _)| key == keyword)
 				{
-					if profile == "core" {
-						self.profile.core = true;
-					} else {
-						self.warnings.push(format!("unknown profile '{profile}'"));
+					self.reject_form(form, crate::eval::info_key_message(keyword));
+				} else if let Some((_, expected)) = crate::eval::INFO_KEYS
+					.iter()
+					.find(|(key, _)| key == keyword)
+				{
+					if let Some(sort) = self.expression(value, None)
+						&& !accepts(expected, &sort)
+					{
+						self.reject_form(
+							form,
+							format!("info :{keyword} must be a {expected}, found {sort}"),
+						);
 					}
 				} else {
 					let _ = self.expression(value, None);
 				}
 			}
-			FormKind::GetInfo { keyword: _ } => {}
 			FormKind::Push => {
 				self.profile.declarations_open = false;
 				self.pushes += 1;
@@ -297,6 +379,99 @@ impl<'a> Checker<'a> {
 		}
 	}
 
+	/// Matches the inputs a run is given against the declarations: every declaration needs an input,
+	/// every named input a declaration, and every positional input a declaration that takes it.
+	fn match_inputs(&mut self, forms: &[Spanned<FormKind>], inputs: &Inputs) {
+		let mut takers = 0;
+		let mut variadic = false;
+		let mut declared = HashSet::new();
+		let mut parameters = HashSet::new();
+		for form in forms {
+			match &form.node {
+				FormKind::Declare {
+					name,
+					variadic: true,
+					..
+				} => {
+					variadic = true;
+					declared.insert(name.as_str());
+				}
+				FormKind::Declare { name, .. } => {
+					declared.insert(name.as_str());
+					if !inputs.named.contains_key(name) {
+						takers += 1;
+					}
+				}
+				FormKind::Parameter { name, .. } => {
+					parameters.insert(name.as_str());
+				}
+				_ => {}
+			}
+		}
+		let mut named: Vec<&String> = inputs.named.keys().collect();
+		named.sort();
+		for name in named {
+			if !declared.contains(name.as_str()) {
+				self.errors.push(Error::plain(format!(
+					"--input {name}: the script declares no input '{name}'"
+				)));
+			}
+		}
+		let mut given: Vec<&String> = inputs.parameters.keys().collect();
+		given.sort();
+		for name in given {
+			if !parameters.contains(name.as_str()) {
+				self.errors.push(Error::plain(format!(
+					"--param {name}: the script declares no parameter '{name}'"
+				)));
+			}
+		}
+		// A file can hold several automata, so fewer files than declarations can be enough; the
+		// run reports a declaration that is still missing its automaton. A script without
+		// declarations reads its inputs as $1, $2, … or `inputs`.
+		if !variadic && !declared.is_empty() && inputs.positional.len() > takers {
+			self.errors.push(Error::plain(format!(
+				"{} positional inputs given, but the script takes {takers}",
+				inputs.positional.len()
+			)));
+		}
+	}
+
+	fn parameter(
+		&mut self,
+		form: &Spanned<FormKind>,
+		name: &str,
+		sort: &str,
+		default: Option<&Expr>,
+	) {
+		if !self.profile.declarations_open {
+			self.reject_form(
+				form,
+				"declarations must come before every other form except set-option and set-info"
+					.into(),
+			);
+		}
+		if let Some(message) = crate::eval::reserved(name) {
+			self.reject_form(form, message);
+		} else if self.known(name) {
+			self.reject_form(form, format!("declaration '{name}' is already defined"));
+		}
+		if !matches!(sort, "String" | "Int" | "Bool") {
+			self.reject_form(
+				form,
+				format!("a parameter must be String, Int, or Bool; '{sort}' is not"),
+			);
+		}
+		if let Some(default) = default
+			&& let Some(actual) = self.expression(default, None)
+			&& !accepts(sort, &actual)
+		{
+			self.reject(default, format!("expected {sort}, found {actual}"));
+		}
+		self.bind(name, Some(sort.to_owned()), None);
+		self.declarations.push(name.to_owned());
+	}
+
 	fn check_sort_name(&mut self, line: usize, column: usize, sort: &str) {
 		if !valid_sort(sort) {
 			self.reject_at(line, column, format!("unknown sort '{sort}'"));
@@ -316,7 +491,9 @@ impl<'a> Checker<'a> {
 					.into(),
 			);
 		}
-		if self.known(name) {
+		if let Some(message) = crate::eval::reserved(name) {
+			self.reject_form(form, message);
+		} else if self.known(name) {
 			self.reject_form(form, format!("declaration '{name}' is already defined"));
 		}
 		if self.profile.declared_variadic {
@@ -374,9 +551,62 @@ impl<'a> Checker<'a> {
 					"option :loops-and-recursion is not implemented".into(),
 				);
 			}
-			_ => {
-				let _ = self.expression(value, None);
-				self.reject_form(form, format!("option :{keyword} is not implemented"));
+			_ => self.default_hints(form, value),
+		}
+	}
+
+	/// `(set-option :default (operation :hint "value" …))`.
+	fn default_hints(&mut self, form: &Spanned<FormKind>, value: &Expr) {
+		let Kind::Call {
+			function,
+			arguments,
+			keywords,
+		} = &value.node
+		else {
+			self.reject(
+				value,
+				":default needs an operation with only hints, as (nfa:included? :algorithm \"naive\")"
+					.into(),
+			);
+			return;
+		};
+		let Kind::Name(operation) = &function.node else {
+			self.reject(function, ":default needs an operation name".into());
+			return;
+		};
+		if crate::ops::visible(operation, self.engine.language).is_none() {
+			self.reject(function, format!("unknown operation '{operation}'"));
+			return;
+		}
+		if !arguments.is_empty() || keywords.is_empty() {
+			self.reject_form(form, ":default needs an operation with only hints".into());
+		}
+		self.hints(operation, keywords);
+	}
+
+	/// Checks the hints of one call of `operation`.
+	fn hints(&mut self, operation: &str, keywords: &[(String, Expr)]) {
+		for (name, value) in keywords {
+			if let Kind::String(text) = &value.node {
+				if let Err(message) = crate::ops::check_hint(operation, name, text) {
+					self.reject(value, message);
+				}
+				continue;
+			}
+			if crate::ops::hint(operation, name).is_none() {
+				self.reject(
+					value,
+					crate::ops::check_hint(operation, name, "")
+						.expect_err("an operation without the hint rejects it"),
+				);
+			}
+			if let Some(sort) = self.expression(value, None)
+				&& !accepts("String", &sort)
+			{
+				self.reject(
+					value,
+					format!("the value of hint :{name} must be a String, found {sort}"),
+				);
 			}
 		}
 	}
@@ -397,7 +627,9 @@ impl<'a> Checker<'a> {
 		line: usize,
 		column: usize,
 	) {
-		if self.defined_here(name) {
+		if let Some(message) = crate::eval::reserved(name) {
+			self.reject_at(line, column, message);
+		} else if self.defined_here(name) {
 			self.reject_at(line, column, format!("'{name}' is already defined"));
 		}
 		let sort = match parameters {
@@ -414,6 +646,9 @@ impl<'a> Checker<'a> {
 				for parameter in parameters {
 					if let Some(sort) = &parameter.sort {
 						self.check_sort_name(line, column, sort);
+					}
+					if let Some(message) = crate::eval::reserved(&parameter.name) {
+						self.reject_at(line, column, message);
 					}
 					self.bind(&parameter.name, parameter.sort.clone(), None);
 				}
@@ -488,6 +723,9 @@ impl<'a> Checker<'a> {
 					if let Some(sort) = &parameter.sort {
 						self.check_sort_expression(expression, sort);
 					}
+					if let Some(message) = crate::eval::reserved(&parameter.name) {
+						self.reject(expression, message);
+					}
 					self.bind(&parameter.name, parameter.sort.clone(), None);
 				}
 				let result = self.body(body, self_name);
@@ -513,6 +751,29 @@ impl<'a> Checker<'a> {
 			}
 			Kind::Call { .. } => self.call(expression, self_name),
 			Kind::Literal { name, arguments } => Some(self.literal(name, arguments, expression)),
+			Kind::GetOption(keyword) => {
+				if OPTIONS.contains(&keyword.as_str()) && keyword != "default" {
+					Some(
+						if keyword == "alphabet" {
+							"String"
+						} else {
+							"Bool"
+						}
+						.into(),
+					)
+				} else {
+					self.reject(expression, format!("unknown option ':{keyword}'"));
+					None
+				}
+			}
+			Kind::GetInfo(keyword) => {
+				if !keyword.starts_with("x-")
+					&& !crate::eval::INFO_KEYS.iter().any(|(key, _)| key == keyword)
+				{
+					self.reject(expression, crate::eval::info_key_message(keyword));
+				}
+				None
+			}
 		}
 	}
 
@@ -615,6 +876,9 @@ impl<'a> Checker<'a> {
 				self.reject(binding, "a let binding needs a name".into());
 				continue;
 			};
+			if let Some(message) = crate::eval::reserved(name) {
+				self.reject(binding, message);
+			}
 			let sort = self.expression(&pair[1], self_name);
 			let arity = match &pair[1].node {
 				Kind::Lambda { parameters, .. }
@@ -736,38 +1000,8 @@ impl<'a> Checker<'a> {
 		if let Special::Form(result) = special {
 			return result;
 		}
-		if let Some(operation) = crate::ops::operation(head) {
-			if !keywords.is_empty() {
-				self.reject(expression, format!("'{head}' takes no keyword arguments"));
-			}
-			if self.profile.core && !core_call(head) {
-				self.reject(expression, format!("'{head}' is not in the portable core"));
-			}
-			if !crate::ops::accepts(operation, arguments.len()) {
-				self.reject(
-					expression,
-					crate::ops::arity_message(operation, arguments.len()),
-				);
-			}
-			let list_function = head.starts_with("list:");
-			let operands: Vec<&str> = operation.operands.split(',').collect();
-			for (index, argument) in arguments.iter().enumerate() {
-				let sort = self.expression(argument, self_name);
-				if let Some(expected) = operands.get(index).filter(|entry| !entry.is_empty())
-					&& let Some(actual) = &sort
-					&& !accepts(expected, actual)
-				{
-					self.reject(
-						argument,
-						format!(
-							"argument {} of '{head}' must be {expected}, found {actual}",
-							index + 1
-						),
-					);
-				}
-				self.consumed(sort.as_deref(), list_function);
-			}
-			return (!operation.result.is_empty()).then(|| operation.result.to_owned());
+		if let Some(operation) = crate::ops::visible(head, self.engine.language) {
+			return self.operation_call(operation, arguments, keywords, expression, self_name);
 		}
 		if SPECIAL_FORMS.contains(&head) {
 			// A special form is handled above; reaching here means it is not allowed in this position.
@@ -813,6 +1047,57 @@ impl<'a> Checker<'a> {
 			let _ = self.expression(value, self_name);
 		}
 		None
+	}
+
+	/// Checks a call of a catalogue operation: its hints, the portable core, its arity, and the sorts of
+	/// its operands.
+	fn operation_call(
+		&mut self,
+		operation: &crate::ops::Operation,
+		arguments: &[Expr],
+		keywords: &[(String, Expr)],
+		expression: &Expr,
+		self_name: Option<&str>,
+	) -> Option<String> {
+		let head = operation.name;
+		self.hints(head, keywords);
+		if self.profile.core && !core_call(head) {
+			self.reject(expression, format!("'{head}' is not in the portable core"));
+		}
+		if !crate::ops::accepts(operation, arguments.len()) {
+			self.reject(
+				expression,
+				crate::ops::arity_message(operation, arguments.len()),
+			);
+		}
+		let list_function = head.starts_with("list:");
+		for (index, argument) in arguments.iter().enumerate() {
+			let sort = self.expression(argument, self_name);
+			let expected = if head == "check" {
+				// `(check condition)` or `(check "label" condition)`.
+				Some(if index + 1 == arguments.len() {
+					"Bool"
+				} else {
+					"String"
+				})
+			} else {
+				crate::ops::operand_sort(operation, index)
+			};
+			if let Some(expected) = expected
+				&& let Some(actual) = &sort
+				&& !accepts(expected, actual)
+			{
+				self.reject(
+					argument,
+					format!(
+						"argument {} of '{head}' must be {expected}, found {actual}",
+						index + 1
+					),
+				);
+			}
+			self.consumed(sort.as_deref(), list_function);
+		}
+		(!operation.result.is_empty()).then(|| operation.result.to_owned())
 	}
 
 	/// Checks a special form named by `head`; `NotSpecial` when `head` names no special form.
@@ -987,28 +1272,25 @@ impl<'a> Checker<'a> {
 		}
 		for step in &steps[1..] {
 			match &step.node {
-				Kind::Name(name) => self.pipeline_name(name, step),
+				Kind::Name(name) => self.pipeline_step(name, 1, step),
 				Kind::Call {
 					function,
 					arguments,
 					keywords,
 				} => {
 					if let Kind::Name(head) = &function.node {
-						self.pipeline_name(head, step);
+						// The piped value is the first argument, before the written ones.
+						self.pipeline_step(head, arguments.len() + 1, step);
 						for argument in arguments {
 							let sort = self.expression(argument, self_name);
 							self.consumed(sort.as_deref(), head.starts_with("list:"));
 						}
-						for (_, value) in keywords {
-							let _ = self.expression(value, self_name);
-						}
-						if let Some(operation) = crate::ops::operation(head)
-							&& !crate::ops::accepts(operation, arguments.len() + 1)
-						{
-							self.reject(
-								step,
-								crate::ops::arity_message(operation, arguments.len() + 1),
-							);
+						if crate::ops::visible(head, self.engine.language).is_some() {
+							self.hints(head, keywords);
+						} else {
+							for (_, value) in keywords {
+								let _ = self.expression(value, self_name);
+							}
 						}
 					} else {
 						self.reject(
@@ -1026,24 +1308,26 @@ impl<'a> Checker<'a> {
 		None
 	}
 
-	fn pipeline_name(&mut self, name: &str, step: &Expr) {
+	/// Checks one pipeline step that calls `name` with `given` arguments, the piped value included.
+	fn pipeline_step(&mut self, name: &str, given: usize, step: &Expr) {
 		if !self.known(name) {
 			self.reject(step, format!("unknown name '{name}'"));
 			return;
 		}
-		if let Some(operation) = crate::ops::operation(name) {
+		self.used.insert(name.to_owned());
+		if let Some(operation) = crate::ops::visible(name, self.engine.language) {
 			if self.profile.core && !core_call(name) {
 				self.reject(step, format!("'{name}' is not in the portable core"));
 			}
-			if !crate::ops::accepts(operation, 1) {
-				self.reject(step, crate::ops::arity_message(operation, 1));
+			if !crate::ops::accepts(operation, given) {
+				self.reject(step, crate::ops::arity_message(operation, given));
 			}
 		} else if let Some(expected) = self.arity_of(name)
-			&& expected != 1
+			&& expected != given
 		{
 			self.reject(
 				step,
-				format!("the function expects {expected} arguments, 1 given"),
+				format!("the function expects {expected} arguments, {given} given"),
 			);
 		}
 	}

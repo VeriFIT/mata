@@ -2,14 +2,19 @@
 
 use std::rc::Rc;
 
+use mata::{
+	CheckAlgorithm, Complementation, Direction, Minimization, Reduction, ResidualConstruction,
+};
 use mata::{Nfa, Symbol, Word, nft::Nft};
 
 use crate::Error;
 use crate::eval::Engine;
 use crate::eval::{AutomatonKind, Value, as_bool, as_int, as_list, as_string};
+use crate::version::{FIRST, Version};
 
 /// One script operation: its script name, the handler that serves it, the argument counts it accepts,
-/// and the sorts of its operands and of its result where they are fixed.
+/// the sorts of its operands and of its result where they are fixed, and the language version that
+/// added it.
 pub(crate) struct Operation {
 	/// Name in a script, such as `nfa:union-nondeterministic`.
 	pub name: &'static str,
@@ -24,6 +29,8 @@ pub(crate) struct Operation {
 	pub operands: &'static str,
 	/// Sort of the result, empty when it depends on the operands.
 	pub result: &'static str,
+	/// The language version that added the operation; a script declaring an older one does not see it.
+	pub since: Version,
 }
 
 const fn op(
@@ -41,7 +48,88 @@ const fn op(
 		maximum,
 		operands,
 		result,
+		since: FIRST,
 	}
+}
+
+/// A hint an operation takes as a keyword argument: its name and the values it accepts, the default
+/// first.
+pub(crate) struct Hint {
+	pub operation: &'static str,
+	pub name: &'static str,
+	pub values: &'static [&'static str],
+}
+
+const CHECK_ALGORITHMS: &[&str] = &["antichains", "naive"];
+
+pub(crate) const HINTS: &[Hint] = &[
+	Hint {
+		operation: "nfa:complement",
+		name: "algorithm",
+		values: &["classical", "brzozowski"],
+	},
+	Hint {
+		operation: "nfa:minimize",
+		name: "algorithm",
+		values: &["hopcroft", "brzozowski"],
+	},
+	Hint {
+		operation: "nfa:reduce",
+		name: "algorithm",
+		values: &["simulation", "residual"],
+	},
+	Hint {
+		operation: "nfa:reduce",
+		name: "type",
+		values: &["after", "with"],
+	},
+	Hint {
+		operation: "nfa:reduce",
+		name: "direction",
+		values: &["forward", "backward"],
+	},
+	Hint {
+		operation: "nfa:included?",
+		name: "algorithm",
+		values: CHECK_ALGORITHMS,
+	},
+	Hint {
+		operation: "nfa:equivalent?",
+		name: "algorithm",
+		values: CHECK_ALGORITHMS,
+	},
+	Hint {
+		operation: "nfa:universal?",
+		name: "algorithm",
+		values: CHECK_ALGORITHMS,
+	},
+];
+
+/// The hint `name` of `operation`, if it takes one.
+pub(crate) fn hint(operation: &str, name: &str) -> Option<&'static Hint> {
+	HINTS
+		.iter()
+		.find(|hint| hint.operation == operation && hint.name == name)
+}
+
+/// Every hint `operation` takes.
+pub(crate) fn hints_of(operation: &str) -> impl Iterator<Item = &'static Hint> {
+	HINTS.iter().filter(move |hint| hint.operation == operation)
+}
+
+/// The binary operations that a script and a direct command apply to more operands by folding from the
+/// left: `(nfa:intersection a b c)` is `(nfa:intersection (nfa:intersection a b) c)`.
+pub(crate) fn folds(name: &str) -> bool {
+	matches!(
+		name,
+		"nfa:union-nondeterministic"
+			| "nfa:intersection"
+			| "nfa:concatenate"
+			| "nft:union-nondeterministic"
+			| "nft:intersection"
+			| "nft:concatenate"
+			| "nft:compose"
+	)
 }
 
 pub(crate) const OPERATIONS: &[Operation] = &[
@@ -51,6 +139,9 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 	op("<=", "le", 2, Some(2), "", "Bool"),
 	op("+", "add", 2, Some(2), "Int,Int", "Int"),
 	op("-", "sub", 2, Some(2), "Int,Int", "Int"),
+	op("concat", "concat", 0, None, "String*", "String"),
+	op("to-string", "to_string", 1, Some(1), "", "String"),
+	op("string->int", "string_to_int", 1, Some(1), "String", "Int"),
 	op("none?", "is_none", 1, Some(1), "", "Bool"),
 	op("get", "get", 1, Some(1), "", ""),
 	op("word", "word", 0, None, "", "Word"),
@@ -124,7 +215,7 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 	op("print", "print", 1, Some(1), "", ""),
 	op("echo", "echo", 1, Some(1), "String", "String"),
 	op("write", "write", 2, Some(2), ",String", ""),
-	op("check", "check", 1, Some(1), "Bool", "Bool"),
+	op("check", "check", 1, Some(2), "", "Bool"),
 	op("assert", "assert", 1, Some(1), "Bool", "Bool"),
 	op("get-witness", "get_witness", 0, Some(0), "", ""),
 	op(
@@ -174,16 +265,16 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 		"nfa:union-nondeterministic",
 		"nfa_union",
 		2,
-		Some(2),
-		"Nfa,Nfa",
+		None,
+		"Nfa,Nfa*",
 		"Nfa",
 	),
 	op(
 		"nfa:intersection",
 		"nfa_intersection",
 		2,
-		Some(2),
-		"Nfa,Nfa",
+		None,
+		"Nfa,Nfa*",
 		"Nfa",
 	),
 	op(
@@ -194,14 +285,7 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 		"Nfa,Nfa",
 		"Nfa",
 	),
-	op(
-		"nfa:concatenate",
-		"nfa_concat",
-		2,
-		Some(2),
-		"Nfa,Nfa",
-		"Nfa",
-	),
+	op("nfa:concatenate", "nfa_concat", 2, None, "Nfa,Nfa*", "Nfa"),
 	op("nfa:complement", "nfa_complement", 1, Some(1), "Nfa", "Nfa"),
 	op(
 		"nfa:determinize",
@@ -434,27 +518,20 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 		"nft:union-nondeterministic",
 		"nft_union",
 		2,
-		Some(2),
-		"Nft,Nft",
+		None,
+		"Nft,Nft*",
 		"Nft",
 	),
 	op(
 		"nft:intersection",
 		"nft_intersection",
 		2,
-		Some(2),
-		"Nft,Nft",
+		None,
+		"Nft,Nft*",
 		"Nft",
 	),
-	op(
-		"nft:concatenate",
-		"nft_concat",
-		2,
-		Some(2),
-		"Nft,Nft",
-		"Nft",
-	),
-	op("nft:compose", "nft_compose", 2, Some(2), "Nft,Nft", "Nft"),
+	op("nft:concatenate", "nft_concat", 2, None, "Nft,Nft*", "Nft"),
+	op("nft:compose", "nft_compose", 2, None, "Nft,Nft*", "Nft"),
 	op("nft:apply", "nft_apply", 2, Some(2), "Nft,Nfa|Word", "Nft"),
 	op(
 		"nft:project-out",
@@ -564,7 +641,12 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 	),
 ];
 
-/// The operation a script calls by `name`, if there is one.
+/// The operation a script of language version `script` calls by `name`, if it sees one.
+pub(crate) fn visible(name: &str, script: Version) -> Option<&'static Operation> {
+	operation(name).filter(|operation| operation.since.visible_in(script))
+}
+
+/// The operation named `name` in the whole catalogue of this interpreter.
 pub(crate) fn operation(name: &str) -> Option<&'static Operation> {
 	OPERATIONS.iter().find(|operation| operation.name == name)
 }
@@ -572,6 +654,21 @@ pub(crate) fn operation(name: &str) -> Option<&'static Operation> {
 /// Whether an operation accepts a call with `given` arguments.
 pub(crate) fn accepts(operation: &Operation, given: usize) -> bool {
 	given >= operation.minimum && operation.maximum.is_none_or(|maximum| given <= maximum)
+}
+
+/// The sort operand `index` of `operation` must have, if it is fixed. A last entry ending in `*`
+/// applies to every later operand too.
+pub(crate) fn operand_sort(operation: &Operation, index: usize) -> Option<&'static str> {
+	if operation.operands.is_empty() {
+		return None;
+	}
+	let entries: Vec<&'static str> = operation.operands.split(',').collect();
+	let entry = match entries.get(index) {
+		Some(entry) => *entry,
+		None => entries.last().filter(|entry| entry.ends_with('*'))?,
+	};
+	let entry = entry.trim_end_matches('*');
+	(!entry.is_empty()).then_some(entry)
 }
 
 /// The error for a call whose argument count the operation does not accept.
@@ -596,9 +693,45 @@ pub(crate) fn arity_message(operation: &Operation, given: usize) -> String {
 	}
 }
 
+/// Checks the hints of one call against the operation's [`HINTS`].
+///
+/// # Errors
+///
+/// The operation takes no such hint, or the value is not one the hint accepts.
+pub(crate) fn check_hint(operation: &str, name: &str, value: &str) -> Result<(), String> {
+	let Some(hint) = hint(operation, name) else {
+		return Err(if hints_of(operation).next().is_none() {
+			format!("operation {operation} takes no hints")
+		} else {
+			format!(
+				"operation {operation} has no hint ':{name}'; it takes {}",
+				hints_of(operation)
+					.map(|hint| format!(":{}", hint.name))
+					.collect::<Vec<_>>()
+					.join(", ")
+			)
+		});
+	};
+	if hint.values.contains(&value) {
+		Ok(())
+	} else {
+		Err(format!(
+			"hint :{name} of {operation} is one of {}, not \"{value}\"",
+			hint.values
+				.iter()
+				.map(|value| format!("\"{value}\""))
+				.collect::<Vec<_>>()
+				.join(", ")
+		))
+	}
+}
+
+/// Calls operation `name` with positional `arguments` and the `hints` of this call, which override
+/// the defaults set with `(set-option :default …)`.
 pub(crate) fn call(
 	name: &str,
 	arguments: Vec<Value>,
+	hints: &[(String, String)],
 	engine: &mut crate::eval::Engine,
 ) -> Result<Value, Error> {
 	let operation =
@@ -607,7 +740,47 @@ pub(crate) fn call(
 	if !accepts(operation, given) {
 		return Err(Error::plain(arity_message(operation, given)));
 	}
-	dispatch(operation.handler, name, arguments, engine)
+	let mut chosen = engine.defaults_of(name);
+	for (key, value) in hints {
+		check_hint(name, key, value).map_err(Error::plain)?;
+		chosen.retain(|(known, _)| known != key);
+		chosen.push((key.clone(), value.clone()));
+	}
+	let saved = std::mem::replace(&mut engine.hints, chosen);
+	let result = if folds(name) && given > 2 {
+		let mut operands = arguments.into_iter();
+		let first = operands.next().expect("at least three operands");
+		operands.try_fold(first, |folded, next| {
+			dispatch(operation.handler, name, vec![folded, next], engine)
+		})
+	} else {
+		dispatch(operation.handler, name, arguments, engine)
+	};
+	engine.hints = saved;
+	result
+}
+
+/// The value of hint `name` for the call being made, or its first (default) value.
+fn hint_value(engine: &Engine, operation: &str, name: &str) -> &'static str {
+	let hint = hint(operation, name).expect("every hint a handler reads is in HINTS");
+	let chosen = engine
+		.hints
+		.iter()
+		.find(|(key, _)| key == name)
+		.map(|(_, value)| value.as_str());
+	hint.values
+		.iter()
+		.copied()
+		.find(|value| Some(*value) == chosen)
+		.unwrap_or(hint.values[0])
+}
+
+fn check_algorithm(engine: &Engine, operation: &str) -> CheckAlgorithm {
+	if hint_value(engine, operation, "algorithm") == "naive" {
+		CheckAlgorithm::Naive
+	} else {
+		CheckAlgorithm::Antichains
+	}
 }
 
 fn dispatch(
@@ -660,6 +833,30 @@ fn dispatch(
 				)),
 				_ => Err(Error::plain("'-' needs Int operands".into())),
 			}
+		}
+		"concat" => {
+			let mut text = String::new();
+			for argument in &arguments {
+				text.push_str(&as_string(argument).map_err(Error::plain)?);
+			}
+			Ok(Value::String(text))
+		}
+		"to_string" => {
+			let [value] = take(arguments, name)?;
+			Ok(Value::String(match &value {
+				Value::String(text) => text.clone(),
+				other => crate::display_value(other, engine)
+					.trim_end_matches('\n')
+					.to_owned(),
+			}))
+		}
+		"string_to_int" => {
+			let [value] = take(arguments, name)?;
+			let text = as_string(&value).map_err(Error::plain)?;
+			text.trim()
+				.parse::<i64>()
+				.map(Value::Int)
+				.map_err(|_| Error::plain(format!("'{text}' is not an Int")))
 		}
 		"is_none" => {
 			let [value] = take(arguments, name)?;
@@ -829,16 +1026,14 @@ fn dispatch_runtime(
 	match handler {
 		"print" => {
 			let [value] = take(arguments, name)?;
-			engine
-				.output
-				.push_str(&crate::display_value(&value, engine));
+			let text = crate::display_value(&value, engine);
+			engine.emit(&text)?;
 			Ok(value)
 		}
 		"echo" => {
 			let [value] = take(arguments, name)?;
 			let text = as_string(&value).map_err(Error::plain)?;
-			engine.output.push_str(&text);
-			engine.output.push('\n');
+			engine.emit(&format!("{text}\n"))?;
 			Ok(value)
 		}
 		"write" => {
@@ -851,18 +1046,27 @@ fn dispatch_runtime(
 			Ok(value)
 		}
 		"check" => {
-			let [value] = take(arguments, name)?;
+			// `(check condition)` or `(check "label" condition)`, which prints a `label: verdict` record.
+			let (label, value) = match <[Value; 2]>::try_from(arguments) {
+				Ok([label, value]) => (Some(as_string(&label).map_err(Error::plain)?), value),
+				Err(arguments) => {
+					let [value] = take(arguments, name)?;
+					(None, value)
+				}
+			};
 			let verdict = as_bool(&value).map_err(Error::plain)?;
-			engine
-				.output
-				.push_str(if verdict { "true\n" } else { "false\n" });
+			let line = match label {
+				Some(label) => engine.record(&label, &verdict.to_string())?,
+				None => format!("{verdict}\n"),
+			};
+			engine.emit(&line)?;
 			Ok(value)
 		}
 		"assert" => {
 			let [value] = take(arguments, name)?;
 			let verdict = as_bool(&value).map_err(Error::plain)?;
 			if !verdict {
-				engine.assertions_failed = true;
+				engine.fail_assertion();
 			}
 			Ok(value)
 		}
@@ -919,7 +1123,10 @@ fn dispatch_nfa_inspection(
 			let text = as_string(&text).map_err(Error::plain)?;
 			engine.parse_text(&text, "nfa")
 		}
-		"nfa_literal" => unreachable!("nfa:literal is handled by the parser"),
+		"nfa_literal" => Err(Error::plain(
+			"nfa:literal is written with its fields, as (nfa:literal :initial (…) :final (…) …)"
+				.into(),
+		)),
 		"nfa_print_to_mata" => {
 			let [value] = take(arguments, name)?;
 			let nfa = expect_nfa(&value)?;
@@ -930,7 +1137,9 @@ fn dispatch_nfa_inspection(
 		"nfa_print_to_dot" => {
 			let [value] = take(arguments, name)?;
 			let nfa = expect_nfa(&value)?;
-			Ok(Value::String(nfa.dot().to_string()))
+			Ok(Value::String(
+				nfa.dot().alphabet(&engine.script_alphabet).to_string(),
+			))
 		}
 		"nfa_num_states" => {
 			let [value] = take(arguments, name)?;
@@ -979,8 +1188,12 @@ fn dispatch_nfa_transformations(
 		}
 		"nfa_complement" => {
 			let [value] = take(arguments, name)?;
+			let algorithm = match hint_value(engine, name, "algorithm") {
+				"brzozowski" => Complementation::Brzozowski,
+				_ => Complementation::Classical,
+			};
 			Ok(Value::Nfa(Rc::new(
-				expect_nfa(&value)?.complement(&engine.script_alphabet),
+				expect_nfa(&value)?.complement_with(&engine.script_alphabet, algorithm),
 			)))
 		}
 		"nfa_determinize" => {
@@ -989,11 +1202,35 @@ fn dispatch_nfa_transformations(
 		}
 		"nfa_minimize" => {
 			let [value] = take(arguments, name)?;
-			Ok(Value::Nfa(Rc::new(expect_nfa(&value)?.minimize())))
+			let algorithm = match hint_value(engine, name, "algorithm") {
+				"brzozowski" => Minimization::Brzozowski,
+				_ => Minimization::Hopcroft,
+			};
+			Ok(Value::Nfa(Rc::new(
+				expect_nfa(&value)?.minimize_with(algorithm),
+			)))
 		}
 		"nfa_reduce" => {
 			let [value] = take(arguments, name)?;
-			Ok(Value::Nfa(Rc::new(expect_nfa(&value)?.reduce())))
+			let reduction = if hint_value(engine, name, "algorithm") == "residual" {
+				Reduction::Residual {
+					construction: if hint_value(engine, name, "type") == "with" {
+						ResidualConstruction::During
+					} else {
+						ResidualConstruction::After
+					},
+					direction: if hint_value(engine, name, "direction") == "backward" {
+						Direction::Backward
+					} else {
+						Direction::Forward
+					},
+				}
+			} else {
+				Reduction::Simulation
+			};
+			Ok(Value::Nfa(Rc::new(
+				expect_nfa(&value)?.reduce_with(reduction),
+			)))
 		}
 		"nfa_reverse" => {
 			let [value] = take(arguments, name)?;
@@ -1051,7 +1288,7 @@ fn dispatch_nfa_predicates(
 			let [lhs, rhs] = take(arguments, name)?;
 			let lhs = expect_nfa(&lhs)?;
 			let rhs = expect_nfa(&rhs)?;
-			let word = lhs.find_word_not_in(&rhs);
+			let word = lhs.find_word_not_in_with(&rhs, check_algorithm(engine, name));
 			let result = word.is_none();
 			engine.last_witness = word.map(Value::Word);
 			Ok(Value::Bool(result))
@@ -1060,7 +1297,7 @@ fn dispatch_nfa_predicates(
 			let [lhs, rhs] = take(arguments, name)?;
 			let lhs = expect_nfa(&lhs)?;
 			let rhs = expect_nfa(&rhs)?;
-			let word = lhs.find_distinguishing_word(&rhs);
+			let word = lhs.find_distinguishing_word_with(&rhs, check_algorithm(engine, name));
 			let result = word.is_none();
 			engine.last_witness = word.map(|distinction| Value::Word(distinction.word));
 			Ok(Value::Bool(result))
@@ -1068,7 +1305,8 @@ fn dispatch_nfa_predicates(
 		"nfa_universal" => {
 			let [value] = take(arguments, name)?;
 			let nfa = expect_nfa(&value)?;
-			let word = nfa.find_rejected_word(&engine.script_alphabet);
+			let word =
+				nfa.find_rejected_word_with(&engine.script_alphabet, check_algorithm(engine, name));
 			let result = word.is_none();
 			engine.last_witness = word.map(Value::Word);
 			Ok(Value::Bool(result))
@@ -1209,7 +1447,10 @@ fn dispatch_nft_inspection(
 			let text = as_string(&text).map_err(Error::plain)?;
 			engine.parse_text(&text, "nft")
 		}
-		"nft_literal" => unreachable!("nft:literal is handled by the parser"),
+		"nft_literal" => Err(Error::plain(
+			"nft:literal is written with its fields, as (nft:literal :levels 2 :initial (…) …)"
+				.into(),
+		)),
 		"nft_print_to_mata" => {
 			let [value] = take(arguments, name)?;
 			let nft = expect_nft(&value)?;
@@ -1220,7 +1461,9 @@ fn dispatch_nft_inspection(
 		"nft_print_to_dot" => {
 			let [value] = take(arguments, name)?;
 			let nft = expect_nft(&value)?;
-			Ok(Value::String(nft.dot().to_string()))
+			Ok(Value::String(
+				nft.dot().alphabet(&engine.script_alphabet).to_string(),
+			))
 		}
 		"nft_num_states" => {
 			let [value] = take(arguments, name)?;

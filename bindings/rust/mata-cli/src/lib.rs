@@ -64,6 +64,7 @@ pub(crate) mod lexer;
 pub(crate) mod literal;
 pub(crate) mod ops;
 pub(crate) mod scripts;
+pub(crate) mod version;
 
 /// The `.mata` text of one automaton, which the library prints with a trailing newline of its own.
 fn automaton_text(text: &dyn std::fmt::Display) -> String {

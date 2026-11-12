@@ -1,6 +1,5 @@
 // Copyright (c) 2026 VeriFIT. GNU GPL v3. See LICENSE in the project root.
 
-use std::io::Read;
 use std::path::Path;
 
 use crate::cli::Exit;
@@ -117,11 +116,22 @@ fn value_of<'a>(arguments: &'a [String], index: usize, message: &str) -> Result<
 fn convert(options: &Options) -> Result<Exit, Error> {
 	let directory = output_directory(options)?;
 	let extension = if options.to == "dot" { "dot" } else { "mata" };
+	if directory.is_some() {
+		let mut targets = std::collections::HashMap::new();
+		for input in &options.inputs {
+			let target = target_name(input, extension)?;
+			if let Some(first) = targets.insert(target.clone(), input) {
+				return Err(Error::plain(format!(
+					"'{first}' and '{input}' would both be written to '{target}'"
+				)));
+			}
+		}
+	}
 	let mut engine = Engine::new();
 	let mut text = String::new();
 	let mut kind: Option<String> = None;
 	for input in &options.inputs {
-		let source = read_input(input)?;
+		let source = crate::eval::read_text(input)?;
 		let (value, detected) = parse_input(input, &source, options, &mut engine)?;
 		match &kind {
 			None => kind = Some(detected.clone()),
@@ -136,7 +146,9 @@ fn convert(options: &Options) -> Result<Exit, Error> {
 		}
 		let rendered = render(&value, &engine, &options.to)?;
 		if let Some(directory) = &directory {
-			write_one(directory, input, extension, &rendered)?;
+			let path = directory.join(target_name(input, extension)?);
+			std::fs::write(&path, &rendered)
+				.map_err(|e| Error::plain(format!("cannot write '{}': {e}", path.display())))?;
 		} else {
 			if !text.is_empty() {
 				text.push('\n');
@@ -166,16 +178,13 @@ fn output_directory(options: &Options) -> Result<Option<std::path::PathBuf>, Err
 	Ok(Some(Path::new(path).to_path_buf()))
 }
 
-fn read_input(input: &str) -> Result<String, Error> {
-	if input != "-" {
-		return std::fs::read_to_string(input)
-			.map_err(|e| Error::plain(format!("cannot read '{input}': {e}")));
-	}
-	let mut source = String::new();
-	std::io::stdin()
-		.read_to_string(&mut source)
-		.map_err(|e| Error::plain(format!("cannot read standard input: {e}")))?;
-	Ok(source)
+/// The file name an input converts to inside an output directory.
+fn target_name(input: &str, extension: &str) -> Result<String, Error> {
+	let stem = Path::new(input)
+		.file_stem()
+		.and_then(|stem| stem.to_str())
+		.ok_or_else(|| Error::plain(format!("'{input}' has no file name")))?;
+	Ok(format!("{stem}.{extension}"))
 }
 
 /// Reads one input in its source format and returns it with the kind that was detected.
@@ -204,16 +213,6 @@ fn parse_input(
 	let detected = options.kind.clone().unwrap_or_else(|| detect_kind(source));
 	let value = engine.parse_text(source, &detected)?;
 	Ok((value, detected))
-}
-
-fn write_one(directory: &Path, input: &str, extension: &str, rendered: &str) -> Result<(), Error> {
-	let stem = Path::new(input)
-		.file_stem()
-		.and_then(|stem| stem.to_str())
-		.ok_or_else(|| Error::plain(format!("'{input}' has no file name")))?;
-	let path = directory.join(format!("{stem}.{extension}"));
-	std::fs::write(&path, rendered)
-		.map_err(|e| Error::plain(format!("cannot write '{}': {e}", path.display())))
 }
 
 fn write_stream(text: &str, output: Option<&str>) -> Result<(), Error> {
@@ -260,8 +259,7 @@ fn kind_of(value: &crate::eval::Value) -> &'static str {
 }
 
 fn detect_kind(source: &str) -> String {
-	let trimmed = source.trim_start();
-	if trimmed.starts_with("@NFT") || source.contains("%LevelsNum") {
+	if crate::eval::holds_transducer(source) {
 		"nft".to_owned()
 	} else {
 		"nfa".to_owned()
