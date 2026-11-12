@@ -77,7 +77,7 @@ std::optional<size_t> mata::parser::StateNameMap::number_of(const std::string_vi
 		return std::nullopt;
 	}
 	size_t number{0};
-	for (const char digit : digits) { number = number * 10 + static_cast<size_t>(digit - '0'); }
+	for (const char digit : digits) { number = (number * 10) + static_cast<size_t>(digit - '0'); }
 	if (number > max_number_) { return std::nullopt; }
 	return number;
 }

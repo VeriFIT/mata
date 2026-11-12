@@ -38,7 +38,7 @@ enum class Naming : std::uint8_t { Marked, Auto };
  *  @c IntermediateAut::parse_from_mf() reads them. They decide which tokens name states and what the names are.
  */
 class Namings {
-	enum Kind : std::uint8_t { STATES, SYMBOLS, NODES };
+	enum class Kind : std::uint8_t { STATES, SYMBOLS, NODES };
 	std::array<Naming, 3> namings_{Naming::Marked, Naming::Marked, Naming::Marked};
 	/// The key that set each naming; @c IntermediateAut::parse_from_mf() lets the last of two different keys of one
 	///  kind win, in the key order rather than the file order.
@@ -52,15 +52,22 @@ class Namings {
 
 	/// Applies the naming key @p key. @return Whether the naming stays within the fast reader's subset.
 	bool apply(const std::string_view key) {
-		const Kind kind{key.contains("Alphabet") ? SYMBOLS : (key.contains("States") ? STATES : NODES)};
-		if (!keys_[kind].empty() && keys_[kind] != key) { return false; }
-		keys_[kind] = key;
+		Kind kind;
+		if (key.contains("Alphabet")) {
+			kind = Kind::SYMBOLS;
+		} else if (key.contains("States")) {
+			kind = Kind::STATES;
+		} else {
+			kind = Kind::NODES;
+		}
+		if (!keys_[static_cast<size_t>(kind)].empty() && keys_[static_cast<size_t>(kind)] != key) { return false; }
+		keys_[static_cast<size_t>(kind)] = key;
 		const size_t dash{key.find('-')};
 		const std::string_view type{dash == std::string_view::npos ? "auto" : key.substr(dash + 1)};
 		if (type == "auto") {
-			namings_[kind] = Naming::Auto;
+			namings_[static_cast<size_t>(kind)] = Naming::Auto;
 		} else if (type == "marked") {
-			namings_[kind] = Naming::Marked;
+			namings_[static_cast<size_t>(kind)] = Naming::Marked;
 		} else { // Enumerated, character, or unknown namings.
 			return false;
 		}
@@ -69,8 +76,9 @@ class Namings {
 
 	/// The check of @c IntermediateAut::parse_from_mf(), named "has at most one automatic naming" there.
 	bool valid() const {
-		return (namings_[NODES] == Naming::Auto && namings_[SYMBOLS] == Naming::Auto) ||
-			   namings_[STATES] != Naming::Auto;
+		return (namings_[static_cast<size_t>(Kind::NODES)] == Naming::Auto &&
+				namings_[static_cast<size_t>(Kind::SYMBOLS)] == Naming::Auto) ||
+			   namings_[static_cast<size_t>(Kind::STATES)] != Naming::Auto;
 	}
 
 	/**
@@ -84,12 +92,12 @@ class Namings {
 			return std::nullopt;
 		}
 		if (token == "\\true" || token == "\\false") { return std::nullopt; }
-		if (namings_[STATES] == Naming::Marked && first == 'q') { return token.substr(1); }
-		if ((namings_[NODES] == Naming::Marked && first == 'n') ||
-			(namings_[SYMBOLS] == Naming::Marked && first == 'a')) {
+		if (namings_[static_cast<size_t>(Kind::STATES)] == Naming::Marked && first == 'q') { return token.substr(1); }
+		if ((namings_[static_cast<size_t>(Kind::NODES)] == Naming::Marked && first == 'n') ||
+			(namings_[static_cast<size_t>(Kind::SYMBOLS)] == Naming::Marked && first == 'a')) {
 			return std::nullopt;
 		}
-		if (namings_[STATES] == Naming::Auto) { return token; }
+		if (namings_[static_cast<size_t>(Kind::STATES)] == Naming::Auto) { return token; }
 		return std::nullopt;
 	}
 };
