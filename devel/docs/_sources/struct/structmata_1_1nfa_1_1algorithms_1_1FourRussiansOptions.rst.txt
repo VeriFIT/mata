@@ -1,0 +1,5 @@
+Struct mata::nfa::algorithms::FourRussiansOptions
+=================================================
+
+.. doxygenstruct:: mata::nfa::algorithms::FourRussiansOptions
+   :members:
