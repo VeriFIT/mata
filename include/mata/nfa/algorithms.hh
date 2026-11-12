@@ -26,8 +26,8 @@
  */
 namespace mata::nfa::algorithms {
 
-/// @brief Reduction of the DFA of @c determinize_four_russians() and @c determinize_classical()
-/// a smaller DFA for the same language, not always minimal.
+/// @brief Reduction of the DFA of @c determinize_four_russians() and @c determinize_classical() to a smaller DFA for
+/// the same language, not always minimal.
 /// There is no real winner, but based on benchmarks, @c Adaptive is the best choice for general use.
 enum class DeterminizationReduction : std::uint8_t {
 	None, ///< No reduction.
@@ -53,8 +53,8 @@ struct FourRussiansOptions {
  * The NFA states are cut into blocks, and the post of each combination of states of a block is computed once, when it
  * first occurs, and kept in a table. The post of a macrostate is then a union over its blocks instead of its states.
  *
- * With a reduction, it gives a smaller DFA for the same language, not always minimal. A reduction does not make it
- * faster, but lower memory usage, and those where the DFA shrinks a lot will also be much faster.
+ * With a reduction, it gives a smaller DFA for the same language, not always minimal. A reduction usually lowers the
+ * memory usage. Its effect on the time varies: inputs whose DFA shrinks a lot are much faster, others may be slower.
  *
  * @code
  *   const Nfa dfa = algorithms::determinize_four_russians(aut);

@@ -1649,6 +1649,11 @@ RefinablePartition<State> refine_by_hopcroft(const Nfa& aut) {
 /// The largest automaton whose simulation bit_row_fw_direct_simulation() computes instead of the simulation engine:
 ///  its rows cost the square of the number of states, which outgrows the engine above a few hundred states.
 constexpr size_t BIT_ROW_SIMULATION_MAX_STATES{256};
+/// bit_row_fw_direct_simulation() keeps a row of a-predecessors for every symbol and state when the rows take at most
+///  this many words, or are at most BIT_ROW_SIMULATION_DENSE_ROWS_PER_TARGET times as many as the a-targets.
+constexpr size_t BIT_ROW_SIMULATION_DENSE_WORDS{size_t{1} << 15};
+/// See BIT_ROW_SIMULATION_DENSE_WORDS.
+constexpr size_t BIT_ROW_SIMULATION_DENSE_ROWS_PER_TARGET{4};
 
 /**
  * @brief The forward direct simulation of @p aut, as compute_fw_direct_simulation() computes it.
@@ -1669,31 +1674,35 @@ Simlib::Util::BinaryRelation bit_row_fw_direct_simulation(const Nfa& aut) {
 	};
 	std::vector<Symbol> symbols;
 	for (State q{0}; q < num_of_states; ++q) {
-		for (const SymbolPost& symbol_post : aut.delta[q]) { symbols.push_back(symbol_post.symbol); }
+		for (const SymbolPost& symbol_post : aut.delta[q]) {
+			// A symbol post without targets is no transition: it neither needs a match nor matches one.
+			if (!symbol_post.empty()) { symbols.push_back(symbol_post.symbol); }
+		}
 	}
 	std::ranges::sort(symbols);
 	symbols.erase(std::ranges::unique(symbols).begin(), symbols.end());
 	const auto index_of = [&](const Symbol symbol) {
 		return static_cast<size_t>(std::ranges::lower_bound(symbols, symbol) - symbols.begin());
 	};
-	// The row (index_of(a) * num_of_states + t) holds the states with a transition over a to t.
-	std::vector<std::uint64_t> a_predecessors(symbols.size() * num_of_states * num_of_words, 0);
 	// The states with a transition to each state.
 	std::vector<std::vector<State>> predecessors(num_of_states);
-	// The index of the symbol of each symbol post of each state.
+	// The index of the symbol of each non-empty symbol post of each state.
 	std::vector<std::vector<size_t>> symbol_indices(num_of_states);
 	std::vector<std::uint64_t> final_states(num_of_words, 0);
 	// The row index_of(a) holds the states with a transition over a.
 	std::vector<std::uint64_t> with_symbol(symbols.size() * num_of_words, 0);
+	// The row index_of(a) holds the states with a transition over a to them.
+	std::vector<std::uint64_t> a_targets(symbols.size() * num_of_words, 0);
 	for (State q{0}; q < num_of_states; ++q) {
 		if (aut.final[q]) { set_bit(final_states, q); }
 		symbol_indices[q].reserve(aut.delta[q].size());
 		for (const SymbolPost& symbol_post : aut.delta[q]) {
+			if (symbol_post.empty()) { continue; }
 			const size_t symbol_index{index_of(symbol_post.symbol)};
 			symbol_indices[q].push_back(symbol_index);
 			set_bit(row_of(with_symbol, symbol_index), q);
 			for (const State target : symbol_post.targets) {
-				set_bit(row_of(a_predecessors, (symbol_index * num_of_states) + target), q);
+				set_bit(row_of(a_targets, symbol_index), target);
 				predecessors[target].push_back(q);
 			}
 		}
@@ -1715,48 +1724,99 @@ Simlib::Util::BinaryRelation bit_row_fw_direct_simulation(const Nfa& aut) {
 		}
 	}
 
-	// Only the row of a state whose successor lost a simulator can lose a simulator, so only those are rechecked.
-	std::vector<State> to_check(num_of_states);
-	// 'std::ranges::iota' would read better, but it is unavailable in older libc++ releases, while CMake still
-	// supports Clang 18.
-	// NOLINTNEXTLINE(modernize-use-ranges)
-	std::iota(to_check.begin(), to_check.end(), State{0});
-	std::vector<bool> is_to_check(num_of_states, true);
-	std::vector<std::uint64_t> row(num_of_words);
-	std::vector<std::uint64_t> matching(num_of_words);
-	while (!to_check.empty()) {
-		const State p{to_check.back()};
-		to_check.pop_back();
-		is_to_check[p] = false;
-		const auto p_row{row_of(simulators, p)};
-		std::ranges::copy(p_row, row.begin());
-		auto symbol_index{symbol_indices[p].begin()};
-		for (const SymbolPost& symbol_post : aut.delta[p]) {
-			const size_t symbol_rows{*symbol_index++ * num_of_states};
-			for (const State target : symbol_post.targets) {
-				const auto target_row{row_of(std::as_const(simulators), target)};
-				std::ranges::fill(matching, 0);
-				for (size_t word{0}; word < num_of_words; ++word) {
-					for (std::uint64_t bits{target_row[word]}; bits != 0; bits &= bits - 1) {
-						const auto a_predecessors_row{row_of(
-							std::as_const(a_predecessors),
-							symbol_rows + (word * 64) + static_cast<size_t>(std::countr_zero(bits))
-						)};
-						for (size_t w{0}; w < num_of_words; ++w) { matching[w] |= a_predecessors_row[w]; }
+	// Rows of a-predecessors for every symbol and state are indexed directly, but a large alphabet makes them huge.
+	//  Unless they are few (see BIT_ROW_SIMULATION_DENSE_WORDS), only the a-targets get a row, at most one per
+	//  transition.
+	size_t num_of_target_rows{0};
+	for (const std::uint64_t word : a_targets) { num_of_target_rows += static_cast<size_t>(std::popcount(word)); }
+	// Fills the a-predecessor rows and refines the simulators to the greatest fixpoint. @p a_predecessors_row_index
+	//  gives the row of the a-predecessors of the state at the bit `bit` of the word `word` of the row `symbol_row` of
+	//  a_targets; it is a template parameter, so the dense rows do not pay for the sparse ones in the innermost loop.
+	const auto refine = [&](const auto a_predecessors_row_index, const size_t num_of_rows) {
+		std::vector<std::uint64_t> a_predecessors(num_of_rows * num_of_words, 0);
+		for (State q{0}; q < num_of_states; ++q) {
+			auto symbol_index{symbol_indices[q].begin()};
+			for (const SymbolPost& symbol_post : aut.delta[q]) {
+				if (symbol_post.empty()) { continue; }
+				const size_t symbol_row{*symbol_index++};
+				for (const State target : symbol_post.targets) {
+					set_bit(row_of(a_predecessors, a_predecessors_row_index(symbol_row, target / 64, target % 64)), q);
+				}
+			}
+		}
+
+		// Only the row of a state whose successor lost a simulator can lose a simulator, so only those are rechecked.
+		std::vector<State> to_check(num_of_states);
+		// 'std::ranges::iota' would read better, but it is unavailable in older libc++ releases, while CMake still
+		// supports Clang 18.
+		// NOLINTNEXTLINE(modernize-use-ranges)
+		std::iota(to_check.begin(), to_check.end(), State{0});
+		std::vector<bool> is_to_check(num_of_states, true);
+		std::vector<std::uint64_t> row(num_of_words);
+		std::vector<std::uint64_t> matching(num_of_words);
+		while (!to_check.empty()) {
+			const State p{to_check.back()};
+			to_check.pop_back();
+			is_to_check[p] = false;
+			const auto p_row{row_of(simulators, p)};
+			std::ranges::copy(p_row, row.begin());
+			auto symbol_index{symbol_indices[p].begin()};
+			for (const SymbolPost& symbol_post : aut.delta[p]) {
+				if (symbol_post.empty()) { continue; }
+				const size_t symbol_row{*symbol_index++};
+				const auto a_targets_row{row_of(std::as_const(a_targets), symbol_row)};
+				for (const State target : symbol_post.targets) {
+					const auto target_row{row_of(std::as_const(simulators), target)};
+					std::ranges::fill(matching, 0);
+					for (size_t word{0}; word < num_of_words; ++word) {
+						// Only the simulators of the target that are a-targets have a-predecessors.
+						for (std::uint64_t bits{target_row[word] & a_targets_row[word]}; bits != 0; bits &= bits - 1) {
+							const auto a_predecessors_row{row_of(
+								std::as_const(a_predecessors),
+								a_predecessors_row_index(symbol_row, word, static_cast<size_t>(std::countr_zero(bits)))
+							)};
+							for (size_t w{0}; w < num_of_words; ++w) { matching[w] |= a_predecessors_row[w]; }
+						}
+					}
+					for (size_t w{0}; w < num_of_words; ++w) { row[w] &= matching[w]; }
+				}
+			}
+			if (!std::ranges::equal(row, p_row)) {
+				std::ranges::copy(row, p_row.begin());
+				for (const State predecessor : predecessors[p]) {
+					if (!is_to_check[predecessor]) {
+						is_to_check[predecessor] = true;
+						to_check.push_back(predecessor);
 					}
 				}
-				for (size_t w{0}; w < num_of_words; ++w) { row[w] &= matching[w]; }
 			}
 		}
-		if (!std::ranges::equal(row, p_row)) {
-			std::ranges::copy(row, p_row.begin());
-			for (const State predecessor : predecessors[p]) {
-				if (!is_to_check[predecessor]) {
-					is_to_check[predecessor] = true;
-					to_check.push_back(predecessor);
-				}
-			}
+	};
+	if (const size_t num_of_dense_rows{symbols.size() * num_of_states};
+		num_of_dense_rows * num_of_words <= BIT_ROW_SIMULATION_DENSE_WORDS ||
+		num_of_dense_rows <= BIT_ROW_SIMULATION_DENSE_ROWS_PER_TARGET * num_of_target_rows) {
+		refine(
+			[num_of_states](const size_t symbol_row, const size_t word, const size_t bit) {
+				return (symbol_row * num_of_states) + (word * 64) + bit;
+			},
+			num_of_dense_rows
+		);
+	} else {
+		// The rows of the states in the word w of the row index_of(a) of a_targets start at
+		//  first_row[index_of(a) * num_of_words + w], in the order of the states.
+		std::vector<size_t> first_row(a_targets.size());
+		for (size_t word{0}, row{0}; word < a_targets.size(); ++word) {
+			first_row[word] = row;
+			row += static_cast<size_t>(std::popcount(a_targets[word]));
 		}
+		refine(
+			[&](const size_t symbol_row, const size_t word, const size_t bit) {
+				const size_t symbol_word{(symbol_row * num_of_words) + word};
+				return first_row[symbol_word] +
+					   static_cast<size_t>(std::popcount(a_targets[symbol_word] & ((std::uint64_t{1} << bit) - 1)));
+			},
+			num_of_target_rows
+		);
 	}
 
 	Simlib::Util::BinaryRelation relation{num_of_states, false};
