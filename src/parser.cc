@@ -6,6 +6,8 @@
 #include "mata/utils/assert.hh"
 #include "mata/utils/utils.hh"
 
+#include "explicit-section-reader.hh"
+
 #include <algorithm>
 #include <cstdint>
 #include <sstream>
@@ -15,173 +17,122 @@ using std::tie;
 using mata::parser::Parsed;
 using mata::parser::ParsedSection;
 
-// macro for debug prints in the parser
-// #define PARSER_DEBUG_PRINT_LN(x) { DEBUG_PRINT_LN(x) }
-// Argument must stay unevaluated; mirrors DEBUG_PRINT_LN() which forwards to debug machinery.
-#define PARSER_DEBUG_PRINT_LN(x)                                                                                       \
-	{}
-
 namespace {
-/** Eats all whitespaces in the input stream */
-void eat_whites(std::istream& input) { // {{{
-	while (input.good()) {
-		if (const int ch = input.peek(); !std::isspace(ch)) { return; }
-		input.get();
-	}
-} // eat_whites(istream) }}}
+/// @c std::isspace() in the "C" locale.
+bool is_space(const char ch) { return ch == ' ' || (ch >= '\t' && ch <= '\r'); }
 
-/// Determines whether the character is a character of a string
-bool is_string_char(const char ch) { // {{{
-	switch (ch) {
-		case '"':
-		case '(':
-		case ')':
-		case '#':
-		case '%':
-		case '@':
-		case '\\':
-			return false;
-		default:
-			return !std::isblank(ch);
-	}
-} // is_string_char }}}
-
-/// Determines whether the character is one of the logical operators of a transition formula.
-bool is_logical_operator(const char ch) { return ch == '&' || ch == '|' || ch == '!'; }
+/// One token of a line, as @c get_token_from_line() produced it.
+using Token = std::pair<std::string, bool>;
 
 /**
- * @brief  Gets a token from the input stream
+ * @brief Gets a token from the line, mirroring @c get_token_from_line() of the stream tokenizer.
  *
- * The function assumes that the stream does not span lines
+ * @param pos The position to read from, advanced past the token and the white space that follows it.
+ * @param quoted Receives whether the token was read in quotes.
+ * @return The token, empty when the line ends. A comment ends the line: everything from @c # on is dropped.
  */
-std::string get_token_from_line(std::istream& input, bool* quoted) {
+Token get_token_from_line(const std::string_view line, size_t& pos, bool* quoted) {
 	MATA_ASSERT(nullptr != quoted);
-
-	enum class TokenizerState : std::uint8_t { Init, Unquoted, Quoted, QuotedEscape };
-
-	std::string result;
 	*quoted = false;
-	TokenizerState state = TokenizerState::Init;
-	int ch = input.get();
-	while (input.good()) {
-		MATA_ASSERT(std::char_traits<char>::eof() != ch);
+	std::string result;
+	while (true) {
+		while (pos < line.size() && is_space(line[pos])) { ++pos; }
+		if (pos == line.size()) { return {}; }
 
-		switch (state) {
-			case TokenizerState::Init: {
-				if (std::isspace(ch)) { /* do nothing */
-				} else if ('"' == ch) {
-					state = TokenizerState::Quoted;
-					*quoted = true;
-				} else if ('#' == ch) { // clear the rest of the line
-					std::string aux;
-					std::getline(input, aux);
-					return {};
-				} else if ('(' == ch || ')' == ch) {
-					return std::to_string(static_cast<char>(ch));
-				} else {
-					result += static_cast<char>(ch);
-					state = TokenizerState::Unquoted;
+		const char ch{line[pos]};
+		if (ch == '#') { // clear the rest of the line
+			pos = line.size();
+			return {};
+		}
+		if (ch == '(' || ch == ')') {
+			++pos;
+			while (pos < line.size() && is_space(line[pos])) { ++pos; }
+			return {std::string(1, ch), false};
+		}
+		if (ch == '"') {
+			*quoted = true;
+			++pos;
+			while (pos < line.size() && line[pos] != '"') {
+				if (line[pos] == '\\' && pos + 1 < line.size()) {
+					// Only a quote is escaped; any other character keeps its backslash.
+					if (line[++pos] != '"') { result += '\\'; }
 				}
-				break;
+				result += line[pos++];
 			}
-			case TokenizerState::Unquoted: {
-				if (std::isspace(ch)) { return result; }
-				if ('#' == ch) { // clear the rest of the line
-					std::string aux;
-					std::getline(input, aux);
-					return result;
-				}
-				if ('"' == ch) {
-					std::string context;
-					std::getline(input, context);
-					std::string msg = "misplaced quotes: ";
-					msg += result;
-					msg += "_\"_";
-					msg += context;
-					throw std::runtime_error(msg);
-				}
-				if ('(' == ch || ')' == ch) {
-					input.unget();
-					return result;
-				}
-				if ('@' == ch || '%' == ch) {
-					std::string context;
-					std::getline(input, context);
-					std::string msg = "misplaced character '";
-					msg += static_cast<char>(ch);
-					msg += "' in string \"";
-					msg += result;
-					msg += static_cast<char>(ch);
-					msg += context;
-					msg += "\"";
-					throw std::runtime_error(msg);
-				}
-				result += static_cast<char>(ch);
-				break;
+			if (pos == line.size()) { throw std::runtime_error("missing ending quotes: " + result); }
+			++pos;
+			if (pos < line.size() && !is_space(line[pos]) && line[pos] != '#' && line[pos] != ')') {
+				std::string msg = "misplaced quotes: \"";
+				msg += result;
+				msg += "_\"_";
+				msg += line.substr(pos);
+				throw std::runtime_error(msg);
 			}
-			case TokenizerState::Quoted: {
-				if ('"' == ch) {
-					ch = input.peek();
-					if (!std::isspace(ch) && ('#' != ch) && (')' != ch) && std::char_traits<char>::eof() != ch) {
-						std::string context;
-						std::getline(input, context);
-						std::string msg = "misplaced quotes: \"";
-						msg += result;
-						msg += "_\"_";
-						msg += context;
-						throw std::runtime_error(msg);
-					}
-
-					return result;
-				}
-				if ('\\' == ch) {
-					state = TokenizerState::QuotedEscape;
-				} else {
-					result += static_cast<char>(ch);
-				}
-				break;
-			}
-			case TokenizerState::QuotedEscape: {
-				if ('"' != ch) { result += '\\'; }
-				result += static_cast<char>(ch);
-				state = TokenizerState::Quoted;
-				break;
-			}
-			default: { // LCOV_EXCL_START
-				throw std::runtime_error("Invalid tokenizer state");
-			} // LCOV_EXCL_STOP
+			while (pos < line.size() && is_space(line[pos])) { ++pos; }
+			return {std::move(result), true};
 		}
 
-		ch = input.get();
+		// An unquoted token, which may not contain quotes, @, or % inside; the first character may be @ or %.
+		const size_t start{pos};
+		do {
+			const char c{line[pos]};
+			if (is_space(c) || c == '#' || c == '(' || c == ')') { break; }
+			if (c == '"' || c == '@' || c == '%') {
+				if (pos == start) {
+					result += c;
+					++pos;
+					continue;
+				}
+				if (c == '"') {
+					std::string msg = "misplaced quotes: ";
+					msg += line.substr(start, pos - start);
+					msg += "_\"_";
+					msg += line.substr(pos);
+					throw std::runtime_error(msg);
+				}
+				std::string msg = "misplaced character '";
+				msg += c;
+				msg += "' in string \"";
+				msg += line.substr(start, pos - start);
+				msg += c;
+				msg += line.substr(pos + 1);
+				msg += "\"";
+				throw std::runtime_error(msg);
+			}
+			result += c;
+			++pos;
+		} while (pos < line.size());
+		while (pos < line.size() && is_space(line[pos])) { ++pos; }
+		return {std::move(result), false};
 	}
-
-	if (TokenizerState::Quoted == state || TokenizerState::QuotedEscape == state) {
-		throw std::runtime_error("missing ending quotes: " + result);
-	}
-
-	return result;
-} // get_token_new(istream) }}}
+}
 
 /**
- * @brief  Transforms a line into a vector of tokens
+ * @brief Transforms a line into a vector of tokens
  */
-std::vector<std::pair<std::string, bool>> tokenize_line(const std::string& line) {
-	std::vector<std::pair<std::string, bool>> token_line;
-	std::istringstream stream(line);
+std::vector<Token> tokenize_line(const std::string_view line) {
+	std::vector<Token> token_line;
 	bool first = true;
-	while (stream.good()) {
-		bool quoted;
-		std::string token = get_token_from_line(stream, &quoted);
-		if (!quoted && token.empty()) { break; }
-
-		if (!first && !quoted) {
-			MATA_ASSERT(!token.empty());
-			if ('@' == token[0]) { throw std::runtime_error("invalid position of @TYPE: " + line); }
-			if ('%' == token[0]) { throw std::runtime_error("invalid position of %KEY: " + line); }
+	size_t pos = 0;
+	while (true) {
+		Token token{get_token_from_line(line, pos, &token_line.emplace_back().second)};
+		if (!token.second && token.first.empty()) {
+			token_line.pop_back();
+			break;
 		}
+		token_line.back().first = std::move(token.first);
 
-		token_line.emplace_back(std::move(token), quoted);
+		if (!first && !token_line.back().second) {
+			MATA_ASSERT(!token_line.back().first.empty());
+			if ('@' == token_line.back().first[0]) {
+				throw std::runtime_error("invalid position of @TYPE: " + std::string(line));
+			}
+			if ('%' == token_line.back().first[0]) {
+				throw std::runtime_error("invalid position of %KEY: " + std::string(line));
+			}
+		}
 		first = false;
+		if (pos >= line.size()) { break; }
 	}
 
 	return token_line;
@@ -198,7 +149,8 @@ std::vector<std::pair<std::string, bool>> split_tokens(std::vector<std::pair<std
 		const std::string_view token_string{token.first};
 		size_t last_operator{0};
 		for (size_t i = 0, token_string_size{token_string.size()}; i < token_string_size; ++i) {
-			if (is_logical_operator(token_string[i])) {
+			// One of the logical operators of a transition formula.
+			if (token_string[i] == '&' || token_string[i] == '|' || token_string[i] == '!') {
 				// there is token before logical operator (this is case of binary operators, e.g., a&b)
 				if (const std::string_view token_candidate = token_string.substr(last_operator, i - last_operator);
 					!token_candidate.empty()) {
@@ -223,62 +175,87 @@ std::vector<std::pair<std::string, bool>> split_tokens(std::vector<std::pair<std
 } // namespace
 
 Parsed mata::parser::parse_mf(const std::string& input, const bool keep_quotes) {
-	std::istringstream stream(input);
-	return parse_mf(stream, keep_quotes);
-}
-
-Parsed mata::parser::parse_mf(std::istream& input, const bool keep_quotes) {
 	Parsed result;
-	while (input.good()) {
-		if (ParsedSection parsec = parse_mf_section(input, keep_quotes); !parsec.empty()) {
+	std::string_view view{input};
+	while (!view.empty()) {
+		if (ParsedSection parsec{parse_mf_section_view(view, keep_quotes)}; !parsec.empty()) {
 			result.push_back(std::move(parsec));
 		}
 	}
 	return result;
 }
 
+Parsed mata::parser::parse_mf(std::istream& input, const bool keep_quotes) {
+	return parse_mf(read_whole_stream(input), keep_quotes);
+}
+
 ParsedSection mata::parser::parse_mf_section(std::istream& input, const bool keep_quotes) {
+	// Gather the lines of this section only, so that the stream stays at the next @TYPE line, as before.
+	std::string text;
+	bool type_seen = false;
+	std::string line;
+	while (input.good()) {
+		while (input.good() && std::isspace(input.peek())) { input.get(); }
+		if (!input.good() || std::char_traits<char>::eof() == input.peek()) { break; }
+		if (type_seen && '@' == input.peek()) { break; }
+		std::getline(input, line);
+		if (!type_seen && !line.empty() && '#' != line[0]) { type_seen = true; }
+		text += line;
+		text += '\n';
+	}
+	std::string_view view{text};
+	return parse_mf_section_view(view, keep_quotes);
+}
+
+ParsedSection mata::parser::parse_mf_section(const std::string& input, const bool keep_quotes) {
+	std::string_view view{input};
+	return parse_mf_section_view(view, keep_quotes);
+}
+
+ParsedSection mata::parser::parse_mf_section_view(std::string_view& input, const bool keep_quotes) {
 	ParsedSection result;
 
 	bool reading_type = true;
 	std::vector<std::pair<std::string, bool>> token_line{};
 	bool append_line = false;
+	size_t pos = 0;
 
-	while (input.good()) {
-		eat_whites(input);
-		const int ch = input.peek();
-		if (std::char_traits<char>::eof() == ch) { break; }
-		if (!reading_type && '@' == ch) {
+	while (pos < input.size()) {
+		while (pos < input.size() && is_space(input[pos])) { ++pos; }
+		if (pos == input.size()) { break; }
+		if (!reading_type && '@' == input[pos]) {
 			// another @TYPE declaration
 			break;
 		}
 
-		std::string line;
-		getline(input, line);
+		const size_t line_end{std::min(input.find('\n', pos), input.size())};
+		std::string_view line{input.substr(pos, line_end - pos)};
+		pos = line_end + (line_end < input.size() ? 1 : 0);
 
 		// getline drops the delimiter, so an empty line stays empty: line.back() would read out of bounds.
 		// Type lines are never continuation lines, so they keep the backslash and fail on the trailing characters.
 		const bool backslash_ending = !line.empty() && line.back() == '\\' && !reading_type;
-		if (backslash_ending) { line.pop_back(); }
+		if (backslash_ending) { line.remove_suffix(1); }
 
-		PARSER_DEBUG_PRINT_LN(line);
 		if (reading_type) { // we're expecting a @TYPE declaration
-			MATA_ASSERT(std::char_traits<char>::to_int_type(line[0]) == ch);
 			if ('#' == line[0] || '\n' == line[0]) { continue; /* skip the rest of the line */ }
 			if ('@' != line[0]) {
-				throw std::runtime_error("expecting automaton type (@TYPE), got \"" + line + "\" instead");
+				throw std::runtime_error("expecting automaton type (@TYPE), got \"" + std::string(line) + "\" instead");
 			}
 
 			std::string type;
 			size_t i;
 			for (i = 1; i < line.size(); ++i) {
-				if (!is_string_char(line[i])) { break; }
-
+				// A character of the type name, as is_string_char() of the stream tokenizer read it.
+				if (line[i] == '"' || line[i] == '(' || line[i] == ')' || line[i] == '#' || line[i] == '%' ||
+					line[i] == '@' || line[i] == '\\' || line[i] == ' ' || line[i] == '\t') {
+					break;
+				}
 				type += line[i];
 			}
 
 			if (type.empty()) {
-				throw std::runtime_error("expecting automaton type (@TYPE), got \"" + line + "\" instead");
+				throw std::runtime_error("expecting automaton type (@TYPE), got \"" + std::string(line) + "\" instead");
 			}
 
 			while (i < line.size()) {
@@ -287,9 +264,8 @@ ParsedSection mata::parser::parse_mf_section(std::istream& input, const bool kee
 				} else if ('#' == line[i]) {
 					break;
 				} else {
-					const std::string trailing(line, i);
 					std::string msg = "invalid trailing characters \"";
-					msg += trailing;
+					msg += line.substr(i);
 					msg += "\" on the line \"";
 					msg += line;
 					msg += "\"";
@@ -329,7 +305,7 @@ ParsedSection mata::parser::parse_mf_section(std::istream& input, const bool kee
 
 		if (!quoted && '%' == maybe_key[0]) {
 			const std::string key = maybe_key.substr(1);
-			if (key.empty()) { throw std::runtime_error("%KEY name missing: " + line); }
+			if (key.empty()) { throw std::runtime_error("%KEY name missing: " + std::string(line)); }
 
 			auto it = result.dict.find(key);
 			if (result.dict.end() == it) { // insert an empty list
@@ -354,14 +330,9 @@ ParsedSection mata::parser::parse_mf_section(std::istream& input, const bool kee
 		}
 	}
 
+	input.remove_prefix(pos);
 	return result;
-} // parse_mf_section(std::istream) }}}
-
-ParsedSection mata::parser::parse_mf_section(const std::string& input, const bool keep_quotes) {
-	std::istringstream stream(input);
-	ParsedSection result = parse_mf_section(stream, keep_quotes);
-	return result;
-}
+} // parse_mf_section_view }}}
 
 const std::vector<std::string>& mata::parser::ParsedSection::operator[](const std::string& key) const {
 	const auto it = this->dict.find(key);

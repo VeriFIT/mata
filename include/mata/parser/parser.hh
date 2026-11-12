@@ -8,6 +8,7 @@
 #include <map>
 #include <ostream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 /**
@@ -43,7 +44,7 @@ using BodyLine = std::vector<BodyToken>;
 struct ParsedSection {
 	std::string type{};
 	KeyListStore dict{};
-	std::list<BodyLine> body{};
+	std::vector<BodyLine> body{};
 
 	ParsedSection() = default;
 
@@ -74,6 +75,9 @@ ParsedSection parse_mf_section(std::istream& input, bool keep_quotes = false);
 
 /** Parses one section from a string into an intermediary structure */
 ParsedSection parse_mf_section(const std::string& input, bool keep_quotes = false);
+
+/** Parses one section from the beginning of @p input into an intermediary structure, advancing @p input past it. */
+ParsedSection parse_mf_section_view(std::string_view& input, bool keep_quotes = false);
 
 /// registers dispatcher
 void init();
