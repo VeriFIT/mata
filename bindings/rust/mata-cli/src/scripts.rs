@@ -69,7 +69,20 @@ pub(crate) fn run(
 	if checked {
 		crate::check::check(&forms, &engine, Some(&inputs))?;
 	}
-	engine.set_inputs(inputs.positional.clone(), inputs.named.clone());
+	// The script resolves the relative paths it loads against its own directory, but a path given on
+	// the command line is relative to the current one.
+	let anchor = |path: &String| anchored(path, base_dir.as_deref());
+	let positional = inputs
+		.positional
+		.iter()
+		.map(anchor)
+		.collect::<Result<Vec<_>, _>>()?;
+	let named = inputs
+		.named
+		.iter()
+		.map(|(name, path)| Ok((name.clone(), anchor(path)?)))
+		.collect::<Result<HashMap<_, _>, Error>>()?;
+	engine.set_inputs(positional.clone(), named);
 	engine.parameters = inputs.parameters;
 	engine.set_base_dir(base_dir);
 	if let Some(path) = output.filter(|path| *path != "-") {
@@ -77,7 +90,7 @@ pub(crate) fn run(
 		engine.sink = create_output(path, given.map(String::as_str))?;
 	}
 	let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-		let bound = bind_declarations(&mut engine, &forms, &inputs.positional)?;
+		let bound = bind_declarations(&mut engine, &forms, &positional)?;
 		engine.execute(&forms[bound..])
 	}));
 	match result {
@@ -94,6 +107,22 @@ pub(crate) fn run(
 	} else {
 		Exit::Success
 	})
+}
+
+/// A command-line path made absolute when it is relative and the script is in another directory.
+fn anchored(path: &str, base_dir: Option<&std::path::Path>) -> Result<String, Error> {
+	if base_dir.is_none() || path == "-" || std::path::Path::new(path).is_absolute() {
+		return Ok(path.to_owned());
+	}
+	std::path::absolute(path)
+		.map_err(|e| Error::plain(format!("cannot resolve '{path}': {e}")))?
+		.into_os_string()
+		.into_string()
+		.map_err(|_| {
+			Error::plain(format!(
+				"cannot resolve '{path}': the current directory is not UTF-8"
+			))
+		})
 }
 
 pub(crate) fn check(source: &Source) -> Result<Exit, Error> {
@@ -234,12 +263,15 @@ fn flush() {
 /// Binds the declared inputs and parameters, which come first in a script, interleaved only with
 /// `set-option` and `set-info`. Those forms run in order with the declarations, so an option such as
 /// `:alphabet` applies to the automata the declarations load. A positional input file with several
-/// automata gives one automaton to each declaration in turn. Returns how many forms it ran.
+/// automata gives one automaton to each declaration in turn, and every input given must be taken. The
+/// inputs are read ahead, so that bitvector automata of different files share their minterms. Returns
+/// how many forms it ran.
 fn bind_declarations(
 	engine: &mut Engine,
 	forms: &[Spanned<FormKind>],
 	inputs: &[String],
 ) -> Result<usize, Error> {
+	let declares = read_declared_inputs(engine, forms, inputs)?;
 	let mut files = inputs.iter();
 	let mut pending: std::collections::VecDeque<Value> = std::collections::VecDeque::new();
 	let mut bound = 0;
@@ -286,6 +318,12 @@ fn bind_declarations(
 		}
 		bound += 1;
 	}
+	let left = files.count();
+	if declares && left > 0 {
+		return Err(Error::plain(format!(
+			"{left} positional inputs are left over; declare an input for each, or use declare-inputs"
+		)));
+	}
 	if !pending.is_empty() {
 		return Err(Error::plain(format!(
 			"{} automata of the inputs are left over; declare an input for each, or use declare-inputs",
@@ -293,4 +331,52 @@ fn bind_declarations(
 		)));
 	}
 	Ok(bound)
+}
+
+/// Rejects a named input that no `declare-input` takes, and reads ahead every input the declarations
+/// take: positional ones in order, then named ones in the order of their declarations. Returns whether
+/// the script declares inputs.
+fn read_declared_inputs(
+	engine: &mut Engine,
+	forms: &[Spanned<FormKind>],
+	inputs: &[String],
+) -> Result<bool, Error> {
+	let declared: Vec<(&str, bool)> = forms
+		.iter()
+		.take_while(|form| {
+			matches!(
+				form.node,
+				FormKind::Declare { .. }
+					| FormKind::Header { .. }
+					| FormKind::SetOption { .. }
+					| FormKind::SetInfo { .. }
+					| FormKind::Parameter { .. }
+			)
+		})
+		.filter_map(|form| match &form.node {
+			FormKind::Declare { name, variadic, .. } => Some((name.as_str(), *variadic)),
+			_ => None,
+		})
+		.collect();
+	if declared.is_empty() {
+		return Ok(false);
+	}
+	let mut named: Vec<&String> = engine.named_inputs.keys().collect();
+	named.sort();
+	if let Some(name) = named
+		.iter()
+		.find(|name| !declared.contains(&(name.as_str(), false)))
+	{
+		return Err(Error::plain(format!(
+			"--input {name}: the script declares no input '{name}'"
+		)));
+	}
+	let named: Vec<String> = declared
+		.iter()
+		.filter_map(|(name, _)| engine.named_inputs.get(*name).cloned())
+		.collect();
+	for path in inputs.iter().chain(&named) {
+		engine.read_ahead(path)?;
+	}
+	Ok(true)
 }

@@ -901,7 +901,7 @@ fn a_runtime_error_names_the_place_of_its_form() {
 	assert_eq!(stdout(&output), "1\n");
 	assert_eq!(
 		stderr(&output),
-		"mata: list:nth index out of bounds at 2:2\n"
+		"mata: list:nth index out of bounds at 2:8\n"
 	);
 }
 
@@ -1735,4 +1735,196 @@ fn witnesses_are_kept_only_when_the_script_asks_for_them() {
 	]);
 	assert_eq!(status(&output), 0, "{}", stderr(&output));
 	assert_eq!(stdout(&output), "false\nnone\nfalse\nb\n");
+}
+
+// Review of #1039: engine
+
+const BITS_A: &str = "@NFA-bits\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 (a0 & !a1) q1\n";
+const BITS_B: &str = "@NFA-bits\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 (!a0 & a1) q1\n";
+
+/// `mata script run` of `script` with `arguments` after it, checked or with `--no-check`.
+fn run_script(script: &str, checked: bool, arguments: &[&str]) -> Output {
+	let mut command = vec!["script", "run"];
+	if !checked {
+		command.push("--no-check");
+	}
+	command.extend(["--expression", script, "--"]);
+	command.extend(arguments);
+	mata(command)
+}
+
+#[test]
+fn witness_takes_only_an_operation_that_stores_a_witness() {
+	let workspace = Workspace::new("witness-operand");
+	let a = workspace.file("a.mata", NFA);
+	let script = "(declare-input a Nfa)\n(declare-input b Nfa)\n(print (nfa:included? a b))\n\
+	              (print (witness (nfa:deterministic? a)))";
+	for checked in [true, false] {
+		let output = run_script(script, checked, &[&a, &a]);
+		assert_eq!(status(&output), 2, "{}", stdout(&output));
+		assert!(
+			stderr(&output).contains("witness applies to an application of nfa:language-empty?"),
+			"{}",
+			stderr(&output)
+		);
+	}
+}
+
+#[test]
+fn get_witness_answers_only_the_most_recent_decision() {
+	let workspace = Workspace::new("stale-witness");
+	let a = workspace.file("a.mata", NFA);
+	let b = workspace.file("b.mata", &NFA.replace(" a ", " b "));
+	let output = run_script(
+		"(declare-input a Nfa)\n(declare-input b Nfa)\n(set-option :produce-witnesses true)\n\
+		 (print (nfa:included? a b))\n(print (get-witness))\n(print (nfa:deterministic? a))\n(print (get-witness))",
+		true,
+		&[&a, &b],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "false\na\ntrue\nnone\n");
+}
+
+#[test]
+fn the_bytes_alphabet_names_digits() {
+	let output = run_script(
+		"(set-option :alphabet \"bytes\")\n(print (word \"0\" \"a\"))",
+		true,
+		&[],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "0 a\n");
+}
+
+#[test]
+fn bitvector_automata_of_different_files_share_their_minterms() {
+	let workspace = Workspace::new("shared-minterms");
+	let a = workspace.file("a.mata", BITS_A);
+	let b = workspace.file("b.mata", BITS_B);
+	let output = mata(["nfa", "intersection-empty?", &a, &b]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "true\n");
+	for script in [
+		"(declare-input a Nfa)\n(declare-input b Nfa)\n(print (nfa:intersection-empty? a b))",
+		"(declare-inputs xs (List Nfa))\n\
+		 (print (nfa:intersection-empty? (list:nth xs 0) (list:nth xs 1)))",
+	] {
+		let output = run_script(script, true, &[&a, &b]);
+		assert_eq!(status(&output), 0, "{}", stderr(&output));
+		assert_eq!(stdout(&output), "true\n", "{script}");
+	}
+}
+
+#[test]
+fn a_command_line_path_is_relative_to_the_current_directory() {
+	let workspace = Workspace::new("input-path");
+	std::fs::create_dir(workspace.path.join("scripts")).expect("a script directory");
+	workspace.file("input.mata", NFA);
+	workspace.file(
+		"scripts/input.mata",
+		"@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q0\n",
+	);
+	workspace.file(
+		"scripts/job.matasc",
+		"(print (nfa:number-of-states (nfa:load $1)))\n(print (nfa:number-of-states (nfa:load \"input.mata\")))",
+	);
+	let output = Command::new(env!("CARGO_BIN_EXE_mata"))
+		.args(["script", "run", "scripts/job.matasc", "input.mata"])
+		.current_dir(&workspace.path)
+		.output()
+		.expect("the mata binary runs");
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "2\n1\n");
+}
+
+#[test]
+fn pop_drops_the_option_changes_of_its_scope() {
+	let output = run_script(
+		"(push)\n(set-option :time-operations true)\n(pop)\n(print (get-option :time-operations))",
+		true,
+		&[],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "false\n");
+}
+
+#[test]
+fn a_run_time_error_names_the_place_of_a_nested_argument() {
+	let output = run_script(
+		"(print (nfa:union-nondeterministic\n  (nfa:load \"missing.mata\")\n  (nfa:load \"missing.mata\")))",
+		true,
+		&[],
+	);
+	assert_eq!(status(&output), 2);
+	assert!(
+		stderr(&output).ends_with(" at 2:3\n"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
+fn as_checks_compound_sorts_and_narrows_an_automaton() {
+	let workspace = Workspace::new("as-sorts");
+	let a = workspace.file("a.mata", NFA);
+	let output = run_script(
+		"(declare-input u Automaton)\n(print (nfa:number-of-states (as u Nfa)))\n\
+		 (print (as (list 1 2) (List Int)))\n(print (as none (Option Int)))",
+		true,
+		&[&a],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "2\n1\n2\nnone\n");
+}
+
+#[test]
+fn a_sort_annotation_checks_the_value_not_its_first_element() {
+	let output = run_script(
+		"(define x (Option Int) none)\n(define xs (List Int) (list))\n(print x)\n(print (list:length xs))",
+		true,
+		&[],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "none\n0\n");
+	for (script, message) in [
+		(
+			"(define xs (List Int) (list 1 \"a\"))",
+			"expected (List Int), found (List Any)",
+		),
+		(
+			"(define xs (List Automaton) (list 1))",
+			"expected (List Automaton), found (List Int)",
+		),
+	] {
+		let output = run_script(script, false, &[]);
+		assert_eq!(status(&output), 2, "{script}");
+		assert!(stderr(&output).contains(message), "{}", stderr(&output));
+	}
+}
+
+#[test]
+fn an_input_no_declaration_takes_is_an_error_without_the_check() {
+	let workspace = Workspace::new("unchecked-inputs");
+	let a = workspace.file("a.mata", NFA);
+	let output = run_script("(declare-input x Nfa)\n(print 1)", false, &[&a, &a]);
+	assert_eq!(status(&output), 2, "{}", stdout(&output));
+	assert_eq!(
+		stderr(&output),
+		"mata: 1 positional inputs are left over; declare an input for each, or use declare-inputs\n"
+	);
+	let named = format!("xs={a}");
+	let output = mata([
+		"script",
+		"run",
+		"--no-check",
+		"--input",
+		named.as_str(),
+		"--expression",
+		"(declare-inputs xs (List Nfa))\n(print 1)",
+	]);
+	assert_eq!(status(&output), 2, "{}", stdout(&output));
+	assert_eq!(
+		stderr(&output),
+		"mata: --input xs: the script declares no input 'xs'\n"
+	);
 }

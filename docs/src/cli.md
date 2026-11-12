@@ -68,9 +68,10 @@ mata script run [options] [SCRIPT] [INPUT…]
   every input on the command line must be taken by a declaration: an extra positional input, an `--input` the script
   does not declare and a `--param` it does not declare are errors, reported before anything runs. A script without
   declarations reads its inputs as `$1`, `$2`, …, `inputs` or `$name`.
-- A path given on the command line is relative to the current directory, as in every other command. A path written in
-  the script, as in `(nfa:load "local.mata")`, is relative to the directory of the script file; a script given as `-`
-  or with `--expression` has no file, so its paths are relative to the current directory too.
+- A path given on the command line is relative to the current directory, as in every other command; when the script
+  file has a directory part, a relative one is made absolute, so `$1` and `inputs` hold the absolute path. A path
+  written in the script, as in `(nfa:load "local.mata")`, is relative to the directory of the script file; a script
+  given as `-` or with `--expression` has no file, so its paths are relative to the current directory too.
 - `--output PATH` redirects the script's standard output: `print`, `echo`, `check`, timing records and REPL values are
   written to `PATH` instead of standard output. `--output -` is standard output, the default. Errors always go to
   standard error. An output that is the file of an input is an error, before anything is written.

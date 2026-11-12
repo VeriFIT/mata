@@ -104,11 +104,17 @@ impl Scope {
 }
 
 /// The script options that change how operations behave.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub(crate) struct Options {
 	pub(crate) bytes_alphabet: bool,
 	pub(crate) produce_witnesses: bool,
 	pub(crate) time_operations: bool,
+}
+
+/// The options and hint defaults when a `push` ran, which its `pop` restores.
+struct Pushed {
+	options: Options,
+	defaults: HashMap<String, Vec<(String, String)>>,
 }
 
 /// Where the values a script prints go, written as they are printed.
@@ -117,6 +123,14 @@ pub(crate) enum Sink {
 	Stdout,
 	/// A file opened once, written after every value.
 	File(std::io::BufWriter<fs::File>),
+}
+
+/// A command-line input read before it is loaded.
+enum Ahead {
+	/// Its text, parsed when it is loaded.
+	Text(String),
+	/// Its automata, parsed with the bitvector automata of the other inputs so that they share minterms.
+	Bits(Vec<Rc<Nfa>>),
 }
 
 pub(crate) struct Engine {
@@ -139,6 +153,10 @@ pub(crate) struct Engine {
 	pub(crate) language: crate::version::Version,
 	/// The hint defaults set with `(set-option :default …)`, per operation.
 	pub(crate) defaults: HashMap<String, Vec<(String, String)>>,
+	/// What each open `push` saved for its `pop` to restore.
+	pushed: Vec<Pushed>,
+	/// Command-line inputs read before they are loaded, so that bitvector automata are parsed together.
+	ahead: Vec<(String, Ahead)>,
 	/// The hints of the operation being called.
 	pub(crate) hints: Vec<(String, String)>,
 	/// Labels of the records printed so far; a label is printed once.
@@ -193,6 +211,8 @@ impl Engine {
 			parameters: HashMap::new(),
 			language,
 			defaults: HashMap::new(),
+			pushed: Vec::new(),
+			ahead: Vec::new(),
 			hints: Vec::new(),
 			labels: std::collections::HashSet::new(),
 			place: None,
@@ -358,7 +378,7 @@ impl Engine {
 					if matches!(&value, Value::Function(_)) {
 						return Err(form.at(format!("'{name}' is a function, not a {sort}")));
 					}
-					if !sort_matches(sort, &actual) {
+					if !fits(&value, sort) {
 						return Err(form.at(format!("expected {sort}, found {actual}")));
 					}
 				}
@@ -405,14 +425,13 @@ impl Engine {
 			}
 			FormKind::Push => {
 				self.scope.push();
+				self.pushed.push(Pushed {
+					options: self.options.clone(),
+					defaults: self.defaults.clone(),
+				});
 				Ok(Value::None)
 			}
-			FormKind::Pop => {
-				if !self.scope.pop() {
-					return Err(form.at("'pop' without a matching 'push'".into()));
-				}
-				Ok(Value::None)
-			}
+			FormKind::Pop => self.pop(form),
 			FormKind::Reset => {
 				let mut fresh = Engine::for_language(self.language);
 				fresh.set_inputs(
@@ -433,6 +452,22 @@ impl Engine {
 			}
 			FormKind::Expression(expression) => self.evaluate(expression),
 		}
+	}
+
+	/// Closes the innermost `push`: drops its definitions and restores the options and hint defaults,
+	/// except the alphabet, which is fixed once set.
+	fn pop(&mut self, form: &Spanned<FormKind>) -> Result<Value, Error> {
+		if !self.scope.pop() {
+			return Err(form.at("'pop' without a matching 'push'".into()));
+		}
+		if let Some(Pushed { options, defaults }) = self.pushed.pop() {
+			self.options = Options {
+				bytes_alphabet: self.options.bytes_alphabet,
+				..options
+			};
+			self.defaults = defaults;
+		}
+		Ok(Value::None)
 	}
 
 	/// A name an operation of the catalogue owns cannot be defined, whether or not the script's
@@ -621,22 +656,35 @@ impl Engine {
 	}
 
 	fn evaluate_list(&mut self, items: &[Expr], expression: &Expr) -> Result<Value, Error> {
-		let Some(Kind::Name(head)) = items.first().map(|e| &e.node) else {
+		let Some(Kind::Name(name)) = items.first().map(|e| &e.node) else {
 			return Err(expression.at("expected a function or special form".into()));
 		};
-		match head.as_str() {
-			"let" => self.evaluate_let(&items[1..], expression),
-			"if" => self.evaluate_if(&items[1..], expression),
-			"cond" => self.evaluate_cond(&items[1..], expression),
-			"do" => self.evaluate_sequence(&items[1..]),
-			"and" | "or" => self.evaluate_connective(&items[1..], head),
-			"->" => self.evaluate_pipeline(&items[1..], expression),
-			"as" => self.evaluate_as(&items[1..], expression),
-			"time" => self.evaluate_time(&items[1..], expression),
-			"witness" => self.evaluate_witness(&items[1..], expression),
+		self.evaluate_application(name, &items[1..], expression)
+	}
+
+	/// An application whose head is the name `name`: a special form, or a call of what the name binds.
+	fn evaluate_application(
+		&mut self,
+		name: &str,
+		parts: &[Expr],
+		expression: &Expr,
+	) -> Result<Value, Error> {
+		match name {
+			"let" => self.evaluate_let(parts, expression),
+			"if" => self.evaluate_if(parts, expression),
+			"cond" => self.evaluate_cond(parts, expression),
+			"do" => self.evaluate_sequence(parts),
+			"and" | "or" => self.evaluate_connective(parts, name),
+			"->" => self.evaluate_pipeline(parts, expression),
+			"as" => self.evaluate_as(parts, expression),
+			"time" => self.evaluate_time(parts, expression),
+			"witness" => self.evaluate_witness(parts, expression),
 			_ => {
-				let function = self.evaluate(&items[0])?;
-				let arguments = items[1..]
+				let function = self
+					.scope
+					.lookup(name)
+					.ok_or_else(|| expression.at(format!("unknown name '{name}'")))?;
+				let arguments = parts
 					.iter()
 					.map(|item| self.evaluate(item))
 					.collect::<Result<Vec<_>, _>>()?;
@@ -701,7 +749,7 @@ impl Engine {
 		let value = self.evaluate(&parts[0])?;
 		let sort = parse_sort(&parts[1])?;
 		check_sort(&value, &sort, &parts[0])?;
-		Ok(value)
+		Ok(narrow(value, &sort))
 	}
 
 	fn evaluate_time(&mut self, parts: &[Expr], expression: &Expr) -> Result<Value, Error> {
@@ -725,13 +773,14 @@ impl Engine {
 		if parts.len() != 1 {
 			return Err(expression.at("witness takes one application".into()));
 		}
+		if !applies_witness_operation(&parts[0]) {
+			return Err(parts[0].at(witness_message()));
+		}
+		// The operation is the last call made, so the stored witness is its own.
 		let requested = std::mem::replace(&mut self.witness_requested, true);
 		let value = self.evaluate(&parts[0]);
 		self.witness_requested = requested;
-		let value = value?;
-		if !matches!(value, Value::Bool(_)) {
-			return Err(parts[0].at("witness applies to a decision operation".into()));
-		}
+		value?;
 		Ok(self.last_witness.clone().unwrap_or(Value::None))
 	}
 
@@ -829,9 +878,6 @@ impl Engine {
 		keywords: &[(String, Expr)],
 		expression: &Expr,
 	) -> Result<Value, Error> {
-		let items = std::iter::once(Kind::Name(name.to_owned()))
-			.chain(arguments.iter().map(|a| a.node.clone()))
-			.collect::<Vec<_>>();
 		if !keywords.is_empty() {
 			let function = self
 				.scope
@@ -843,17 +889,7 @@ impl Engine {
 				.collect::<Result<Vec<_>, _>>()?;
 			return self.call_function(function, arguments, keywords, expression);
 		}
-		let wrapped: Vec<Expr> = items
-			.into_iter()
-			.zip(std::iter::repeat(expression.line))
-			.enumerate()
-			.map(|(i, (node, line))| Expr {
-				node,
-				line,
-				column: expression.column + i,
-			})
-			.collect();
-		self.evaluate_list(&wrapped, expression)
+		self.evaluate_application(name, arguments, expression)
 	}
 
 	pub(crate) fn call_function(
@@ -884,6 +920,10 @@ impl Engine {
 						expression.at(error.message)
 					}
 				};
+				// A decision stores its own witness, or none: `get-witness` never answers an older call.
+				if is_timed(name) && name.ends_with('?') {
+					self.last_witness = None;
+				}
 				if is_timed(name) {
 					let label = name.clone();
 					self.timed(&label, |engine| {
@@ -1010,9 +1050,79 @@ impl Engine {
 
 	/// Loads every automaton section of a command-line input; standard input for `-`.
 	pub(crate) fn load_inputs(&mut self, path: &str, kind: &str) -> Result<Vec<Value>, Error> {
-		let text = read_text(path)?;
+		let position = self.ahead.iter().position(|(known, _)| known == path);
+		if position.is_some_and(
+			|index| matches!(&self.ahead[index].1, Ahead::Text(text) if holds_bits(text)),
+		) {
+			self.parse_bits_ahead()?;
+		}
+		let text = match position.map(|index| &self.ahead[index].1) {
+			Some(Ahead::Bits(automata)) => {
+				if kind == "nft" {
+					return Err(Error::plain(format!(
+						"{path}: a transducer cannot have a bitvector alphabet"
+					)));
+				}
+				return Ok(automata
+					.iter()
+					.map(|nfa| of_kind(kind, Value::Nfa(Rc::clone(nfa))))
+					.collect());
+			}
+			Some(Ahead::Text(text)) => text.clone(),
+			None => read_text(path)?,
+		};
 		self.timed("parsing", |engine| engine.parse_all(&text, kind))
 			.map_err(|error| Error::plain(format!("{path}: {}", error.message)))
+	}
+
+	/// Reads a command-line input before it is loaded, so that [`Engine::load_inputs`] parses the
+	/// bitvector automata of all inputs read ahead together and they share their minterms. Returns how
+	/// many automata the input holds.
+	pub(crate) fn read_ahead(&mut self, path: &str) -> Result<usize, Error> {
+		if let Some((_, ahead)) = self.ahead.iter().find(|(known, _)| known == path) {
+			return Ok(match ahead {
+				Ahead::Text(text) => sections(text),
+				Ahead::Bits(automata) => automata.len(),
+			});
+		}
+		let text = read_text(path)?;
+		let count = sections(&text);
+		self.ahead.push((path.to_owned(), Ahead::Text(text)));
+		Ok(count)
+	}
+
+	/// Parses the bitvector inputs read ahead in one call, which mintermizes them together.
+	fn parse_bits_ahead(&mut self) -> Result<(), Error> {
+		let mut shared = Vec::new();
+		let mut paths = Vec::new();
+		let mut text = String::new();
+		for (index, (path, ahead)) in self.ahead.iter().enumerate() {
+			if let Ahead::Text(input) = ahead
+				&& holds_bits(input)
+			{
+				shared.push((index, sections(input)));
+				paths.push(path.as_str());
+				text.push_str(input);
+				text.push('\n');
+			}
+		}
+		let paths = paths.join(", ");
+		let parsed = self
+			.timed("parsing", |engine| {
+				Nfa::parse_mata_all(&text, &mut engine.script_alphabet)
+					.map_err(|e| Error::plain(e.to_string()))
+			})
+			.map_err(|error| Error::plain(format!("{paths}: {}", error.message)))?;
+		if parsed.len() != shared.iter().map(|&(_, count)| count).sum::<usize>() {
+			return Err(Error::plain(format!(
+				"{paths}: cannot tell which file each automaton comes from"
+			)));
+		}
+		let mut automata = parsed.into_iter().map(Rc::new);
+		for (index, count) in shared {
+			self.ahead[index].1 = Ahead::Bits(automata.by_ref().take(count).collect());
+		}
+		Ok(())
 	}
 
 	pub(crate) fn parse_text(&mut self, text: &str, kind: &str) -> Result<Value, Error> {
@@ -1049,11 +1159,7 @@ impl Engine {
 			"nft" => true,
 			_ => holds_transducer(text),
 		};
-		let wrap = |value: Value| match (kind, value) {
-			("automaton", Value::Nfa(nfa)) => Value::Automaton(Rc::new(AutomatonKind::Nfa(nfa))),
-			("automaton", Value::Nft(nft)) => Value::Automaton(Rc::new(AutomatonKind::Nft(nft))),
-			(_, value) => value,
-		};
+		let wrap = |value: Value| of_kind(kind, value);
 		let values: Vec<Value> = if transducer {
 			Nft::parse_mata_all(text, &mut self.script_alphabet)
 				.map_err(|e| Error::plain(e.to_string()))?
@@ -1083,6 +1189,28 @@ pub(crate) fn holds_transducer(text: &str) -> bool {
 	text.trim_start().starts_with("@NFT") || text.contains("%LevelsNum")
 }
 
+/// Whether a `.mata` text holds a bitvector NFA, whose symbols are the minterms of its parse.
+fn holds_bits(text: &str) -> bool {
+	text.lines()
+		.any(|line| line.trim_start().starts_with("@NFA-bits"))
+}
+
+/// The number of automaton sections of a `.mata` text: each starts with an `@TYPE` line.
+fn sections(text: &str) -> usize {
+	text.lines()
+		.filter(|line| line.trim_start().starts_with('@'))
+		.count()
+}
+
+/// A parsed automaton as the value of `kind`: an `Automaton` wraps either kind.
+fn of_kind(kind: &str, value: Value) -> Value {
+	match (kind, value) {
+		("automaton", Value::Nfa(nfa)) => Value::Automaton(Rc::new(AutomatonKind::Nfa(nfa))),
+		("automaton", Value::Nft(nft)) => Value::Automaton(Rc::new(AutomatonKind::Nft(nft))),
+		(_, value) => value,
+	}
+}
+
 /// The text of a file, or of standard input for `-`.
 ///
 /// # Errors
@@ -1107,6 +1235,29 @@ pub(crate) fn kind_of(sort: &str) -> &'static str {
 	} else {
 		"nfa"
 	}
+}
+
+/// The decision operations that store a witness, the ones `witness` applies to.
+pub(crate) const WITNESS_OPERATIONS: &[&str] = &[
+	"nfa:language-empty?",
+	"nfa:intersection-empty?",
+	"nfa:included?",
+	"nfa:equivalent?",
+	"nfa:universal?",
+];
+
+/// Whether `expression` is an application of a witness operation.
+pub(crate) fn applies_witness_operation(expression: &Expr) -> bool {
+	matches!(&expression.node, Kind::Call { function, .. }
+		if matches!(&function.node, Kind::Name(name) if WITNESS_OPERATIONS.contains(&name.as_str())))
+}
+
+/// The error for a `witness` whose operand is not an application of a witness operation.
+pub(crate) fn witness_message() -> String {
+	format!(
+		"witness applies to an application of {}",
+		WITNESS_OPERATIONS.join(", ")
+	)
 }
 
 /// Whether a call of `name` is a library operation that `:time-operations` measures.
@@ -1187,36 +1338,29 @@ pub(crate) fn info_key_message(keyword: &str) -> String {
 }
 
 fn parse_sort(expression: &Expr) -> Result<String, Error> {
-	match &expression.node {
-		Kind::Name(name) => Ok(name.clone()),
-		Kind::List(_) => Ok(render_list_sort(expression)),
-		_ => Err(expression.at("expected a sort".into())),
-	}
+	sort_expression(expression).ok_or_else(|| expression.at("expected a sort".into()))
 }
 
-fn render_list_sort(expression: &Expr) -> String {
-	let mut out = String::from("(");
-	render(expression, &mut out);
-	out.push(')');
-	out
-}
-
-fn render(expression: &Expr, out: &mut String) {
+/// The sort written as an expression, as in `(as value (List Nfa))`, spelled as a declaration spells
+/// it: `(List (Option Int))`.
+pub(crate) fn sort_expression(expression: &Expr) -> Option<String> {
 	match &expression.node {
-		Kind::Name(name) => {
-			if !out.is_empty() && !out.ends_with('(') {
-				out.push(' ');
-			}
-			out.push_str(name);
+		Kind::Name(name) => Some(name.clone()),
+		Kind::Call {
+			function,
+			arguments,
+			keywords,
+		} if keywords.is_empty() && !arguments.is_empty() => {
+			let Kind::Name(name) = &function.node else {
+				return None;
+			};
+			let arguments = arguments
+				.iter()
+				.map(sort_expression)
+				.collect::<Option<Vec<_>>>()?;
+			Some(format!("({name} {})", arguments.join(" ")))
 		}
-		Kind::List(items) => {
-			out.push('(');
-			for item in items {
-				render(item, out);
-			}
-			out.push(')');
-		}
-		_ => {}
+		_ => None,
 	}
 }
 
@@ -1249,11 +1393,10 @@ pub(crate) fn as_list(value: &Value) -> Result<Vec<Value>, String> {
 }
 
 fn check_sort(value: &Value, sort: &str, expression: &Expr) -> Result<(), Error> {
-	let actual = value_sort(value);
-	if sort_matches(sort, &actual) {
+	if fits(value, sort) {
 		Ok(())
 	} else {
-		Err(expression.at(format!("expected {sort}, found {actual}")))
+		Err(expression.at(format!("expected {sort}, found {}", value_sort(value))))
 	}
 }
 
@@ -1266,7 +1409,12 @@ pub(crate) fn value_sort(value: &Value) -> String {
 		Value::Nft(_) => "Nft".into(),
 		Value::Automaton(_) => "Automaton".into(),
 		Value::List(list) => {
-			let element = list.first().map_or_else(|| "unknown".into(), value_sort);
+			let mut sorts = list.iter().map(value_sort);
+			let element = match sorts.next() {
+				None => "unknown".into(),
+				Some(first) if sorts.all(|sort| sort == first) => first,
+				Some(_) => "Any".into(),
+			};
 			format!("(List {element})")
 		}
 		Value::Word(_) => "Word".into(),
@@ -1278,10 +1426,41 @@ pub(crate) fn value_sort(value: &Value) -> String {
 	}
 }
 
-fn sort_matches(expected: &str, actual: &str) -> bool {
-	expected == actual
-		|| (expected == "Automaton" && (actual == "Nfa" || actual == "Nft"))
-		|| (expected == "(List Automaton)" && actual.starts_with("(List "))
+/// Whether `value` is of sort `sort`: `none` is of every `(Option T)`, a list is a `(List T)` when every
+/// element is a `T`, and an `Automaton` is also of the kind it holds.
+fn fits(value: &Value, sort: &str) -> bool {
+	if let Some(element) = compound(sort, "List") {
+		return matches!(value, Value::List(items) if items.iter().all(|item| fits(item, element)));
+	}
+	if let Some(inner) = compound(sort, "Option") {
+		return matches!(value, Value::None) || fits(value, inner);
+	}
+	match (sort, value) {
+		("Any", _) | ("Automaton", Value::Nfa(_) | Value::Nft(_)) => true,
+		("Nfa", Value::Automaton(automaton)) => matches!(**automaton, AutomatonKind::Nfa(_)),
+		("Nft", Value::Automaton(automaton)) => matches!(**automaton, AutomatonKind::Nft(_)),
+		(_, Value::List(_)) => false,
+		_ => value_sort(value) == sort,
+	}
+}
+
+/// The argument of `sort` when it is `(name argument)`.
+fn compound<'s>(sort: &'s str, name: &str) -> Option<&'s str> {
+	sort.strip_prefix('(')?
+		.strip_suffix(')')?
+		.strip_prefix(name)?
+		.strip_prefix(' ')
+}
+
+/// `value` narrowed to `sort`: an `Automaton` narrowed to `Nfa` or `Nft` is the automaton it holds.
+fn narrow(value: Value, sort: &str) -> Value {
+	match (sort, &value) {
+		("Nfa" | "Nft", Value::Automaton(automaton)) => match &**automaton {
+			AutomatonKind::Nfa(nfa) => Value::Nfa(Rc::clone(nfa)),
+			AutomatonKind::Nft(nft) => Value::Nft(Rc::clone(nft)),
+		},
+		_ => value,
+	}
 }
 
 fn byte_name(byte: u8) -> String {

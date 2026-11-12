@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::Error;
 use crate::ast::{Expr, FormKind, Kind, Parameter, Spanned};
-use crate::eval::Engine;
+use crate::eval::{Engine, sort_expression};
 use crate::scripts::Inputs;
 
 /// What `mata script check` reports besides its errors.
@@ -1292,8 +1292,10 @@ impl<'a> Checker<'a> {
 		};
 		self.check_sort_expression(&arguments[1], &sort);
 		let actual = self.expression(&arguments[0], self_name);
+		// `as` narrows: an `Automaton` may be checked as an `Nfa`.
 		if let Some(actual) = &actual
 			&& !accepts(&sort, actual)
+			&& !accepts(actual, &sort)
 		{
 			self.reject(&arguments[0], format!("expected {sort}, found {actual}"));
 		}
@@ -1322,7 +1324,7 @@ impl<'a> Checker<'a> {
 		Special::Form(self.sequence(&arguments[1..], self_name))
 	}
 
-	/// Checks `witness`: a decision operation whose counterexample word is returned.
+	/// Checks `witness`: an application of an operation that stores a witness, a counterexample word.
 	fn special_witness(
 		&mut self,
 		arguments: &[Expr],
@@ -1333,13 +1335,9 @@ impl<'a> Checker<'a> {
 			self.reject(expression, "witness takes one application".into());
 			return Special::Form(None);
 		}
-		if let Some(sort) = self.expression(&arguments[0], self_name)
-			&& !accepts("Bool", &sort)
-		{
-			self.reject(
-				&arguments[0],
-				"witness applies to a decision operation".into(),
-			);
+		self.expression(&arguments[0], self_name);
+		if !crate::eval::applies_witness_operation(&arguments[0]) {
+			self.reject(&arguments[0], crate::eval::witness_message());
 		}
 		Special::Form(Some("(Option Word)".into()))
 	}
@@ -1479,21 +1477,6 @@ fn portable_sort(sort: &str) -> bool {
 		return true;
 	}
 	matches!(compound(sort), Some(("List", argument)) if portable_sort(argument))
-}
-
-/// The sort written as an expression, as in `(as value (List Nfa))`.
-fn sort_expression(expression: &Expr) -> Option<String> {
-	match &expression.node {
-		Kind::Name(name) => Some(name.clone()),
-		Kind::List(items) => {
-			let mut parts = Vec::new();
-			for item in items {
-				parts.push(sort_expression(item)?);
-			}
-			Some(format!("({})", parts.join(" ")))
-		}
-		_ => None,
-	}
 }
 
 /// Whether a value of sort `actual` fits where `expected` is required. An empty or `Any` expected sort,

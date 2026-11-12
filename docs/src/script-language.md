@@ -401,7 +401,9 @@ loaded.
 
 **Paths written in the script** are loaded with the same operations: `(nfa:load "automata/a.mata")`. A relative path
 is resolved against the directory of the script, so a script and the automata beside it move together. A path given on
-the command line is resolved against the current directory, as for any other command.
+the command line is resolved against the current directory, as for any other command: when the script is in a file
+with a directory part, a relative one is made absolute before the script sees it, so `$1` and `inputs` hold the
+absolute path.
 
 **Literals** make a script complete without any file:
 
@@ -662,7 +664,8 @@ get it.
 Each of these procedures has one verdict that a word can explain: inclusion, equivalence and universality when they
 do not hold, and the two emptiness checks when the language is not empty. `(witness application)` makes the call with
 the output parameter and returns the stored `Word` for that verdict, and `none` for the other one. The call is made
-once, so the verdict is not computed separately:
+once, so the verdict is not computed separately. The application must be a call of `nfa:included?`,
+`nfa:equivalent?`, `nfa:universal?`, `nfa:language-empty?` or `nfa:intersection-empty?`; anything else is an error:
 
 ```scheme
 (define counterexample (witness (nfa:included? smaller bigger)))
@@ -670,7 +673,8 @@ once, so the verdict is not computed separately:
 ```
 
 With `(set-option :produce-witnesses true)`, every such call passes the output parameter, and `(get-witness)` returns
-the witness of the most recent one. This is the convenient form in an interactive session:
+the witness of the most recent decision operation, the `nfa:` and `nft:` operations whose names end in `?`, and `none`
+when that operation stored none. This is the convenient form in an interactive session:
 
 ```scheme
 (set-option :produce-witnesses true)

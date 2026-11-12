@@ -581,35 +581,43 @@ fn direct(arguments: &[String], namespace: &str) -> Result<Exit, Error> {
 
 /// The values of the operands of a direct command, each read as the sort its position takes. An
 /// automaton operand that is a file with several automata gives one value each; standard input can
-/// be read once.
+/// be read once. The automaton operands are read ahead, so that bitvector ones share their minterms.
 fn direct_values(
 	engine: &mut Engine,
 	operation: &Operation,
 	sorts: &[&str],
 	operands: &[String],
 ) -> Result<Vec<Value>, Error> {
+	let sort_at = |index: usize| {
+		sorts.get(index).copied().or_else(|| {
+			operation
+				.maximum
+				.is_none()
+				.then(|| sorts.last().copied())
+				.flatten()
+		})
+	};
+	let automaton = |sort: &str| matches!(sort, "Nfa" | "Nft" | "Automaton" | "Nfa|Word");
+	let mut index = 0;
+	for operand in operands {
+		index += if sort_at(index).is_some_and(automaton) {
+			engine.read_ahead(operand)?
+		} else {
+			1
+		};
+	}
 	let mut values = Vec::new();
 	let mut stdin_used = false;
 	for operand in operands {
 		let index = values.len();
-		let sort = sorts
-			.get(index)
-			.copied()
-			.or_else(|| {
-				operation
-					.maximum
-					.is_none()
-					.then(|| sorts.last().copied())
-					.flatten()
-			})
-			.ok_or_else(|| {
-				Error::plain(crate::ops::arity_message(
-					operation,
-					operands.len().max(index + 1),
-				))
-			})?;
+		let sort = sort_at(index).ok_or_else(|| {
+			Error::plain(crate::ops::arity_message(
+				operation,
+				operands.len().max(index + 1),
+			))
+		})?;
 		match sort {
-			"Nfa" | "Nft" | "Automaton" | "Nfa|Word" => {
+			_ if automaton(sort) => {
 				if operand == "-" {
 					if stdin_used {
 						return Err(Error::plain("standard input can be read only once".into()));

@@ -135,8 +135,8 @@ impl Alphabet {
 	/// # Errors
 	///
 	/// [`AlphabetError::ReservedName`] if `name` is `<dntcr>`,
-	/// [`AlphabetError::NumericName`] if `name` consists only of decimal digits (printing would write it
-	/// as the number of another symbol, changing the language on the next parse), and
+	/// [`AlphabetError::NumericName`] if `name` is new and consists only of decimal digits (printing would
+	/// write it as the number of another symbol, changing the language on the next parse), and
 	/// [`AlphabetError::Full`] if the name is new and no symbol below `u32::MAX - 1` (the value of
 	/// [`DONT_CARE`](crate::nft::DONT_CARE) in transducers) is left.
 	pub fn insert_name(&mut self, name: &str) -> Result<Symbol, AlphabetError> {
@@ -184,17 +184,21 @@ impl Alphabet {
 	}
 
 	/// The checks that every way of naming a symbol shares: the reserved names, and a name that
-	/// printing would write as the number of a symbol. Returns `Some` for a known name.
+	/// printing would write as the number of a symbol. Returns `Some` for a known name, numeric or not:
+	/// [`insert_named`](Alphabet::insert_named) may have bound one.
 	fn insert_new_name(&self, name: &str) -> Result<Option<Symbol>, AlphabetError> {
 		if name == DONT_CARE_NAME {
 			return Err(AlphabetError::ReservedName);
+		}
+		if let Some(&symbol) = self.by_name.get(name) {
+			return Ok(Some(symbol));
 		}
 		if is_numeric(name) {
 			return Err(AlphabetError::NumericName {
 				name: name.to_owned(),
 			});
 		}
-		Ok(self.by_name.get(name).copied())
+		Ok(None)
 	}
 
 	/// The symbol named `name`, if any. `<eps>` gives [`Symbol::EPSILON`].

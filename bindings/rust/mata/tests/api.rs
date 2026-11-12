@@ -309,6 +309,18 @@ fn insert_named_rejects_the_epsilon_name() {
 }
 
 #[test]
+fn a_numeric_name_bound_by_insert_named_is_found() -> Result<(), Error> {
+	let mut sigma = Alphabet::new();
+	sigma.insert_named("0", Symbol::new(48))?;
+	assert_eq!(sigma.insert_name("0"), Ok(Symbol::new(48)));
+	assert_eq!(
+		sigma.insert_name("1"),
+		Err(AlphabetError::NumericName { name: "1".into() })
+	);
+	Ok(())
+}
+
+#[test]
 fn parse_with_names_shares_symbols() -> Result<(), Error> {
 	let mut sigma = Alphabet::from_names(["b"])?;
 	let texts = [
