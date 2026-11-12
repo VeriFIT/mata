@@ -432,14 +432,7 @@ fn script_check(arguments: &[String]) -> Result<Exit, Error> {
 	while index < arguments.len() {
 		let argument = &arguments[index];
 		index += 1;
-		if separator || !argument.starts_with("--") || argument == "-" {
-			if separator && argument == "--" {
-				return Err(Error::plain("unexpected argument '--'".into()));
-			}
-			if argument == "--" {
-				separator = true;
-				continue;
-			}
+		if separator || argument == "-" || !argument.starts_with('-') {
 			if choice.given() {
 				return Err(Error::plain(format!(
 					"unexpected argument '{argument}'; check takes no inputs"
@@ -461,6 +454,7 @@ fn script_check(arguments: &[String]) -> Result<Exit, Error> {
 				println!("{}", check_help());
 				return Ok(Exit::Success);
 			}
+			"--" => separator = true,
 			_ => return Err(Error::plain(format!("unknown option '{argument}'"))),
 		}
 	}

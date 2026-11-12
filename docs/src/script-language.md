@@ -256,8 +256,8 @@ needs no loop. It is a `list:map` or a `list:fold` over a range:
 ```scheme
 (list:range 0 3)                                  ; the list 0 1 2
 
-; measure the same check five times: five records labelled "inclusion"
-(list:map (lambda (round) (time "inclusion" (nfa:included? lhs rhs)))
+; measure the same check five times: records "inclusion-0" to "inclusion-4"
+(list:map (lambda (round) (time (concat "inclusion-" (to-string round)) (nfa:included? lhs rhs)))
           (list:range 0 5))
 
 ; the image of a language under four applications of a transducer

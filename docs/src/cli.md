@@ -199,8 +199,9 @@ true
   read as a pattern: `mata nfa included` is `nfa:included?`.
 - Each operand is read as the sort its position takes. An automaton operand is a file in the
   [`.mata` format](automata-format), or `-` for standard input, which can be read once; a file with several automata
-  gives one operand each. A `Word` operand is symbol names separated by spaces, as `mata nfa in-language a.mata 'a b'`;
-  a `String` operand is the text itself, as `mata nfa create-from-regex 'a(b|c)*'`; an `Int` operand is a number.
+  gives one operand each. A `Word` operand is symbol names separated by spaces, as `mata nfa in-language a.mata 'a b'`,
+  and an empty operand `''` is the empty word; `ε`, as printed for the empty word, is read as a symbol named `ε`.
+  A `String` operand is the text itself, as `mata nfa create-from-regex 'a(b|c)*'`; an `Int` operand is a number.
 - An operation whose operands a command line cannot give, such as a function or `nfa:literal`, is not a direct
   command; `mata nfa --help` lists exactly the operations that are, each with its operands and hints.
 - A binary operation of the algebra, such as `intersection`, `union-nondeterministic`, `concatenate` or `compose`, takes

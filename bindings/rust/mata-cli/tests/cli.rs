@@ -1079,3 +1079,38 @@ fn an_operation_passed_as_a_value_is_a_function() {
 	assert_eq!(status(&output), 0, "{}", stderr(&output));
 	assert_eq!(stdout(&output), "2\n");
 }
+
+// Review of #1039: script check options
+#[test]
+fn script_check_takes_short_options_and_a_separator() {
+	let output = mata([
+		"script",
+		"check",
+		"-e",
+		"(mata-script \"0.1.0\")\n(print 1)",
+	]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert!(
+		stdout(&output).starts_with("checked: <expression>"),
+		"{}",
+		stdout(&output)
+	);
+	let output = mata(["script", "check", "-h"]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert!(
+		stdout(&output).starts_with("usage: mata script check"),
+		"{}",
+		stdout(&output)
+	);
+	let workspace = Workspace::new("check-separator");
+	let script = workspace.file("-s.matasc", "(mata-script \"0.1.0\")\n(print 1)\n");
+	let output = mata(["script", "check", "--", &script]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	let output = mata(["script", "check", "-x"]);
+	assert_eq!(status(&output), 2);
+	assert!(
+		stderr(&output).contains("unknown option '-x'"),
+		"{}",
+		stderr(&output)
+	);
+}
