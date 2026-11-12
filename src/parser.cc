@@ -140,6 +140,7 @@ std::vector<Token> tokenize_line(const std::string_view line) {
 
 std::vector<std::pair<std::string, bool>> split_tokens(std::vector<std::pair<std::string, bool>> tokens) {
 	std::vector<std::pair<std::string, bool>> result;
+	result.reserve(tokens.size());
 	for (auto& token : tokens) {
 		if (token.second) { // is quoted?
 			result.push_back(std::move(token));
@@ -320,12 +321,11 @@ ParsedSection mata::parser::parse_mf_section_view(std::string_view& input, const
 			);
 		} else {
 			BodyLine stripped_token_line;
-			std::ranges::transform(
-				token_line, std::back_inserter(stripped_token_line), [&](const std::pair<std::string, bool>& token) {
-					if (keep_quotes && token.second) { return BodyToken{"\"" + token.first + "\"", token.second}; }
-					return BodyToken{token.first, token.second};
-				}
-			);
+			stripped_token_line.reserve(token_line.size());
+			for (auto& [token, token_quoted] : token_line) {
+				if (keep_quotes && token_quoted) { token = "\"" + token + "\""; }
+				stripped_token_line.emplace_back(std::move(token), token_quoted);
+			}
 			result.body.push_back(std::move(stripped_token_line));
 		}
 	}
