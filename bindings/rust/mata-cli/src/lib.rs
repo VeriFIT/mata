@@ -63,6 +63,7 @@ pub(crate) mod eval;
 pub(crate) mod lexer;
 pub(crate) mod literal;
 pub(crate) mod ops;
+pub(crate) mod optimize;
 pub(crate) mod scripts;
 pub(crate) mod version;
 

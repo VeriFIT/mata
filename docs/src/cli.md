@@ -325,8 +325,9 @@ label with no listed symbols. Nothing is skipped, guessed or approximated.
   message is followed by its line and column, as `mata: unknown name 'nfa:determinizee' at 3:1`; an error at run time
   without a place of its own gets the place of the form that was running. A failed `assert` writes
   `mata: assertion failed at <line>:<column>` and the script goes on.
-- The trace of a run is not implemented: `(set-option :trace true)` is rejected with `option :trace is not
-implemented`, so a run does not report its library calls yet.
+- The trace of a run, with `(set-option :trace true)`, writes one line per library call to standard error, and only
+  there: `mata: trace: <operation>`, then ` :<key> <value>` for each hint in effect, the defaults first. A call that
+  `:optimize` answers from its memo, and a call that it rewrites away, makes no line.
 - No progress output, banners or colours are printed, unless standard error is a terminal and the command is
   interactive; the content of the streams never changes, only the prompt.
 
@@ -455,3 +456,14 @@ language page specifies but this build does not have are listed in the
   `option :<name> is not implemented`, and `:loops-and-recursion` is always rejected, so `loop`, `recur` and self-calls
   are errors with the same reason. `mata formats` lists the features a header can require and whether this build has
   them.
+- Every script option works: `:alphabet` with `on-the-fly` or `bytes`, `:produce-witnesses`, `:time-operations`,
+  `:default`, `:optimize`, `:trace` and `:loops-and-recursion`. `mata formats` lists the features a header can require
+  and whether this build has them.
+- `:optimize` rewrites what the [script language](script-language) page lists, and no more: a definition whose value
+  is never read is left out when its value is an `Nfa` computed from library operations that cannot fail, so that
+  leaving it out cannot hide an error; the same application of the same values runs once; `(nfa:language-empty?
+(nfa:intersection a b))` calls `nfa:intersection-empty?`; and the last use of a named value is passed on to be
+  moved rather than copied.
+- `:trace` writes `mata: trace: <operation>` and the hints in effect, as ` :<key> <value>`, to standard error, for
+  every library call it makes. A call that the memo of `:optimize` answers makes no line, and the defaults of an
+  operation are printed before the hints the script wrote, which win.

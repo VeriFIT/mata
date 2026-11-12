@@ -189,15 +189,15 @@ pub(crate) const FEATURES: &[Feature] = &[
 	},
 	Feature {
 		name: "loops-and-recursion",
-		implemented: false,
+		implemented: true,
 	},
 	Feature {
 		name: "optimizer",
-		implemented: false,
+		implemented: true,
 	},
 	Feature {
 		name: "trace",
-		implemented: false,
+		implemented: true,
 	},
 	Feature {
 		name: "automaton",

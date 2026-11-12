@@ -4,7 +4,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::Error;
 use crate::ast::{Expr, FormKind, Kind, Parameter, Spanned};
-use crate::eval::{Engine, sort_expression};
+use crate::eval::{Engine, Switch, sort_expression};
 use crate::scripts::Inputs;
 
 /// What `mata script check` reports besides its errors.
@@ -64,6 +64,21 @@ const OPTIONS: &[&str] = &[
 	"time-operations",
 	"trace",
 ];
+
+/// Why a `:loops-and-recursion` option comes too late; it holds for the whole file.
+pub(crate) const LOOPS_OPTION_PLACE: &str = "the option :loops-and-recursion must be set before the first form that is not set-option or set-info";
+
+/// Why `what` is an error without `:loops-and-recursion`.
+pub(crate) fn needs_loops(what: &str) -> String {
+	format!("{what} needs (set-option :loops-and-recursion true)")
+}
+
+/// Why a `recur` stands where it cannot restart a loop.
+pub(crate) const RECUR_OUTSIDE: &str =
+	"'recur' must be inside a loop, and not inside a function defined in it";
+
+/// Why a `recur` is not the last thing its loop body evaluates.
+pub(crate) const RECUR_NOT_LAST: &str = "'recur' must be the last thing a loop body evaluates";
 
 /// Operations a portable core script may call; `script-language.md`, "Portable core".
 const CORE_OPERATIONS: &[&str] = &[
@@ -136,6 +151,9 @@ struct Frame {
 	sorts: HashMap<String, Option<String>>,
 	/// Parameter count of each function defined here, when it is known.
 	arities: HashMap<String, usize>,
+	/// The frame binds only the name of the function whose body is checked, under
+	/// `:loops-and-recursion`; a use of that name is a self-call.
+	own: bool,
 }
 
 /// The flags of the profile check: the portable core profile and its declaration rules.
@@ -165,14 +183,25 @@ struct Checker<'a> {
 	declarations: Vec<String>,
 	errors: Vec<Error>,
 	warnings: Vec<String>,
-	termination: bool,
+	termination: Switch,
 	/// The profile and declaration state of the script.
 	profile: Profile,
 	/// Self-call errors are reported once per function.
-	recursion_reported: bool,
+	recursion_reported: Switch,
 	/// Open `push` forms, for a `pop` without a matching `push`.
 	pushes: usize,
+	/// `:loops-and-recursion` is on.
+	loops: Switch,
+	/// No form other than `set-option` and `set-info` has been seen yet.
+	options_open: Switch,
+	/// The names and sorts of the innermost loop, for `recur`; `None` inside a function, where `recur`
+	/// cannot restart a loop around it.
+	loop_bindings: LoopBindings,
 }
+
+/// The names and sorts that the loops around an expression bound, innermost last; `None` inside a
+/// function, where a `recur` cannot restart a loop around it.
+type LoopBindings = Vec<Option<Vec<(String, Option<String>)>>>;
 
 impl<'a> Checker<'a> {
 	fn new(engine: &'a Engine) -> Checker<'a> {
@@ -183,14 +212,17 @@ impl<'a> Checker<'a> {
 			declarations: Vec::new(),
 			errors: Vec::new(),
 			warnings: Vec::new(),
-			termination: true,
+			termination: Switch::On,
 			profile: Profile {
 				core: false,
 				declarations_open: true,
 				declared_variadic: false,
 			},
-			recursion_reported: false,
+			recursion_reported: Switch::Off,
 			pushes: 0,
+			loops: Switch::Off,
+			options_open: Switch::On,
+			loop_bindings: Vec::new(),
 		}
 	}
 
@@ -202,7 +234,7 @@ impl<'a> Checker<'a> {
 		}
 		if self.errors.is_empty() {
 			Ok(Report {
-				termination: self.termination,
+				termination: self.termination.on(),
 				warnings: self.warnings,
 			})
 		} else {
@@ -268,6 +300,32 @@ impl<'a> Checker<'a> {
 		None
 	}
 
+	/// Takes away the termination guarantee when `name` resolves to the function whose body binds it
+	/// as its own name: a self-call.
+	fn own_reference(&mut self, name: &str) {
+		let own = self
+			.frames
+			.iter()
+			.rev()
+			.find(|frame| frame.sorts.contains_key(name))
+			.is_some_and(|frame| frame.own);
+		if own {
+			self.termination = Switch::Off;
+		}
+	}
+
+	/// A function that uses its own name in its body, without `:loops-and-recursion`; reported once.
+	fn self_call(&mut self, name: &str, expression: &Expr) {
+		if !self.recursion_reported.on() {
+			self.recursion_reported = Switch::On;
+			self.reject(
+				expression,
+				needs_loops(&format!("'{name}' calls itself; recursion")),
+			);
+		}
+		self.termination = Switch::Off;
+	}
+
 	fn reject(&mut self, expression: &Expr, message: String) {
 		self.errors.push(expression.at(message));
 	}
@@ -284,7 +342,7 @@ impl<'a> Checker<'a> {
 	/// position of the function a `list:` function applies, the only one it allows.
 	fn consumed(&mut self, sort: Option<&str>, to_apply: bool) {
 		if sort == Some("Function") && !to_apply {
-			self.termination = false;
+			self.termination = Switch::Off;
 		}
 	}
 
@@ -302,6 +360,17 @@ impl<'a> Checker<'a> {
 			&& let Some(directive) = outside_core(&form.node)
 		{
 			self.reject_form(form, format!("'{directive}' is not in the portable core"));
+		}
+		if !matches!(
+			form.node,
+			FormKind::Header { .. } | FormKind::SetOption { .. } | FormKind::SetInfo { .. }
+		) {
+			self.options_open = Switch::Off;
+		}
+		if self.loops.on() {
+			for expression in form.node.expressions() {
+				misplaced_recur(expression, false, false, &mut self.errors);
+			}
 		}
 		match &form.node {
 			FormKind::Header { requires, profile } => {
@@ -327,33 +396,7 @@ impl<'a> Checker<'a> {
 				default,
 			} => self.parameter(form, name, sort, default.as_ref()),
 			FormKind::SetOption { keyword, value } => self.option(form, keyword, value),
-			FormKind::SetInfo { keyword, value } => {
-				if keyword == "profile" {
-					self.reject_form(
-						form,
-						"the profile is set in the header: (mata-script \"…\" :profile core)"
-							.into(),
-					);
-				} else if !keyword.starts_with("x-")
-					&& !crate::eval::INFO_KEYS.iter().any(|(key, _)| key == keyword)
-				{
-					self.reject_form(form, crate::eval::info_key_message(keyword));
-				} else if let Some((_, expected)) = crate::eval::INFO_KEYS
-					.iter()
-					.find(|(key, _)| key == keyword)
-				{
-					if let Some(sort) = self.expression(value, None)
-						&& !accepts(expected, &sort)
-					{
-						self.reject_form(
-							form,
-							format!("info :{keyword} must be a {expected}, found {sort}"),
-						);
-					}
-				} else {
-					let _ = self.expression(value, None);
-				}
-			}
+			FormKind::SetInfo { keyword, value } => self.info(form, keyword, value),
 			FormKind::Push => {
 				self.profile.declarations_open = false;
 				self.pushes += 1;
@@ -395,6 +438,36 @@ impl<'a> Checker<'a> {
 				self.profile.declarations_open = false;
 				let _ = self.expression(expression, None);
 			}
+		}
+	}
+
+	/// Checks one `set-info`: a key of the format or an `x-` key, with a value of the sort it names.
+	fn info(&mut self, form: &Spanned<FormKind>, keyword: &str, value: &Expr) {
+		if keyword == "profile" {
+			self.reject_form(
+				form,
+				"the profile is set in the header: (mata-script \"…\" :profile core)".into(),
+			);
+		} else if !keyword.starts_with("x-")
+			&& !crate::eval::INFO_KEYS
+				.iter()
+				.any(|(key, _)| *key == keyword)
+		{
+			self.reject_form(form, crate::eval::info_key_message(keyword));
+		} else if let Some((_, expected)) = crate::eval::INFO_KEYS
+			.iter()
+			.find(|(key, _)| *key == keyword)
+		{
+			if let Some(sort) = self.expression(value, None)
+				&& !accepts(expected, &sort)
+			{
+				self.reject_form(
+					form,
+					format!("info :{keyword} must be a {expected}, found {sort}"),
+				);
+			}
+		} else {
+			let _ = self.expression(value, None);
 		}
 	}
 
@@ -574,19 +647,26 @@ impl<'a> Checker<'a> {
 					self.reject_form(form, format!("unknown alphabet '{name}'"));
 				}
 			}
-			"produce-witnesses" | "time-operations" => self.expect_sort(value, "Bool", form),
-			"optimize" | "trace" => {
+			"produce-witnesses" | "time-operations" | "optimize" | "trace" => {
 				self.expect_sort(value, "Bool", form);
-				if matches!(value.node, Kind::Bool(true)) {
-					self.reject_form(form, format!("option :{keyword} is not implemented"));
-				}
 			}
 			"loops-and-recursion" => {
-				let _ = self.expression(value, None);
-				self.reject_form(
-					form,
-					"option :loops-and-recursion is not implemented".into(),
-				);
+				if !self.options_open.on() {
+					self.reject_form(form, LOOPS_OPTION_PLACE.into());
+				}
+				match value.node {
+					Kind::Bool(enabled) => self.loops = Switch::from(enabled),
+					_ => self.reject_form(
+						form,
+						"the value of :loops-and-recursion must be written as true or false".into(),
+					),
+				}
+				if self.loops.on() && self.profile.core {
+					self.reject_form(
+						form,
+						"a portable core script cannot turn on :loops-and-recursion".into(),
+					);
+				}
 			}
 			_ => self.default_hints(form, value),
 		}
@@ -696,6 +776,15 @@ impl<'a> Checker<'a> {
 						"a portable core script cannot define a function".into(),
 					);
 				}
+				// With the option, the function sees its own name; without it, a use of the name is
+				// reported as a self-call.
+				if self.loops.on() {
+					self.frames.push(Frame {
+						own: true,
+						..Frame::default()
+					});
+					self.bind(name, Some("Function".to_owned()), Some(parameters.len()));
+				}
 				self.frames.push(Frame::default());
 				for parameter in parameters {
 					if let Some(sort) = &parameter.sort {
@@ -706,10 +795,15 @@ impl<'a> Checker<'a> {
 					}
 					self.bind(&parameter.name, parameter.sort.clone(), None);
 				}
-				let result = self.body(body, Some(name));
+				self.loop_bindings.push(None);
+				let result = self.body(body, (!self.loops.on()).then_some(name));
+				self.loop_bindings.pop();
 				self.frames.pop();
+				if self.loops.on() {
+					self.frames.pop();
+				}
 				if result.as_deref() == Some("Function") {
-					self.termination = false;
+					self.termination = Switch::Off;
 				}
 				Some("Function".to_owned())
 			}
@@ -765,16 +859,7 @@ impl<'a> Checker<'a> {
 			Kind::None => Some("none".into()),
 			Kind::Name(name) => {
 				if Some(name.as_str()) == self_name {
-					if !self.recursion_reported {
-						self.recursion_reported = true;
-						self.reject(
-							expression,
-							format!(
-								"'{name}' calls itself; recursion needs :loops-and-recursion, which is not implemented"
-							),
-						);
-					}
-					self.termination = false;
+					self.self_call(name, expression);
 					return Some("Function".into());
 				}
 				if !self.known(name) {
@@ -782,6 +867,7 @@ impl<'a> Checker<'a> {
 					return None;
 				}
 				self.used.insert(name.clone());
+				self.own_reference(name);
 				self.sort_of(name)
 			}
 			Kind::List(items) => self.list(items, expression, self_name),
@@ -802,10 +888,12 @@ impl<'a> Checker<'a> {
 					}
 					self.bind(&parameter.name, parameter.sort.clone(), None);
 				}
+				self.loop_bindings.push(None);
 				let result = self.body(body, self_name);
+				self.loop_bindings.pop();
 				self.frames.pop();
 				if result.as_deref() == Some("Function") {
-					self.termination = false;
+					self.termination = Switch::Off;
 				}
 				Some("Function".into())
 			}
@@ -912,18 +1000,19 @@ impl<'a> Checker<'a> {
 			return None;
 		};
 		match head.as_str() {
-			"let" => self.list_let(&items[1..], expression, self_name),
+			"let" | "loop" => {
+				if head == "loop" {
+					self.termination = Switch::Off;
+					if !self.loops.on() {
+						self.reject(expression, needs_loops("'loop'"));
+						return None;
+					}
+				}
+				self.list_let(head, &items[1..], expression, self_name)
+			}
 			"cond" => {
 				self.core_form("cond", expression);
 				self.list_cond(&items[1..], expression, self_name)
-			}
-			"loop" => {
-				self.termination = false;
-				self.reject(
-					expression,
-					"'loop' needs :loops-and-recursion, which is not implemented".into(),
-				);
-				None
 			}
 			_ => {
 				let arguments = items[1..].to_vec();
@@ -932,32 +1021,36 @@ impl<'a> Checker<'a> {
 		}
 	}
 
+	/// Checks `let` and `loop`, which bind names in turn and then evaluate a body; the body of a `loop`
+	/// can `recur` with new values of its names.
 	fn list_let(
 		&mut self,
+		head: &str,
 		parts: &[Expr],
 		expression: &Expr,
 		self_name: Option<&str>,
 	) -> Option<String> {
 		let Some(Kind::List(bindings)) = parts.first().map(|part| &part.node) else {
-			self.reject(expression, "let needs a binding list".into());
+			self.reject(expression, format!("{head} needs a binding list"));
 			return None;
 		};
 		if parts.len() < 2 {
-			self.reject(expression, "let needs a body".into());
+			self.reject(expression, format!("{head} needs a body"));
 			return None;
 		}
 		self.frames.push(Frame::default());
+		let mut bound = Vec::new();
 		for binding in bindings {
 			let Kind::List(pair) = &binding.node else {
-				self.reject(binding, "a let binding must be (name value)".into());
+				self.reject(binding, format!("a {head} binding must be (name value)"));
 				continue;
 			};
 			if pair.len() != 2 {
-				self.reject(binding, "a let binding must be (name value)".into());
+				self.reject(binding, format!("a {head} binding must be (name value)"));
 				continue;
 			}
 			let Kind::Name(name) = &pair[0].node else {
-				self.reject(binding, "a let binding needs a name".into());
+				self.reject(binding, format!("a {head} binding needs a name"));
 				continue;
 			};
 			if let Some(message) = crate::eval::reserved(name) {
@@ -972,9 +1065,17 @@ impl<'a> Checker<'a> {
 				} => Some(parameters.len()),
 				_ => None,
 			};
+			bound.push((name.clone(), sort.clone()));
 			self.bind(name, sort, arity);
 		}
+		let looping = head == "loop";
+		if looping {
+			self.loop_bindings.push(Some(bound));
+		}
 		let result = self.body(&parts[1..], self_name);
+		if looping {
+			self.loop_bindings.pop();
+		}
 		self.frames.pop();
 		result
 	}
@@ -1065,16 +1166,7 @@ impl<'a> Checker<'a> {
 		self_name: Option<&str>,
 	) -> Option<String> {
 		if Some(head) == self_name {
-			if !self.recursion_reported {
-				self.recursion_reported = true;
-				self.reject(
-					expression,
-					format!(
-						"'{head}' calls itself; recursion needs :loops-and-recursion, which is not implemented"
-					),
-				);
-			}
-			self.termination = false;
+			self.self_call(head, expression);
 			for argument in arguments {
 				let _ = self.expression(argument, self_name);
 			}
@@ -1096,6 +1188,7 @@ impl<'a> Checker<'a> {
 			self.reject(expression, format!("unknown name '{head}'"));
 			return None;
 		}
+		self.own_reference(head);
 		let sort = self.sort_of(head);
 		if let Some(sort) = &sort
 			&& !accepts("Function", sort)
@@ -1221,11 +1314,7 @@ impl<'a> Checker<'a> {
 			"time" => self.special_time(arguments, expression, self_name),
 			"witness" => self.special_witness(arguments, expression, self_name),
 			"recur" => {
-				self.termination = false;
-				self.reject(
-					expression,
-					"'recur' needs :loops-and-recursion, which is not implemented".into(),
-				);
+				self.special_recur(arguments, expression, self_name);
 				Special::Form(None)
 			}
 			"else" => {
@@ -1236,6 +1325,52 @@ impl<'a> Checker<'a> {
 				Special::Form(None)
 			}
 			_ => Special::NotSpecial,
+		}
+	}
+
+	/// Checks `recur`: one value for each name of the innermost loop, of the sort the name started
+	/// with. Where it stands is checked by [`misplaced_recur`].
+	fn special_recur(&mut self, arguments: &[Expr], expression: &Expr, self_name: Option<&str>) {
+		self.termination = Switch::Off;
+		if !self.loops.on() {
+			self.reject(expression, needs_loops("'recur'"));
+		}
+		let sorts: Vec<Option<String>> = arguments
+			.iter()
+			.map(|argument| self.expression(argument, self_name))
+			.collect();
+		let Some(Some(bindings)) = self.loop_bindings.last() else {
+			return;
+		};
+		if bindings.len() != sorts.len() {
+			let message = format!(
+				"recur takes {} values, one for each name of the loop; {} given",
+				bindings.len(),
+				sorts.len()
+			);
+			self.reject(expression, message);
+			return;
+		}
+		let mismatches: Vec<(usize, String)> = bindings
+			.iter()
+			.zip(&sorts)
+			.enumerate()
+			.filter_map(|(index, ((name, expected), actual))| {
+				let (Some(expected), Some(actual)) = (expected, actual) else {
+					return None;
+				};
+				(expected != "none" && !accepts(expected, actual)).then(|| {
+					(
+						index,
+						format!(
+							"recur gives '{name}' a {actual}, but the loop started it as {expected}"
+						),
+					)
+				})
+			})
+			.collect();
+		for (index, message) in mismatches {
+			self.reject(&arguments[index], message);
 		}
 	}
 
@@ -1405,6 +1540,7 @@ impl<'a> Checker<'a> {
 		let given = arguments.len() + 1;
 		let operation = if self.known(name) {
 			self.used.insert(name.to_owned());
+			self.own_reference(name);
 			crate::ops::visible(name, self.engine.language)
 		} else {
 			self.reject(step, format!("unknown name '{name}'"));
@@ -1519,5 +1655,107 @@ fn accepts(expected: &str, actual: &str) -> bool {
 		(Some(("Option", expected)), Some(("Option", actual)))
 		| (Some(("List", expected)), Some(("List", actual))) => accepts(expected, actual),
 		_ => false,
+	}
+}
+
+/// Reports every `recur` in `expression` that does not restart a loop as the last thing its body
+/// evaluates. `tail`: `expression` is in that place; `in_loop`: a loop of the same function is around.
+fn misplaced_recur(expression: &Expr, tail: bool, in_loop: bool, errors: &mut Vec<Error>) {
+	match &expression.node {
+		Kind::Call {
+			function,
+			arguments,
+			keywords,
+		} => {
+			let head = match &function.node {
+				Kind::Name(head) => head.as_str(),
+				_ => "",
+			};
+			match head {
+				"recur" => {
+					if !in_loop {
+						errors.push(expression.at(RECUR_OUTSIDE.into()));
+					} else if !tail {
+						errors.push(expression.at(RECUR_NOT_LAST.into()));
+					}
+				}
+				"if" => {
+					for (index, argument) in arguments.iter().enumerate() {
+						misplaced_recur(argument, tail && index > 0, in_loop, errors);
+					}
+					return;
+				}
+				"do" => {
+					misplaced_in_body(arguments, tail, in_loop, errors);
+					return;
+				}
+				_ => misplaced_recur(function, false, in_loop, errors),
+			}
+			for argument in arguments
+				.iter()
+				.chain(keywords.iter().map(|(_, value)| value))
+			{
+				misplaced_recur(argument, false, in_loop, errors);
+			}
+		}
+		Kind::List(items) => {
+			let head = match items.first().map(|item| &item.node) {
+				Some(Kind::Name(head)) => head.as_str(),
+				_ => "",
+			};
+			match head {
+				"let" | "loop" => {
+					if let Some(Kind::List(bindings)) = items.get(1).map(|item| &item.node) {
+						for binding in bindings {
+							misplaced_recur(binding, false, in_loop, errors);
+						}
+					}
+					let looping = head == "loop";
+					let body = items.get(2..).unwrap_or_default();
+					misplaced_in_body(body, tail || looping, in_loop || looping, errors);
+				}
+				"cond" => {
+					for clause in &items[1..] {
+						if let Kind::List(pair) = &clause.node {
+							for (index, part) in pair.iter().enumerate() {
+								misplaced_recur(part, tail && index == 1, in_loop, errors);
+							}
+						}
+					}
+				}
+				_ => {
+					for item in items {
+						misplaced_recur(item, false, in_loop, errors);
+					}
+				}
+			}
+		}
+		Kind::Lambda { body, .. }
+		| Kind::Definition {
+			parameters: Some(_),
+			body,
+			..
+		} => misplaced_in_body(body, false, false, errors),
+		Kind::Definition {
+			parameters: None,
+			body,
+			..
+		} => {
+			for item in body {
+				misplaced_recur(item, false, in_loop, errors);
+			}
+		}
+		_ => {}
+	}
+}
+
+/// [`misplaced_recur`] over a body, whose last expression after its definitions is in the place of
+/// the body itself.
+fn misplaced_in_body(body: &[Expr], tail: bool, in_loop: bool, errors: &mut Vec<Error>) {
+	let last = body
+		.iter()
+		.rposition(|item| !matches!(item.node, Kind::Definition { .. }));
+	for (index, item) in body.iter().enumerate() {
+		misplaced_recur(item, tail && Some(index) == last, in_loop, errors);
 	}
 }

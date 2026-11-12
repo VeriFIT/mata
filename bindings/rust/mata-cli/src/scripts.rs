@@ -102,7 +102,7 @@ pub(crate) fn run(
 			));
 		}
 	}
-	Ok(if engine.assertions_failed {
+	Ok(if engine.assertions_failed.on() {
 		Exit::Assertion
 	} else {
 		Exit::Success
@@ -202,17 +202,17 @@ pub(crate) fn repl(output: Option<&str>) -> Result<Exit, Error> {
 					failed = true;
 				}
 			}
-			if engine.exit {
+			if engine.exit.on() {
 				break;
 			}
 		}
-		if engine.exit {
+		if engine.exit.on() {
 			break;
 		}
 	}
 	Ok(if failed {
 		Exit::Usage
-	} else if engine.assertions_failed {
+	} else if engine.assertions_failed.on() {
 		Exit::Assertion
 	} else {
 		Exit::Success

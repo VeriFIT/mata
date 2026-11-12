@@ -94,6 +94,24 @@ pub(crate) enum FormKind {
 	Expression(Expr),
 }
 
+impl FormKind {
+	/// The expressions the form evaluates: the body of a definition, the value of an option or
+	/// information, the default of a parameter, or the expression itself.
+	pub(crate) fn expressions(&self) -> Vec<&Expr> {
+		match self {
+			FormKind::Define { body, .. } => body.iter().collect(),
+			FormKind::Parameter {
+				default: Some(value),
+				..
+			}
+			| FormKind::SetOption { value, .. }
+			| FormKind::SetInfo { value, .. }
+			| FormKind::Expression(value) => vec![value],
+			_ => Vec::new(),
+		}
+	}
+}
+
 #[derive(Clone, Debug)]
 pub(crate) struct Parameter {
 	pub(crate) name: String,

@@ -149,9 +149,10 @@ fn formats_lists_every_format_feature_and_operation() {
 	assert!(text.starts_with("format mata\nformat dot\n"), "{text}");
 	assert!(text.contains("feature hints implemented\n"), "{text}");
 	assert!(
-		text.contains("feature loops-and-recursion not-implemented\n"),
+		text.contains("feature loops-and-recursion implemented\n"),
 		"{text}"
 	);
+	assert!(text.contains("feature trace implemented\n"), "{text}");
 	assert!(text.contains("operation nfa:trim (1 operand)\n"), "{text}");
 	assert!(
 		text.contains("operation nft:apply (2 operands)\n"),
@@ -264,11 +265,12 @@ fn check_reports_where_a_call_has_the_wrong_number_of_arguments() {
 }
 
 #[test]
-fn check_rejects_recursion_that_the_language_does_not_implement() {
+fn check_rejects_a_self_call_without_the_loops_option() {
 	let output = mata(["script", "check", "--expression", "(define (f x) (f x))"]);
 	assert_eq!(status(&output), 2);
 	assert!(
-		stderr(&output).contains("recursion needs :loops-and-recursion, which is not implemented"),
+		stderr(&output)
+			.contains("'f' calls itself; recursion needs (set-option :loops-and-recursion true)"),
 		"{}",
 		stderr(&output)
 	);
@@ -527,16 +529,21 @@ fn run_without_the_check_runs_forms_until_one_fails() {
 }
 
 #[test]
-fn run_without_the_check_still_rejects_a_required_feature_it_lacks() {
+fn run_without_the_check_still_rejects_an_unknown_required_feature() {
 	let output = mata([
 		"script",
 		"run",
 		"--no-check",
 		"--expression",
-		"(mata-script \"0.1.0\" :requires (loops-and-recursion))\n(print 1)",
+		"(mata-script \"0.1.0\" :requires (no-such-feature))\n(print 1)",
 	]);
 	assert_eq!(status(&output), 2);
 	assert!(stdout(&output).is_empty(), "{}", stdout(&output));
+	assert!(
+		stderr(&output).contains("unknown feature 'no-such-feature'"),
+		"{}",
+		stderr(&output)
+	);
 }
 
 #[test]
@@ -967,9 +974,16 @@ fn the_header_selects_the_language_version_requires_features_and_sets_the_profil
 		"script",
 		"run",
 		"--expression",
-		"(mata-script \"0.1.4\" :requires (hints) :profile core)\n(print 1)",
+		"(mata-script \"0.1.4\" :requires (hints loops-and-recursion optimizer trace))\n(print 1)",
 	]);
 	assert_eq!((status(&ok), stdout(&ok)), (0, "1\n".to_owned()));
+	let core = mata([
+		"script",
+		"run",
+		"--expression",
+		"(mata-script \"0.1.4\" :requires (hints) :profile core)\n(print 1)",
+	]);
+	assert_eq!((status(&core), stdout(&core)), (0, "1\n".to_owned()));
 	for (script, message) in [
 		(
 			"(mata-script \"0.2.0\") (this is not (parsed",
@@ -982,10 +996,6 @@ fn the_header_selects_the_language_version_requires_features_and_sets_the_profil
 		(
 			"(mata-script \"0.1\")",
 			"invalid language version '0.1'; expected MAJOR.MINOR.PATCH",
-		),
-		(
-			"(mata-script \"0.1.0\" :requires (loops-and-recursion))",
-			"requires feature 'loops-and-recursion', which this mata does not implement",
 		),
 		(
 			"(mata-script \"0.1.0\" :requires (teleport))",
@@ -2480,4 +2490,196 @@ fn strings_direct_commands_read_an_automaton_from_a_file() {
 		"{}",
 		stderr(&alphabet)
 	);
+}
+
+#[test]
+fn a_loop_restarts_with_the_values_recur_gives() {
+	let output = run_script(
+		"(set-option :loops-and-recursion true)\n(print (loop ((on true)) (if on (recur false) (list 1 2))))",
+		true,
+		&[],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "1\n2\n");
+}
+
+#[test]
+fn a_loop_reaches_the_saturating_union_the_language_page_gives() {
+	let workspace = Workspace::new("loop-reachable");
+	let initial = workspace.file("initial.mata", NFA);
+	let step = workspace.file("step.mata", NFT);
+	let bad = workspace.file(
+		"bad.mata",
+		"@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q2\nq0 a q0\nq1 a q2\n",
+	);
+	let script = "(mata-script \"0.1.0\")\n(set-option :loops-and-recursion true)\n\
+	              (declare-input initial Nfa)\n(declare-input step Nft)\n(declare-input bad Nfa)\n\
+	              (define reachable (loop ((reached initial)) \
+	              (define next (nfa:union-nondeterministic reached (nft:to-nfa (nft:apply step reached)))) \
+	              (if (nfa:included? next reached) reached (recur next))))\n\
+	              (print (nfa:number-of-states reachable))\n(check (nfa:intersection-empty? reachable bad))";
+	let output = run_script(script, true, &[&initial, &step, &bad]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "4\ntrue\n");
+}
+
+#[test]
+fn a_function_calls_itself_with_the_loops_option() {
+	let workspace = Workspace::new("self-call");
+	let initial = workspace.file("initial.mata", NFA);
+	let step = workspace.file("step.mata", NFT);
+	let script = "(set-option :loops-and-recursion true)\n\
+	              (declare-input initial Nfa)\n(declare-input step Nft)\n\
+	              (define (saturate (reached Nfa)) \
+	              (define next (nfa:union-nondeterministic reached (nft:to-nfa (nft:apply step reached)))) \
+	              (if (nfa:included? next reached) reached (saturate next)))\n\
+	              (print (nfa:number-of-states (saturate initial)))";
+	let output = run_script(script, true, &[&initial, &step]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "4\n");
+}
+
+#[test]
+fn a_loop_takes_the_termination_guarantee_away() {
+	let script = "(mata-script \"0.1.0\")\n(set-option :loops-and-recursion true)\n(loop ((on true)) (if on (recur false) false))";
+	let output = mata(["script", "check", "--expression", script]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stderr(&output), "termination: not-guaranteed\n");
+}
+
+#[test]
+fn check_rejects_the_loops_option_after_the_first_other_form() {
+	let output = mata([
+		"script",
+		"check",
+		"--expression",
+		"(print 1)\n(set-option :loops-and-recursion true)",
+	]);
+	assert_eq!(status(&output), 2);
+	assert!(
+		stderr(&output).contains(":loops-and-recursion must be set before the first form"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
+fn check_rejects_a_loop_in_a_portable_core_script() {
+	let output = mata([
+		"script",
+		"check",
+		"--expression",
+		"(mata-script \"0.1.0\" :profile core)\n(set-option :loops-and-recursion true)",
+	]);
+	assert_eq!(status(&output), 2);
+	assert!(
+		stderr(&output).contains("a portable core script cannot turn on :loops-and-recursion"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
+fn check_rejects_recur_without_a_loop_and_out_of_its_last_place() {
+	for (script, message) in [
+		(
+			"(set-option :loops-and-recursion true)\n(define x (recur 1))",
+			"'recur' must be inside a loop",
+		),
+		(
+			"(set-option :loops-and-recursion true)\n(loop ((on true)) (recur on) 2)",
+			"'recur' must be the last thing a loop body evaluates",
+		),
+	] {
+		let output = mata(["script", "check", "--expression", script]);
+		assert_eq!(status(&output), 2, "{script}");
+		assert!(stderr(&output).contains(message), "{}", stderr(&output));
+	}
+}
+
+#[test]
+fn check_rejects_recur_with_the_wrong_number_or_sort_of_values() {
+	for (script, message) in [
+		(
+			"(set-option :loops-and-recursion true)\n(loop ((on true) (off false)) (recur on))",
+			"recur takes 2 values, one for each name of the loop; 1 given",
+		),
+		(
+			"(set-option :loops-and-recursion true)\n(loop ((on true)) (recur 1))",
+			"recur gives 'on' a Int, but the loop started it as Bool",
+		),
+	] {
+		let output = mata(["script", "check", "--expression", script]);
+		assert_eq!(status(&output), 2, "{script}");
+		assert!(stderr(&output).contains(message), "{}", stderr(&output));
+	}
+}
+
+#[test]
+fn a_recursion_that_never_stops_hits_the_depth_limit() {
+	let script =
+		"(set-option :loops-and-recursion true)\n(define (f (on Bool)) (f on))\n(print (f true))";
+	let output = run_script(script, false, &[]);
+	assert_eq!(status(&output), 2, "{}", stdout(&output));
+	assert!(
+		stderr(&output).contains("function calls nest deeper than 1000"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
+fn trace_writes_every_library_call_and_its_hints_to_standard_error() {
+	let workspace = Workspace::new("trace");
+	let a = workspace.file("a.mata", NFA);
+	let script = "(set-option :trace true)\n(set-option :default (nfa:included? :algorithm \"naive\"))\n\
+	              (declare-input a Nfa)\n(print (nfa:included? a a))\n\
+	              (print (nfa:included? a a :algorithm \"antichains\"))";
+	let output = run_script(script, true, &[&a]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "true\ntrue\n");
+	assert_eq!(
+		stderr(&output),
+		"mata: trace: nfa:included? :algorithm \"naive\"\n\
+		 mata: trace: nfa:included? :algorithm \"antichains\"\n"
+	);
+}
+
+#[test]
+fn the_optimizer_calls_one_operation_for_an_intersection_emptiness_and_runs_it_once() {
+	let workspace = Workspace::new("optimizer");
+	let a = workspace.file("a.mata", NFA);
+	let script = "(mata-script \"0.1.0\")\n(set-option :optimize true)\n(set-option :time-operations true)\n\
+	              (declare-input a Nfa)\n\
+	              (print (nfa:language-empty? (nfa:intersection a a)))\n\
+	              (print (nfa:language-empty? (nfa:intersection a a)))";
+	let output = run_script(script, true, &[&a]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	let text = stdout(&output);
+	let records: Vec<&str> = text.lines().filter(|line| *line != "false").collect();
+	assert_eq!(records.len(), 2, "{text}");
+	assert!(records[0].starts_with("parsing: "), "{text}");
+	assert!(
+		records[1].starts_with("nfa:intersection-empty?: "),
+		"{text}"
+	);
+}
+
+#[test]
+fn the_optimizer_leaves_out_a_definition_nothing_reads() {
+	let workspace = Workspace::new("optimizer-dead");
+	let a = workspace.file("a.mata", NFA);
+	let script = "(set-option :optimize true)\n(set-option :trace true)\n(declare-input a Nfa)\n\
+	              (define unused (nfa:trim a))\n(print 1)";
+	let output = run_script(script, true, &[&a]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "1\n");
+	assert!(stderr(&output).is_empty(), "{}", stderr(&output));
+
+	let without = run_script(
+		&script.replace("(set-option :optimize true)\n", ""),
+		true,
+		&[&a],
+	);
+	assert_eq!(stderr(&without), "mata: trace: nfa:trim\n");
 }

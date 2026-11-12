@@ -40,6 +40,9 @@ pub(crate) enum Function {
 		name: String,
 	},
 	User {
+		/// The name of a function defined with `define`, which its body sees under
+		/// `:loops-and-recursion`.
+		name: Option<String>,
 		parameters: Vec<Parameter>,
 		body: Vec<Expr>,
 		environment: Scope,
@@ -96,6 +99,15 @@ impl Scope {
 			.find_map(|frame| frame.get(name).cloned())
 	}
 
+	/// Removes the innermost binding of `name`, for the optimizer at the last use of the value.
+	fn take(&self, name: &str) -> Option<Value> {
+		self.frames
+			.borrow_mut()
+			.iter_mut()
+			.rev()
+			.find_map(|frame| frame.remove(name))
+	}
+
 	fn snapshot(&self) -> Scope {
 		let frames = self.frames.borrow().clone();
 		Scope {
@@ -104,12 +116,35 @@ impl Scope {
 	}
 }
 
+/// An option, flag or status that is off or on: a named `Switch` rather than a `bool`, so that a
+/// struct of many of them keeps a name for each.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(crate) enum Switch {
+	#[default]
+	Off,
+	On,
+}
+
+impl Switch {
+	pub(crate) fn on(self) -> bool {
+		matches!(self, Switch::On)
+	}
+}
+
+impl From<bool> for Switch {
+	fn from(on: bool) -> Switch {
+		if on { Switch::On } else { Switch::Off }
+	}
+}
+
 /// The script options that change how operations behave.
 #[derive(Debug, Default, Clone)]
 pub(crate) struct Options {
-	pub(crate) bytes_alphabet: bool,
-	pub(crate) produce_witnesses: bool,
-	pub(crate) time_operations: bool,
+	pub(crate) bytes_alphabet: Switch,
+	pub(crate) produce_witnesses: Switch,
+	pub(crate) time_operations: Switch,
+	pub(crate) optimize: Switch,
+	pub(crate) trace: Switch,
 }
 
 /// The options and hint defaults when a `push` ran, which its `pop` restores.
@@ -139,9 +174,9 @@ pub(crate) struct Engine {
 	pub(crate) options: Options,
 	pub(crate) last_witness: Option<Value>,
 	/// Set while `witness` evaluates its application, which then searches a counterexample.
-	pub(crate) witness_requested: bool,
-	pub(crate) assertions_failed: bool,
-	pub(crate) exit: bool,
+	pub(crate) witness_requested: Switch,
+	pub(crate) assertions_failed: Switch,
+	pub(crate) exit: Switch,
 	pub(crate) sink: Sink,
 	pub(crate) base_dir: Option<PathBuf>,
 	pub(crate) info: HashMap<String, Value>,
@@ -166,7 +201,26 @@ pub(crate) struct Engine {
 	labels: std::collections::HashSet<String>,
 	/// The form being evaluated, so that a failure at run time names its place.
 	pub(crate) place: Option<(usize, usize)>,
+	/// `:loops-and-recursion` is on, for the whole file: `pop` and `reset` keep it.
+	loops_and_recursion: Switch,
+	/// No form other than `set-option` and `set-info` has run yet.
+	options_open: Switch,
+	/// The number of names of each loop around the expression being evaluated, innermost last; a
+	/// function call starts with none.
+	loops: Vec<usize>,
+	/// The values of a `recur` on their way to the loop it restarts.
+	recur: Option<Vec<Value>>,
+	/// How deeply defined functions and lambdas are calling each other.
+	depth: usize,
+	/// The optimizer's findings about the script being executed.
+	plan: crate::optimize::Plan,
+	/// The results of library applications, for the optimizer.
+	memo: crate::optimize::Memo,
 }
+
+/// How deeply function calls may nest; deeper recursion is an error rather than an overflow of the
+/// stack.
+const MAX_DEPTH: usize = 1000;
 
 /// A synthetic expression for calling a function value outside of syntax, e.g. from `list:map`.
 pub(crate) fn dummy_expr() -> Expr {
@@ -202,9 +256,9 @@ impl Engine {
 			script_alphabet: mata::Alphabet::new(),
 			options: Options::default(),
 			last_witness: None,
-			witness_requested: false,
-			assertions_failed: false,
-			exit: false,
+			witness_requested: Switch::Off,
+			assertions_failed: Switch::Off,
+			exit: Switch::Off,
 			sink: Sink::Stdout,
 			base_dir: None,
 			info: HashMap::new(),
@@ -220,6 +274,13 @@ impl Engine {
 			call_parameters: Vec::new(),
 			labels: std::collections::HashSet::new(),
 			place: None,
+			loops_and_recursion: Switch::Off,
+			options_open: Switch::On,
+			loops: Vec::new(),
+			recur: None,
+			depth: 0,
+			plan: crate::optimize::Plan::default(),
+			memo: crate::optimize::Memo::default(),
 		}
 	}
 
@@ -267,7 +328,7 @@ impl Engine {
 
 	/// Records a failed assertion and reports its place on standard error.
 	pub(crate) fn fail_assertion(&mut self) {
-		self.assertions_failed = true;
+		self.assertions_failed = Switch::On;
 		match self.place {
 			Some((line, column)) => eprintln!("mata: assertion failed at {line}:{column}"),
 			None => eprintln!("mata: assertion failed"),
@@ -289,7 +350,7 @@ impl Engine {
 		label: &str,
 		work: impl FnOnce(&mut Engine) -> Result<T, Error>,
 	) -> Result<T, Error> {
-		if !self.options.time_operations {
+		if !self.options.time_operations.on() {
 			return work(self);
 		}
 		let started = Instant::now();
@@ -338,11 +399,13 @@ impl Engine {
 		}
 	}
 
-	/// Evaluates forms until end or `(exit)`.
+	/// Evaluates forms until end or `(exit)`. The forms are the whole script, so the optimizer may
+	/// plan for them.
 	pub(crate) fn execute(&mut self, forms: &[Spanned<FormKind>]) -> Result<(), Error> {
+		self.plan = crate::optimize::Plan::of(forms);
 		for form in forms {
 			self.execute_form(form)?;
-			if self.exit {
+			if self.exit.on() {
 				return Ok(());
 			}
 		}
@@ -352,7 +415,15 @@ impl Engine {
 	/// Evaluates one top-level form; a failure without a place of its own gets the form's place.
 	pub(crate) fn execute_form(&mut self, form: &Spanned<FormKind>) -> Result<Value, Error> {
 		self.place = Some((form.line, form.column));
+		if !matches!(
+			form.node,
+			FormKind::Header { .. } | FormKind::SetOption { .. } | FormKind::SetInfo { .. }
+		) {
+			self.options_open = Switch::Off;
+		}
 		self.execute_form_at(form).map_err(|mut error| {
+			// A `recur` that failed on its way to its loop does not restart the next form.
+			self.recur = None;
 			if error.at.is_none() {
 				error.at = Some((form.line, form.column));
 			}
@@ -367,28 +438,7 @@ impl Engine {
 				parameters,
 				body,
 				sort,
-			} => {
-				self.check_definable(name, form)?;
-				let value = match parameters {
-					None => self.evaluate_sequence(body)?,
-					Some(parameters) => Value::Function(Rc::new(Function::User {
-						parameters: parameters.clone(),
-						body: body.clone(),
-						environment: self.scope.snapshot(),
-					})),
-				};
-				if let Some(sort) = sort {
-					let actual = value_sort(&value);
-					if matches!(&value, Value::Function(_)) {
-						return Err(form.at(format!("'{name}' is a function, not a {sort}")));
-					}
-					if !fits(&value, sort) {
-						return Err(form.at(format!("expected {sort}, found {actual}")));
-					}
-				}
-				self.scope.define(name.clone(), value.clone());
-				Ok(Value::None)
-			}
+			} => self.define(name, parameters.as_deref(), sort.as_deref(), body, form),
 			FormKind::Declare {
 				name,
 				sort,
@@ -447,15 +497,76 @@ impl Engine {
 				fresh.sink = std::mem::replace(&mut self.sink, Sink::Stdout);
 				fresh.assertions_failed = self.assertions_failed;
 				fresh.labels = std::mem::take(&mut self.labels);
+				fresh.loops_and_recursion = self.loops_and_recursion;
+				fresh.options_open = Switch::Off;
+				fresh.plan = std::mem::take(&mut self.plan);
 				*self = fresh;
 				Ok(Value::None)
 			}
 			FormKind::Exit => {
-				self.exit = true;
+				self.exit = Switch::On;
 				Ok(Value::None)
 			}
 			FormKind::Expression(expression) => self.evaluate(expression),
 		}
+	}
+
+	/// Binds a definition's value, which a function definition makes a closure over the current scope.
+	fn define(
+		&mut self,
+		name: &str,
+		parameters: Option<&[Parameter]>,
+		sort: Option<&str>,
+		body: &[Expr],
+		form: &Spanned<FormKind>,
+	) -> Result<Value, Error> {
+		self.check_definable(name, form)?;
+		if parameters.is_none() && self.dead_definition(form.line, form.column, sort, body) {
+			return Ok(Value::None);
+		}
+		let value = match parameters {
+			None => self.evaluate_sequence(body)?,
+			Some(parameters) => Value::Function(Rc::new(Function::User {
+				name: Some(name.to_owned()),
+				parameters: parameters.to_vec(),
+				body: body.to_vec(),
+				environment: self.scope.snapshot(),
+			})),
+		};
+		if let Some(sort) = sort {
+			let actual = value_sort(&value);
+			if matches!(&value, Value::Function(_)) {
+				return Err(form.at(format!("'{name}' is a function, not a {sort}")));
+			}
+			if !fits(&value, sort) {
+				return Err(form.at(format!("expected {sort}, found {actual}")));
+			}
+		}
+		self.scope.define(name.to_owned(), value.clone());
+		Ok(Value::None)
+	}
+
+	/// Whether a definition can be left out: nothing reads its value, and its value is an `Nfa`
+	/// computed with pure library operations, so that leaving it out cannot hide an error.
+	fn dead_definition(
+		&self,
+		line: usize,
+		column: usize,
+		sort: Option<&str>,
+		body: &[Expr],
+	) -> bool {
+		if !self.options.optimize.on()
+			|| !self.plan.is_dead(line, column)
+			|| !matches!(sort, None | Some("Nfa"))
+		{
+			return false;
+		}
+		let [expression] = body else {
+			return false;
+		};
+		crate::optimize::computes_nfa(expression, &|name| {
+			matches!(self.scope.lookup(name), Some(Value::Nfa(_)))
+		})
 	}
 
 	/// Closes the innermost `push`: drops its definitions and restores the options and hint defaults,
@@ -530,12 +641,12 @@ impl Engine {
 			"alphabet" => {
 				let name = as_string(&value).map_err(|e| form.at(e.clone()))?;
 				match name.as_str() {
-					"on-the-fly" => self.options.bytes_alphabet = false,
+					"on-the-fly" => self.options.bytes_alphabet = Switch::Off,
 					"bytes" => {
 						if !self.script_alphabet.is_empty() {
 							return Err(form.at("the script alphabet is already in use".into()));
 						}
-						self.options.bytes_alphabet = true;
+						self.options.bytes_alphabet = Switch::On;
 						for byte in u8::MIN..=u8::MAX {
 							let name = byte_name(byte);
 							self.script_alphabet
@@ -547,20 +658,26 @@ impl Engine {
 				}
 			}
 			"produce-witnesses" => {
-				self.options.produce_witnesses = as_bool(&value).map_err(|e| form.at(e.clone()))?;
+				self.options.produce_witnesses =
+					Switch::from(as_bool(&value).map_err(|e| form.at(e.clone()))?);
 			}
 			"time-operations" => {
-				self.options.time_operations = as_bool(&value).map_err(|e| form.at(e.clone()))?;
+				self.options.time_operations =
+					Switch::from(as_bool(&value).map_err(|e| form.at(e.clone()))?);
 			}
-			"optimize" | "trace" => {
-				let enabled = as_bool(&value).map_err(|e| form.at(e.clone()))?;
-				if !enabled {
-					return Ok(Value::None);
-				}
-				return Err(form.at(format!("option :{keyword} is not implemented")));
+			"optimize" => {
+				self.options.optimize =
+					Switch::from(as_bool(&value).map_err(|e| form.at(e.clone()))?);
+			}
+			"trace" => {
+				self.options.trace = Switch::from(as_bool(&value).map_err(|e| form.at(e.clone()))?);
 			}
 			"loops-and-recursion" => {
-				return Err(form.at("option :loops-and-recursion is not implemented".into()));
+				if !self.options_open.on() {
+					return Err(form.at(crate::check::LOOPS_OPTION_PLACE.into()));
+				}
+				self.loops_and_recursion =
+					Switch::from(as_bool(&value).map_err(|e| form.at(e.clone()))?);
 			}
 			_ => return Err(form.at(format!("unknown option ':{keyword}'"))),
 		}
@@ -604,28 +721,42 @@ impl Engine {
 
 	fn get_option(&self, keyword: &str) -> Result<Value, String> {
 		Ok(match keyword {
-			"alphabet" => Value::String(if self.options.bytes_alphabet {
+			"alphabet" => Value::String(if self.options.bytes_alphabet.on() {
 				"bytes".into()
 			} else {
 				"on-the-fly".into()
 			}),
-			"produce-witnesses" => Value::Bool(self.options.produce_witnesses),
-			"time-operations" => Value::Bool(self.options.time_operations),
-			"optimize" | "trace" | "loops-and-recursion" => Value::Bool(false),
+			"produce-witnesses" => Value::Bool(self.options.produce_witnesses.on()),
+			"time-operations" => Value::Bool(self.options.time_operations.on()),
+			"optimize" => Value::Bool(self.options.optimize.on()),
+			"trace" => Value::Bool(self.options.trace.on()),
+			"loops-and-recursion" => Value::Bool(self.loops_and_recursion.on()),
 			_ => return Err(format!("unknown option ':{keyword}'")),
 		})
 	}
 
 	pub(crate) fn evaluate(&mut self, expression: &Expr) -> Result<Value, Error> {
+		if self.recur.is_some() {
+			return Err(expression.at(crate::check::RECUR_NOT_LAST.into()));
+		}
 		match &expression.node {
 			Kind::Bool(value) => Ok(Value::Bool(*value)),
 			Kind::Int(value) => Ok(Value::Int(*value)),
 			Kind::String(value) => Ok(Value::String(value.clone())),
 			Kind::None => Ok(Value::None),
-			Kind::Name(name) => self
-				.scope
-				.lookup(name)
-				.ok_or_else(|| expression.at(format!("unknown name '{name}'"))),
+			Kind::Name(name) => {
+				// Dropping the name at the last use of its value lets an operation change the value in
+				// place. An operation stays bound, as the optimizer calls some by name.
+				let last = self.options.optimize.on()
+					&& self.plan.is_last_use(expression)
+					&& crate::ops::operation(name).is_none();
+				if last {
+					self.scope.take(name)
+				} else {
+					self.scope.lookup(name)
+				}
+				.ok_or_else(|| expression.at(format!("unknown name '{name}'")))
+			}
 			Kind::Input(name) => {
 				if name.chars().all(|c| c.is_ascii_digit()) {
 					let index: usize = name
@@ -646,6 +777,7 @@ impl Engine {
 			}
 			Kind::List(items) => self.evaluate_list(items, expression),
 			Kind::Lambda { parameters, body } => Ok(Value::Function(Rc::new(Function::User {
+				name: None,
 				parameters: parameters.clone(),
 				body: body.clone(),
 				environment: self.scope.snapshot(),
@@ -676,6 +808,8 @@ impl Engine {
 	) -> Result<Value, Error> {
 		match name {
 			"let" => self.evaluate_let(parts, expression),
+			"loop" => self.evaluate_loop(parts, expression),
+			"recur" => self.evaluate_recur(parts, expression),
 			"if" => self.evaluate_if(parts, expression),
 			"cond" => self.evaluate_cond(parts, expression),
 			"do" => self.evaluate_sequence(parts),
@@ -685,6 +819,11 @@ impl Engine {
 			"time" => self.evaluate_time(parts, expression),
 			"witness" => self.evaluate_witness(parts, expression),
 			_ => {
+				if self.options.optimize.on()
+					&& let Some(value) = self.evaluate_disjointness(name, parts, expression)?
+				{
+					return Ok(value);
+				}
 				let function = self
 					.scope
 					.lookup(name)
@@ -696,6 +835,25 @@ impl Engine {
 				self.call_function(function, arguments, &[], expression)
 			}
 		}
+	}
+
+	/// `(nfa:language-empty? (nfa:intersection lhs rhs))` runs as `(nfa:intersection-empty? lhs rhs)`,
+	/// which the library decides without building the product.
+	fn evaluate_disjointness(
+		&mut self,
+		name: &str,
+		parts: &[Expr],
+		expression: &Expr,
+	) -> Result<Option<Value>, Error> {
+		let Some((lhs, rhs)) = crate::optimize::disjointness(name, parts) else {
+			return Ok(None);
+		};
+		let arguments = vec![self.evaluate(lhs)?, self.evaluate(rhs)?];
+		let function = Value::Function(Rc::new(Function::Native {
+			name: "nfa:intersection-empty?".to_owned(),
+		}));
+		self.call_function(function, arguments, &[], expression)
+			.map(Some)
 	}
 
 	fn evaluate_if(&mut self, parts: &[Expr], expression: &Expr) -> Result<Value, Error> {
@@ -782,7 +940,7 @@ impl Engine {
 			return Err(parts[0].at(witness_message()));
 		}
 		// The operation is the last call made, so the stored witness is its own.
-		let requested = std::mem::replace(&mut self.witness_requested, true);
+		let requested = std::mem::replace(&mut self.witness_requested, Switch::On);
 		let value = self.evaluate(&parts[0]);
 		self.witness_requested = requested;
 		value?;
@@ -798,19 +956,7 @@ impl Engine {
 		}
 		self.scope.push();
 		let result = (|| {
-			for binding in bindings {
-				let Kind::List(pair) = &binding.node else {
-					return Err(binding.at("a let binding must be (name value)".into()));
-				};
-				if pair.len() != 2 {
-					return Err(binding.at("a let binding must be (name value)".into()));
-				}
-				let Kind::Name(name) = &pair[0].node else {
-					return Err(binding.at("a let binding needs a name".into()));
-				};
-				let value = self.evaluate(&pair[1])?;
-				self.scope.define(name.clone(), value);
-			}
+			self.bind_names(bindings, "let")?;
 			self.evaluate_definitions(&parts[1..])?;
 			let expressions = parts[1..]
 				.iter()
@@ -821,6 +967,102 @@ impl Engine {
 		})();
 		let _ = self.scope.pop();
 		result
+	}
+
+	/// Binds the `(name value)` pairs of a `let` or a `loop` in order, so that a later value sees the
+	/// names bound before it.
+	fn bind_names(&mut self, bindings: &[Expr], head: &str) -> Result<Vec<(String, Value)>, Error> {
+		let mut bound = Vec::with_capacity(bindings.len());
+		for binding in bindings {
+			let Kind::List(pair) = &binding.node else {
+				return Err(binding.at(format!("a {head} binding must be (name value)")));
+			};
+			if pair.len() != 2 {
+				return Err(binding.at(format!("a {head} binding must be (name value)")));
+			}
+			let Kind::Name(name) = &pair[0].node else {
+				return Err(binding.at(format!("a {head} binding needs a name")));
+			};
+			let value = self.evaluate(&pair[1])?;
+			self.scope.define(name.clone(), value.clone());
+			bound.push((name.clone(), value));
+		}
+		Ok(bound)
+	}
+
+	/// `(loop ((name value) …) body …)`: the body runs in a fresh scope until it ends without a
+	/// `recur`, whose values then bind the names again.
+	fn evaluate_loop(&mut self, parts: &[Expr], expression: &Expr) -> Result<Value, Error> {
+		if !self.loops_and_recursion.on() {
+			return Err(expression.at(crate::check::needs_loops("'loop'")));
+		}
+		let Kind::List(bindings) = &parts[0].node else {
+			return Err(expression.at("loop needs a binding list".into()));
+		};
+		if parts.len() < 2 {
+			return Err(expression.at("loop needs a body".into()));
+		}
+		self.scope.push();
+		let bound = self.bind_names(bindings, "loop");
+		let _ = self.scope.pop();
+		let bound = bound?;
+		let names = bound
+			.iter()
+			.map(|(name, _)| name.clone())
+			.collect::<Vec<_>>();
+		let mut values = bound
+			.into_iter()
+			.map(|(_, value)| value)
+			.collect::<Vec<_>>();
+		let expressions = parts[1..]
+			.iter()
+			.filter(|e| !matches!(e.node, Kind::Definition { .. }))
+			.cloned()
+			.collect::<Vec<_>>();
+		self.loops.push(names.len());
+		let result = (|| {
+			loop {
+				// A fresh scope per round: what the body defines belongs to that round.
+				self.scope.push();
+				let round = (|| {
+					for (name, value) in names.iter().zip(&values) {
+						self.scope.define(name.clone(), value.clone());
+					}
+					self.evaluate_definitions(&parts[1..])?;
+					self.evaluate_sequence(&expressions)
+				})();
+				let _ = self.scope.pop();
+				let value = round?;
+				match self.recur.take() {
+					Some(next) => values = next,
+					None => break Ok(value),
+				}
+			}
+		})();
+		self.loops.pop();
+		result
+	}
+
+	/// `(recur value …)`: hands the values to the innermost `loop`, which runs its body again.
+	fn evaluate_recur(&mut self, parts: &[Expr], expression: &Expr) -> Result<Value, Error> {
+		if !self.loops_and_recursion.on() {
+			return Err(expression.at(crate::check::needs_loops("'recur'")));
+		}
+		let Some(count) = self.loops.last().copied() else {
+			return Err(expression.at(crate::check::RECUR_OUTSIDE.into()));
+		};
+		if parts.len() != count {
+			return Err(expression.at(format!(
+				"recur takes {count} values, one for each name of the loop; {} given",
+				parts.len()
+			)));
+		}
+		let values = parts
+			.iter()
+			.map(|part| self.evaluate(part))
+			.collect::<Result<Vec<_>, _>>()?;
+		self.recur = Some(values);
+		Ok(Value::None)
 	}
 
 	fn evaluate_pipeline(&mut self, steps: &[Expr], expression: &Expr) -> Result<Value, Error> {
@@ -910,74 +1152,155 @@ impl Engine {
 			);
 		};
 		match &*function {
-			Function::Native { name } => {
-				let mut hints = Vec::with_capacity(keywords.len());
-				for (key, value) in keywords {
-					let text = crate::ops::keyword_text(name, key, &self.evaluate(value)?)
-						.map_err(|message| value.at(message))?;
-					hints.push((key.clone(), text));
-				}
-				let located = |error: Error| {
-					if error.at.is_some() || expression.line == 0 {
-						error
-					} else {
-						expression.at(error.message)
-					}
-				};
-				// A decision stores its own witness, or none: `get-witness` never answers an older call.
-				if is_timed(name) && name.ends_with('?') {
-					self.last_witness = None;
-				}
-				if is_timed(name) {
-					let label = name.clone();
-					self.timed(&label, |engine| {
-						crate::ops::call(&label, arguments, &hints, engine)
-					})
-					.map_err(located)
-				} else {
-					crate::ops::call(name, arguments, &hints, self).map_err(located)
-				}
+			Function::Native { name } => self.call_native(name, arguments, keywords, expression),
+			Function::User { .. } => self.call_user(&function, arguments, keywords, expression),
+		}
+	}
+
+	/// Calls a library operation: the optimizer may answer from the memo instead, and `:trace` reports
+	/// the call that is made.
+	fn call_native(
+		&mut self,
+		name: &str,
+		arguments: Vec<Value>,
+		keywords: &[(String, Expr)],
+		expression: &Expr,
+	) -> Result<Value, Error> {
+		let mut hints = Vec::with_capacity(keywords.len());
+		for (key, value) in keywords {
+			let text = crate::ops::keyword_text(name, key, &self.evaluate(value)?)
+				.map_err(|message| value.at(message))?;
+			hints.push((key.clone(), text));
+		}
+		let located = |error: Error| {
+			if error.at.is_some() || expression.line == 0 {
+				error
+			} else {
+				expression.at(error.message)
 			}
-			Function::User {
-				parameters,
-				body,
-				environment,
-			} => {
-				if !keywords.is_empty() {
-					return Err(
-						expression.at("a defined function takes no keyword arguments".into())
-					);
-				}
-				if parameters.len() != arguments.len() {
-					return Err(expression.at(format!(
-						"the function expects {} arguments, {} given",
-						parameters.len(),
-						arguments.len()
-					)));
-				}
-				let saved = std::mem::replace(&mut self.scope, environment.snapshot());
-				self.scope.push();
-				let result = (|| {
-					for (parameter, value) in parameters.iter().zip(arguments) {
-						if let Some(sort) = &parameter.sort {
-							check_sort(&value, sort, expression)?;
-						}
-						self.scope.define(parameter.name.clone(), value);
-					}
-					self.evaluate_definitions(body)?;
-					self.evaluate_sequence(
-						&body
-							.iter()
-							.filter(|e| !matches!(e.node, Kind::Definition { .. }))
-							.cloned()
-							.collect::<Vec<_>>(),
-					)
-				})();
-				let _ = self.scope.pop();
-				self.scope = saved;
-				result
+		};
+		// A decision stores its own witness, or none: `get-witness` never answers an older call.
+		if is_timed(name) && name.ends_with('?') {
+			self.last_witness = None;
+		}
+		// A search for a witness makes a real call, so that the library stores a witness.
+		let remembered =
+			self.options.optimize.on() && !(self.witness_requested.on() && name.ends_with('?'));
+		let key = if remembered {
+			crate::optimize::Memo::key(
+				name,
+				&arguments,
+				hints.clone(),
+				self.defaults_of(name),
+				self.script_alphabet.len(),
+			)
+		} else {
+			None
+		};
+		if let Some(key) = &key
+			&& let Some(value) = self.memo.get(key)
+		{
+			return Ok(value);
+		}
+		if self.options.trace.on() && is_timed(name) {
+			self.trace(name, &hints);
+		}
+		// The memo keeps the identity of the operands, which the call itself consumes.
+		let operands = key.as_ref().map(|_| arguments.clone());
+		let value = if is_timed(name) {
+			let label = name.to_owned();
+			self.timed(&label, |engine| {
+				crate::ops::call(&label, arguments, &hints, engine)
+			})
+		} else {
+			crate::ops::call(name, arguments, &hints, self)
+		}
+		.map_err(located)?;
+		if let Some((key, operands)) = key.zip(operands) {
+			self.memo.insert(key, &operands, &value);
+		}
+		Ok(value)
+	}
+
+	/// Reports one library call and its effective hints on standard error, as `:trace` asks.
+	fn trace(&self, name: &str, hints: &[(String, String)]) {
+		use std::fmt::Write as _;
+
+		let mut line = format!("mata: trace: {name}");
+		for (key, value) in self.defaults_of(name) {
+			if !hints.iter().any(|(written, _)| *written == key) {
+				let _ = write!(line, " :{key} {value:?}");
 			}
 		}
+		for (key, value) in hints {
+			let _ = write!(line, " :{key} {value:?}");
+		}
+		eprintln!("{line}");
+	}
+
+	/// Calls a function a script defined, or a lambda: its body runs in the scope it closed over.
+	fn call_user(
+		&mut self,
+		function: &Rc<Function>,
+		arguments: Vec<Value>,
+		keywords: &[(String, Expr)],
+		expression: &Expr,
+	) -> Result<Value, Error> {
+		let Function::User {
+			name,
+			parameters,
+			body,
+			environment,
+		} = &**function
+		else {
+			unreachable!("a native function is not called as a user function")
+		};
+		if !keywords.is_empty() {
+			return Err(expression.at("a defined function takes no keyword arguments".into()));
+		}
+		if parameters.len() != arguments.len() {
+			return Err(expression.at(format!(
+				"the function expects {} arguments, {} given",
+				parameters.len(),
+				arguments.len()
+			)));
+		}
+		if self.depth >= MAX_DEPTH {
+			return Err(expression.at(format!("function calls nest deeper than {MAX_DEPTH}")));
+		}
+		// A `recur` cannot reach a loop that the call is made in, only one in the body.
+		let loops = std::mem::take(&mut self.loops);
+		self.depth += 1;
+		let saved = std::mem::replace(&mut self.scope, environment.snapshot());
+		self.scope.push();
+		let result = (|| {
+			// With the option on, a function sees itself, so that it can call itself.
+			if let Some(name) = name
+				&& self.loops_and_recursion.on()
+			{
+				self.scope
+					.define(name.clone(), Value::Function(Rc::clone(function)));
+			}
+			for (parameter, value) in parameters.iter().zip(arguments) {
+				if let Some(sort) = &parameter.sort {
+					check_sort(&value, sort, expression)?;
+				}
+				self.scope.define(parameter.name.clone(), value);
+			}
+			self.evaluate_definitions(body)?;
+			self.evaluate_sequence(
+				&body
+					.iter()
+					.filter(|e| !matches!(e.node, Kind::Definition { .. }))
+					.cloned()
+					.collect::<Vec<_>>(),
+			)
+		})();
+		let _ = self.scope.pop();
+		self.scope = saved;
+		self.depth -= 1;
+		self.loops = loops;
+		result
 	}
 
 	/// Binds the local definitions of a body in order, so each one sees the previous ones and not itself.
@@ -996,6 +1319,7 @@ impl Engine {
 				let value = match parameters {
 					None => self.evaluate_sequence(body)?,
 					Some(parameters) => Value::Function(Rc::new(Function::User {
+						name: Some(name.clone()),
 						parameters: parameters.clone(),
 						body: body.clone(),
 						environment: self.scope.snapshot(),

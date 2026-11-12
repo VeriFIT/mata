@@ -2070,7 +2070,7 @@ fn decide(
 	holds: impl FnOnce(&Engine) -> bool,
 	find: impl FnOnce(&Engine) -> Option<Word>,
 ) -> Value {
-	if !(engine.options.produce_witnesses || engine.witness_requested) {
+	if !(engine.options.produce_witnesses.on() || engine.witness_requested.on()) {
 		engine.last_witness = None;
 		return Value::Bool(holds(engine));
 	}
