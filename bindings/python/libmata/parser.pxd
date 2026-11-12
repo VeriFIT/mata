@@ -4,6 +4,10 @@ from libcpp.string cimport string
 from libcpp.unordered_map cimport unordered_map
 from libcpp.vector cimport vector
 
+cdef extern from "<filesystem>" namespace "std" nogil:
+    cdef cppclass cpath "std::filesystem::path":
+        cpath(string other)
+
 from libmata.nfa.nfa cimport CNfa, State
 from libmata.alphabets cimport CAlphabet, Symbol
 
@@ -37,6 +41,7 @@ cdef extern from "mata/nfa/builder.hh" namespace "mata::nfa::builder":
 
     cdef void construct(CNfa*, CInterAut&, CAlphabet*) except +
     cdef CNfa parse_from_mata(string, CAlphabet*, NameStateMap*, bool) except +
+    cdef CNfa parse_from_mata_path "parse_from_mata" (cpath&, CAlphabet*, NameStateMap*, bool) except +
     cdef optional[CNfa] parse_explicit_from_mata(string, CAlphabet*, NameStateMap*, bool) except +
 
 cdef extern from "mata/parser/parser.hh" namespace "mata::parser":

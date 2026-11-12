@@ -53,13 +53,12 @@ def from_mata(src: str | list[str], alph.Alphabet alphabet):
         alphabet = IntAlphabet()
     c_alphabet = alphabet.as_base().get()
 
-    # either load single automata
+    # either load single automata; the path overload saves the whole-file copy the bytes roundtrip makes
     if isinstance(src, str):
-        with open(src, 'rb') as handle:
-            result = mata_nfa.Nfa()
-            (<mata_nfa.Nfa>result).thisptr = make_shared[CNfa](
-                parser.parse_from_mata(handle.read(), c_alphabet, NULL, True)
-            )
+        result = mata_nfa.Nfa()
+        (<mata_nfa.Nfa>result).thisptr = make_shared[CNfa](
+            parser.parse_from_mata_path(parser.cpath(src.encode('utf-8')), c_alphabet, NULL, True)
+        )
         return result
     # load multiple automata: the inputs the fast reader of explicit alphabets reads are loaded right away, the
     #  others go through the general reader and are mintermized together
