@@ -4360,6 +4360,42 @@ TEST_CASE("mata::nfa::reduce_size_by_simulation()") {
 		CHECK(state_renaming.at(0) == state_renaming.at(1));
 		CHECK(are_equivalent(result, nfa));
 	}
+
+	SECTION("automata over small and large alphabets give the quotient by the simulation") {
+		// More than 64 states, so the rows of the simulation take several words. Few transitions over many symbols
+		//  give rows of a-predecessors only to the a-targets; few symbols give rows to all states.
+		std::mt19937 gen{13};
+		for (size_t iteration{0}; iteration < 40; ++iteration) {
+			const Symbol num_of_symbols{iteration % 2 == 0 ? 4U : 200U};
+			const State num_of_states{static_cast<State>(65 + gen() % 190)};
+			std::uniform_int_distribution<State> state_dist{0, num_of_states - 1};
+			Nfa nfa(num_of_states);
+			nfa.initial.insert(state_dist(gen));
+			for (State state{0}; state < num_of_states; ++state) {
+				if (gen() % 3 == 0) { nfa.final.insert(state); }
+				for (size_t num_of_posts{1 + (gen() % 3)}; num_of_posts > 0; --num_of_posts) {
+					// Symbols far apart, up to 59'700.
+					const Symbol symbol{static_cast<Symbol>(gen() % num_of_symbols) * 300};
+					for (size_t num_of_targets{1 + (gen() % 2)}; num_of_targets > 0; --num_of_targets) {
+						nfa.delta.add(state, symbol, state_dist(gen));
+					}
+				}
+			}
+
+			const auto relation{algorithms::compute_relation(nfa)};
+			std::vector<size_t> quot_proj;
+			relation.get_symmetric_quotient_projection(quot_proj);
+			StateRenaming expected_renaming;
+			const Nfa expected{
+				algorithms::quotient_by_simulation(nfa, relation, quot_proj, nullptr, &expected_renaming)
+			};
+
+			INFO("iteration " << iteration);
+			const Nfa result{reduce(nfa, &state_renaming)};
+			CHECK(result.is_identical(expected));
+			CHECK(state_renaming == expected_renaming);
+		}
+	}
 }
 
 TEST_CASE("mata::nfa::algorithms::minimize_hopcroft()") {
