@@ -86,8 +86,16 @@ pub(crate) fn run(
 	engine.parameters = inputs.parameters;
 	engine.set_base_dir(base_dir);
 	if let Some(path) = output.filter(|path| *path != "-") {
+		// The script was read already, but writing over its file would still destroy it.
+		let script = match source {
+			Source::File(script) => Some(("script", script.as_str())),
+			Source::Stdin | Source::Expression(_) => None,
+		};
 		let given = inputs.positional.iter().chain(inputs.named.values());
-		engine.sink = create_output(path, given.map(String::as_str))?;
+		let files = script
+			.into_iter()
+			.chain(given.map(|input| ("input", input.as_str())));
+		engine.sink = create_output(path, files)?;
 	}
 	let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
 		let bound = bind_declarations(&mut engine, &forms, &positional)?;
@@ -220,14 +228,17 @@ pub(crate) fn repl(output: Option<&str>) -> Result<Exit, Error> {
 }
 
 /// Opens the `--output` file at once, so every value is written as it is printed. The file must not
-/// be one of `inputs`, which opening it would empty before they are read.
-fn create_output<'a>(path: &str, inputs: impl IntoIterator<Item = &'a str>) -> Result<Sink, Error> {
+/// be one of `files`, the script and its inputs, each with what it is, which opening it would empty.
+fn create_output<'a>(
+	path: &str,
+	files: impl IntoIterator<Item = (&'a str, &'a str)>,
+) -> Result<Sink, Error> {
 	if let Ok(output) = std::fs::canonicalize(path)
-		&& let Some(input) = inputs.into_iter().find(|input| {
-			*input != "-" && std::fs::canonicalize(input).is_ok_and(|input| input == output)
+		&& let Some((what, file)) = files.into_iter().find(|(_, file)| {
+			*file != "-" && std::fs::canonicalize(file).is_ok_and(|file| file == output)
 		}) {
 		return Err(Error::plain(format!(
-			"the output '{path}' is the input '{input}'"
+			"the output '{path}' is the {what} '{file}'"
 		)));
 	}
 	let file = std::fs::File::create(path)
@@ -264,14 +275,16 @@ fn flush() {
 /// `set-option` and `set-info`. Those forms run in order with the declarations, so an option such as
 /// `:alphabet` applies to the automata the declarations load. A positional input file with several
 /// automata gives one automaton to each declaration in turn, and every input given must be taken. The
-/// inputs are read ahead, so that bitvector automata of different files share their minterms. Returns
-/// how many forms it ran.
+/// inputs are read ahead at the first declaration, after the forms before it, so that bitvector
+/// automata of different files share their minterms. Returns how many forms it ran.
 fn bind_declarations(
 	engine: &mut Engine,
 	forms: &[Spanned<FormKind>],
 	inputs: &[String],
 ) -> Result<usize, Error> {
-	let declares = read_declared_inputs(engine, forms, inputs)?;
+	let named = declared_named_inputs(engine, forms)?;
+	let declares = named.is_some();
+	let mut unread = named;
 	let mut files = inputs.iter();
 	let mut pending: std::collections::VecDeque<Value> = std::collections::VecDeque::new();
 	let mut bound = 0;
@@ -282,6 +295,11 @@ fn bind_declarations(
 				sort,
 				variadic,
 			} => {
+				if let Some(named) = unread.take() {
+					for path in inputs.iter().chain(&named) {
+						engine.read_ahead(path)?;
+					}
+				}
 				let at = |mut error: Error| {
 					error.at.get_or_insert((form.line, form.column));
 					error
@@ -333,14 +351,12 @@ fn bind_declarations(
 	Ok(bound)
 }
 
-/// Rejects a named input that no `declare-input` takes, and reads ahead every input the declarations
-/// take: positional ones in order, then named ones in the order of their declarations. Returns whether
-/// the script declares inputs.
-fn read_declared_inputs(
-	engine: &mut Engine,
+/// Rejects a named input that no `declare-input` takes. Returns the paths of the named inputs in the
+/// order of their declarations, or `None` when the script declares no input.
+fn declared_named_inputs(
+	engine: &Engine,
 	forms: &[Spanned<FormKind>],
-	inputs: &[String],
-) -> Result<bool, Error> {
+) -> Result<Option<Vec<String>>, Error> {
 	let declared: Vec<(&str, bool)> = forms
 		.iter()
 		.take_while(|form| {
@@ -359,7 +375,7 @@ fn read_declared_inputs(
 		})
 		.collect();
 	if declared.is_empty() {
-		return Ok(false);
+		return Ok(None);
 	}
 	let mut named: Vec<&String> = engine.named_inputs.keys().collect();
 	named.sort();
@@ -371,12 +387,10 @@ fn read_declared_inputs(
 			"--input {name}: the script declares no input '{name}'"
 		)));
 	}
-	let named: Vec<String> = declared
-		.iter()
-		.filter_map(|(name, _)| engine.named_inputs.get(*name).cloned())
-		.collect();
-	for path in inputs.iter().chain(&named) {
-		engine.read_ahead(path)?;
-	}
-	Ok(true)
+	Ok(Some(
+		declared
+			.iter()
+			.filter_map(|(name, _)| engine.named_inputs.get(*name).cloned())
+			.collect(),
+	))
 }

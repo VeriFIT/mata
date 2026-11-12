@@ -810,7 +810,9 @@ impl<'a> Checker<'a> {
 		};
 		// The annotation narrows like `as`: only a sort that cannot hold the value is an error.
 		let sort = match (annotation, sort) {
-			(Some(expected), Some(actual)) if actual == "Function" => {
+			(Some(expected), Some(actual))
+				if actual == "Function" && !accepts(expected, "Function") =>
+			{
 				self.reject_at(
 					line,
 					column,
@@ -1654,6 +1656,8 @@ fn accepts(expected: &str, actual: &str) -> bool {
 		(Some(("Option", _)), _) if actual == "none" => true,
 		(Some(("Option", expected)), Some(("Option", actual)))
 		| (Some(("List", expected)), Some(("List", actual))) => accepts(expected, actual),
+		// A `T` is an `(Option T)`, as the run has it.
+		(Some(("Option", expected)), _) => accepts(expected, actual),
 		_ => false,
 	}
 }

@@ -2683,3 +2683,98 @@ fn the_optimizer_leaves_out_a_definition_nothing_reads() {
 	);
 	assert_eq!(stderr(&without), "mata: trace: nfa:trim\n");
 }
+
+// Review of #1039: declarations, sorts, direct operands, DOT labels and the output file
+
+#[test]
+fn a_form_before_the_declarations_can_create_an_input() {
+	let workspace = Workspace::new("created-input");
+	let made = workspace.path.join("made.mata");
+	let made = made.to_str().expect("a UTF-8 path");
+	let script = "(set-info :x-created (write \"@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q0\n\" $1))\n\
+	              (declare-input a Nfa)\n(print (nfa:number-of-states a))";
+	for checked in [true, false] {
+		std::fs::remove_file(made).ok();
+		let output = run_script(script, checked, &[made]);
+		assert_eq!(status(&output), 0, "{}", stderr(&output));
+		assert_eq!(stdout(&output), "1\n");
+	}
+}
+
+#[test]
+fn an_annotation_takes_a_function_and_an_option_takes_its_inner_sort() {
+	for script in [
+		"(define f Function (lambda (x) x))\n(print (f 1))",
+		"(define (g x) x)\n(define h Function g)\n(print (h 1))",
+	] {
+		for checked in [true, false] {
+			let output = run_script(script, checked, &[]);
+			assert_eq!(status(&output), 0, "{script}: {}", stderr(&output));
+			assert_eq!(stdout(&output), "1\n");
+		}
+	}
+	let option = "(define w (Option Word) (word \"a\"))\n(print (none? w))";
+	for checked in [true, false] {
+		let output = run_script(option, checked, &[]);
+		assert_eq!(status(&output), 0, "{}", stderr(&output));
+		assert_eq!(stdout(&output), "false\n");
+	}
+	let wrong = run_script("(define f Int (lambda (x) x))", true, &[]);
+	assert_eq!(status(&wrong), 2);
+	assert!(
+		stderr(&wrong).contains("'f' is a function, not a Int"),
+		"{}",
+		stderr(&wrong)
+	);
+}
+
+#[test]
+fn a_direct_nft_apply_takes_an_automaton_operand() {
+	let workspace = Workspace::new("direct-apply");
+	let nft = workspace.file("t.mata", NFT);
+	let nfa = workspace.file("a.mata", NFA);
+	let help = stdout(&mata(["nft", "--help"]));
+	assert!(help.contains("\n  apply NFT NFA\n"), "{help}");
+	let output = mata(["nft", "apply", &nft, &nfa]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert!(
+		stdout(&output).starts_with("@NFT-explicit"),
+		"{}",
+		stdout(&output)
+	);
+}
+
+#[test]
+fn an_explicit_dot_number_label_stays_numeric_after_an_escaped_name() {
+	let workspace = Workspace::new("dot-numbers");
+	let named = workspace.file(
+		"named.dot",
+		"digraph finiteAutomaton {\n0 -> 1 [label=\"\\<5>\"];\ni0 -> 0;\n}\n",
+	);
+	let numbered = workspace.file(
+		"numbered.dot",
+		"digraph finiteAutomaton {\n0 -> 1 [label=\"<5>\"];\ni0 -> 0;\n}\n",
+	);
+	let output = mata([
+		"convert", "--from", "dot", "--to", "mata", &named, &numbered,
+	]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	let text = stdout(&output);
+	let (first, second) = text.split_once("\n\n").expect("two sections");
+	assert!(first.ends_with("q0 <5> q1"), "{text}");
+	assert!(second.ends_with("q0 5 q1\n"), "{text}");
+}
+
+#[test]
+fn the_output_cannot_be_the_script() {
+	let workspace = Workspace::new("output-script");
+	let script = workspace.file("program.matasc", "(print 1)\n");
+	let output = mata(["script", "run", &script, "--output", &script]);
+	assert_eq!(status(&output), 2);
+	assert!(
+		stderr(&output).contains("is the script"),
+		"{}",
+		stderr(&output)
+	);
+	assert_eq!(workspace.read("program.matasc"), "(print 1)\n");
+}

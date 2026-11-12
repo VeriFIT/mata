@@ -75,7 +75,7 @@ mata script run [options] [SCRIPT] [INPUT…]
   given as `-` or with `--expression` has no file, so its paths are relative to the current directory too.
 - `--output PATH` redirects the script's standard output: `print`, `echo`, `check`, timing records and REPL values are
   written to `PATH` instead of standard output. `--output -` is standard output, the default. Errors always go to
-  standard error. An output that is the file of an input is an error, before anything is written.
+  standard error. An output that is the script file or the file of an input is an error, before anything is written.
 
 The whole script is checked, as [`mata script check`](#mata-script-check) does, before its first form runs, so a
 misspelled operation in the last line stops the run before any output and before any automaton is loaded. Its declared
@@ -207,7 +207,9 @@ determinize`, `mata nfa intersection`, `mata nft compose`, `mata strings get-acc
 - Each operand is read as the sort its position takes. An automaton operand is a file in the
   [`.mata` format](automata-format), or `-` for standard input, which can be read once; a file with several automata
   gives one operand each. A `Word` operand is symbol names separated by spaces, as `mata nfa in-language a.mata 'a b'`,
-  and an empty operand `''` is the empty word; `ε`, as printed for the empty word, is read as a symbol named `ε`.
+  and an empty operand `''` is the empty word; `ε`, as printed for the empty word, is read as a symbol named `ε`. An
+  operand that a script may give as an automaton or a word, as the second one of `nft:apply`, is an automaton file:
+  the command line cannot tell the two apart.
   A `String` operand is the text itself, as `mata nfa create-from-regex 'a(b|c)*'`; an `Int` operand is a number.
 - An operation whose operands a command line cannot give, such as a function or `nfa:literal`, is not a direct
   command; `mata nfa --help`, `mata nft --help` and `mata strings --help` list exactly the operations that are, each
@@ -290,9 +292,9 @@ The symbol label is the reverse of the {ref}`script alphabet <script-alphabets>`
 `nft:print-to-dot` all write symbol names, so their outputs agree:
 
 - A plain name such as `a` or `q0` is looked up, and inserted under the next free symbol if new.
-- `<eps>` is epsilon, `<dntcr>` is the don't-care symbol, and `<n>` is the symbol number `n`. A number `n` that is not
-  a known name is symbol `n` too, as the library writes a symbol without a name. A new name never takes the number of
-  a symbol the graph lists.
+- `<eps>` is epsilon, `<dntcr>` is the don't-care symbol, and `<n>` is the symbol number `n`, even when an escaped
+  `\<n>` has made `<n>` a name. A number `n` that is not a known name is symbol `n` too, as the library writes a
+  symbol without a name. A new name never takes the number of a symbol the graph lists.
 - A range `[a-c]` expands to every symbol it names; `a,b` expands to the two symbols `a` and `b`.
 - An empty label is an error.
 - `\\`, `\"`, `\,`, `\[` and `\<` are the characters `\`, `"`, `,`, `[` and `<` inside a name, as Graphviz shows

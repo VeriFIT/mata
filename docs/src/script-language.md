@@ -378,7 +378,8 @@ asks:
   or else the next positional input. A file with several automata gives one automaton to each `declare-input` in turn.
   `declare-inputs` takes all the positional inputs that are left, every automaton of every file, and must come last.
 - Declarations must come before every other form except `set-option` and `set-info`, which run in order with them, so
-  `(set-option :alphabet "bytes")` before a declaration applies to the automaton it loads.
+  `(set-option :alphabet "bytes")` before a declaration applies to the automaton it loads, and a `set-info` value
+  that writes a file before the first declaration can create an input it loads.
 - All declared inputs are loaded before the first other form runs. A file whose kind does not match the declared sort
   is an error at that point. Declaring an input as `Automaton` accepts either kind.
 - When a script declares inputs, every input given on the command line must be taken by a declaration; an input left

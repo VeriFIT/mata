@@ -321,6 +321,32 @@ fn a_numeric_name_bound_by_insert_named_is_found() -> Result<(), Error> {
 }
 
 #[test]
+fn a_numeric_name_never_shadows_an_unnamed_symbol() -> Result<(), Error> {
+	// Printing writes an unnamed symbol as its number, so that number cannot also name another symbol:
+	// the transition over symbol 1 would read back over symbol 49.
+	let mut sigma = Alphabet::from_symbols([Symbol::new(1)])?;
+	assert_eq!(
+		sigma.insert_named("1", Symbol::new(49)),
+		Err(AlphabetError::NumericName { name: "1".into() })
+	);
+	let nfa = Nfa::from_word(&[Symbol::new(1)]);
+	let back = Nfa::parse_mata(&nfa.display_with(&sigma).to_string(), &mut sigma)?;
+	assert!(back.accepts(&[Symbol::new(1)]));
+
+	let mut named = Alphabet::new();
+	named.insert_named("1", Symbol::new(49))?;
+	assert_eq!(
+		named.insert(Symbol::new(1)),
+		Err(AlphabetError::NumericName { name: "1".into() })
+	);
+	// Naming the symbol itself by its own number is no collision.
+	sigma.insert_named("7", Symbol::new(7))?;
+	#[cfg(feature = "serde")]
+	assert!(serde_json::from_str::<Alphabet>(r#"[[49,"1"],[1,null]]"#).is_err());
+	Ok(())
+}
+
+#[test]
 fn parse_with_names_shares_symbols() -> Result<(), Error> {
 	let mut sigma = Alphabet::from_names(["b"])?;
 	let texts = [

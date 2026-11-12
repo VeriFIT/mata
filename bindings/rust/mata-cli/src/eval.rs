@@ -535,7 +535,7 @@ impl Engine {
 		};
 		if let Some(sort) = sort {
 			let actual = value_sort(&value);
-			if matches!(&value, Value::Function(_)) {
+			if matches!(&value, Value::Function(_)) && !fits(&value, sort) {
 				return Err(form.at(format!("'{name}' is a function, not a {sort}")));
 			}
 			if !fits(&value, sort) {

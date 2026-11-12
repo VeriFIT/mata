@@ -573,16 +573,23 @@ fn label_item(name: &str, escaped: bool, engine: &Engine) -> Result<Item, Error>
 	if name.is_empty() {
 		return Err(Error::plain("an empty symbol name is not allowed".into()));
 	}
-	// A name the alphabet knows wins over a number, as in the `.mata` parser.
-	if let Some(symbol) = engine.script_alphabet.symbol(name) {
+	let explicit = name
+		.strip_prefix('<')
+		.and_then(|n| n.strip_suffix('>'))
+		.filter(|number| !escaped && is_number(number));
+	// A name the alphabet knows wins over bare digits, as in the `.mata` parser; `<n>` is always a
+	// number, since `\<` spells a name that starts with `<`.
+	if explicit.is_none()
+		&& let Some(symbol) = engine.script_alphabet.symbol(name)
+	{
 		return Ok(Item::Known(symbol));
 	}
-	let number = match name.strip_prefix('<').and_then(|n| n.strip_suffix('>')) {
-		_ if escaped => return Ok(Item::Name(name.to_owned())),
-		_ if name == "<dntcr>" => return Ok(Item::Known(mata::nft::DONT_CARE)),
-		Some(number) if is_number(number) => number,
-		_ if is_number(name) => name,
-		_ => return Ok(Item::Name(name.to_owned())),
+	let number = match explicit {
+		Some(number) => number,
+		None if escaped => return Ok(Item::Name(name.to_owned())),
+		None if name == "<dntcr>" => return Ok(Item::Known(mata::nft::DONT_CARE)),
+		None if is_number(name) => name,
+		None => return Ok(Item::Name(name.to_owned())),
 	};
 	let number = number
 		.parse()

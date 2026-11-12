@@ -229,10 +229,14 @@ fn direct_operand_sorts(operation: &Operation) -> Option<Vec<&'static str>> {
 	let count = operation.maximum.unwrap_or(operation.minimum);
 	let mut sorts = Vec::with_capacity(count);
 	for index in 0..count {
-		let sort = crate::ops::operand_sort(operation, index)?;
+		let sort = match crate::ops::operand_sort(operation, index)? {
+			// A command-line operand cannot tell a file from symbol names, so it is the automaton.
+			"Nfa|Word" => "Nfa",
+			sort => sort,
+		};
 		if !matches!(
 			sort,
-			"Nfa" | "Nft" | "Automaton" | "Word" | "String" | "Int" | "Nfa|Word" | "(List Int)"
+			"Nfa" | "Nft" | "Automaton" | "Word" | "String" | "Int" | "(List Int)"
 		) {
 			return None;
 		}
@@ -609,7 +613,7 @@ fn direct_values(
 				.flatten()
 		})
 	};
-	let automaton = |sort: &str| matches!(sort, "Nfa" | "Nft" | "Automaton" | "Nfa|Word");
+	let automaton = |sort: &str| matches!(sort, "Nfa" | "Nft" | "Automaton");
 	let mut index = 0;
 	for operand in operands {
 		index += if sort_at(index).is_some_and(automaton) {

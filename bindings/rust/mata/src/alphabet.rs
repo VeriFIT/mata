@@ -111,18 +111,22 @@ impl Alphabet {
 	///
 	/// # Errors
 	///
-	/// [`AlphabetError::Epsilon`] if `symbol` is [`Symbol::EPSILON`].
+	/// [`AlphabetError::Epsilon`] if `symbol` is [`Symbol::EPSILON`], and
+	/// [`AlphabetError::NumericName`] if `symbol` is new and its number is the name of another symbol
+	/// (printing writes an unnamed symbol as its number, which would read back as that other symbol).
 	pub fn insert(&mut self, symbol: Symbol) -> Result<bool, AlphabetError> {
 		if symbol.is_epsilon() {
 			return Err(AlphabetError::Epsilon);
 		}
-		match self.symbols.entry(symbol) {
-			btree_map::Entry::Vacant(entry) => {
-				entry.insert(None);
-				Ok(true)
-			}
-			btree_map::Entry::Occupied(_) => Ok(false),
+		if self.contains(symbol) {
+			return Ok(false);
 		}
+		let number = symbol.value().to_string();
+		if self.by_name.contains_key(&number) {
+			return Err(AlphabetError::NumericName { name: number });
+		}
+		self.symbols.insert(symbol, None);
+		Ok(true)
 	}
 
 	/// The symbol named `name`, adding a new symbol (one above the largest) if the name is new, as Mata's
@@ -159,12 +163,14 @@ impl Alphabet {
 	/// Unlike [`insert_name`](Alphabet::insert_name), the symbol is given instead of the next free one, and a
 	/// name that consists only of decimal digits is accepted: the `"bytes"` script alphabet names the byte
 	/// symbols `"0"`…`"9"`.
-	/// Such a name is safe, because Mata's parser resolves a token to a name before it reads it as a number.
+	/// Such a name is safe, because Mata's parser resolves a token to a name before it reads it as a number,
+	/// as long as no unnamed symbol has that number: printing writes an unnamed symbol as its number.
 	///
 	/// # Errors
 	///
 	/// [`AlphabetError::Epsilon`] if `symbol` is [`Symbol::EPSILON`] or `name` is `<eps>`,
-	/// [`AlphabetError::ReservedName`] if `name` is `<dntcr>`, and
+	/// [`AlphabetError::ReservedName`] if `name` is `<dntcr>`,
+	/// [`AlphabetError::NumericName`] if `name` is the number of an unnamed symbol other than `symbol`, and
 	/// [`AlphabetError::Full`] if `symbol` is [`DONT_CARE`](crate::nft::DONT_CARE).
 	pub fn insert_named(&mut self, name: &str, symbol: Symbol) -> Result<(), AlphabetError> {
 		if symbol.is_epsilon() || name == EPSILON_NAME {
@@ -179,8 +185,20 @@ impl Alphabet {
 		if self.by_name.contains_key(name) || self.symbols.contains_key(&symbol) {
 			return Ok(());
 		}
+		if self.names_unnamed(name) {
+			return Err(AlphabetError::NumericName {
+				name: name.to_owned(),
+			});
+		}
 		self.add_named(name.to_owned(), symbol);
 		Ok(())
+	}
+
+	/// Whether `name` is how printing writes an unnamed symbol of the alphabet: its decimal number.
+	fn names_unnamed(&self, name: &str) -> bool {
+		name.parse::<u32>().is_ok_and(|number| {
+			number.to_string() == name && self.symbols.get(&Symbol::new(number)) == Some(&None)
+		})
 	}
 
 	/// The checks that every way of naming a symbol shares: the reserved names, and a name that
@@ -469,6 +487,16 @@ mod serde_impl {
 						alphabet.symbols.insert(symbol, None);
 					}
 				}
+			}
+			// Pairs come in any order, so the collision is checked once all are in.
+			if let Some(name) = alphabet
+				.by_name
+				.keys()
+				.find(|name| alphabet.names_unnamed(name))
+			{
+				return Err(serde::de::Error::custom(format!(
+					"the name {name:?} is the number of an unnamed symbol"
+				)));
 			}
 			Ok(alphabet)
 		}
