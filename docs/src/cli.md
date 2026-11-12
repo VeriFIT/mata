@@ -208,9 +208,10 @@ true
   command; `mata nfa --help` lists exactly the operations that are, each with its operands and hints.
 - A binary operation of the algebra, such as `intersection`, `union-nondeterministic`, `concatenate` or `compose`, takes
   more than two operands and folds them from the left, as in a script.
-- `--hint NAME=VALUE` gives a hint of the operation, as `(nfa:included? a b :algorithm "naive")` does in a script. A
-  hint the operation does not take, or a value it does not accept, is an error that lists what it takes; nothing is
-  silently ignored. Any other option is an error, as `mata: unknown option '--algorithm'`.
+- `--hint NAME=VALUE` gives a hint or an optional parameter of the operation, as
+  `(nfa:included? a b :algorithm "naive")` and `(nfa:concatenate a b :use-epsilon true)` do in a script. A keyword the
+  operation does not take, or a value it does not accept, is an error that lists what it takes; nothing is silently
+  ignored. Any other option is an error, as `mata: unknown option '--algorithm'`.
 - All operands of one command are loaded together, so bitvector alphabets are mintermized together exactly as
   `declare-inputs` loads them. Automata that cannot be mintermized together are an error, never a silent mismatch.
 - Automaton-returning operations write to standard output, or to the file given by `--output PATH`. `--output -` means
@@ -419,6 +420,12 @@ language page specifies but this build does not have are listed in the
   or `"with"` and `:direction` `"forward"` or `"backward"`), and `:algorithm` `"antichains"` or `"naive"` of
   `nfa:included?`, `nfa:equivalent?` and `nfa:universal?`. `(set-option :default …)` changes the default of any of
   them. The other operations take no hints yet.
+- Optional parameters of the library functions are keyword arguments of their sort, named after the parameter:
+  `(nfa:concatenate a b :use-epsilon true)`. A `Bool` is `true` or `false`, an `Int` a number, and a `Symbol` is
+  given by its name, a `String`, as in `(symbol "a")`. A direct command takes them as `--hint NAME=VALUE`, as
+  `--hint use-epsilon=true`, and `(set-option :default …)` changes their defaults too; a call without one gets the
+  library default. `mata nfa --help` and `mata nft --help` list them with their sorts. The parameters this build
+  takes are `:use-epsilon` of `nfa:concatenate`.
 - Of the script options, `:alphabet` with `on-the-fly` or `bytes`, `:produce-witnesses`, `:time-operations` and
   `:default` work. `:optimize` and `:trace` are accepted only as `false`; `true` is rejected as
   `option :<name> is not implemented`, and `:loops-and-recursion` is always rejected, so `loop`, `recur` and self-calls

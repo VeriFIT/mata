@@ -494,7 +494,9 @@ The namespace tells where the function lives:
 - **Required parameters** are positional, in the order of the library function. For a member function, the object
   comes first.
 - **Optional parameters** are keyword arguments named after the parameter:
-  `(nfa:concatenate lhs rhs :use-epsilon true)`.
+  `(nfa:concatenate lhs rhs :use-epsilon true)`. The value has the sort of the parameter, `Bool`, `Int` or `String`;
+  a `Symbol` parameter takes the name of the symbol, as `(symbol "a")` does. The checker rejects a value of another
+  sort before the script runs. A call without the keyword gets the default of the library.
 - **Entries of the `ParameterMap`** are keyword arguments too: `(nfa:included? lhs rhs :algorithm "naive")`. They are
   called _hints_. Their values are strings, as in the library. Each operation lists the hints it takes and the values
   each accepts, and the checker rejects any other one before the script runs; a value written as an expression rather

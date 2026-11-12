@@ -1928,3 +1928,57 @@ fn an_input_no_declaration_takes_is_an_error_without_the_check() {
 		"mata: --input xs: the script declares no input 'xs'\n"
 	);
 }
+
+// nfa: optional parameters and nfa operations
+#[test]
+fn optional_parameters_are_keyword_arguments_of_their_sort() {
+	let workspace = Workspace::new("optional-parameters");
+	let a = workspace.file("a.mata", NFA);
+	let script = "(define ab (nfa:concatenate (nfa:create-single-word-nfa (word \"a\")) \
+	              (nfa:create-single-word-nfa (word \"b\")) :use-epsilon true))\n\
+	              (print (nfa:print-to-mata ab))\n\
+	              (print (nfa:in-language? ab (word \"a\" \"b\")))";
+	let output = run_script(script, true, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert!(
+		stdout(&output).contains("q1 <eps> q2"),
+		"{}",
+		stdout(&output)
+	);
+	assert!(stdout(&output).ends_with("true\n"), "{}", stdout(&output));
+
+	let defaulted = "(set-option :default (nfa:concatenate :use-epsilon true))\n\
+	                 (print (nfa:number-of-transitions (nfa:concatenate (nfa:create-single-word-nfa (word \"a\")) \
+	                 (nfa:create-single-word-nfa (word \"b\")))))";
+	let output = run_script(defaulted, true, &[]);
+	assert_eq!((status(&output), stdout(&output)), (0, "3\n".to_owned()));
+
+	let wrong_sort = run_script(
+		"(nfa:concatenate (nfa:create-empty-string-nfa) (nfa:create-empty-string-nfa) :use-epsilon \"yes\")",
+		true,
+		&[],
+	);
+	assert_eq!(status(&wrong_sort), 2);
+	assert!(
+		stderr(&wrong_sort)
+			.contains("the value of :use-epsilon must be of sort Bool, found String"),
+		"{}",
+		stderr(&wrong_sort)
+	);
+
+	let direct = mata(["nfa", "concatenate", &a, &a, "--hint", "use-epsilon=true"]);
+	assert_eq!(status(&direct), 0, "{}", stderr(&direct));
+	assert!(stdout(&direct).contains("<eps>"), "{}", stdout(&direct));
+	let bad = mata(["nfa", "concatenate", &a, &a, "--hint", "use-epsilon=maybe"]);
+	assert_eq!(status(&bad), 2);
+	assert_eq!(
+		stderr(&bad),
+		"mata: :use-epsilon of nfa:concatenate must be of sort Bool, not \"maybe\"\n"
+	);
+	let help = mata(["nfa", "--help"]);
+	assert!(
+		stdout(&help).contains("concatenate NFA NFA [NFA…] [--hint use-epsilon=Bool]"),
+		"{}",
+		stdout(&help)
+	);
+}

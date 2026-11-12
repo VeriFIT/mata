@@ -177,7 +177,7 @@ may leave out the trailing `?`.
 
 options:
   --output PATH        write the result to PATH instead of standard output; `-` is standard output
-  --hint NAME=VALUE    a hint of the operation, as `--hint algorithm=naive`
+  --hint NAME=VALUE    a hint or optional parameter of the operation, as `--hint algorithm=naive`
   --help               print this text and the operations below
   --                   every following argument is an operand
 
@@ -192,6 +192,10 @@ operations:
 				.expect("writing to a String cannot fail");
 			for hint in crate::ops::hints_of(operation.name) {
 				write!(text, " [--hint {}={}]", hint.name, hint.values.join("|"))
+					.expect("writing to a String cannot fail");
+			}
+			for parameter in crate::ops::optional_parameters_of(operation.name) {
+				write!(text, " [--hint {}={}]", parameter.name, parameter.sort)
 					.expect("writing to a String cannot fail");
 			}
 			text.push('\n');

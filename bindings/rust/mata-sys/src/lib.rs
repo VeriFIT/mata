@@ -358,6 +358,12 @@ pub mod ffi {
 			names: &[String],
 			symbols: &[u32],
 		) -> Result<String>;
+
+		// Further operations of the library.
+
+		/// L(lhs) · L(rhs), joined by epsilon transitions from the final states of `lhs` to the initial
+		/// states of `rhs`.
+		fn concatenate_over_epsilon(lhs: &Nfa, rhs: &Nfa) -> Result<UniquePtr<Nfa>>;
 	}
 }
 

@@ -117,6 +117,165 @@ pub(crate) fn hints_of(operation: &str) -> impl Iterator<Item = &'static Hint> {
 	HINTS.iter().filter(move |hint| hint.operation == operation)
 }
 
+/// An optional parameter of the library function that an operation takes as a keyword argument, named after
+/// the parameter in kebab-case: `(nfa:concatenate a b :use-epsilon true)`. `sort` is `Bool`, `Int`,
+/// `String`, or `Symbol`, which is given by its name, a `String`, as in `(symbol "a")`. A call without it
+/// gets the library default. Handlers read it with [`optional`]: `optional::<bool>(engine, "use-epsilon")`.
+pub(crate) struct OptionalParameter {
+	pub operation: &'static str,
+	pub name: &'static str,
+	pub sort: &'static str,
+}
+
+impl OptionalParameter {
+	/// The sort of the value a script gives.
+	pub(crate) fn script_sort(&self) -> &'static str {
+		if self.sort == "Symbol" {
+			"String"
+		} else {
+			self.sort
+		}
+	}
+}
+
+pub(crate) const OPTIONAL_PARAMETERS: &[OptionalParameter] = &[OptionalParameter {
+	operation: "nfa:concatenate",
+	name: "use-epsilon",
+	sort: "Bool",
+}];
+
+/// The optional parameter `name` of `operation`, if it takes one.
+pub(crate) fn optional_parameter(
+	operation: &str,
+	name: &str,
+) -> Option<&'static OptionalParameter> {
+	OPTIONAL_PARAMETERS
+		.iter()
+		.find(|parameter| parameter.operation == operation && parameter.name == name)
+}
+
+/// Every optional parameter `operation` takes.
+pub(crate) fn optional_parameters_of(
+	operation: &str,
+) -> impl Iterator<Item = &'static OptionalParameter> {
+	OPTIONAL_PARAMETERS
+		.iter()
+		.filter(move |parameter| parameter.operation == operation)
+}
+
+/// Checks keyword argument `name` of `operation` written as `value`, a hint or an optional parameter in
+/// the text of the command line: `true`/`false` for `Bool`, decimal for `Int`.
+///
+/// # Errors
+///
+/// The operation takes no such keyword, or the value does not fit it.
+pub(crate) fn check_keyword(operation: &str, name: &str, value: &str) -> Result<(), String> {
+	let Some(parameter) = optional_parameter(operation, name) else {
+		return check_hint(operation, name, value);
+	};
+	let fits = match parameter.sort {
+		"Bool" => matches!(value, "true" | "false"),
+		"Int" => value.parse::<i64>().is_ok(),
+		_ => true,
+	};
+	if fits {
+		Ok(())
+	} else {
+		Err(format!(
+			":{name} of {operation} must be of sort {}, not \"{value}\"",
+			parameter.sort
+		))
+	}
+}
+
+/// The command-line text of keyword argument `name` of `operation` given as `value` in a script.
+///
+/// # Errors
+///
+/// `value` is not of the sort the keyword takes.
+pub(crate) fn keyword_text(operation: &str, name: &str, value: &Value) -> Result<String, String> {
+	match optional_parameter(operation, name).map(OptionalParameter::script_sort) {
+		Some("Bool") => as_bool(value)
+			.map(|value| value.to_string())
+			.map_err(|_| format!("the value of :{name} must be a Bool")),
+		Some("Int") => as_int(value)
+			.map(|value| value.to_string())
+			.map_err(|_| format!("the value of :{name} must be an Int")),
+		Some(_) => as_string(value).map_err(|_| format!("the value of :{name} must be a String")),
+		None => as_string(value).map_err(|_| format!("the value of hint :{name} must be a String")),
+	}
+}
+
+/// The value of optional parameter `parameter` written as `text`, which [`check_keyword`] accepted.
+fn optional_value(
+	parameter: &OptionalParameter,
+	text: &str,
+	engine: &mut Engine,
+) -> Result<Value, Error> {
+	Ok(match parameter.sort {
+		"Bool" => Value::Bool(text == "true"),
+		"Int" => Value::Int(text.parse().map_err(|_| {
+			Error::plain(format!(
+				":{} must be an Int, not \"{text}\"",
+				parameter.name
+			))
+		})?),
+		"Symbol" => Value::Symbol(engine.intern_name(text).map_err(Error::plain)?),
+		_ => Value::String(text.to_owned()),
+	})
+}
+
+/// The value of an optional parameter, of the Rust type of its sort.
+pub(crate) trait OptionalValue: Sized {
+	fn from_value(value: &Value) -> Option<Self>;
+}
+
+impl OptionalValue for bool {
+	fn from_value(value: &Value) -> Option<bool> {
+		match value {
+			Value::Bool(value) => Some(*value),
+			_ => None,
+		}
+	}
+}
+
+impl OptionalValue for i64 {
+	fn from_value(value: &Value) -> Option<i64> {
+		match value {
+			Value::Int(value) => Some(*value),
+			_ => None,
+		}
+	}
+}
+
+impl OptionalValue for String {
+	fn from_value(value: &Value) -> Option<String> {
+		match value {
+			Value::String(value) => Some(value.clone()),
+			_ => None,
+		}
+	}
+}
+
+impl OptionalValue for Symbol {
+	fn from_value(value: &Value) -> Option<Symbol> {
+		match value {
+			Value::Symbol(value) => Some(*value),
+			_ => None,
+		}
+	}
+}
+
+/// Optional parameter `name` of the call being made (`bool` for `Bool`, `i64` for `Int`, `String`, or
+/// `Symbol`), `None` when the call leaves it to the library default.
+pub(crate) fn optional<T: OptionalValue>(engine: &Engine, name: &str) -> Option<T> {
+	engine
+		.call_parameters
+		.iter()
+		.find(|(key, _)| key == name)
+		.and_then(|(_, value)| T::from_value(value))
+}
+
 /// The binary operations that a script and a direct command apply to more operands by folding from the
 /// left: `(nfa:intersection a b c)` is `(nfa:intersection (nfa:intersection a b) c)`.
 pub(crate) fn folds(name: &str) -> bool {
@@ -707,15 +866,18 @@ pub(crate) fn arity_message(operation: &Operation, given: usize) -> String {
 /// The operation takes no such hint, or the value is not one the hint accepts.
 pub(crate) fn check_hint(operation: &str, name: &str, value: &str) -> Result<(), String> {
 	let Some(hint) = hint(operation, name) else {
-		return Err(if hints_of(operation).next().is_none() {
+		let keywords = hints_of(operation)
+			.map(|hint| format!(":{}", hint.name))
+			.chain(
+				optional_parameters_of(operation).map(|parameter| format!(":{}", parameter.name)),
+			)
+			.collect::<Vec<_>>();
+		return Err(if keywords.is_empty() {
 			format!("operation {operation} takes no hints")
 		} else {
 			format!(
 				"operation {operation} has no hint ':{name}'; it takes {}",
-				hints_of(operation)
-					.map(|hint| format!(":{}", hint.name))
-					.collect::<Vec<_>>()
-					.join(", ")
+				keywords.join(", ")
 			)
 		});
 	};
@@ -749,11 +911,18 @@ pub(crate) fn call(
 	}
 	let mut chosen = engine.defaults_of(name);
 	for (key, value) in hints {
-		check_hint(name, key, value).map_err(Error::plain)?;
+		check_keyword(name, key, value).map_err(Error::plain)?;
 		chosen.retain(|(known, _)| known != key);
 		chosen.push((key.clone(), value.clone()));
 	}
+	let mut parameters = Vec::new();
+	for (key, text) in &chosen {
+		if let Some(parameter) = optional_parameter(name, key) {
+			parameters.push((key.clone(), optional_value(parameter, text, engine)?));
+		}
+	}
 	let saved = std::mem::replace(&mut engine.hints, chosen);
+	let saved_parameters = std::mem::replace(&mut engine.call_parameters, parameters);
 	let result = if folds(name) && given > 2 {
 		let mut operands = arguments.into_iter();
 		let first = operands.next().expect("at least three operands");
@@ -764,6 +933,7 @@ pub(crate) fn call(
 		dispatch(operation.handler, name, arguments, engine)
 	};
 	engine.hints = saved;
+	engine.call_parameters = saved_parameters;
 	result
 }
 
@@ -1187,8 +1357,13 @@ fn dispatch_nfa_transformations(
 		}
 		"nfa_concat" => {
 			let [lhs, rhs] = take(arguments, name)?;
+			let (lhs, rhs) = (expect_nfa(&lhs)?, expect_nfa(&rhs)?);
 			Ok(Value::Nfa(Rc::new(
-				expect_nfa(&lhs)?.concat(&*expect_nfa(&rhs)?),
+				if optional::<bool>(engine, "use-epsilon") == Some(true) {
+					lhs.concat_over_epsilon(&rhs)
+				} else {
+					lhs.concat(&rhs)
+				},
 			)))
 		}
 		"nfa_complement" => {

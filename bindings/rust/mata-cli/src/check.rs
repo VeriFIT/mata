@@ -624,6 +624,18 @@ impl<'a> Checker<'a> {
 	/// Checks the hints of one call of `operation`.
 	fn hints(&mut self, operation: &str, keywords: &[(String, Expr)]) {
 		for (name, value) in keywords {
+			if let Some(parameter) = crate::ops::optional_parameter(operation, name) {
+				let expected = parameter.script_sort();
+				if let Some(sort) = self.expression(value, None)
+					&& !accepts(expected, &sort)
+				{
+					self.reject(
+						value,
+						format!("the value of :{name} must be of sort {expected}, found {sort}"),
+					);
+				}
+				continue;
+			}
 			if let Kind::String(text) = &value.node {
 				if let Err(message) = crate::ops::check_hint(operation, name, text) {
 					self.reject(value, message);

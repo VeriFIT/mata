@@ -159,6 +159,8 @@ pub(crate) struct Engine {
 	ahead: Vec<(String, Ahead)>,
 	/// The hints of the operation being called.
 	pub(crate) hints: Vec<(String, String)>,
+	/// The optional parameters given to the operation being called, of their sorts.
+	pub(crate) call_parameters: Vec<(String, Value)>,
 	/// Labels of the records printed so far; a label is printed once.
 	labels: std::collections::HashSet<String>,
 	/// The form being evaluated, so that a failure at run time names its place.
@@ -214,6 +216,7 @@ impl Engine {
 			pushed: Vec::new(),
 			ahead: Vec::new(),
 			hints: Vec::new(),
+			call_parameters: Vec::new(),
 			labels: std::collections::HashSet::new(),
 			place: None,
 		}
@@ -587,9 +590,10 @@ impl Engine {
 		}
 		let mut chosen = self.defaults_of(operation);
 		for (name, value) in keywords {
-			let text = as_string(&self.evaluate(value)?)
-				.map_err(|_| value.at(format!("the value of hint :{name} must be a String")))?;
-			crate::ops::check_hint(operation, name, &text).map_err(|message| value.at(message))?;
+			let text = crate::ops::keyword_text(operation, name, &self.evaluate(value)?)
+				.map_err(|message| value.at(message))?;
+			crate::ops::check_keyword(operation, name, &text)
+				.map_err(|message| value.at(message))?;
 			chosen.retain(|(known, _)| known != name);
 			chosen.push((name.clone(), text));
 		}
@@ -908,9 +912,8 @@ impl Engine {
 			Function::Native { name } => {
 				let mut hints = Vec::with_capacity(keywords.len());
 				for (key, value) in keywords {
-					let text = as_string(&self.evaluate(value)?).map_err(|_| {
-						value.at(format!("the value of hint :{key} must be a String"))
-					})?;
+					let text = crate::ops::keyword_text(name, key, &self.evaluate(value)?)
+						.map_err(|message| value.at(message))?;
 					hints.push((key.clone(), text));
 				}
 				let located = |error: Error| {

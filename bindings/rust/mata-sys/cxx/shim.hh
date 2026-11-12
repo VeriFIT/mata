@@ -190,4 +190,7 @@ rust::String print_dot(
 	rust::Slice<const Symbol> symbols
 );
 
+// Further operations of the library.
+std::unique_ptr<Nfa> concatenate_over_epsilon(const Nfa& lhs, const Nfa& rhs);
+
 } // namespace mata_sys

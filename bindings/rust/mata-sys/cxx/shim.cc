@@ -689,4 +689,10 @@ rust::String print_dot(
 	return rust::String(nfa.print_to_dot(ascii_labels, intervals, max_label_length, alphabet));
 }
 
+// Further operations of the library.
+
+std::unique_ptr<Nfa> concatenate_over_epsilon(const Nfa& lhs, const Nfa& rhs) {
+	return boxed(mata::nfa::concatenate(lhs, rhs, /*use_epsilon=*/true));
+}
+
 } // namespace mata_sys

@@ -1020,6 +1020,16 @@ impl Nfa {
 	pub fn dot(&self) -> Dot<'_> {
 		Dot::new(self)
 	}
+
+	// ── Further operations of the library ─────────────────────────────────────────────────────────
+
+	/// L(self) · L(other) as [`Nfa::concat`], but joined by epsilon transitions from the final states of
+	/// `self` to the initial states of `other`, and keeping the epsilon transitions of both (Mata's
+	/// `concatenate` with `use_epsilon`).
+	#[must_use = "returns a new automaton and leaves `self` unchanged"]
+	pub fn concat_over_epsilon(&self, other: &Nfa) -> Nfa {
+		new_nfa(ffi::concatenate_over_epsilon(self.raw(), other.raw()))
+	}
 }
 
 fn take_parsed(mut parsed: UniquePtr<ffi::ParsedNfas>) -> Vec<Nfa> {
