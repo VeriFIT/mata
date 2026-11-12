@@ -4344,6 +4344,22 @@ TEST_CASE("mata::nfa::reduce_size_by_simulation()") {
 			CHECK(state_renaming == expected_renaming);
 		}
 	}
+
+	SECTION("symbol posts without targets do not constrain the simulation") {
+		// States 0 and 1 are final without transitions; the empty 'a' post of 0 is no transition, so they simulate
+		//  each other. The post of 2 has two targets, so the simulation itself is computed.
+		Nfa nfa(3);
+		nfa.initial.insert(2);
+		nfa.final = {0, 1};
+		nfa.delta.mutable_state_post(0).emplace_back('a');
+		nfa.delta.add(2, 'b', 0);
+		nfa.delta.add(2, 'b', 1);
+
+		const Nfa result{reduce(nfa, &state_renaming)};
+		CHECK(result.num_of_states() == 2);
+		CHECK(state_renaming.at(0) == state_renaming.at(1));
+		CHECK(are_equivalent(result, nfa));
+	}
 }
 
 TEST_CASE("mata::nfa::algorithms::minimize_hopcroft()") {

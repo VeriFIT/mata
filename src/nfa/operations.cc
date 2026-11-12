@@ -1669,7 +1669,10 @@ Simlib::Util::BinaryRelation bit_row_fw_direct_simulation(const Nfa& aut) {
 	};
 	std::vector<Symbol> symbols;
 	for (State q{0}; q < num_of_states; ++q) {
-		for (const SymbolPost& symbol_post : aut.delta[q]) { symbols.push_back(symbol_post.symbol); }
+		for (const SymbolPost& symbol_post : aut.delta[q]) {
+			// A symbol post without targets is no transition: it neither needs a match nor matches one.
+			if (!symbol_post.empty()) { symbols.push_back(symbol_post.symbol); }
+		}
 	}
 	std::ranges::sort(symbols);
 	symbols.erase(std::ranges::unique(symbols).begin(), symbols.end());
@@ -1680,7 +1683,7 @@ Simlib::Util::BinaryRelation bit_row_fw_direct_simulation(const Nfa& aut) {
 	std::vector<std::uint64_t> a_predecessors(symbols.size() * num_of_states * num_of_words, 0);
 	// The states with a transition to each state.
 	std::vector<std::vector<State>> predecessors(num_of_states);
-	// The index of the symbol of each symbol post of each state.
+	// The index of the symbol of each non-empty symbol post of each state.
 	std::vector<std::vector<size_t>> symbol_indices(num_of_states);
 	std::vector<std::uint64_t> final_states(num_of_words, 0);
 	// The row index_of(a) holds the states with a transition over a.
@@ -1689,6 +1692,7 @@ Simlib::Util::BinaryRelation bit_row_fw_direct_simulation(const Nfa& aut) {
 		if (aut.final[q]) { set_bit(final_states, q); }
 		symbol_indices[q].reserve(aut.delta[q].size());
 		for (const SymbolPost& symbol_post : aut.delta[q]) {
+			if (symbol_post.empty()) { continue; }
 			const size_t symbol_index{index_of(symbol_post.symbol)};
 			symbol_indices[q].push_back(symbol_index);
 			set_bit(row_of(with_symbol, symbol_index), q);
@@ -1732,6 +1736,7 @@ Simlib::Util::BinaryRelation bit_row_fw_direct_simulation(const Nfa& aut) {
 		std::ranges::copy(p_row, row.begin());
 		auto symbol_index{symbol_indices[p].begin()};
 		for (const SymbolPost& symbol_post : aut.delta[p]) {
+			if (symbol_post.empty()) { continue; }
 			const size_t symbol_rows{*symbol_index++ * num_of_states};
 			for (const State target : symbol_post.targets) {
 				const auto target_row{row_of(std::as_const(simulators), target)};
