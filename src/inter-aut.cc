@@ -9,6 +9,9 @@
 #include "mata/utils/utils.hh"
 
 #include <format>
+#include <span>
+
+using namespace std::string_view_literals;
 
 namespace {
 
@@ -139,16 +142,16 @@ mata::FormulaNode create_node(const mata::IntermediateAut& mata, const std::stri
 				default:
 					MATA_ASSERT(false);
 			}
-		} else if (token == "(") {
+		} else if (token == "("sv) {
 			return {mata::FormulaNode::Type::LeftParenthesis, token};
-		} else if (token == ")") {
+		} else if (token == ")"sv) {
 			return {mata::FormulaNode::Type::RightParenthesis, token};
 		}
 	}
 
-	if (token == "\\true") {
+	if (token == "\\true"sv) {
 		return {mata::FormulaNode::Type::Operand, token, token, mata::FormulaNode::OperandType::True};
-	} else if (token == "\\false") {
+	} else if (token == "\\false"sv) {
 		return {mata::FormulaNode::Type::Operand, token, token, mata::FormulaNode::OperandType::False};
 	} else if (is_naming_enum(mata.state_naming) && mata.states_names.contains(token)) {
 		return {mata::FormulaNode::Type::Operand, token, token, mata::FormulaNode::OperandType::State};
@@ -188,7 +191,7 @@ bool lower_precedence(const mata::FormulaNode::OperatorType op1, const mata::For
  * @return A postfix notation for input
  */
 std::vector<mata::FormulaNode>
-	infix_to_postfix(const mata::IntermediateAut& aut, const std::vector<mata::parser::BodyToken>& tokens) {
+	infix_to_postfix(const mata::IntermediateAut& aut, const std::span<const mata::parser::BodyToken> tokens) {
 	std::vector<mata::FormulaNode> opstack;
 	std::vector<mata::FormulaNode> output;
 	output.reserve(tokens.size());
@@ -211,14 +214,13 @@ std::vector<mata::FormulaNode>
 				opstack.pop_back();
 				break;
 			case mata::FormulaNode::Type::Operator:
-				for (int j = static_cast<int>(opstack.size()) - 1; j >= 0; --j) {
-					auto formula_node_opstack_it{opstack.begin() + j};
-					MATA_ASSERT(!formula_node_opstack_it->is_operand());
-					if (formula_node_opstack_it->is_left_parenthesis()) { break; }
-					if (lower_precedence(node.operator_type, formula_node_opstack_it->operator_type)) {
-						output.emplace_back(std::move(*formula_node_opstack_it));
-						opstack.erase(formula_node_opstack_it);
-					}
+				// The operators an operator pops are a run on top of the stack ('|' pops all down to '(', '&' pops the
+				//  '!'s, which are always on top), so the scan stops at the first one kept: a long chain stays linear.
+				while (!opstack.empty() && !opstack.back().is_left_parenthesis() &&
+					   lower_precedence(node.operator_type, opstack.back().operator_type)) {
+					MATA_ASSERT(!opstack.back().is_operand());
+					output.emplace_back(std::move(opstack.back()));
+					opstack.pop_back();
 				}
 				opstack.emplace_back(std::move(node));
 				break;
@@ -433,7 +435,7 @@ void mata::IntermediateAut::parse_transition(mata::IntermediateAut& aut, const m
 		);
 	}
 	mata::FormulaNode lhs = create_node(aut, tokens[0].token, tokens[0].quoted);
-	std::vector<mata::parser::BodyToken> rhs(tokens.begin() + 1, tokens.end());
+	const std::span<const mata::parser::BodyToken> rhs{std::span{tokens}.subspan(1)};
 
 	std::vector<mata::FormulaNode> postfix;
 
@@ -452,9 +454,8 @@ void mata::IntermediateAut::parse_transition(mata::IntermediateAut& aut, const m
 			postfix.emplace_back(create_node(aut, rhs[1].token, rhs[1].quoted));
 		} else if (aut.alphabet_type == mata::IntermediateAut::AlphabetType::Bitvector) {
 			// This is a case where rhs state is not separated by a conjunction from the rest of the transitions.
-			const mata::parser::BodyToken last_token{rhs.back()};
-			rhs.pop_back();
-			postfix = infix_to_postfix(aut, rhs);
+			const mata::parser::BodyToken& last_token{rhs.back()};
+			postfix = infix_to_postfix(aut, rhs.first(rhs.size() - 1));
 			postfix.emplace_back(create_node(aut, last_token.token, last_token.quoted));
 		} else {
 			MATA_ASSERT(false, "Unknown NFA type");
@@ -472,9 +473,8 @@ void mata::IntermediateAut::parse_transition(mata::IntermediateAut& aut, const m
 			postfix.emplace_back(create_node(aut, rhs[1].token, rhs[1].quoted));
 		} else if (aut.alphabet_type == mata::IntermediateAut::AlphabetType::Bitvector) {
 			// This is a case where rhs state is not separated by a conjunction from the rest of the transitions.
-			const mata::parser::BodyToken last_token{rhs.back()};
-			rhs.pop_back();
-			postfix = infix_to_postfix(aut, rhs);
+			const mata::parser::BodyToken& last_token{rhs.back()};
+			postfix = infix_to_postfix(aut, rhs.first(rhs.size() - 1));
 			postfix.emplace_back(create_node(aut, last_token.token, last_token.quoted));
 		} else {
 			MATA_ASSERT(false, "Unknown NFT type");
