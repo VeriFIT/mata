@@ -8,7 +8,11 @@
 #include "mata/parser/re2parser.hh"
 #include "mata/utils/assert.hh"
 
+#include "../explicit-section-reader.hh"
+
+#include <array>
 #include <cmath>
+#include <cstdint>
 #include <fstream>
 #include <numeric>
 #include <random>
@@ -24,6 +28,191 @@ namespace {
 Symbol translate_symbol_name(mata::Alphabet* alphabet, const std::string& name) {
 	if (name == mata::EPSILON_NAME) { return EPSILON; }
 	return alphabet->translate_symb(name);
+}
+
+/// The namings of states, symbols, and nodes the fast reader supports; see @c IntermediateAut::Naming.
+enum class Naming : std::uint8_t { Marked, Auto };
+
+/**
+ * The namings of a section, read from its `%Alphabet`, `%States`, and `%Nodes` keys as
+ *  @c IntermediateAut::parse_from_mf() reads them. They decide which tokens name states and what the names are.
+ */
+class Namings {
+	enum Kind : std::uint8_t { STATES, SYMBOLS, NODES };
+	std::array<Naming, 3> namings_{Naming::Marked, Naming::Marked, Naming::Marked};
+	/// The key that set each naming; @c IntermediateAut::parse_from_mf() lets the last of two different keys of one
+	///  kind win, in the key order rather than the file order.
+	std::array<std::string, 3> keys_{};
+
+  public:
+	/// Whether @c IntermediateAut::parse_from_mf() reads @p key as a naming key.
+	static bool is_naming_key(const std::string_view key) {
+		return key.contains("Alphabet") || key.contains("States") || key.contains("Nodes");
+	}
+
+	/// Applies the naming key @p key. @return Whether the naming stays within the fast reader's subset.
+	bool apply(const std::string_view key) {
+		const Kind kind{key.contains("Alphabet") ? SYMBOLS : (key.contains("States") ? STATES : NODES)};
+		if (!keys_[kind].empty() && keys_[kind] != key) { return false; }
+		keys_[kind] = key;
+		const size_t dash{key.find('-')};
+		const std::string_view type{dash == std::string_view::npos ? "auto" : key.substr(dash + 1)};
+		if (type == "auto") {
+			namings_[kind] = Naming::Auto;
+		} else if (type == "marked") {
+			namings_[kind] = Naming::Marked;
+		} else { // Enumerated, character, or unknown namings.
+			return false;
+		}
+		return true;
+	}
+
+	/// The check of @c IntermediateAut::parse_from_mf(), named "has at most one automatic naming" there.
+	bool valid() const {
+		return (namings_[NODES] == Naming::Auto && namings_[SYMBOLS] == Naming::Auto) ||
+			   namings_[STATES] != Naming::Auto;
+	}
+
+	/**
+	 * The name of the state @p token stands for, following @c create_node() of @c IntermediateAut.
+	 * @param quoted Whether @c create_node() sees the token as quoted, which keeps it from being read for an operator.
+	 * @return The name, or @c std::nullopt when @p token is not a state.
+	 */
+	std::optional<std::string_view> state_name(const std::string_view token, const bool quoted) const {
+		const char first{token.empty() ? '\0' : token.front()};
+		if (!quoted && (first == '&' || first == '|' || first == '!' || token == "(" || token == ")")) {
+			return std::nullopt;
+		}
+		if (token == "\\true" || token == "\\false") { return std::nullopt; }
+		if (namings_[STATES] == Naming::Marked && first == 'q') { return token.substr(1); }
+		if ((namings_[NODES] == Naming::Marked && first == 'n') ||
+			(namings_[SYMBOLS] == Naming::Marked && first == 'a')) {
+			return std::nullopt;
+		}
+		if (namings_[STATES] == Naming::Auto) { return token; }
+		return std::nullopt;
+	}
+};
+
+/// A body token as @c parse_mf() hands it over: with @p keep_quotes, a quoted token keeps its quotes.
+std::string_view body_token(const mata::parser::ExplicitToken& token, const bool keep_quotes, std::string& buffer) {
+	if (!keep_quotes || !token.quoted) { return token.text; }
+	buffer.assign(1, '"');
+	buffer += token.text;
+	buffer += '"';
+	return buffer;
+}
+
+/**
+ * Reads an NFA from @p input with @c mata::parser::ExplicitSectionReader, producing the NFA that
+ *  @c builder::construct() would produce from @c IntermediateAut::parse_from_mf() of @c parser::parse_mf() of @p input.
+ * The initial states are numbered in the order of the file, not in the order of an unordered set as there.
+ * @return The NFA, or @c std::nullopt when @p input leaves the subset of the format this reader covers.
+ */
+std::optional<Nfa> read_explicit_nfa(
+	const std::string_view input,
+	mata::Alphabet* alphabet,
+	mata::parser::StateNameMap& state_names,
+	const bool keep_quotes
+) {
+	using mata::parser::ExplicitSectionReader;
+	using mata::parser::ExplicitToken;
+
+	ExplicitSectionReader reader{input};
+	if (const std::optional<std::string_view> type{reader.read_type()};
+		!type.has_value() || (*type != TYPE_NFA && *type != TYPE_NFA + "-explicit")) {
+		return std::nullopt;
+	}
+
+	Nfa aut;
+	// See builder::construct(): a name mapped by the caller allocates its state.
+	const auto get_state{[&](const std::string_view name) {
+		if (const std::optional<State> state{state_names.find(name)}) { return aut.add_state(*state); }
+		const State state{aut.add_state()};
+		state_names.insert(name, state);
+		return state;
+	}};
+
+	Namings namings;
+	// The %Initial and %Final values. Their state names depend on the namings, which may follow them in the file.
+	//  IntermediateAut::parse_from_mf() reads the values as unquoted tokens, so their quoting is dropped.
+	std::vector<std::string> initial_names;
+	std::vector<std::string> final_names;
+	const auto add_names{[](const std::vector<ExplicitToken>& tokens, std::vector<std::string>& names) {
+		for (const ExplicitToken& token : tokens) { names.emplace_back(token.text); }
+	}};
+
+	std::vector<Transition> transitions;
+	bool in_body{false};
+	const auto start_body{[&]() {
+		if (!namings.valid()) { return false; }
+		for (const std::string& name : initial_names) {
+			const std::optional<std::string_view> state_name{namings.state_name(name, false)};
+			if (!state_name.has_value()) { return false; }
+			aut.initial.insert(get_state(*state_name));
+		}
+		in_body = true;
+		return true;
+	}};
+
+	std::string source_buffer;
+	std::string symbol_buffer;
+	std::string target_buffer;
+	while (true) {
+		switch (reader.read_line()) {
+			case ExplicitSectionReader::Line::Key: {
+				const std::string_view key{reader.key()};
+				if (Namings::is_naming_key(key)) {
+					if (in_body || key.starts_with("Initial") || key.starts_with("Final") || !namings.apply(key)) {
+						return std::nullopt;
+					}
+				} else if (key.starts_with("Initial")) {
+					if (in_body || key != "Initial") { return std::nullopt; }
+					add_names(reader.tokens(), initial_names);
+				} else if (key.starts_with("Final")) {
+					if (key != "Final") { return std::nullopt; }
+					add_names(reader.tokens(), final_names);
+				} // IntermediateAut::parse_from_mf() ignores any other key.
+				break;
+			}
+			case ExplicitSectionReader::Line::Body: {
+				if (!in_body && !start_body()) { return std::nullopt; }
+				const std::vector<ExplicitToken>& tokens{reader.tokens()};
+				// Other lines are formulas, such as `q1 a & q2`, or malformed.
+				if (tokens.size() != 3) { return std::nullopt; }
+				const std::optional<std::string_view> source_name{
+					namings.state_name(body_token(tokens[0], keep_quotes, source_buffer), tokens[0].quoted)
+				};
+				const std::optional<std::string_view> target_name{
+					namings.state_name(body_token(tokens[2], keep_quotes, target_buffer), tokens[2].quoted)
+				};
+				if (!source_name.has_value() || !target_name.has_value()) { return std::nullopt; }
+				// Sequenced as in builder::construct().
+				const State source{get_state(*source_name)};
+				if (keep_quotes && tokens[1].quoted) {
+					body_token(tokens[1], keep_quotes, symbol_buffer);
+				} else {
+					symbol_buffer.assign(tokens[1].text);
+				}
+				const Symbol symbol{translate_symbol_name(alphabet, symbol_buffer)};
+				const State target{get_state(*target_name)};
+				transitions.emplace_back(source, symbol, target);
+				break;
+			}
+			case ExplicitSectionReader::Line::End: {
+				if (!in_body && !start_body()) { return std::nullopt; }
+				for (const std::string& name : final_names) {
+					const std::optional<std::string_view> state_name{namings.state_name(name, false)};
+					if (!state_name.has_value()) { return std::nullopt; }
+					aut.final.insert(get_state(*state_name));
+				}
+				aut.delta.add(std::move(transitions));
+				return aut;
+			}
+			case ExplicitSectionReader::Line::Unsupported:
+				return std::nullopt;
+		}
+	}
 }
 } // namespace
 
@@ -268,38 +457,54 @@ Nfa builder::create_random_nfa_tabakov_vardi(
 	return nfa;
 }
 
-Nfa builder::parse_from_mata(std::istream& nfa_stream) {
-	const std::string nfa_str = "NFA";
-	const parser::Parsed parsed{parser::parse_mf(nfa_stream)};
+std::optional<Nfa> builder::parse_explicit_from_mata(
+	const std::string_view nfa_in_mata, Alphabet* alphabet, NameStateMap* state_map, const bool keep_quotes
+) {
+	IntAlphabet int_alphabet;
+	if (alphabet == nullptr) { alphabet = &int_alphabet; }
+	// The caller's map stays untouched when the reader gives up halfway. A state name takes a few bytes of the input,
+	//  which bounds the numbers worth indexing.
+	mata::parser::StateNameMap state_names{state_map != nullptr ? *state_map : NameStateMap{}, nfa_in_mata.size() / 4};
+	std::optional<Nfa> nfa{read_explicit_nfa(nfa_in_mata, alphabet, state_names, keep_quotes)};
+	if (nfa.has_value() && state_map != nullptr) { *state_map = state_names.to_map(); }
+	return nfa;
+}
+
+Nfa builder::parse_from_mata(
+	const std::string& nfa_in_mata, Alphabet* alphabet, NameStateMap* state_map, const bool keep_quotes
+) {
+	IntAlphabet int_alphabet;
+	if (alphabet == nullptr) { alphabet = &int_alphabet; }
+	if (std::optional<Nfa> nfa{parse_explicit_from_mata(nfa_in_mata, alphabet, state_map, keep_quotes)}) {
+		return std::move(*nfa);
+	}
+
+	const parser::Parsed parsed{parser::parse_mf(nfa_in_mata, keep_quotes)};
 	if (parsed.size() != 1) {
 		throw std::runtime_error(
 			"The number of sections in the input file is '" + std::to_string(parsed.size()) + "'. Required is '1'.\n"
 		);
 	}
-	if (const std::string automaton_type{parsed[0].type}; !automaton_type.starts_with(nfa_str)) {
+	if (const std::string& automaton_type{parsed[0].type}; !automaton_type.starts_with(TYPE_NFA)) {
 		throw std::runtime_error("The type of input automaton is '" + automaton_type + "'. Required is 'NFA'\n");
 	}
-	IntAlphabet alphabet;
-	return construct(IntermediateAut::parse_from_mf(parsed)[0], &alphabet);
+	IntermediateAut inter_aut{std::move(IntermediateAut::parse_from_mf(parsed)[0])};
+	if (inter_aut.is_bitvector()) { inter_aut = Mintermization{}.mintermize(inter_aut); }
+	return construct(inter_aut, alphabet, state_map);
 }
 
-Nfa builder::parse_from_mata(const std::filesystem::path& nfa_file) {
+Nfa builder::parse_from_mata(
+	std::istream& nfa_stream, Alphabet* alphabet, NameStateMap* state_map, const bool keep_quotes
+) {
+	return parse_from_mata(parser::read_whole_stream(nfa_stream), alphabet, state_map, keep_quotes);
+}
+
+Nfa builder::parse_from_mata(
+	const std::filesystem::path& nfa_file, Alphabet* alphabet, NameStateMap* state_map, const bool keep_quotes
+) {
 	std::ifstream file_stream{nfa_file};
 	if (!file_stream) { throw std::runtime_error("Could not open file \'" + nfa_file.string() + "'\n"); }
-
-	Nfa nfa;
-	try {
-		nfa = parse_from_mata(file_stream);
-	} catch (const std::exception& ex) {
-		file_stream.close();
-		throw;
-	}
-	return nfa;
-}
-
-Nfa builder::parse_from_mata(const std::string& nfa_in_mata) {
-	std::istringstream nfa_stream(nfa_in_mata);
-	return parse_from_mata(nfa_stream);
+	return parse_from_mata(file_stream, alphabet, state_map, keep_quotes);
 }
 
 Nfa builder::create_from_regex(const std::string& regex, const bool reduce) {

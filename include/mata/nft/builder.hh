@@ -112,6 +112,9 @@ Nft parse_from_mata(std::istream& nft_stream);
 /**
  * Parse NFA from the mata format in a string.
  *
+ * Inputs whose `%Initial`, `%Final`, `%Levels`, and `%LevelsNum` lines and transitions are plain lists of names are
+ *  read directly, the others go through @c mata::parser::parse_mf() and @c construct(); both read the same NFT.
+ *
  * @param nft_in_mata String containing NFA in mata format.
  * @throws std::runtime_error Parsing of NFA fails.
  */

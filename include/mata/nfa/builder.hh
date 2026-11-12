@@ -11,6 +11,8 @@
 #include "nfa.hh"
 
 #include <filesystem>
+#include <optional>
+#include <string_view>
 
 /**
  * Namespace providing options to build NFAs.
@@ -101,29 +103,72 @@ Nfa construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr, NameStat
 } // construct().
 
 /**
- * Parse NFA from the mata format in an input stream.
+ * Reads an NFA from the `.mata` format in @p nfa_in_mata with the fast reader of explicit alphabets.
  *
- * @param nfa_stream Input stream containing NFA in mata format.
- * @throws std::runtime_error Parsing of NFA fails.
+ * The reader skips the intermediate representations of the general reader (@c mata::parser::parse_mf() and
+ *  @c IntermediateAut), and reads only the inputs whose transitions are `source symbol target` triples and whose
+ *  `%Initial` and `%Final` lines list states. For those, it returns the NFA @c parse_from_mata() has always returned,
+ *  except that the initial states are numbered in the order of the input.
+ *
+ * @param nfa_in_mata Input with a single `@NFA` or `@NFA-explicit` section.
+ * @param alphabet Alphabet translating the symbol names; @c nullptr reads them as numbers (@c IntAlphabet).
+ * @param state_map If not @c nullptr, receives the map from state names to states, see @c construct().
+ * @param keep_quotes Whether quoted names of body lines keep their quotes, see @c mata::parser::parse_mf().
+ * @return The NFA, or @c std::nullopt when @p nfa_in_mata needs the general reader, as do Boolean formulas, bitvector
+ *  alphabets, enumerated namings, and malformed inputs. @p state_map is then left unchanged, while @p alphabet may have
+ *  learned symbols of the lines read before.
  */
-Nfa parse_from_mata(std::istream& nfa_stream);
+std::optional<Nfa> parse_explicit_from_mata(
+	std::string_view nfa_in_mata,
+	Alphabet* alphabet = nullptr,
+	NameStateMap* state_map = nullptr,
+	bool keep_quotes = false
+);
 
 /**
  * Parse NFA from the mata format in a string.
  *
- * @param nfa_stream String containing NFA in mata format.
+ * Reads the input with @c parse_explicit_from_mata() when it can, and with the general reader otherwise. A bitvector
+ *  alphabet is mintermized.
+ *
+ * @param nfa_in_mata String containing NFA in mata format.
+ * @param alphabet Alphabet translating the symbol names; @c nullptr reads them as numbers (@c IntAlphabet).
+ * @param state_map If not @c nullptr, receives the map from state names to states, see @c construct().
+ * @param keep_quotes Whether quoted names of body lines keep their quotes, see @c mata::parser::parse_mf().
  * @throws std::runtime_error Parsing of NFA fails.
  */
-Nfa parse_from_mata(const std::string& nfa_in_mata);
+Nfa parse_from_mata(
+	const std::string& nfa_in_mata,
+	Alphabet* alphabet = nullptr,
+	NameStateMap* state_map = nullptr,
+	bool keep_quotes = false
+);
+
+/**
+ * Parse NFA from the mata format in an input stream.
+ *
+ * @param nfa_stream Input stream containing NFA in mata format.
+ * @see parse_from_mata(const std::string&, Alphabet*, NameStateMap*, bool) for the other parameters.
+ * @throws std::runtime_error Parsing of NFA fails.
+ */
+Nfa parse_from_mata(
+	std::istream& nfa_stream, Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr, bool keep_quotes = false
+);
 
 /**
  * Parse NFA from the mata format in a file.
  *
- * @param nfa_stream Path to the file containing NFA in mata format.
+ * @param nfa_file Path to the file containing NFA in mata format.
+ * @see parse_from_mata(const std::string&, Alphabet*, NameStateMap*, bool) for the other parameters.
  * @throws std::runtime_error @p nfa_file does not exist.
  * @throws std::runtime_error Parsing of NFA fails.
  */
-Nfa parse_from_mata(const std::filesystem::path& nfa_file);
+Nfa parse_from_mata(
+	const std::filesystem::path& nfa_file,
+	Alphabet* alphabet = nullptr,
+	NameStateMap* state_map = nullptr,
+	bool keep_quotes = false
+);
 
 /**
  * @brief Create NFA from @p regex

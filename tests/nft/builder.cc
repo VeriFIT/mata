@@ -1,6 +1,8 @@
 // TODO: some header
 
 #include <fstream>
+#include <optional>
+#include <set>
 #include <unordered_set>
 #include <vector>
 
@@ -9,6 +11,7 @@
 
 #include "mata/nft/builder.hh"
 #include "mata/nft/nft.hh"
+#include "mata/parser/parser.hh"
 
 using namespace mata::nft;
 using mata::nfa::Nfa;
@@ -420,6 +423,82 @@ TEST_CASE("mata::nft::parse_from_mata()") {
 				CHECK(parsed.levels[s] == 0);
 			}
 		}
+	}
+}
+
+namespace {
+/// Checks that parse_from_mata() reads @p input as builder::construct() reads mata::parser::parse_mf() of it, with
+///  the same state numbering, or fails as it does.
+void check_reads_as_general_reader(const std::string& input) {
+	CAPTURE(input);
+	std::optional<Nft> general;
+	try {
+		const mata::parser::Parsed parsed{mata::parser::parse_mf(input)};
+		if (parsed.size() == 1) {
+			IntAlphabet alphabet;
+			general = builder::construct(parsed[0], &alphabet);
+		}
+	} catch (const std::exception&) {}
+	if (!general.has_value()) {
+		CHECK_THROWS(builder::parse_from_mata(input));
+		return;
+	}
+	const Nft nft{builder::parse_from_mata(input)};
+	CHECK(nft.num_of_states() == general->num_of_states());
+	CHECK(nft.delta == general->delta);
+	CHECK(
+		std::set<State>(nft.initial.begin(), nft.initial.end()) ==
+		std::set<State>(general->initial.begin(), general->initial.end())
+	);
+	CHECK(
+		std::set<State>(nft.final.begin(), nft.final.end()) ==
+		std::set<State>(general->final.begin(), general->final.end())
+	);
+	CHECK(nft.levels == general->levels);
+}
+} // namespace
+
+TEST_CASE("mata::nft::parse_from_mata() reads what the general reader reads") {
+	SECTION("printed transducers") {
+		Nft nft{Nft::with_levels({3, {0, 1, 2, 0, 1, 2}}, 6, {0}, {3, 5})};
+		nft.delta.add(0, 1, 1);
+		nft.delta.add(1, EPSILON, 2);
+		nft.delta.add(2, DONT_CARE, 3);
+		nft.delta.add(3, 4, 4);
+		nft.delta.add(4, 5, 5);
+		check_reads_as_general_reader(nft.print_to_mata());
+		check_reads_as_general_reader(Nft{}.print_to_mata());
+	}
+
+	SECTION("layout") {
+		// The keys are read before the body in a fixed order, whatever their order in the file.
+		check_reads_as_general_reader(
+			"# comment\n@NFT\n%LevelsNum 2\n%Levels s:1 r:0\n%Final r\n%Initial \"p q\" \\\n s\n%Final x\n%Foo\n"
+			"s 1 r # comment\n\"p q\" 2 s\nr\t3 \"p q\"\n"
+		);
+		check_reads_as_general_reader("@NFT-explicit\n%Initial a\na 1 b\n%Foo x\n");
+	}
+
+	SECTION("late keys, formulas, and unusual names") {
+		check_reads_as_general_reader("@NFT-explicit\n%Initial a\na 1 b\n%Final b\n");
+		check_reads_as_general_reader("@NFT-explicit\n%LevelsNum 1\n%LevelsNum 2\na 1 b\n");
+		check_reads_as_general_reader("@NFT-explicit\n%Levels a:+1\n%LevelsNum 2\na 1 b\n");
+		check_reads_as_general_reader("@NFT-explicit\n%Initial a|b\na 1 b\n");
+		check_reads_as_general_reader("@NFT-explicit\n%Levels :1 b:0\n%LevelsNum 2\nb 1 b\n");
+	}
+
+	SECTION("malformed inputs") {
+		check_reads_as_general_reader("");
+		check_reads_as_general_reader("@NFT-bits\na x b\n");
+		check_reads_as_general_reader("@NFT-explicit\n%Levels a:1:2\na 1 b\n");
+		check_reads_as_general_reader("@NFT-explicit\n%Levels a\na 1 b\n");
+		check_reads_as_general_reader("@NFT-explicit\n%Levels a:-1\na 1 b\n");
+		check_reads_as_general_reader("@NFT-explicit\n%Levels a:99999999999999999999\na 1 b\n");
+		check_reads_as_general_reader("@NFT-explicit\n%LevelsNum 1 2\na 1 b\n");
+		check_reads_as_general_reader("@NFT-explicit\n%LevelsNum\na 1 b\n");
+		check_reads_as_general_reader("@NFT-explicit\na 1\n");
+		check_reads_as_general_reader("@NFT-explicit\na x b\n");
+		check_reads_as_general_reader("@NFT-explicit\na 1 b\n@NFT-explicit\na 1 b\n");
 	}
 }
 

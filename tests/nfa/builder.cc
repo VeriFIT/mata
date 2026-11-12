@@ -2,6 +2,8 @@
 
 #include <cmath>
 #include <fstream>
+#include <optional>
+#include <set>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
@@ -9,6 +11,9 @@
 
 #include "mata/nfa/builder.hh"
 #include "mata/nfa/nfa.hh"
+#include "mata/parser/inter-aut.hh"
+#include "mata/parser/mintermization.hh"
+#include "mata/parser/parser.hh"
 
 using namespace mata::nfa;
 using Symbol = mata::Symbol;
@@ -183,6 +188,207 @@ TEST_CASE("parse_from_mata()") {
 			parsed.delta.contains(51, 'z', 42);
 			CHECK(are_equivalent(parsed, nfa));
 		}
+	}
+}
+
+namespace {
+/// Reads @p input with the general reader, mata::parser::parse_mf() and IntermediateAut, as parse_from_mata() did.
+Nfa read_with_general_reader(
+	const std::string& input, mata::Alphabet* alphabet, builder::NameStateMap* state_map, const bool keep_quotes
+) {
+	const mata::parser::Parsed parsed{mata::parser::parse_mf(input, keep_quotes)};
+	if (parsed.size() != 1 || !parsed[0].type.starts_with("NFA")) { throw std::runtime_error("not a single NFA"); }
+	mata::IntermediateAut inter_aut{mata::IntermediateAut::parse_from_mf(parsed)[0]};
+	if (inter_aut.is_bitvector()) { inter_aut = mata::Mintermization{}.mintermize(inter_aut); }
+	return builder::construct(inter_aut, alphabet, state_map);
+}
+
+/// Checks that @p lhs and @p rhs are the same NFA up to the numbering of states, which the state names fix.
+void check_same_up_to_state_names(
+	const Nfa& lhs, const builder::NameStateMap& lhs_states, const Nfa& rhs, const builder::NameStateMap& rhs_states
+) {
+	REQUIRE(lhs.num_of_states() == rhs.num_of_states());
+	REQUIRE(lhs_states.size() == rhs_states.size());
+	std::vector<State> renaming(rhs.num_of_states());
+	for (const auto& [name, state] : rhs_states) {
+		REQUIRE(lhs_states.contains(name));
+		renaming[state] = lhs_states.at(name);
+	}
+	Nfa renamed{lhs.num_of_states()};
+	for (const Transition& transition : rhs.delta.transitions()) {
+		renamed.delta.add(renaming[transition.source], transition.symbol, renaming[transition.target]);
+	}
+	for (const State state : rhs.initial) { renamed.initial.insert(renaming[state]); }
+	for (const State state : rhs.final) { renamed.final.insert(renaming[state]); }
+	CHECK(lhs.delta == renamed.delta);
+	CHECK(
+		std::set<State>(lhs.initial.begin(), lhs.initial.end()) ==
+		std::set<State>(renamed.initial.begin(), renamed.initial.end())
+	);
+	CHECK(
+		std::set<State>(lhs.final.begin(), lhs.final.end()) ==
+		std::set<State>(renamed.final.begin(), renamed.final.end())
+	);
+}
+
+/// Checks that parse_explicit_from_mata() reads @p input, and reads the NFA and the alphabet the general reader reads.
+void check_explicit_reader_reads(const std::string& input, const bool keep_quotes = false) {
+	CAPTURE(input, keep_quotes);
+	OnTheFlyAlphabet explicit_alphabet;
+	builder::NameStateMap explicit_states;
+	const std::optional<Nfa> explicit_nfa{
+		builder::parse_explicit_from_mata(input, &explicit_alphabet, &explicit_states, keep_quotes)
+	};
+	REQUIRE(explicit_nfa.has_value());
+	OnTheFlyAlphabet general_alphabet;
+	builder::NameStateMap general_states;
+	const Nfa general_nfa{read_with_general_reader(input, &general_alphabet, &general_states, keep_quotes)};
+	CHECK(explicit_alphabet.get_symbol_map() == general_alphabet.get_symbol_map());
+	check_same_up_to_state_names(*explicit_nfa, explicit_states, general_nfa, general_states);
+}
+
+/// Checks that parse_explicit_from_mata() leaves @p input to the general reader, and that parse_from_mata() then reads
+///  what the general reader reads, or fails as it does.
+void check_general_reader_reads(const std::string& input, const bool keep_quotes = false) {
+	CAPTURE(input, keep_quotes);
+	OnTheFlyAlphabet explicit_alphabet;
+	builder::NameStateMap explicit_states{{"kept", 0}};
+	CHECK_FALSE(
+		builder::parse_explicit_from_mata(input, &explicit_alphabet, &explicit_states, keep_quotes).has_value()
+	);
+	CHECK(explicit_states == builder::NameStateMap{{"kept", 0}});
+
+	OnTheFlyAlphabet general_alphabet;
+	builder::NameStateMap general_states;
+	std::optional<Nfa> general_nfa;
+	try {
+		general_nfa = read_with_general_reader(input, &general_alphabet, &general_states, keep_quotes);
+	} catch (const std::exception&) {}
+	OnTheFlyAlphabet alphabet;
+	builder::NameStateMap states;
+	if (!general_nfa.has_value()) {
+		CHECK_THROWS(builder::parse_from_mata(input, &alphabet, &states, keep_quotes));
+		return;
+	}
+	const Nfa nfa{builder::parse_from_mata(input, &alphabet, &states, keep_quotes)};
+	CHECK(alphabet.get_symbol_map() == general_alphabet.get_symbol_map());
+	check_same_up_to_state_names(nfa, states, *general_nfa, general_states);
+}
+} // namespace
+
+TEST_CASE("parse_explicit_from_mata() reads what the general reader reads") {
+	SECTION("printed automata") {
+		Nfa nfa{6, {0, 4}, {2, 5}};
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(1, 'b', 2);
+		nfa.delta.add(1, EPSILON, 3);
+		nfa.delta.add(3, 'a', 0);
+		OnTheFlyAlphabet alphabet{{"a", 'a'}, {"b", 'b'}};
+		check_explicit_reader_reads(nfa.print_to_mata(&alphabet));
+		check_explicit_reader_reads(Nfa{}.print_to_mata());
+		check_explicit_reader_reads(Nfa{3, {0}, {2}}.print_to_mata());
+	}
+
+	SECTION("layout") {
+		check_explicit_reader_reads("@NFA\n%Alphabet-auto\n%Initial q0\nq0 a q1\n");
+		check_explicit_reader_reads(
+			"# comment\n\n  @NFA-explicit   # comment\n%Alphabet-auto\n\t%Initial q0 q1 # comment\n"
+			"%Final q2\n%Final q3\n\nq0 a q1#comment\n   q1\tb  q2\r\n# comment\nq2 c q0 \n"
+		);
+		// Continued lines, including across lines without tokens.
+		check_explicit_reader_reads(
+			"@NFA-explicit\n%Alphabet-auto\n%Initial q0 \\\n q1\nq0 a \\\n# comment \\\n\n q1\nq1 \\\n\\\n b q0\n"
+		);
+		// The namings apply to the whole section; other keys are ignored.
+		check_explicit_reader_reads("@NFA-explicit\n%Initial q0\n%Final q1\n%Foo x y\n%Alphabet-auto\nq0 a q1\n");
+		check_explicit_reader_reads("@NFA-explicit\n%Alphabet-auto\nq0 a q1\n%Final q1\n");
+		check_explicit_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q\nq a q\n");
+	}
+
+	SECTION("namings") {
+		check_explicit_reader_reads(
+			"@NFA-explicit\n%Alphabet-auto\n%States-auto\n%Nodes-auto\n%Initial s0\n%Final qs1\ns0 a qs1\n"
+		);
+		check_explicit_reader_reads("@NFA-explicit\n%Alphabet-marked\n%States-marked\n%Initial q0\nq0 b q1\n");
+		check_explicit_reader_reads("@NFA-explicit\n%Alphabet\n%Initial q0\nq0 a q1\n");
+	}
+
+	SECTION("quoted names") {
+		const std::string input{"@NFA-explicit\n%Alphabet-auto\n%Initial \"q0\"\nq0 \"a b\" q1\nq1 \"x\\\"y\" q0\nq0 "
+								"\"\\\\\" q1\nq1 \"\" \"q2\"\n"
+								"\"q2\" \"#\" q0 # comment\n"};
+		check_explicit_reader_reads(input);
+		check_explicit_reader_reads("@NFA-explicit\n%Alphabet-auto\nq0 \"a b\" q1\nq1 \"x\\\"y\" q0\n", true);
+		check_explicit_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q0\nq0 \"&\" q1\nq1 \"(\" q0\n");
+	}
+
+	SECTION("special symbols") {
+		check_explicit_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q0\nq0 <eps> q1\nq1 a q0\n");
+	}
+
+	SECTION("caller's state names") {
+		const std::string input{"@NFA-explicit\n%Alphabet-auto\n%Initial q1\n%Final q5\nq1 a q5\nq5 b q7\n"};
+		builder::NameStateMap explicit_states{{"5", 3}, {"9", 0}};
+		builder::NameStateMap general_states{explicit_states};
+		OnTheFlyAlphabet explicit_alphabet;
+		OnTheFlyAlphabet general_alphabet;
+		const std::optional<Nfa> explicit_nfa{
+			builder::parse_explicit_from_mata(input, &explicit_alphabet, &explicit_states)
+		};
+		REQUIRE(explicit_nfa.has_value());
+		const Nfa general_nfa{read_with_general_reader(input, &general_alphabet, &general_states, false)};
+		CHECK(explicit_states.at("5") == 3);
+		check_same_up_to_state_names(*explicit_nfa, explicit_states, general_nfa, general_states);
+	}
+}
+
+TEST_CASE("parse_explicit_from_mata() leaves the general format to the general reader") {
+	SECTION("formulas") {
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q0 | q1\n%Final q1\nq0 a q1\n");
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final !q0 & !q1\nq0 a q1\n");
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final \\true\nq0 a q1\n");
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final (q1)\nq0 a q1\n");
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a & q1\n");
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final \"!q1\"\nq0 a q1\n");
+	}
+
+	SECTION("bitvector alphabets") {
+		check_general_reader_reads(
+			"@NFA-bits\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 x & !y q1\nq1 (x | y) & !z q0\nq0 z q0\n"
+		);
+	}
+
+	SECTION("names that are not states") {
+		// IntermediateAut reads these as nodes and symbols, and builder::construct() then takes them for states.
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q0\nq0 a n1\n");
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q0\nq0 a x1\n");
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial x0\nq0 a q1\n");
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q0\n\"q0\" a \"q1\"\n", true);
+	}
+
+	SECTION("namings") {
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n%States-enum p r\n%Initial p\np a r\n");
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n%States-auto\n%Initial p\np a r\n");
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Alphabet-marked\n%Initial q0\nq0 a1 q1\n");
+		check_general_reader_reads("@NFA-explicit\n%Initial q0\nq0 a q1\n%Alphabet-auto\n");
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial-x q0\nq0 a q1\n");
+	}
+
+	SECTION("malformed inputs") {
+		check_general_reader_reads("");
+		check_general_reader_reads("%Initial q0\n");
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\nq0 a q1\n@NFA-explicit\n%Alphabet-auto\nq0 a q1\n");
+		check_general_reader_reads("@NFA-foo\n%Alphabet-auto\nq0 a q1\n");
+		check_general_reader_reads("@NFA-explicit trailing\n%Alphabet-auto\nq0 a q1\n");
+		check_general_reader_reads("@NFT-explicit\n%Alphabet-auto\nq0 a q1\n");
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\nq0 a\n");
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\nq0 a q1 q2\n");
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\nq0 \"a q1\n");
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\nq0 \"a\"b q1\n");
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\nq0 a%b q1\n");
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\nq0 a %b\n");
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n% q0\n");
+		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q0\nq0 a q1\nq1 b \\");
 	}
 }
 

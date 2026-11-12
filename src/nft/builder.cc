@@ -8,6 +8,9 @@
 #include "mata/utils/sparse-set.hh"
 #include "mata/utils/utils.hh"
 
+#include "../explicit-section-reader.hh"
+
+#include <charconv>
 #include <fstream>
 
 using namespace mata::nft;
@@ -30,6 +33,115 @@ Symbol translate_symbol_name(
 	if (name == mata::EPSILON_NAME) { return EPSILON; }
 	if (name == mata::DONT_CARE_NAME) { return DONT_CARE; }
 	return alphabets->translate_symb(name, level);
+}
+
+/// Parses a level as @c std::stol() would, but only a plain decimal number. @return The level, or @c std::nullopt.
+std::optional<long> parse_plain_level(const std::string_view level) {
+	long value{};
+	const char* const end{level.data() + level.size()};
+	if (level.empty() || level.front() < '0' || level.front() > '9') { return std::nullopt; }
+	if (const auto [ptr, error]{std::from_chars(level.data(), end, value)}; error != std::errc{} || ptr != end) {
+		return std::nullopt;
+	}
+	return value;
+}
+
+/**
+ * Reads an NFT from @p input with @c mata::parser::ExplicitSectionReader, producing the NFT that
+ *  @c builder::construct() produces from @c parser::parse_mf() of @p input, with the states numbered the same.
+ * @return The NFT, or @c std::nullopt when @p input leaves the subset of the format this reader covers.
+ */
+std::optional<Nft> read_explicit_nft(const std::string_view input, mata::Alphabet* alphabet) {
+	using mata::parser::ExplicitSectionReader;
+	using mata::parser::ExplicitToken;
+
+	ExplicitSectionReader reader{input};
+	if (const std::optional<std::string_view> type{reader.read_type()};
+		!type.has_value() || (*type != TYPE_NFT && *type != TYPE_NFT + "-explicit")) {
+		return std::nullopt;
+	}
+
+	Nft aut;
+	// A state name takes a few bytes of the input, which bounds the numbers worth indexing.
+	mata::parser::StateNameMap state_names{{}, input.size() / 4};
+	const auto get_state{[&](const std::string_view name) {
+		if (const std::optional<State> state{state_names.find(name)}) { return *state; }
+		const State state{aut.add_state()};
+		state_names.insert(name, state);
+		return state;
+	}};
+
+	// builder::construct() reads the keys before the body, in this order, whatever their order in the file.
+	std::vector<std::string> initial_names;
+	std::vector<std::string> final_names;
+	std::vector<std::string> levels;
+	// Present even without values; the key alone is malformed.
+	std::optional<std::vector<std::string>> num_of_levels;
+	const auto start_body{[&]() {
+		for (const std::string& name : initial_names) { aut.initial.insert(get_state(name)); }
+		for (const std::string& name : final_names) { aut.final.insert(get_state(name)); }
+		for (const std::string_view state_level : levels) {
+			const size_t colon{state_level.find(':')};
+			if (colon == std::string_view::npos) { return false; }
+			const State state{get_state(state_level.substr(0, colon))};
+			const std::optional<long> level{parse_plain_level(state_level.substr(colon + 1))};
+			if (!level.has_value()) { return false; }
+			aut.levels[state] = static_cast<Level>(*level);
+		}
+		if (num_of_levels.has_value()) {
+			if (num_of_levels->size() != 1) { return false; }
+			const std::optional<long> level{parse_plain_level(num_of_levels->front())};
+			if (!level.has_value()) { return false; }
+			aut.levels.num_of_levels = static_cast<Level>(*level);
+		}
+		return true;
+	}};
+
+	std::vector<Transition> transitions;
+	bool in_body{false};
+	std::string symbol_buffer;
+	while (true) {
+		switch (reader.read_line()) {
+			case ExplicitSectionReader::Line::Key: {
+				std::vector<std::string>* values{nullptr};
+				if (const std::string_view key{reader.key()}; key == "Initial") {
+					values = &initial_names;
+				} else if (key == "Final") {
+					values = &final_names;
+				} else if (key == "Levels") {
+					values = &levels;
+				} else if (key == "LevelsNum") {
+					if (!num_of_levels.has_value()) { num_of_levels.emplace(); }
+					values = &*num_of_levels;
+				} else { // builder::construct() ignores any other key.
+					break;
+				}
+				// Would be numbered before the body.
+				if (in_body) { return std::nullopt; }
+				for (const ExplicitToken& token : reader.tokens()) { values->emplace_back(token.text); }
+				break;
+			}
+			case ExplicitSectionReader::Line::Body: {
+				if (!in_body && !start_body()) { return std::nullopt; }
+				in_body = true;
+				const std::vector<ExplicitToken>& tokens{reader.tokens()};
+				if (tokens.size() != 3) { return std::nullopt; }
+				const State source{get_state(tokens[0].text)};
+				symbol_buffer.assign(tokens[1].text);
+				const Symbol symbol{translate_symbol_name(alphabet, symbol_buffer)};
+				const State target{get_state(tokens[2].text)};
+				transitions.emplace_back(source, symbol, target);
+				break;
+			}
+			case ExplicitSectionReader::Line::End: {
+				if (!in_body && !start_body()) { return std::nullopt; }
+				aut.delta.add(std::move(transitions));
+				return aut;
+			}
+			case ExplicitSectionReader::Line::Unsupported:
+				return std::nullopt;
+		}
+	}
 }
 } // namespace
 
@@ -295,39 +407,30 @@ Nft builder::create_sigma_star_nft(const std::shared_ptr<mata::Alphabet>& alphab
 	return nft;
 }
 
-Nft builder::parse_from_mata(std::istream& nft_stream) {
-	const std::string nft_str = "NFT";
-	const parser::Parsed parsed{parser::parse_mf(nft_stream)};
+Nft builder::parse_from_mata(const std::string& nft_in_mata) {
+	IntAlphabet alphabet;
+	if (std::optional<Nft> nft{read_explicit_nft(nft_in_mata, &alphabet)}) { return std::move(*nft); }
+
+	const parser::Parsed parsed{parser::parse_mf(nft_in_mata)};
 	if (parsed.size() != 1) {
 		throw std::runtime_error(
 			"The number of sections in the input file is '" + std::to_string(parsed.size()) + "'. Required is '1'.\n"
 		);
 	}
-	if (const std::string automaton_type{parsed[0].type}; !automaton_type.starts_with(nft_str)) {
+	if (const std::string& automaton_type{parsed[0].type}; !automaton_type.starts_with(TYPE_NFT)) {
 		throw std::runtime_error("The type of input automaton is '" + automaton_type + "'. Required is 'NFT'\n");
 	}
-	IntAlphabet alphabet;
-	// return construct(IntermediateAut::parse_from_mf(parsed)[0], &alphabet);
 	return construct(parsed[0], &alphabet);
+}
+
+Nft builder::parse_from_mata(std::istream& nft_stream) {
+	return parse_from_mata(parser::read_whole_stream(nft_stream));
 }
 
 Nft builder::parse_from_mata(const std::filesystem::path& nft_file) {
 	std::ifstream file_stream{nft_file};
 	if (!file_stream) { throw std::runtime_error("Could not open file \'" + nft_file.string() + "'\n"); }
-
-	Nft nft;
-	try {
-		nft = parse_from_mata(file_stream);
-	} catch (const std::exception&) {
-		file_stream.close();
-		throw;
-	}
-	return nft;
-}
-
-Nft builder::parse_from_mata(const std::string& nft_in_mata) {
-	std::istringstream nft_stream(nft_in_mata);
-	return parse_from_mata(nft_stream);
+	return parse_from_mata(file_stream);
 }
 
 Nft builder::from_nfa_with_levels_zero(
