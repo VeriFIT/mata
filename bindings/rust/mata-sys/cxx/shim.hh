@@ -10,6 +10,7 @@
 
 #include "mata/automaton.hh"
 #include "mata/nfa/nfa.hh"
+#include "mata/parser/inter-aut.hh"
 #include "mata/utils/generator-support.hh"
 #include "rust/cxx.h"
 
@@ -162,19 +163,31 @@ std::unique_ptr<Nfa> complement_within(
 std::unique_ptr<Nfa> determinize_within(const Nfa& nfa, const Limits& limits);
 std::unique_ptr<Nfa> minimize_within(const Nfa& nfa, Minimization algorithm, const Limits& limits);
 
-// Decision procedures. A `false` from the checks fills `counterexample`.
+// Decision procedures. A `false` from the checks fills `counterexample`; the `decide_` variants compute none.
 bool accepting_run(const Nfa& nfa, rust::Vec<Symbol>& word, rust::Vec<State>& path);
 bool some_word(const Nfa& nfa, rust::Vec<Symbol>& word);
 bool shortest_word(const Nfa& nfa, rust::Vec<Symbol>& word);
 bool is_universal(
 	const Nfa& nfa, rust::Slice<const Symbol> symbols, CheckAlgorithm algorithm, rust::Vec<Symbol>& counterexample
 );
+bool decide_universal(const Nfa& nfa, rust::Slice<const Symbol> symbols, CheckAlgorithm algorithm);
 bool is_included(const Nfa& smaller, const Nfa& bigger, CheckAlgorithm algorithm, rust::Vec<Symbol>& counterexample);
+bool decide_included(const Nfa& smaller, const Nfa& bigger, CheckAlgorithm algorithm);
 bool is_disjoint(const Nfa& lhs, const Nfa& rhs, rust::Vec<Symbol>& common_word);
+bool decide_disjoint(const Nfa& lhs, const Nfa& rhs);
 
 // Words.
 std::unique_ptr<WordStream> words(const Nfa& nfa, std::size_t max_length);
 bool next_word(WordStream& stream, rust::Vec<Symbol>& word);
+
+// Strings (`mata::applications::strings`). Words are returned concatenated, with their lengths.
+void strings_shortest_words(const Nfa& nfa, rust::Vec<Symbol>& symbols, rust::Vec<std::size_t>& lengths);
+bool strings_longest_words(const Nfa& nfa, rust::Vec<Symbol>& symbols, rust::Vec<std::size_t>& lengths);
+rust::Vec<Symbol> strings_accepted_symbols(const Nfa& nfa);
+rust::Vec<std::size_t> strings_word_lengths(const Nfa& nfa);
+bool strings_is_lang_eps(const Nfa& nfa);
+std::unique_ptr<ParsedNfas> strings_segments(const Nfa& nfa, rust::Slice<const Symbol> epsilons);
+std::unique_ptr<Nfa> strings_reluctant_nfa(const Nfa& nfa);
 
 // Printing.
 rust::String print_mata(const Nfa& nfa, rust::Slice<const rust::String> names, rust::Slice<const Symbol> symbols);
@@ -186,5 +199,67 @@ rust::String print_dot(
 	rust::Slice<const rust::String> names,
 	rust::Slice<const Symbol> symbols
 );
+
+// Further operations of the library.
+std::unique_ptr<Nfa> concatenate_over_epsilon(const Nfa& lhs, const Nfa& rhs);
+std::unique_ptr<Nfa> as_dfa(const Nfa& nfa);
+std::unique_ptr<Nfa> concatenate_nth_power(const Nfa& nfa, std::uint32_t power);
+std::unique_ptr<Nfa> union_det_complete(const Nfa& lhs, const Nfa& rhs, rust::Slice<const Symbol> symbols);
+std::unique_ptr<Nfa> product(const Nfa& lhs, const Nfa& rhs, bool either_final, Symbol first_epsilon);
+std::unique_ptr<Nfa> left_quotient(const Nfa& nfa, const Nfa& prefixes, Symbol first_epsilon);
+std::unique_ptr<Nfa> right_quotient(const Nfa& nfa, const Nfa& suffixes, Symbol first_epsilon);
+std::unique_ptr<Nfa> decode_utf8(const Nfa& nfa);
+std::unique_ptr<Nfa> one_letter_automaton(const Nfa& nfa, Symbol abstract_symbol);
+bool is_flat(const Nfa& nfa);
+bool accepts_prefix(const Nfa& nfa, rust::Slice<const Symbol> word, bool use_epsilon);
+bool word_from_complement(const Nfa& nfa, rust::Slice<const Symbol> symbols, rust::Vec<Symbol>& word);
+bool word_from_difference(const Nfa& included, const Nfa& excluded, rust::Vec<Symbol>& word);
+std::unique_ptr<Nfa> random_tabakov_vardi(
+	std::size_t num_states,
+	std::size_t alphabet_size,
+	double transition_ratio,
+	double final_density,
+	bool has_seed,
+	std::uint32_t seed
+);
+
+// Intermediate automata: parsed `.mata` sections that are not constructed yet.
+
+/// Intermediate automata of one parse or one mintermization, taken out one by one with `intermediate_auts_take()`.
+class IntermediateAuts {
+  public:
+	explicit IntermediateAuts(std::vector<mata::IntermediateAut> automata)
+		: automata_(std::move(automata)),
+		  taken_(automata_.size(), false) {}
+
+	std::size_t size() const { return automata_.size(); }
+	std::unique_ptr<mata::IntermediateAut> take(std::size_t index);
+
+  private:
+	std::vector<mata::IntermediateAut> automata_;
+	std::vector<bool> taken_;
+};
+
+/// Borrowed intermediate automata to mintermize together; the caller keeps them alive.
+class IntermediateRefs {
+  public:
+	std::vector<const mata::IntermediateAut*> automata = {};
+};
+
+std::unique_ptr<IntermediateAuts> intermediate_parse_mata(rust::Str text);
+std::size_t intermediate_auts_len(const IntermediateAuts& automata);
+std::unique_ptr<mata::IntermediateAut> intermediate_auts_take(IntermediateAuts& automata, std::size_t index);
+std::unique_ptr<IntermediateRefs> intermediate_refs_new();
+void intermediate_refs_push(IntermediateRefs& refs, const mata::IntermediateAut& automaton);
+std::unique_ptr<IntermediateAuts> intermediate_mintermize(const IntermediateRefs& refs);
+std::unique_ptr<Nfa> intermediate_construct_nfa(
+	const mata::IntermediateAut& automaton,
+	rust::Slice<const rust::String> names,
+	rust::Slice<const Symbol> named_symbols,
+	Symbol next_symbol,
+	rust::Vec<rust::String>& new_names,
+	rust::Vec<Symbol>& new_symbols
+);
+rust::String intermediate_print(const mata::IntermediateAut& automaton);
 
 } // namespace mata_sys

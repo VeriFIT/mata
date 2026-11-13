@@ -8,6 +8,7 @@
 
 #include "mata-sys/cxx/common.hh"
 #include "mata-sys/src/nft.rs.h"
+#include "mata/applications/strings.hh"
 #include "mata/nft/builder.hh"
 #include "mata/parser/parser.hh"
 
@@ -547,6 +548,146 @@ bool nft_are_equivalent(const Nft& lhs, const Nft& rhs) {
 	return mata::nft::are_equivalent(without_jumps(lhs, lhs_storage), without_jumps(rhs, rhs_storage));
 }
 
+bool nft_is_deterministic(const Nft& nft) {
+	auto storage = std::optional<Nft>();
+	return without_jumps(nft, storage).is_deterministic();
+}
+
+// Strings.
+
+namespace {
+
+using mata::applications::strings::replace::ReplaceMode;
+
+ReplaceMode replace_mode(const bool single) { return single ? ReplaceMode::Single : ReplaceMode::All; }
+
+/// The alphabet of a replace transducer. Throws on epsilon, `DONT_CARE` and `marker`, which the construction
+///  gives another meaning, and on a `marker` that is epsilon or `DONT_CARE`, which cannot mark anything.
+mata::EnumAlphabet
+	replace_alphabet(const rust::Slice<const Symbol> symbols, const std::optional<Symbol> marker = std::nullopt) {
+	if (marker.has_value() && (*marker == mata::nft::EPSILON || *marker == mata::nft::DONT_CARE)) {
+		throw std::invalid_argument(
+			"the marker of the replace cannot be epsilon or DONT_CARE, found " + std::to_string(*marker)
+		);
+	}
+	if (marker.has_value() && std::ranges::find(symbols, *marker) != symbols.end()) {
+		throw std::invalid_argument(
+			"the alphabet cannot contain the marker symbol " + std::to_string(*marker) + " of the replace"
+		);
+	}
+	return mata::EnumAlphabet(detail::to_symbol_set(symbols));
+}
+
+/// Wraps a transducer that a library construction built, checked as one from other C++ code.
+std::unique_ptr<Nft> built(Nft&& nft) {
+	nft_check_well_formed(nft);
+	return boxed(std::move(nft));
+}
+
+} // namespace
+
+Symbol strings_begin_marker() { return mata::applications::strings::replace::BEGIN_MARKER; }
+
+Symbol strings_end_marker() { return mata::applications::strings::replace::END_MARKER; }
+
+bool strings_words_of_lengths(
+	const Nft& nft,
+	const rust::Slice<const std::uint32_t> lengths,
+	rust::Vec<Symbol>& symbols,
+	rust::Vec<std::size_t>& word_lengths
+) {
+	auto storage = std::optional<Nft>();
+	const auto words = mata::applications::strings::get_words_of_lengths(
+		without_jumps(nft, storage), std::vector<unsigned>(lengths.begin(), lengths.end())
+	);
+	if (!words.has_value()) { return false; }
+	detail::assign_words(symbols, word_lengths, *words);
+	return true;
+}
+
+std::unique_ptr<Nft> strings_create_identity(const rust::Slice<const Symbol> alphabet, const std::size_t num_levels) {
+	check_num_levels(num_levels);
+	const auto symbols = replace_alphabet(alphabet);
+	return built(mata::applications::strings::replace::create_identity(&symbols, num_levels));
+}
+
+// The overloads taking a `Symbol` replacement build `Word{replacement}`, so the bridge has only the `Word` ones.
+std::unique_ptr<Nft> strings_identity_with_replace(
+	const rust::Slice<const Symbol> alphabet,
+	const Symbol from_symbol,
+	const rust::Slice<const Symbol> replacement,
+	const bool single
+) {
+	const auto symbols = replace_alphabet(alphabet);
+	return built(
+		mata::applications::strings::replace::create_identity_with_single_symbol_replace(
+			&symbols, from_symbol, to_word(replacement), replace_mode(single)
+		)
+	);
+}
+
+std::unique_ptr<Nft> strings_replace_regex(
+	const rust::Str regex,
+	const rust::Slice<const Symbol> replacement,
+	const rust::Slice<const Symbol> alphabet,
+	const bool single,
+	const Symbol begin_marker
+) {
+	const auto symbols = replace_alphabet(alphabet, begin_marker);
+	return built(
+		mata::applications::strings::replace::replace_reluctant_regex(
+			std::string(regex), to_word(replacement), &symbols, replace_mode(single), begin_marker
+		)
+	);
+}
+
+std::unique_ptr<Nft> strings_replace_regex_nfa(
+	const mata::nfa::Nfa& regex,
+	const rust::Slice<const Symbol> replacement,
+	const rust::Slice<const Symbol> alphabet,
+	const bool single,
+	const Symbol begin_marker
+) {
+	const auto symbols = replace_alphabet(alphabet, begin_marker);
+	// The library needs a deterministic automaton, as the String form builds it.
+	auto dfa = mata::nfa::remove_epsilon(regex);
+	if (!dfa.is_deterministic()) { dfa = mata::nfa::determinize(dfa); }
+	return built(
+		mata::applications::strings::replace::replace_reluctant_regex(
+			std::move(dfa), to_word(replacement), &symbols, replace_mode(single), begin_marker
+		)
+	);
+}
+
+std::unique_ptr<Nft> strings_replace_literal(
+	const rust::Slice<const Symbol> literal,
+	const rust::Slice<const Symbol> replacement,
+	const rust::Slice<const Symbol> alphabet,
+	const bool single,
+	const Symbol end_marker
+) {
+	const auto symbols = replace_alphabet(alphabet, end_marker);
+	return built(
+		mata::applications::strings::replace::replace_reluctant_literal(
+			to_word(literal), to_word(replacement), &symbols, replace_mode(single), end_marker
+		)
+	);
+}
+
+std::unique_ptr<Nft> strings_replace_symbol(
+	const Symbol from_symbol,
+	const rust::Slice<const Symbol> replacement,
+	const rust::Slice<const Symbol> alphabet,
+	const bool single
+) {
+	const auto symbols = replace_alphabet(alphabet);
+	return built(
+		mata::applications::strings::replace::replace_reluctant_single_symbol(
+			from_symbol, to_word(replacement), &symbols, replace_mode(single)
+		)
+	);
+}
+
 // Printing.
 
 rust::String nft_print_mata(
@@ -572,6 +713,131 @@ rust::String nft_print_dot(
 	const auto table = detail::NameTable(names, symbols);
 	const mata::Alphabet* const alphabet = table.empty() ? nullptr : &table;
 	return rust::String(nft.print_to_dot(ascii_labels, intervals, max_label_length, alphabet));
+}
+
+// The other operations of the script language's `nft:` namespace.
+
+namespace {
+
+bool has_epsilon_edge(const Nft& nft) {
+	return std::ranges::any_of(nft.delta, [](const mata::nfa::StatePost& state_post) {
+		return state_post.find(mata::nft::EPSILON) != state_post.end();
+	});
+}
+
+} // namespace
+
+std::unique_ptr<Nft> nft_complement(const Nft& nft, const rust::Slice<const Symbol> symbols) {
+	const auto alphabet = detail::to_symbol_set(symbols);
+	// Mata documents the precondition but does not check it.
+	if (has_epsilon_edge(nft)) {
+		throw std::invalid_argument("the complement needs a transducer without epsilon transitions");
+	}
+	// Mata completes only from the initial states, so without one the complement would be the empty
+	// word alone: seed a non-final initial state.
+	const bool seed = nft.initial.empty();
+	if (!seed && !uses_dont_care(nft)) { return boxed(mata::nft::complement(nft, alphabet)); }
+	auto prepared = Nft(nft);
+	prepared.levels.resize(prepared.num_of_states());
+	if (seed) { prepared.initial.insert(prepared.add_state_with_level(0)); }
+	// Mata's determinization reads DONT_CARE as one more symbol: spell it out over the alphabet first.
+	if (uses_dont_care(prepared)) { prepared.unwind_jumps_inplace(alphabet, mata::nft::JumpMode::RepeatSymbol); }
+	return boxed(mata::nft::complement(prepared, alphabet));
+}
+
+bool nft_is_complete(const Nft& nft, const rust::Slice<const Symbol> symbols) {
+	return nft.is_complete(detail::to_symbol_set(symbols));
+}
+
+std::unique_ptr<Nft> nft_concatenate_nth_power(const Nft& nft, const std::uint32_t power) {
+	return boxed(mata::nft::concatenate_nth_power(Nft(nft), power));
+}
+
+bool nft_contains_jump_transitions(const Nft& nft) { return nft.contains_jump_transitions(); }
+
+std::unique_ptr<Nft> nft_sigma_star(const std::size_t num_levels) {
+	check_num_levels(num_levels);
+	return boxed(mata::nft::builder::create_sigma_star_nft(num_levels));
+}
+
+std::unique_ptr<Nft> nft_from_nfa_with_levels_advancing(const mata::nfa::Nfa& nfa, const std::size_t num_levels) {
+	check_num_levels(num_levels);
+	auto nft = mata::nft::builder::from_nfa_with_levels_advancing(nfa, num_levels);
+	nft_adopt(nft);
+	return std::make_unique<Nft>(std::move(nft));
+}
+
+bool nft_has_epsilon_cycle(const Nft& nft) { return mata::nft::has_epsilon_cycle(nft); }
+
+// Mata's is_identical() ignores the number of states.
+bool nft_is_identical(const Nft& lhs, const Nft& rhs) {
+	return lhs.num_of_states() == rhs.num_of_states() && lhs.is_identical(rhs);
+}
+
+bool nft_is_in_lang(
+	const Nft& nft, const rust::Slice<const Symbol> word, const bool match_prefix, const bool has_epsilon_cycles
+) {
+	// Mata only asserts this: told there is no epsilon cycle, its search would follow one forever.
+	if (!has_epsilon_cycles && mata::nft::has_epsilon_cycle(nft)) {
+		throw std::invalid_argument("the transducer has a cycle of epsilon transitions");
+	}
+	return nft.is_in_lang(to_word(word), match_prefix, mata::nft::JumpMode::RepeatSymbol, has_epsilon_cycles);
+}
+
+std::unique_ptr<Nft> nft_insert_level(const Nft& nft, const std::size_t level) {
+	// A level past the last one appends every level up to it.
+	check_num_levels(std::max(nft.levels.num_of_levels, level) + 1);
+	return boxed(mata::nft::insert_level(nft, static_cast<Level>(level)));
+}
+
+std::unique_ptr<Nft> nft_insert_levels(const Nft& nft, const rust::Slice<const bool> mask) {
+	const auto kept = static_cast<std::size_t>(std::count(mask.begin(), mask.end(), false));
+	// Mata asserts these.
+	if (kept != nft.levels.num_of_levels) {
+		throw std::invalid_argument(
+			"the mask keeps " + std::to_string(kept) + " levels, but the transducer has " +
+			std::to_string(nft.levels.num_of_levels)
+		);
+	}
+	check_num_levels(mask.size());
+	auto new_levels_mask = mata::BoolVector(mask.size(), false);
+	std::copy(mask.begin(), mask.end(), new_levels_mask.begin());
+	return boxed(mata::nft::insert_levels(nft, new_levels_mask));
+}
+
+std::unique_ptr<Nft> nft_reduce(const Nft& nft) { return boxed(mata::nft::reduce(nft)); }
+
+std::unique_ptr<Nft> nft_revert(const Nft& nft) { return boxed(mata::nft::revert(nft)); }
+
+bool nft_is_universal(const Nft& nft, const rust::Slice<const Symbol> symbols) {
+	const auto alphabet = mata::EnumAlphabet(detail::to_symbol_set(symbols));
+	// Mata's check takes no epsilon closure, so remove the epsilon transitions first, as for NFAs.
+	if (!has_epsilon_edge(nft)) { return nft.is_universal(alphabet); }
+	return mata::nft::remove_epsilon(nft).is_universal(alphabet);
+}
+
+std::unique_ptr<Nft> nft_unwind_jumps(const Nft& nft) { return boxed(nft.unwind_jumps()); }
+
+// Intermediate automata.
+
+std::unique_ptr<Nft> intermediate_construct_nft(
+	const mata::IntermediateAut& automaton,
+	const rust::Slice<const rust::String> names,
+	const rust::Slice<const Symbol> named_symbols,
+	const Symbol next_symbol,
+	rust::Vec<rust::String>& new_names,
+	rust::Vec<Symbol>& new_symbols
+) {
+	if (!automaton.is_nft()) { throw std::runtime_error("the intermediate automaton is not an NFT"); }
+	if (automaton.is_bitvector()) {
+		throw std::runtime_error("the intermediate automaton has a bit-vector alphabet, which transducers cannot have");
+	}
+	auto alphabet = detail::ParseAlphabet(false, names, named_symbols, next_symbol);
+	auto nft = mata::nft::builder::construct(automaton, alphabet.get());
+	nft.alphabets = nullptr;
+	nft_check_well_formed(nft);
+	alphabet.report_new_names(new_names, new_symbols);
+	return boxed(std::move(nft));
 }
 
 } // namespace mata_sys

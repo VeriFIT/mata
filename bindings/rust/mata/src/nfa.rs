@@ -15,8 +15,9 @@ use crate::types::{
 };
 use crate::{
 	Alphabet, CheckAlgorithm, Complementation, Determinization, Direction, Distinction,
-	InvalidAutomaton, LimitExceeded, Limits, Minimization, NoSuchState, ParseError, Reduction,
-	RegexError, ResidualConstruction, Run, Side, State, Symbol, Transition, Word, check,
+	InvalidAutomaton, LimitExceeded, Limits, Minimization, NoSuchState, ParseError,
+	ProductFinalCondition, Reduction, RegexError, Requirement, ResidualConstruction, Run, Side,
+	State, Symbol, Transition, UnmetRequirement, Word, check,
 };
 
 /// A nondeterministic finite automaton with epsilon transitions: Mata's `mata::nfa::Nfa`.
@@ -815,7 +816,17 @@ impl Nfa {
 	/// PSPACE-complete.
 	#[must_use]
 	pub fn is_universal(&self, alphabet: &Alphabet) -> bool {
-		self.find_rejected_word(alphabet).is_none()
+		self.is_universal_with(alphabet, CheckAlgorithm::default())
+	}
+
+	/// [`Nfa::is_universal`] with an explicit algorithm.
+	#[must_use]
+	pub fn is_universal_with(&self, alphabet: &Alphabet, algorithm: CheckAlgorithm) -> bool {
+		check(ffi::decide_universal(
+			self.raw(),
+			&alphabet.raw_symbols(),
+			algorithm.into(),
+		))
 	}
 
 	/// A word over `alphabet` that is not accepted, or `None` if the automaton is universal over it.
@@ -850,7 +861,17 @@ impl Nfa {
 	#[doc(alias = "is_included")]
 	#[doc(alias = "is_subset")]
 	pub fn is_included_in(&self, other: &Nfa) -> bool {
-		self.find_word_not_in(other).is_none()
+		self.is_included_in_with(other, CheckAlgorithm::default())
+	}
+
+	/// [`Nfa::is_included_in`] with an explicit algorithm.
+	#[must_use]
+	pub fn is_included_in_with(&self, other: &Nfa, algorithm: CheckAlgorithm) -> bool {
+		check(ffi::decide_included(
+			self.raw(),
+			other.raw(),
+			algorithm.into(),
+		))
 	}
 
 	/// A word accepted by `self` but not by `other`, or `None` if L(self) ⊆ L(other).
@@ -881,7 +902,7 @@ impl Nfa {
 	#[doc(alias = "is_intersection_empty")]
 	#[doc(alias = "is_disjoint")]
 	pub fn is_disjoint_from(&self, other: &Nfa) -> bool {
-		self.find_common_word(other).is_none()
+		check(ffi::decide_disjoint(self.raw(), other.raw()))
 	}
 
 	/// A word accepted by both `self` and `other` (not necessarily the shortest), or `None` if their
@@ -901,7 +922,13 @@ impl Nfa {
 	#[must_use]
 	#[doc(alias = "are_equivalent")]
 	pub fn is_equivalent_to(&self, other: &Nfa) -> bool {
-		self.find_distinguishing_word(other).is_none()
+		self.is_equivalent_to_with(other, CheckAlgorithm::default())
+	}
+
+	/// [`Nfa::is_equivalent_to`] with an explicit algorithm.
+	#[must_use]
+	pub fn is_equivalent_to_with(&self, other: &Nfa, algorithm: CheckAlgorithm) -> bool {
+		self.is_included_in_with(other, algorithm) && other.is_included_in_with(self, algorithm)
 	}
 
 	/// A word accepted by exactly one of the automata, or `None` if they are equivalent.
@@ -993,6 +1020,208 @@ impl Nfa {
 	/// ```
 	pub fn dot(&self) -> Dot<'_> {
 		Dot::new(self)
+	}
+
+	// ── Further operations of the library ─────────────────────────────────────────────────────────
+
+	/// L(self) · L(other) as [`Nfa::concat`], but joined by epsilon transitions from the final states of
+	/// `self` to the initial states of `other`, and keeping the epsilon transitions of both (Mata's
+	/// `concatenate` with `use_epsilon`).
+	#[must_use = "returns a new automaton and leaves `self` unchanged"]
+	pub fn concat_over_epsilon(&self, other: &Nfa) -> Nfa {
+		new_nfa(ffi::concatenate_over_epsilon(self.raw(), other.raw()))
+	}
+
+	/// The same language as a deterministic automaton (Mata's `as_dfa`), which is a copy of `self` when
+	/// `self` is deterministic already.
+	#[must_use = "returns a new automaton and leaves `self` unchanged"]
+	pub fn as_dfa(&self) -> Nfa {
+		new_nfa(ffi::as_dfa(self.raw()))
+	}
+
+	/// L(self) repeated `power` times (Mata's `concatenate_nth_power`); `L(self)^0` is the language of
+	/// the empty word.
+	#[must_use = "returns a new automaton and leaves `self` unchanged"]
+	pub fn concatenate_nth_power(&self, power: u32) -> Nfa {
+		new_nfa(ffi::concatenate_nth_power(self.raw(), power))
+	}
+
+	/// The union of two deterministic automata that are complete over `alphabet` (Mata's
+	/// `union_det_complete`), which is their product.
+	///
+	/// # Errors
+	///
+	/// [`UnmetRequirement`] with [`Requirement::Deterministic`] when `self` or `other` has no initial
+	/// state or is nondeterministic, and with [`Requirement::Complete`] when one is not complete over
+	/// `alphabet` or has a transition under a symbol outside it.
+	pub fn union_det_complete(
+		&self,
+		other: &Nfa,
+		alphabet: &Alphabet,
+	) -> Result<Nfa, UnmetRequirement> {
+		for operand in [self, other] {
+			if operand.initial_states().is_empty() || !operand.is_deterministic() {
+				return Err(UnmetRequirement::new(
+					Requirement::Deterministic,
+					"union_det_complete requires deterministic automata",
+				));
+			}
+			// Unlike `is_complete`, a symbol outside `alphabet` is this call's error, not a panic.
+			let complete =
+				ffi::is_complete(operand.raw(), &alphabet.raw_symbols()).unwrap_or(false);
+			if !complete {
+				return Err(UnmetRequirement::new(
+					Requirement::Complete,
+					"union_det_complete requires automata complete over the alphabet",
+				));
+			}
+		}
+		Ok(new_nfa(ffi::union_det_complete(
+			self.raw(),
+			other.raw(),
+			&alphabet.raw_symbols(),
+		)))
+	}
+
+	/// The product of two automata, whose pairs of states are final according to `condition` (Mata's
+	/// `product`). Under [`ProductFinalCondition::And`] its language is the intersection. Under
+	/// [`ProductFinalCondition::Or`] a pair is final when either state is. That is guaranteed to give
+	/// the union when both automata have an initial state and are complete over the symbols either
+	/// uses; otherwise a word that only one of them reads may be lost. [`Nfa::union`] is the union of
+	/// any two automata, and [`Nfa::union_det_complete`] checks the requirements of the product
+	/// union.
+	#[must_use = "returns a new automaton and leaves `self` unchanged"]
+	pub fn product(
+		&self,
+		other: &Nfa,
+		condition: ProductFinalCondition,
+		first_epsilon: Symbol,
+	) -> Nfa {
+		new_nfa(ffi::product(
+			self.raw(),
+			other.raw(),
+			matches!(condition, ProductFinalCondition::Or),
+			first_epsilon.value(),
+		))
+	}
+
+	/// The left quotient of `self` by `prefixes`, that is `{ w | u·w ∈ L(self) for some u ∈ L(prefixes) }`
+	/// (Mata's `left_quotient`).
+	#[must_use = "returns a new automaton and leaves `self` unchanged"]
+	pub fn left_quotient(&self, prefixes: &Nfa, first_epsilon: Symbol) -> Nfa {
+		new_nfa(ffi::left_quotient(
+			self.raw(),
+			prefixes.raw(),
+			first_epsilon.value(),
+		))
+	}
+
+	/// The right quotient of `self` by `suffixes`, that is `{ w | w·u ∈ L(self) for some u ∈ L(suffixes) }`
+	/// (Mata's `right_quotient`).
+	#[must_use = "returns a new automaton and leaves `self` unchanged"]
+	pub fn right_quotient(&self, suffixes: &Nfa, first_epsilon: Symbol) -> Nfa {
+		new_nfa(ffi::right_quotient(
+			self.raw(),
+			suffixes.raw(),
+			first_epsilon.value(),
+		))
+	}
+
+	/// The automaton for the words that are UTF-8 encodings of the words `self` accepts (Mata's
+	/// `decode_utf8`).
+	///
+	/// # Errors
+	///
+	/// [`UnmetRequirement`] with [`Requirement::Utf8`] when a symbol of a sequence is not a byte, a
+	/// sequence starts with a byte that does not start a sequence, or a later byte of a multi-byte
+	/// sequence is not a continuation byte.
+	pub fn decode_utf8(&self) -> Result<Nfa, UnmetRequirement> {
+		ffi::decode_utf8(self.raw())
+			.map(Nfa::from_owned)
+			.map_err(|error| UnmetRequirement::new(Requirement::Utf8, error.what()))
+	}
+
+	/// The automaton for the words of `self` with every symbol replaced by `abstract_symbol` (Mata's
+	/// `get_one_letter_aut`).
+	#[must_use = "returns a new automaton and leaves `self` unchanged"]
+	pub fn one_letter_automaton(&self, abstract_symbol: Symbol) -> Nfa {
+		new_nfa(ffi::one_letter_automaton(
+			self.raw(),
+			abstract_symbol.value(),
+		))
+	}
+
+	/// Whether no state lies on two cycles (Mata's `is_flat`).
+	#[must_use]
+	pub fn is_flat(&self) -> bool {
+		check(ffi::is_flat(self.raw()))
+	}
+
+	/// Whether some prefix of `word` is accepted, the prefixes that end on a final state being taken
+	/// into account only if `use_epsilon` (Mata's `is_in_lang_prefix`).
+	#[must_use]
+	pub fn is_in_language_prefix(&self, word: &[Symbol], use_epsilon: bool) -> bool {
+		check(ffi::accepts_prefix(
+			self.raw(),
+			symbols_to_raw(word),
+			use_epsilon,
+		))
+	}
+
+	/// A word over `alphabet` that `self` does not accept, or `None` if `self` is universal over it
+	/// (Mata's `get_word_from_complement`).
+	#[must_use]
+	pub fn find_word_from_complement(&self, alphabet: &Alphabet) -> Option<Word> {
+		let mut word = Vec::new();
+		let found = check(ffi::word_from_complement(
+			self.raw(),
+			&alphabet.raw_symbols(),
+			&mut word,
+		));
+		found.then(|| word_from_raw(word))
+	}
+
+	/// A word that `self` accepts and `excluded` does not, or `None` if `L(self) ⊆ L(excluded)` (Mata's
+	/// `get_word_from_lang_difference`).
+	#[must_use]
+	pub fn find_word_from_language_difference(&self, excluded: &Nfa) -> Option<Word> {
+		let mut word = Vec::new();
+		let found = check(ffi::word_from_difference(
+			self.raw(),
+			excluded.raw(),
+			&mut word,
+		));
+		found.then(|| word_from_raw(word))
+	}
+
+	/// A random automaton with `num_states` states and `alphabet_size` symbols, as in the Tabakov-Vardi
+	/// model (Mata's `create_random_nfa_tabakov_vardi`).
+	///
+	/// `transition_ratio` is the number of transitions per state and symbol, `final_density` the share of
+	/// final states (state `0` is always final), and `seed` seeds the generator, which picks one at random
+	/// when `None`.
+	///
+	/// # Errors
+	///
+	/// [`UnmetRequirement`] with [`Requirement::ParameterRange`] when a parameter is out of its range.
+	pub fn random_tabakov_vardi(
+		num_states: usize,
+		alphabet_size: usize,
+		transition_ratio: f64,
+		final_density: f64,
+		seed: Option<u32>,
+	) -> Result<Nfa, UnmetRequirement> {
+		let (has_seed, seed) = seed.map_or((false, 0), |seed| (true, seed));
+		ffi::random_tabakov_vardi(
+			num_states,
+			alphabet_size,
+			transition_ratio,
+			final_density,
+			has_seed,
+			seed,
+		)
+		.map(Nfa::from_owned)
+		.map_err(|error| UnmetRequirement::new(Requirement::ParameterRange, error.what()))
 	}
 }
 

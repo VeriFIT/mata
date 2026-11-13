@@ -25,8 +25,9 @@ fn is_numeric(name: &str) -> bool {
 /// it for one call, and [`Nfa::parse_mata`](crate::Nfa::parse_mata) adds the symbol names it reads.
 ///
 /// [`Symbol::EPSILON`] is never a member. The name `<eps>` stands for it, and `<dntcr>` is reserved.
-/// Names that consist only of decimal digits are rejected: printing would write such a name as the
-/// number of a symbol, so a round trip through the `.mata` format would resolve it to that symbol.
+/// [`insert_name`](Alphabet::insert_name) rejects names that consist only of decimal digits: printing
+/// would write such a name as the number of a symbol, so a round trip through the `.mata` format
+/// would resolve it to that symbol. [`insert_named`](Alphabet::insert_named) binds them.
 ///
 /// ```
 /// use mata::{Alphabet, Symbol};
@@ -110,18 +111,22 @@ impl Alphabet {
 	///
 	/// # Errors
 	///
-	/// [`AlphabetError::Epsilon`] if `symbol` is [`Symbol::EPSILON`].
+	/// [`AlphabetError::Epsilon`] if `symbol` is [`Symbol::EPSILON`], and
+	/// [`AlphabetError::NumericName`] if `symbol` is new and its number is the name of another symbol
+	/// (printing writes an unnamed symbol as its number, which would read back as that other symbol).
 	pub fn insert(&mut self, symbol: Symbol) -> Result<bool, AlphabetError> {
 		if symbol.is_epsilon() {
 			return Err(AlphabetError::Epsilon);
 		}
-		match self.symbols.entry(symbol) {
-			btree_map::Entry::Vacant(entry) => {
-				entry.insert(None);
-				Ok(true)
-			}
-			btree_map::Entry::Occupied(_) => Ok(false),
+		if self.contains(symbol) {
+			return Ok(false);
 		}
+		let number = symbol.value().to_string();
+		if self.by_name.contains_key(&number) {
+			return Err(AlphabetError::NumericName { name: number });
+		}
+		self.symbols.insert(symbol, None);
+		Ok(true)
 	}
 
 	/// The symbol named `name`, adding a new symbol (one above the largest) if the name is new, as Mata's
@@ -134,8 +139,8 @@ impl Alphabet {
 	/// # Errors
 	///
 	/// [`AlphabetError::ReservedName`] if `name` is `<dntcr>`,
-	/// [`AlphabetError::NumericName`] if `name` consists only of decimal digits (printing would write it
-	/// as the number of another symbol, changing the language on the next parse), and
+	/// [`AlphabetError::NumericName`] if `name` is new and consists only of decimal digits (printing would
+	/// write it as the number of another symbol, changing the language on the next parse), and
 	/// [`AlphabetError::Full`] if the name is new and no symbol below `u32::MAX - 1` (the value of
 	/// [`DONT_CARE`](crate::nft::DONT_CARE) in transducers) is left.
 	pub fn insert_name(&mut self, name: &str) -> Result<Symbol, AlphabetError> {
@@ -152,18 +157,66 @@ impl Alphabet {
 		Ok(symbol)
 	}
 
+	/// Binds `name` to exactly `symbol`, as Mata's `OnTheFlyAlphabet::add_new_symbol(name, value)` does.
+	/// Nothing changes if the name or the symbol is already in the alphabet; the first binding is kept.
+	///
+	/// Unlike [`insert_name`](Alphabet::insert_name), the symbol is given instead of the next free one, and a
+	/// name that consists only of decimal digits is accepted: the `"bytes"` script alphabet names the byte
+	/// symbols `"0"`…`"9"`.
+	/// Such a name is safe, because Mata's parser resolves a token to a name before it reads it as a number,
+	/// as long as no unnamed symbol has that number: printing writes an unnamed symbol as its number.
+	///
+	/// # Errors
+	///
+	/// [`AlphabetError::Epsilon`] if `symbol` is [`Symbol::EPSILON`] or `name` is `<eps>`,
+	/// [`AlphabetError::ReservedName`] if `name` is `<dntcr>`,
+	/// [`AlphabetError::NumericName`] if `name` is the number of an unnamed symbol other than `symbol`, and
+	/// [`AlphabetError::Full`] if `symbol` is [`DONT_CARE`](crate::nft::DONT_CARE).
+	pub fn insert_named(&mut self, name: &str, symbol: Symbol) -> Result<(), AlphabetError> {
+		if symbol.is_epsilon() || name == EPSILON_NAME {
+			return Err(AlphabetError::Epsilon);
+		}
+		if name == DONT_CARE_NAME {
+			return Err(AlphabetError::ReservedName);
+		}
+		if symbol >= DONT_CARE_VALUE {
+			return Err(AlphabetError::Full);
+		}
+		if self.by_name.contains_key(name) || self.symbols.contains_key(&symbol) {
+			return Ok(());
+		}
+		if self.names_unnamed(name) {
+			return Err(AlphabetError::NumericName {
+				name: name.to_owned(),
+			});
+		}
+		self.add_named(name.to_owned(), symbol);
+		Ok(())
+	}
+
+	/// Whether `name` is how printing writes an unnamed symbol of the alphabet: its decimal number.
+	fn names_unnamed(&self, name: &str) -> bool {
+		name.parse::<u32>().is_ok_and(|number| {
+			number.to_string() == name && self.symbols.get(&Symbol::new(number)) == Some(&None)
+		})
+	}
+
 	/// The checks that every way of naming a symbol shares: the reserved names, and a name that
-	/// printing would write as the number of a symbol. Returns `Some` for a known name.
+	/// printing would write as the number of a symbol. Returns `Some` for a known name, numeric or not:
+	/// [`insert_named`](Alphabet::insert_named) may have bound one.
 	fn insert_new_name(&self, name: &str) -> Result<Option<Symbol>, AlphabetError> {
 		if name == DONT_CARE_NAME {
 			return Err(AlphabetError::ReservedName);
+		}
+		if let Some(&symbol) = self.by_name.get(name) {
+			return Ok(Some(symbol));
 		}
 		if is_numeric(name) {
 			return Err(AlphabetError::NumericName {
 				name: name.to_owned(),
 			});
 		}
-		Ok(self.by_name.get(name).copied())
+		Ok(None)
 	}
 
 	/// The symbol named `name`, if any. `<eps>` gives [`Symbol::EPSILON`].
@@ -270,15 +323,27 @@ impl Alphabet {
 		self.next_symbol().value()
 	}
 
-	/// Records the names that the parser added. Skips names that printing would write as the number
-	/// of a symbol: the shim only mints such names for a numeric token that already names a symbol,
-	/// where the parser has resolved it to that symbol.
+	/// Records the names that the parser added, with the symbols it gave them. A number that the parser
+	/// read as the symbol of that number stays unnamed, so the next parse reads the number as it again;
+	/// a number whose own symbol was taken keeps its name, so the next parse finds the same symbol.
 	pub(crate) fn add_parsed_names(&mut self, names: Vec<String>, symbols: &[u32]) {
+		self.add_names(names, symbols, false);
+	}
+
+	/// Records the names that a construction added, numeric ones included: a mintermized section names
+	/// its minterms `0`, `1`, …, and two constructions over one alphabet must read them as the same
+	/// symbols.
+	pub(crate) fn add_minterm_names(&mut self, names: Vec<String>, symbols: &[u32]) {
+		self.add_names(names, symbols, true);
+	}
+
+	fn add_names(&mut self, names: Vec<String>, symbols: &[u32], keep_numeric: bool) {
 		for (name, &symbol) in names.into_iter().zip(symbols) {
-			if is_numeric(&name) {
-				continue;
+			if keep_numeric || !is_numeric(&name) || name != symbol.to_string() {
+				self.add_named(name, Symbol::new(symbol));
+			} else {
+				self.symbols.entry(Symbol::new(symbol)).or_insert(None);
 			}
-			self.add_named(name, Symbol::new(symbol));
 		}
 	}
 }
@@ -382,7 +447,7 @@ impl fmt::Display for DisplayWord<'_> {
 mod serde_impl {
 	use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-	use super::{Alphabet, is_numeric};
+	use super::Alphabet;
 	use crate::Symbol;
 
 	/// An alphabet serializes as a list of `(symbol, name)` pairs in ascending order of symbols.
@@ -413,11 +478,7 @@ mod serde_impl {
 							"the name {name} is reserved"
 						)));
 					}
-					Some(name) if is_numeric(&name) => {
-						return Err(serde::de::Error::custom(format!(
-							"the name {name} is only digits"
-						)));
-					}
+					// Numeric names are accepted, as `insert_named` binds them.
 					Some(name) if alphabet.by_name.contains_key(&name) => {
 						return Err(serde::de::Error::custom(format!(
 							"name {name:?} appears twice"
@@ -428,6 +489,16 @@ mod serde_impl {
 						alphabet.symbols.insert(symbol, None);
 					}
 				}
+			}
+			// Pairs come in any order, so the collision is checked once all are in.
+			if let Some(name) = alphabet
+				.by_name
+				.keys()
+				.find(|name| alphabet.names_unnamed(name))
+			{
+				return Err(serde::de::Error::custom(format!(
+					"the name {name:?} is the number of an unnamed symbol"
+				)));
 			}
 			Ok(alphabet)
 		}

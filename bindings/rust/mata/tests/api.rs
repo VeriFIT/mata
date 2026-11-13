@@ -282,15 +282,72 @@ fn numeric_names_are_rejected() -> Result<(), Error> {
 		Alphabet::from_names(["7"]),
 		Err(AlphabetError::NumericName { name: "7".into() })
 	);
+	// `insert_named` binds a numeric name (the "bytes" script alphabet does), so it must reload.
+	let mut bytes = Alphabet::new();
+	bytes.insert_named("1", Symbol::new(49))?;
 	#[cfg(feature = "serde")]
 	{
-		let error = serde_json::from_str::<Alphabet>("[[1, \"1\"]]").unwrap_err();
-		assert!(error.to_string().contains("only digits"), "{error}");
+		let text = serde_json::to_string(&bytes).unwrap();
+		assert_eq!(serde_json::from_str::<Alphabet>(&text).unwrap(), bytes);
 	}
+	// The parser resolves a name before a number, so the `.mata` text keeps symbol 49.
+	let nfa = Nfa::from_word(&[Symbol::new(49)]);
+	let back = Nfa::parse_mata(&nfa.display_with(&bytes).to_string(), &mut bytes)?;
+	assert!(back.accepts(&[Symbol::new(49)]));
+	assert!(!back.accepts(&[Symbol::new(1)]));
 	// The empty name is digits-and-nothing: not numeric, still rejected by round-trip rules as before.
 	let mut empty = Alphabet::new();
 	let symbol = empty.insert_name("")?;
 	assert_eq!(u32::from(symbol), 0);
+	Ok(())
+}
+
+#[test]
+fn insert_named_rejects_the_epsilon_name() {
+	let mut sigma = Alphabet::new();
+	assert_eq!(
+		sigma.insert_named("<eps>", Symbol::new(5)),
+		Err(AlphabetError::Epsilon)
+	);
+	assert_eq!(sigma.name(Symbol::new(5)), None);
+	assert!(sigma.is_empty());
+}
+
+#[test]
+fn a_numeric_name_bound_by_insert_named_is_found() -> Result<(), Error> {
+	let mut sigma = Alphabet::new();
+	sigma.insert_named("0", Symbol::new(48))?;
+	assert_eq!(sigma.insert_name("0"), Ok(Symbol::new(48)));
+	assert_eq!(
+		sigma.insert_name("1"),
+		Err(AlphabetError::NumericName { name: "1".into() })
+	);
+	Ok(())
+}
+
+#[test]
+fn a_numeric_name_never_shadows_an_unnamed_symbol() -> Result<(), Error> {
+	// Printing writes an unnamed symbol as its number, so that number cannot also name another symbol:
+	// the transition over symbol 1 would read back over symbol 49.
+	let mut sigma = Alphabet::from_symbols([Symbol::new(1)])?;
+	assert_eq!(
+		sigma.insert_named("1", Symbol::new(49)),
+		Err(AlphabetError::NumericName { name: "1".into() })
+	);
+	let nfa = Nfa::from_word(&[Symbol::new(1)]);
+	let back = Nfa::parse_mata(&nfa.display_with(&sigma).to_string(), &mut sigma)?;
+	assert!(back.accepts(&[Symbol::new(1)]));
+
+	let mut named = Alphabet::new();
+	named.insert_named("1", Symbol::new(49))?;
+	assert_eq!(
+		named.insert(Symbol::new(1)),
+		Err(AlphabetError::NumericName { name: "1".into() })
+	);
+	// Naming the symbol itself by its own number is no collision.
+	sigma.insert_named("7", Symbol::new(7))?;
+	#[cfg(feature = "serde")]
+	assert!(serde_json::from_str::<Alphabet>(r#"[[49,"1"],[1,null]]"#).is_err());
 	Ok(())
 }
 
@@ -722,5 +779,39 @@ fn readme_example() -> Result<(), Error> {
 	assert!(b.accepts(&witness) && !a.accepts(&witness));
 	assert_eq!(a.minimize().num_states(), 4);
 	assert!(a.accepts(&word_from_bytes("aabb")));
+	Ok(())
+}
+
+/// A number the alphabet has no name for is the symbol of that number in every parse, as it is printed.
+#[test]
+fn a_number_parses_as_its_own_symbol_in_every_parse() -> Result<(), Error> {
+	let section = |symbol: &str| {
+		format!("@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 {symbol} q1\n")
+	};
+	let mut sigma = Alphabet::from_names(["a"])?;
+	let five = Nfa::parse_mata(&section("5"), &mut sigma)?;
+	let one = Nfa::parse_mata(&section("1"), &mut sigma)?;
+	assert!(five.accepts(&[Symbol::new(5)]) && one.accepts(&[Symbol::new(1)]));
+	assert!(Nfa::parse_mata(&section("5"), &mut sigma)?.is_equivalent_to(&five));
+	assert_eq!((sigma.name(Symbol::new(5)), sigma.len()), (None, 3));
+	Ok(())
+}
+
+/// A number whose own symbol has a name gets a new symbol once, and keeps it in later parses.
+#[test]
+fn a_number_whose_symbol_is_named_keeps_the_symbol_it_got() -> Result<(), Error> {
+	let section = |symbol: &str| {
+		format!("@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 {symbol} q1\n")
+	};
+	let mut sigma = Alphabet::from_names(["a"])?;
+	let zero = Nfa::parse_mata(&section("0"), &mut sigma)?;
+	assert!(!zero.accepts(&[Symbol::new(0)]));
+	Nfa::parse_mata(&section("b"), &mut sigma)?;
+	assert!(Nfa::parse_mata(&section("0"), &mut sigma)?.is_equivalent_to(&zero));
+	// A number with a leading zero is a name, so it never takes the free symbol 3 below the symbol 5.
+	Nfa::parse_mata(&section("5"), &mut sigma)?;
+	let leading = Nfa::parse_mata(&section("03"), &mut sigma)?;
+	assert!(!leading.accepts(&[Symbol::new(3)]));
+	assert!(Nfa::parse_mata(&section("03"), &mut sigma)?.is_equivalent_to(&leading));
 	Ok(())
 }

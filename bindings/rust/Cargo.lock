@@ -344,6 +344,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "mata-cli"
+version = "0.1.0"
+dependencies = [
+ "mata",
+]
+
+[[package]]
 name = "mata-sys"
 version = "0.1.0"
 dependencies = [

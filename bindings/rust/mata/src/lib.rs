@@ -3,25 +3,28 @@
 
 pub mod alphabet;
 mod error;
+mod intermediate;
 mod limits;
 pub mod nfa;
 pub mod nft;
 mod options;
 #[cfg(feature = "serde")]
 mod serde_impl;
+pub mod strings;
 mod transitions;
 mod types;
 
 pub use alphabet::Alphabet;
 pub use error::{
-	AlphabetError, Error, InvalidAutomaton, LimitExceeded, NftError, NoSuchState, ParseError,
-	RegexError,
+	AlphabetError, Error, IntermediateError, InvalidAutomaton, LimitExceeded, NftError,
+	NoSuchState, ParseError, RegexError, ReplaceError, Requirement, UnmetRequirement,
 };
+pub use intermediate::IntermediateAutomaton;
 pub use limits::Limits;
 pub use nfa::Nfa;
 pub use options::{
-	CheckAlgorithm, Complementation, Determinization, Direction, Minimization, Reduction,
-	ResidualConstruction,
+	CheckAlgorithm, Complementation, Determinization, Direction, Minimization,
+	ProductFinalCondition, Reduction, ResidualConstruction,
 };
 pub use types::{Distinction, Run, Side, State, Symbol, Transition, Word, word_from_bytes};
 

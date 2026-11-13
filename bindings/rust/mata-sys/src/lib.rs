@@ -321,6 +321,8 @@ pub mod ffi {
 			algorithm: CheckAlgorithm,
 			counterexample: &mut Vec<u32>,
 		) -> Result<bool>;
+		/// [`is_universal`] without a counterexample, which Mata decides with less bookkeeping.
+		fn decide_universal(nfa: &Nfa, symbols: &[u32], algorithm: CheckAlgorithm) -> Result<bool>;
 		/// Whether L(smaller) ⊆ L(bigger); otherwise writes a word of L(smaller) \ L(bigger).
 		fn is_included(
 			smaller: &Nfa,
@@ -328,8 +330,12 @@ pub mod ffi {
 			algorithm: CheckAlgorithm,
 			counterexample: &mut Vec<u32>,
 		) -> Result<bool>;
+		/// [`is_included`] without a counterexample, which Mata decides with less bookkeeping.
+		fn decide_included(smaller: &Nfa, bigger: &Nfa, algorithm: CheckAlgorithm) -> Result<bool>;
 		/// Whether L(lhs) ∩ L(rhs) = ∅, without building the product; otherwise writes a common word.
 		fn is_disjoint(lhs: &Nfa, rhs: &Nfa, common_word: &mut Vec<u32>) -> Result<bool>;
+		/// [`is_disjoint`] without a common word, which Mata decides with less bookkeeping.
+		fn decide_disjoint(lhs: &Nfa, rhs: &Nfa) -> Result<bool>;
 
 		// Words.
 
@@ -338,6 +344,35 @@ pub mod ffi {
 		fn words(nfa: &Nfa, max_length: usize) -> Result<UniquePtr<WordStream>>;
 		/// Writes the next word; false at the end.
 		fn next_word(stream: Pin<&mut WordStream>, word: &mut Vec<u32>) -> Result<bool>;
+
+		// Strings (`mata::applications::strings`). Word sets are written as all their symbols concatenated
+		// (`symbols`) and the length of each word (`lengths`), in ascending order of the words. The word
+		// queries remove epsilon transitions first.
+
+		/// The shortest accepted words (`get_shortest_words`).
+		fn strings_shortest_words(
+			nfa: &Nfa,
+			symbols: &mut Vec<u32>,
+			lengths: &mut Vec<usize>,
+		) -> Result<()>;
+		/// The longest accepted words (`get_longest_words`); false if the language is infinite.
+		fn strings_longest_words(
+			nfa: &Nfa,
+			symbols: &mut Vec<u32>,
+			lengths: &mut Vec<usize>,
+		) -> Result<bool>;
+		/// The accepted words of length one, ascending (`get_accepted_symbols`).
+		fn strings_accepted_symbols(nfa: &Nfa) -> Result<Vec<u32>>;
+		/// The pairs (offset, period) of `get_word_lengths`, flattened and ascending: the words have the
+		/// lengths offset + k · period for all k ≥ 0, over all pairs.
+		fn strings_word_lengths(nfa: &Nfa) -> Result<Vec<usize>>;
+		/// Whether the language is {ε} (`is_lang_eps`).
+		fn strings_is_lang_eps(nfa: &Nfa) -> Result<bool>;
+		/// The trimmed segments of a segment automaton between the transitions over `epsilons`, from the
+		/// initial to the final states (`seg_nfa::Segmentation::get_segments`).
+		fn strings_segments(nfa: &Nfa, epsilons: &[u32]) -> Result<UniquePtr<ParsedNfas>>;
+		/// The automaton without the transitions leaving final states (`replace::reluctant_nfa`).
+		fn strings_reluctant_nfa(nfa: &Nfa) -> Result<UniquePtr<Nfa>>;
 
 		// Printing.
 
@@ -352,11 +387,117 @@ pub mod ffi {
 			names: &[String],
 			symbols: &[u32],
 		) -> Result<String>;
+
+		// Further operations of the library.
+
+		/// L(lhs) · L(rhs), joined by epsilon transitions from the final states of `lhs` to the initial
+		/// states of `rhs`.
+		fn concatenate_over_epsilon(lhs: &Nfa, rhs: &Nfa) -> Result<UniquePtr<Nfa>>;
+		/// The automaton itself (copied) when it is deterministic, otherwise its subset construction.
+		fn as_dfa(nfa: &Nfa) -> Result<UniquePtr<Nfa>>;
+		/// L(nfa) concatenated `power` times; `power` 0 gives the empty word.
+		fn concatenate_nth_power(nfa: &Nfa, power: u32) -> Result<UniquePtr<Nfa>>;
+		/// L(lhs) ∪ L(rhs) as a DFA, by the product with either state final. Throws unless both are
+		/// deterministic and complete over `symbols`.
+		fn union_det_complete(lhs: &Nfa, rhs: &Nfa, symbols: &[u32]) -> Result<UniquePtr<Nfa>>;
+		/// The product: a pair of states is final when both are (`either_final` false) or either is.
+		/// Symbols from `first_epsilon` up move one side only.
+		fn product(
+			lhs: &Nfa,
+			rhs: &Nfa,
+			either_final: bool,
+			first_epsilon: u32,
+		) -> Result<UniquePtr<Nfa>>;
+		/// The words of `nfa` with a prefix from L(prefixes) removed; not trimmed.
+		fn left_quotient(nfa: &Nfa, prefixes: &Nfa, first_epsilon: u32) -> Result<UniquePtr<Nfa>>;
+		/// The words of `nfa` with a suffix from L(suffixes) removed; not trimmed.
+		fn right_quotient(nfa: &Nfa, suffixes: &Nfa, first_epsilon: u32) -> Result<UniquePtr<Nfa>>;
+		/// The automaton over code points of a UTF-8-encoded byte automaton. Throws where a multi-byte
+		/// sequence does not end with a continuation byte.
+		fn decode_utf8(nfa: &Nfa) -> Result<UniquePtr<Nfa>>;
+		/// The automaton with every transition relabelled to `abstract_symbol`.
+		fn one_letter_automaton(nfa: &Nfa, abstract_symbol: u32) -> Result<UniquePtr<Nfa>>;
+		/// Whether every strongly connected component is a simple cycle.
+		fn is_flat(nfa: &Nfa) -> Result<bool>;
+		/// Whether some prefix of `word` is accepted; `use_epsilon` follows epsilon transitions.
+		fn accepts_prefix(nfa: &Nfa, word: &[u32], use_epsilon: bool) -> Result<bool>;
+		/// A word over `symbols` that is not accepted, by a lazy complement; false if there is none.
+		fn word_from_complement(nfa: &Nfa, symbols: &[u32], word: &mut Vec<u32>) -> Result<bool>;
+		/// A word of L(included) \ L(excluded), by a lazy difference; false if there is none.
+		fn word_from_difference(
+			included: &Nfa,
+			excluded: &Nfa,
+			word: &mut Vec<u32>,
+		) -> Result<bool>;
+		/// Tabakov and Vardi's random automaton over the symbols `0..alphabet_size`. Throws unless
+		/// `transition_ratio` is in `[0, num_states]` and `final_density` in `[0, 1]`.
+		fn random_tabakov_vardi(
+			num_states: usize,
+			alphabet_size: usize,
+			transition_ratio: f64,
+			final_density: f64,
+			has_seed: bool,
+			seed: u32,
+		) -> Result<UniquePtr<Nfa>>;
+
+		// Intermediate automata: parsed `.mata` sections that are not constructed yet.
+
+		/// `mata::IntermediateAut`.
+		#[namespace = "mata"]
+		type IntermediateAut;
+		/// The intermediate automata of one parse or one mintermization.
+		type IntermediateAuts;
+		/// Intermediate automata borrowed for `'a`, to mintermize together.
+		type IntermediateRefs<'a>;
+		/// `IntermediateAut::is_nfa`: the section describes an NFA.
+		fn is_nfa(self: &IntermediateAut) -> bool;
+		/// `IntermediateAut::is_nft`: the section describes an NFT.
+		fn is_nft(self: &IntermediateAut) -> bool;
+		/// `IntermediateAut::is_afa`: the section describes an AFA.
+		fn is_afa(self: &IntermediateAut) -> bool;
+		/// `IntermediateAut::is_bitvector`: the section has a bit-vector alphabet.
+		fn is_bitvector(self: &IntermediateAut) -> bool;
+
+		/// Mata's `parse_mf` followed by `IntermediateAut::parse_from_mf`: every section of a `.mata`
+		/// text, bit-vector sections left as they are.
+		fn intermediate_parse_mata(text: &str) -> Result<UniquePtr<IntermediateAuts>>;
+		/// The number of intermediate automata.
+		fn intermediate_auts_len(automata: &IntermediateAuts) -> usize;
+		/// Moves out the intermediate automaton at `index`; taking one twice is an error.
+		fn intermediate_auts_take(
+			automata: Pin<&mut IntermediateAuts>,
+			index: usize,
+		) -> Result<UniquePtr<IntermediateAut>>;
+		/// An empty list of borrowed intermediate automata.
+		fn intermediate_refs_new<'a>() -> UniquePtr<IntermediateRefs<'a>>;
+		/// Appends `automaton`.
+		fn intermediate_refs_push<'a>(
+			refs: Pin<&mut IntermediateRefs<'a>>,
+			automaton: &'a IntermediateAut,
+		);
+		/// `Mintermization::mintermize` of the automata of `refs` together, so that they share their
+		/// minterms. Throws unless every one is an NFA or AFA with a bit-vector alphabet.
+		fn intermediate_mintermize(refs: &IntermediateRefs) -> Result<UniquePtr<IntermediateAuts>>;
+		/// `nfa::builder::construct` of an explicit NFA section, with symbol names as in
+		/// [`parse_mata`].
+		fn intermediate_construct_nfa(
+			automaton: &IntermediateAut,
+			names: &[String],
+			named_symbols: &[u32],
+			next_symbol: u32,
+			new_names: &mut Vec<String>,
+			new_symbols: &mut Vec<u32>,
+		) -> Result<UniquePtr<Nfa>>;
+		/// Mata's `operator<<` of an intermediate automaton.
+		fn intermediate_print(automaton: &IntermediateAut) -> Result<String>;
 	}
 }
 
 /// Mata's epsilon symbol, `u32::MAX`.
 pub const EPSILON: u32 = u32::MAX;
+
+/// The version of the `libmata` this crate links, as its CMake package declares it.
+pub const LIBRARY_VERSION: &str = env!("MATA_LIBRARY_VERSION");
 
 impl std::fmt::Debug for ffi::Automaton {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -388,5 +529,25 @@ impl std::fmt::Debug for ffi::ParsedNfas {
 impl std::fmt::Debug for ffi::WordStream {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		f.debug_struct("WordStream").finish_non_exhaustive()
+	}
+}
+
+impl std::fmt::Debug for ffi::IntermediateAut {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("IntermediateAut").finish_non_exhaustive()
+	}
+}
+
+impl std::fmt::Debug for ffi::IntermediateAuts {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("IntermediateAuts")
+			.field("len", &ffi::intermediate_auts_len(self))
+			.finish()
+	}
+}
+
+impl std::fmt::Debug for ffi::IntermediateRefs<'_> {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("IntermediateRefs").finish_non_exhaustive()
 	}
 }

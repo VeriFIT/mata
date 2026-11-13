@@ -38,6 +38,14 @@ SymbolSet NameTable::get_alphabet_symbols() const {
 	return SymbolSet(std::move(symbols));
 }
 
+std::vector<mata::IntermediateAut> mintermize(const std::vector<const mata::IntermediateAut*>& automata) {
+	// CUDD swaps a process-wide out-of-memory handler, so one thread at a time.
+	static auto cudd_mutex = std::mutex();
+	const auto cudd_lock = std::lock_guard(cudd_mutex);
+	auto mintermization = mata::Mintermization();
+	return mintermization.mintermize(automata);
+}
+
 std::vector<mata::IntermediateAut> parse_sections(const rust::Str text) {
 	auto sections = mata::IntermediateAut::parse_from_mf(mata::parser::parse_mf(std::string(text)));
 
@@ -46,11 +54,7 @@ std::vector<mata::IntermediateAut> parse_sections(const rust::Str text) {
 		if (section.is_bitvector()) { bitvector_sections.push_back(&section); }
 	}
 	if (!bitvector_sections.empty()) {
-		// CUDD swaps a process-wide out-of-memory handler, so one thread at a time.
-		static auto cudd_mutex = std::mutex();
-		const auto cudd_lock = std::lock_guard(cudd_mutex);
-		auto mintermization = mata::Mintermization();
-		auto mintermized = mintermization.mintermize(bitvector_sections);
+		auto mintermized = mintermize(bitvector_sections);
 		auto next_mintermized = mintermized.begin();
 		for (auto& section : sections) {
 			if (section.is_bitvector()) { section = std::move(*next_mintermized++); }
@@ -87,6 +91,27 @@ void check_delta(const mata::Automaton& automaton) {
 	}
 }
 
+Symbol NumberingAlphabet::translate_symb(const std::string& str) {
+	// More than 10 digits is more than any symbol, and too long for stoull. A number is written without
+	// leading zeros, so `01` is a name, as it is to Mata.
+	if (str.empty() || str.size() > 10 || (str.size() > 1 && str[0] == '0') ||
+		!std::ranges::all_of(str, [](const char c) { return c >= '0' && c <= '9'; }) ||
+		get_symbol_map().contains(str)) {
+		return *taken_.insert(OnTheFlyAlphabet::translate_symb(str)).first;
+	}
+	const auto number{std::stoull(str)};
+	if (number >= mata::nft::DONT_CARE || taken_.contains(static_cast<Symbol>(number))) {
+		return *taken_.insert(OnTheFlyAlphabet::translate_symb(str)).first;
+	}
+	bind(str, static_cast<Symbol>(number));
+	return static_cast<Symbol>(number);
+}
+
+void NumberingAlphabet::bind(const std::string& name, const Symbol symbol) {
+	add_new_symbol(name, symbol);
+	taken_.insert(symbol);
+}
+
 ParseAlphabet::ParseAlphabet(
 	const bool numeric_symbols,
 	const rust::Slice<const rust::String> names,
@@ -99,7 +124,7 @@ ParseAlphabet::ParseAlphabet(
 	if (names.size() != named_symbols.size()) { throw std::invalid_argument("names and symbols differ in length"); }
 	for (std::size_t i = 0; i < names.size(); ++i) {
 		auto name = std::string(names[i]);
-		on_the_fly_.add_new_symbol(name, named_symbols[i]);
+		on_the_fly_.bind(name, named_symbols[i]);
 		known_names_.insert(std::move(name));
 	}
 }
@@ -111,7 +136,8 @@ void ParseAlphabet::report_new_names(rust::Vec<rust::String>& new_names, rust::V
 	auto added = std::vector<std::pair<Symbol, std::string>>();
 	for (const auto& [name, symbol] : on_the_fly_.get_symbol_map()) {
 		if (known_names_.contains(name)) { continue; }
-		if (symbol < first_new_symbol_ || symbol >= mata::nft::DONT_CARE) {
+		// A number that is its own symbol may lie below the first new symbol, in a gap of the alphabet.
+		if ((symbol < first_new_symbol_ && name != std::to_string(symbol)) || symbol >= mata::nft::DONT_CARE) {
 			throw std::runtime_error("the alphabet has no symbol left for the name '" + name + "'");
 		}
 		added.emplace_back(symbol, name);
