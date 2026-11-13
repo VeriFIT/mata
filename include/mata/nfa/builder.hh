@@ -159,7 +159,7 @@ class BitvectorNfaReader {
 	 * @param keep_quotes Whether quoted names of body lines keep their quotes, see @c mata::parser::parse_mf().
 	 * @param state_map If not @c nullptr, the map from state names to states of this automaton, see @c construct().
 	 *  @c build() reads and fills it, so it has to outlive the call of @c build().
-	 * @throws std::runtime_error A bitvector NFA the general reader rejects.
+	 * @throws std::runtime_error A bitvector NFA the general reader rejects; nothing of it is kept.
 	 */
 	Read add(std::string_view nfa_in_mata, bool keep_quotes = false, NameStateMap* state_map = nullptr);
 

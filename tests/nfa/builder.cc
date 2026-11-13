@@ -629,6 +629,13 @@ TEST_CASE("BitvectorNfaReader leaves no trace of the inputs it does not keep") {
 		CHECK(reader.add(input, false, states.data()) == Read::Directly);
 	}
 
+	SECTION("an input the general reader throws on") {
+		// The second transition has a disjunction for its target.
+		input = header + "q0 y q1\n";
+		CHECK(reader.add(input, false, states.data()) == Read::Directly);
+		CHECK_THROWS(reader.add(header + "q0 x q1\nq0 x & y | z & q1\n"));
+	}
+
 	const std::vector<Nfa> read{reader.build()};
 	const auto [alone, alone_states]{read_alone(input)};
 	check_same_up_to_names(read, states, alone, alone_states);

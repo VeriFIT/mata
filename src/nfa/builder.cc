@@ -588,9 +588,15 @@ builder::BitvectorNfaReader::Read builder::BitvectorNfaReader::add(
 	if (!inter_aut.is_bitvector()) { return Read::Rejected; }
 	BitvectorAutomaton aut;
 	aut.state_map = state_map;
-	for (const auto& transition : inter_aut.transitions) {
-		const BDD bdd{impl_->mintermization.graph_to_bdd_nfa(inter_aut.get_symbol_part_of_transition(transition))};
-		if (!bdd.IsZero()) { impl_->predicate_of(bdd); }
+	try {
+		for (const auto& transition : inter_aut.transitions) {
+			const BDD bdd{impl_->mintermization.graph_to_bdd_nfa(inter_aut.get_symbol_part_of_transition(transition))};
+			if (!bdd.IsZero()) { impl_->predicate_of(bdd); }
+		}
+	} catch (...) {
+		// A malformed later transition throws after the earlier ones were added.
+		roll_back();
+		throw;
 	}
 	aut.general = std::move(inter_aut);
 	impl_->automata.push_back(std::move(aut));
