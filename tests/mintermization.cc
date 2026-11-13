@@ -13,6 +13,7 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "mata/applications/strings.hh"
+#include "mata/nfa/builder.hh"
 #include "mata/parser/inter-aut.hh"
 #include "mata/parser/mintermization.hh"
 
@@ -730,4 +731,38 @@ TEST_CASE("mata::Mintermization::mintermize converts and prints deep formulas") 
 	const auto symbol = [&](const size_t index) { return res.transitions[index].second.children()[0].node().name(); };
 	CHECK(symbol(0) == symbol(1));
 	CHECK(symbol(0) != symbol(2));
+}
+
+TEST_CASE("mata::Mintermization keeps the constants apart from the symbols of their names") {
+	const auto parse = [](const std::string& file) { return mata::IntermediateAut::parse_from_mf(parse_mf(file))[0]; };
+	// The marked symbol a\true has the name \true, which the constant \true has too.
+	const std::string marked{"@NFA-bits\n%Alphabet-marked\n%Initial q0\n%Final q1\nq0 a\\true q1\nq0 !a\\true q2\n"};
+	// The names of the target states, without their marker q.
+	const auto targets = [](const mata::IntermediateAut& aut) {
+		std::set<std::string> names;
+		for (const auto& [source, formula] : aut.transitions) { names.emplace(formula.children()[1].node().name()); }
+		return names;
+	};
+
+	SECTION("across calls on one object") {
+		mata::Mintermization reused{};
+		CHECK(
+			reused.mintermize(parse("@NFA-bits\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 \\true q1\n"))
+				.transitions.size() == 1
+		);
+		CHECK(targets(reused.mintermize(parse(marked))) == std::set<std::string>{"1", "2"});
+	}
+
+	SECTION("in one automaton") {
+		const std::string both{marked + "q0 \\true q1\n"};
+		// \true over both minterms of a\true, a\true and !a\true over one each.
+		CHECK(mata::Mintermization{}.mintermize(parse(both)).transitions.size() == 4);
+		mata::nfa::builder::NameStateMap state_map;
+		mata::nfa::builder::BitvectorNfaReader reader;
+		reader.add(both, false, &state_map);
+		const mata::nfa::Nfa nfa{reader.build().front()};
+		// The same transitions, the two to q1 over a\true merged.
+		CHECK(nfa.delta.num_of_transitions() == 3);
+		CHECK(nfa.delta.get_successors(state_map.at("0")).contains(state_map.at("2")));
+	}
 }

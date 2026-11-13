@@ -42,6 +42,10 @@ class Mintermization {
 #endif
 
 	Cudd bdd_mng_{}; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
+	/// The constants, apart from @c symbol_to_bddvar_: a symbol may have the name of a constant, as `a\true` does.
+	BDD true_bdd_{bdd_mng_.bddOne()};
+	BDD false_bdd_{bdd_mng_.bddZero()};
+	/// The variables of the symbols, by name.
 	utils::StringMap<BDD> symbol_to_bddvar_{};
 	/// The BDDs of the formulas @c graph_to_bdd_nfa() converted, keyed by a serialization of the formula. A formula
 	///  usually labels many transitions. Its BDD depends only on @c symbol_to_bddvar_, so the entries stay valid across
@@ -117,11 +121,11 @@ class Mintermization {
 	BDD graph_to_bdd_nfa(FormulaGraphView graph);
 
 	/**
-	 * The BDD of the bitvector symbol @p name, as @c graph_to_bdd_nfa() makes it for an operand of that name: the
-	 *  BDD of the first operand of that name, which is a fresh variable or the @p constant the operand stands for.
+	 * The BDD of an operand, as @c graph_to_bdd_nfa() makes it: the @p constant the operand stands for, or else the
+	 *  variable of the bitvector symbol @p name, fresh for the first operand of that name.
 	 * @param name Name of the symbol.
-	 * @param constant The constant (@c \\true or @c \\false) the operand stands for, if it does.
-	 * @return The BDD this object keeps for @p name, valid until a @c rollback() past its creation.
+	 * @param constant The constant (@c \\true or @c \\false) the operand stands for, if it does, whatever its @p name.
+	 * @return The BDD this object keeps for the operand, valid until a @c rollback() past its creation.
 	 */
 	const BDD& symbol_bdd(std::string_view name, std::optional<bool> constant = std::nullopt);
 

@@ -267,9 +267,9 @@ mata::Mintermization::OptionalBdd mata::Mintermization::graph_to_bdd_afa(const F
 #endif
 
 const BDD& mata::Mintermization::symbol_bdd(const std::string_view name, const std::optional<bool> constant) {
+	if (constant.has_value()) { return *constant ? true_bdd_ : false_bdd_; }
 	if (const auto it{symbol_to_bddvar_.find(name)}; it != symbol_to_bddvar_.end()) { return it->second; }
-	const BDD res{constant.has_value() ? (*constant ? bdd_mng_.bddOne() : bdd_mng_.bddZero()) : bdd_mng_.bddVar()};
-	const auto it{symbol_to_bddvar_.emplace(name, res).first};
+	const auto it{symbol_to_bddvar_.emplace(name, bdd_mng_.bddVar()).first};
 	added_symbols_.push_back(&it->first);
 	return it->second;
 }
