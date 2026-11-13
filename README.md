@@ -88,6 +88,25 @@ The option is off by default and `cmake` fails if mimalloc cannot be found. The 
 The allocator applies to the final executable, so consumers linking `libmata.a` without the exported CMake target must also link mimalloc themselves.
 A measurement over Mata operations on the automata-lib-bench TACAS'24 experiments and selected NFT programs reduced total runtime by 26.6%; the effect varies by workload.
 
+Independently of the global allocator, Mata chooses how it allocates the heap blocks of `Delta` (the transitions of automata):
+
+| `MATA_DELTA_ALLOCATOR` | Behaviour                                                                                                                                                                                                                                              |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `std` (default)        | Global `operator new`/`delete`, i.e., whatever global allocator the executable uses.                                                                                                                                                                   |
+| `pool`                 | Thread-local 1 MiB chunks carved in allocation order, so a `Delta` built state by state lies in consecutive memory. Faster on composition-heavy workloads; the chunks are reused, but never returned to the operating system before the process exits. |
+
+Select it per process with the environment variable, without rebuilding:
+
+```shell
+MATA_DELTA_ALLOCATOR=pool ./my-program
+```
+
+The variable is read on the first allocation and fixed for the rest of the process; an unknown value throws `std::invalid_argument`.
+The CMake option of the same name sets the default used when the variable is unset: `make release MATA_DELTA_ALLOCATOR=pool`.
+
+mimalloc, in contrast, replaces the allocator of the whole process, so it is chosen when the executable is linked (`MATA_USE_MIMALLOC=ON`) or started (`LD_PRELOAD=/path/to/libmimalloc.so ./my-program`), never while it runs.
+The two combine freely. When the memory runs out, the system allocator makes Mata throw `std::bad_alloc`, while mimalloc may abort the process instead.
+
 In order to install the library, you can run
 
 ```shell

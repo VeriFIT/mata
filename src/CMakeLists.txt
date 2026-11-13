@@ -35,6 +35,13 @@ if (MATA_USE_MIMALLOC)
 	target_link_libraries (libmata PRIVATE mimalloc)
 endif ()
 
+if (MATA_DELTA_ALLOCATOR STREQUAL "pool")
+	set_source_files_properties (
+		"${CMAKE_CURRENT_SOURCE_DIR}/delta-allocator.cc" PROPERTIES COMPILE_DEFINITIONS
+																	MATA_DELTA_ALLOCATOR_DEFAULT_POOL
+	)
+endif ()
+
 target_include_directories (
 	libmata
 	PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include> $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
