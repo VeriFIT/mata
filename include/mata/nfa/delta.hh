@@ -684,9 +684,10 @@ class Delta {
 	 * @brief Add transitions given in an arbitrary order.
 	 *
 	 * Sorts @p transitions by (source, symbol, target) and deduplicates them once, then writes whole symbol posts,
-	 *  instead of searching and shifting per transition as repeated @c add() does. Duplicates collapse and states
-	 *  up to the largest mentioned one are allocated, exactly as with repeated @c add().
-	 * @param[in,out] transitions Transitions to add; sorted in place, so the vector is consumed.
+	 *  instead of searching and shifting per transition as repeated @c add() does. An empty delta gets the transitions
+	 *  bucketed by source in linear time, which leaves only the transitions of each source to sort. Duplicates collapse
+	 *  and states up to the largest mentioned one are allocated, exactly as with repeated @c add().
+	 * @param[in,out] transitions Transitions to add; consumed.
 	 */
 	void add(std::vector<Transition>&& transitions);
 	void remove(State source, Symbol symbol, State target);
