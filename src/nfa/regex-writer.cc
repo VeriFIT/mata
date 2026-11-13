@@ -1350,7 +1350,7 @@ Regex find_short_regex(const Nfa& aut, Characters& characters, Regexes& regexes)
 	if (automata.front().num_of_states() <= max_states_to_rebuild) {
 		// Automata of the same language: a smaller nondeterministic one, the minimal deterministic one, and the
 		//  minimal one deterministic backwards. Which of them has the shortest regex depends on the language.
-		const Nfa plain{trim(remove_epsilon(aut))};
+		const Nfa plain{remove_epsilon(trim(aut))};
 		const size_t max_states{4 * plain.num_of_states() + 16};
 		automata.push_back(label_by_regexes(reduce(plain), characters, regexes));
 		if (const std::optional<Nfa> minimal{minimize_within(plain, max_states)}; minimal.has_value()) {
