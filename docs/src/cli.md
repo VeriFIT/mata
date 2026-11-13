@@ -430,7 +430,8 @@ language page specifies but this build does not have are listed in the
 - `automaton:` operations are the names that exist under both `nfa:` and `nft:`, and the kind of their automaton
   operands picks one: `(automaton:determinize a)` is `nfa:determinize` for an NFA and `nft:determinize` for a
   transducer, and the result is an automaton of that kind. The operands must be of one kind: a call that gets both
-  reports `'automaton:intersection' got an Nfa and an Nft; convert one with nft:from-nfa-with-levels-zero or nft:to-nfa`,
+  reports
+  `'automaton:intersection' got an Nfa and an Nft; convert one with nft:from-nfa-with-levels-zero or nft:to-nfa`,
   and a call with no automaton operand reports `'automaton:determinize' needs an Nfa or an Nft operand`. A hint the
   `nfa:` operation of that name does not take is an error, as for the `nfa:` name itself.
 - The load-in-separate-steps path is served whole: `intermediate:parse-from-mata` returns the intermediate automata of

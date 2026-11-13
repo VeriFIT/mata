@@ -658,18 +658,28 @@ when the script runs. Operands of different kinds are an error; convert explicit
 
 ### Other namespaces
 
-| Script                                                                                                            | Library                                                                        |
-| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `strings:get-shortest-words`, `strings:get-longest-words`                                                         | `get_shortest_words`, `get_longest_words`                                      |
-| `strings:get-words-of-lengths`, `strings:get-word-lengths`                                                        | `get_words_of_lengths`, `get_word_lengths`                                     |
-| `strings:get-accepted-symbols`, `strings:language-epsilon?`                                                       | `get_accepted_symbols`, `is_lang_eps`                                          |
-| `strings:get-segments`                                                                                            | `seg_nfa::Segmentation` for the given epsilon symbols, then its `get_segments` |
-| `strings:reluctant-nfa`, `strings:create-identity`                                                                | `replace::reluctant_nfa`, `replace::create_identity`                           |
-| `strings:create-identity-with-single-symbol-replace`                                                              | The `replace` function of the same name                                        |
-| `strings:replace-reluctant-regex`, `strings:replace-reluctant-literal`, `strings:replace-reluctant-single-symbol` | The `replace` functions of the same names                                      |
-| `alphabet:get-alphabet-symbols`, `alphabet:translate-symbol`, `alphabet:reverse-translate-symbol`                 | `Alphabet::get_alphabet_symbols`, `translate_symb`, `reverse_translate_symbol` |
-| `intermediate:parse-from-mata`                                                                                    | `parser::parse_mf` followed by `IntermediateAut::parse_from_mf`                |
-| `intermediate:mintermize`                                                                                         | `Mintermization::mintermize`, on one NFA or on a list of NFAs                  |
+| Script                                               | Library                                                   |
+| ---------------------------------------------------- | --------------------------------------------------------- |
+| `strings:get-shortest-words`                         | `get_shortest_words`                                      |
+| `strings:get-longest-words`                          | `get_longest_words`                                       |
+| `strings:get-words-of-lengths`                       | `get_words_of_lengths`                                    |
+| `strings:get-word-lengths`                           | `get_word_lengths`                                        |
+| `strings:get-accepted-symbols`                       | `get_accepted_symbols`                                    |
+| `strings:language-epsilon?`                          | `is_lang_eps`                                             |
+| `strings:get-segments`                               | `seg_nfa::Segmentation`, then `get_segments`              |
+| `strings:reluctant-nfa`                              | `replace::reluctant_nfa`                                  |
+| `strings:create-identity`                            | `replace::create_identity`                                |
+| `strings:create-identity-with-single-symbol-replace` | `replace::create_identity_with_single_symbol_replace`     |
+| `strings:replace-reluctant-regex`                    | `replace::replace_reluctant_regex`                        |
+| `strings:replace-reluctant-literal`                  | `replace::replace_reluctant_literal`                      |
+| `strings:replace-reluctant-single-symbol`            | `replace::replace_reluctant_single_symbol`                |
+| `alphabet:get-alphabet-symbols`                      | `Alphabet::get_alphabet_symbols`                          |
+| `alphabet:translate-symbol`                          | `translate_symb`                                          |
+| `alphabet:reverse-translate-symbol`                  | `reverse_translate_symbol`                                |
+| `intermediate:parse-from-mata`                       | `parser::parse_mf`, then `IntermediateAut::parse_from_mf` |
+| `intermediate:mintermize`                            | `Mintermization::mintermize`, on one NFA or a list        |
+
+`strings:get-segments` builds `seg_nfa::Segmentation` for the given epsilon symbols.
 
 Noodlification (`noodlify`, `noodlify_for_equation`, `noodlify_for_transducer`) is specific to one string solver and
 is not part of the language.
@@ -683,15 +693,15 @@ alphabet; `(script-alphabet)`.
 
 ## Reporting results
 
-| Form                        | Effect                                                                          | Value         |
-| --------------------------- | ------------------------------------------------------------------------------- | ------------- |
-| `(check condition)`         | Prints `true` or `false`                                                        | The `Bool`    |
-| `(check "label" condition)` | Prints the record `label: true` or `label: false`                               | The `Bool`    |
-| `(assert condition)`        | Reports a failure and its place if the condition is false; the script continues | The `Bool`    |
-| `(print value)`             | Prints the value to standard output                                             | The value     |
-| `(write value path)`        | Writes the value to a file                                                      | The value     |
-| `(echo string)`             | Prints the string                                                               | The string    |
-| `(get-witness)`             | See [Witnesses](#witnesses)                                                     | `Option Word` |
+| Form                        | Effect                                                        | Value         |
+| --------------------------- | ------------------------------------------------------------- | ------------- |
+| `(check condition)`         | Prints `true` or `false`                                      | The `Bool`    |
+| `(check "label" condition)` | Prints the record `label: true` or `label: false`             | The `Bool`    |
+| `(assert condition)`        | Reports a false condition and its place; the script continues | The `Bool`    |
+| `(print value)`             | Prints the value to standard output                           | The value     |
+| `(write value path)`        | Writes the value to a file                                    | The value     |
+| `(echo string)`             | Prints the string                                             | The string    |
+| `(get-witness)`             | See [Witnesses](#witnesses)                                   | `Option Word` |
 
 `print` and `write` return their argument, so they can stand in the middle of a pipeline. An automaton is printed in
 the `.mata` format; use `nfa:print-to-dot` to print a DOT graph instead: `(print (nfa:print-to-dot a))`.
@@ -773,15 +783,15 @@ emptiness: 0.0007
 
 ## Options
 
-| Option                 | Values                              | Meaning                                                                                                               |
-| ---------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `:alphabet`            | `"on-the-fly"` (default), `"bytes"` | The [script alphabet](#alphabets)                                                                                     |
-| `:default`             | An application with only hints      | Changes the default of a hint; see [Arguments](#arguments)                                                            |
-| `:produce-witnesses`   | `false` (default), `true`           | See [Witnesses](#witnesses)                                                                                           |
-| `:time-operations`     | `false` (default), `true`           | See [Timing](#timing)                                                                                                 |
-| `:optimize`            | `false` (default), `true`           | See [Optimizer](#optimizer)                                                                                           |
-| `:trace`               | `false` (default), `true`           | Prints every library call that is made, with its hints, to standard error                                             |
-| `:loops-and-recursion` | `false` (default), `true`           | Allows `loop` and functions that call themselves, for the whole file; see [Loops and recursion](#loops-and-recursion) |
+| Option                 | Values                              | Meaning                                              |
+| ---------------------- | ----------------------------------- | ---------------------------------------------------- |
+| `:alphabet`            | `"on-the-fly"` (default), `"bytes"` | The [script alphabet](#alphabets)                    |
+| `:default`             | Hint-only application               | Changes a hint default; see [Arguments](#arguments)  |
+| `:produce-witnesses`   | `false` (default), `true`           | See [Witnesses](#witnesses)                          |
+| `:time-operations`     | `false` (default), `true`           | See [Timing](#timing)                                |
+| `:optimize`            | `false` (default), `true`           | See [Optimizer](#optimizer)                          |
+| `:trace`               | `false` (default), `true`           | Prints each library call and hints to standard error |
+| `:loops-and-recursion` | `false` (default), `true`           | Enables [loops and recursion](#loops-and-recursion)  |
 
 `set-info` attaches information that does not change evaluation; see [Script information](#script-information).
 
