@@ -541,6 +541,10 @@ fn complement_completeness_and_universality_over_an_alphabet() -> Result<(), Err
 	let sigma_star = Nft::sigma_star(1)?;
 	assert!(sigma_star.is_universal(&alphabet) && sigma_star.is_complete(&alphabet)?);
 	assert!(sigma_star.complement(&alphabet)?.is_lang_empty());
+	// Without an initial state there is no word, so the complement has every word.
+	assert!(Nft::new(1)?.complement(&alphabet)?.is_universal(&alphabet));
+	let complement = Nft::new(2)?.complement(&alphabet)?;
+	assert!(complement.accepts(&[[a], [b]]) && complement.accepts(&[[b, b], [a, a]]));
 	// Universal through an epsilon edge, which Mata's check alone does not follow.
 	let mut epsilon = Nft::new(1)?;
 	let (source, target) = (epsilon.add_state(), epsilon.add_state());

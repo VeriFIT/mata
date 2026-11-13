@@ -57,6 +57,10 @@ fn union_det_complete_is_the_union_of_complete_deterministic_automata() -> Resul
 		.union_det_complete(&nondeterministic, &alphabet)
 		.unwrap_err();
 	assert_eq!(error.requirement(), Requirement::Deterministic);
+	// A transition under a symbol outside the alphabet is not complete over it, not a panic.
+	let outside = complete("c", &Alphabet::from_symbols([Symbol::from(b'c')])?);
+	let error = outside.union_det_complete(&a, &alphabet).unwrap_err();
+	assert_eq!(error.requirement(), Requirement::Complete);
 	Ok(())
 }
 

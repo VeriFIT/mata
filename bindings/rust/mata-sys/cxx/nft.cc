@@ -733,12 +733,16 @@ std::unique_ptr<Nft> nft_complement(const Nft& nft, const rust::Slice<const Symb
 	if (has_epsilon_edge(nft)) {
 		throw std::invalid_argument("the complement needs a transducer without epsilon transitions");
 	}
-	if (!uses_dont_care(nft)) { return boxed(mata::nft::complement(nft, alphabet)); }
+	// Mata completes only from the initial states, so without one the complement would be the empty
+	// word alone: seed a non-final initial state.
+	const bool seed = nft.initial.empty();
+	if (!seed && !uses_dont_care(nft)) { return boxed(mata::nft::complement(nft, alphabet)); }
+	auto prepared = Nft(nft);
+	prepared.levels.resize(prepared.num_of_states());
+	if (seed) { prepared.initial.insert(prepared.add_state_with_level(0)); }
 	// Mata's determinization reads DONT_CARE as one more symbol: spell it out over the alphabet first.
-	auto spelled = Nft(nft);
-	spelled.levels.resize(spelled.num_of_states());
-	spelled.unwind_jumps_inplace(alphabet, mata::nft::JumpMode::RepeatSymbol);
-	return boxed(mata::nft::complement(spelled, alphabet));
+	if (uses_dont_care(prepared)) { prepared.unwind_jumps_inplace(alphabet, mata::nft::JumpMode::RepeatSymbol); }
+	return boxed(mata::nft::complement(prepared, alphabet));
 }
 
 bool nft_is_complete(const Nft& nft, const rust::Slice<const Symbol> symbols) {

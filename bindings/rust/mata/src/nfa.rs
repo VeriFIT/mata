@@ -1053,7 +1053,7 @@ impl Nfa {
 	///
 	/// [`UnmetRequirement`] with [`Requirement::Deterministic`] when `self` or `other` has no initial
 	/// state or is nondeterministic, and with [`Requirement::Complete`] when one is not complete over
-	/// `alphabet`.
+	/// `alphabet` or has a transition under a symbol outside it.
 	pub fn union_det_complete(
 		&self,
 		other: &Nfa,
@@ -1066,7 +1066,10 @@ impl Nfa {
 					"union_det_complete requires deterministic automata",
 				));
 			}
-			if !operand.is_complete(alphabet) {
+			// Unlike `is_complete`, a symbol outside `alphabet` is this call's error, not a panic.
+			let complete =
+				ffi::is_complete(operand.raw(), &alphabet.raw_symbols()).unwrap_or(false);
+			if !complete {
 				return Err(UnmetRequirement::new(
 					Requirement::Complete,
 					"union_det_complete requires automata complete over the alphabet",
@@ -1082,10 +1085,11 @@ impl Nfa {
 
 	/// The product of two automata, whose pairs of states are final according to `condition` (Mata's
 	/// `product`). Under [`ProductFinalCondition::And`] its language is the intersection. Under
-	/// [`ProductFinalCondition::Or`] a pair is final when either state is, which gives the union only
-	/// when both automata have an initial state and are complete over the symbols either uses;
-	/// otherwise a word that only one of them reads is lost. [`Nfa::union`] is the union of any two
-	/// automata, and [`Nfa::union_det_complete`] checks the requirements of the product union.
+	/// [`ProductFinalCondition::Or`] a pair is final when either state is. That is guaranteed to give
+	/// the union when both automata have an initial state and are complete over the symbols either
+	/// uses; otherwise a word that only one of them reads may be lost. [`Nfa::union`] is the union of
+	/// any two automata, and [`Nfa::union_det_complete`] checks the requirements of the product
+	/// union.
 	#[must_use = "returns a new automaton and leaves `self` unchanged"]
 	pub fn product(
 		&self,
