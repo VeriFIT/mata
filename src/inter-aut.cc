@@ -200,18 +200,25 @@ bool lower_precedence(const mata::FormulaNode::OperatorType op1, const mata::For
 		   (op1 != mata::FormulaNode::OperatorType::And || op2 == mata::FormulaNode::OperatorType::Neg);
 }
 
+/// The buffers of parsing a transition formula, reused from formula to formula.
+struct FormulaBuffers {
+	std::vector<mata::FormulaNode> postfix{};
+	std::vector<mata::FormulaNode> opstack{};
+};
+
 /**
  * Transforms a series of tokes to postfix notation.
  * @param aut Automaton for which transition formula is parsed
  * @param tokens Series of tokens representing transition formula parsed from the input text
- * @return A postfix notation for input
+ * @param buffers Buffers whose @c postfix the postfix notation is appended to
  */
-std::vector<mata::FormulaNode>
-	infix_to_postfix(mata::IntermediateAut& aut, const std::span<const mata::parser::BodyToken> tokens) {
-	std::vector<mata::FormulaNode> opstack;
-	std::vector<mata::FormulaNode> output;
-	output.reserve(tokens.size());
-	opstack.reserve(32);
+void infix_to_postfix(
+	mata::IntermediateAut& aut, const std::span<const mata::parser::BodyToken> tokens, FormulaBuffers& buffers
+) {
+	std::vector<mata::FormulaNode>& opstack{buffers.opstack};
+	std::vector<mata::FormulaNode>& output{buffers.postfix};
+	opstack.clear();
+	output.reserve(output.size() + tokens.size());
 
 	for (const mata::parser::BodyToken& token : tokens) {
 		switch (mata::FormulaNode node = create_node(aut, token.token, token.quoted); node.type) {
@@ -252,8 +259,14 @@ std::vector<mata::FormulaNode>
 		output.push_back(std::move(opstack.back()));
 		opstack.pop_back();
 	}
+}
 
-	return output;
+/// Transforms @p tokens to postfix notation, see @c infix_to_postfix().
+std::vector<mata::FormulaNode>
+	infix_to_postfix(mata::IntermediateAut& aut, const std::span<const mata::parser::BodyToken> tokens) {
+	FormulaBuffers buffers;
+	infix_to_postfix(aut, tokens, buffers);
+	return std::move(buffers.postfix);
 }
 
 /**
@@ -288,6 +301,59 @@ std::vector<mata::FormulaNode> add_disjunction_implicitly(std::vector<mata::Form
 	}
 
 	return res;
+}
+
+/**
+ * Parses a transition by firstly transforming transition formula to postfix form and then creating
+ * a tree representing the formula from postfix.
+ * @param aut Automaton to which transition will be added.
+ * @param tokens Series of tokens representing transition formula
+ * @param buffers Buffers to reuse
+ */
+void parse_transition(mata::IntermediateAut& aut, const mata::parser::BodyLine& tokens, FormulaBuffers& buffers) {
+	if (tokens.size() < 2) {
+		throw std::runtime_error(
+			"Malformed transition " + std::to_string(tokens) + ": expected at least 2 tokens, got " +
+			std::to_string(tokens.size())
+		);
+	}
+	mata::FormulaNode lhs = create_node(aut, tokens[0].token, tokens[0].quoted);
+	const std::span<const mata::parser::BodyToken> rhs{std::span{tokens}.subspan(1)};
+
+	std::vector<mata::FormulaNode>& postfix{buffers.postfix};
+	postfix.clear();
+
+	// add implicit conjunction to NFA explicit states, i.e. p a q -> p a & q
+	// A quoted "&" names the symbol &; it is not the conjunction of an explicit transition.
+	const bool explicit_transition = tokens[tokens.size() - 2].quoted || tokens[tokens.size() - 2].token != "&";
+	const bool explicit_automaton{
+		aut.automaton_type == mata::IntermediateAut::AutomatonType::Nfa ||
+		aut.automaton_type == mata::IntermediateAut::AutomatonType::Nft
+	};
+	if (explicit_automaton && explicit_transition) {
+		// we need to take care of this case manually since user does not need to determine
+		// symbol and state naming and put conjunction to transition
+		if (aut.alphabet_type != mata::IntermediateAut::AlphabetType::Bitvector) {
+			check_explicit_transition(tokens, aut.is_nfa() ? "NFA" : "NFT");
+			// The symbol slot is identified by position, not by naming: keep its full name, also when quoted.
+			postfix.emplace_back(
+				mata::FormulaNode::Type::Operand, aut.name_store->store(rhs[0].token),
+				mata::FormulaNode::OperandType::Symbol
+			);
+			postfix.emplace_back(create_node(aut, rhs[1].token, rhs[1].quoted));
+		} else {
+			// This is a case where rhs state is not separated by a conjunction from the rest of the transitions.
+			const mata::parser::BodyToken& last_token{rhs.back()};
+			infix_to_postfix(aut, rhs.first(rhs.size() - 1), buffers);
+			postfix.emplace_back(create_node(aut, last_token.token, last_token.quoted));
+		}
+
+		postfix.emplace_back(mata::FormulaNode::Type::Operator, "&", mata::FormulaNode::OperatorType::And);
+	} else {
+		infix_to_postfix(aut, rhs, buffers);
+	}
+
+	aut.transitions.emplace_back(std::move(lhs), mata::FormulaGraph::from_postfix(postfix));
 }
 
 /**
@@ -359,7 +425,8 @@ mata::IntermediateAut mf_to_aut(const mata::parser::ParsedSection& section) {
 		throw std::runtime_error("Only one of nodes, symbols and states could be specified automatically");
 	}
 
-	for (const auto& trans : section.body) { mata::IntermediateAut::parse_transition(aut, trans); }
+	FormulaBuffers buffers;
+	for (const auto& trans : section.body) { parse_transition(aut, trans, buffers); }
 
 	return aut;
 }
@@ -380,89 +447,28 @@ size_t mata::IntermediateAut::get_number_of_disjuncts() const {
 	return res;
 }
 
-/**
- * Parses a transition by firstly transforming transition formula to postfix form and then creating
- * a tree representing the formula from postfix.
- * @param aut Automaton to which transition will be added.
- * @param tokens Series of tokens representing transition formula
- */
 void mata::IntermediateAut::parse_transition(mata::IntermediateAut& aut, const mata::parser::BodyLine& tokens) {
-	if (tokens.size() < 2) {
-		throw std::runtime_error(
-			"Malformed transition " + std::to_string(tokens) + ": expected at least 2 tokens, got " +
-			std::to_string(tokens.size())
-		);
-	}
-	mata::FormulaNode lhs = create_node(aut, tokens[0].token, tokens[0].quoted);
-	const std::span<const mata::parser::BodyToken> rhs{std::span{tokens}.subspan(1)};
-
-	std::vector<mata::FormulaNode> postfix;
-
-	// add implicit conjunction to NFA explicit states, i.e. p a q -> p a & q
-	// A quoted "&" names the symbol &; it is not the conjunction of an explicit transition.
-	const bool explicit_transition = tokens[tokens.size() - 2].quoted || tokens[tokens.size() - 2].token != "&";
-	if (aut.automaton_type == mata::IntermediateAut::AutomatonType::Nfa && explicit_transition) {
-		// we need to take care of this case manually since user does not need to determine
-		// symbol and state naming and put conjunction to transition
-		if (aut.alphabet_type != mata::IntermediateAut::AlphabetType::Bitvector) {
-			check_explicit_transition(tokens, "NFA");
-			// The symbol slot is identified by position, not by naming: keep its full name, also when quoted.
-			postfix.emplace_back(
-				mata::FormulaNode::Type::Operand, aut.name_store->store(rhs[0].token),
-				mata::FormulaNode::OperandType::Symbol
-			);
-			postfix.emplace_back(create_node(aut, rhs[1].token, rhs[1].quoted));
-		} else if (aut.alphabet_type == mata::IntermediateAut::AlphabetType::Bitvector) {
-			// This is a case where rhs state is not separated by a conjunction from the rest of the transitions.
-			const mata::parser::BodyToken& last_token{rhs.back()};
-			postfix = infix_to_postfix(aut, rhs.first(rhs.size() - 1));
-			postfix.emplace_back(create_node(aut, last_token.token, last_token.quoted));
-		} else {
-			MATA_ASSERT(false, "Unknown NFA type");
-		}
-
-		postfix.emplace_back(mata::FormulaNode::Type::Operator, "&", mata::FormulaNode::OperatorType::And);
-	} else if (aut.automaton_type == mata::IntermediateAut::AutomatonType::Nft && explicit_transition) {
-		// we need to take care of this case manually since user does not need to determine
-		// symbol and state naming and put conjunction to transition
-		if (aut.alphabet_type != mata::IntermediateAut::AlphabetType::Bitvector) {
-			check_explicit_transition(tokens, "NFT");
-			postfix.emplace_back(
-				mata::FormulaNode::Type::Operand, aut.name_store->store(rhs[0].token),
-				mata::FormulaNode::OperandType::Symbol
-			);
-			postfix.emplace_back(create_node(aut, rhs[1].token, rhs[1].quoted));
-		} else if (aut.alphabet_type == mata::IntermediateAut::AlphabetType::Bitvector) {
-			// This is a case where rhs state is not separated by a conjunction from the rest of the transitions.
-			const mata::parser::BodyToken& last_token{rhs.back()};
-			postfix = infix_to_postfix(aut, rhs.first(rhs.size() - 1));
-			postfix.emplace_back(create_node(aut, last_token.token, last_token.quoted));
-		} else {
-			MATA_ASSERT(false, "Unknown NFT type");
-		}
-
-		postfix.emplace_back(mata::FormulaNode::Type::Operator, "&", mata::FormulaNode::OperatorType::And);
-	} else {
-		postfix = infix_to_postfix(aut, rhs);
-	}
-
-	aut.transitions.emplace_back(std::move(lhs), FormulaGraph::from_postfix(postfix));
+	FormulaBuffers buffers;
+	::parse_transition(aut, tokens, buffers);
 }
 
 mata::FormulaGraph mata::FormulaGraph::from_postfix(const std::span<const FormulaNode> postfix) {
 	FormulaGraph graph;
-	graph.entries_.reserve(postfix.size());
-	// The number of the subtrees at the end of the entries that are not children of a node yet.
+	graph.entries_.resize(postfix.size());
+	FormulaGraphEntry* const entries{graph.entries_.data()};
+	// The number of the subtrees before the current node that are not children of a node yet.
 	size_t num_trees{0};
-	for (const FormulaNode& node : postfix) {
+	for (size_t i{0}; i < postfix.size(); ++i) {
+		const FormulaNode& node{postfix[i]};
+		uint32_t size{1};
 		switch (node.type) {
 			case FormulaNode::Type::Operand:
-				graph.entries_.push_back({node, 1});
 				++num_trees;
 				break;
 			case FormulaNode::Type::Operator:
 				if (node.is_neg()) {
 					if (num_trees == 0) { throw std::runtime_error("Malformed formula: '!' without an operand"); }
+					size += entries[i - 1].subtree_size;
 				} else {
 					if (num_trees < 2) {
 						throw std::runtime_error(
@@ -470,12 +476,14 @@ mata::FormulaGraph mata::FormulaGraph::from_postfix(const std::span<const Formul
 						);
 					}
 					--num_trees;
+					size += entries[i - 1].subtree_size;
+					size += entries[i - size].subtree_size;
 				}
-				graph.append_root(node);
 				break;
 			default:
 				throw std::runtime_error("Malformed formula: unexpected '" + std::string{node.raw} + "'");
 		}
+		entries[i] = {node, size};
 	}
 	if (num_trees > 1) { throw std::runtime_error("Malformed formula: operands without an operator between them"); }
 	return graph;
