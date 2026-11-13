@@ -403,6 +403,8 @@ struct BitvectorAutomaton {
 	std::optional<mata::IntermediateAut> general{};
 	Nfa nfa{};
 	std::optional<mata::parser::StateNameMap> state_names{};
+	/// Bounds the numbered names kept by the state map built in @c build().
+	size_t max_number{};
 	builder::NameStateMap* state_map{nullptr};
 	StateFormula final{};
 };
@@ -439,10 +441,11 @@ std::optional<BitvectorAutomaton> builder::BitvectorNfaReader::Impl::parse(
 	}
 
 	BitvectorAutomaton aut;
-	aut.state_names.emplace(state_map != nullptr ? *state_map : NameStateMap{}, input.size() / 4);
+	// The caller's map is read in build(), after the earlier automata have filled it.
+	aut.state_names.emplace(NameStateMap{}, input.size() / 4);
+	aut.max_number = input.size() / 4;
 	aut.state_map = state_map;
 	mata::parser::StateNameMap& state_names{*aut.state_names};
-	// See builder::construct(): a name mapped by the caller allocates its state, a new name skips the mapped states.
 	const auto get_state{[&](const std::string_view name) {
 		if (const std::optional<State> state{state_names.find(name)}) { return aut.nfa.add_state(*state); }
 		const State state{aut.nfa.add_state(state_names.new_state(aut.nfa.num_of_states()))};
@@ -650,15 +653,48 @@ std::vector<Nfa> builder::BitvectorNfaReader::build(Alphabet* alphabet) {
 		}
 
 		Nfa& nfa{aut.nfa};
+		mata::parser::StateNameMap* names{&*aut.state_names};
+		std::optional<mata::parser::StateNameMap> mapped_state_names;
+		std::vector<State> mapped_states;
+		if (aut.state_map != nullptr) {
+			// See builder::construct(): a name mapped by the caller keeps its state, a new name skips the mapped ones.
+			mapped_state_names.emplace(*aut.state_map, aut.max_number);
+			names = &*mapped_state_names;
+			const size_t num_of_states{nfa.num_of_states()};
+			std::vector<std::string> local_names(num_of_states);
+			aut.state_names->for_each([&](const std::string_view name, const State state) {
+				local_names[state] = name;
+			});
+			mapped_states.resize(num_of_states);
+			size_t num_of_mapped_states{0};
+			for (size_t local{0}; local < num_of_states; ++local) {
+				const std::string& name{local_names[local]};
+				const std::optional<State> mapped{names->find(name)};
+				if (mapped.has_value()) {
+					mapped_states[local] = *mapped;
+				} else {
+					const State added{names->new_state(num_of_mapped_states)};
+					names->insert(name, added);
+					mapped_states[local] = added;
+				}
+				num_of_mapped_states = std::max(num_of_mapped_states, static_cast<size_t>(mapped_states[local]) + 1);
+			}
+			Nfa renamed;
+			for (const State mapped : mapped_states) { renamed.add_state(mapped); }
+			for (const State initial : nfa.initial) { renamed.initial.insert(mapped_states[initial]); }
+			nfa = std::move(renamed);
+		}
+		const auto state_of{[&](const State local) { return mapped_states.empty() ? local : mapped_states[local]; }};
+
 		std::vector<Transition> transitions;
 		for (const BitvectorTransition& transition : aut.transitions) {
 			for (const size_t minterm : partition.minterms_of_source[transition.predicate]) {
-				transitions.emplace_back(transition.source, symbol_of(minterm), transition.target);
+				transitions.emplace_back(state_of(transition.source), symbol_of(minterm), state_of(transition.target));
 			}
 		}
 		nfa.delta.add(std::move(transitions));
 
-		mata::parser::StateNameMap& state_names{*aut.state_names};
+		mata::parser::StateNameMap& state_names{*names};
 		switch (aut.final.kind) {
 			case StateFormula::Kind::True:
 			case StateFormula::Kind::AllBut: {

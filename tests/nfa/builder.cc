@@ -604,6 +604,26 @@ TEST_CASE("BitvectorNfaReader reads what the general reader and mintermization r
 	}
 }
 
+TEST_CASE("BitvectorNfaReader reads the state map shared by queued inputs at build") {
+	const std::string header{"@NFA-bits\n%Alphabet-auto\n"};
+	builder::BitvectorNfaReader reader;
+	builder::NameStateMap states;
+	CHECK(reader.add(header + "%Initial q0\n%Final q1\nq0 x q1\n", false, &states) == Read::Directly);
+	CHECK(reader.add(header + "%Initial q1\n%Final q2\nq1 y q2\n", false, &states) == Read::Directly);
+	const std::vector<Nfa> read{reader.build()};
+	REQUIRE(states.size() == 3);
+	// %States-marked, the default, names q0, q1, and q2 0, 1, and 2.
+	CHECK(states.at("0") == 0);
+	CHECK(states.at("1") == 1);
+	CHECK(states.at("2") == 2);
+	CHECK(read[0].initial.contains(states.at("0")));
+	CHECK(read[0].final.contains(states.at("1")));
+	CHECK(read[0].delta.get_successors(states.at("0")).contains(states.at("1")));
+	CHECK(read[1].initial.contains(states.at("1")));
+	CHECK(read[1].final.contains(states.at("2")));
+	CHECK(read[1].delta.get_successors(states.at("1")).contains(states.at("2")));
+}
+
 TEST_CASE("BitvectorNfaReader leaves inputs that are not bitvector NFAs") {
 	builder::BitvectorNfaReader reader;
 	CHECK(reader.add("@NFA-explicit\n%Alphabet-auto\n%Initial q0\nq0 a q1\n") == Read::Rejected);
