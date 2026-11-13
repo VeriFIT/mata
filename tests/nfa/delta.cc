@@ -918,7 +918,11 @@ TEST_CASE("mata::nfa::State width and state overflow checks") {
 		CHECK_THROWS_AS(delta.add(0, 0, Limits::max_state), std::overflow_error);
 		CHECK_THROWS_AS(delta.mutable_state_post(Limits::max_state), std::overflow_error);
 		CHECK_THROWS_AS(delta.add(std::vector<Transition>{{Limits::max_state, 0, 0}}), std::overflow_error);
+		CHECK_THROWS_AS(delta.add(std::vector<Transition>{{0, 0, Limits::max_state}}), std::overflow_error);
 		CHECK(delta.num_of_states() == 0);
+		Delta preallocated{5};
+		CHECK_THROWS_AS(preallocated.add(std::vector<Transition>{{Limits::max_state, 0, 0}}), std::overflow_error);
+		CHECK(preallocated.num_of_states() == 5);
 
 		Nfa nfa{};
 		CHECK_THROWS_AS(nfa.add_state(Limits::max_state), std::overflow_error);

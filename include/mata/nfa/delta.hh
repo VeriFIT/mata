@@ -1120,7 +1120,9 @@ class DeltaBuilder {
 	Delta finish() {
 		MATA_ASSERT(!in_state_ && !in_symbol_ && "finish() called inside an unfinished state or symbol");
 		// A target state needs its own (possibly empty) post, like every other state of the delta.
-		if (!state_posts_.empty() && max_target_ >= state_posts_.size()) { state_posts_.resize(max_target_ + 1); }
+		if (!state_posts_.empty() && max_target_ >= state_posts_.size()) {
+			state_posts_.resize(num_of_states_for(max_target_));
+		}
 		Delta delta{};
 		delta.reserve(state_posts_.size());
 		for (StatePost& state_post : state_posts_) { delta.emplace_back(std::move(state_post)); }
