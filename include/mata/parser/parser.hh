@@ -103,6 +103,8 @@ struct BodyToken {
 	BodyToken(const std::string_view token, const bool quoted) : token{token}, quoted{quoted} {}
 	/// An unquoted token, so that a body line reads as a list of plain names in tests and call sites.
 	BodyToken(const char* token) : token{token} {}
+	/// A literal, which the overloads for strings and views could both take.
+	BodyToken(const char* const token, const bool quoted) : token{token}, quoted{quoted} {}
 	// A view of a temporary string would dangle.
 	BodyToken(std::string&&, bool) = delete;
 	bool operator==(const BodyToken& rhs) const = default;

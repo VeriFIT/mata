@@ -333,6 +333,11 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()") { // {{{
 		REQUIRE(parsec.body.empty());
 	}
 
+	SECTION("quoted operators in the body") {
+		parsec = parse_mf_section("@Type\nq0 \"&\" & q1\n");
+		CHECK(parsec.body == std::vector<BodyLine>{{"q0", BodyToken{"&", true}, "&", "q1"}});
+	}
+
 	SECTION("file with no keys") {
 		std::string file = "@Type\n"
 						   "a b c\n";
