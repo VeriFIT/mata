@@ -15,7 +15,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Class mata::IntAlphabet" href="classmata_1_1IntAlphabet.html" />
-    <link rel="prev" title="Class mata::FormulaGraph" href="classmata_1_1FormulaGraph.html" />
+    <link rel="prev" title="Class mata::FormulaGraphView" href="classmata_1_1FormulaGraphView.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -39,7 +39,26 @@
 <dt class="sig sig-object cpp" id="_CPPv4N4mata11FormulaNodeE">
 <span id="_CPPv3N4mata11FormulaNodeE"></span><span id="_CPPv2N4mata11FormulaNodeE"></span><span id="mata::FormulaNode"></span><span class="target" id="classmata_1_1FormulaNode"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">FormulaNode</span></span></span><a class="headerlink" href="#_CPPv4N4mata11FormulaNodeE" title="Link to this definition">¶</a><br /></dt>
 <dd><p>A node of graph representing transition formula. </p>
-<p>A node could be operator (!,&amp;,|) or operand (symbol, state, node). Each node has a name (in case of marking naming, an initial character defining type of node is removed and stored in name), raw (name including potential type marker), and information about its type. </p>
+<p>A node could be operator (!,&amp;,|) or operand (symbol, state, node). Each node has its raw name as written in the input, its name (the raw name without the type marker, the initial character, under the marked naming), and information about its type. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata11FormulaNode4nameEv">
+<span id="_CPPv3NK4mata11FormulaNode4nameEv"></span><span id="_CPPv2NK4mata11FormulaNode4nameEv"></span><span id="mata::FormulaNode::nameC"></span><span class="target" id="classmata_1_1FormulaNode_1a3b311ad7b66f230479b19b47c094cb41"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string_view</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">name</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata11FormulaNode4nameEv" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The parsed name: <code class="docutils literal notranslate"><span class="pre">raw</span></code> without the type marker, if the node has one. Valid while <code class="docutils literal notranslate"><span class="pre">raw</span></code> is unchanged. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata11FormulaNode11FormulaNodeEK4TypeKNSt11string_viewEK11OperandTypeKb">
+<span id="_CPPv3N4mata11FormulaNode11FormulaNodeEK4TypeKNSt11string_viewEK11OperandTypeKb"></span><span id="_CPPv2N4mata11FormulaNode11FormulaNodeEK4TypeKNSt11string_viewEK11OperandTypeKb"></span><span id="mata::FormulaNode::FormulaNode__TypeC.std::string_viewC.OperandTypeC.bC"></span><span class="target" id="classmata_1_1FormulaNode_1a2925eaa35c37fb20f5e4ec9f66bc6107"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">FormulaNode</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/inter-aut_8hh.html#_CPPv4N4mata11FormulaNode4TypeE" title="mata::FormulaNode::Type"><span class="n"><span class="pre">Type</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">t</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string_view</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">raw</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/inter-aut_8hh.html#_CPPv4N4mata11FormulaNode11OperandTypeE" title="mata::FormulaNode::OperandType"><span class="n"><span class="pre">OperandType</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">operand</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">marked</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata11FormulaNode11FormulaNodeEK4TypeKNSt11string_viewEK11OperandTypeKb" title="Link to this definition">¶</a><br /></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>marked</strong> – Whether the first character of <code class="docutils literal notranslate"><span class="pre">raw</span></code> is a type marker, which the name leaves out. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
 <div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
 <dl class="cpp var">
@@ -50,14 +69,9 @@
 
 <dl class="cpp var">
 <dt class="sig sig-object cpp" id="_CPPv4N4mata11FormulaNode3rawE">
-<span id="_CPPv3N4mata11FormulaNode3rawE"></span><span id="_CPPv2N4mata11FormulaNode3rawE"></span><span id="mata::FormulaNode::raw__ss"></span><span class="target" id="classmata_1_1FormulaNode_1a21564034a06b3c2ba6843af9515c35e9"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">raw</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata11FormulaNode3rawE" title="Link to this definition">¶</a><br /></dt>
+<span id="_CPPv3N4mata11FormulaNode3rawE"></span><span id="_CPPv2N4mata11FormulaNode3rawE"></span><span id="mata::FormulaNode::raw__std::string_view"></span><span class="target" id="classmata_1_1FormulaNode_1a9b07ada1eb264efd855ac422cf58aa4e"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string_view</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">raw</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata11FormulaNode3rawE" title="Link to this definition">¶</a><br /></dt>
 <dd><p>Raw name of node as it was specified in input text, i.e., including type marker. </p>
-</dd></dl>
-
-<dl class="cpp var">
-<dt class="sig sig-object cpp" id="_CPPv4N4mata11FormulaNode4nameE">
-<span id="_CPPv3N4mata11FormulaNode4nameE"></span><span id="_CPPv2N4mata11FormulaNode4nameE"></span><span id="mata::FormulaNode::name__ss"></span><span class="target" id="classmata_1_1FormulaNode_1a9b45b3e13bd9167aab02e17e08916231"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">name</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata11FormulaNode4nameE" title="Link to this definition">¶</a><br /></dt>
-<dd><p>Parsed name, i.e., a potential type marker (first character) is removed. </p>
+<p>The name is not owned: it has to point into the name storage of the automaton the node belongs to (<code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1IntermediateAut_1a479e5e334b126c62c1c4b6b6be3d5f61"><span class="std std-ref"><span class="pre">IntermediateAut::name_store</span></span></a></code> or <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1IntermediateAut_1aa3e9f64100c028aa12dda7fecfdb6bb6"><span class="std std-ref"><span class="pre">IntermediateAut::section_names</span></span></a></code>) or into a literal, so that it lives for as long as the node does. </p>
 </dd></dl>
 
 <dl class="cpp var">
@@ -125,11 +139,14 @@
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1BoolVector.html">Class mata::BoolVector</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1EnumAlphabet.html">Class mata::EnumAlphabet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1FormulaGraph.html">Class mata::FormulaGraph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1FormulaGraphChildren.html">Class mata::FormulaGraphChildren</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1FormulaGraphView.html">Class mata::FormulaGraphView</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Class mata::FormulaNode</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntAlphabet.html">Class mata::IntAlphabet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton.html">Class mata::IntAlphabet::IntAlphabetSingleton</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntermediateAut.html">Class mata::IntermediateAut</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1Mintermization.html">Class mata::Mintermization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1NameStore.html">Class mata::NameStore</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1OnTheFlyAlphabet.html">Class mata::OnTheFlyAlphabet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1ShortestWordsMap.html">Class mata::applications::strings::ShortestWordsMap</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace.html">Class mata::applications::strings::replace::ReluctantReplace</a></li>
@@ -149,10 +166,15 @@
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1SymbolPost.html">Class mata::nfa::SymbolPost</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1SynchronizedExistentialSymbolPostIterator.html">Class mata::nfa::SynchronizedExistentialSymbolPostIterator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1algorithms_1_1ExternalSolverNotFound.html">Class mata::nfa::algorithms::ExternalSolverNotFound</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1builder_1_1BitvectorNfaReader.html">Class mata::nfa::builder::BitvectorNfaReader</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1internal_1_1ProcessedAntichain.html">Class mata::nfa::internal::ProcessedAntichain</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1nft_1_1Levels.html">Class mata::nft::Levels</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1nft_1_1Levels_1_1Ordering.html">Class mata::nft::Levels::Ordering</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1nft_1_1Nft.html">Class mata::nft::Nft</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1parser_1_1ExplicitSectionReader.html">Class mata::parser::ExplicitSectionReader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1parser_1_1MataWriter.html">Class mata::parser::MataWriter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1parser_1_1NewStates.html">Class mata::parser::NewStates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1parser_1_1StateNameMap.html">Class mata::parser::StateNameMap</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1LazyWordGenerator.html">Class mata::utils::LazyWordGenerator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1OrdVector.html">Class mata::utils::OrdVector</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SmallOrdVector.html">Class mata::utils::SmallOrdVector</a></li>
@@ -181,7 +203,7 @@
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
   <li><a href="../classlist.html">Class list</a><ul>
-      <li>Previous: <a href="classmata_1_1FormulaGraph.html" title="previous chapter">Class mata::FormulaGraph</a></li>
+      <li>Previous: <a href="classmata_1_1FormulaGraphView.html" title="previous chapter">Class mata::FormulaGraphView</a></li>
       <li>Next: <a href="classmata_1_1IntAlphabet.html" title="next chapter">Class mata::IntAlphabet</a></li>
   </ul></li>
   </ul></li>

@@ -216,6 +216,15 @@ In particular, this includes:<ol class="lowerroman simple">
 </dl>
 </p>
 <div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-typedefs">Typedefs</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9StringMapE">
+<span id="_CPPv3I0EN4mata5utils9StringMapE"></span><span id="_CPPv2I0EN4mata5utils9StringMapE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1utils_1a860d7c17d306a35d6df79523866717ca"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">StringMap</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unordered_map</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I0EN4mata5utils9StringMapE" title="mata::utils::StringMap::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils10StringHashE" title="mata::utils::StringHash"><span class="n"><span class="pre">StringHash</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">equal_to</span></span><span class="p"><span class="pre">&lt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><a class="headerlink" href="#_CPPv4I0EN4mata5utils9StringMapE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>A map from strings that <code class="docutils literal notranslate"><span class="pre">find()</span></code>, <code class="docutils literal notranslate"><span class="pre">contains()</span></code> and <code class="docutils literal notranslate"><span class="pre">count()</span></code> a <code class="docutils literal notranslate"><span class="pre">std::string_view</span></code> without copying it. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric" id="breathe-section-title-functions">Functions</p>
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4N4mata5utils11replace_allERKNSt6stringERKNSt6stringERKNSt6stringE">
@@ -381,6 +390,30 @@ In particular, this includes:<ol class="lowerroman simple">
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils8PairHashclERKNSt4pairI1A1BEE">
 <span id="_CPPv3NK4mata5utils8PairHashclERKNSt4pairI1A1BEE"></span><span id="_CPPv2NK4mata5utils8PairHashclERKNSt4pairI1A1BEE"></span><span id="mata::utils::PairHash::call-operator__std::pair:A.B:CRC"></span><span class="target" id="structmata_1_1utils_1_1PairHash_1a3222b90799e9c708bd23ee57a91406c5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">()</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">pair</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I00EN4mata5utils8PairHashE" title="mata::utils::PairHash::A"><span class="n"><span class="pre">A</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I00EN4mata5utils8PairHashE" title="mata::utils::PairHash::B"><span class="n"><span class="pre">B</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pair</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils8PairHashclERKNSt4pairI1A1BEE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils10StringHashE">
+<span id="_CPPv3N4mata5utils10StringHashE"></span><span id="_CPPv2N4mata5utils10StringHashE"></span><span id="mata::utils::StringHash"></span><span class="target" id="structmata_1_1utils_1_1StringHash"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">StringHash</span></span></span><a class="headerlink" href="#_CPPv4N4mata5utils10StringHashE" title="Link to this definition">¶</a><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;utils.hh&gt;</em></div>
+<p>A hasher of strings given as any string type, so that a <code class="docutils literal notranslate"><span class="pre">std::string_view</span></code> finds a <code class="docutils literal notranslate"><span class="pre">std::string</span></code> key. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils10StringHash14is_transparentE">
+<span id="_CPPv3N4mata5utils10StringHash14is_transparentE"></span><span id="_CPPv2N4mata5utils10StringHash14is_transparentE"></span><span class="target" id="structmata_1_1utils_1_1StringHash_1a2fbeedf2fc9bbbe1f7c1df62798a28e8"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_transparent</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><a class="headerlink" href="#_CPPv4N4mata5utils10StringHash14is_transparentE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils10StringHashclEKNSt11string_viewE">
+<span id="_CPPv3NK4mata5utils10StringHashclEKNSt11string_viewE"></span><span id="_CPPv2NK4mata5utils10StringHashclEKNSt11string_viewE"></span><span id="mata::utils::StringHash::call-operator__std::string_viewCC"></span><span class="target" id="structmata_1_1utils_1_1StringHash_1ac6c9d550b08625dbe581bb5c671cc22f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">()</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string_view</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">str</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils10StringHashclEKNSt11string_viewE" title="Link to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
 </div>
@@ -555,9 +588,11 @@ In particular, this includes:<ol class="lowerroman simple">
 <li class="toctree-l2"><a class="reference internal" href="assert_8hh.html">File assert.hh</a></li>
 <li class="toctree-l2"><a class="reference internal" href="automaton_8hh.html">File automaton.hh</a></li>
 <li class="toctree-l2"><a class="reference internal" href="closed-set_8hh.html">File closed-set.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="explicit-section-reader_8hh.html">File explicit-section-reader.hh</a></li>
 <li class="toctree-l2"><a class="reference internal" href="generator-support_8hh.html">File generator-support.hh</a></li>
 <li class="toctree-l2"><a class="reference internal" href="inter-aut_8hh.html">File inter-aut.hh</a></li>
 <li class="toctree-l2"><a class="reference internal" href="lazy-word-generator_8hh.html">File lazy-word-generator.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mata-writer_8hh.html">File mata-writer.hh</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mintermization_8hh.html">File mintermization.hh</a></li>
 <li class="toctree-l2"><a class="reference internal" href="nfa_2algorithms_8hh.html">File algorithms.hh</a></li>
 <li class="toctree-l2"><a class="reference internal" href="nfa_2builder_8hh.html">File builder.hh</a></li>

@@ -38,7 +38,7 @@
 <dl class="cpp type">
 <dt class="sig sig-object cpp" id="_CPPv4N4mata6parserE">
 <span id="_CPPv3N4mata6parserE"></span><span id="_CPPv2N4mata6parserE"></span><span id="mata::parser"></span><span class="target" id="namespacemata_1_1parser"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">parser</span></span></span><br /></dt>
-<dd><p>Parser from <code class="docutils literal notranslate"><span class="pre">.</span><a class="reference internal" href="namespacemata.html#namespacemata"><span class="std std-ref"><span class="pre">mata</span></span></a></code> format to automata (currently <code class="docutils literal notranslate"><span class="pre">Nfa</span></code> and <code class="docutils literal notranslate"><span class="pre">Afa</span></code> are supported). </p>
+<dd><p>Parser from <code class="docutils literal notranslate"><span class="pre">.</span><a class="reference internal" href="namespacemata.html#namespacemata"><span class="std std-ref"><span class="pre">mata</span></span></a></code> format to automata (currently <code class="docutils literal notranslate"><span class="pre">Nfa</span></code> and <code class="docutils literal notranslate"><span class="pre">Nft</span></code> are supported). </p>
 <p>This includes parsing either from files or from other streams (strings, etc.). </p>
 <div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric" id="breathe-section-title-typedefs">Typedefs</p>
@@ -88,6 +88,12 @@
 <dt class="sig sig-object cpp" id="_CPPv4N4mata6parser16parse_mf_sectionERKNSt6stringEb">
 <span id="_CPPv3N4mata6parser16parse_mf_sectionERKNSt6stringEb"></span><span id="_CPPv2N4mata6parser16parse_mf_sectionERKNSt6stringEb"></span><span id="mata::parser::parse_mf_section__ssCR.b"></span><span class="target" id="namespacemata_1_1parser_1a339e41edfffaf9b9bb9e0da6e9c51b7a"></span><a class="reference internal" href="../file/parser_8hh.html#_CPPv4N4mata6parser13ParsedSectionE" title="mata::parser::ParsedSection"><span class="n"><span class="pre">ParsedSection</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">parse_mf_section</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">input</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">keep_quotes</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><br /></dt>
 <dd><p>Parses one section from a string into an intermediary structure. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser21parse_mf_section_viewERNSt11string_viewEb">
+<span id="_CPPv3N4mata6parser21parse_mf_section_viewERNSt11string_viewEb"></span><span id="_CPPv2N4mata6parser21parse_mf_section_viewERNSt11string_viewEb"></span><span id="mata::parser::parse_mf_section_view__std::string_viewR.b"></span><span class="target" id="namespacemata_1_1parser_1a14cf629b67a77196be684e1802724f41"></span><a class="reference internal" href="../file/parser_8hh.html#_CPPv4N4mata6parser13ParsedSectionE" title="mata::parser::ParsedSection"><span class="n"><span class="pre">ParsedSection</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">parse_mf_section_view</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string_view</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">input</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">keep_quotes</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Parses one section from the beginning of <code class="docutils literal notranslate"><span class="pre">input</span></code> into an intermediary structure, advancing <code class="docutils literal notranslate"><span class="pre">input</span></code> past it. </p>
 </dd></dl>
 
 <dl class="cpp function">
@@ -150,6 +156,12 @@
 <span id="_CPPv3N4mata6parser10create_nfaEPN3nfa3NfaERKNSt6stringEb6Symbolb8Encoding"></span><span id="_CPPv2N4mata6parser10create_nfaEPN3nfa3NfaERKNSt6stringEb6Symbolb8Encoding"></span><span id="mata::parser::create_nfa__nfa::NfaP.ssCR.b.Symbol.b.Encoding"></span><span class="target" id="namespacemata_1_1parser_1a130aafddceb10f304933102f439390bd"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">create_nfa</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../file/re2parser_8hh.html#_CPPv4N4mata6parser10create_nfaEPN3nfa3NfaERKNSt6stringEb6Symbolb8Encoding" title="mata::parser::create_nfa::nfa"><span class="n"><span class="pre">nfa</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">Nfa</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">nfa</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">pattern</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">use_epsilon</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span>, <a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">epsilon_value</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">306</span></span>, <span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">use_reduce</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">true</span></span>, <a class="reference internal" href="../file/re2parser_8hh.html#_CPPv48Encoding" title="Encoding"><span class="n"><span class="pre">Encoding</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">encoding</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../file/re2parser_8hh.html#_CPPv48Encoding" title="Encoding"><span class="n"><span class="pre">Encoding</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../file/re2parser_8hh.html#_CPPv4N8Encoding6Latin1E" title="Encoding::Latin1"><span class="n"><span class="pre">Latin1</span></span></a><span class="sig-paren">)</span><br /></dt>
 <dd></dd></dl>
 
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser17read_whole_streamERNSt7istreamE">
+<span id="_CPPv3N4mata6parser17read_whole_streamERNSt7istreamE"></span><span id="_CPPv2N4mata6parser17read_whole_streamERNSt7istreamE"></span><span id="mata::parser::read_whole_stream__isR"></span><span class="target" id="namespacemata_1_1parser_1aef0d755187ec080f51c44fc1817327d2"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">read_whole_stream</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">istream</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">input</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Reads the rest of <code class="docutils literal notranslate"><span class="pre">input</span></code>, which the readers of the <code class="docutils literal notranslate"><span class="pre">.</span><a class="reference internal" href="namespacemata.html#namespacemata"><span class="std std-ref"><span class="pre">mata</span></span></a></code> format take as a whole. </p>
+</dd></dl>
+
 </div>
 <dl class="cpp struct">
 <dt class="sig sig-object cpp" id="_CPPv4N4mata6parser9BodyTokenE">
@@ -157,13 +169,19 @@
 <dd><div class="docutils container">
 <em>#include &lt;parser.hh&gt;</em></div>
 <p>One token of a body line, with the flag telling whether the reader read it in quotes. </p>
-<p><code class="docutils literal notranslate"><span class="pre">create_node()</span></code> lets a quoted token be an operand even when it starts with <code class="docutils literal notranslate"><span class="pre">&amp;</span></code> <code class="docutils literal notranslate"></code>| or <code class="docutils literal notranslate"><span class="pre">!</span></code>, which the unquoted reader would take for an operator of the transition formula. </p>
+<p><code class="docutils literal notranslate"><span class="pre">create_node()</span></code> lets a quoted token be an operand even when it starts with <code class="docutils literal notranslate"><span class="pre">&amp;</span></code> <code class="docutils literal notranslate"></code>| or <code class="docutils literal notranslate"><span class="pre">!</span></code>, which the unquoted reader would take for an operator of the transition formula. The token is a view: <code class="docutils literal notranslate"><a class="reference internal" href="#namespacemata_1_1parser_1ae8e2170397d8605d7546f3cab8556a8f"><span class="std std-ref"><span class="pre">parse_mf()</span></span></a></code> points it into the name storage of its section, other code has to keep the bytes alive for as long as the token is used. </p>
 <div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4N4mata6parser9BodyToken9BodyTokenEPKc">
 <span id="_CPPv3N4mata6parser9BodyToken9BodyTokenEPKc"></span><span id="_CPPv2N4mata6parser9BodyToken9BodyTokenEPKc"></span><span id="mata::parser::BodyToken::BodyToken__cCP"></span><span class="target" id="structmata_1_1parser_1_1BodyToken_1a1447a471d29067af8a0d974f69b5b1df"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">BodyToken</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">token</span></span><span class="sig-paren">)</span><br /></dt>
 <dd><p>An unquoted token, so that a body line reads as a list of plain names in tests and call sites. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser9BodyToken9BodyTokenEPCKcKb">
+<span id="_CPPv3N4mata6parser9BodyToken9BodyTokenEPCKcKb"></span><span id="_CPPv2N4mata6parser9BodyToken9BodyTokenEPCKcKb"></span><span id="mata::parser::BodyToken::BodyToken__cCPC.bC"></span><span class="target" id="structmata_1_1parser_1_1BodyToken_1a48896f4e04b205c25bf78e6d9abf85c6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">BodyToken</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">token</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">quoted</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>A literal, which the overloads for strings and views could both take. </p>
 </dd></dl>
 
 </div>
@@ -202,6 +220,15 @@
 </dd></dl>
 
 </div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser13ParsedSection10name_storeE">
+<span id="_CPPv3N4mata6parser13ParsedSection10name_storeE"></span><span id="_CPPv2N4mata6parser13ParsedSection10name_storeE"></span><span id="mata::parser::ParsedSection::name_store__std::shared_ptr:NameStore:"></span><span class="target" id="structmata_1_1parser_1_1ParsedSection_1a479e5e334b126c62c1c4b6b6be3d5f61"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">shared_ptr</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1NameStore.html#_CPPv4N4mata9NameStoreE" title="mata::NameStore"><span class="n"><span class="pre">NameStore</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">name_store</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">make_shared</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1NameStore.html#_CPPv4N4mata9NameStoreE" title="mata::NameStore"><span class="n"><span class="pre">NameStore</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">}</span></span><br /></dt>
+<dd><p>The storage the tokens of <code class="docutils literal notranslate"><span class="pre">body</span></code> point into; copies of the section share it. </p>
+</dd></dl>
+
+</div>
 </dd></dl>
 
 <dl class="cpp struct">
@@ -235,6 +262,212 @@
 <dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10Re2Options6reduceE">
 <span id="_CPPv3N4mata6parser10Re2Options6reduceE"></span><span id="_CPPv2N4mata6parser10Re2Options6reduceE"></span><span id="mata::parser::Re2Options::reduce__b"></span><span class="target" id="structmata_1_1parser_1_1Re2Options_1ae222d7a37aa84a49db7d1ded011754b7"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reduce</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="k"><span class="pre">true</span></span><span class="p"><span class="pre">}</span></span><br /></dt>
 <dd><p>Reduce the created NFA by simulation reduction. The reduction costs seconds on regexes with a few thousand states, where the conversion itself takes milliseconds; turn it off for large regexes and when the result is determinized anyway. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser9NewStatesE">
+<span id="_CPPv3N4mata6parser9NewStatesE"></span><span id="_CPPv2N4mata6parser9NewStatesE"></span><span id="mata::parser::NewStates"></span><span class="target" id="classmata_1_1parser_1_1NewStates"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">NewStates</span></span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;explicit-section-reader.hh&gt;</em></div>
+<p>The states the readers give to the names they meet first, given the names the caller mapped to states beforehand. </p>
+<p>A mapped name gets its state allocated when used. A new name gets the lowest state that the automaton does not have yet and no mapped name has, so that it never shares the state of a mapped name, used later or not at all. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser9NewStates9NewStatesERKN5utils9StringMapI5StateEE">
+<span id="_CPPv3N4mata6parser9NewStates9NewStatesERKN5utils9StringMapI5StateEE"></span><span id="_CPPv2N4mata6parser9NewStates9NewStatesERKN5utils9StringMapI5StateEE"></span><span id="mata::parser::NewStates::NewStates__utils::StringMap:State:CR"></span><span class="target" id="classmata_1_1parser_1_1NewStates_1af7731c92227d0aec78294414695a4699"></span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">NewStates</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/lazy-word-generator_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I0EN4mata5utils9StringMapE" title="mata::utils::StringMap"><span class="n"><span class="pre">StringMap</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/explicit-section-reader_8hh.html#_CPPv4N4mata6parser9NewStates5StateE" title="mata::parser::NewStates::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">mapped</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mapped</strong> – The names the caller mapped. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser9NewStates4nextE6size_t">
+<span id="_CPPv3N4mata6parser9NewStates4nextE6size_t"></span><span id="_CPPv2N4mata6parser9NewStates4nextE6size_t"></span><span id="mata::parser::NewStates::next__s"></span><span class="target" id="classmata_1_1parser_1_1NewStates_1a93c487c3d71aedbd3e658e387c2c5a10"></span><a class="reference internal" href="../file/explicit-section-reader_8hh.html#_CPPv4N4mata6parser9NewStates5StateE" title="mata::parser::NewStates::State"><span class="n"><span class="pre">State</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">next</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">num_of_states</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>The state of a new name in an automaton of <code class="docutils literal notranslate"><span class="pre">num_of_states</span></code> states; <code class="docutils literal notranslate"><span class="pre">num_of_states</span></code> never decreases between calls, as the caller allocates each state returned. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser12StateNameMapE">
+<span id="_CPPv3N4mata6parser12StateNameMapE"></span><span id="_CPPv2N4mata6parser12StateNameMapE"></span><span id="mata::parser::StateNameMap"></span><span class="target" id="classmata_1_1parser_1_1StateNameMap"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">StateNameMap</span></span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;explicit-section-reader.hh&gt;</em></div>
+<p>The map from state names to states of the readers, which behaves as the <code class="docutils literal notranslate"><span class="pre">std::unordered_map</span></code> it is built from and turns into, but finds the names of printed automata, a fixed prefix followed by a number, in a vector. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser12StateNameMap12StateNameMapERK3Map6size_t">
+<span id="_CPPv3N4mata6parser12StateNameMap12StateNameMapERK3Map6size_t"></span><span id="_CPPv2N4mata6parser12StateNameMap12StateNameMapERK3Map6size_t"></span><span id="mata::parser::StateNameMap::StateNameMap__MapCR.s"></span><span class="target" id="classmata_1_1parser_1_1StateNameMap_1a49b8ba78ec02334894d1fe57d39bb691"></span><span class="sig-name descname"><span class="n"><span class="pre">StateNameMap</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/explicit-section-reader_8hh.html#_CPPv4N4mata6parser12StateNameMap3MapE" title="mata::parser::StateNameMap::Map"><span class="n"><span class="pre">Map</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">names</span></span>, <span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">max_number</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>names</strong> – The initial names.</p></li>
+<li><p><strong>max_number</strong> – The largest number kept in the vector, which bounds its size. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser12StateNameMap9new_stateEK6size_t">
+<span id="_CPPv3N4mata6parser12StateNameMap9new_stateEK6size_t"></span><span id="_CPPv2N4mata6parser12StateNameMap9new_stateEK6size_t"></span><span id="mata::parser::StateNameMap::new_state__sC"></span><span class="target" id="classmata_1_1parser_1_1StateNameMap_1aa25f582fae0577dad82c3caf1f5197b1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../file/explicit-section-reader_8hh.html#_CPPv4N4mata6parser12StateNameMap5StateE" title="mata::parser::StateNameMap::State"><span class="n"><span class="pre">State</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">new_state</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">num_of_states</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>The state of a new name in an automaton of <code class="docutils literal notranslate"><span class="pre">num_of_states</span></code> states, see <code class="docutils literal notranslate"><a class="reference internal" href="#classmata_1_1parser_1_1NewStates"><span class="std std-ref"><span class="pre">NewStates</span></span></a></code>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser12StateNameMap4findENSt11string_viewE">
+<span id="_CPPv3N4mata6parser12StateNameMap4findENSt11string_viewE"></span><span id="_CPPv2N4mata6parser12StateNameMap4findENSt11string_viewE"></span><span id="mata::parser::StateNameMap::find__std::string_view"></span><span class="target" id="classmata_1_1parser_1_1StateNameMap_1ac5fcebdc8f8235213dd82ae259eedddb"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">optional</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/explicit-section-reader_8hh.html#_CPPv4N4mata6parser12StateNameMap5StateE" title="mata::parser::StateNameMap::State"><span class="n"><span class="pre">State</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">find</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string_view</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">name</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>The state named <code class="docutils literal notranslate"><span class="pre">name</span></code>, if any. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser12StateNameMap6insertENSt11string_viewE5State">
+<span id="_CPPv3N4mata6parser12StateNameMap6insertENSt11string_viewE5State"></span><span id="_CPPv2N4mata6parser12StateNameMap6insertENSt11string_viewE5State"></span><span id="mata::parser::StateNameMap::insert__std::string_view.State"></span><span class="target" id="classmata_1_1parser_1_1StateNameMap_1a05bcb409cae826d8b6463aae54ef0745"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">insert</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string_view</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">name</span></span>, <a class="reference internal" href="../file/explicit-section-reader_8hh.html#_CPPv4N4mata6parser12StateNameMap5StateE" title="mata::parser::StateNameMap::State"><span class="n"><span class="pre">State</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">state</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Maps <code class="docutils literal notranslate"><span class="pre">name</span></code>, which has no state yet, to <code class="docutils literal notranslate"><span class="pre">state</span></code>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata6parser12StateNameMap6to_mapEv">
+<span id="_CPPv3NK4mata6parser12StateNameMap6to_mapEv"></span><span id="_CPPv2NK4mata6parser12StateNameMap6to_mapEv"></span><span id="mata::parser::StateNameMap::to_mapC"></span><span class="target" id="classmata_1_1parser_1_1StateNameMap_1a431ed5805c8d068e4d937fcefa231ad2"></span><a class="reference internal" href="../file/explicit-section-reader_8hh.html#_CPPv4N4mata6parser12StateNameMap3MapE" title="mata::parser::StateNameMap::Map"><span class="n"><span class="pre">Map</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">to_map</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>All the names and their states. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK4mata6parser12StateNameMap8for_eachEvRR8Function">
+<span id="_CPPv3I0ENK4mata6parser12StateNameMap8for_eachERR8Function"></span><span id="_CPPv2I0ENK4mata6parser12StateNameMap8for_eachERR8Function"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Function</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1parser_1_1StateNameMap_1a4a1709834f4527bbb28722210aa3a92f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">for_each</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1parser_1_1StateNameMap.html#_CPPv4I0ENK4mata6parser12StateNameMap8for_eachEvRR8Function" title="mata::parser::StateNameMap::for_each::Function"><span class="n"><span class="pre">Function</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">function</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Calls <code class="docutils literal notranslate"><span class="pre">function</span></code> with every name and its state. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser13ExplicitTokenE">
+<span id="_CPPv3N4mata6parser13ExplicitTokenE"></span><span id="_CPPv2N4mata6parser13ExplicitTokenE"></span><span id="mata::parser::ExplicitToken"></span><span class="target" id="structmata_1_1parser_1_1ExplicitToken"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ExplicitToken</span></span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;explicit-section-reader.hh&gt;</em></div>
+<p>One token of a line, as <code class="docutils literal notranslate"><a class="reference internal" href="#namespacemata_1_1parser_1ae8e2170397d8605d7546f3cab8556a8f"><span class="std std-ref"><span class="pre">parse_mf()</span></span></a></code> reads it. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser13ExplicitToken4textE">
+<span id="_CPPv3N4mata6parser13ExplicitToken4textE"></span><span id="_CPPv2N4mata6parser13ExplicitToken4textE"></span><span id="mata::parser::ExplicitToken::text__std::string_view"></span><span class="target" id="structmata_1_1parser_1_1ExplicitToken_1ab43737ecee6b757b4e5ed141055d8f2d"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string_view</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">text</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><br /></dt>
+<dd><p>The token without the enclosing quotes, with escapes resolved. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser13ExplicitToken6quotedE">
+<span id="_CPPv3N4mata6parser13ExplicitToken6quotedE"></span><span id="_CPPv2N4mata6parser13ExplicitToken6quotedE"></span><span id="mata::parser::ExplicitToken::quoted__b"></span><span class="target" id="structmata_1_1parser_1_1ExplicitToken_1a9d1ca0934fbcd65975742949a31cc8a1"></span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">quoted</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="k"><span class="pre">false</span></span><span class="p"><span class="pre">}</span></span><br /></dt>
+<dd><p>Whether the token was quoted. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser21ExplicitSectionReaderE">
+<span id="_CPPv3N4mata6parser21ExplicitSectionReaderE"></span><span id="_CPPv2N4mata6parser21ExplicitSectionReaderE"></span><span id="mata::parser::ExplicitSectionReader"></span><span class="target" id="classmata_1_1parser_1_1ExplicitSectionReader"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ExplicitSectionReader</span></span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;explicit-section-reader.hh&gt;</em></div>
+<p>Reads the single section of a <code class="docutils literal notranslate"><span class="pre">.</span><a class="reference internal" href="namespacemata.html#namespacemata"><span class="std std-ref"><span class="pre">mata</span></span></a></code> input line by line, tokenizing every line as <code class="docutils literal notranslate"><a class="reference internal" href="#namespacemata_1_1parser_1ae8e2170397d8605d7546f3cab8556a8f"><span class="std std-ref"><span class="pre">parse_mf()</span></span></a></code> does. </p>
+<p>The reader covers only lines that are lists of names, and in the formula mode also the operators and parentheses of transition formulas (<code class="docutils literal notranslate"><span class="pre">&amp;</span></code>, <code class="docutils literal notranslate"><span class="pre">|</span></code>, <code class="docutils literal notranslate"><span class="pre">!</span></code>, <code class="docutils literal notranslate"><span class="pre">(</span></code>, <code class="docutils literal notranslate"><span class="pre">)</span></code>), which it splits off as tokens of their own, as <code class="docutils literal notranslate"><a class="reference internal" href="#namespacemata_1_1parser_1ae8e2170397d8605d7546f3cab8556a8f"><span class="std std-ref"><span class="pre">parse_mf()</span></span></a></code> does. It gives up on anything else <code class="docutils literal notranslate"><a class="reference internal" href="#namespacemata_1_1parser_1ae8e2170397d8605d7546f3cab8556a8f"><span class="std std-ref"><span class="pre">parse_mf()</span></span></a></code> would turn into an operator, on a second section, on a line continuation left open at the end of the input, and on every input <code class="docutils literal notranslate"><a class="reference internal" href="#namespacemata_1_1parser_1ae8e2170397d8605d7546f3cab8556a8f"><span class="std std-ref"><span class="pre">parse_mf()</span></span></a></code> rejects. Giving up is reported as <code class="docutils literal notranslate"><a class="reference internal" href="../file/explicit-section-reader_8hh.html#classmata_1_1parser_1_1ExplicitSectionReader_1a1eaab656caed8a37e17852de9b1b967fab4080bdf74febf04d578ff105cce9d3f"><span class="std std-ref"><span class="pre">Line::Unsupported</span></span></a></code>, so that the caller can hand the input to the general reader, which then either reads it or reports the error. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser21ExplicitSectionReader21ExplicitSectionReaderENSt11string_viewEKb">
+<span id="_CPPv3N4mata6parser21ExplicitSectionReader21ExplicitSectionReaderENSt11string_viewEKb"></span><span id="_CPPv2N4mata6parser21ExplicitSectionReader21ExplicitSectionReaderENSt11string_viewEKb"></span><span id="mata::parser::ExplicitSectionReader::ExplicitSectionReader__std::string_view.bC"></span><span class="target" id="classmata_1_1parser_1_1ExplicitSectionReader_1ac6c8d393c73c4127fcc44b480baa7474"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ExplicitSectionReader</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string_view</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">input</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">formulas</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">input</span></code> has to outlive the reader and the tokens it returns. <code class="docutils literal notranslate"><span class="pre">formulas</span></code> Whether to read the operators and parentheses of transition formulas. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser21ExplicitSectionReader9read_typeEv">
+<span id="_CPPv3N4mata6parser21ExplicitSectionReader9read_typeEv"></span><span id="_CPPv2N4mata6parser21ExplicitSectionReader9read_typeEv"></span><span id="mata::parser::ExplicitSectionReader::read_type"></span><span class="target" id="classmata_1_1parser_1_1ExplicitSectionReader_1aa4d126244c059f7b29c6ff0a81f8d394"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">optional</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string_view</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">read_type</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Reads the <code class="docutils literal notranslate"><span class="pre">&#64;TYPE</span></code> line, skipping the comment lines before it. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The section type, or <code class="docutils literal notranslate"><span class="pre">std::nullopt</span></code> when the input does not start with a well-formed type line. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser21ExplicitSectionReader9read_lineEv">
+<span id="_CPPv3N4mata6parser21ExplicitSectionReader9read_lineEv"></span><span id="_CPPv2N4mata6parser21ExplicitSectionReader9read_lineEv"></span><span id="mata::parser::ExplicitSectionReader::read_line"></span><span class="target" id="classmata_1_1parser_1_1ExplicitSectionReader_1a7374479068b40b13d5fba668a658f3e4"></span><a class="reference internal" href="../file/explicit-section-reader_8hh.html#_CPPv4N4mata6parser21ExplicitSectionReader4LineE" title="mata::parser::ExplicitSectionReader::Line"><span class="n"><span class="pre">Line</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">read_line</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Reads the next line, joining the lines continued by a trailing <code class="docutils literal notranslate"><span class="pre">\</span></code>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata6parser21ExplicitSectionReader3keyEv">
+<span id="_CPPv3NK4mata6parser21ExplicitSectionReader3keyEv"></span><span id="_CPPv2NK4mata6parser21ExplicitSectionReader3keyEv"></span><span id="mata::parser::ExplicitSectionReader::keyC"></span><span class="target" id="classmata_1_1parser_1_1ExplicitSectionReader_1a835f9a1c90dfa5d3bc3bc2a4fcc5a485"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string_view</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">key</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>The key of the last <code class="docutils literal notranslate"><a class="reference internal" href="../file/explicit-section-reader_8hh.html#classmata_1_1parser_1_1ExplicitSectionReader_1a1eaab656caed8a37e17852de9b1b967fa897356954c2cd3d41b221e3f24f99bba"><span class="std std-ref"><span class="pre">Line::Key</span></span></a></code> line, without the leading <code class="docutils literal notranslate"><span class="pre">%</span></code>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata6parser21ExplicitSectionReader6tokensEv">
+<span id="_CPPv3NK4mata6parser21ExplicitSectionReader6tokensEv"></span><span id="_CPPv2NK4mata6parser21ExplicitSectionReader6tokensEv"></span><span id="mata::parser::ExplicitSectionReader::tokensC"></span><span class="target" id="classmata_1_1parser_1_1ExplicitSectionReader_1ad9f2ae35c4d731493644ba6684e80905"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/explicit-section-reader_8hh.html#_CPPv4N4mata6parser13ExplicitTokenE" title="mata::parser::ExplicitToken"><span class="n"><span class="pre">ExplicitToken</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">tokens</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>The values of the last <code class="docutils literal notranslate"><a class="reference internal" href="../file/explicit-section-reader_8hh.html#classmata_1_1parser_1_1ExplicitSectionReader_1a1eaab656caed8a37e17852de9b1b967fa897356954c2cd3d41b221e3f24f99bba"><span class="std std-ref"><span class="pre">Line::Key</span></span></a></code> line, or the tokens of the last <code class="docutils literal notranslate"><a class="reference internal" href="../file/explicit-section-reader_8hh.html#classmata_1_1parser_1_1ExplicitSectionReader_1a1eaab656caed8a37e17852de9b1b967faac101b32dda4448cf13a93fe283dddd8"><span class="std std-ref"><span class="pre">Line::Body</span></span></a></code> line. Valid until the next call of <code class="docutils literal notranslate"><a class="reference internal" href="#classmata_1_1parser_1_1ExplicitSectionReader_1a7374479068b40b13d5fba668a658f3e4"><span class="std std-ref"><span class="pre">read_line()</span></span></a></code>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata6parser21ExplicitSectionReader11source_textENSt4spanIK13ExplicitTokenEE">
+<span id="_CPPv3NK4mata6parser21ExplicitSectionReader11source_textENSt4spanIK13ExplicitTokenEE"></span><span id="_CPPv2NK4mata6parser21ExplicitSectionReader11source_textENSt4spanIK13ExplicitTokenEE"></span><span id="mata::parser::ExplicitSectionReader::source_text__std::span:ExplicitTokenC:C"></span><span class="target" id="classmata_1_1parser_1_1ExplicitSectionReader_1ade01452d9f8793bce7e8be047aa63575"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">optional</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string_view</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">source_text</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">span</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/explicit-section-reader_8hh.html#_CPPv4N4mata6parser13ExplicitTokenE" title="mata::parser::ExplicitToken"><span class="n"><span class="pre">ExplicitToken</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">tokens</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>The text of the input that the consecutive tokens <code class="docutils literal notranslate"><span class="pre">tokens</span></code> of the last line were read from, quotes included. </p>
+<p>Equal texts read without giving up are equal tokens, as nothing before a token changes how the reader reads it but whether the reader gives up, so the text identifies the tokens. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The text, or <code class="docutils literal notranslate"><span class="pre">std::nullopt</span></code> when a token had its escapes resolved and so has no text of the input. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriterE">
+<span id="_CPPv3N4mata6parser10MataWriterE"></span><span id="_CPPv2N4mata6parser10MataWriterE"></span><span id="mata::parser::MataWriter"></span><span class="target" id="classmata_1_1parser_1_1MataWriter"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">MataWriter</span></span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;mata-writer.hh&gt;</em></div>
+<p>Collects the text of a printed automaton in a string, formatting the numbers with <code class="docutils literal notranslate"><span class="pre">std::to_chars()</span></code> instead of the locale machinery of a stream, which took most of the time of printing. </p>
+<p>The numbers are plain decimals whatever the format flags of the stream, as the parser reads them. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriter10MataWriterEv">
+<span id="_CPPv3N4mata6parser10MataWriter10MataWriterEv"></span><span id="_CPPv2N4mata6parser10MataWriter10MataWriterEv"></span><span id="mata::parser::MataWriter::MataWriter"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1a4a8d2eef47421faec581fd4c32ee14c9"></span><span class="sig-name descname"><span class="n"><span class="pre">MataWriter</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
+<dd><p>Collects the whole text for <code class="docutils literal notranslate"><a class="reference internal" href="#classmata_1_1parser_1_1MataWriter_1ac9e612c2c917d072d9f7b0730e899f25"><span class="std std-ref"><span class="pre">take()</span></span></a></code>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriter10MataWriterERNSt7ostreamE">
+<span id="_CPPv3N4mata6parser10MataWriter10MataWriterERNSt7ostreamE"></span><span id="_CPPv2N4mata6parser10MataWriter10MataWriterERNSt7ostreamE"></span><span id="mata::parser::MataWriter::MataWriter__osR"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1ae28e60ba34a6835e642d0b0e04af6a2e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">MataWriter</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">ostream</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">output</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Passes the text on to <code class="docutils literal notranslate"><span class="pre">output</span></code> chunk by chunk; see <code class="docutils literal notranslate"><a class="reference internal" href="#classmata_1_1parser_1_1MataWriter_1a2cac1909f4f72831140a39427e1159a2"><span class="std std-ref"><span class="pre">end_line()</span></span></a></code> and <code class="docutils literal notranslate"><a class="reference internal" href="#classmata_1_1parser_1_1MataWriter_1adac116554b543b7c4228c018a85882f5"><span class="std std-ref"><span class="pre">flush()</span></span></a></code>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriter8end_lineEv">
+<span id="_CPPv3N4mata6parser10MataWriter8end_lineEv"></span><span id="_CPPv2N4mata6parser10MataWriter8end_lineEv"></span><span id="mata::parser::MataWriter::end_line"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1a2cac1909f4f72831140a39427e1159a2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">end_line</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Ends a line, and passes the text on to the stream once it fills a chunk. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriter5flushEv">
+<span id="_CPPv3N4mata6parser10MataWriter5flushEv"></span><span id="_CPPv2N4mata6parser10MataWriter5flushEv"></span><span id="mata::parser::MataWriter::flush"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1adac116554b543b7c4228c018a85882f5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">flush</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Passes the rest of the text on to the stream, and flushes the stream once. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriter4takeEv">
+<span id="_CPPv3N4mata6parser10MataWriter4takeEv"></span><span id="_CPPv2N4mata6parser10MataWriter4takeEv"></span><span id="mata::parser::MataWriter::take"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1ac9e612c2c917d072d9f7b0730e899f25"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">take</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><br /></dt>
+<dd><p>The text collected without a stream. </p>
 </dd></dl>
 
 </div>

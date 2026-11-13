@@ -54,6 +54,15 @@ In particular, this includes:<ol class="loweralpha simple">
 </dl>
 </p>
 <div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-typedefs">Typedefs</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9StringMapE">
+<span id="_CPPv3I0EN4mata5utils9StringMapE"></span><span id="_CPPv2I0EN4mata5utils9StringMapE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="namespacemata_1_1utils_1a860d7c17d306a35d6df79523866717ca"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">StringMap</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unordered_map</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4I0EN4mata5utils9StringMapE" title="mata::utils::StringMap::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../file/utils_8hh.html#_CPPv4N4mata5utils10StringHashE" title="mata::utils::StringHash"><span class="n"><span class="pre">StringHash</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">equal_to</span></span><span class="p"><span class="pre">&lt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><br /></dt>
+<dd><p>A map from strings that <code class="docutils literal notranslate"><span class="pre">find()</span></code>, <code class="docutils literal notranslate"><span class="pre">contains()</span></code> and <code class="docutils literal notranslate"><span class="pre">count()</span></code> a <code class="docutils literal notranslate"><span class="pre">std::string_view</span></code> without copying it. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric" id="breathe-section-title-functions">Functions</p>
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils12are_disjointEbRKN5utils9OrdVectorI1TEERKN5utils9OrdVectorI1TEE">
@@ -791,6 +800,14 @@ In particular, this includes:<ol class="loweralpha simple">
 <p class="admonition-title">Note</p>
 <p>See <code class="docutils literal notranslate"><a class="reference internal" href="../struct/structmata_1_1utils_1_1SetHash.html#structmata_1_1utils_1_1SetHash"><span class="std std-ref"><span class="pre">SetHash</span></span></a></code> for why we do not specialize <code class="docutils literal notranslate"><span class="pre">std::hash&lt;std::pair&lt;A,</span> <span class="pre">B&gt;&gt;</span></code> directly. </p>
 </div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils10StringHashE">
+<span id="_CPPv3N4mata5utils10StringHashE"></span><span id="_CPPv2N4mata5utils10StringHashE"></span><span id="mata::utils::StringHash"></span><span class="target" id="structmata_1_1utils_1_1StringHash"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">StringHash</span></span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;utils.hh&gt;</em></div>
+<p>A hasher of strings given as any string type, so that a <code class="docutils literal notranslate"><span class="pre">std::string_view</span></code> finds a <code class="docutils literal notranslate"><span class="pre">std::string</span></code> key. </p>
 </dd></dl>
 
 <dl class="cpp struct">

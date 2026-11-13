@@ -1,0 +1,5 @@
+Class mata::parser::MataWriter
+==============================
+
+.. doxygenclass:: mata::parser::MataWriter
+   :members:

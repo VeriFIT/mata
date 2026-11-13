@@ -1,0 +1,5 @@
+Class mata::parser::StateNameMap
+================================
+
+.. doxygenclass:: mata::parser::StateNameMap
+   :members:

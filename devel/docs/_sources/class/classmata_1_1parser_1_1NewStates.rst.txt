@@ -1,0 +1,5 @@
+Class mata::parser::NewStates
+=============================
+
+.. doxygenclass:: mata::parser::NewStates
+   :members:

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>File mata-writer.hh &#8212; Mata v0.0.0-dev.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=623e9adf"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="File mintermization.hh" href="mintermization_8hh.html" />
+    <link rel="prev" title="File lazy-word-generator.hh" href="lazy-word-generator_8hh.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="file-mata-writer-hh">
+<h1>File mata-writer.hh<a class="headerlink" href="#file-mata-writer-hh" title="Link to this heading">¶</a></h1>
+<p>Writer of the <code class="docutils literal notranslate"><span class="pre">.</span><a class="reference internal" href="../namespace/namespacemata.html#namespacemata"><span class="std std-ref"><span class="pre">mata</span></span></a></code> text of printed automata. </p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv44mata">
+<span id="_CPPv34mata"></span><span id="_CPPv24mata"></span><span id="mata"></span><span class="target" id="namespacemata"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mata</span></span></span><br /></dt>
+<dd><p>Main namespace including structs and algorithms for all automata. </p>
+<p>In particular, this includes:<ol class="loweralpha simple">
+<li><p>Alphabets,</p></li>
+<li><p>Formula graphs and nodes,</p></li>
+<li><p><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1Mintermization"><span class="std std-ref">Mintermization</span></a>,</p></li>
+<li><p>Closed sets. </p></li>
+</ol>
+</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parserE">
+<span id="_CPPv3N4mata6parserE"></span><span id="_CPPv2N4mata6parserE"></span><span id="mata::parser"></span><span class="target" id="namespacemata_1_1parser"></span><span class="k"><span class="pre">namespace</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">parser</span></span></span><br /></dt>
+<dd><p>Parser from <code class="docutils literal notranslate"><span class="pre">.</span><a class="reference internal" href="../namespace/namespacemata.html#namespacemata"><span class="std std-ref"><span class="pre">mata</span></span></a></code> format to automata (currently <code class="docutils literal notranslate"><span class="pre">Nfa</span></code> and <code class="docutils literal notranslate"><span class="pre">Nft</span></code> are supported). </p>
+<p>This includes parsing either from files or from other streams (strings, etc.). </p>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriterE">
+<span id="_CPPv3N4mata6parser10MataWriterE"></span><span id="_CPPv2N4mata6parser10MataWriterE"></span><span id="mata::parser::MataWriter"></span><span class="target" id="classmata_1_1parser_1_1MataWriter"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">MataWriter</span></span></span><br /></dt>
+<dd><div class="docutils container">
+<em>#include &lt;mata-writer.hh&gt;</em></div>
+<p>Collects the text of a printed automaton in a string, formatting the numbers with <code class="docutils literal notranslate"><span class="pre">std::to_chars()</span></code> instead of the locale machinery of a stream, which took most of the time of printing. </p>
+<p>The numbers are plain decimals whatever the format flags of the stream, as the parser reads them. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriter10MataWriterEv">
+<span id="_CPPv3N4mata6parser10MataWriter10MataWriterEv"></span><span id="_CPPv2N4mata6parser10MataWriter10MataWriterEv"></span><span id="mata::parser::MataWriter::MataWriter"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1a4a8d2eef47421faec581fd4c32ee14c9"></span><span class="sig-name descname"><span class="n"><span class="pre">MataWriter</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
+<dd><p>Collects the whole text for <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1parser.html#classmata_1_1parser_1_1MataWriter_1ac9e612c2c917d072d9f7b0730e899f25"><span class="std std-ref"><span class="pre">take()</span></span></a></code>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriter10MataWriterERNSt7ostreamE">
+<span id="_CPPv3N4mata6parser10MataWriter10MataWriterERNSt7ostreamE"></span><span id="_CPPv2N4mata6parser10MataWriter10MataWriterERNSt7ostreamE"></span><span id="mata::parser::MataWriter::MataWriter__osR"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1ae28e60ba34a6835e642d0b0e04af6a2e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">MataWriter</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">ostream</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">output</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Passes the text on to <code class="docutils literal notranslate"><span class="pre">output</span></code> chunk by chunk; see <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1parser.html#classmata_1_1parser_1_1MataWriter_1a2cac1909f4f72831140a39427e1159a2"><span class="std std-ref"><span class="pre">end_line()</span></span></a></code> and <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1parser.html#classmata_1_1parser_1_1MataWriter_1adac116554b543b7c4228c018a85882f5"><span class="std std-ref"><span class="pre">flush()</span></span></a></code>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriter10MataWriterERK10MataWriter">
+<span id="_CPPv3N4mata6parser10MataWriter10MataWriterERK10MataWriter"></span><span id="_CPPv2N4mata6parser10MataWriter10MataWriterERK10MataWriter"></span><span id="mata::parser::MataWriter::MataWriter__MataWriterCR"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1af175d205c7b1141ad540c4423aa2a60d"></span><span class="sig-name descname"><span class="n"><span class="pre">MataWriter</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata6parser10MataWriter10MataWriterERK10MataWriter" title="mata::parser::MataWriter::MataWriter"><span class="n"><span class="pre">MataWriter</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">delete</span></span><a class="headerlink" href="#_CPPv4N4mata6parser10MataWriter10MataWriterERK10MataWriter" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriter10MataWriterERR10MataWriter">
+<span id="_CPPv3N4mata6parser10MataWriter10MataWriterERR10MataWriter"></span><span id="_CPPv2N4mata6parser10MataWriter10MataWriterERR10MataWriter"></span><span id="mata::parser::MataWriter::MataWriter__MataWriterRR"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1a403280d4c9a10b453bece9df461c5dcc"></span><span class="sig-name descname"><span class="n"><span class="pre">MataWriter</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4N4mata6parser10MataWriter10MataWriterERR10MataWriter" title="mata::parser::MataWriter::MataWriter"><span class="n"><span class="pre">MataWriter</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">delete</span></span><a class="headerlink" href="#_CPPv4N4mata6parser10MataWriter10MataWriterERR10MataWriter" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriteraSERK10MataWriter">
+<span id="_CPPv3N4mata6parser10MataWriteraSERK10MataWriter"></span><span id="_CPPv2N4mata6parser10MataWriteraSERK10MataWriter"></span><span id="mata::parser::MataWriter::assign-operator__MataWriterCR"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1a043ac1d6b1f2af6466ea1152e0d17746"></span><a class="reference internal" href="../class/classmata_1_1parser_1_1MataWriter.html#_CPPv4N4mata6parser10MataWriterE" title="mata::parser::MataWriter"><span class="n"><span class="pre">MataWriter</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1parser_1_1MataWriter.html#_CPPv4N4mata6parser10MataWriterE" title="mata::parser::MataWriter"><span class="n"><span class="pre">MataWriter</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">delete</span></span><a class="headerlink" href="#_CPPv4N4mata6parser10MataWriteraSERK10MataWriter" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriteraSERR10MataWriter">
+<span id="_CPPv3N4mata6parser10MataWriteraSERR10MataWriter"></span><span id="_CPPv2N4mata6parser10MataWriteraSERR10MataWriter"></span><span id="mata::parser::MataWriter::assign-operator__MataWriterRR"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1acbca610640e3eb6618adc2ca7b778d5c"></span><a class="reference internal" href="../class/classmata_1_1parser_1_1MataWriter.html#_CPPv4N4mata6parser10MataWriterE" title="mata::parser::MataWriter"><span class="n"><span class="pre">MataWriter</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1parser_1_1MataWriter.html#_CPPv4N4mata6parser10MataWriterE" title="mata::parser::MataWriter"><span class="n"><span class="pre">MataWriter</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">delete</span></span><a class="headerlink" href="#_CPPv4N4mata6parser10MataWriteraSERR10MataWriter" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriterD0Ev">
+<span id="_CPPv3N4mata6parser10MataWriterD0Ev"></span><span id="_CPPv2N4mata6parser10MataWriterD0Ev"></span><span id="mata::parser::MataWriter::~MataWriter"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1a25c79bd66494b4939ad6cf13b81c297a"></span><span class="sig-name descname"><span class="n"><span class="pre">~MataWriter</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><a class="headerlink" href="#_CPPv4N4mata6parser10MataWriterD0Ev" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriterlsEKNSt11string_viewE">
+<span id="_CPPv3N4mata6parser10MataWriterlsEKNSt11string_viewE"></span><span id="_CPPv2N4mata6parser10MataWriterlsEKNSt11string_viewE"></span><span id="mata::parser::MataWriter::lshift-operator__std::string_viewC"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1a453161f2735de9ab5c83c45961656262"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1parser_1_1MataWriter.html#_CPPv4N4mata6parser10MataWriterE" title="mata::parser::MataWriter"><span class="n"><span class="pre">MataWriter</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&lt;&lt;</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string_view</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">text</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata6parser10MataWriterlsEKNSt11string_viewE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriterlsEKc">
+<span id="_CPPv3N4mata6parser10MataWriterlsEKc"></span><span id="_CPPv2N4mata6parser10MataWriterlsEKc"></span><span id="mata::parser::MataWriter::lshift-operator__cC"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1a4c9dadff43874e0f3f4738b808d300c1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1parser_1_1MataWriter.html#_CPPv4N4mata6parser10MataWriterE" title="mata::parser::MataWriter"><span class="n"><span class="pre">MataWriter</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&lt;&lt;</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">ch</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata6parser10MataWriterlsEKc" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I_NSt17unsigned_integralEEN4mata6parser10MataWriterlsER10MataWriterK6Number">
+<span id="_CPPv3I_NSt17unsigned_integralEEN4mata6parser10MataWriterlsEK6Number"></span><span id="_CPPv2I_NSt17unsigned_integralEEN4mata6parser10MataWriterlsEK6Number"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">unsigned_integral</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Number</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1parser_1_1MataWriter_1ab354810a641b1b0753d9009616761980"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1parser_1_1MataWriter.html#_CPPv4N4mata6parser10MataWriterE" title="mata::parser::MataWriter"><span class="n"><span class="pre">MataWriter</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">&lt;&lt;</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I_NSt17unsigned_integralEEN4mata6parser10MataWriterlsER10MataWriterK6Number" title="mata::parser::MataWriter::operator&lt;&lt;::Number"><span class="n"><span class="pre">Number</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">number</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I_NSt17unsigned_integralEEN4mata6parser10MataWriterlsER10MataWriterK6Number" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriter8end_lineEv">
+<span id="_CPPv3N4mata6parser10MataWriter8end_lineEv"></span><span id="_CPPv2N4mata6parser10MataWriter8end_lineEv"></span><span id="mata::parser::MataWriter::end_line"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1a2cac1909f4f72831140a39427e1159a2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">end_line</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Ends a line, and passes the text on to the stream once it fills a chunk. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriter5flushEv">
+<span id="_CPPv3N4mata6parser10MataWriter5flushEv"></span><span id="_CPPv2N4mata6parser10MataWriter5flushEv"></span><span id="mata::parser::MataWriter::flush"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1adac116554b543b7c4228c018a85882f5"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">flush</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Passes the rest of the text on to the stream, and flushes the stream once. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriter4takeEv">
+<span id="_CPPv3N4mata6parser10MataWriter4takeEv"></span><span id="_CPPv2N4mata6parser10MataWriter4takeEv"></span><span id="mata::parser::MataWriter::take"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1ac9e612c2c917d072d9f7b0730e899f25"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">take</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><br /></dt>
+<dd><p>The text collected without a stream. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-functions">Private Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriter8room_forEK6size_t">
+<span id="_CPPv3N4mata6parser10MataWriter8room_forEK6size_t"></span><span id="_CPPv2N4mata6parser10MataWriter8room_forEK6size_t"></span><span id="mata::parser::MataWriter::room_for__sC"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1a82247a48677ab106fe3b2f042d4b193d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">room_for</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">num_of_chars</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata6parser10MataWriter8room_forEK6size_t" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Where to write <code class="docutils literal notranslate"><span class="pre">num_of_chars</span></code> more characters. The string is sized ahead and cut to the text at the end, so that writing a piece of a line is a copy rather than a call of <code class="docutils literal notranslate"><span class="pre">std::string::append()</span></code>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriter9write_outEv">
+<span id="_CPPv3N4mata6parser10MataWriter9write_outEv"></span><span id="_CPPv2N4mata6parser10MataWriter9write_outEv"></span><span id="mata::parser::MataWriter::write_out"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1a2c3cea5fe89d2db620813b9294495a35"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">write_out</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata6parser10MataWriter9write_outEv" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-members">Private Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriter7output_E">
+<span id="_CPPv3N4mata6parser10MataWriter7output_E"></span><span id="_CPPv2N4mata6parser10MataWriter7output_E"></span><span id="mata::parser::MataWriter::output___osP"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1a7a274fe86e9f94d370592442679f06dd"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">ostream</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">output_</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="k"><span class="pre">nullptr</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata6parser10MataWriter7output_E" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriter5text_E">
+<span id="_CPPv3N4mata6parser10MataWriter5text_E"></span><span id="_CPPv2N4mata6parser10MataWriter5text_E"></span><span id="mata::parser::MataWriter::text___ss"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1ae79346bdafd79119e9ee948a530790e6"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">text_</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata6parser10MataWriter5text_E" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The text written is the first <code class="docutils literal notranslate"><span class="pre">size_</span></code> characters. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriter5size_E">
+<span id="_CPPv3N4mata6parser10MataWriter5size_E"></span><span id="_CPPv2N4mata6parser10MataWriter5size_E"></span><span id="mata::parser::MataWriter::size___s"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1a5f31775800bbb46b35b5791def1f3acc"></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">size_</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata6parser10MataWriter5size_E" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-static-attributes">Private Static Attributes</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser10MataWriter10CHUNK_SIZEE">
+<span id="_CPPv3N4mata6parser10MataWriter10CHUNK_SIZEE"></span><span id="_CPPv2N4mata6parser10MataWriter10CHUNK_SIZEE"></span><span id="mata::parser::MataWriter::CHUNK_SIZE__s"></span><span class="target" id="classmata_1_1parser_1_1MataWriter_1a3a82a8a05d4dee6688eb2e36ae52dd28"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">constexpr</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">CHUNK_SIZE</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="n"><span class="pre">size_t</span></span><span class="p"><span class="pre">{</span></span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">}</span></span><span class="w"> </span><span class="o"><span class="pre">&lt;&lt;</span></span><span class="w"> </span><span class="m"><span class="pre">16</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata6parser10MataWriter10CHUNK_SIZEE" title="Link to this definition">¶</a><br /></dt>
+<dd></dd></dl>
+
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automata-format.html">Automata Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../script-language.html">(Auto)Mata Script Language</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">The <code class="docutils literal notranslate"><span class="pre">mata</span></code> command</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automaton.html">Automaton Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../applications.html">Strings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../namespacelist.html">Namespace list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../classlist.html">Class list</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../filelist.html">File list</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="alphabet_8hh.html">File alphabet.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="antichain-inclusion_8hh.html">File antichain-inclusion.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="assert_8hh.html">File assert.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automaton_8hh.html">File automaton.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="closed-set_8hh.html">File closed-set.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="explicit-section-reader_8hh.html">File explicit-section-reader.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="generator-support_8hh.html">File generator-support.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="inter-aut_8hh.html">File inter-aut.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lazy-word-generator_8hh.html">File lazy-word-generator.hh</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">File mata-writer.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mintermization_8hh.html">File mintermization.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2algorithms_8hh.html">File algorithms.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2builder_8hh.html">File builder.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2delta_8hh.html">File delta.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2plumbing_8hh.html">File plumbing.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_2types_8hh.html">File types.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa_8hh.html">File nfa.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft-internal_8hh.html">File nft-internal.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2algorithms_8hh.html">File algorithms.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2builder_8hh.html">File builder.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2delta_8hh.html">File delta.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2plumbing_8hh.html">File plumbing.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_2types_8hh.html">File types.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft_8hh.html">File nft.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ord-vector_8hh.html">File ord-vector.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parser_8hh.html">File parser.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="re2parser_8hh.html">File re2parser.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="small-ord-vector_8hh.html">File small-ord-vector.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sparse-set_8hh.html">File sparse-set.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="strings_8hh.html">File strings.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="synchronized-iterator_8hh.html">File synchronized-iterator.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="two-dimensional-map_8hh.html">File two-dimensional-map.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils_8hh.html">File utils.hh</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../structlist.html">Struct list</a></li>
+</ul>
+
+
+<hr />
+<ul>
+    
+    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/">Mata website</a></li>
+    
+    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/playground/">Playground</a></li>
+    
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../filelist.html">File list</a><ul>
+      <li>Previous: <a href="lazy-word-generator_8hh.html" title="previous chapter">File lazy-word-generator.hh</a></li>
+      <li>Next: <a href="mintermization_8hh.html" title="next chapter">File mintermization.hh</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.2.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/file/mata-writer_8hh.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

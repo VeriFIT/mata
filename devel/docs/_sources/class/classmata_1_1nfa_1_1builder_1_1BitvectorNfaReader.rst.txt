@@ -1,0 +1,5 @@
+Class mata::nfa::builder::BitvectorNfaReader
+============================================
+
+.. doxygenclass:: mata::nfa::builder::BitvectorNfaReader
+   :members:

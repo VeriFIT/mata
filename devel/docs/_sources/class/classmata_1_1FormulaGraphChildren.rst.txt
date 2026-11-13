@@ -1,0 +1,5 @@
+Class mata::FormulaGraphChildren
+================================
+
+.. doxygenclass:: mata::FormulaGraphChildren
+   :members:

@@ -1,0 +1,5 @@
+Struct mata::NameStore::Range
+=============================
+
+.. doxygenstruct:: mata::NameStore::Range
+   :members:

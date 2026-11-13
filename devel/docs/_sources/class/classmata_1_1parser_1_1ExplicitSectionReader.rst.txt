@@ -1,0 +1,5 @@
+Class mata::parser::ExplicitSectionReader
+=========================================
+
+.. doxygenclass:: mata::parser::ExplicitSectionReader
+   :members:

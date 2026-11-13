@@ -1,0 +1,5 @@
+Struct mata::Mintermization::Checkpoint
+=======================================
+
+.. doxygenstruct:: mata::Mintermization::Checkpoint
+   :members:

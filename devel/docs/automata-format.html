@@ -39,7 +39,7 @@
 <h2>The Mata file format for automata (.mata format)<a class="headerlink" href="#the-mata-file-format-for-automata-mata-format" title="Link to this heading">¶</a></h2>
 <blockquote>
 <div><p>[!WARNING]
-The Mata library currently supports only a subset of the whole format. Notably, the Mata library supports NFAs, but not AFAs nor transducers. The Mata library may also not support all the additional features described in the format, such as special formulas, tracks, etc.</p>
+The Mata library currently supports only a subset of the whole format. Notably, the Mata library supports NFAs and NFTs (transducers), but not AFAs (their support is disabled). The Mata library may also not support all the additional features described in the format, such as special formulas, tracks, etc.</p>
 </div></blockquote>
 <section id="top-level-file-structure">
 <h3>Top-level file structure<a class="headerlink" href="#top-level-file-structure" title="Link to this heading">¶</a></h3>
@@ -89,7 +89,7 @@ or <strong>comment lines</strong> starting with <code class="docutils literal no
 <h4>AFA (Alternating finite automata)<a class="headerlink" href="#afa-alternating-finite-automata" title="Link to this heading">¶</a></h4>
 <blockquote>
 <div><p>[!WARNING]
-The Mata library currently does not support AFAs.</p>
+The Mata library currently does not support AFAs; their support is disabled.</p>
 </div></blockquote>
 <ul class="simple">
 <li><p>Transition lines are of the form <code class="docutils literal notranslate"><span class="pre">&quot;&lt;State&gt;</span> <span class="pre">&lt;Formula&gt;&quot;</span></code> representing the source state and the transition formula - a Boolean formula over symbol literals, states, and nodes.</p></li>
@@ -162,7 +162,9 @@ q2 x &amp; !y q3
 <h3>Transducer<a class="headerlink" href="#transducer" title="Link to this heading">¶</a></h3>
 <blockquote>
 <div><p>[!WARNING]
-The Mata library currently does not support transducers.</p>
+The Mata library supports transducers only as NFTs in <code class="docutils literal notranslate"><span class="pre">&#64;NFT-explicit</span></code> sections, where <code class="docutils literal notranslate"><span class="pre">%Levels</span> <span class="pre">q0:0</span> <span class="pre">q1:1</span> <span class="pre">...</span></code>
+assigns the states to levels and <code class="docutils literal notranslate"><span class="pre">%LevelsNum</span></code> gives the number of levels. Tracks, as described below, are not
+supported.</p>
 </div></blockquote>
 <p>A transducer has named tracks, and it has a key-value line starting with <code class="docutils literal notranslate"><span class="pre">%Tracks</span></code>. We use <code class="docutils literal notranslate"><span class="pre">&lt;lit&gt;&#64;x</span></code> to say that the <code class="docutils literal notranslate"><span class="pre">&lt;lit&gt;</span></code> belongs to the track <code class="docutils literal notranslate"><span class="pre">x</span></code>. We may also specify their names by a type-identifier or enumeration. An example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@AFA</span><span class="o">-</span><span class="n">intervals</span>
@@ -200,6 +202,41 @@ The Mata library currently does not support transducers.</p>
 <ol class="arabic simple">
 <li><p>An attribute inside a transition is a token such as a state, node, symbol. Its identifier is <code class="docutils literal notranslate"><span class="pre">t</span></code>. We can also give attributes to states, symbols, nodes by writing key-value lines of the form <code class="docutils literal notranslate"><span class="pre">%Attribute</span> <span class="pre">&lt;state&gt;</span> <span class="pre">&lt;attribute&gt;</span></code>.</p></li>
 </ol>
+</section>
+<section id="how-the-mata-library-reads-the-format">
+<h3>How the Mata library reads the format<a class="headerlink" href="#how-the-mata-library-reads-the-format" title="Link to this heading">¶</a></h3>
+<p>The loaders of the Mata library (<code class="docutils literal notranslate"><span class="pre">mata::nfa::builder::parse_from_mata()</span></code>, <code class="docutils literal notranslate"><span class="pre">mata::nft::builder::parse_from_mata()</span></code>,
+and the loaders of the Python and Rust bindings) give each section to a fast reader when the section stays within the
+subset the reader covers, and to the general reader otherwise. Both read the same automaton, up to the numbering of
+states and of the minterms of bitvector alphabets. The general reader parses the section with
+<code class="docutils literal notranslate"><span class="pre">mata::parser::parse_mf()</span></code>. For NFAs, <code class="docutils literal notranslate"><span class="pre">mata::IntermediateAut</span></code> then parses the formulas of the section and
+<code class="docutils literal notranslate"><span class="pre">construct()</span></code> builds the automaton from it. For NFTs, <code class="docutils literal notranslate"><span class="pre">construct()</span></code> builds the transducer from the parsed section
+directly, as its <code class="docutils literal notranslate"><span class="pre">mata::IntermediateAut</span></code> overload ignores <code class="docutils literal notranslate"><span class="pre">%Levels</span></code> and <code class="docutils literal notranslate"><span class="pre">%LevelsNum</span></code>.</p>
+<ul>
+<li><p><strong>Explicit reader</strong> (<code class="docutils literal notranslate"><span class="pre">mata::nfa::builder::parse_explicit_from_mata()</span></code>, and its counterpart for NFTs): a single
+<code class="docutils literal notranslate"><span class="pre">&#64;NFA</span></code> or <code class="docutils literal notranslate"><span class="pre">&#64;NFA-explicit</span></code> section (<code class="docutils literal notranslate"><span class="pre">&#64;NFT</span></code> or <code class="docutils literal notranslate"><span class="pre">&#64;NFT-explicit</span></code> for NFTs) in which</p>
+<ul class="simple">
+<li><p>the <code class="docutils literal notranslate"><span class="pre">%Initial</span></code> and <code class="docutils literal notranslate"><span class="pre">%Final</span></code> lines (and <code class="docutils literal notranslate"><span class="pre">%Levels</span></code> and <code class="docutils literal notranslate"><span class="pre">%LevelsNum</span></code> for NFTs) are plain lists of names,</p></li>
+<li><p>every transition is a <code class="docutils literal notranslate"><span class="pre">source</span> <span class="pre">symbol</span> <span class="pre">target</span></code> triple of names,</p></li>
+<li><p>the namings of states, symbols, and nodes are <code class="docutils literal notranslate"><span class="pre">auto</span></code> or <code class="docutils literal notranslate"><span class="pre">marked</span></code>,</p></li>
+<li><p>and no unquoted name contains <code class="docutils literal notranslate"><span class="pre">&amp;</span></code>, <code class="docutils literal notranslate"><span class="pre">|</span></code>, <code class="docutils literal notranslate"><span class="pre">!</span></code>, <code class="docutils literal notranslate"><span class="pre">(</span></code>, <code class="docutils literal notranslate"><span class="pre">)</span></code>, <code class="docutils literal notranslate"><span class="pre">%</span></code>, <code class="docutils literal notranslate"><span class="pre">&#64;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;</span></code>.</p></li>
+</ul>
+</li>
+<li><p><strong>Bitvector reader</strong> (<code class="docutils literal notranslate"><span class="pre">mata::nfa::builder::BitvectorNfaReader</span></code>): <code class="docutils literal notranslate"><span class="pre">&#64;NFA-bits</span></code> sections, all of which given to one
+reader share one set of minterms. It reads directly the sections in which</p>
+<ul class="simple">
+<li><p>every transition is <code class="docutils literal notranslate"><span class="pre">source</span> <span class="pre">formula</span> <span class="pre">target</span></code>, where the formula is a Boolean combination of unquoted symbol
+names, <code class="docutils literal notranslate"><span class="pre">\true</span></code>, and <code class="docutils literal notranslate"><span class="pre">\false</span></code> with <code class="docutils literal notranslate"><span class="pre">!</span></code>, <code class="docutils literal notranslate"><span class="pre">&amp;</span></code>, <code class="docutils literal notranslate"><span class="pre">|</span></code>, and parentheses, not joined to the target by <code class="docutils literal notranslate"><span class="pre">&amp;</span></code>,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">%Initial</span></code> is a plain list of states,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">%Final</span></code> is a plain list of states, a conjunction of negated states such as <code class="docutils literal notranslate"><span class="pre">!q1</span> <span class="pre">&amp;</span> <span class="pre">!q2</span></code>, <code class="docutils literal notranslate"><span class="pre">\true</span></code>, or <code class="docutils literal notranslate"><span class="pre">\false</span></code>,</p></li>
+<li><p>and the namings are <code class="docutils literal notranslate"><span class="pre">auto</span></code> or <code class="docutils literal notranslate"><span class="pre">marked</span></code>.</p></li>
+</ul>
+<p>The other <code class="docutils literal notranslate"><span class="pre">&#64;NFA-bits</span></code> sections, such as those with states in transition formulas, a disjunction in <code class="docutils literal notranslate"><span class="pre">%Initial</span></code>, or
+quoted names, are read by the general reader inside the bitvector reader, still over the shared minterms.</p>
+</li>
+<li><p><strong>General reader</strong>: everything else, such as other section types, Boolean formulas in explicit sections,
+enumerated namings (<code class="docutils literal notranslate"><span class="pre">%States-enum</span></code>, <code class="docutils literal notranslate"><span class="pre">%Alphabet-enum</span></code>), and malformed inputs, which it reports.</p></li>
+</ul>
 </section>
 </section>
 </section>

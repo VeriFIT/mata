@@ -14,7 +14,7 @@
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Struct mata::parser::ParsedSection" href="structmata_1_1parser_1_1ParsedSection.html" />
+    <link rel="next" title="Struct mata::parser::ExplicitToken" href="structmata_1_1parser_1_1ExplicitToken.html" />
     <link rel="prev" title="Struct mata::nft::algorithms::CompositionSchedule::Position" href="structmata_1_1nft_1_1algorithms_1_1CompositionSchedule_1_1Position.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
@@ -39,13 +39,19 @@
 <dt class="sig sig-object cpp" id="_CPPv4N4mata6parser9BodyTokenE">
 <span id="_CPPv3N4mata6parser9BodyTokenE"></span><span id="_CPPv2N4mata6parser9BodyTokenE"></span><span id="mata::parser::BodyToken"></span><span class="target" id="structmata_1_1parser_1_1BodyToken"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">BodyToken</span></span></span><br /></dt>
 <dd><p>One token of a body line, with the flag telling whether the reader read it in quotes. </p>
-<p><code class="docutils literal notranslate"><span class="pre">create_node()</span></code> lets a quoted token be an operand even when it starts with <code class="docutils literal notranslate"><span class="pre">&amp;</span></code> <code class="docutils literal notranslate"></code>| or <code class="docutils literal notranslate"><span class="pre">!</span></code>, which the unquoted reader would take for an operator of the transition formula. </p>
+<p><code class="docutils literal notranslate"><span class="pre">create_node()</span></code> lets a quoted token be an operand even when it starts with <code class="docutils literal notranslate"><span class="pre">&amp;</span></code> <code class="docutils literal notranslate"></code>| or <code class="docutils literal notranslate"><span class="pre">!</span></code>, which the unquoted reader would take for an operator of the transition formula. The token is a view: <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1parser.html#namespacemata_1_1parser_1ae8e2170397d8605d7546f3cab8556a8f"><span class="std std-ref"><span class="pre">parse_mf()</span></span></a></code> points it into the name storage of its section, other code has to keep the bytes alive for as long as the token is used. </p>
 <div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4N4mata6parser9BodyToken9BodyTokenEPKc">
 <span id="_CPPv3N4mata6parser9BodyToken9BodyTokenEPKc"></span><span id="_CPPv2N4mata6parser9BodyToken9BodyTokenEPKc"></span><span id="mata::parser::BodyToken::BodyToken__cCP"></span><span class="target" id="structmata_1_1parser_1_1BodyToken_1a1447a471d29067af8a0d974f69b5b1df"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">BodyToken</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">token</span></span><span class="sig-paren">)</span><br /></dt>
 <dd><p>An unquoted token, so that a body line reads as a list of plain names in tests and call sites. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser9BodyToken9BodyTokenEPCKcKb">
+<span id="_CPPv3N4mata6parser9BodyToken9BodyTokenEPCKcKb"></span><span id="_CPPv2N4mata6parser9BodyToken9BodyTokenEPCKcKb"></span><span id="mata::parser::BodyToken::BodyToken__cCPC.bC"></span><span class="target" id="structmata_1_1parser_1_1BodyToken_1a48896f4e04b205c25bf78e6d9abf85c6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">BodyToken</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">token</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">quoted</span></span><span class="sig-paren">)</span><br /></dt>
+<dd><p>A literal, which the overloads for strings and views could both take. </p>
 </dd></dl>
 
 </div>
@@ -99,8 +105,11 @@
 <li class="toctree-l1 current"><a class="reference internal" href="../structlist.html">Struct list</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1Automaton_1_1TarjanDiscoverCallback.html">Struct mata::Automaton::TarjanDiscoverCallback</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1ClosedSet.html">Struct mata::ClosedSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="structmata_1_1FormulaGraphEntry.html">Struct mata::FormulaGraphEntry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="structmata_1_1Mintermization_1_1Checkpoint.html">Struct mata::Mintermization::Checkpoint</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1Mintermization_1_1MintermPartition.html">Struct mata::Mintermization::MintermPartition</a></li>
-<li class="toctree-l2"><a class="reference internal" href="structmata_1_1Mintermization_1_1OptionalBdd.html">Struct mata::Mintermization::OptionalBdd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="structmata_1_1NameStore_1_1Chunk.html">Struct mata::NameStore::Chunk</a></li>
+<li class="toctree-l2"><a class="reference internal" href="structmata_1_1NameStore_1_1Range.html">Struct mata::NameStore::Range</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1OnTheFlyAlphabet_1_1SymbolNames.html">Struct mata::OnTheFlyAlphabet::SymbolNames</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1NoodleOrder.html">Struct mata::applications::strings::seg_nfa::NoodleOrder</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1NoodleSegment.html">Struct mata::applications::strings::seg_nfa::NoodleSegment</a></li>
@@ -121,10 +130,12 @@
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1nft_1_1algorithms_1_1CompositionSchedule.html">Struct mata::nft::algorithms::CompositionSchedule</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1nft_1_1algorithms_1_1CompositionSchedule_1_1Position.html">Struct mata::nft::algorithms::CompositionSchedule::Position</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Struct mata::parser::BodyToken</a></li>
+<li class="toctree-l2"><a class="reference internal" href="structmata_1_1parser_1_1ExplicitToken.html">Struct mata::parser::ExplicitToken</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1parser_1_1ParsedSection.html">Struct mata::parser::ParsedSection</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1parser_1_1Re2Options.html">Struct mata::parser::Re2Options</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1utils_1_1PairHash.html">Struct mata::utils::PairHash</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1utils_1_1SetHash.html">Struct mata::utils::SetHash</a></li>
+<li class="toctree-l2"><a class="reference internal" href="structmata_1_1utils_1_1StringHash.html">Struct mata::utils::StringHash</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1utils_1_1TuplePrinter.html">Struct mata::utils::TuplePrinter</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1utils_1_1TuplePrinter_3_01Tuple_00_011_01_4.html">Struct mata::utils::TuplePrinter&lt; Tuple, 1 &gt;</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1utils_1_1TwoDimensionalMap_1_1Slot.html">Struct mata::utils::TwoDimensionalMap::Slot</a></li>
@@ -154,7 +165,7 @@
   <li><a href="../index.html">Documentation overview</a><ul>
   <li><a href="../structlist.html">Struct list</a><ul>
       <li>Previous: <a href="structmata_1_1nft_1_1algorithms_1_1CompositionSchedule_1_1Position.html" title="previous chapter">Struct mata::nft::algorithms::CompositionSchedule::Position</a></li>
-      <li>Next: <a href="structmata_1_1parser_1_1ParsedSection.html" title="next chapter">Struct mata::parser::ParsedSection</a></li>
+      <li>Next: <a href="structmata_1_1parser_1_1ExplicitToken.html" title="next chapter">Struct mata::parser::ExplicitToken</a></li>
   </ul></li>
   </ul></li>
 </ul>

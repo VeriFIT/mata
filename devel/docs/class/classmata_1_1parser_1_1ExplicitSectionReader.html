@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Class mata::parser::ExplicitSectionReader &#8212; Mata v0.0.0-dev.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=623e9adf"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Class mata::parser::MataWriter" href="classmata_1_1parser_1_1MataWriter.html" />
+    <link rel="prev" title="Class mata::nft::Nft" href="classmata_1_1nft_1_1Nft.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="class-mata-parser-explicitsectionreader">
+<h1>Class mata::parser::ExplicitSectionReader<a class="headerlink" href="#class-mata-parser-explicitsectionreader" title="Link to this heading">¶</a></h1>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser21ExplicitSectionReaderE">
+<span id="_CPPv3N4mata6parser21ExplicitSectionReaderE"></span><span id="_CPPv2N4mata6parser21ExplicitSectionReaderE"></span><span id="mata::parser::ExplicitSectionReader"></span><span class="target" id="classmata_1_1parser_1_1ExplicitSectionReader"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ExplicitSectionReader</span></span></span><a class="headerlink" href="#_CPPv4N4mata6parser21ExplicitSectionReaderE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Reads the single section of a <code class="docutils literal notranslate"><span class="pre">.</span><a class="reference internal" href="../namespace/namespacemata.html#namespacemata"><span class="std std-ref"><span class="pre">mata</span></span></a></code> input line by line, tokenizing every line as <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1parser.html#namespacemata_1_1parser_1ae8e2170397d8605d7546f3cab8556a8f"><span class="std std-ref"><span class="pre">parse_mf()</span></span></a></code> does. </p>
+<p>The reader covers only lines that are lists of names, and in the formula mode also the operators and parentheses of transition formulas (<code class="docutils literal notranslate"><span class="pre">&amp;</span></code>, <code class="docutils literal notranslate"><span class="pre">|</span></code>, <code class="docutils literal notranslate"><span class="pre">!</span></code>, <code class="docutils literal notranslate"><span class="pre">(</span></code>, <code class="docutils literal notranslate"><span class="pre">)</span></code>), which it splits off as tokens of their own, as <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1parser.html#namespacemata_1_1parser_1ae8e2170397d8605d7546f3cab8556a8f"><span class="std std-ref"><span class="pre">parse_mf()</span></span></a></code> does. It gives up on anything else <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1parser.html#namespacemata_1_1parser_1ae8e2170397d8605d7546f3cab8556a8f"><span class="std std-ref"><span class="pre">parse_mf()</span></span></a></code> would turn into an operator, on a second section, on a line continuation left open at the end of the input, and on every input <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1parser.html#namespacemata_1_1parser_1ae8e2170397d8605d7546f3cab8556a8f"><span class="std std-ref"><span class="pre">parse_mf()</span></span></a></code> rejects. Giving up is reported as <code class="docutils literal notranslate"><a class="reference internal" href="../file/explicit-section-reader_8hh.html#classmata_1_1parser_1_1ExplicitSectionReader_1a1eaab656caed8a37e17852de9b1b967fab4080bdf74febf04d578ff105cce9d3f"><span class="std std-ref"><span class="pre">Line::Unsupported</span></span></a></code>, so that the caller can hand the input to the general reader, which then either reads it or reports the error. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser21ExplicitSectionReader21ExplicitSectionReaderENSt11string_viewEKb">
+<span id="_CPPv3N4mata6parser21ExplicitSectionReader21ExplicitSectionReaderENSt11string_viewEKb"></span><span id="_CPPv2N4mata6parser21ExplicitSectionReader21ExplicitSectionReaderENSt11string_viewEKb"></span><span id="mata::parser::ExplicitSectionReader::ExplicitSectionReader__std::string_view.bC"></span><span class="target" id="classmata_1_1parser_1_1ExplicitSectionReader_1ac6c8d393c73c4127fcc44b480baa7474"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">ExplicitSectionReader</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string_view</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">input</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">formulas</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata6parser21ExplicitSectionReader21ExplicitSectionReaderENSt11string_viewEKb" title="Link to this definition">¶</a><br /></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">input</span></code> has to outlive the reader and the tokens it returns. <code class="docutils literal notranslate"><span class="pre">formulas</span></code> Whether to read the operators and parentheses of transition formulas. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser21ExplicitSectionReader9read_typeEv">
+<span id="_CPPv3N4mata6parser21ExplicitSectionReader9read_typeEv"></span><span id="_CPPv2N4mata6parser21ExplicitSectionReader9read_typeEv"></span><span id="mata::parser::ExplicitSectionReader::read_type"></span><span class="target" id="classmata_1_1parser_1_1ExplicitSectionReader_1aa4d126244c059f7b29c6ff0a81f8d394"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">optional</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string_view</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">read_type</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata6parser21ExplicitSectionReader9read_typeEv" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Reads the <code class="docutils literal notranslate"><span class="pre">&#64;TYPE</span></code> line, skipping the comment lines before it. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The section type, or <code class="docutils literal notranslate"><span class="pre">std::nullopt</span></code> when the input does not start with a well-formed type line. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser21ExplicitSectionReader9read_lineEv">
+<span id="_CPPv3N4mata6parser21ExplicitSectionReader9read_lineEv"></span><span id="_CPPv2N4mata6parser21ExplicitSectionReader9read_lineEv"></span><span id="mata::parser::ExplicitSectionReader::read_line"></span><span class="target" id="classmata_1_1parser_1_1ExplicitSectionReader_1a7374479068b40b13d5fba668a658f3e4"></span><a class="reference internal" href="../file/explicit-section-reader_8hh.html#_CPPv4N4mata6parser21ExplicitSectionReader4LineE" title="mata::parser::ExplicitSectionReader::Line"><span class="n"><span class="pre">Line</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">read_line</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata6parser21ExplicitSectionReader9read_lineEv" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Reads the next line, joining the lines continued by a trailing <code class="docutils literal notranslate"><span class="pre">\</span></code>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata6parser21ExplicitSectionReader3keyEv">
+<span id="_CPPv3NK4mata6parser21ExplicitSectionReader3keyEv"></span><span id="_CPPv2NK4mata6parser21ExplicitSectionReader3keyEv"></span><span id="mata::parser::ExplicitSectionReader::keyC"></span><span class="target" id="classmata_1_1parser_1_1ExplicitSectionReader_1a835f9a1c90dfa5d3bc3bc2a4fcc5a485"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string_view</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">key</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata6parser21ExplicitSectionReader3keyEv" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The key of the last <code class="docutils literal notranslate"><a class="reference internal" href="../file/explicit-section-reader_8hh.html#classmata_1_1parser_1_1ExplicitSectionReader_1a1eaab656caed8a37e17852de9b1b967fa897356954c2cd3d41b221e3f24f99bba"><span class="std std-ref"><span class="pre">Line::Key</span></span></a></code> line, without the leading <code class="docutils literal notranslate"><span class="pre">%</span></code>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata6parser21ExplicitSectionReader6tokensEv">
+<span id="_CPPv3NK4mata6parser21ExplicitSectionReader6tokensEv"></span><span id="_CPPv2NK4mata6parser21ExplicitSectionReader6tokensEv"></span><span id="mata::parser::ExplicitSectionReader::tokensC"></span><span class="target" id="classmata_1_1parser_1_1ExplicitSectionReader_1ad9f2ae35c4d731493644ba6684e80905"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../file/explicit-section-reader_8hh.html#_CPPv4N4mata6parser13ExplicitTokenE" title="mata::parser::ExplicitToken"><span class="n"><span class="pre">ExplicitToken</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">tokens</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata6parser21ExplicitSectionReader6tokensEv" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The values of the last <code class="docutils literal notranslate"><a class="reference internal" href="../file/explicit-section-reader_8hh.html#classmata_1_1parser_1_1ExplicitSectionReader_1a1eaab656caed8a37e17852de9b1b967fa897356954c2cd3d41b221e3f24f99bba"><span class="std std-ref"><span class="pre">Line::Key</span></span></a></code> line, or the tokens of the last <code class="docutils literal notranslate"><a class="reference internal" href="../file/explicit-section-reader_8hh.html#classmata_1_1parser_1_1ExplicitSectionReader_1a1eaab656caed8a37e17852de9b1b967faac101b32dda4448cf13a93fe283dddd8"><span class="std std-ref"><span class="pre">Line::Body</span></span></a></code> line. Valid until the next call of <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1parser.html#classmata_1_1parser_1_1ExplicitSectionReader_1a7374479068b40b13d5fba668a658f3e4"><span class="std std-ref"><span class="pre">read_line()</span></span></a></code>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata6parser21ExplicitSectionReader11source_textENSt4spanIK13ExplicitTokenEE">
+<span id="_CPPv3NK4mata6parser21ExplicitSectionReader11source_textENSt4spanIK13ExplicitTokenEE"></span><span id="_CPPv2NK4mata6parser21ExplicitSectionReader11source_textENSt4spanIK13ExplicitTokenEE"></span><span id="mata::parser::ExplicitSectionReader::source_text__std::span:ExplicitTokenC:C"></span><span class="target" id="classmata_1_1parser_1_1ExplicitSectionReader_1ade01452d9f8793bce7e8be047aa63575"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">optional</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string_view</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">source_text</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">span</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../file/explicit-section-reader_8hh.html#_CPPv4N4mata6parser13ExplicitTokenE" title="mata::parser::ExplicitToken"><span class="n"><span class="pre">ExplicitToken</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">tokens</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata6parser21ExplicitSectionReader11source_textENSt4spanIK13ExplicitTokenEE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The text of the input that the consecutive tokens <code class="docutils literal notranslate"><span class="pre">tokens</span></code> of the last line were read from, quotes included. </p>
+<p>Equal texts read without giving up are equal tokens, as nothing before a token changes how the reader reads it but whether the reader gives up, so the text identifies the tokens. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The text, or <code class="docutils literal notranslate"><span class="pre">std::nullopt</span></code> when a token had its escapes resolved and so has no text of the input. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automata-format.html">Automata Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../script-language.html">(Auto)Mata Script Language</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">The <code class="docutils literal notranslate"><span class="pre">mata</span></code> command</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automaton.html">Automaton Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../applications.html">Strings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../namespacelist.html">Namespace list</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../classlist.html">Class list</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1Alphabet.html">Class mata::Alphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1AlphabetLevels.html">Class mata::AlphabetLevels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1Automaton.html">Class mata::Automaton</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1BoolVector.html">Class mata::BoolVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1EnumAlphabet.html">Class mata::EnumAlphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1FormulaGraph.html">Class mata::FormulaGraph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1FormulaGraphChildren.html">Class mata::FormulaGraphChildren</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1FormulaGraphView.html">Class mata::FormulaGraphView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1FormulaNode.html">Class mata::FormulaNode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntAlphabet.html">Class mata::IntAlphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton.html">Class mata::IntAlphabet::IntAlphabetSingleton</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntermediateAut.html">Class mata::IntermediateAut</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1Mintermization.html">Class mata::Mintermization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1NameStore.html">Class mata::NameStore</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1OnTheFlyAlphabet.html">Class mata::OnTheFlyAlphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1ShortestWordsMap.html">Class mata::applications::strings::ShortestWordsMap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace.html">Class mata::applications::strings::replace::ReluctantReplace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation.html">Class mata::applications::strings::seg_nfa::Segmentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1LazyView.html">Class mata::applications::strings::seg_nfa::Segmentation::LazyView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Delta.html">Class mata::nfa::Delta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1DeltaBuilder.html">Class mata::nfa::DeltaBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Delta_1_1Transitions.html">Class mata::nfa::Delta::Transitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Delta_1_1Transitions_1_1const__iterator.html">Class mata::nfa::Delta::Transitions::const_iterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Move.html">Class mata::nfa::Move</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Nfa.html">Class mata::nfa::Nfa</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1StatePost.html">Class mata::nfa::StatePost</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1StatePost_1_1Moves.html">Class mata::nfa::StatePost::Moves</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1StatePost_1_1Moves_1_1const__iterator.html">Class mata::nfa::StatePost::Moves::const_iterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1SuccessorCursor.html">Class mata::nfa::SuccessorCursor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1SuccessorCursor_1_1const__iterator.html">Class mata::nfa::SuccessorCursor::const_iterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1SymbolPost.html">Class mata::nfa::SymbolPost</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1SynchronizedExistentialSymbolPostIterator.html">Class mata::nfa::SynchronizedExistentialSymbolPostIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1algorithms_1_1ExternalSolverNotFound.html">Class mata::nfa::algorithms::ExternalSolverNotFound</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1builder_1_1BitvectorNfaReader.html">Class mata::nfa::builder::BitvectorNfaReader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1internal_1_1ProcessedAntichain.html">Class mata::nfa::internal::ProcessedAntichain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nft_1_1Levels.html">Class mata::nft::Levels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nft_1_1Levels_1_1Ordering.html">Class mata::nft::Levels::Ordering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nft_1_1Nft.html">Class mata::nft::Nft</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Class mata::parser::ExplicitSectionReader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1parser_1_1MataWriter.html">Class mata::parser::MataWriter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1parser_1_1NewStates.html">Class mata::parser::NewStates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1parser_1_1StateNameMap.html">Class mata::parser::StateNameMap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1LazyWordGenerator.html">Class mata::utils::LazyWordGenerator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1OrdVector.html">Class mata::utils::OrdVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SmallOrdVector.html">Class mata::utils::SmallOrdVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SparseSet.html">Class mata::utils::SparseSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SynchronizedExistentialIterator.html">Class mata::utils::SynchronizedExistentialIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SynchronizedIterator.html">Class mata::utils::SynchronizedIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SynchronizedUniversalIterator.html">Class mata::utils::SynchronizedUniversalIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1TwoDimensionalMap.html">Class mata::utils::TwoDimensionalMap</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../filelist.html">File list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../structlist.html">Struct list</a></li>
+</ul>
+
+
+<hr />
+<ul>
+    
+    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/">Mata website</a></li>
+    
+    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/playground/">Playground</a></li>
+    
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../classlist.html">Class list</a><ul>
+      <li>Previous: <a href="classmata_1_1nft_1_1Nft.html" title="previous chapter">Class mata::nft::Nft</a></li>
+      <li>Next: <a href="classmata_1_1parser_1_1MataWriter.html" title="next chapter">Class mata::parser::MataWriter</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.2.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/class/classmata_1_1parser_1_1ExplicitSectionReader.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

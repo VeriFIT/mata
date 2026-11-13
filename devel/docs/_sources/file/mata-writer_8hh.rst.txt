@@ -1,0 +1,4 @@
+File mata-writer.hh
+===================
+
+.. doxygenfile:: mata-writer.hh

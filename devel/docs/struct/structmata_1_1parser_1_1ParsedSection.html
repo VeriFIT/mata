@@ -15,7 +15,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Struct mata::parser::Re2Options" href="structmata_1_1parser_1_1Re2Options.html" />
-    <link rel="prev" title="Struct mata::parser::BodyToken" href="structmata_1_1parser_1_1BodyToken.html" />
+    <link rel="prev" title="Struct mata::parser::ExplicitToken" href="structmata_1_1parser_1_1ExplicitToken.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -63,6 +63,15 @@
 <dt class="sig sig-object cpp" id="_CPPv4NK4mata6parser13ParsedSection6haskeyERKNSt6stringE">
 <span id="_CPPv3NK4mata6parser13ParsedSection6haskeyERKNSt6stringE"></span><span id="_CPPv2NK4mata6parser13ParsedSection6haskeyERKNSt6stringE"></span><span id="mata::parser::ParsedSection::haskey__ssCRC"></span><span class="target" id="structmata_1_1parser_1_1ParsedSection_1a55c37b06be38e3f9772cefe487c4464e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">haskey</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">key</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
 <dd><p>check whether the key-value store contains a key </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata6parser13ParsedSection10name_storeE">
+<span id="_CPPv3N4mata6parser13ParsedSection10name_storeE"></span><span id="_CPPv2N4mata6parser13ParsedSection10name_storeE"></span><span id="mata::parser::ParsedSection::name_store__std::shared_ptr:NameStore:"></span><span class="target" id="structmata_1_1parser_1_1ParsedSection_1a479e5e334b126c62c1c4b6b6be3d5f61"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">shared_ptr</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1NameStore.html#_CPPv4N4mata9NameStoreE" title="mata::NameStore"><span class="n"><span class="pre">NameStore</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">name_store</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">make_shared</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1NameStore.html#_CPPv4N4mata9NameStoreE" title="mata::NameStore"><span class="n"><span class="pre">NameStore</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">(</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">}</span></span><br /></dt>
+<dd><p>The storage the tokens of <code class="docutils literal notranslate"><span class="pre">body</span></code> point into; copies of the section share it. </p>
 </dd></dl>
 
 </div>
@@ -116,8 +125,11 @@
 <li class="toctree-l1 current"><a class="reference internal" href="../structlist.html">Struct list</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1Automaton_1_1TarjanDiscoverCallback.html">Struct mata::Automaton::TarjanDiscoverCallback</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1ClosedSet.html">Struct mata::ClosedSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="structmata_1_1FormulaGraphEntry.html">Struct mata::FormulaGraphEntry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="structmata_1_1Mintermization_1_1Checkpoint.html">Struct mata::Mintermization::Checkpoint</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1Mintermization_1_1MintermPartition.html">Struct mata::Mintermization::MintermPartition</a></li>
-<li class="toctree-l2"><a class="reference internal" href="structmata_1_1Mintermization_1_1OptionalBdd.html">Struct mata::Mintermization::OptionalBdd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="structmata_1_1NameStore_1_1Chunk.html">Struct mata::NameStore::Chunk</a></li>
+<li class="toctree-l2"><a class="reference internal" href="structmata_1_1NameStore_1_1Range.html">Struct mata::NameStore::Range</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1OnTheFlyAlphabet_1_1SymbolNames.html">Struct mata::OnTheFlyAlphabet::SymbolNames</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1NoodleOrder.html">Struct mata::applications::strings::seg_nfa::NoodleOrder</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1applications_1_1strings_1_1seg__nfa_1_1NoodleSegment.html">Struct mata::applications::strings::seg_nfa::NoodleSegment</a></li>
@@ -138,10 +150,12 @@
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1nft_1_1algorithms_1_1CompositionSchedule.html">Struct mata::nft::algorithms::CompositionSchedule</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1nft_1_1algorithms_1_1CompositionSchedule_1_1Position.html">Struct mata::nft::algorithms::CompositionSchedule::Position</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1parser_1_1BodyToken.html">Struct mata::parser::BodyToken</a></li>
+<li class="toctree-l2"><a class="reference internal" href="structmata_1_1parser_1_1ExplicitToken.html">Struct mata::parser::ExplicitToken</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Struct mata::parser::ParsedSection</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1parser_1_1Re2Options.html">Struct mata::parser::Re2Options</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1utils_1_1PairHash.html">Struct mata::utils::PairHash</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1utils_1_1SetHash.html">Struct mata::utils::SetHash</a></li>
+<li class="toctree-l2"><a class="reference internal" href="structmata_1_1utils_1_1StringHash.html">Struct mata::utils::StringHash</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1utils_1_1TuplePrinter.html">Struct mata::utils::TuplePrinter</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1utils_1_1TuplePrinter_3_01Tuple_00_011_01_4.html">Struct mata::utils::TuplePrinter&lt; Tuple, 1 &gt;</a></li>
 <li class="toctree-l2"><a class="reference internal" href="structmata_1_1utils_1_1TwoDimensionalMap_1_1Slot.html">Struct mata::utils::TwoDimensionalMap::Slot</a></li>
@@ -170,7 +184,7 @@
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
   <li><a href="../structlist.html">Struct list</a><ul>
-      <li>Previous: <a href="structmata_1_1parser_1_1BodyToken.html" title="previous chapter">Struct mata::parser::BodyToken</a></li>
+      <li>Previous: <a href="structmata_1_1parser_1_1ExplicitToken.html" title="previous chapter">Struct mata::parser::ExplicitToken</a></li>
       <li>Next: <a href="structmata_1_1parser_1_1Re2Options.html" title="next chapter">Struct mata::parser::Re2Options</a></li>
   </ul></li>
   </ul></li>

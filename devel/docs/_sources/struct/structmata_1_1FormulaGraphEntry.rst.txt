@@ -1,0 +1,5 @@
+Struct mata::FormulaGraphEntry
+==============================
+
+.. doxygenstruct:: mata::FormulaGraphEntry
+   :members:
