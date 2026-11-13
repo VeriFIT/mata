@@ -69,9 +69,18 @@ std::optional<Nft>
 
 	Nft aut;
 	// See builder::construct(): a name mapped by the caller allocates its state, a new name skips the mapped states.
+	//  Every state allocated is below num_of_states, which spares a name met before the call of add_state().
+	size_t num_of_states{0};
 	const auto get_state{[&](const std::string_view name) {
-		if (const std::optional<State> state{state_names.find(name)}) { return aut.add_state(*state); }
-		const State state{aut.add_state(state_names.new_state(aut.num_of_states()))};
+		if (const std::optional<State> state{state_names.find(name)}) {
+			if (*state >= num_of_states) {
+				aut.add_state(*state);
+				num_of_states = aut.num_of_states();
+			}
+			return *state;
+		}
+		const State state{aut.add_state(state_names.new_state(num_of_states))};
+		num_of_states = aut.num_of_states();
 		state_names.insert(name, state);
 		return state;
 	}};
