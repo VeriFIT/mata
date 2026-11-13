@@ -341,7 +341,10 @@ impl<'a> Checker<'a> {
 	/// A function value in a position that the termination guarantee does not allow; `to_apply` is the
 	/// position of the function a `list:` function applies, the only one it allows.
 	fn consumed(&mut self, sort: Option<&str>, to_apply: bool) {
-		if sort == Some("Function") && !to_apply {
+		let function = sort.is_some_and(|sort| {
+			sort == "Function" || compound(sort) == Some(("Option", "Function"))
+		});
+		if function && !to_apply {
 			self.termination = Switch::Off;
 		}
 	}

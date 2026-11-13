@@ -2867,12 +2867,14 @@ fn a_remembered_decision_keeps_its_witness() {
 		"(set-option :produce-witnesses true)\n(set-option :optimize true)\n\
 		 (declare-input a Nfa)\n(declare-input b Nfa)\n\
 		 (print (nfa:included? a b))\n(print (get-witness))\n\
+		 (print (nfa:included? a a))\n(print (get-witness))\n\
 		 (print (nfa:included? a b))\n(print (get-witness))",
 		true,
 		&[&a, &b],
 	);
 	assert_eq!(status(&output), 0, "{}", stderr(&output));
-	assert_eq!(stdout(&output), "false\na\nfalse\na\n");
+	// The successful decision between clears the witness, so the remembered one must bring it back.
+	assert_eq!(stdout(&output), "false\na\ntrue\nnone\nfalse\na\n");
 }
 
 #[test]
@@ -2988,6 +2990,18 @@ fn check_rejects_a_pipeline_step_that_is_not_a_function() {
 	);
 	assert_eq!(status(&output), 0, "{}", stderr(&output));
 	assert_eq!(stdout(&output), "3\n4\n");
+	// Passed as data, it may call itself, so the guarantee goes.
+	let output = mata([
+		"script",
+		"check",
+		"--expression",
+		"(define g (as (lambda (f x) (f f x)) (Option Function)))\n(g g 0)",
+	]);
+	assert!(
+		stderr(&output).contains("termination: not-guaranteed"),
+		"{}",
+		stderr(&output)
+	);
 }
 
 #[test]

@@ -9,7 +9,7 @@ use std::fmt::Write as _;
 #[derive(Debug, Default)]
 struct DotAutomaton {
 	initial: Vec<u32>,
-	final_states: Vec<u32>,
+	final_states: BTreeSet<u32>,
 	/// Every state a statement names; they must be `0` to the highest without a gap.
 	states: BTreeSet<u32>,
 	/// `None` for an edge without a label.
@@ -236,11 +236,11 @@ fn parse_node(
 		match (key, value) {
 			// The last shape of a state wins, as in Graphviz.
 			("shape", "doublecircle") => {
-				if !automaton.final_states.contains(&state) {
-					automaton.final_states.push(state);
-				}
+				automaton.final_states.insert(state);
 			}
-			("shape", "circle") => automaton.final_states.retain(|&other| other != state),
+			("shape", "circle") => {
+				automaton.final_states.remove(&state);
+			}
 			("shape", "none") => {
 				return Err(Error::plain(format!(
 					"line {line_number}: a marker node is used only through its edge"
