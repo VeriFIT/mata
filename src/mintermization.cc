@@ -300,13 +300,15 @@ BDD mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph& graph) {
 namespace {
 /// One leaf per minterm holding its symbol, copied into every transition over that symbol. A copied leaf has no
 ///  children and so allocates nothing, unlike a graph constructed from a node, which reserves room for children.
-std::vector<mata::FormulaGraph> symbol_leaves(const size_t num_of_minterms) {
+std::vector<mata::FormulaGraph> symbol_leaves(const size_t num_of_minterms, mata::NameStore& names) {
 	std::vector<mata::FormulaGraph> leaves{};
 	leaves.reserve(num_of_minterms);
 	for (size_t symbol{0}; symbol < num_of_minterms; ++symbol) {
-		const std::string name{std::to_string(symbol)};
 		leaves.emplace_back(
-			mata::FormulaNode{mata::FormulaNode::Type::Operand, name, mata::FormulaNode::OperandType::Symbol}
+			mata::FormulaNode{
+				mata::FormulaNode::Type::Operand, names.store(std::to_string(symbol)),
+				mata::FormulaNode::OperandType::Symbol
+			}
 		);
 	}
 	return leaves;
@@ -336,7 +338,7 @@ const std::vector<size_t>* minterms_below(
 void mata::Mintermization::minterms_to_aut_nfa(
 	IntermediateAut& res, const IntermediateAut& aut, const std::vector<std::vector<size_t>>& minterms_of_source
 ) {
-	const std::vector<FormulaGraph> symbols{symbol_leaves(num_of_symbols(minterms_of_source))};
+	const std::vector<FormulaGraph> symbols{symbol_leaves(num_of_symbols(minterms_of_source), *res.name_store)};
 	const FormulaNode conjunction{FormulaNode::Type::Operator, "&", FormulaNode::OperatorType::And};
 	// The minterms below the BDD of the symbol part of a transition, or nullptr if the transition had a zero BDD and
 	//  so was not added to the map.
@@ -373,7 +375,7 @@ void mata::Mintermization::minterms_to_aut_nfa(
 void mata::Mintermization::minterms_to_aut_afa(
 	IntermediateAut& res, const IntermediateAut& aut, const std::vector<std::vector<size_t>>& minterms_of_source
 ) {
-	const std::vector<FormulaGraph> symbols{symbol_leaves(num_of_symbols(minterms_of_source))};
+	const std::vector<FormulaGraph> symbols{symbol_leaves(num_of_symbols(minterms_of_source), *res.name_store)};
 	const FormulaNode conjunction{FormulaNode::Type::Operator, "&", FormulaNode::OperatorType::And};
 	for (const auto& formula_node : aut.transitions | std::views::keys) {
 		for (const auto& [disjunct, formula_graph] : lhs_to_disjuncts_and_states_[&formula_node]) {
@@ -441,6 +443,9 @@ std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::v
 	for (const IntermediateAut* aut : auts) {
 		// The transitions are replaced below; copying their formula trees only to clear them dominates large inputs.
 		IntermediateAut mintermized_aut;
+		// The formula and transition copies below keep the names of their nodes as views into the source automaton,
+		//  so sharing its name storage keeps them valid for as long as the mintermized automaton lives.
+		mintermized_aut.name_store = aut->name_store;
 		mintermized_aut.state_naming = aut->state_naming;
 		mintermized_aut.symbol_naming = aut->symbol_naming;
 		mintermized_aut.node_naming = aut->node_naming;

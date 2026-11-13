@@ -10,6 +10,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include <optional>
 #include <sstream>
 
 using namespace mata::parser;
@@ -1047,5 +1048,58 @@ TEST_CASE("mata::IntermediateAut streaming a negated compound formula - #760") {
 		);
 		std::ostringstream out;
 		CHECK_THROWS_WITH(out << aut, Catch::Matchers::ContainsSubstring("0 children"));
+	}
+} // }}}
+
+TEST_CASE("mata::IntermediateAut keeps the names of its formula nodes") { // {{{
+	// A node keeps a view of its name into the name storage of its automaton instead of a string of its own, so a copy
+	//  and a move have to keep that storage alive.
+	const std::string file{"@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a0 q1\n"};
+
+	SECTION("a copy and a move outliving the parse result still read their names") {
+		std::optional<mata::IntermediateAut> copied{};
+		std::optional<mata::IntermediateAut> moved{};
+		{
+			const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
+			REQUIRE(auts.size() == 1);
+			copied = auts[0];
+			moved = std::move(auts[0]);
+		}
+
+		for (const mata::IntermediateAut* aut : {&*copied, &*moved}) {
+			REQUIRE(aut->transitions.size() == 1);
+			CHECK(aut->transitions[0].first.raw == "q0");
+			CHECK(aut->transitions[0].first.name() == "0");
+			CHECK(aut->transitions[0].second.children[0].node.raw == "a0");
+			CHECK(aut->transitions[0].second.children[1].node.raw == "q1");
+			CHECK(aut->transitions[0].second.children[1].node.name() == "1");
+		}
+	}
+
+	SECTION("add_transition stores the names it is given") {
+		mata::IntermediateAut aut{};
+		const std::string source_name{"q0"};
+		const std::string symbol_name{"a0"};
+		const std::string target_name{"q1"};
+		aut.add_transition(
+			mata::FormulaNode{
+				mata::FormulaNode::Type::Operand, source_name, mata::FormulaNode::OperandType::State, true
+			},
+			mata::FormulaNode{mata::FormulaNode::Type::Operand, symbol_name, mata::FormulaNode::OperandType::Symbol},
+			mata::FormulaGraph{mata::FormulaNode{
+				mata::FormulaNode::Type::Operand, target_name, mata::FormulaNode::OperandType::State, true
+			}}
+		);
+
+		REQUIRE(aut.transitions.size() == 1);
+		CHECK(aut.transitions[0].first.raw == "q0");
+		CHECK(aut.transitions[0].first.name() == "0");
+		CHECK(aut.transitions[0].second.children[0].node.raw == "a0");
+		CHECK(aut.transitions[0].second.children[1].node.raw == "q1");
+		CHECK(aut.transitions[0].second.children[1].node.name() == "1");
+		// The automaton keeps copies, not views of the strings the caller owns.
+		CHECK(aut.transitions[0].first.raw.data() != source_name.data());
+		CHECK(aut.transitions[0].second.children[0].node.raw.data() != symbol_name.data());
+		CHECK(aut.transitions[0].second.children[1].node.raw.data() != target_name.data());
 	}
 } // }}}

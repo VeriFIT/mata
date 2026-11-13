@@ -582,6 +582,8 @@ std::vector<Nfa> builder::BitvectorNfaReader::build(Alphabet* alphabet) {
 			// The transitions of the general reader's automaton, mintermized over the shared partition.
 			IntermediateAut& inter_aut{*aut.general};
 			IntermediateAut mintermized;
+			// The moved formulas and the copied target states below keep their node names as views into @c inter_aut.
+			mintermized.name_store = inter_aut.name_store;
 			mintermized.state_naming = inter_aut.state_naming;
 			mintermized.symbol_naming = inter_aut.symbol_naming;
 			mintermized.node_naming = inter_aut.node_naming;
@@ -599,7 +601,10 @@ std::vector<Nfa> builder::BitvectorNfaReader::build(Alphabet* alphabet) {
 					const std::string name{std::to_string(minterm)};
 					FormulaGraph graph{conjunction};
 					graph.children.emplace_back(
-						FormulaNode{FormulaNode::Type::Operand, name, FormulaNode::OperandType::Symbol}
+						FormulaNode{
+							FormulaNode::Type::Operand, mintermized.name_store->store(name),
+							FormulaNode::OperandType::Symbol
+						}
 					);
 					graph.children.push_back(transition.second.children[1]);
 					mintermized.transitions.emplace_back(transition.first, std::move(graph));

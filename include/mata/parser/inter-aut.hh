@@ -9,6 +9,8 @@
 #define MATA_INTER_AUT_HH
 
 #include <cstdint>
+#include <cstring>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_set>
@@ -18,6 +20,43 @@
 #include "parser.hh"
 
 namespace mata {
+
+/**
+ * An append-only storage of the names of formula nodes: a node keeps a view into it instead of a string of its own.
+ * The bytes handed out are never moved, so a view stays valid for as long as the storage lives. Copies of
+ *  @c IntermediateAut share the storage, which keeps the names of their nodes valid.
+ */
+class NameStore {
+  public:
+	/**
+	 * @brief Copies @p name into the storage.
+	 * @return A view of the copy, valid for as long as the storage lives.
+	 */
+	std::string_view store(const std::string_view name) {
+		if (chunks_.empty() || chunks_.back().capacity - used_ < name.size()) {
+			const std::size_t capacity{name.size() < chunk_capacity_ ? chunk_capacity_ : name.size()};
+			chunks_.push_back(Chunk{.data = std::make_unique_for_overwrite<char[]>(capacity), .capacity = capacity});
+			used_ = 0;
+		}
+		char* const stored{chunks_.back().data.get() + used_};
+		std::memcpy(stored, name.data(), name.size());
+		used_ += name.size();
+		return {stored, name.size()};
+	}
+
+  private:
+	/// One block of the storage; the bytes of the blocks handed out earlier stay where they are.
+	struct Chunk {
+		std::unique_ptr<char[]> data{};
+		std::size_t capacity{};
+	};
+
+	static constexpr std::size_t chunk_capacity_ = 16 * 1'024;
+
+	std::vector<Chunk> chunks_{};
+	/// The number of bytes used in the last chunk.
+	std::size_t used_{};
+};
 
 /**
  * A node of graph representing transition formula. A node could be operator (!,&,|) or operand (symbol, state, node).
@@ -34,8 +73,12 @@ class FormulaNode {
 
 	/// Define whether a node is operand or operator
 	Type type{};
-	/// Raw name of node as it was specified in input text, i.e., including type marker.
-	std::string raw{};
+	/**
+	 * Raw name of node as it was specified in input text, i.e., including type marker.
+	 * The name is not owned: it has to point into the name storage of the automaton the node belongs to
+	 *  (@c IntermediateAut::name_store) or into a literal, so that it lives for as long as the node does.
+	 */
+	std::string_view raw{};
 	/// if a node is operator, it defines which one
 	OperatorType operator_type{};
 	/// if a node is operand, it defines which one
@@ -70,25 +113,40 @@ class FormulaNode {
 		  operator_type(OperatorType::NotOperator),
 		  operand_type(OperandType::NotOperand) {}
 
-	FormulaNode(const Type t, std::string raw, const OperatorType operator_t)
+	FormulaNode(const Type t, const std::string_view raw, const OperatorType operator_t)
 		: type(t),
-		  raw(std::move(raw)),
+		  raw(raw),
 		  operator_type(operator_t),
 		  operand_type(OperandType::NotOperand) {}
 
 	/// @param marked Whether the first character of @p raw is a type marker, which the name leaves out.
-	FormulaNode(const Type t, std::string raw, const OperandType operand, const bool marked = false)
+	FormulaNode(const Type t, const std::string_view raw, const OperandType operand, const bool marked = false)
 		: type(t),
-		  raw(std::move(raw)),
+		  raw(raw),
 		  operator_type(OperatorType::NotOperator),
 		  operand_type(operand),
-		  marked_(marked && !this->raw.empty()) {}
+		  marked_(marked && !raw.empty()) {}
 
-	FormulaNode(const Type t, std::string raw)
+	FormulaNode(const Type t, const std::string_view raw)
 		: type(t),
-		  raw(std::move(raw)),
+		  raw(raw),
 		  operator_type(OperatorType::NotOperator),
 		  operand_type(OperandType::NotOperand) {}
+
+	// A literal is storage of its own, so a node can point into it directly.
+	FormulaNode(const Type t, const char* const raw, const OperatorType operator_t)
+		: FormulaNode(t, std::string_view{raw}, operator_t) {}
+
+	FormulaNode(const Type t, const char* const raw, const OperandType operand, const bool marked = false)
+		: FormulaNode(t, std::string_view{raw}, operand, marked) {}
+
+	FormulaNode(const Type t, const char* const raw) : FormulaNode(t, std::string_view{raw}) {}
+
+	// A name is a view, so a temporary string would leave it dangling: the name has to be stored first, in the name
+	//  storage of the automaton the node belongs to.
+	FormulaNode(Type, std::string&&, OperatorType) = delete;
+	FormulaNode(Type, std::string&&, OperandType, bool = false) = delete;
+	FormulaNode(Type, std::string&&) = delete;
 
 	FormulaNode(const FormulaNode& n) = default;
 
@@ -184,6 +242,12 @@ class IntermediateAut {
 	std::unordered_set<std::string> states_names{};
 	std::unordered_set<std::string> symbols_names{};
 	std::unordered_set<std::string> nodes_names{};
+
+	/**
+	 * The storage the names of the formula nodes point into (@c FormulaNode::raw). Copies of the automaton share it,
+	 *  which keeps the names of the nodes of a copy alive when the original is gone.
+	 */
+	std::shared_ptr<NameStore> name_store{std::make_shared<NameStore>()};
 
 	FormulaGraph initial_formula{};
 	FormulaGraph final_formula{};
