@@ -1,6 +1,6 @@
 //! The further NFA operations of the library, on hand-written cases.
 
-use mata::{Alphabet, Error, Nfa, ProductFinalCondition, Symbol, word_from_bytes};
+use mata::{Alphabet, Error, Nfa, ProductFinalCondition, Requirement, Symbol, word_from_bytes};
 
 #[test]
 fn concatenation_over_epsilon_keeps_the_joining_epsilon_transitions() -> Result<(), Error> {
@@ -49,7 +49,14 @@ fn union_det_complete_is_the_union_of_complete_deterministic_automata() -> Resul
 	assert!(!union.accepts(&word_from_bytes("ab")));
 
 	let incomplete = Nfa::from_word(&[Symbol::from(b'a')]);
-	assert!(incomplete.union_det_complete(&a, &alphabet).is_err());
+	let error = incomplete.union_det_complete(&a, &alphabet).unwrap_err();
+	assert_eq!(error.requirement(), Requirement::Complete);
+	// Two initial states.
+	let nondeterministic = complete("a", &alphabet).union(&complete("b", &alphabet));
+	let error = a
+		.union_det_complete(&nondeterministic, &alphabet)
+		.unwrap_err();
+	assert_eq!(error.requirement(), Requirement::Deterministic);
 	Ok(())
 }
 
@@ -86,8 +93,22 @@ fn decode_utf8_turns_the_bytes_of_a_symbol_into_one_symbol() -> Result<(), Error
 	let bytes = Nfa::from_word(&[Symbol::new(0xC4), Symbol::new(0x85)]);
 	let decoded = bytes.decode_utf8()?;
 	assert!(decoded.accepts(&[Symbol::new(0x105)]));
-	let broken = Nfa::from_word(&[Symbol::new(0xC4), Symbol::from(b'A')]);
-	assert!(broken.decode_utf8().is_err());
+	for broken in [
+		// The last byte is not a continuation byte.
+		vec![0xC4, u32::from(b'A')],
+		// A middle byte is not one: E1 41 80 is not UTF-8, though its last byte is a continuation byte.
+		vec![0xE1, u32::from(b'A'), 0x80],
+		vec![0xF0, 0x90, u32::from(b'A'), 0x80],
+		// A sequence starts with a continuation byte, or a symbol is not a byte.
+		vec![0x80, 0x80],
+		vec![0x1C4, 0x85],
+	] {
+		let nfa = Nfa::from_word(&broken.into_iter().map(Symbol::new).collect::<Vec<_>>());
+		assert_eq!(
+			nfa.decode_utf8().unwrap_err().requirement(),
+			Requirement::Utf8
+		);
+	}
 	Ok(())
 }
 

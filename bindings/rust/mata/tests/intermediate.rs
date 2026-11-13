@@ -1,6 +1,6 @@
 //! Loading in separate steps: parsing to intermediate automata, mintermizing, constructing.
 
-use mata::{Alphabet, IntermediateAutomaton, Nfa, ParseError};
+use mata::{Alphabet, Error, IntermediateAutomaton, IntermediateError, Nfa};
 
 const BITS_A: &str = "@NFA-bits\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 (a0 & !a1) q1\n";
 const BITS_B: &str = "@NFA-bits\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 (!a0 & a1) q1\n";
@@ -20,7 +20,7 @@ fn construct_all(automata: &[IntermediateAutomaton], alphabet: &mut Alphabet) ->
 }
 
 #[test]
-fn an_explicit_section_constructs_over_the_alphabet() -> Result<(), ParseError> {
+fn an_explicit_section_constructs_over_the_alphabet() -> Result<(), Error> {
 	let parsed = IntermediateAutomaton::parse_mata_all(&format!("{EXPLICIT}{EXPLICIT}"))?;
 	assert_eq!(parsed.len(), 2);
 	let mut sigma = Alphabet::new();
@@ -33,7 +33,7 @@ fn an_explicit_section_constructs_over_the_alphabet() -> Result<(), ParseError> 
 }
 
 #[test]
-fn automata_mintermized_together_share_their_minterms() -> Result<(), ParseError> {
+fn automata_mintermized_together_share_their_minterms() -> Result<(), Error> {
 	let (a, b) = (parse_one(BITS_A), parse_one(BITS_B));
 	let mut sigma = Alphabet::new();
 	let together = construct_all(&IntermediateAutomaton::mintermize(&[&a, &b])?, &mut sigma);
@@ -50,17 +50,23 @@ fn each_step_rejects_a_section_it_cannot_take() {
 	let bits = parse_one(BITS_A);
 	let explicit = parse_one(EXPLICIT);
 	let mut sigma = Alphabet::new();
-	let error = bits.construct_nfa(&mut sigma).unwrap_err();
-	assert!(error.message().contains("mintermize it first"), "{error}");
-	let error = IntermediateAutomaton::mintermize(&[&bits, &explicit]).unwrap_err();
-	assert!(error.message().contains("bitvectors"), "{error}");
-	let error = explicit.construct_nft(&mut sigma).unwrap_err();
-	assert!(error.message().contains("not an NFT"), "{error}");
+	assert_eq!(
+		bits.construct_nfa(&mut sigma).unwrap_err(),
+		IntermediateError::NeedsMintermization
+	);
+	assert_eq!(
+		IntermediateAutomaton::mintermize(&[&bits, &explicit]).unwrap_err(),
+		IntermediateError::NotMintermizable { index: 1 }
+	);
+	assert_eq!(
+		explicit.construct_nft(&mut sigma).unwrap_err(),
+		IntermediateError::WrongKind { expected: "NFT" }
+	);
 	assert!(IntermediateAutomaton::parse_mata_all("@NFA-explicit\n%Initial\n q0 a").is_err());
 }
 
 #[test]
-fn a_transducer_section_constructs_on_level_zero() -> Result<(), ParseError> {
+fn a_transducer_section_constructs_on_level_zero() -> Result<(), Error> {
 	let text = "@NFT-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a q1\n";
 	let mut sigma = Alphabet::new();
 	let nft = parse_one(text).construct_nft(&mut sigma)?;
@@ -68,8 +74,10 @@ fn a_transducer_section_constructs_on_level_zero() -> Result<(), ParseError> {
 	assert_eq!(nft.num_levels(), 2);
 	assert!(nft.accepts(&[&a, &a]));
 	assert!(!nft.accepts(&[&a[..], &[]]));
-	let error = parse_one(text).construct_nfa(&mut sigma).unwrap_err();
-	assert!(error.message().contains("not an NFA"), "{error}");
+	assert_eq!(
+		parse_one(text).construct_nfa(&mut sigma).unwrap_err(),
+		IntermediateError::WrongKind { expected: "NFA" }
+	);
 	Ok(())
 }
 

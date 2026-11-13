@@ -16,8 +16,8 @@ mod types;
 
 pub use alphabet::Alphabet;
 pub use error::{
-	AlphabetError, Error, InvalidAutomaton, LimitExceeded, NftError, NoSuchState, ParseError,
-	RegexError, ReplaceError, UnmetRequirement,
+	AlphabetError, Error, IntermediateError, InvalidAutomaton, LimitExceeded, NftError,
+	NoSuchState, ParseError, RegexError, ReplaceError, Requirement, UnmetRequirement,
 };
 pub use intermediate::IntermediateAutomaton;
 pub use limits::Limits;

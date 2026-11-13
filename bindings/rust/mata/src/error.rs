@@ -33,6 +33,9 @@ pub enum Error {
 	/// An argument that a replace transducer cannot be built from.
 	#[error(transparent)]
 	Replace(#[from] ReplaceError),
+	/// A step of loading in separate steps that its intermediate automaton does not allow.
+	#[error(transparent)]
+	Intermediate(#[from] IntermediateError),
 }
 
 /// Error from parsing the `.mata` format. It carries Mata's message.
@@ -214,6 +217,13 @@ pub enum ReplaceError {
 		/// The reserved symbol.
 		symbol: Symbol,
 	},
+	/// The marker of the call is epsilon or [`DONT_CARE`](crate::nft::DONT_CARE), which read as moves,
+	/// not as a symbol that can mark a position.
+	#[error("the marker cannot be symbol {marker}, which is epsilon or DONT_CARE")]
+	ReservedMarker {
+		/// The marker that was passed.
+		marker: Symbol,
+	},
 	/// Invalid regular expression.
 	#[error(transparent)]
 	Regex(#[from] RegexError),
@@ -245,23 +255,72 @@ impl InvalidAutomaton {
 
 /// An operand or argument that does not meet a requirement of the operation, such as a deterministic
 /// and complete automaton for [`Nfa::union_det_complete`](crate::Nfa::union_det_complete). It carries
-/// the shim's message.
+/// which requirement failed and the shim's message.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
 #[error("{message}")]
 pub struct UnmetRequirement {
+	requirement: Requirement,
 	message: String,
 }
 
 impl UnmetRequirement {
-	pub(crate) fn new(message: impl Into<String>) -> UnmetRequirement {
+	pub(crate) fn new(requirement: Requirement, message: impl Into<String>) -> UnmetRequirement {
 		UnmetRequirement {
+			requirement,
 			message: message.into(),
 		}
 	}
 
-	/// The shim's message.
+	/// The requirement that failed.
+	#[must_use]
+	pub fn requirement(&self) -> Requirement {
+		self.requirement
+	}
+
+	/// What failed, for diagnostics.
 	#[must_use]
 	pub fn message(&self) -> &str {
 		&self.message
 	}
+}
+
+/// The requirement that an [`UnmetRequirement`] reports.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum Requirement {
+	/// An operand must have an initial state and be deterministic.
+	Deterministic,
+	/// An operand must be complete over the alphabet of the call.
+	Complete,
+	/// The automaton must read UTF-8 encoded bytes.
+	Utf8,
+	/// A numeric parameter must be in its range.
+	ParameterRange,
+}
+
+/// Error from a step of loading in separate steps on an
+/// [`IntermediateAutomaton`](crate::IntermediateAutomaton).
+#[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
+pub enum IntermediateError {
+	/// [`mintermize`](crate::IntermediateAutomaton::mintermize) takes only NFAs and AFAs with a
+	/// bit-vector alphabet.
+	#[error("automaton {index} is not an NFA or AFA with a bit-vector alphabet")]
+	NotMintermizable {
+		/// The position of the automaton in the call, from 0.
+		index: usize,
+	},
+	/// The section is not of the kind the construction builds.
+	#[error("the intermediate automaton is not an {expected}")]
+	WrongKind {
+		/// `"NFA"` or `"NFT"`.
+		expected: &'static str,
+	},
+	/// The section still has a bit-vector alphabet; mintermize it first.
+	#[error("the intermediate automaton has a bit-vector alphabet; mintermize it first")]
+	NeedsMintermization,
+	/// Mata could not parse the text, or construct a transition of the section, or the alphabet has no
+	/// symbol left for a new name.
+	#[error(transparent)]
+	Parse(#[from] ParseError),
 }

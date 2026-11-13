@@ -184,5 +184,13 @@ fn replace_rejects_reserved_symbols() -> Result<(), Error> {
 		strings::create_identity(&abc(), 0).unwrap_err(),
 		ReplaceError::Nft(NftError::InvalidNumLevels { num_levels: 0 })
 	);
+	// Epsilon and DONT_CARE read as moves, so neither can mark a position.
+	for marker in [Symbol::EPSILON, DONT_CARE] {
+		assert_eq!(
+			strings::replace_reluctant_literal(&[c], &[c], &abc(), ReplaceMode::All, marker)
+				.unwrap_err(),
+			ReplaceError::ReservedMarker { marker }
+		);
+	}
 	Ok(())
 }

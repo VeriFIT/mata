@@ -151,6 +151,7 @@ pub enum ProductFinalCondition {
 	/// Both states are final: the intersection.
 	#[default]
 	And,
-	/// Either state is final.
+	/// Either state is final. The product is the union only when both automata have an initial state
+	/// and are complete over the symbols either uses; see [`Nfa::product`](crate::Nfa::product).
 	Or,
 }

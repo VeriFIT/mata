@@ -791,8 +791,9 @@ std::unique_ptr<Nfa> right_quotient(const Nfa& nfa, const Nfa& suffixes, const S
 
 namespace {
 
-/// Throws where `Nfa::decode_utf8()` asserts, by its own traversal: after a byte that starts a sequence of two, three
-///  or four bytes, the last byte of the sequence must be a continuation byte `10xxxxxx`.
+/// Throws where `Nfa::decode_utf8()` asserts or would build a wrong code point, by its own traversal: every symbol
+///  is a byte, a byte that is not ASCII starts a sequence of two, three or four bytes, and every later byte of the
+///  sequence is a continuation byte `10xxxxxx`.
 void check_utf8(const Nfa& nfa) {
 	std::vector<bool> used(nfa.num_of_states(), false);
 	std::vector<State> worklist{};
@@ -803,11 +804,14 @@ void check_utf8(const Nfa& nfa) {
 			worklist.push_back(state);
 		}
 	};
-	const auto fail = [](const State state) {
+	const auto fail = [](const State state, const std::string& what) {
 		throw std::invalid_argument(
-			"the automaton is not UTF-8 encoded: a multi-byte sequence from state " + std::to_string(state) +
-			" does not end with a continuation byte"
+			"the automaton is not UTF-8 encoded: a sequence from state " + std::to_string(state) + " " + what
 		);
+	};
+	const auto continuation = [&](const State state, const Symbol symbol) {
+		if (symbol > 0xFF) { fail(state, "has symbol " + std::to_string(symbol) + ", which is not a byte"); }
+		if ((symbol & 0xC0) != 0x80) { fail(state, "has a byte that is not a continuation byte"); }
 	};
 	push(nfa.initial);
 	while (!worklist.empty()) {
@@ -815,23 +819,27 @@ void check_utf8(const Nfa& nfa) {
 		worklist.pop_back();
 		for (const auto& sp1 : nfa.delta[q1]) {
 			const Symbol s1 = sp1.symbol;
+			if (s1 > 0xFF) { fail(q1, "has symbol " + std::to_string(s1) + ", which is not a byte"); }
 			if ((s1 & 0x80) == 0x00) {
 				push(sp1.targets);
 				continue;
 			}
+			if ((s1 & 0xE0) != 0xC0 && (s1 & 0xF0) != 0xE0 && (s1 & 0xF8) != 0xF0) {
+				fail(q1, "starts with a byte that does not start a multi-byte sequence");
+			}
 			for (const State q2 : sp1.targets) {
 				for (const auto& sp2 : nfa.delta[q2]) {
 					const Symbol s2 = sp2.symbol;
+					continuation(q1, s2);
 					if ((s1 & 0xE0) == 0xC0) {
-						if ((s2 & 0xC0) != 0x80) { fail(q1); }
 						if ((((s1 & 0x1F) << 6) | (s2 & 0x3F)) >= 0x80) { push(sp2.targets); }
 						continue;
 					}
 					for (const State q3 : sp2.targets) {
 						for (const auto& sp3 : nfa.delta[q3]) {
 							const Symbol s3 = sp3.symbol;
+							continuation(q1, s3);
 							if ((s1 & 0xF0) == 0xE0) {
-								if ((s3 & 0xC0) != 0x80) { fail(q1); }
 								if ((((s1 & 0x0F) << 12) | ((s2 & 0x3F) << 6) | (s3 & 0x3F)) >= 0x8'00) {
 									push(sp3.targets);
 								}
@@ -840,7 +848,7 @@ void check_utf8(const Nfa& nfa) {
 							for (const State q4 : sp3.targets) {
 								for (const auto& sp4 : nfa.delta[q4]) {
 									const Symbol s4 = sp4.symbol;
-									if ((s1 & 0xF8) != 0xF0 || (s4 & 0xC0) != 0x80) { fail(q1); }
+									continuation(q1, s4);
 									const Symbol symbol =
 										((s1 & 0x07) << 18) | ((s2 & 0x3F) << 12) | ((s3 & 0x3F) << 6) | (s4 & 0x3F);
 									if (symbol >= 0x1'00'00 && symbol <= 0x10'FF'FF) { push(sp4.targets); }

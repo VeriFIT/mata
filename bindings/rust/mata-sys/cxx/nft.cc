@@ -562,9 +562,14 @@ using mata::applications::strings::replace::ReplaceMode;
 ReplaceMode replace_mode(const bool single) { return single ? ReplaceMode::Single : ReplaceMode::All; }
 
 /// The alphabet of a replace transducer. Throws on epsilon, `DONT_CARE` and `marker`, which the construction
-///  gives another meaning.
+///  gives another meaning, and on a `marker` that is epsilon or `DONT_CARE`, which cannot mark anything.
 mata::EnumAlphabet
 	replace_alphabet(const rust::Slice<const Symbol> symbols, const std::optional<Symbol> marker = std::nullopt) {
+	if (marker.has_value() && (*marker == mata::nft::EPSILON || *marker == mata::nft::DONT_CARE)) {
+		throw std::invalid_argument(
+			"the marker of the replace cannot be epsilon or DONT_CARE, found " + std::to_string(*marker)
+		);
+	}
 	if (marker.has_value() && std::ranges::find(symbols, *marker) != symbols.end()) {
 		throw std::invalid_argument(
 			"the alphabet cannot contain the marker symbol " + std::to_string(*marker) + " of the replace"

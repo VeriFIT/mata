@@ -16,8 +16,8 @@ use crate::types::{
 use crate::{
 	Alphabet, CheckAlgorithm, Complementation, Determinization, Direction, Distinction,
 	InvalidAutomaton, LimitExceeded, Limits, Minimization, NoSuchState, ParseError,
-	ProductFinalCondition, Reduction, RegexError, ResidualConstruction, Run, Side, State, Symbol,
-	Transition, UnmetRequirement, Word, check,
+	ProductFinalCondition, Reduction, RegexError, Requirement, ResidualConstruction, Run, Side,
+	State, Symbol, Transition, UnmetRequirement, Word, check,
 };
 
 /// A nondeterministic finite automaton with epsilon transitions: Mata's `mata::nfa::Nfa`.
@@ -1051,21 +1051,41 @@ impl Nfa {
 	///
 	/// # Errors
 	///
-	/// [`UnmetRequirement`] when `self` or `other` has no initial state, is nondeterministic, or is not
-	/// complete over `alphabet`.
+	/// [`UnmetRequirement`] with [`Requirement::Deterministic`] when `self` or `other` has no initial
+	/// state or is nondeterministic, and with [`Requirement::Complete`] when one is not complete over
+	/// `alphabet`.
 	pub fn union_det_complete(
 		&self,
 		other: &Nfa,
 		alphabet: &Alphabet,
 	) -> Result<Nfa, UnmetRequirement> {
-		ffi::union_det_complete(self.raw(), other.raw(), &alphabet.raw_symbols())
-			.map(Nfa::from_owned)
-			.map_err(|error| UnmetRequirement::new(error.what()))
+		for operand in [self, other] {
+			if operand.initial_states().is_empty() || !operand.is_deterministic() {
+				return Err(UnmetRequirement::new(
+					Requirement::Deterministic,
+					"union_det_complete requires deterministic automata",
+				));
+			}
+			if !operand.is_complete(alphabet) {
+				return Err(UnmetRequirement::new(
+					Requirement::Complete,
+					"union_det_complete requires automata complete over the alphabet",
+				));
+			}
+		}
+		Ok(new_nfa(ffi::union_det_complete(
+			self.raw(),
+			other.raw(),
+			&alphabet.raw_symbols(),
+		)))
 	}
 
 	/// The product of two automata, whose pairs of states are final according to `condition` (Mata's
-	/// `product`): under [`ProductFinalCondition::And`] its language is the intersection, and under
-	/// [`ProductFinalCondition::Or`] the union.
+	/// `product`). Under [`ProductFinalCondition::And`] its language is the intersection. Under
+	/// [`ProductFinalCondition::Or`] a pair is final when either state is, which gives the union only
+	/// when both automata have an initial state and are complete over the symbols either uses;
+	/// otherwise a word that only one of them reads is lost. [`Nfa::union`] is the union of any two
+	/// automata, and [`Nfa::union_det_complete`] checks the requirements of the product union.
 	#[must_use = "returns a new automaton and leaves `self` unchanged"]
 	pub fn product(
 		&self,
@@ -1108,12 +1128,13 @@ impl Nfa {
 	///
 	/// # Errors
 	///
-	/// [`UnmetRequirement`] when a multi-byte sequence of a symbol of `self` does not start with a
-	/// multi-byte lead byte and end with a continuation byte.
+	/// [`UnmetRequirement`] with [`Requirement::Utf8`] when a symbol of a sequence is not a byte, a
+	/// sequence starts with a byte that does not start a sequence, or a later byte of a multi-byte
+	/// sequence is not a continuation byte.
 	pub fn decode_utf8(&self) -> Result<Nfa, UnmetRequirement> {
 		ffi::decode_utf8(self.raw())
 			.map(Nfa::from_owned)
-			.map_err(|error| UnmetRequirement::new(error.what()))
+			.map_err(|error| UnmetRequirement::new(Requirement::Utf8, error.what()))
 	}
 
 	/// The automaton for the words of `self` with every symbol replaced by `abstract_symbol` (Mata's
@@ -1178,7 +1199,7 @@ impl Nfa {
 	///
 	/// # Errors
 	///
-	/// [`UnmetRequirement`] when a parameter is out of its range.
+	/// [`UnmetRequirement`] with [`Requirement::ParameterRange`] when a parameter is out of its range.
 	pub fn random_tabakov_vardi(
 		num_states: usize,
 		alphabet_size: usize,
@@ -1196,7 +1217,7 @@ impl Nfa {
 			seed,
 		)
 		.map(Nfa::from_owned)
-		.map_err(|error| UnmetRequirement::new(error.what()))
+		.map_err(|error| UnmetRequirement::new(Requirement::ParameterRange, error.what()))
 	}
 }
 

@@ -6,7 +6,7 @@ use mata_sys::cxx::UniquePtr;
 use mata_sys::ffi;
 
 use crate::nft::Nft;
-use crate::{Alphabet, Nfa, ParseError, check};
+use crate::{Alphabet, IntermediateError, Nfa, ParseError, check};
 
 /// One section of a `.mata` text as Mata's parser reads it, before an automaton is constructed from it:
 /// Mata's `mata::IntermediateAut`.
@@ -29,7 +29,7 @@ use crate::{Alphabet, Nfa, ParseError, check};
 /// let mut sigma = Alphabet::new();
 /// let nfa = explicit[0].construct_nfa(&mut sigma)?;
 /// assert_eq!(nfa.num_transitions(), 1);
-/// # Ok::<(), mata::ParseError>(())
+/// # Ok::<(), mata::Error>(())
 /// ```
 pub struct IntermediateAutomaton {
 	/// Never null.
@@ -63,13 +63,18 @@ impl IntermediateAutomaton {
 	///
 	/// # Errors
 	///
-	/// [`ParseError`] unless every automaton is an NFA or an AFA with a bit-vector alphabet.
+	/// [`IntermediateError::NotMintermizable`] unless every automaton is an NFA or an AFA with a
+	/// bit-vector alphabet.
 	pub fn mintermize(
 		automata: &[&IntermediateAutomaton],
-	) -> Result<Vec<IntermediateAutomaton>, ParseError> {
+	) -> Result<Vec<IntermediateAutomaton>, IntermediateError> {
 		let mut refs = ffi::intermediate_refs_new();
-		for automaton in automata {
-			ffi::intermediate_refs_push(refs.pin_mut(), automaton.raw());
+		for (index, automaton) in automata.iter().enumerate() {
+			let raw = automaton.raw();
+			if !(raw.is_nfa() || raw.is_afa()) || !raw.is_bitvector() {
+				return Err(IntermediateError::NotMintermizable { index });
+			}
+			ffi::intermediate_refs_push(refs.pin_mut(), raw);
 		}
 		let mintermized =
 			ffi::intermediate_mintermize(&refs).map_err(|error| ParseError::new(error.what()))?;
@@ -82,9 +87,12 @@ impl IntermediateAutomaton {
 	///
 	/// # Errors
 	///
-	/// [`ParseError`] if the section is not an NFA, still has a bit-vector alphabet (mintermize it
-	/// first), has a transition Mata cannot construct, or `alphabet` has no symbol left for a new name.
-	pub fn construct_nfa(&self, alphabet: &mut Alphabet) -> Result<Nfa, ParseError> {
+	/// [`IntermediateError::WrongKind`] if the section is not an NFA,
+	/// [`IntermediateError::NeedsMintermization`] if it still has a bit-vector alphabet, and
+	/// [`IntermediateError::Parse`] if it has a transition Mata cannot construct or `alphabet` has no
+	/// symbol left for a new name.
+	pub fn construct_nfa(&self, alphabet: &mut Alphabet) -> Result<Nfa, IntermediateError> {
+		self.require("NFA", self.raw().is_nfa())?;
 		let (names, symbols) = alphabet.raw_parse_names();
 		let mut new_names = Vec::new();
 		let mut new_symbols = Vec::new();
@@ -108,9 +116,12 @@ impl IntermediateAutomaton {
 	///
 	/// # Errors
 	///
-	/// [`ParseError`] if the section is not an NFT, has a bit-vector alphabet, has a transition Mata
-	/// cannot construct, or `alphabet` has no symbol left for a new name.
-	pub fn construct_nft(&self, alphabet: &mut Alphabet) -> Result<Nft, ParseError> {
+	/// [`IntermediateError::WrongKind`] if the section is not an NFT,
+	/// [`IntermediateError::NeedsMintermization`] if it has a bit-vector alphabet, and
+	/// [`IntermediateError::Parse`] if it has a transition Mata cannot construct or `alphabet` has no
+	/// symbol left for a new name.
+	pub fn construct_nft(&self, alphabet: &mut Alphabet) -> Result<Nft, IntermediateError> {
+		self.require("NFT", self.raw().is_nft())?;
 		let (names, symbols) = alphabet.raw_parse_names();
 		let mut new_names = Vec::new();
 		let mut new_symbols = Vec::new();
@@ -135,6 +146,17 @@ impl IntermediateAutomaton {
 
 	fn raw(&self) -> &ffi::IntermediateAut {
 		&self.inner
+	}
+
+	/// Checks that the section is of the kind a construction builds, with an explicit alphabet.
+	fn require(&self, expected: &'static str, kind: bool) -> Result<(), IntermediateError> {
+		if !kind {
+			return Err(IntermediateError::WrongKind { expected });
+		}
+		if self.raw().is_bitvector() {
+			return Err(IntermediateError::NeedsMintermization);
+		}
+		Ok(())
 	}
 }
 

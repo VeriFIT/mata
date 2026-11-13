@@ -170,8 +170,14 @@ pub fn words_of_lengths(nft: &Nft, lengths: &[usize]) -> Result<Option<Vec<Word>
 	Ok(found.then(|| words_from_raw(symbols, &word_lengths)))
 }
 
-/// The symbols of `alphabet` as the bridge takes them, rejecting those the construction reserves.
+/// The symbols of `alphabet` as the bridge takes them, rejecting those the construction reserves and a
+/// marker that cannot mark anything.
 fn replace_symbols(alphabet: &Alphabet, marker: Option<Symbol>) -> Result<Vec<u32>, ReplaceError> {
+	if let Some(marker) = marker
+		&& (marker.is_epsilon() || marker == DONT_CARE)
+	{
+		return Err(ReplaceError::ReservedMarker { marker });
+	}
 	for symbol in [Some(DONT_CARE), marker].into_iter().flatten() {
 		if alphabet.contains(symbol) {
 			return Err(ReplaceError::ReservedSymbol { symbol });
@@ -242,8 +248,9 @@ pub fn create_identity_with_single_symbol_replace(
 ///
 /// # Errors
 ///
-/// [`ReplaceError::Regex`] if the pattern is invalid, and [`ReplaceError::ReservedSymbol`] if `alphabet`
-/// contains [`DONT_CARE`] or `begin_marker`.
+/// [`ReplaceError::Regex`] if the pattern is invalid, [`ReplaceError::ReservedMarker`] if `begin_marker`
+/// is epsilon or [`DONT_CARE`], and [`ReplaceError::ReservedSymbol`] if `alphabet` contains
+/// [`DONT_CARE`] or `begin_marker`.
 pub fn replace_reluctant_regex(
 	regex: &str,
 	replacement: &[Symbol],
@@ -268,6 +275,7 @@ pub fn replace_reluctant_regex(
 ///
 /// # Errors
 ///
+/// [`ReplaceError::ReservedMarker`] if `begin_marker` is epsilon or [`DONT_CARE`], and
 /// [`ReplaceError::ReservedSymbol`] if `alphabet` contains [`DONT_CARE`] or `begin_marker`.
 pub fn replace_reluctant_regex_nfa(
 	regex: &Nfa,
@@ -292,6 +300,7 @@ pub fn replace_reluctant_regex_nfa(
 ///
 /// # Errors
 ///
+/// [`ReplaceError::ReservedMarker`] if `end_marker` is epsilon or [`DONT_CARE`], and
 /// [`ReplaceError::ReservedSymbol`] if `alphabet` contains [`DONT_CARE`] or `end_marker`.
 pub fn replace_reluctant_literal(
 	literal: &[Symbol],

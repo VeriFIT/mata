@@ -449,6 +449,14 @@ pub mod ffi {
 		type IntermediateAuts;
 		/// Intermediate automata borrowed for `'a`, to mintermize together.
 		type IntermediateRefs<'a>;
+		/// `IntermediateAut::is_nfa`: the section describes an NFA.
+		fn is_nfa(self: &IntermediateAut) -> bool;
+		/// `IntermediateAut::is_nft`: the section describes an NFT.
+		fn is_nft(self: &IntermediateAut) -> bool;
+		/// `IntermediateAut::is_afa`: the section describes an AFA.
+		fn is_afa(self: &IntermediateAut) -> bool;
+		/// `IntermediateAut::is_bitvector`: the section has a bit-vector alphabet.
+		fn is_bitvector(self: &IntermediateAut) -> bool;
 
 		/// Mata's `parse_mf` followed by `IntermediateAut::parse_from_mf`: every section of a `.mata`
 		/// text, bit-vector sections left as they are.

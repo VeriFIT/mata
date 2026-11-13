@@ -283,13 +283,18 @@ fn numeric_names_are_rejected() -> Result<(), Error> {
 		Err(AlphabetError::NumericName { name: "7".into() })
 	);
 	// `insert_named` binds a numeric name (the "bytes" script alphabet does), so it must reload.
+	let mut bytes = Alphabet::new();
+	bytes.insert_named("1", Symbol::new(49))?;
 	#[cfg(feature = "serde")]
 	{
-		let mut bytes = Alphabet::new();
-		bytes.insert_named("1", Symbol::new(49))?;
 		let text = serde_json::to_string(&bytes).unwrap();
 		assert_eq!(serde_json::from_str::<Alphabet>(&text).unwrap(), bytes);
 	}
+	// The parser resolves a name before a number, so the `.mata` text keeps symbol 49.
+	let nfa = Nfa::from_word(&[Symbol::new(49)]);
+	let back = Nfa::parse_mata(&nfa.display_with(&bytes).to_string(), &mut bytes)?;
+	assert!(back.accepts(&[Symbol::new(49)]));
+	assert!(!back.accepts(&[Symbol::new(1)]));
 	// The empty name is digits-and-nothing: not numeric, still rejected by round-trip rules as before.
 	let mut empty = Alphabet::new();
 	let symbol = empty.insert_name("")?;
