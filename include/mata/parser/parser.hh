@@ -10,6 +10,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <ostream>
 #include <string>
 #include <string_view>
@@ -26,10 +27,11 @@ namespace mata {
 class NameStore {
   public:
 	/**
-	 * @brief Copies @p name into the storage.
+	 * @brief Copies @p name into the storage. Threads may store concurrently; each view points to its own copy.
 	 * @return A view of the copy, valid for as long as the storage lives.
 	 */
 	std::string_view store(const std::string_view name) {
+		const std::scoped_lock lock{store_mutex_};
 		if (chunks_.empty() || chunks_.back().capacity - used_ < name.size()) { add_chunk(name.size()); }
 		char* const stored{chunks_.back().data.get() + used_};
 		std::memcpy(stored, name.data(), name.size());
@@ -75,6 +77,8 @@ class NameStore {
 	std::vector<Range> ranges_{};
 	/// The number of bytes used in the last chunk.
 	std::size_t used_{};
+	/// Serializes the writes to @c chunks_, @c ranges_, and @c used_.
+	std::mutex store_mutex_{};
 };
 
 } // namespace mata

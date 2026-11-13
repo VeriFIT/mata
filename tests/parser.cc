@@ -10,8 +10,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include <array>
 #include <optional>
 #include <sstream>
+#include <thread>
+#include <unordered_set>
 
 using namespace mata::parser;
 using namespace mata::utils;
@@ -422,6 +425,38 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()") { // {{{
 		CHECK(aut.delta.num_of_transitions() == 1);
 	}
 } // parse_mf_section correct }}}
+
+TEST_CASE("mata::NameStore supports concurrent stores") {
+	constexpr size_t NUM_THREADS{8};
+	constexpr size_t NUM_NAMES{1'000};
+	struct Stored {
+		std::string name;
+		std::string_view view;
+	};
+
+	mata::NameStore names;
+	std::array<std::vector<Stored>, NUM_THREADS> stored;
+	std::vector<std::thread> threads;
+	threads.reserve(NUM_THREADS);
+	for (size_t thread{0}; thread < NUM_THREADS; ++thread) {
+		threads.emplace_back([&names, &stored, thread] {
+			stored[thread].reserve(NUM_NAMES);
+			for (size_t i{0}; i < NUM_NAMES; ++i) {
+				std::string name{std::to_string(thread) + "-" + std::to_string(i)};
+				stored[thread].push_back({name, names.store(name)});
+			}
+		});
+	}
+	for (std::thread& thread : threads) { thread.join(); }
+
+	std::unordered_set<const char*> addresses;
+	for (const auto& per_thread : stored) {
+		for (const Stored& entry : per_thread) {
+			CHECK(entry.view == entry.name);
+			CHECK(addresses.insert(entry.view.data()).second);
+		}
+	}
+}
 
 TEST_CASE("incorrect use of mata::Parser::parse_mf_section()") { // {{{
 	ParsedSection parsec;
