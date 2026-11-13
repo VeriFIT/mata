@@ -139,7 +139,12 @@ class Mintermization {
 		IntermediateAut& res, const IntermediateAut& aut, const std::vector<std::vector<size_t>>& minterms_of_source
 	);
 
-	Mintermization() : bdd_mng_(0) {}
+	/// The manager starts with a small cache, which CUDD grows on demand: allocating and clearing the default one
+	///  dominates the mintermization of a small automaton.
+	Mintermization() : bdd_mng_(0, 0, CUDD_UNIQUE_SLOTS, INITIAL_CACHE_SLOTS) {}
+
+  private:
+	static constexpr unsigned INITIAL_CACHE_SLOTS{4'096};
 };
 
 } // namespace mata
