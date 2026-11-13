@@ -98,25 +98,32 @@ mata::parser::StateNameMap::StateNameMap(const Map& names, const size_t max_numb
 }
 
 std::optional<size_t> mata::parser::StateNameMap::number_of(const std::string_view name) {
-	size_t digits_begin{name.size()};
-	while (digits_begin > 0 && name[digits_begin - 1] >= '0' && name[digits_begin - 1] <= '9') { --digits_begin; }
-	const std::string_view digits{name.substr(digits_begin)};
-	// Leading zeros would map two names to one number.
-	if (digits.empty() || (digits.size() > 1 && digits.front() == '0')) { return std::nullopt; }
-	const std::string_view prefix{name.substr(0, digits_begin)};
-	if (!prefix_.has_value()) {
-		prefix_.emplace(prefix);
-	} else if (*prefix_ != prefix) {
-		return std::nullopt;
+	std::string_view digits;
+	if (prefix_.has_value()) {
+		// The prefix ends with no digit, so the digits are the rest of the name, if it is all digits. The prefix is a
+		//  character or so, compared in place rather than by a call of memcmp().
+		const std::string_view prefix{*prefix_};
+		if (name.size() < prefix.size()) { return std::nullopt; }
+		for (size_t i{0}; i < prefix.size(); ++i) {
+			if (name[i] != prefix[i]) { return std::nullopt; }
+		}
+		digits = name.substr(prefix.size());
+	} else {
+		size_t digits_begin{name.size()};
+		while (digits_begin > 0 && name[digits_begin - 1] >= '0' && name[digits_begin - 1] <= '9') { --digits_begin; }
+		digits = name.substr(digits_begin);
 	}
-	size_t number{0};
+	// Leading zeros would map two names to one number. With at most 19 digits, the number fits a std::uint64_t.
+	if (digits.empty() || (digits.size() > 1 && digits.front() == '0') || digits.size() > 19) { return std::nullopt; }
+	std::uint64_t number{0};
 	for (const char digit : digits) {
-		// Checked before the number can wrap around and so merge two names.
-		const auto value{static_cast<size_t>(digit - '0')};
-		if (number > max_number_ / 10 || value > max_number_ - (number * 10)) { return std::nullopt; }
+		const auto value{static_cast<unsigned char>(digit - '0')};
+		if (value > 9) { return std::nullopt; }
 		number = (number * 10) + value;
 	}
-	return number;
+	if (!prefix_.has_value()) { prefix_.emplace(name.substr(0, name.size() - digits.size())); }
+	if (number > max_number_) { return std::nullopt; }
+	return static_cast<size_t>(number);
 }
 
 std::optional<mata::parser::StateNameMap::State> mata::parser::StateNameMap::find(const std::string_view name) {
