@@ -38,10 +38,14 @@ SymbolSet NameTable::get_alphabet_symbols() const {
 	return SymbolSet(std::move(symbols));
 }
 
-std::vector<mata::IntermediateAut> mintermize(const std::vector<const mata::IntermediateAut*>& automata) {
+std::mutex& cudd_mutex() {
 	// CUDD swaps a process-wide out-of-memory handler, so one thread at a time.
-	static auto cudd_mutex = std::mutex();
-	const auto cudd_lock = std::lock_guard(cudd_mutex);
+	static auto mutex = std::mutex();
+	return mutex;
+}
+
+std::vector<mata::IntermediateAut> mintermize(const std::vector<const mata::IntermediateAut*>& automata) {
+	const auto cudd_lock = std::lock_guard(cudd_mutex());
 	auto mintermization = mata::Mintermization();
 	return mintermization.mintermize(automata);
 }

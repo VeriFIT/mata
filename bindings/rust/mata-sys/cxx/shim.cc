@@ -161,14 +161,12 @@ std::vector<Nfa> parse_nfas(const std::string_view text, mata::Alphabet& alphabe
 	auto bitvector_nfas = std::vector<Nfa>();
 	auto is_bitvector = std::vector<bool>(sections.size(), false);
 	{
-		// CUDD swaps a process-wide out-of-memory handler, so one thread at a time.
-		static auto cudd_mutex = std::mutex();
 		auto cudd_lock = std::unique_lock<std::mutex>();
 		auto reader = std::optional<mata::nfa::builder::BitvectorNfaReader>();
 		for (std::size_t i = 0; i < sections.size(); ++i) {
 			if (sections[i].type != "NFA-bits") { continue; }
 			if (!reader.has_value()) {
-				cudd_lock = std::unique_lock(cudd_mutex);
+				cudd_lock = std::unique_lock(detail::cudd_mutex());
 				reader.emplace();
 			}
 			is_bitvector[i] = reader->add(sections[i].text) != mata::nfa::builder::BitvectorNfaReader::Read::Rejected;

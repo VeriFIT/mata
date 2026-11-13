@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <mutex>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -93,6 +94,9 @@ class NameTable final : public mata::Alphabet {
 	std::unordered_map<Symbol, std::string> by_symbol_ = {};
 	mata::utils::StringMap<Symbol> by_name_ = {};
 };
+
+/// Serializes every CUDD entry point that swaps the process-wide out-of-memory handler.
+std::mutex& cudd_mutex();
 
 /// Mata's `Mintermization::mintermize()` of `automata` together, one thread at a time.
 std::vector<mata::IntermediateAut> mintermize(const std::vector<const mata::IntermediateAut*>& automata);
