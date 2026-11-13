@@ -309,7 +309,7 @@ class FormulaToBdd {
 
 	/// @return The BDD, or @c std::nullopt when the formula is not such a combination.
 	std::optional<BDD> read() {
-		std::optional<BDD> bdd{disjunction()};
+		std::optional<BDD> bdd{formula()};
 		if (position_ != tokens_.size()) { return std::nullopt; }
 		return bdd;
 	}
@@ -320,47 +320,54 @@ class FormulaToBdd {
 			   tokens_[position_].text[0] == op;
 	}
 
-	std::optional<BDD> disjunction() {
-		std::optional<BDD> bdd{conjunction()};
-		while (bdd.has_value() && is_operator('|')) {
-			++position_;
-			const std::optional<BDD> rhs{conjunction()};
-			if (!rhs.has_value()) { return std::nullopt; }
-			bdd = *bdd + *rhs;
+	/// The formula: a disjunction of conjunctions of negations of operands or parenthesized formulas. The enclosing
+	///  parentheses are kept on a stack of their own, so that deep nesting cannot exhaust the call stack.
+	std::optional<BDD> formula() {
+		/// What a parenthesis interrupts: the disjunction and conjunction before it, and whether it is negated.
+		struct Enclosing {
+			std::optional<BDD> disjunction;
+			std::optional<BDD> conjunction;
+			bool negated;
+		};
+		std::vector<Enclosing> enclosing;
+		std::optional<BDD> disjunction;
+		std::optional<BDD> conjunction;
+		while (true) {
+			bool negated{false};
+			for (; is_operator('!'); ++position_) { negated = !negated; }
+			if (is_operator('(')) {
+				++position_;
+				enclosing.push_back({std::move(disjunction), std::move(conjunction), negated});
+				disjunction.reset();
+				conjunction.reset();
+				continue;
+			}
+			std::optional<BDD> bdd{operand()};
+			if (!bdd.has_value()) { return std::nullopt; }
+			// Adds the negation to the conjunction, and closes the parentheses that end after it.
+			while (true) {
+				if (negated) { bdd = !*bdd; }
+				conjunction = conjunction.has_value() ? *conjunction * *bdd : *bdd;
+				if (is_operator('&')) { break; }
+				disjunction = disjunction.has_value() ? *disjunction + *conjunction : *conjunction;
+				conjunction.reset();
+				if (is_operator('|')) { break; }
+				if (enclosing.empty()) { return disjunction; }
+				if (!is_operator(')')) { return std::nullopt; }
+				++position_;
+				bdd = std::move(disjunction);
+				Enclosing& outer{enclosing.back()};
+				disjunction = std::move(outer.disjunction);
+				conjunction = std::move(outer.conjunction);
+				negated = outer.negated;
+				enclosing.pop_back();
+			}
+			++position_; // The `&` or `|`.
 		}
-		return bdd;
 	}
 
-	std::optional<BDD> conjunction() {
-		std::optional<BDD> bdd{negation()};
-		while (bdd.has_value() && is_operator('&')) {
-			++position_;
-			const std::optional<BDD> rhs{negation()};
-			if (!rhs.has_value()) { return std::nullopt; }
-			bdd = *bdd * *rhs;
-		}
-		return bdd;
-	}
-
-	std::optional<BDD> negation() {
-		if (is_operator('!')) {
-			++position_;
-			const std::optional<BDD> operand{negation()};
-			if (!operand.has_value()) { return std::nullopt; }
-			return !*operand;
-		}
-		return atom();
-	}
-
-	std::optional<BDD> atom() {
+	std::optional<BDD> operand() {
 		if (position_ == tokens_.size()) { return std::nullopt; }
-		if (is_operator('(')) {
-			++position_;
-			std::optional<BDD> bdd{disjunction()};
-			if (!bdd.has_value() || !is_operator(')')) { return std::nullopt; }
-			++position_;
-			return bdd;
-		}
 		const mata::parser::ExplicitToken& token{tokens_[position_]};
 		// A quoted operand, an operator, or a parenthesis in operand position goes to the general reader.
 		if (token.quoted || (token.text.size() == 1 && std::string_view{"&|!()"}.contains(token.text[0]))) {

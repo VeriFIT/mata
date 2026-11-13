@@ -568,6 +568,23 @@ TEST_CASE("BitvectorNfaReader reads what the general reader and mintermization r
 		check_bitvector_reader_reads({header + "%Final q1\nq0 \"x\" & y q1\n"}, Read::ByGeneralReader);
 		check_bitvector_reader_reads({header + "%Final q1\nq0 (\"x\") q1\n"}, Read::ByGeneralReader);
 	}
+
+	SECTION("deep nesting") {
+		const std::string open(100'000, '(');
+		const std::string close(100'000, ')');
+		check_bitvector_reader_reads({header + "%Final q1\nq0 " + open + "x" + close + " q1\n"});
+		// The general reader converts these formula trees recursively, so they are compared with shallow ones.
+		std::string nested_conjunction;
+		for (size_t i{0}; i < 100'000; ++i) { nested_conjunction += "(x & "; }
+		builder::BitvectorNfaReader reader;
+		CHECK(reader.add(header + "%Final q1\nq0 " + nested_conjunction + "y" + close + " q1\n") == Read::Directly);
+		CHECK(reader.add(header + "%Final q1\nq0 x & y q1\n") == Read::Directly);
+		CHECK(reader.add(header + "%Final q1\nq0 " + std::string(100'001, '!') + "x q1\n") == Read::Directly);
+		CHECK(reader.add(header + "%Final q1\nq0 !x q1\n") == Read::Directly);
+		const std::vector<Nfa> read{reader.build()};
+		CHECK(read[0].delta == read[1].delta);
+		CHECK(read[2].delta == read[3].delta);
+	}
 }
 
 TEST_CASE("BitvectorNfaReader leaves inputs that are not bitvector NFAs") {
