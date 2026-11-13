@@ -750,11 +750,12 @@ rust::String print_dot(
 rust::String print_regex(
 	const Nfa& nfa,
 	const RegexPrintMode mode,
+	const bool has_alphabet,
 	const rust::Slice<const rust::String> names,
 	const rust::Slice<const Symbol> symbols
 ) {
 	const auto table = detail::NameTable(names, symbols);
-	const mata::Alphabet* const alphabet = table.empty() ? nullptr : &table;
+	const mata::Alphabet* const alphabet = has_alphabet ? &table : nullptr;
 	switch (mode) {
 		case RegexPrintMode::Fast:
 			return rust::String(nfa.print_to_regex(mata::nfa::RegexPrintMode::Fast, alphabet));

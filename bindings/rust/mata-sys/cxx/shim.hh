@@ -201,7 +201,11 @@ rust::String print_dot(
 	rust::Slice<const Symbol> symbols
 );
 rust::String print_regex(
-	const Nfa& nfa, RegexPrintMode mode, rust::Slice<const rust::String> names, rust::Slice<const Symbol> symbols
+	const Nfa& nfa,
+	RegexPrintMode mode,
+	bool has_alphabet,
+	rust::Slice<const rust::String> names,
+	rust::Slice<const Symbol> symbols
 );
 
 // Further operations of the library.

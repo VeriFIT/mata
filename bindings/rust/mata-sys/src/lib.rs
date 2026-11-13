@@ -397,11 +397,12 @@ pub mod ffi {
 			names: &[String],
 			symbols: &[u32],
 		) -> Result<String>;
-		/// An RE2/Latin1 regular expression, with names from (`names`, `symbols`) and numbers for other
-		/// symbols.
+		/// An RE2 regular expression, with names from (`names`, `symbols`) and numbers for other symbols.
+		/// `has_alphabet` distinguishes an explicitly supplied empty alphabet from no alphabet.
 		fn print_regex(
 			nfa: &Nfa,
 			mode: RegexPrintMode,
+			has_alphabet: bool,
 			names: &[String],
 			symbols: &[u32],
 		) -> Result<String>;

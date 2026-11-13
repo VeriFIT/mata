@@ -1022,8 +1022,9 @@ impl Nfa {
 		Dot::new(self)
 	}
 
-	/// The language as an RE2/Latin1 regular expression; set options on the adapter and render it
-	/// with [`Regex::render`].
+	/// The language as an RE2 regular expression; set options on the adapter and render it with
+	/// [`Regex::render`]. [`Nfa::from_regex`] is a Latin1 reader, so these round trips apply to symbols
+	/// through `0xFF`; a larger Unicode scalar value needs a UTF-8 reader and decoding of its UTF-8 automaton.
 	///
 	/// ```
 	/// use mata::{Nfa, RegexPrintMode};
@@ -1481,8 +1482,14 @@ impl<'a> Regex<'a> {
 	/// not exactly one UTF-8 character.
 	pub fn render(&self) -> Result<String, UnmetRequirement> {
 		let (names, symbols) = self.alphabet.map(Alphabet::raw_names).unwrap_or_default();
-		ffi::print_regex(self.nfa.raw(), self.mode.into(), &names, &symbols)
-			.map_err(|error| UnmetRequirement::new(Requirement::RegexSymbols, error.what()))
+		ffi::print_regex(
+			self.nfa.raw(),
+			self.mode.into(),
+			self.alphabet.is_some(),
+			&names,
+			&symbols,
+		)
+		.map_err(|error| UnmetRequirement::new(Requirement::RegexSymbols, error.what()))
 	}
 }
 

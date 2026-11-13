@@ -281,6 +281,24 @@ fn regex_symbol_errors_report_the_requirement() -> Result<(), Error> {
 }
 
 #[test]
+fn regex_alphabet_without_names_writes_symbol_numbers() -> Result<(), Error> {
+	// An alphabet with no names is still an alphabet: an unnamed symbol is written as its number.
+	let sigma = Alphabet::from_symbols([Symbol::new(7), Symbol::new(97)])?;
+	let seven = Nfa::from_word(&[Symbol::new(7)]);
+	assert_eq!(seven.regex().alphabet(&sigma).render()?, "7");
+	assert_eq!(seven.regex().alphabet(&Alphabet::new()).render()?, "7");
+	assert_eq!(seven.regex().render()?, "\\x07");
+
+	let error = Nfa::from_word(&[Symbol::new(97)])
+		.regex()
+		.alphabet(&sigma)
+		.render()
+		.unwrap_err();
+	assert_eq!(error.requirement(), Requirement::RegexSymbols);
+	Ok(())
+}
+
+#[test]
 fn oversized_regex_is_an_error() {
 	// Beyond RE2's memory budget.
 	let pattern = "[a-z]{1000}".repeat(1000);
