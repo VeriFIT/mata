@@ -196,7 +196,7 @@ make -C bindings/python test
 
 ## Rust binding
 
-Mata offers bindings of its library to Rust in [`bindings/rust`](./bindings/rust/): the crate [`mata`](https://crates.io/crates/mata) with a safe API, and the crate [`mata-sys`](https://crates.io/crates/mata-sys), which builds the library. They need Rust 1.88 or newer besides the requirements of the library. The same workspace builds the [`mata` command](https://mata.pages.fit.vutbr.cz/), the command-line interpreter of Mata Script; see [`bindings/rust/README.md`](./bindings/rust/README.md).
+Mata offers bindings of its library to Rust in [`bindings/rust`](./bindings/rust/): the crate [`mata`](https://crates.io/crates/mata) with a safe API, and the crate [`mata-sys`](https://crates.io/crates/mata-sys), which builds the library. They need Rust 1.95 or newer besides the requirements of the library. The same workspace builds the [`mata` command](https://mata.pages.fit.vutbr.cz/), the command-line interpreter of Mata Script, and the crate [`lazymat`](./bindings/rust/lazymat/), lazy emptiness checking of combinations of NFA and NFT built on these bindings; see [`bindings/rust/README.md`](./bindings/rust/README.md).
 
 ### Installation from crates.io
 
