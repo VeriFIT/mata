@@ -1,6 +1,8 @@
 // Copyright (c) 2026 VeriFIT. GNU GPL v3. See LICENSE in the project root.
 
 //! End-to-end tests of the `mata` binary: the commands, the exit statuses, and the stream each one writes.
+//! Rust's standard library for Emscripten cannot spawn processes, so these tests do not run there.
+#![cfg(not(target_os = "emscripten"))]
 
 use std::ffi::OsStr;
 use std::io::Write as _;
