@@ -176,12 +176,26 @@ mata::Mintermization::MintermPartition
 	std::vector<Region> current;
 	current.push_back({bdd_mng_.bddOne(), make_incidence()});
 
+	// Refinement loop. Two Leq tests per (region, source) pair: a region is usually disjoint from the source or
+	//  inside it, and only a region that properly overlaps it pays for the two products. Disjointness is tested
+	//  first because most sources cut out most regions.
 	for (size_t i = 0; i < source_bdds.size(); ++i) {
 		const BDD& source = source_bdds[i];
+		const BDD not_source = !source;
 		std::vector<Region> next;
 
 		for (auto& region : current) {
-			// Positive child: inside source (covered by source i)
+			if (region.value <= not_source) {
+				// Disjoint: the positive child is empty, the negative one is the region itself.
+				next.push_back(std::move(region));
+				continue;
+			}
+			if (region.value <= source) {
+				// The whole region is inside the source: only the positive child survives, and it is the region.
+				next.push_back(std::move(region));
+				set_bit(next.back().incidence, i);
+				continue;
+			}
 			if (const BDD b1 = region.value * source; !b1.IsZero()) {
 				auto new_incidence = region.incidence;
 				set_bit(new_incidence, i);
@@ -189,7 +203,7 @@ mata::Mintermization::MintermPartition
 			}
 
 			// Negative child: outside source (incidence unchanged, moved: last use of the region)
-			if (const BDD b0 = region.value * !source; !b0.IsZero()) {
+			if (const BDD b0 = region.value * not_source; !b0.IsZero()) {
 				next.push_back({b0, std::move(region.incidence)});
 			}
 		}
