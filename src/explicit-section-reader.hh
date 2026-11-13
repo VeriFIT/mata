@@ -32,7 +32,7 @@ std::string read_whole_stream(std::istream& input);
 class StateNameMap {
   public:
 	using State = nfa::State;
-	using Map = std::unordered_map<std::string, State>;
+	using Map = utils::StringMap<State>;
 
 	/// @param names The initial names. @param max_number The largest number kept in the vector, which bounds its size.
 	StateNameMap(const Map& names, size_t max_number);
@@ -70,7 +70,6 @@ class StateNameMap {
 	/// The state of each numbered name, or @c NO_STATE.
 	std::vector<State> numbered_{};
 	Map others_{};
-	std::string buffer_{};
 };
 
 /// One token of a line, as @c parse_mf() reads it.

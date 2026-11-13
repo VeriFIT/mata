@@ -20,7 +20,7 @@ using mata::nft::Nft;
 namespace {
 /// Maps the printed names of EPSILON and DONT_CARE back to their symbols; every other name goes to the alphabet, which
 /// never sees the special names.
-Symbol translate_symbol_name(mata::Alphabet* alphabet, const std::string& name) {
+Symbol translate_symbol_name(mata::Alphabet* alphabet, const std::string_view name) {
 	if (name == mata::EPSILON_NAME) { return EPSILON; }
 	if (name == mata::DONT_CARE_NAME) { return DONT_CARE; }
 	return alphabet->translate_symb(name);
@@ -28,7 +28,7 @@ Symbol translate_symbol_name(mata::Alphabet* alphabet, const std::string& name) 
 
 /// The per-level variant of @c translate_symbol_name.
 Symbol translate_symbol_name(
-	const std::shared_ptr<mata::AlphabetLevels>& alphabets, const std::string& name, const Level level
+	const std::shared_ptr<mata::AlphabetLevels>& alphabets, const std::string_view name, const Level level
 ) {
 	if (name == mata::EPSILON_NAME) { return EPSILON; }
 	if (name == mata::DONT_CARE_NAME) { return DONT_CARE; }
@@ -99,7 +99,6 @@ std::optional<Nft> read_explicit_nft(const std::string_view input, mata::Alphabe
 
 	std::vector<Transition> transitions;
 	bool in_body{false};
-	std::string symbol_buffer;
 	while (true) {
 		switch (reader.read_line()) {
 			case ExplicitSectionReader::Line::Key: {
@@ -127,8 +126,7 @@ std::optional<Nft> read_explicit_nft(const std::string_view input, mata::Alphabe
 				const std::vector<ExplicitToken>& tokens{reader.tokens()};
 				if (tokens.size() != 3) { return std::nullopt; }
 				const State source{get_state(tokens[0].text)};
-				symbol_buffer.assign(tokens[1].text);
-				const Symbol symbol{translate_symbol_name(alphabet, symbol_buffer)};
+				const Symbol symbol{translate_symbol_name(alphabet, tokens[1].text)};
 				const State target{get_state(tokens[2].text)};
 				transitions.emplace_back(source, symbol, target);
 				break;
@@ -255,13 +253,11 @@ Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
 	if (nullptr == state_map) { state_map = &tmp_state_map; }
 
 	// a lambda for translating state names to identifiers
-	auto get_state_name = [&state_map, &aut](const std::string& str) {
-		if (!state_map->contains(str)) {
-			const State state = aut.add_state();
-			state_map->insert({str, state});
-			return state;
-		}
-		return (*state_map)[str];
+	auto get_state_name = [&state_map, &aut](const std::string_view name) {
+		if (const auto it{state_map->find(name)}; it != state_map->end()) { return it->second; }
+		const State state = aut.add_state();
+		state_map->emplace(name, state);
+		return state;
 	};
 
 	for (const auto& str : inter_aut.initial_formula.collect_node_names()) {
@@ -269,20 +265,15 @@ Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
 		aut.initial.insert(state);
 	}
 
-	// The names are views; the maps take strings, so one buffer is reused instead of a string per lookup.
-	std::string name_buffer;
 	for (const auto& [formula_node, formula_graph] : inter_aut.transitions) {
 		if (formula_graph.children.size() != 2) {
 			if (formula_graph.children.size() == 1) { throw std::runtime_error("Epsilon transitions not supported"); }
 			throw std::runtime_error("Invalid transition");
 		}
 
-		name_buffer.assign(formula_node.name());
-		const State source = get_state_name(name_buffer);
-		name_buffer.assign(formula_graph.children[0].node.name());
-		const Symbol symbol = translate_symbol_name(alphabet, name_buffer);
-		name_buffer.assign(formula_graph.children[1].node.name());
-		const State target = get_state_name(name_buffer);
+		const State source = get_state_name(formula_node.name());
+		const Symbol symbol = translate_symbol_name(alphabet, formula_graph.children[0].node.name());
+		const State target = get_state_name(formula_graph.children[1].node.name());
 
 		aut.delta.add(source, symbol, target);
 	}
@@ -334,13 +325,11 @@ Nft builder::construct(
 	NameStateMap tmp_state_map;
 	if (nullptr == state_map) { state_map = &tmp_state_map; }
 
-	auto get_state_name = [&state_map, &aut](const std::string& str) {
-		if (!state_map->contains(str)) {
-			const State state = aut.add_state();
-			state_map->insert({str, state});
-			return state;
-		}
-		return (*state_map)[str];
+	auto get_state_name = [&state_map, &aut](const std::string_view name) {
+		if (const auto it{state_map->find(name)}; it != state_map->end()) { return it->second; }
+		const State state = aut.add_state();
+		state_map->emplace(name, state);
+		return state;
 	};
 
 	for (const auto& str : inter_aut.initial_formula.collect_node_names()) {
@@ -348,19 +337,16 @@ Nft builder::construct(
 		aut.initial.insert(state);
 	}
 
-	std::string name_buffer;
 	for (const auto& [formula_node, formula_graph] : inter_aut.transitions) {
 		if (formula_graph.children.size() != 2) {
 			if (formula_graph.children.size() == 1) { throw std::runtime_error("Epsilon transitions not supported"); }
 			throw std::runtime_error("Invalid transition");
 		}
 
-		name_buffer.assign(formula_node.name());
-		const State source = get_state_name(name_buffer);
-		name_buffer.assign(formula_graph.children[0].node.name());
-		const Symbol symbol = translate_symbol_name(alphabets, name_buffer, aut.levels[source]);
-		name_buffer.assign(formula_graph.children[1].node.name());
-		const State target = get_state_name(name_buffer);
+		const State source = get_state_name(formula_node.name());
+		const Symbol symbol =
+			translate_symbol_name(alphabets, formula_graph.children[0].node.name(), aut.levels[source]);
+		const State target = get_state_name(formula_graph.children[1].node.name());
 		aut.delta.add(source, symbol, target);
 	}
 

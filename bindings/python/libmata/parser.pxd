@@ -10,6 +10,7 @@ cdef extern from "<filesystem>" namespace "std" nogil:
 
 from libmata.nfa.nfa cimport CNfa, State
 from libmata.alphabets cimport CAlphabet, Symbol
+from libmata.utils cimport CStringHash, CTransparentEqualTo
 
 cdef extern from "<iostream>" namespace "std":
     cdef cppclass istream:
@@ -37,7 +38,7 @@ cdef extern from "mata/parser/inter-aut.hh" namespace "mata":
 
 
 cdef extern from "mata/nfa/builder.hh" namespace "mata::nfa::builder":
-    ctypedef unordered_map[string, State] NameStateMap
+    ctypedef unordered_map[string, State, CStringHash, CTransparentEqualTo] NameStateMap
 
     cdef void construct(CNfa*, CInterAut&, CAlphabet*) except +
     cdef CNfa parse_from_mata(string, CAlphabet*, NameStateMap*, bool) except +

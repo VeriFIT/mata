@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -83,14 +84,14 @@ class NameTable final : public mata::Alphabet {
   public:
 	NameTable(rust::Slice<const rust::String> names, rust::Slice<const Symbol> symbols);
 
-	Symbol translate_symb(const std::string& name) override;
+	Symbol translate_symb(std::string_view name) override;
 	std::string reverse_translate_symbol(Symbol symbol) const override;
 	SymbolSet get_alphabet_symbols() const override;
 	bool empty() const override { return by_symbol_.empty(); }
 
   private:
 	std::unordered_map<Symbol, std::string> by_symbol_ = {};
-	std::unordered_map<std::string, Symbol> by_name_ = {};
+	mata::utils::StringMap<Symbol> by_name_ = {};
 };
 
 /// Mata's `Mintermization::mintermize()` of `automata` together, one thread at a time.
@@ -102,7 +103,7 @@ std::vector<mata::IntermediateAut> mintermize(const std::vector<const mata::Inte
 class NumberingAlphabet final : public mata::OnTheFlyAlphabet {
   public:
 	using OnTheFlyAlphabet::OnTheFlyAlphabet;
-	Symbol translate_symb(const std::string& str) override;
+	Symbol translate_symb(std::string_view str) override;
 	/// Binds `name` to `symbol`; every name the parse starts with goes through here.
 	void bind(const std::string& name, Symbol symbol);
 

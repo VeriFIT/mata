@@ -80,6 +80,12 @@ cdef extern from "mata/utils/utils.hh" namespace "mata::utils":
     cdef cppclass CPairHash "mata::utils::PairHash" [A, B]:
         pass
 
+    # The hash and equality of utils::StringMap, which also find strings by std::string_view.
+    cdef cppclass CStringHash "mata::utils::StringHash":
+        pass
+    cdef cppclass CTransparentEqualTo "std::equal_to<>":
+        pass
+
 
 cdef extern from "mata/simlib/util/binary_relation.hh" namespace "Simlib::Util":
     ctypedef vector[size_t] ivector

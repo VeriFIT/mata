@@ -1,6 +1,7 @@
 #include "mata-sys/cxx/common.hh"
 
 #include <algorithm>
+#include <charconv>
 #include <mutex>
 #include <optional>
 #include <utility>
@@ -19,9 +20,9 @@ NameTable::NameTable(const rust::Slice<const rust::String> names, const rust::Sl
 	}
 }
 
-Symbol NameTable::translate_symb(const std::string& name) {
+Symbol NameTable::translate_symb(const std::string_view name) {
 	const auto found = by_name_.find(name);
-	if (found == by_name_.end()) { throw std::runtime_error("unknown symbol name '" + name + "'"); }
+	if (found == by_name_.end()) { throw std::runtime_error("unknown symbol name '" + std::string(name) + "'"); }
 	return found->second;
 }
 
@@ -72,19 +73,20 @@ void check_delta(const mata::Automaton& automaton) {
 	}
 }
 
-Symbol NumberingAlphabet::translate_symb(const std::string& str) {
-	// More than 10 digits is more than any symbol, and too long for stoull. A number is written without
+Symbol NumberingAlphabet::translate_symb(const std::string_view str) {
+	// More than 10 digits is more than any symbol. A number is written without
 	// leading zeros, so `01` is a name, as it is to Mata.
 	if (str.empty() || str.size() > 10 || (str.size() > 1 && str[0] == '0') ||
 		!std::ranges::all_of(str, [](const char c) { return c >= '0' && c <= '9'; }) ||
 		get_symbol_map().contains(str)) {
 		return *taken_.insert(OnTheFlyAlphabet::translate_symb(str)).first;
 	}
-	const auto number{std::stoull(str)};
+	unsigned long long number{};
+	std::from_chars(str.data(), str.data() + str.size(), number);
 	if (number >= mata::nft::DONT_CARE || taken_.contains(static_cast<Symbol>(number))) {
 		return *taken_.insert(OnTheFlyAlphabet::translate_symb(str)).first;
 	}
-	bind(str, static_cast<Symbol>(number));
+	bind(std::string{str}, static_cast<Symbol>(number));
 	return static_cast<Symbol>(number);
 }
 

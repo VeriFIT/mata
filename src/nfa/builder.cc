@@ -28,7 +28,7 @@ using mata::nfa::Nfa;
 namespace {
 /// Maps the printed name of EPSILON back to the symbol; every other name goes to the alphabet, which never sees the
 // special names.
-Symbol translate_symbol_name(mata::Alphabet* alphabet, const std::string& name) {
+Symbol translate_symbol_name(mata::Alphabet* alphabet, const std::string_view name) {
 	if (name == mata::EPSILON_NAME) { return EPSILON; }
 	return alphabet->translate_symb(name);
 }
@@ -222,12 +222,7 @@ std::optional<Nfa> read_explicit_nfa(
 				if (!source_name.has_value() || !target_name.has_value()) { return std::nullopt; }
 				// Sequenced as in builder::construct().
 				const State source{get_state(*source_name)};
-				if (keep_quotes && tokens[1].quoted) {
-					body_token(tokens[1], keep_quotes, symbol_buffer);
-				} else {
-					symbol_buffer.assign(tokens[1].text);
-				}
-				const Symbol symbol{translate_symbol_name(alphabet, symbol_buffer)};
+				const Symbol symbol{translate_symbol_name(alphabet, body_token(tokens[1], keep_quotes, symbol_buffer))};
 				const State target{get_state(*target_name)};
 				transitions.emplace_back(source, symbol, target);
 				break;
@@ -724,13 +719,11 @@ Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, Nam
 	if (nullptr == state_map) { state_map = &tmp_state_map; }
 
 	// a lambda for translating state names to identifiers, see the ParsedSection overload above
-	auto get_state_name = [&state_map, &aut](const std::string& str) {
-		if (!state_map->contains(str)) {
-			const State state = aut.add_state();
-			state_map->insert({str, state});
-			return state;
-		}
-		return aut.add_state((*state_map)[str]);
+	auto get_state_name = [&state_map, &aut](const std::string_view name) {
+		if (const auto it{state_map->find(name)}; it != state_map->end()) { return aut.add_state(it->second); }
+		const State state = aut.add_state();
+		state_map->emplace(name, state);
+		return state;
 	};
 
 	for (const auto& str : inter_aut.initial_formula.collect_node_names()) {
@@ -741,20 +734,15 @@ Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, Nam
 	// Gathered and imported in one batch, see the ParsedSection overload above.
 	std::vector<Transition> transitions;
 	transitions.reserve(inter_aut.transitions.size());
-	std::string name_buffer;
 	for (const auto& [formula_node, formula_graph] : inter_aut.transitions) {
 		if (formula_graph.children.size() != 2) {
 			if (formula_graph.children.size() == 1) { throw std::runtime_error("Epsilon transitions not supported"); }
 			throw std::runtime_error("Invalid transition");
 		}
 
-		// The names are views; the maps take strings, so one buffer is reused instead of a string per lookup.
-		name_buffer.assign(formula_node.name());
-		const State src_state{get_state_name(name_buffer)};
-		name_buffer.assign(formula_graph.children[0].node.name());
-		const Symbol symbol{translate_symbol_name(alphabet, name_buffer)};
-		name_buffer.assign(formula_graph.children[1].node.name());
-		const State tgt_state{get_state_name(name_buffer)};
+		const State src_state{get_state_name(formula_node.name())};
+		const Symbol symbol{translate_symbol_name(alphabet, formula_graph.children[0].node.name())};
+		const State tgt_state{get_state_name(formula_graph.children[1].node.name())};
 
 		transitions.emplace_back(src_state, symbol, tgt_state);
 	}

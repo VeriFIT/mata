@@ -23,7 +23,8 @@ namespace mata::nfa::builder {
 
 using namespace mata::nfa;
 
-using NameStateMap = std::unordered_map<std::string, State>;
+/// Finds a @c std::string_view name without copying it.
+using NameStateMap = utils::StringMap<State>;
 
 /**
  * Create an automaton accepting only a single @p word.

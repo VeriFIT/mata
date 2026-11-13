@@ -130,7 +130,7 @@ TEST_CASE("parse_from_mata()") {
 			auto alphabet{std::make_shared<mata::OnTheFlyAlphabet>()};
 			epsilon_nfa.alphabet = alphabet;
 			const std::string printed{epsilon_nfa.print_to_mata()};
-			CHECK(alphabet->translate_symb(std::string{mata::EPSILON_NAME}) == EPSILON);
+			CHECK(alphabet->translate_symb(mata::EPSILON_NAME) == EPSILON);
 			CHECK_THROWS(alphabet->add_new_symbol(std::string{mata::EPSILON_NAME}));
 			CHECK(alphabet->get_number_of_symbols() == 0);
 			Nfa parsed{mata::nfa::builder::parse_from_mata(printed)};

@@ -90,8 +90,7 @@ std::optional<mata::parser::StateNameMap::State> mata::parser::StateNameMap::fin
 		if (*number < numbered_.size() && numbered_[*number] != NO_STATE) { return numbered_[*number]; }
 		return std::nullopt;
 	}
-	buffer_.assign(name);
-	if (const auto it{others_.find(buffer_)}; it != others_.end()) { return it->second; }
+	if (const auto it{others_.find(name)}; it != others_.end()) { return it->second; }
 	return std::nullopt;
 }
 
