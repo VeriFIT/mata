@@ -43,6 +43,12 @@ class Mintermization {
 
 	Cudd bdd_mng_{}; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
 	utils::StringMap<BDD> symbol_to_bddvar_{};
+	/// The BDDs of the formulas @c graph_to_bdd_nfa() converted, keyed by a serialization of the formula. A formula
+	///  usually labels many transitions. Its BDD depends only on @c symbol_to_bddvar_, so the entries stay valid across
+	///  calls.
+	std::unordered_map<std::string, BDD> formula_to_bdd_{};
+	/// Buffer for the key of the formula being looked up in @c formula_to_bdd_.
+	std::string formula_key_{};
 	std::unordered_map<const FormulaGraph*, BDD> trans_to_bddvar_{};
 #ifdef MATA_AFA_SUPPORT
 	std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states_{};
@@ -56,6 +62,8 @@ class Mintermization {
 	void add_source_bdd(const BDD& bdd);
 
 	void trans_to_bdd_nfa(const IntermediateAut& aut);
+	/// @c graph_to_bdd_nfa() without the lookup in @c formula_to_bdd_, for the formula and its subformulas.
+	BDD convert_graph_to_bdd_nfa(const FormulaGraph& graph);
 #ifdef MATA_AFA_SUPPORT
 	void trans_to_bdd_afa(const IntermediateAut& aut);
 #endif

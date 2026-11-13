@@ -176,7 +176,6 @@ mata::Mintermization::MintermPartition
 	std::vector<Region> current;
 	current.push_back({bdd_mng_.bddOne(), make_incidence()});
 
-	// Refinement loop
 	for (size_t i = 0; i < source_bdds.size(); ++i) {
 		const BDD& source = source_bdds[i];
 		std::vector<Region> next;
@@ -264,7 +263,39 @@ BDD mata::Mintermization::symbol_bdd(const std::string_view name, const std::opt
 	return res;
 }
 
+namespace {
+/// Appends to @p key a serialization of the formula @p graph that determines its BDD: node kinds, names, and the
+///  shape of the tree in prefix order. Each node starts with a backslash and its type byte, and the name of an
+///  operand follows with its backslashes doubled, so no name can mimic the start of another node.
+void append_formula_key(std::string& key, const mata::FormulaGraph& graph) {
+	key.push_back('\\');
+	const mata::FormulaNode& node{graph.node};
+	if (node.is_operand()) {
+		key.push_back(static_cast<char>(node.operand_type));
+		const std::string_view name{node.name()};
+		for (const char c : name) {
+			key.push_back(c);
+			if (c == '\\') { key.push_back('\\'); } // Escape the escape byte.
+		}
+		return;
+	}
+	key.push_back(static_cast<char>(node.operator_type));
+	for (const mata::FormulaGraph& child : graph.children) { append_formula_key(key, child); }
+}
+} // namespace
+
 BDD mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph& graph) {
+	// A single operand has its own lookup.
+	if (graph.node.is_operand()) { return convert_graph_to_bdd_nfa(graph); }
+	formula_key_.clear();
+	append_formula_key(formula_key_, graph);
+	if (const auto it{formula_to_bdd_.find(formula_key_)}; it != formula_to_bdd_.end()) { return it->second; }
+	const BDD bdd{convert_graph_to_bdd_nfa(graph)};
+	formula_to_bdd_.emplace(formula_key_, bdd);
+	return bdd;
+}
+
+BDD mata::Mintermization::convert_graph_to_bdd_nfa(const FormulaGraph& graph) {
 	const FormulaNode& node = graph.node;
 	if (node.is_operand()) {
 		return symbol_bdd(
@@ -275,19 +306,19 @@ BDD mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph& graph) {
 	if (node.is_operator()) {
 		if (node.operator_type == FormulaNode::OperatorType::And) {
 			MATA_ASSERT(graph.children.size() == 2);
-			const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
-			const BDD op2 = graph_to_bdd_nfa(graph.children[1]);
+			const BDD op1 = convert_graph_to_bdd_nfa(graph.children[0]);
+			const BDD op2 = convert_graph_to_bdd_nfa(graph.children[1]);
 			return op1 * op2;
 		}
 		if (node.operator_type == FormulaNode::OperatorType::Or) {
 			MATA_ASSERT(graph.children.size() == 2);
-			const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
-			const BDD op2 = graph_to_bdd_nfa(graph.children[1]);
+			const BDD op1 = convert_graph_to_bdd_nfa(graph.children[0]);
+			const BDD op2 = convert_graph_to_bdd_nfa(graph.children[1]);
 			return op1 + op2;
 		}
 		if (node.operator_type == FormulaNode::OperatorType::Neg) {
 			MATA_ASSERT(graph.children.size() == 1);
-			const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
+			const BDD op1 = convert_graph_to_bdd_nfa(graph.children[0]);
 			return !op1;
 		}
 		MATA_ASSERT(false);
