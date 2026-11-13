@@ -403,9 +403,12 @@ mata::IntermediateAut mata::Mintermization::mintermize(const IntermediateAut& au
  * bitvector transitions with explicit symbols.
  */
 std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::vector<const IntermediateAut*>& auts) {
-	// Initialize source BDD tracking structures
+	// The state of an earlier call would add its BDDs to the partition, and its maps are keyed by addresses into
+	//  automata that may be gone. The symbol variables stay: the same name keeps its variable across calls.
 	source_bdds_.clear();
 	source_bdd_to_index_.clear();
+	trans_to_bddvar_.clear();
+	lhs_to_disjuncts_and_states_.clear();
 
 	for (const IntermediateAut* aut : auts) {
 		if ((!aut->is_nfa() && !aut->is_afa()) || aut->alphabet_type != IntermediateAut::AlphabetType::Bitvector) {

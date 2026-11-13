@@ -674,3 +674,22 @@ TEST_CASE("mata::Mintermization::mintermization preserves non-transition fields"
 		}
 	}
 }
+
+TEST_CASE("mata::Mintermization::mintermize can be called again on one object") {
+	const auto parse = [](const std::string& file) { return mata::IntermediateAut::parse_from_mf(parse_mf(file))[0]; };
+	mata::Mintermization reused{};
+	// An automaton destroyed after its call leaves its addresses free for the next one. The unsatisfiable transition
+	//  of the second automaton must not pick up what the first call recorded for the address it reuses.
+	for (size_t round{0}; round < 8; ++round) {
+		{
+			const mata::IntermediateAut first{
+				parse("@NFA-bits\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a1 q1\nq0 a1 q1\n")
+			};
+			CHECK(reused.mintermize(first).transitions.size() == 2);
+		}
+		const mata::IntermediateAut second{
+			parse("@NFA-bits\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a1 q1\nq0 a1 & !a1 q1\n")
+		};
+		CHECK(reused.mintermize(second).transitions.size() == 1);
+	}
+}
