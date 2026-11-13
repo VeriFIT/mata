@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>(Auto)Mata Script Language &#8212; Mata v0.0.0-dev.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
+    <script src="_static/documentation_options.js?v=623e9adf"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="The mata command" href="cli.html" />
+    <link rel="prev" title="Automata Format" href="automata-format.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="auto-mata-script-language">
+<span id="automata-script-language"></span><h1>(Auto)Mata Script Language<a class="headerlink" href="#auto-mata-script-language" title="Link to this heading">¶</a></h1>
+<p><strong>Status: specification, partly implemented.</strong> The page records the agreed design of <strong>Mata Script</strong>, a small,
+library-independent language for describing automata operations, with Mata as its first implementation. The <code class="docutils literal notranslate"><span class="pre">mata</span></code>
+command runs scripts today; <a class="reference internal" href="cli.html"><span class="doc std std-doc">The <code class="docutils literal notranslate"><span class="pre">mata</span></code> command</span></a> lists under its implementation notes which operations and
+options of this page the current interpreter does not have, and it rejects those by name rather than approximating
+them. Mata Script programs use the <strong><code class="docutils literal notranslate"><span class="pre">.matasc</span></code></strong> file extension, as in <code class="docutils literal notranslate"><span class="pre">email-filter.matasc</span></code>; <code class="docutils literal notranslate"><span class="pre">.mata</span></code> remains the
+extension for automata files.</p>
+<p>A script loads automata, applies a sequence of automata operations to them, and reports the outcome: a verdict, a
+witness, a printed automaton, or timing records. It replaces two things that exist today:</p>
+<ul class="simple">
+<li><p>the <code class="docutils literal notranslate"><span class="pre">.emp</span></code> programs of <a class="reference external" href="https://github.com/VeriFIT/nfa-program-parser/">VeriFIT/nfa-program-parser</a>, which can only
+express a straight-line sequence drawn from a small fixed set of operations, and</p></li>
+<li><p>the hand-written benchmark binaries in <code class="docutils literal notranslate"><span class="pre">tests-integration/src/</span></code>, one C++ file per sequence of operations.</p></li>
+</ul>
+<p>The intended uses are benchmark programs, one-off queries from a shell, regression specifications that assert expected
+results, and interactive sessions, including the playground on the website.</p>
+<section id="a-first-example">
+<h2>A first example<a class="headerlink" href="#a-first-example" title="Link to this heading">¶</a></h2>
+<p>The script below is the <code class="docutils literal notranslate"><span class="pre">email-filter</span></code> benchmark: it intersects the first four input automata and checks, once with
+each inclusion algorithm, whether the intersection is included in the fifth one.</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="o">#</span><span class="nv">!/usr/bin/env</span><span class="w"> </span><span class="nv">-S</span><span class="w"> </span><span class="nv">mata</span><span class="w"> </span><span class="nv">script</span><span class="w"> </span><span class="nv">run</span>
+<span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">set-info</span><span class="w"> </span><span class="nv">:name</span><span class="w"> </span><span class="s">"email-filter"</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-inputs</span><span class="w"> </span><span class="nv">automata</span><span class="w"> </span><span class="p">(</span><span class="nf">List</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">))</span>
+
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">filters</span><span class="w"> </span><span class="p">(</span><span class="nf">list:reduce</span><span class="w"> </span><span class="nv">nfa:intersection</span><span class="w"> </span><span class="p">(</span><span class="nf">list:take</span><span class="w"> </span><span class="nv">automata</span><span class="w"> </span><span class="mi">4</span><span class="p">)))</span>
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="p">(</span><span class="nf">included-with</span><span class="w"> </span><span class="nv">algorithm</span><span class="p">)</span>
+<span class="w">  </span><span class="p">(</span><span class="nf">time</span><span class="w"> </span><span class="p">(</span><span class="nf">concat</span><span class="w"> </span><span class="nv">algorithm</span><span class="w"> </span><span class="s">"-time"</span><span class="p">)</span>
+<span class="w">    </span><span class="p">(</span><span class="nf">nfa:included?</span><span class="w"> </span><span class="nv">filters</span><span class="w"> </span><span class="p">(</span><span class="nf">list:nth</span><span class="w"> </span><span class="nv">automata</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span><span class="w"> </span><span class="nv">:algorithm</span><span class="w"> </span><span class="nv">algorithm</span><span class="p">)))</span>
+<span class="p">(</span><span class="nf">check</span><span class="w"> </span><span class="s">"naive"</span><span class="w"> </span><span class="p">(</span><span class="nf">included-with</span><span class="w"> </span><span class="s">"naive"</span><span class="p">))</span>
+<span class="p">(</span><span class="nf">check</span><span class="w"> </span><span class="s">"antichains"</span><span class="w"> </span><span class="p">(</span><span class="nf">included-with</span><span class="w"> </span><span class="s">"antichains"</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Run on five <code class="docutils literal notranslate"><span class="pre">.mata</span></code> files, it prints a timing record and a verdict for each algorithm, for example:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>naive-time: 0.048100
+naive: true
+antichains-time: 0.001200
+antichains: true
+</pre></div>
+</div>
+<p>Every record of a run has its own label, so a program that reads the records, such as <code class="docutils literal notranslate"><span class="pre">pycobench</span></code>, can key them by
+label.</p>
+</section>
+<section id="design-principles">
+<h2>Design principles<a class="headerlink" href="#design-principles" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p><strong>A script is a sequence of forms, evaluated in order.</strong> The shape is borrowed from SMT-LIB: parenthesised
+commands, <code class="docutils literal notranslate"><span class="pre">:keyword</span></code> attributes, options, a <code class="docutils literal notranslate"><span class="pre">check</span></code> command. The language is only inspired by SMT-LIB. It is not
+conformant, nothing is solved, and every form runs when it is reached.</p></li>
+<li><p><strong>One application is one library call.</strong> <code class="docutils literal notranslate"><span class="pre">(nfa:determinize</span> <span class="pre">a)</span></code> calls <code class="docutils literal notranslate"><span class="pre">mata::nfa::determinize</span></code> and nothing else.
+Arguments are evaluated left to right. No call is added, removed, merged or reordered unless the
+<a class="reference internal" href="#optimizer">optimizer</a> is turned on. The exceptions are listed in
+<a class="reference internal" href="#one-call-per-application">One call per application</a>.</p></li>
+<li><p><strong>Values are immutable.</strong> An operation never changes its operands. A name always denotes the value it was bound
+to.</p></li>
+<li><p><strong>Operation names are the names of the library.</strong> A name is the C++ name in kebab-case with abbreviations written
+out, so the API reference documents the script operations too.</p></li>
+<li><p><strong>Scripts are checked before they run.</strong> Everything that can be decided without loading an input is decided first,
+so a misspelled name is not reported after an hour of determinization. <code class="docutils literal notranslate"><span class="pre">mata</span> <span class="pre">script</span> <span class="pre">run</span></code> checks the whole script
+before its first form runs, unless it is given <code class="docutils literal notranslate"><span class="pre">--no-check</span></code>.</p></li>
+<li><p><strong>Functions are ordinary values.</strong> A function can be defined inside another function, passed as an argument,
+returned as a result and stored in a list; see <a class="reference internal" href="#functions">Functions</a>.</p></li>
+<li><p><strong>Loops and recursion are opt-in.</strong> They are off unless the script turns them on, and an interpreter may leave them
+out; see <a class="reference internal" href="#loops-and-recursion">Loops and recursion</a>.</p></li>
+<li><p><strong>Evaluation is sequential.</strong> Nothing is evaluated in parallel.</p></li>
+<li><p><strong>A script names its language version.</strong> A <code class="docutils literal notranslate"><span class="pre">mata-script</span></code> header declares the version a script is written for, so
+a later version can change the language without changing what an existing script means; see
+<a class="reference internal" href="#versions">Versions</a>.</p></li>
+</ol>
+</section>
+<section id="lexical-structure">
+<h2>Lexical structure<a class="headerlink" href="#lexical-structure" title="Link to this heading">¶</a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Token</p></th>
+<th class="head"><p>Form</p></th>
+<th class="head"><p>Examples</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Comment</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">;</span></code> to the end of the line; a <code class="docutils literal notranslate"><span class="pre">#!</span></code> first line is skipped too</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">;</span> <span class="pre">intersect</span> <span class="pre">the</span> <span class="pre">filters</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Name</p></td>
+<td><p>Letters, digits and <code class="docutils literal notranslate"><span class="pre">-</span> <span class="pre">_</span> <span class="pre">?</span> <span class="pre">!</span> <span class="pre">*</span> <span class="pre">+</span> <span class="pre">/</span> <span class="pre">&lt;</span> <span class="pre">=</span> <span class="pre">&gt;</span> <span class="pre">.</span></code>; no initial digit</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">filters</span></code>, <code class="docutils literal notranslate"><span class="pre">list:take</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Namespaced name</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">namespace:name</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">nfa:intersection</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Keyword</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">:name</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">:algorithm</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Input reference</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">$</span></code> followed by a position (from 1) or a name</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">$1</span></code>, <code class="docutils literal notranslate"><span class="pre">$specification</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Integer</p></td>
+<td><p>Decimal digits</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">42</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>String</p></td>
+<td><p>Between <code class="docutils literal notranslate"><span class="pre">&quot;</span></code>; the only escape is <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> for one <code class="docutils literal notranslate"><span class="pre">&quot;</span></code>; may span lines</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;a(b|c)*&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;say</span> <span class="pre">&quot;&quot;hi&quot;&quot;&quot;</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Constant</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">true</span></code>, <code class="docutils literal notranslate"><span class="pre">false</span></code>, <code class="docutils literal notranslate"><span class="pre">none</span></code></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p>Backslash has no meaning in a string, so regular expressions and <code class="docutils literal notranslate"><span class="pre">.mata</span></code> text can be written without doubling it. A
+namespaced name always names an operation: a script cannot define one, so an operation added to a later version never
+clashes with a name a script chose.</p>
+</section>
+<section id="grammar">
+<h2>Grammar<a class="headerlink" href="#grammar" title="Link to this heading">¶</a></h2>
+<div class="highlight-ebnf notranslate"><div class="highlight"><pre><span></span><span class="k">script      </span><span class="o">=</span> <span class="p">[</span> <span class="k">shebang </span><span class="p">]</span> <span class="p">[</span> <span class="k">header </span><span class="p">]</span> <span class="p">{</span> <span class="k">form </span><span class="p">}</span> <span class="p">;</span>
+<span class="k">header      </span><span class="o">=</span> <span class="s2">"("</span> <span class="s2">"mata-script"</span> <span class="k">string </span><span class="p">{</span> <span class="s2">":requires"</span> <span class="s2">"("</span> <span class="p">{</span> <span class="k">name </span><span class="p">}</span> <span class="s2">")"</span> <span class="p">|</span> <span class="s2">":profile"</span> <span class="k">name </span><span class="p">}</span> <span class="s2">")"</span> <span class="p">;</span>
+<span class="k">form        </span><span class="o">=</span> <span class="k">definition </span><span class="p">|</span> <span class="k">declaration </span><span class="p">|</span> <span class="k">directive </span><span class="p">|</span> <span class="k">expression </span><span class="p">;</span>
+
+<span class="k">definition  </span><span class="o">=</span> <span class="s2">"("</span> <span class="s2">"define"</span> <span class="k">name </span><span class="p">[</span> <span class="k">sort </span><span class="p">]</span> <span class="k">expression </span><span class="s2">")"</span>
+            <span class="p">|</span> <span class="s2">"("</span> <span class="s2">"define"</span> <span class="s2">"("</span> <span class="k">name </span><span class="p">{</span> <span class="k">parameter </span><span class="p">}</span> <span class="s2">")"</span> <span class="k">body </span><span class="s2">")"</span> <span class="p">;</span>
+<span class="k">body        </span><span class="o">=</span> <span class="p">{</span> <span class="k">definition </span><span class="p">}</span> <span class="k">expression </span><span class="p">{</span> <span class="k">expression </span><span class="p">}</span> <span class="p">;</span>
+<span class="k">parameter   </span><span class="o">=</span> <span class="k">name </span><span class="p">|</span> <span class="s2">"("</span> <span class="k">name sort </span><span class="s2">")"</span> <span class="p">;</span>
+<span class="k">declaration </span><span class="o">=</span> <span class="s2">"("</span> <span class="s2">"declare-input"</span> <span class="k">name sort </span><span class="s2">")"</span>
+            <span class="p">|</span> <span class="s2">"("</span> <span class="s2">"declare-inputs"</span> <span class="k">name sort </span><span class="s2">")"</span>
+            <span class="p">|</span> <span class="s2">"("</span> <span class="s2">"declare-param"</span> <span class="k">name sort </span><span class="p">[</span> <span class="k">expression </span><span class="p">]</span> <span class="s2">")"</span> <span class="p">;</span>
+<span class="k">directive   </span><span class="o">=</span> <span class="s2">"("</span> <span class="s2">"set-option"</span> <span class="k">keyword expression </span><span class="s2">")"</span> <span class="p">|</span> <span class="s2">"("</span> <span class="s2">"set-info"</span> <span class="k">keyword expression </span><span class="s2">")"</span>
+            <span class="p">|</span> <span class="s2">"("</span> <span class="s2">"push"</span> <span class="s2">")"</span> <span class="p">|</span> <span class="s2">"("</span> <span class="s2">"pop"</span> <span class="s2">")"</span> <span class="p">|</span> <span class="s2">"("</span> <span class="s2">"reset"</span> <span class="s2">")"</span> <span class="p">|</span> <span class="s2">"("</span> <span class="s2">"exit"</span> <span class="s2">")"</span> <span class="p">;</span>
+
+<span class="k">expression  </span><span class="o">=</span> <span class="k">constant </span><span class="p">|</span> <span class="k">integer </span><span class="p">|</span> <span class="k">string </span><span class="p">|</span> <span class="k">name </span><span class="p">|</span> <span class="k">input-reference</span>
+            <span class="p">|</span> <span class="s2">"("</span> <span class="k">expression </span><span class="p">{</span> <span class="k">expression </span><span class="p">}</span> <span class="p">{</span> <span class="k">keyword expression </span><span class="p">}</span> <span class="s2">")"</span>
+            <span class="p">|</span> <span class="s2">"("</span> <span class="s2">"let"</span> <span class="s2">"("</span> <span class="p">{</span> <span class="s2">"("</span> <span class="k">name expression </span><span class="s2">")"</span> <span class="p">}</span> <span class="s2">")"</span> <span class="k">body </span><span class="s2">")"</span>
+            <span class="p">|</span> <span class="s2">"("</span> <span class="s2">"lambda"</span> <span class="s2">"("</span> <span class="p">{</span> <span class="k">parameter </span><span class="p">}</span> <span class="s2">")"</span> <span class="k">body </span><span class="s2">")"</span>
+            <span class="p">|</span> <span class="s2">"("</span> <span class="s2">"loop"</span> <span class="s2">"("</span> <span class="p">{</span> <span class="s2">"("</span> <span class="k">name expression </span><span class="s2">")"</span> <span class="p">}</span> <span class="s2">")"</span> <span class="k">body </span><span class="s2">")"</span>
+            <span class="p">|</span> <span class="s2">"("</span> <span class="s2">"recur"</span> <span class="p">{</span> <span class="k">expression </span><span class="p">}</span> <span class="s2">")"</span>
+            <span class="p">|</span> <span class="s2">"("</span> <span class="s2">"if"</span> <span class="k">expression expression expression </span><span class="s2">")"</span>
+            <span class="p">|</span> <span class="s2">"("</span> <span class="s2">"cond"</span> <span class="p">{</span> <span class="s2">"("</span> <span class="k">expression expression </span><span class="s2">")"</span> <span class="p">}</span> <span class="s2">"("</span> <span class="s2">"else"</span> <span class="k">expression </span><span class="s2">")"</span> <span class="s2">")"</span>
+            <span class="p">|</span> <span class="s2">"("</span> <span class="s2">"do"</span> <span class="k">expression </span><span class="p">{</span> <span class="k">expression </span><span class="p">}</span> <span class="s2">")"</span>
+            <span class="p">|</span> <span class="s2">"("</span> <span class="p">(</span> <span class="s2">"and"</span> <span class="p">|</span> <span class="s2">"or"</span> <span class="p">)</span> <span class="p">{</span> <span class="k">expression </span><span class="p">}</span> <span class="s2">")"</span>
+            <span class="p">|</span> <span class="s2">"("</span> <span class="s2">"-&gt;"</span> <span class="k">expression </span><span class="p">{</span> <span class="k">step </span><span class="p">}</span> <span class="s2">")"</span>
+            <span class="p">|</span> <span class="s2">"("</span> <span class="s2">"as"</span> <span class="k">expression sort </span><span class="s2">")"</span>
+            <span class="p">|</span> <span class="s2">"("</span> <span class="s2">"time"</span> <span class="k">expression expression </span><span class="p">{</span> <span class="k">expression </span><span class="p">}</span> <span class="s2">")"</span>
+            <span class="p">|</span> <span class="s2">"("</span> <span class="s2">"witness"</span> <span class="k">expression </span><span class="s2">")"</span>
+            <span class="p">|</span> <span class="s2">"("</span> <span class="p">(</span> <span class="s2">"get-option"</span> <span class="p">|</span> <span class="s2">"get-info"</span> <span class="p">)</span> <span class="k">keyword </span><span class="s2">")"</span>
+            <span class="p">|</span> <span class="s2">"("</span> <span class="p">(</span> <span class="s2">"nfa:literal"</span> <span class="p">|</span> <span class="s2">"nft:literal"</span> <span class="p">)</span> <span class="p">{</span> <span class="k">keyword literal-data </span><span class="p">}</span> <span class="s2">")"</span> <span class="p">;</span>
+<span class="k">step        </span><span class="o">=</span> <span class="k">name </span><span class="p">|</span> <span class="s2">"("</span> <span class="k">expression </span><span class="p">{</span> <span class="k">expression </span><span class="p">}</span> <span class="p">{</span> <span class="k">keyword expression </span><span class="p">}</span> <span class="s2">")"</span> <span class="p">;</span>
+<span class="k">sort        </span><span class="o">=</span> <span class="k">name </span><span class="p">|</span> <span class="s2">"("</span> <span class="k">name </span><span class="p">{</span> <span class="k">sort </span><span class="p">}</span> <span class="s2">")"</span> <span class="p">;</span>
+<span class="k">literal-data </span><span class="o">=</span> <span class="k">name </span><span class="p">|</span> <span class="k">integer </span><span class="p">|</span> <span class="s2">"("</span> <span class="p">{</span> <span class="k">literal-data </span><span class="p">}</span> <span class="s2">")"</span> <span class="p">;</span>
+</pre></div>
+</div>
+<p>The header, when present, is the first form. Declarations and directives are allowed only at the top level. A
+definition is allowed at the top level and at the start of a body, where it is local to that body. Everything else is
+an expression and can be nested; <code class="docutils literal notranslate"><span class="pre">get-option</span></code> and <code class="docutils literal notranslate"><span class="pre">get-info</span></code> are expressions, so <code class="docutils literal notranslate"><span class="pre">(print</span> <span class="pre">(get-option</span> <span class="pre">:alphabet))</span></code>
+works. <code class="docutils literal notranslate"><span class="pre">loop</span></code> and <code class="docutils literal notranslate"><span class="pre">recur</span></code> need the option described in <a class="reference internal" href="#loops-and-recursion">Loops and recursion</a>.</p>
+</section>
+<section id="values-and-sorts">
+<h2>Values and sorts<a class="headerlink" href="#values-and-sorts" title="Link to this heading">¶</a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Sort</p></th>
+<th class="head"><p>Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Nfa</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mata::nfa::Nfa</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Nft</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mata::nft::Nft</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Automaton</span></code></p></td>
+<td><p>Either an <code class="docutils literal notranslate"><span class="pre">Nfa</span></code> or an <code class="docutils literal notranslate"><span class="pre">Nft</span></code>; which one is known only when the script runs</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">IntermediateAutomaton</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mata::IntermediateAut</span></code>: a parsed automaton that is not constructed yet</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Alphabet</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mata::Alphabet</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Symbol</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mata::Symbol</span></code>; <code class="docutils literal notranslate"><span class="pre">epsilon</span></code> and <code class="docutils literal notranslate"><span class="pre">dont-care</span></code> are predefined</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Word</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mata::Word</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Run</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mata::nfa::Run</span></code>: a word and a path</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Bool</span></code>, <code class="docutils literal notranslate"><span class="pre">Int</span></code>, <code class="docutils literal notranslate"><span class="pre">String</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">(List</span> <span class="pre">T)</span></code></p></td>
+<td><p>A list of values of sort <code class="docutils literal notranslate"><span class="pre">T</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">(Option</span> <span class="pre">T)</span></code></p></td>
+<td><p>Either a <code class="docutils literal notranslate"><span class="pre">T</span></code> or <code class="docutils literal notranslate"><span class="pre">none</span></code>, for operations that return <code class="docutils literal notranslate"><span class="pre">std::optional</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Function</span></code></p></td>
+<td><p>An operation, a defined function or a <code class="docutils literal notranslate"><span class="pre">lambda</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<section id="checking">
+<h3>Checking<a class="headerlink" href="#checking" title="Link to this heading">¶</a></h3>
+<p>Checking is static where the sorts are known and dynamic where they are not.</p>
+<ul class="simple">
+<li><p><strong>Before the script runs:</strong> the language version, syntax, unknown names, unknown keywords and hints, the number of
+arguments in a call of a named operation or function, a name that is reserved, and the declared inputs and
+parameters against the ones given.</p></li>
+<li><p><strong>Before the script runs, where sorts are known:</strong> every operation in the <code class="docutils literal notranslate"><span class="pre">nfa:</span></code> and <code class="docutils literal notranslate"><span class="pre">nft:</span></code> namespaces has fixed
+sorts, so <code class="docutils literal notranslate"><span class="pre">(nfa:determinize</span> <span class="pre">t)</span></code> with <code class="docutils literal notranslate"><span class="pre">t</span></code> declared as <code class="docutils literal notranslate"><span class="pre">Nft</span></code> is rejected without running anything.</p></li>
+<li><p><strong>When the script runs:</strong> the kind of a loaded file, operations in the <code class="docutils literal notranslate"><span class="pre">automaton:</span></code> namespace, function parameters
+without a sort, and every call of a function that arrived as a value.</p></li>
+<li><p><strong>As a report:</strong> whether the script is guaranteed to terminate; see <a class="reference internal" href="#termination">Termination</a>.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">(as</span> <span class="pre">value</span> <span class="pre">Sort)</span></code> narrows a value and fails at that point if the value is of another sort:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="p">(</span><span class="nf">as</span><span class="w"> </span><span class="p">(</span><span class="nf">automaton:load</span><span class="w"> </span><span class="nv">$1</span><span class="p">)</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">))</span><span class="w"> </span><span class="c1">; error here if the file holds a transducer</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="definitions-functions-and-conditionals">
+<h2>Definitions, functions and conditionals<a class="headerlink" href="#definitions-functions-and-conditionals" title="Link to this heading">¶</a></h2>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">alphabet-size</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span><span class="w">                          </span><span class="c1">; a value</span>
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">product</span><span class="w"> </span><span class="nv">Nfa</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:intersection</span><span class="w"> </span><span class="nv">lhs</span><span class="w"> </span><span class="nv">rhs</span><span class="p">))</span><span class="w">   </span><span class="c1">; a value with a checked sort</span>
+
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="p">(</span><span class="nf">image</span><span class="w"> </span><span class="p">(</span><span class="nf">transducer</span><span class="w"> </span><span class="nv">Nft</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nf">language</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">))</span><span class="w">   </span><span class="c1">; a function; parameter sorts are optional</span>
+<span class="w">  </span><span class="p">(</span><span class="nf">nft:to-nfa</span><span class="w"> </span><span class="p">(</span><span class="nf">nft:apply</span><span class="w"> </span><span class="nv">transducer</span><span class="w"> </span><span class="nv">language</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">deterministic</span>
+<span class="w">  </span><span class="p">(</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:deterministic?</span><span class="w"> </span><span class="nv">product</span><span class="p">)</span><span class="w"> </span><span class="nv">product</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:determinize</span><span class="w"> </span><span class="nv">product</span><span class="p">)))</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">define</span></code> binds a name once; binding it again in the same scope is an error. <code class="docutils literal notranslate"><span class="pre">push</span></code> opens a scope, <code class="docutils literal notranslate"><span class="pre">pop</span></code> closes it
+and drops its definitions and option changes, and <code class="docutils literal notranslate"><span class="pre">reset</span></code> returns to the initial state.</p></li>
+<li><p>The sort in <code class="docutils literal notranslate"><span class="pre">(define</span> <span class="pre">name</span> <span class="pre">Sort</span> <span class="pre">value)</span></code> narrows the value as <code class="docutils literal notranslate"><span class="pre">as</span></code> does: a value that cannot be of that sort is an
+error before the script runs, and a value whose sort is known only when the script runs is checked then.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">let</span></code> binds names for the extent of its body, each binding seeing the previous ones.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">if</span></code> and <code class="docutils literal notranslate"><span class="pre">cond</span></code> evaluate only the chosen branch. <code class="docutils literal notranslate"><span class="pre">and</span></code> and <code class="docutils literal notranslate"><span class="pre">or</span></code> stop at the first operand that decides the result.
+This matters because it decides which library calls are made.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">do</span></code> evaluates its expressions in order and returns the last value.</p></li>
+</ul>
+<section id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Link to this heading">¶</a></h3>
+<p>A function can call every function that is defined before it. A function is also an ordinary value: it can be defined
+inside another function, passed as an argument, returned as a result, and stored in a list.</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="p">(</span><span class="nf">minimal-image</span><span class="w"> </span><span class="p">(</span><span class="nf">transducer</span><span class="w"> </span><span class="nv">Nft</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nf">language</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">))</span>
+<span class="w">  </span><span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="p">(</span><span class="nf">normalize</span><span class="w"> </span><span class="p">(</span><span class="nf">automaton</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">))</span><span class="w">             </span><span class="c1">; visible only inside minimal-image</span>
+<span class="w">    </span><span class="p">(</span><span class="nf">-&gt;</span><span class="w"> </span><span class="nv">automaton</span><span class="w"> </span><span class="nv">nfa:determinize</span><span class="w"> </span><span class="nv">nfa:minimize</span><span class="p">))</span>
+<span class="w">  </span><span class="p">(</span><span class="nf">normalize</span><span class="w"> </span><span class="p">(</span><span class="nf">nft:to-nfa</span><span class="w"> </span><span class="p">(</span><span class="nf">nft:apply</span><span class="w"> </span><span class="nv">transducer</span><span class="w"> </span><span class="nv">language</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="p">(</span><span class="nf">included-with</span><span class="w"> </span><span class="p">(</span><span class="nf">algorithm</span><span class="w"> </span><span class="nv">String</span><span class="p">))</span><span class="w">        </span><span class="c1">; returns a function</span>
+<span class="w">  </span><span class="p">(</span><span class="k">lambda</span><span class="w"> </span><span class="p">(</span><span class="nf">smaller</span><span class="w"> </span><span class="nv">bigger</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:included?</span><span class="w"> </span><span class="nv">smaller</span><span class="w"> </span><span class="nv">bigger</span><span class="w"> </span><span class="nv">:algorithm</span><span class="w"> </span><span class="nv">algorithm</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">relations</span><span class="w"> </span><span class="p">(</span><span class="nb">list</span><span class="w"> </span><span class="p">(</span><span class="nf">included-with</span><span class="w"> </span><span class="s">"naive"</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nf">included-with</span><span class="w"> </span><span class="s">"antichains"</span><span class="p">)))</span>
+<span class="p">(</span><span class="nf">list:map</span><span class="w"> </span><span class="p">(</span><span class="k">lambda</span><span class="w"> </span><span class="p">(</span><span class="nf">included?</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nf">included?</span><span class="w"> </span><span class="nv">lhs</span><span class="w"> </span><span class="nv">rhs</span><span class="p">))</span><span class="w"> </span><span class="nv">relations</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Body.</strong> The body of a function, of a <code class="docutils literal notranslate"><span class="pre">lambda</span></code> and of a <code class="docutils literal notranslate"><span class="pre">let</span></code> is a sequence of definitions followed by
+expressions. The definitions are local to the body, and the value of the body is the value of its last expression.</p></li>
+<li><p><strong>Parameters</strong> are positional. A parameter that takes a function can be given the sort <code class="docutils literal notranslate"><span class="pre">Function</span></code>.</p></li>
+<li><p><strong>Scope.</strong> A function sees its parameters, its local definitions, and every name that was visible where the
+function was written. It keeps those names for as long as it exists: the function returned by <code class="docutils literal notranslate"><span class="pre">included-with</span></code> still
+knows <code class="docutils literal notranslate"><span class="pre">algorithm</span></code> after <code class="docutils literal notranslate"><span class="pre">included-with</span></code> has returned.</p></li>
+<li><p><strong>Order.</strong> A name is visible after its definition, and not inside it. A function can therefore call the functions
+defined before it, but it cannot call itself by name, and two functions cannot call each other.
+<a class="reference internal" href="#loops-and-recursion">Loops and recursion</a> describes the option that lets a function call itself.</p></li>
+<li><p><strong>Own name.</strong> Using the name of a function inside its own body is an error without that option, even when an outer
+scope defines the same name. Turning the option on therefore never changes what an accepted script means.</p></li>
+<li><p><strong>Hiding.</strong> An inner scope may define a name that an outer scope already has. The inner one is used inside that
+scope.</p></li>
+</ul>
+</section>
+<section id="pipelines">
+<h3>Pipelines<a class="headerlink" href="#pipelines" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">-&gt;</span></code> passes a value through a sequence of steps. A step that is a name is called with the value; a step that is an
+application gets the value as its first argument.</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">-&gt;</span><span class="w"> </span><span class="nv">$1</span><span class="w"> </span><span class="nv">nfa:load</span><span class="w"> </span><span class="nv">nfa:determinize</span><span class="w"> </span><span class="nv">nfa:minimize</span><span class="w"> </span><span class="nv">nfa:print-to-mata</span><span class="w"> </span><span class="nv">print</span><span class="p">)</span>
+
+<span class="p">(</span><span class="nf">-&gt;</span><span class="w"> </span><span class="nv">lhs</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:intersection</span><span class="w"> </span><span class="nv">rhs</span><span class="p">)</span><span class="w"> </span><span class="nv">nfa:trim</span><span class="w"> </span><span class="p">(</span><span class="nb">write</span><span class="w"> </span><span class="s">"product.mata"</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>The second pipeline is <code class="docutils literal notranslate"><span class="pre">(write</span> <span class="pre">(nfa:trim</span> <span class="pre">(nfa:intersection</span> <span class="pre">lhs</span> <span class="pre">rhs))</span> <span class="pre">&quot;product.mata&quot;)</span></code>.</p>
+</section>
+<section id="lists">
+<h3>Lists<a class="headerlink" href="#lists" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">(list</span> <span class="pre">a</span> <span class="pre">b</span> <span class="pre">c)</span></code> builds a list. The list functions are <code class="docutils literal notranslate"><span class="pre">list:length</span></code>, <code class="docutils literal notranslate"><span class="pre">list:nth</span></code> (from 0), <code class="docutils literal notranslate"><span class="pre">list:take</span></code>, <code class="docutils literal notranslate"><span class="pre">list:drop</span></code>,
+<code class="docutils literal notranslate"><span class="pre">list:range</span></code>, <code class="docutils literal notranslate"><span class="pre">list:map</span></code>, <code class="docutils literal notranslate"><span class="pre">list:filter</span></code>, <code class="docutils literal notranslate"><span class="pre">list:reduce</span></code> and <code class="docutils literal notranslate"><span class="pre">list:fold</span></code>:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">list:map</span><span class="w"> </span><span class="nv">nfa:determinize</span><span class="w"> </span><span class="nv">automata</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">list:filter</span><span class="w"> </span><span class="p">(</span><span class="k">lambda</span><span class="w"> </span><span class="p">(</span><span class="nf">a</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nb">not</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:language-empty?</span><span class="w"> </span><span class="nv">a</span><span class="p">)))</span><span class="w"> </span><span class="nv">automata</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">list:reduce</span><span class="w"> </span><span class="nv">nfa:intersection</span><span class="w"> </span><span class="nv">automata</span><span class="p">)</span><span class="w">                    </span><span class="c1">; error on an empty list</span>
+<span class="p">(</span><span class="nf">list:fold</span><span class="w"> </span><span class="nv">nfa:union-nondeterministic</span><span class="w"> </span><span class="nv">empty-language</span><span class="w"> </span><span class="nv">automata</span><span class="p">)</span><span class="w"> </span><span class="c1">; starts from empty-language</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">list:reduce</span></code> and <code class="docutils literal notranslate"><span class="pre">list:fold</span></code> combine from left to right, one call per element. The function gets the value combined
+so far as its first argument and the next element as its second.</p>
+<p><code class="docutils literal notranslate"><span class="pre">(list:range</span> <span class="pre">start</span> <span class="pre">end)</span></code> is the list of integers from <code class="docutils literal notranslate"><span class="pre">start</span></code> up to, but not including, <code class="docutils literal notranslate"><span class="pre">end</span></code>; it is empty when
+<code class="docutils literal notranslate"><span class="pre">start</span></code> is not smaller than <code class="docutils literal notranslate"><span class="pre">end</span></code>. Repeating something a number of times that is known before the repetition starts
+needs no loop. It is a <code class="docutils literal notranslate"><span class="pre">list:map</span></code> or a <code class="docutils literal notranslate"><span class="pre">list:fold</span></code> over a range:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">list:range</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w">                                  </span><span class="c1">; the list 0 1 2</span>
+
+<span class="c1">; measure the same check five times: records "inclusion-0" to "inclusion-4"</span>
+<span class="p">(</span><span class="nf">list:map</span><span class="w"> </span><span class="p">(</span><span class="k">lambda</span><span class="w"> </span><span class="p">(</span><span class="nb">round</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nf">time</span><span class="w"> </span><span class="p">(</span><span class="nf">concat</span><span class="w"> </span><span class="s">"inclusion-"</span><span class="w"> </span><span class="p">(</span><span class="nf">to-string</span><span class="w"> </span><span class="nb">round</span><span class="p">))</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:included?</span><span class="w"> </span><span class="nv">lhs</span><span class="w"> </span><span class="nv">rhs</span><span class="p">)))</span>
+<span class="w">          </span><span class="p">(</span><span class="nf">list:range</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">5</span><span class="p">))</span>
+
+<span class="c1">; the image of a language under four applications of a transducer</span>
+<span class="p">(</span><span class="nf">list:fold</span><span class="w"> </span><span class="p">(</span><span class="k">lambda</span><span class="w"> </span><span class="p">(</span><span class="nf">language</span><span class="w"> </span><span class="nb">round</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nf">nft:to-nfa</span><span class="w"> </span><span class="p">(</span><span class="nf">nft:apply</span><span class="w"> </span><span class="nv">step</span><span class="w"> </span><span class="nv">language</span><span class="p">)))</span>
+<span class="w">           </span><span class="nv">initial</span>
+<span class="w">           </span><span class="p">(</span><span class="nf">list:range</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">4</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="loops-and-recursion">
+<h3>Loops and recursion<a class="headerlink" href="#loops-and-recursion" title="Link to this heading">¶</a></h3>
+<p>Loops and functions that call themselves are part of the language, but they are off by default. A script turns them
+on for the whole file:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">set-option</span><span class="w"> </span><span class="nv">:loops-and-recursion</span><span class="w"> </span><span class="nv">true</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>The option must be set before the first form that is not <code class="docutils literal notranslate"><span class="pre">set-option</span></code> or <code class="docutils literal notranslate"><span class="pre">set-info</span></code>. It cannot be changed
+afterwards, and <code class="docutils literal notranslate"><span class="pre">pop</span></code> and <code class="docutils literal notranslate"><span class="pre">reset</span></code> leave it as it is.</p></li>
+<li><p>Without the option, a <code class="docutils literal notranslate"><span class="pre">loop</span></code>, a <code class="docutils literal notranslate"><span class="pre">recur</span></code>, and a function that uses its own name in its body are errors, reported
+before the script runs. <code class="docutils literal notranslate"><span class="pre">loop</span></code> and <code class="docutils literal notranslate"><span class="pre">recur</span></code> cannot be used as names in any script.</p></li>
+<li><p>An interpreter may leave the option unimplemented. It then rejects the <code class="docutils literal notranslate"><span class="pre">set-option</span></code> form before running anything.
+The first version of the Mata interpreter is planned without it.</p></li>
+</ul>
+<p>Everything else on this page works without the option, including functions that call other functions and functions
+used as values.</p>
+<p>Loops and recursion are meant for a computation whose number of rounds depends on the automata computed so far, such
+as a fixpoint. A number of rounds that is known in advance needs only <a class="reference internal" href="#lists"><code class="docutils literal notranslate"><span class="pre">list:range</span></code></a>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">loop</span></code> binds names to initial values and evaluates its body. <code class="docutils literal notranslate"><span class="pre">(recur</span> <span class="pre">value</span> <span class="pre">…)</span></code> starts the body again with the names
+bound to the new values. When the body finishes without a <code class="docutils literal notranslate"><span class="pre">recur</span></code>, the loop ends and the value of the body is the
+value of the loop.</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">set-option</span><span class="w"> </span><span class="nv">:loops-and-recursion</span><span class="w"> </span><span class="nv">true</span><span class="p">)</span>
+
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">initial</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">step</span><span class="w"> </span><span class="nv">Nft</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">bad</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">)</span>
+
+<span class="c1">; the configurations reachable from `initial` under the transition relation `step`</span>
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">reachable</span>
+<span class="w">  </span><span class="p">(</span><span class="nf">loop</span><span class="w"> </span><span class="p">((</span><span class="nf">reached</span><span class="w"> </span><span class="nv">initial</span><span class="p">))</span>
+<span class="w">    </span><span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">next</span>
+<span class="w">      </span><span class="p">(</span><span class="nf">nfa:union-nondeterministic</span><span class="w"> </span><span class="nv">reached</span><span class="w"> </span><span class="p">(</span><span class="nf">nft:to-nfa</span><span class="w"> </span><span class="p">(</span><span class="nf">nft:apply</span><span class="w"> </span><span class="nv">step</span><span class="w"> </span><span class="nv">reached</span><span class="p">))))</span>
+<span class="w">    </span><span class="p">(</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:included?</span><span class="w"> </span><span class="nv">next</span><span class="w"> </span><span class="nv">reached</span><span class="p">)</span><span class="w"> </span><span class="nv">reached</span><span class="w"> </span><span class="p">(</span><span class="nf">recur</span><span class="w"> </span><span class="nv">next</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="nf">check</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:intersection-empty?</span><span class="w"> </span><span class="nv">reachable</span><span class="w"> </span><span class="nv">bad</span><span class="p">))</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">recur</span></code> takes one value for each name of the loop, of the sort that the name started with.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">recur</span></code> must be the last thing the body evaluates: the last expression of the body, or a branch of an <code class="docutils literal notranslate"><span class="pre">if</span></code> or a
+<code class="docutils literal notranslate"><span class="pre">cond</span></code> in that place, or the last expression of a <code class="docutils literal notranslate"><span class="pre">let</span></code> or a <code class="docutils literal notranslate"><span class="pre">do</span></code> in that place.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">recur</span></code> restarts the innermost <code class="docutils literal notranslate"><span class="pre">loop</span></code> around it. It cannot be written inside a function that is defined in the body
+of the loop.</p></li>
+</ul>
+<p>With the option, a function defined with <code class="docutils literal notranslate"><span class="pre">define</span></code> is also visible inside its own body, so it can call itself. The
+loop above as a function:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="p">(</span><span class="nf">saturate</span><span class="w"> </span><span class="p">(</span><span class="nf">reached</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">))</span>
+<span class="w">  </span><span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">next</span>
+<span class="w">    </span><span class="p">(</span><span class="nf">nfa:union-nondeterministic</span><span class="w"> </span><span class="nv">reached</span><span class="w"> </span><span class="p">(</span><span class="nf">nft:to-nfa</span><span class="w"> </span><span class="p">(</span><span class="nf">nft:apply</span><span class="w"> </span><span class="nv">step</span><span class="w"> </span><span class="nv">reached</span><span class="p">))))</span>
+<span class="w">  </span><span class="p">(</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:included?</span><span class="w"> </span><span class="nv">next</span><span class="w"> </span><span class="nv">reached</span><span class="p">)</span><span class="w"> </span><span class="nv">reached</span><span class="w"> </span><span class="p">(</span><span class="nf">saturate</span><span class="w"> </span><span class="nv">next</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">reachable</span><span class="w"> </span><span class="p">(</span><span class="nf">saturate</span><span class="w"> </span><span class="nv">initial</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Two functions still cannot call each other by name, because the second one is not visible in the first.</p>
+</section>
+<section id="script-termination">
+<span id="termination"></span><h3>Termination<a class="headerlink" href="#script-termination" title="Link to this heading">¶</a></h3>
+<p>The checker reports, for each script, whether it is guaranteed to terminate, provided that the library operations it
+calls do. This is a report, not an error: the script runs either way.</p>
+<p>The guarantee is given when the script has no <code class="docutils literal notranslate"><span class="pre">loop</span></code> and no function that calls itself, and every function in it is
+used in these ways only:</p>
+<ul class="simple">
+<li><p>it is bound to a name,</p></li>
+<li><p>it is called, or</p></li>
+<li><p>it is given to a <code class="docutils literal notranslate"><span class="pre">list:</span></code> function as the function to apply.</p></li>
+</ul>
+<p>A script gets no guarantee when it passes a function to a defined function or to a <code class="docutils literal notranslate"><span class="pre">lambda</span></code>, returns a function from
+one, or puts a function into a list. A function can then be passed to itself, as in
+<code class="docutils literal notranslate"><span class="pre">((lambda</span> <span class="pre">(f)</span> <span class="pre">(f</span> <span class="pre">f))</span> <span class="pre">(lambda</span> <span class="pre">(f)</span> <span class="pre">(f</span> <span class="pre">f)))</span></code>, which runs forever without any loop. The example in
+<a class="reference internal" href="#functions">Functions</a> is such a script: <code class="docutils literal notranslate"><span class="pre">included-with</span></code> returns a function, and <code class="docutils literal notranslate"><span class="pre">relations</span></code> is a list of functions.</p>
+<p>The checker is conservative, so a script without the guarantee may still terminate.</p>
+</section>
+</section>
+<section id="inputs">
+<h2>Inputs<a class="headerlink" href="#inputs" title="Link to this heading">¶</a></h2>
+<p>A script gets its automata from four sources, and its other values from parameters.</p>
+<p><strong>Inputs given on the command line</strong> are paths. <code class="docutils literal notranslate"><span class="pre">$1</span></code>, <code class="docutils literal notranslate"><span class="pre">$2</span></code>, … are the positional inputs, <code class="docutils literal notranslate"><span class="pre">inputs</span></code> is the list of all
+of them, and <code class="docutils literal notranslate"><span class="pre">$name</span></code> is the input given under that name. All of them are strings; nothing is loaded until the script
+asks:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">lhs</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:load</span><span class="w"> </span><span class="nv">$1</span><span class="p">))</span>
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">transducer</span><span class="w"> </span><span class="p">(</span><span class="nf">nft:load</span><span class="w"> </span><span class="nv">$transducer</span><span class="p">))</span>
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">unknown</span><span class="w"> </span><span class="p">(</span><span class="nf">automaton:load</span><span class="w"> </span><span class="nv">$2</span><span class="p">))</span><span class="w"> </span><span class="c1">; an Nfa or an Nft, whichever the file holds</span>
+</pre></div>
+</div>
+<p><strong>Declarations</strong> are the short form:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">lhs</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">rhs</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-inputs</span><span class="w"> </span><span class="nv">rest</span><span class="w"> </span><span class="p">(</span><span class="nf">List</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">))</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Each <code class="docutils literal notranslate"><span class="pre">declare-input</span></code> declares one automaton, <code class="docutils literal notranslate"><span class="pre">Nfa</span></code>, <code class="docutils literal notranslate"><span class="pre">Nft</span></code> or <code class="docutils literal notranslate"><span class="pre">Automaton</span></code>, and takes the input given under its name,
+or else the next positional input. A file with several automata gives one automaton to each <code class="docutils literal notranslate"><span class="pre">declare-input</span></code> in turn.
+<code class="docutils literal notranslate"><span class="pre">declare-inputs</span></code> takes all the positional inputs that are left, every automaton of every file, and must come last.</p></li>
+<li><p>Declarations must come before every other form except <code class="docutils literal notranslate"><span class="pre">set-option</span></code> and <code class="docutils literal notranslate"><span class="pre">set-info</span></code>, which run in order with them, so
+<code class="docutils literal notranslate"><span class="pre">(set-option</span> <span class="pre">:alphabet</span> <span class="pre">&quot;bytes&quot;)</span></code> before a declaration applies to the automaton it loads, and a <code class="docutils literal notranslate"><span class="pre">set-info</span></code> value
+that writes a file before the first declaration can create an input it loads.</p></li>
+<li><p>All declared inputs are loaded before the first other form runs. A file whose kind does not match the declared sort
+is an error at that point. Declaring an input as <code class="docutils literal notranslate"><span class="pre">Automaton</span></code> accepts either kind.</p></li>
+<li><p>When a script declares inputs, every input given on the command line must be taken by a declaration; an input left
+over is an error, so a mistyped command line is not ignored.</p></li>
+<li><p>The loading done by declarations is part of a <a class="reference internal" href="#timing">timing record</a> only under <code class="docutils literal notranslate"><span class="pre">:time-operations</span></code>, as <code class="docutils literal notranslate"><span class="pre">parsing</span></code>.</p></li>
+</ul>
+<p><strong>Parameters</strong> are values given on the command line, for a script that is run several times with different sizes,
+seeds or labels:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">declare-param</span><span class="w"> </span><span class="nb">count</span><span class="w"> </span><span class="nv">Int</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w">        </span><span class="c1">; --param count=5, or 3 without one</span>
+<span class="p">(</span><span class="nf">declare-param</span><span class="w"> </span><span class="nv">label</span><span class="w"> </span><span class="nv">String</span><span class="p">)</span><span class="w">       </span><span class="c1">; --param label=…, required</span>
+<span class="p">(</span><span class="nf">echo</span><span class="w"> </span><span class="p">(</span><span class="nf">concat</span><span class="w"> </span><span class="nv">label</span><span class="w"> </span><span class="s">": "</span><span class="w"> </span><span class="p">(</span><span class="nf">to-string</span><span class="w"> </span><span class="nb">count</span><span class="p">)))</span>
+</pre></div>
+</div>
+<p>A parameter is <code class="docutils literal notranslate"><span class="pre">String</span></code>, <code class="docutils literal notranslate"><span class="pre">Int</span></code> or <code class="docutils literal notranslate"><span class="pre">Bool</span></code>; the value given on the command line is read as that sort, and an optional
+default makes the parameter optional. Parameters are declarations, so they come first, with the inputs. The check
+reports a value that is not of the sort, and a missing value of a parameter without a default, before any input is
+loaded.</p>
+<p><strong>Paths written in the script</strong> are loaded with the same operations: <code class="docutils literal notranslate"><span class="pre">(nfa:load</span> <span class="pre">&quot;automata/a.mata&quot;)</span></code>. A relative path
+is resolved against the directory of the script, so a script and the automata beside it move together. A path given on
+the command line is resolved against the current directory, as for any other command: when the script is in a file
+with a directory part, a relative one is made absolute before the script sees it, so <code class="docutils literal notranslate"><span class="pre">$1</span></code> and <code class="docutils literal notranslate"><span class="pre">inputs</span></code> hold the
+absolute path.</p>
+<p><strong>Literals</strong> make a script complete without any file:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">nfa:create-from-regex</span><span class="w"> </span><span class="s">"a(b|c)*"</span><span class="p">)</span>
+
+<span class="p">(</span><span class="nf">nfa:parse</span><span class="w"> </span><span class="s">"@NFA-explicit</span>
+<span class="s">%Initial q0</span>
+<span class="s">%Final q1</span>
+<span class="s">q0 a q1"</span><span class="p">)</span>
+
+<span class="p">(</span><span class="nf">nfa:literal</span><span class="w"> </span><span class="nv">:initial</span><span class="w"> </span><span class="p">(</span><span class="nf">q0</span><span class="p">)</span><span class="w"> </span><span class="nv">:final</span><span class="w"> </span><span class="p">(</span><span class="nf">q1</span><span class="p">)</span>
+<span class="w">             </span><span class="nv">:transitions</span><span class="w"> </span><span class="p">((</span><span class="nf">q0</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">q1</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nf">q1</span><span class="w"> </span><span class="nv">b</span><span class="w"> </span><span class="nv">q1</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nf">q0</span><span class="w"> </span><span class="nv">epsilon</span><span class="w"> </span><span class="nv">q1</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="nf">nft:literal</span><span class="w"> </span><span class="nv">:levels</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="nv">:initial</span><span class="w"> </span><span class="p">(</span><span class="nf">q0</span><span class="p">)</span><span class="w"> </span><span class="nv">:final</span><span class="w"> </span><span class="p">(</span><span class="nf">q0</span><span class="p">)</span>
+<span class="w">             </span><span class="nv">:states</span><span class="w"> </span><span class="p">((</span><span class="nf">q0</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nf">q1</span><span class="w"> </span><span class="mi">1</span><span class="p">))</span>
+<span class="w">             </span><span class="nv">:transitions</span><span class="w"> </span><span class="p">((</span><span class="nf">q0</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">q1</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nf">q1</span><span class="w"> </span><span class="nv">b</span><span class="w"> </span><span class="nv">q0</span><span class="p">)))</span>
+</pre></div>
+</div>
+<p>In <code class="docutils literal notranslate"><span class="pre">nfa:literal</span></code> and <code class="docutils literal notranslate"><span class="pre">nft:literal</span></code>, states and symbols are names, as in the <a class="reference internal" href="automata-format.html"><span class="doc std std-doc"><code class="docutils literal notranslate"><span class="pre">.mata</span></code> format</span></a>; they
+are not evaluated. <code class="docutils literal notranslate"><span class="pre">epsilon</span></code> in the symbol position is an ε-transition. <code class="docutils literal notranslate"><span class="pre">:states</span></code> of <code class="docutils literal notranslate"><span class="pre">nft:literal</span></code> gives the level of
+each state that is not on level 0.</p>
+<section id="script-loading">
+<span id="what-loading-does"></span><h3>What loading does<a class="headerlink" href="#script-loading" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">nfa:load</span></code>, <code class="docutils literal notranslate"><span class="pre">nft:load</span></code> and <code class="docutils literal notranslate"><span class="pre">automaton:load</span></code> are the one place where a script operation is more than one library call.
+Loading parses the file, mintermizes it if its alphabet is a bitvector alphabet, and constructs the automaton over the
+<a class="reference internal" href="#alphabets">script alphabet</a>. This is what <code class="docutils literal notranslate"><span class="pre">load_automaton()</span></code> in <code class="docutils literal notranslate"><span class="pre">tests-integration/src/utils/</span></code> does today. The
+library function <code class="docutils literal notranslate"><span class="pre">parse_from_mata()</span></code> is not used, because it constructs over <code class="docutils literal notranslate"><span class="pre">IntAlphabet</span></code>, which accepts only numbers
+as symbol names.</p>
+<p><code class="docutils literal notranslate"><span class="pre">nfa:parse</span></code>, <code class="docutils literal notranslate"><span class="pre">nft:parse</span></code> and <code class="docutils literal notranslate"><span class="pre">automaton:parse</span></code> do the same with <code class="docutils literal notranslate"><span class="pre">.mata</span></code> text given as a string instead of a file.</p>
+<p>Given a list of paths, <code class="docutils literal notranslate"><span class="pre">load</span></code> returns a list. Inputs with a bitvector alphabet are then mintermized together, so that
+they share their minterms; declarations load this way. Automata mintermized separately do not share minterms and
+must not be combined. The library mintermizes NFAs and AFAs only, so a transducer with a bitvector alphabet is an
+error.</p>
+<p>The steps are available separately as <code class="docutils literal notranslate"><span class="pre">intermediate:parse-from-mata</span></code>, <code class="docutils literal notranslate"><span class="pre">intermediate:mintermize</span></code> and <code class="docutils literal notranslate"><span class="pre">nfa:construct</span></code> /
+<code class="docutils literal notranslate"><span class="pre">nft:construct</span></code>.</p>
+</section>
+</section>
+<section id="script-alphabets">
+<span id="alphabets"></span><h2>Alphabets<a class="headerlink" href="#script-alphabets" title="Link to this heading">¶</a></h2>
+<p>A script has one <strong>script alphabet</strong>. Every load, literal, and word made with <code class="docutils literal notranslate"><span class="pre">(word</span> <span class="pre">&quot;a&quot;</span> <span class="pre">&quot;b&quot;)</span></code> or <code class="docutils literal notranslate"><span class="pre">(symbol</span> <span class="pre">&quot;a&quot;)</span></code>
+translates symbol names through it, so a name means the same symbol everywhere in the script.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">(set-option</span> <span class="pre">:alphabet</span> <span class="pre">…)</span></code></p></th>
+<th class="head"><p>Script alphabet</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;on-the-fly&quot;</span></code> (default)</p></td>
+<td><p>An empty <code class="docutils literal notranslate"><span class="pre">OnTheFlyAlphabet</span></code>; a name gets the next free number when it is first seen</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;bytes&quot;</span></code></p></td>
+<td><p>An <code class="docutils literal notranslate"><span class="pre">OnTheFlyAlphabet</span></code> with the byte registration and naming rules below</p></td>
+</tr>
+</tbody>
+</table>
+<p>With <code class="docutils literal notranslate"><span class="pre">&quot;bytes&quot;</span></code>, every byte is registered under its own value first, as in the website playground: a printable ASCII
+character other than the space and the backslash is named by itself, and any other byte by <code class="docutils literal notranslate"><span class="pre">\xHH</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">nfa:create-from-regex</span></code> produces automata whose symbols are byte values. Under <code class="docutils literal notranslate"><span class="pre">&quot;on-the-fly&quot;</span></code>, the name <code class="docutils literal notranslate"><span class="pre">a</span></code> in a
+<code class="docutils literal notranslate"><span class="pre">.mata</span></code> file is the symbol 0 if it is seen first, which is not the byte <code class="docutils literal notranslate"><span class="pre">a</span></code>. A script that combines automata from
+regular expressions with automata from files or literals must therefore select <code class="docutils literal notranslate"><span class="pre">&quot;bytes&quot;</span></code>. The option can be set only
+before the alphabet is first used.</p>
+<p><code class="docutils literal notranslate"><span class="pre">(script-alphabet)</span></code> returns the script alphabet as a value, for operations that take one. <code class="docutils literal notranslate"><span class="pre">nfa:create-alphabet</span></code>
+builds the alphabet of the symbols that occur in the given automata.</p>
+</section>
+<section id="operations">
+<h2>Operations<a class="headerlink" href="#operations" title="Link to this heading">¶</a></h2>
+<section id="names">
+<h3>Names<a class="headerlink" href="#names" title="Link to this heading">¶</a></h3>
+<p>The name of an operation is the name of the library function, changed by three rules:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">snake_case</span></code> becomes <code class="docutils literal notranslate"><span class="pre">kebab-case</span></code>: <code class="docutils literal notranslate"><span class="pre">project_out</span></code> is <code class="docutils literal notranslate"><span class="pre">nft:project-out</span></code>.</p></li>
+<li><p>Abbreviations are written out: <code class="docutils literal notranslate"><span class="pre">lang</span></code> is <code class="docutils literal notranslate"><span class="pre">language</span></code>, <code class="docutils literal notranslate"><span class="pre">nondet</span></code> is <code class="docutils literal notranslate"><span class="pre">nondeterministic</span></code>, <code class="docutils literal notranslate"><span class="pre">det</span></code> is <code class="docutils literal notranslate"><span class="pre">deterministic</span></code>,
+<code class="docutils literal notranslate"><span class="pre">num</span></code> is <code class="docutils literal notranslate"><span class="pre">number</span></code>, <code class="docutils literal notranslate"><span class="pre">aut</span></code> is <code class="docutils literal notranslate"><span class="pre">automaton</span></code>, <code class="docutils literal notranslate"><span class="pre">eps</span></code> is <code class="docutils literal notranslate"><span class="pre">epsilon</span></code>, <code class="docutils literal notranslate"><span class="pre">symb</span></code> is <code class="docutils literal notranslate"><span class="pre">symbol</span></code>. <code class="docutils literal notranslate"><span class="pre">nfa</span></code>, <code class="docutils literal notranslate"><span class="pre">nft</span></code> and <code class="docutils literal notranslate"><span class="pre">dfa</span></code> stay.</p></li>
+<li><p>An operation that returns <code class="docutils literal notranslate"><span class="pre">Bool</span></code> ends in <code class="docutils literal notranslate"><span class="pre">?</span></code> and drops a leading <code class="docutils literal notranslate"><span class="pre">is</span></code> or <code class="docutils literal notranslate"><span class="pre">are</span></code>: <code class="docutils literal notranslate"><span class="pre">is_lang_empty</span></code> is
+<code class="docutils literal notranslate"><span class="pre">nfa:language-empty?</span></code>, <code class="docutils literal notranslate"><span class="pre">are_equivalent</span></code> is <code class="docutils literal notranslate"><span class="pre">nfa:equivalent?</span></code>, <code class="docutils literal notranslate"><span class="pre">has_epsilon_cycle</span></code> is <code class="docutils literal notranslate"><span class="pre">nft:has-epsilon-cycle?</span></code>.</p></li>
+</ol>
+<p>The namespace tells where the function lives:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Namespace</p></th>
+<th class="head"><p>Library</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mata::nfa</span></code>, <code class="docutils literal notranslate"><span class="pre">mata::nfa::builder</span></code>, and the member functions of <code class="docutils literal notranslate"><span class="pre">Nfa</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mata::nft</span></code>, <code class="docutils literal notranslate"><span class="pre">mata::nft::builder</span></code>, and the member functions of <code class="docutils literal notranslate"><span class="pre">Nft</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">automaton:</span></code></p></td>
+<td><p>No library counterpart; see <a class="reference internal" href="#the-automaton-namespace">below</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">strings:</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mata::applications::strings</span></code> and its <code class="docutils literal notranslate"><span class="pre">seg_nfa</span></code> and <code class="docutils literal notranslate"><span class="pre">replace</span></code> namespaces</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">alphabet:</span></code></p></td>
+<td><p>The member functions of <code class="docutils literal notranslate"><span class="pre">mata::Alphabet</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">intermediate:</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mata::parser</span></code>, <code class="docutils literal notranslate"><span class="pre">mata::IntermediateAut</span></code> and <code class="docutils literal notranslate"><span class="pre">mata::Mintermization</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">list:</span></code></p></td>
+<td><p>No library counterpart</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="arguments">
+<h3>Arguments<a class="headerlink" href="#arguments" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Required parameters</strong> are positional, in the order of the library function. For a member function, the object
+comes first.</p></li>
+<li><p><strong>Optional parameters</strong> are keyword arguments named after the parameter:
+<code class="docutils literal notranslate"><span class="pre">(nfa:concatenate</span> <span class="pre">lhs</span> <span class="pre">rhs</span> <span class="pre">:use-epsilon</span> <span class="pre">true)</span></code>. The value has the sort of the parameter, <code class="docutils literal notranslate"><span class="pre">Bool</span></code>, <code class="docutils literal notranslate"><span class="pre">Int</span></code> or <code class="docutils literal notranslate"><span class="pre">String</span></code>;
+a <code class="docutils literal notranslate"><span class="pre">Symbol</span></code> parameter takes the name of the symbol, as <code class="docutils literal notranslate"><span class="pre">(symbol</span> <span class="pre">&quot;a&quot;)</span></code> does. The checker rejects a value of another
+sort before the script runs. A call without the keyword gets the default of the library.</p></li>
+<li><p><strong>Entries of the <code class="docutils literal notranslate"><span class="pre">ParameterMap</span></code></strong> are keyword arguments too: <code class="docutils literal notranslate"><span class="pre">(nfa:included?</span> <span class="pre">lhs</span> <span class="pre">rhs</span> <span class="pre">:algorithm</span> <span class="pre">&quot;naive&quot;)</span></code>. They are
+called <em>hints</em>. Their values are strings, as in the library. Each operation lists the hints it takes and the values
+each accepts, and the checker rejects any other one before the script runs; a value written as an expression rather
+than a string literal is checked when the call is made.</p></li>
+<li><p><strong>Enumerations</strong> are strings in kebab-case: <code class="docutils literal notranslate"><span class="pre">:jump-mode</span> <span class="pre">&quot;append-dont-cares&quot;</span></code> is <code class="docutils literal notranslate"><span class="pre">JumpMode::AppendDontCares</span></code>.</p></li>
+<li><p><strong>Not available:</strong> callbacks, such as <code class="docutils literal notranslate"><span class="pre">macrostate_discover</span></code>, and output parameters, such as <code class="docutils literal notranslate"><span class="pre">prod_map</span></code>,
+<code class="docutils literal notranslate"><span class="pre">state_renaming</span></code> and <code class="docutils literal notranslate"><span class="pre">subset_map</span></code>. Counterexample output parameters are available through
+<a class="reference internal" href="#witnesses"><code class="docutils literal notranslate"><span class="pre">witness</span></code></a>.</p></li>
+</ul>
+<p>A hint value is an ordinary expression, so one script can compare algorithms:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">list:map</span><span class="w"> </span><span class="p">(</span><span class="k">lambda</span><span class="w"> </span><span class="p">(</span><span class="nf">algorithm</span><span class="p">)</span>
+<span class="w">            </span><span class="p">(</span><span class="nf">time</span><span class="w"> </span><span class="nv">algorithm</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:included?</span><span class="w"> </span><span class="nv">lhs</span><span class="w"> </span><span class="nv">rhs</span><span class="w"> </span><span class="nv">:algorithm</span><span class="w"> </span><span class="nv">algorithm</span><span class="p">)))</span>
+<span class="w">          </span><span class="p">(</span><span class="nb">list</span><span class="w"> </span><span class="s">"naive"</span><span class="w"> </span><span class="s">"antichains"</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>The default of a hint can be changed for the rest of the scope. A hint written in the application wins over the
+changed default, which wins over the default of the library:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">set-option</span><span class="w"> </span><span class="nv">:default</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:included?</span><span class="w"> </span><span class="nv">:algorithm</span><span class="w"> </span><span class="s">"naive"</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="one-call-per-application">
+<h3>One call per application<a class="headerlink" href="#one-call-per-application" title="Link to this heading">¶</a></h3>
+<p>Each application is one library call, with these exceptions:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">load</span></code> and <code class="docutils literal notranslate"><span class="pre">parse</span></code>, described in <a class="reference internal" href="#what-loading-does">What loading does</a>.</p></li>
+<li><p>A member function that changes its object, such as <code class="docutils literal notranslate"><span class="pre">Nfa::trim()</span></code> or <code class="docutils literal notranslate"><span class="pre">Nfa::make_complete()</span></code>, is applied to a copy
+when the operand is a named value, because values are immutable. An unnamed intermediate result is changed in place.
+Either way, the operation returns the changed automaton.</p></li>
+<li><p>The library offers some functions in several overloads that differ only in whether an operand is copied or moved,
+such as <code class="docutils literal notranslate"><span class="pre">union_nondet(Nfa&amp;&amp;,</span> <span class="pre">const</span> <span class="pre">Nfa&amp;)</span></code> and <code class="docutils literal notranslate"><span class="pre">Nft::to_nfa_copy()</span></code> / <code class="docutils literal notranslate"><span class="pre">Nft::to_nfa_move()</span></code>. A script has one
+operation for all of them. A named operand is passed by reference and an unnamed intermediate result is moved, so
+the overload that runs can be read from the script.</p></li>
+<li><p>With more than two operands, <code class="docutils literal notranslate"><span class="pre">(nfa:intersection</span> <span class="pre">a</span> <span class="pre">b</span> <span class="pre">c)</span></code> is <code class="docutils literal notranslate"><span class="pre">(nfa:intersection</span> <span class="pre">(nfa:intersection</span> <span class="pre">a</span> <span class="pre">b)</span> <span class="pre">c)</span></code>. This holds
+for every operation whose library function takes two automata and returns one: <code class="docutils literal notranslate"><span class="pre">union-nondeterministic</span></code>,
+<code class="docutils literal notranslate"><span class="pre">intersection</span></code> and <code class="docutils literal notranslate"><span class="pre">concatenate</span></code> of both namespaces, and <code class="docutils literal notranslate"><span class="pre">nft:compose</span></code>.</p></li>
+</ul>
+</section>
+<section id="nfa-operations">
+<h3>NFA operations<a class="headerlink" href="#nfa-operations" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Script</p></th>
+<th class="head"><p>Library</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:union-nondeterministic</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">union_nondet</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:union-deterministic-complete</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">union_det_complete</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:intersection</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">intersection</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:product</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">product</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:language-difference</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">lang_difference</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:concatenate</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">concatenate</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:concatenate-nth-power</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">concatenate_nth_power</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:complement</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">complement</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:left-quotient</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">left_quotient</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:right-quotient</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">right_quotient</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:determinize</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">determinize</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:as-dfa</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">as_dfa</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:minimize</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">minimize</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:reduce</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">reduce</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:revert</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">revert</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:remove-epsilon</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">remove_epsilon</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:trim</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">trim</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:make-complete</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nfa::make_complete</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:decode-utf8</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nfa::decode_utf8</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:get-one-letter-automaton</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nfa::get_one_letter_aut</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:language-empty?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nfa::is_lang_empty</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:intersection-empty?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">is_intersection_empty</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:included?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">is_included</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:equivalent?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">are_equivalent</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:universal?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nfa::is_universal</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:in-language?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nfa::is_in_lang</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:in-language-prefix?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nfa::is_in_lang_prefix</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:deterministic?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nfa::is_deterministic</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:complete?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">is_complete</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:minimal?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">is_minimal</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:flat?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">is_flat</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:identical?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">is_identical</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:get-word</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nfa::get_word</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:get-shortest-word</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">get_shortest_word</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:get-words</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">get_words</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:get-word-from-complement</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nfa::get_word_from_complement</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:get-word-from-language-difference</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">get_word_from_lang_difference</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:number-of-states</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nfa::num_of_states</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:number-of-transitions</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Delta::num_of_transitions</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:create-from-regex</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">builder::create_from_regex</span></code>; <code class="docutils literal notranslate"><span class="pre">Re2Options</span></code> members are keywords</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:create-single-word-nfa</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">builder::create_single_word_nfa</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:create-empty-string-nfa</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">builder::create_empty_string_nfa</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:create-sigma-star-nfa</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">builder::create_sigma_star_nfa</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:create-random-nfa-tabakov-vardi</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">builder::create_random_nfa_tabakov_vardi</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:construct</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">builder::construct</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:create-alphabet</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">create_alphabet</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:encode-word</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">encode_word</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:print-to-mata</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nfa::print_to_mata</span></code>; returns a string</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:print-to-dot</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nfa::print_to_dot</span></code>; returns a string</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:load</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:parse</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:literal</span></code></p></td>
+<td><p>No single library counterpart</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="nft-operations">
+<h3>NFT operations<a class="headerlink" href="#nft-operations" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Script</p></th>
+<th class="head"><p>Library</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:union-nondeterministic</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">union_nondet</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:intersection</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">intersection</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:concatenate</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">concatenate</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:concatenate-nth-power</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">concatenate_nth_power</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:complement</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">complement</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:compose</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">compose</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:apply</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nft::apply</span></code>, to an <code class="docutils literal notranslate"><span class="pre">Nfa</span></code> or to a <code class="docutils literal notranslate"><span class="pre">Word</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:project-out</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">project_out</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:project-to</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">project_to</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:insert-level</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">insert_level</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:insert-levels</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">insert_levels</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:invert-levels</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">invert_levels</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:unwind-jumps</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nft::unwind_jumps</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:determinize</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">determinize</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:reduce</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">reduce</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:revert</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">revert</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:remove-epsilon</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">remove_epsilon</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:trim</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nft::trim</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:language-empty?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nft::is_lang_empty</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:included?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">is_included</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:equivalent?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">are_equivalent</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:universal?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nft::is_universal</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:in-language?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nft::is_in_lang</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:in-language-by-levels?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nft::is_in_lang_by_levels</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:deterministic?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nft::is_deterministic</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:complete?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">is_complete</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:identical?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">is_identical</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:contains-jump-transitions?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nft::contains_jump_transitions</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:has-epsilon-cycle?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">has_epsilon_cycle</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:to-nfa</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nft::to_nfa_copy</span></code> or <code class="docutils literal notranslate"><span class="pre">to_nfa_move</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:to-nfa-update</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nft::to_nfa_update_copy</span></code> or <code class="docutils literal notranslate"><span class="pre">to_nfa_update_move</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:from-nfa-with-levels-zero</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">builder::from_nfa_with_levels_zero</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:from-nfa-with-levels-advancing</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">builder::from_nfa_with_levels_advancing</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:create-single-word-nft</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">builder::create_single_word_nft</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:create-empty-string-nft</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">builder::create_empty_string_nft</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:create-sigma-star-nft</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">builder::create_sigma_star_nft</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:construct</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">builder::construct</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:number-of-states</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nft::num_of_states</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:print-to-mata</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nft::print_to_mata</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nft:print-to-dot</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nft::print_to_dot</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nft:load</span></code>, <code class="docutils literal notranslate"><span class="pre">nft:parse</span></code>, <code class="docutils literal notranslate"><span class="pre">nft:literal</span></code></p></td>
+<td><p>No single library counterpart</p></td>
+</tr>
+</tbody>
+</table>
+<p>There is no <code class="docutils literal notranslate"><span class="pre">nft:minimize</span></code>: the library declares <code class="docutils literal notranslate"><span class="pre">nft::minimize</span></code> only under <code class="docutils literal notranslate"><span class="pre">MATA_NFT_NOT_IMPLEMENTED</span></code>.</p>
+</section>
+<section id="the-automaton-namespace">
+<h3>The <code class="docutils literal notranslate"><span class="pre">automaton:</span></code> namespace<a class="headerlink" href="#the-automaton-namespace" title="Link to this heading">¶</a></h3>
+<p>For every operation that exists under the same name in both <code class="docutils literal notranslate"><span class="pre">nfa:</span></code> and <code class="docutils literal notranslate"><span class="pre">nft:</span></code>, there is an operation of that name in
+<code class="docutils literal notranslate"><span class="pre">automaton:</span></code>, for example <code class="docutils literal notranslate"><span class="pre">automaton:intersection</span></code>, <code class="docutils literal notranslate"><span class="pre">automaton:determinize</span></code> and <code class="docutils literal notranslate"><span class="pre">automaton:included?</span></code>. It accepts an
+<code class="docutils literal notranslate"><span class="pre">Automaton</span></code>, an <code class="docutils literal notranslate"><span class="pre">Nfa</span></code> or an <code class="docutils literal notranslate"><span class="pre">Nft</span></code>, and calls the <code class="docutils literal notranslate"><span class="pre">nfa:</span></code> or the <code class="docutils literal notranslate"><span class="pre">nft:</span></code> operation according to what the operands are
+when the script runs. Operands of different kinds are an error; convert explicitly with
+<code class="docutils literal notranslate"><span class="pre">nft:from-nfa-with-levels-zero</span></code> or <code class="docutils literal notranslate"><span class="pre">nft:to-nfa</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">automaton:load</span></code> and <code class="docutils literal notranslate"><span class="pre">automaton:parse</span></code> accept either kind and return an <code class="docutils literal notranslate"><span class="pre">Automaton</span></code>.</p>
+</section>
+<section id="other-namespaces">
+<h3>Other namespaces<a class="headerlink" href="#other-namespaces" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Script</p></th>
+<th class="head"><p>Library</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">strings:get-shortest-words</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">get_shortest_words</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">strings:get-longest-words</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">get_longest_words</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">strings:get-words-of-lengths</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">get_words_of_lengths</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">strings:get-word-lengths</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">get_word_lengths</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">strings:get-accepted-symbols</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">get_accepted_symbols</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">strings:language-epsilon?</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">is_lang_eps</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">strings:get-segments</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">seg_nfa::Segmentation</span></code>, then <code class="docutils literal notranslate"><span class="pre">get_segments</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">strings:reluctant-nfa</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">replace::reluctant_nfa</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">strings:create-identity</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">replace::create_identity</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">strings:create-identity-with-single-symbol-replace</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">replace::create_identity_with_single_symbol_replace</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">strings:replace-reluctant-regex</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">replace::replace_reluctant_regex</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">strings:replace-reluctant-literal</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">replace::replace_reluctant_literal</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">strings:replace-reluctant-single-symbol</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">replace::replace_reluctant_single_symbol</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">alphabet:get-alphabet-symbols</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Alphabet::get_alphabet_symbols</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">alphabet:translate-symbol</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">translate_symb</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">alphabet:reverse-translate-symbol</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">reverse_translate_symbol</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">intermediate:parse-from-mata</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">parser::parse_mf</span></code>, then <code class="docutils literal notranslate"><span class="pre">IntermediateAut::parse_from_mf</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">intermediate:mintermize</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Mintermization::mintermize</span></code>, on one NFA or a list</p></td>
+</tr>
+</tbody>
+</table>
+<p><code class="docutils literal notranslate"><span class="pre">strings:get-segments</span></code> builds <code class="docutils literal notranslate"><span class="pre">seg_nfa::Segmentation</span></code> for the given epsilon symbols.</p>
+<p>Noodlification (<code class="docutils literal notranslate"><span class="pre">noodlify</span></code>, <code class="docutils literal notranslate"><span class="pre">noodlify_for_equation</span></code>, <code class="docutils literal notranslate"><span class="pre">noodlify_for_transducer</span></code>) is specific to one string solver and
+is not part of the language.</p>
+</section>
+<section id="core-functions">
+<h3>Core functions<a class="headerlink" href="#core-functions" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">not</span></code>, <code class="docutils literal notranslate"><span class="pre">=</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;=</span></code>, <code class="docutils literal notranslate"><span class="pre">+</span></code>, <code class="docutils literal notranslate"><span class="pre">-</span></code> on <code class="docutils literal notranslate"><span class="pre">Bool</span></code>, <code class="docutils literal notranslate"><span class="pre">Int</span></code>, <code class="docutils literal notranslate"><span class="pre">String</span></code> and <code class="docutils literal notranslate"><span class="pre">Word</span></code> as applicable; <code class="docutils literal notranslate"><span class="pre">(concat</span> <span class="pre">string…)</span></code>, which joins
+strings; <code class="docutils literal notranslate"><span class="pre">(to-string</span> <span class="pre">value)</span></code>, which shows any value as one line, the way <code class="docutils literal notranslate"><span class="pre">print</span></code> would; <code class="docutils literal notranslate"><span class="pre">(string-&gt;int</span> <span class="pre">string)</span></code>; <code class="docutils literal notranslate"><span class="pre">none?</span></code>
+and <code class="docutils literal notranslate"><span class="pre">get</span></code> on an <code class="docutils literal notranslate"><span class="pre">Option</span></code>; <code class="docutils literal notranslate"><span class="pre">list</span></code>; <code class="docutils literal notranslate"><span class="pre">(word</span> <span class="pre">&quot;a&quot;</span> <span class="pre">&quot;b&quot;)</span></code> and <code class="docutils literal notranslate"><span class="pre">(symbol</span> <span class="pre">&quot;a&quot;)</span></code>, which translate names through the script
+alphabet; <code class="docutils literal notranslate"><span class="pre">(script-alphabet)</span></code>.</p>
+</section>
+</section>
+<section id="reporting-results">
+<h2>Reporting results<a class="headerlink" href="#reporting-results" title="Link to this heading">¶</a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Form</p></th>
+<th class="head"><p>Effect</p></th>
+<th class="head"><p>Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">(check</span> <span class="pre">condition)</span></code></p></td>
+<td><p>Prints <code class="docutils literal notranslate"><span class="pre">true</span></code> or <code class="docutils literal notranslate"><span class="pre">false</span></code></p></td>
+<td><p>The <code class="docutils literal notranslate"><span class="pre">Bool</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">(check</span> <span class="pre">&quot;label&quot;</span> <span class="pre">condition)</span></code></p></td>
+<td><p>Prints the record <code class="docutils literal notranslate"><span class="pre">label:</span> <span class="pre">true</span></code> or <code class="docutils literal notranslate"><span class="pre">label:</span> <span class="pre">false</span></code></p></td>
+<td><p>The <code class="docutils literal notranslate"><span class="pre">Bool</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">(assert</span> <span class="pre">condition)</span></code></p></td>
+<td><p>Reports a false condition and its place; the script continues</p></td>
+<td><p>The <code class="docutils literal notranslate"><span class="pre">Bool</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">(print</span> <span class="pre">value)</span></code></p></td>
+<td><p>Prints the value to standard output</p></td>
+<td><p>The value</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">(write</span> <span class="pre">value</span> <span class="pre">path)</span></code></p></td>
+<td><p>Writes the value to a file</p></td>
+<td><p>The value</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">(echo</span> <span class="pre">string)</span></code></p></td>
+<td><p>Prints the string</p></td>
+<td><p>The string</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">(get-witness)</span></code></p></td>
+<td><p>See <a class="reference internal" href="#witnesses">Witnesses</a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Option</span> <span class="pre">Word</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<p><code class="docutils literal notranslate"><span class="pre">print</span></code> and <code class="docutils literal notranslate"><span class="pre">write</span></code> return their argument, so they can stand in the middle of a pipeline. An automaton is printed in
+the <code class="docutils literal notranslate"><span class="pre">.mata</span></code> format; use <code class="docutils literal notranslate"><span class="pre">nfa:print-to-dot</span></code> to print a DOT graph instead: <code class="docutils literal notranslate"><span class="pre">(print</span> <span class="pre">(nfa:print-to-dot</span> <span class="pre">a))</span></code>.</p>
+<p>In an interactive session, the value of every top-level expression is shown, with an automaton summarised by its
+kind and size rather than printed in full. When a script is run, the value of a top-level expression is dropped.</p>
+<p>Results and timing records go to standard output, each written as soon as it is printed, so a run stopped by a time
+limit keeps what it printed; errors and the <a class="reference internal" href="#options">trace</a> go to standard error.</p>
+<section id="script-exit-status">
+<span id="exit-status"></span><h3>Exit status<a class="headerlink" href="#script-exit-status" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Status</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>The script ran to its end and no assertion failed</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>At least one <code class="docutils literal notranslate"><span class="pre">assert</span></code> failed</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>An error stopped the script: a failed check of the script, a file, a sort, the library</p></td>
+</tr>
+</tbody>
+</table>
+<p><code class="docutils literal notranslate"><span class="pre">check</span></code> never changes the status. A one-off query that should fail a shell command uses <code class="docutils literal notranslate"><span class="pre">assert</span></code>. In an interactive
+session, an error ends the form, not the session, and makes the session end with status <code class="docutils literal notranslate"><span class="pre">2</span></code>.</p>
+</section>
+<section id="witnesses">
+<h3>Witnesses<a class="headerlink" href="#witnesses" title="Link to this heading">¶</a></h3>
+<p>Several decision procedures of the library can return a word that explains their answer through an output parameter:
+<code class="docutils literal notranslate"><span class="pre">is_included</span></code>, <code class="docutils literal notranslate"><span class="pre">are_equivalent</span></code>, <code class="docutils literal notranslate"><span class="pre">is_universal</span></code>, <code class="docutils literal notranslate"><span class="pre">is_lang_empty</span></code> and <code class="docutils literal notranslate"><span class="pre">is_intersection_empty</span></code>. There are two ways to
+get it.</p>
+<p>Each of these procedures has one verdict that a word can explain: inclusion, equivalence and universality when they
+do not hold, and the two emptiness checks when the language is not empty. <code class="docutils literal notranslate"><span class="pre">(witness</span> <span class="pre">application)</span></code> makes the call with
+the output parameter and returns the stored <code class="docutils literal notranslate"><span class="pre">Word</span></code> for that verdict, and <code class="docutils literal notranslate"><span class="pre">none</span></code> for the other one. The call is made
+once, so the verdict is not computed separately. The application must be a call of <code class="docutils literal notranslate"><span class="pre">nfa:included?</span></code>,
+<code class="docutils literal notranslate"><span class="pre">nfa:equivalent?</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:universal?</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:language-empty?</span></code> or <code class="docutils literal notranslate"><span class="pre">nfa:intersection-empty?</span></code>; anything else is an error:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">counterexample</span><span class="w"> </span><span class="p">(</span><span class="nf">witness</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:included?</span><span class="w"> </span><span class="nv">smaller</span><span class="w"> </span><span class="nv">bigger</span><span class="p">)))</span>
+<span class="p">(</span><span class="nf">assert</span><span class="w"> </span><span class="p">(</span><span class="nf">none?</span><span class="w"> </span><span class="nv">counterexample</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>With <code class="docutils literal notranslate"><span class="pre">(set-option</span> <span class="pre">:produce-witnesses</span> <span class="pre">true)</span></code>, every such call passes the output parameter, and <code class="docutils literal notranslate"><span class="pre">(get-witness)</span></code> returns
+the witness of the most recent decision operation, the <code class="docutils literal notranslate"><span class="pre">nfa:</span></code> and <code class="docutils literal notranslate"><span class="pre">nft:</span></code> operations whose names end in <code class="docutils literal notranslate"><span class="pre">?</span></code>, and <code class="docutils literal notranslate"><span class="pre">none</span></code>
+when that operation stored none. This is the convenient form in an interactive session:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">set-option</span><span class="w"> </span><span class="nv">:produce-witnesses</span><span class="w"> </span><span class="nv">true</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">check</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:included?</span><span class="w"> </span><span class="nv">smaller</span><span class="w"> </span><span class="nv">bigger</span><span class="p">))</span><span class="w">   </span><span class="c1">; false</span>
+<span class="p">(</span><span class="nf">get-witness</span><span class="p">)</span><span class="w">                            </span><span class="c1">; a b b</span>
+</pre></div>
+</div>
+<p>Asking for a witness can make a decision procedure slower, so <code class="docutils literal notranslate"><span class="pre">:produce-witnesses</span></code> is off by default. Without it, a
+call outside <code class="docutils literal notranslate"><span class="pre">witness</span></code> computes no witness, and <code class="docutils literal notranslate"><span class="pre">(get-witness)</span></code> returns <code class="docutils literal notranslate"><span class="pre">none</span></code> after it. A witness is a word only: the
+states of an accepting run come from <code class="docutils literal notranslate"><span class="pre">nfa:get-accepting-run</span></code>.</p>
+</section>
+</section>
+<section id="timing">
+<h2>Timing<a class="headerlink" href="#timing" title="Link to this heading">¶</a></h2>
+<p>Nothing is measured unless the script asks. <code class="docutils literal notranslate"><span class="pre">(time</span> <span class="pre">label</span> <span class="pre">expression…)</span></code> evaluates the expressions, prints one record,
+and returns the last value:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">product</span><span class="w"> </span><span class="p">(</span><span class="nf">time</span><span class="w"> </span><span class="s">"intersection"</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:intersection</span><span class="w"> </span><span class="nv">lhs</span><span class="w"> </span><span class="nv">rhs</span><span class="p">)))</span>
+<span class="p">(</span><span class="nf">check</span><span class="w"> </span><span class="p">(</span><span class="nf">time</span><span class="w"> </span><span class="s">"emptiness"</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:language-empty?</span><span class="w"> </span><span class="nv">product</span><span class="p">)))</span>
+</pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>intersection: 0.0481
+emptiness: 0.0007
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>A record is a line <code class="docutils literal notranslate"><span class="pre">label:</span> <span class="pre">seconds</span></code>, measured with a monotonic clock, with six fractional digits. This is the format
+the benchmark binaries in <code class="docutils literal notranslate"><span class="pre">tests-integration/src/</span></code> print today.</p></li>
+<li><p>Every record of a run has its own label: a reader of the records, such as <code class="docutils literal notranslate"><span class="pre">pycobench</span></code>, keys them by label, so a label
+printed twice is an error. A <code class="docutils literal notranslate"><span class="pre">time</span></code> form that is evaluated several times needs a label that differs each time, as
+<code class="docutils literal notranslate"><span class="pre">(time</span> <span class="pre">(concat</span> <span class="pre">&quot;round-&quot;</span> <span class="pre">(to-string</span> <span class="pre">i))</span> <span class="pre">…)</span></code>.</p></li>
+<li><p>Loading is measured when it is written inside a <code class="docutils literal notranslate"><span class="pre">time</span></code> form: <code class="docutils literal notranslate"><span class="pre">(time</span> <span class="pre">&quot;parsing&quot;</span> <span class="pre">(nfa:load</span> <span class="pre">$1))</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(set-option</span> <span class="pre">:time-operations</span> <span class="pre">true)</span></code> prints a record for every operation that is called, labelled by the name of
+the operation, without any <code class="docutils literal notranslate"><span class="pre">time</span></code> form in the script; a repeated operation gets <code class="docutils literal notranslate"><span class="pre">#2</span></code>, <code class="docutils literal notranslate"><span class="pre">#3</span></code>, … after its name. Set
+before the declarations, it also records their loading, as <code class="docutils literal notranslate"><span class="pre">parsing</span></code>, as the benchmark binaries do.</p></li>
+</ul>
+</section>
+<section id="options">
+<h2>Options<a class="headerlink" href="#options" title="Link to this heading">¶</a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Values</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">:alphabet</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;on-the-fly&quot;</span></code> (default), <code class="docutils literal notranslate"><span class="pre">&quot;bytes&quot;</span></code></p></td>
+<td><p>The <a class="reference internal" href="#alphabets">script alphabet</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">:default</span></code></p></td>
+<td><p>Hint-only application</p></td>
+<td><p>Changes a hint default; see <a class="reference internal" href="#arguments">Arguments</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">:produce-witnesses</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">false</span></code> (default), <code class="docutils literal notranslate"><span class="pre">true</span></code></p></td>
+<td><p>See <a class="reference internal" href="#witnesses">Witnesses</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">:time-operations</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">false</span></code> (default), <code class="docutils literal notranslate"><span class="pre">true</span></code></p></td>
+<td><p>See <a class="reference internal" href="#timing">Timing</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">:optimize</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">false</span></code> (default), <code class="docutils literal notranslate"><span class="pre">true</span></code></p></td>
+<td><p>See <a class="reference internal" href="#optimizer">Optimizer</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">:trace</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">false</span></code> (default), <code class="docutils literal notranslate"><span class="pre">true</span></code></p></td>
+<td><p>Prints each library call and hints to standard error</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">:loops-and-recursion</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">false</span></code> (default), <code class="docutils literal notranslate"><span class="pre">true</span></code></p></td>
+<td><p>Enables <a class="reference internal" href="#loops-and-recursion">loops and recursion</a></p></td>
+</tr>
+</tbody>
+</table>
+<p><code class="docutils literal notranslate"><span class="pre">set-info</span></code> attaches information that does not change evaluation; see <a class="reference internal" href="#script-information">Script information</a>.</p>
+</section>
+<section id="optimizer">
+<h2>Optimizer<a class="headerlink" href="#optimizer" title="Link to this heading">¶</a></h2>
+<p>By default a script runs exactly as written. <code class="docutils literal notranslate"><span class="pre">(set-option</span> <span class="pre">:optimize</span> <span class="pre">true)</span></code> allows the interpreter to replace the
+calls a script asks for with cheaper ones.</p>
+<ul class="simple">
+<li><p><strong>What is preserved:</strong> the language of every automaton, and every result that depends only on languages.</p></li>
+<li><p><strong>What is not preserved:</strong> the structure of automata. The number of states, the numbering of states, and which
+witness is returned may differ.</p></li>
+<li><p><strong>What is never changed:</strong> the operand of a form that shows structure, namely <code class="docutils literal notranslate"><span class="pre">print</span></code>, <code class="docutils literal notranslate"><span class="pre">write</span></code>, the
+<code class="docutils literal notranslate"><span class="pre">number-of-states</span></code> and <code class="docutils literal notranslate"><span class="pre">number-of-transitions</span></code> operations, and the predicates on structure such as
+<code class="docutils literal notranslate"><span class="pre">nfa:deterministic?</span></code>, is computed as written.</p></li>
+<li><p><strong>What is reported:</strong> timing records and the trace describe the calls that were made, not the calls that were
+written.</p></li>
+</ul>
+<p>The first rewrites planned are:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Written</p></th>
+<th class="head"><p>Run</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">(nfa:language-empty?</span> <span class="pre">(nfa:intersection</span> <span class="pre">a</span> <span class="pre">b))</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">is_intersection_empty(a,</span> <span class="pre">b)</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>A definition whose value is never used</p></td>
+<td><p>Nothing</p></td>
+</tr>
+<tr class="row-even"><td><p>The same application of the same values twice</p></td>
+<td><p>One call</p></td>
+</tr>
+<tr class="row-odd"><td><p>The last use of a named value</p></td>
+<td><p>The operand is moved instead of copied</p></td>
+</tr>
+</tbody>
+</table>
+<p>A benchmark that measures one specific operation should leave the optimizer off.</p>
+</section>
+<section id="portable-core">
+<h2>Portable core<a class="headerlink" href="#portable-core" title="Link to this heading">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">.emp</span></code> programs were interpreted by several automata libraries, to compare them on the same inputs. A script whose
+header says <code class="docutils literal notranslate"><span class="pre">:profile</span> <span class="pre">core</span></code>, as <code class="docutils literal notranslate"><span class="pre">(mata-script</span> <span class="pre">&quot;0.1.0&quot;</span> <span class="pre">:profile</span> <span class="pre">core)</span></code>, promises to stay within a subset that another
+library can implement, and the checker rejects anything outside of it, before <code class="docutils literal notranslate"><span class="pre">check</span></code> reports and before <code class="docutils literal notranslate"><span class="pre">run</span></code> runs:</p>
+<ul class="simple">
+<li><p><strong>Forms:</strong> <code class="docutils literal notranslate"><span class="pre">declare-input</span></code>, <code class="docutils literal notranslate"><span class="pre">declare-inputs</span></code>, <code class="docutils literal notranslate"><span class="pre">define</span></code> of a value, <code class="docutils literal notranslate"><span class="pre">let</span></code>, <code class="docutils literal notranslate"><span class="pre">-&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">time</span></code>, <code class="docutils literal notranslate"><span class="pre">check</span></code>, <code class="docutils literal notranslate"><span class="pre">assert</span></code>, <code class="docutils literal notranslate"><span class="pre">print</span></code>,
+<code class="docutils literal notranslate"><span class="pre">echo</span></code>, <code class="docutils literal notranslate"><span class="pre">set-option</span></code>, <code class="docutils literal notranslate"><span class="pre">set-info</span></code>; no defined functions, no <code class="docutils literal notranslate"><span class="pre">lambda</span></code>, no conditionals, and no loops or recursion:
+<code class="docutils literal notranslate"><span class="pre">:loops-and-recursion</span></code> cannot be turned on.</p></li>
+<li><p><strong>Sorts:</strong> <code class="docutils literal notranslate"><span class="pre">Nfa</span></code>, <code class="docutils literal notranslate"><span class="pre">Alphabet</span></code>, <code class="docutils literal notranslate"><span class="pre">Bool</span></code>, <code class="docutils literal notranslate"><span class="pre">Int</span></code>, <code class="docutils literal notranslate"><span class="pre">String</span></code>, <code class="docutils literal notranslate"><span class="pre">(List</span> <span class="pre">T)</span></code>.</p></li>
+<li><p><strong>Operations:</strong> <code class="docutils literal notranslate"><span class="pre">nfa:load</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:union-nondeterministic</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:intersection</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:complement</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:concatenate</span></code>,
+<code class="docutils literal notranslate"><span class="pre">nfa:determinize</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:minimize</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:language-empty?</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:included?</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:equivalent?</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:universal?</span></code>,
+<code class="docutils literal notranslate"><span class="pre">(script-alphabet)</span></code>, and the <code class="docutils literal notranslate"><span class="pre">list:</span></code> functions.</p></li>
+</ul>
+<p>A script in the portable core is always guaranteed to <a class="reference internal" href="#termination">terminate</a>.</p>
+<p>An interpreter for another library must reject an operation it does not have. It may ignore a hint it does not know,
+with a warning, because a hint only selects how a result is computed.</p>
+</section>
+<section id="script-information">
+<span id="id1"></span><h2>Script information<a class="headerlink" href="#script-information" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">set-info</span></code> attaches information to a script that does not change what it computes; <code class="docutils literal notranslate"><span class="pre">get-info</span></code> reads it back, and is
+<code class="docutils literal notranslate"><span class="pre">none</span></code> for a key the script did not set. The keys are fixed, so that a tool reading a set of scripts finds the same
+fact under the same key:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Sort</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">:name</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">String</span></code></p></td>
+<td><p>A short name, as <code class="docutils literal notranslate"><span class="pre">&quot;email-filter&quot;</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">:description</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">String</span></code></p></td>
+<td><p>What the script computes</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">:source</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">String</span></code></p></td>
+<td><p>Where the script or its benchmark comes from, as <code class="docutils literal notranslate"><span class="pre">&quot;CADE'23,</span> <span class="pre">b-regex&quot;</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">:license</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">String</span></code></p></td>
+<td><p>The license of the script</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">:authors</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">String</span></code></p></td>
+<td><p>Who wrote it</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">:expects</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Bool</span></code></p></td>
+<td><p>The verdict the script is expected to print, as SMT-LIB’s <code class="docutils literal notranslate"><span class="pre">:status</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">:x-…</span></code></p></td>
+<td><p>Any</p></td>
+<td><p>Free for any use, as <code class="docutils literal notranslate"><span class="pre">:x-timeout</span></code>; never given a meaning by a later version</p></td>
+</tr>
+</tbody>
+</table>
+<p>Any other key is an error, and so is a value of the wrong sort. The profile is not information: it changes what the
+checker accepts, so it is part of the header.</p>
+</section>
+<section id="versions">
+<span id="id2"></span><h2>Versions<a class="headerlink" href="#versions" title="Link to this heading">¶</a></h2>
+<p>A script names the version of the language it is written for in a header, the first form of the file:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="o">#</span><span class="nv">!/usr/bin/env</span><span class="w"> </span><span class="nv">-S</span><span class="w"> </span><span class="nv">mata</span><span class="w"> </span><span class="nv">script</span><span class="w"> </span><span class="nv">run</span>
+<span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span>
+<span class="w">  </span><span class="nv">:requires</span><span class="w"> </span><span class="p">(</span><span class="nf">hints</span><span class="w"> </span><span class="nv">witnesses</span><span class="p">)</span><span class="w">   </span><span class="c1">; optional features the script needs</span>
+<span class="w">  </span><span class="nv">:profile</span><span class="w"> </span><span class="nv">core</span><span class="p">)</span><span class="w">                </span><span class="c1">; optional: the portable core</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>The framing never changes.</strong> In every version, a script is an optional <code class="docutils literal notranslate"><span class="pre">#!</span></code> line, whitespace and <code class="docutils literal notranslate"><span class="pre">;</span></code> comments,
+then <code class="docutils literal notranslate"><span class="pre">(mata-script</span> <span class="pre">&quot;MAJOR.MINOR.PATCH&quot;</span> <span class="pre">…)</span></code>, with whitespace and comments allowed between its tokens. An interpreter
+reads the version from this framing before it parses the rest, so a script for a version it does not run is
+rejected with the version it needs, as <code class="docutils literal notranslate"><span class="pre">the</span> <span class="pre">script</span> <span class="pre">needs</span> <span class="pre">Mata</span> <span class="pre">Script</span> <span class="pre">0.2.0;</span> <span class="pre">this</span> <span class="pre">mata</span> <span class="pre">runs</span> <span class="pre">Mata</span> <span class="pre">Script</span> <span class="pre">0.1.x</span></code>, never
+with a syntax error about something that version added. A header typed into a REPL session is checked the same way.</p></li>
+<li><p><strong>A major version may break anything:</strong> syntax, the meaning of a form, a removed or renamed operation, the printed
+formats, the exit statuses. An interpreter runs one major version.</p></li>
+<li><p><strong>A minor version only adds,</strong> from <code class="docutils literal notranslate"><span class="pre">1.0.0</span></code> on: an interpreter of <code class="docutils literal notranslate"><span class="pre">1.4</span></code> runs scripts for <code class="docutils literal notranslate"><span class="pre">1.0</span></code> to <code class="docutils literal notranslate"><span class="pre">1.4</span></code>, and rejects
+a script for <code class="docutils literal notranslate"><span class="pre">1.5</span></code>. Before <code class="docutils literal notranslate"><span class="pre">1.0.0</span></code>, every minor version may break, so an interpreter of <code class="docutils literal notranslate"><span class="pre">0.1</span></code> runs only <code class="docutils literal notranslate"><span class="pre">0.1</span></code> scripts.</p></li>
+<li><p><strong>A patch version</strong> never changes what a script means; an interpreter of <code class="docutils literal notranslate"><span class="pre">0.1.0</span></code> runs a script that declares
+<code class="docutils literal notranslate"><span class="pre">0.1.7</span></code>.</p></li>
+<li><p><strong>A version selects the names a script sees.</strong> Every operation records the version that added it, and a script
+sees only those of its declared version. Every namespaced name and every name of the language is reserved, whether
+the declared version has it yet or not, so adding an operation cannot change the meaning of a script that defined a
+name of its own.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">:requires</span></code></strong> lists optional parts of the language that the script needs: <code class="docutils literal notranslate"><span class="pre">hints</span></code>, <code class="docutils literal notranslate"><span class="pre">witnesses</span></code>, <code class="docutils literal notranslate"><span class="pre">transducers</span></code>,
+<code class="docutils literal notranslate"><span class="pre">loops-and-recursion</span></code>, <code class="docutils literal notranslate"><span class="pre">optimizer</span></code>, <code class="docutils literal notranslate"><span class="pre">trace</span></code>, <code class="docutils literal notranslate"><span class="pre">automaton</span></code>, <code class="docutils literal notranslate"><span class="pre">strings</span></code> and <code class="docutils literal notranslate"><span class="pre">intermediate</span></code>. An interpreter without one
+of them rejects the script before running it, naming the feature, rather than failing at the first form that needs
+it. <code class="docutils literal notranslate"><span class="pre">mata</span> <span class="pre">formats</span></code> lists the features and whether the build implements them.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">:profile</span></code></strong> selects a <a class="reference internal" href="#portable-core">profile</a>; <code class="docutils literal notranslate"><span class="pre">core</span></code> is the only one, and any other name is an error.</p></li>
+<li><p><strong>A script without a header</strong> is read as the version of the interpreter that runs it. That suits a one-line
+<code class="docutils literal notranslate"><span class="pre">--expression</span></code> and an interactive session, but a script kept in a file should name its version; <code class="docutils literal notranslate"><span class="pre">mata</span> <span class="pre">script</span> <span class="pre">check</span></code>
+warns about one that does not.</p></li>
+<li><p><strong>Deprecation.</strong> A minor version may deprecate a name with a warning; the name is removed only in the next major
+version.</p></li>
+</ul>
+<p>The language starts at <code class="docutils literal notranslate"><span class="pre">0.1.0</span></code>. The version describes the language only: the behaviour of the library, such as the
+numbering of states or the default algorithm of an operation, and the options of the <code class="docutils literal notranslate"><span class="pre">mata</span></code> command have versions of
+their own, which <code class="docutils literal notranslate"><span class="pre">mata</span> <span class="pre">version</span></code> prints beside it.</p>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading">¶</a></h2>
+<p>A regression specification that needs no input file:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">set-option</span><span class="w"> </span><span class="nv">:alphabet</span><span class="w"> </span><span class="s">"bytes"</span><span class="p">)</span>
+
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">language</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:create-from-regex</span><span class="w"> </span><span class="s">"a(b|c)*"</span><span class="p">))</span>
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">minimal</span><span class="w"> </span><span class="p">(</span><span class="nf">-&gt;</span><span class="w"> </span><span class="nv">language</span><span class="w"> </span><span class="nv">nfa:determinize</span><span class="w"> </span><span class="nv">nfa:minimize</span><span class="p">))</span>
+
+<span class="p">(</span><span class="nf">assert</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:deterministic?</span><span class="w"> </span><span class="nv">minimal</span><span class="p">))</span>
+<span class="p">(</span><span class="nf">assert</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:equivalent?</span><span class="w"> </span><span class="nv">language</span><span class="w"> </span><span class="nv">minimal</span><span class="p">))</span>
+<span class="p">(</span><span class="nf">assert</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:in-language?</span><span class="w"> </span><span class="nv">minimal</span><span class="w"> </span><span class="p">(</span><span class="nf">word</span><span class="w"> </span><span class="s">"a"</span><span class="w"> </span><span class="s">"b"</span><span class="w"> </span><span class="s">"c"</span><span class="p">)))</span>
+<span class="p">(</span><span class="nf">assert</span><span class="w"> </span><span class="p">(</span><span class="nb">not</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:in-language?</span><span class="w"> </span><span class="nv">minimal</span><span class="w"> </span><span class="p">(</span><span class="nf">word</span><span class="w"> </span><span class="s">"b"</span><span class="p">))))</span>
+</pre></div>
+</div>
+<p>The image of a language under a transducer, checked against a specification, with a function:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">transducer</span><span class="w"> </span><span class="nv">Nft</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">language</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">specification</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">)</span>
+
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="p">(</span><span class="nf">image</span><span class="w"> </span><span class="p">(</span><span class="nf">transducer</span><span class="w"> </span><span class="nv">Nft</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nf">language</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">))</span>
+<span class="w">  </span><span class="p">(</span><span class="nf">nft:to-nfa</span><span class="w"> </span><span class="p">(</span><span class="nf">nft:apply</span><span class="w"> </span><span class="nv">transducer</span><span class="w"> </span><span class="nv">language</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">counterexample</span>
+<span class="w">  </span><span class="p">(</span><span class="nf">witness</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:included?</span><span class="w"> </span><span class="p">(</span><span class="nf">image</span><span class="w"> </span><span class="nv">transducer</span><span class="w"> </span><span class="nv">language</span><span class="p">)</span><span class="w"> </span><span class="nv">specification</span><span class="p">)))</span>
+<span class="p">(</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nf">none?</span><span class="w"> </span><span class="nv">counterexample</span><span class="p">)</span>
+<span class="w">    </span><span class="p">(</span><span class="nf">echo</span><span class="w"> </span><span class="s">"the image satisfies the specification"</span><span class="p">)</span>
+<span class="w">    </span><span class="p">(</span><span class="nf">print</span><span class="w"> </span><span class="p">(</span><span class="nf">get</span><span class="w"> </span><span class="nv">counterexample</span><span class="p">)))</span>
+</pre></div>
+</div>
+<p>A script that works on an input of either kind:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="w"> </span><span class="nv">:requires</span><span class="w"> </span><span class="p">(</span><span class="nf">automaton</span><span class="p">))</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">Automaton</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">b</span><span class="w"> </span><span class="nv">Automaton</span><span class="p">)</span>
+
+<span class="p">(</span><span class="nf">check</span><span class="w"> </span><span class="p">(</span><span class="nf">automaton:included?</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">b</span><span class="p">))</span>
+<span class="p">(</span><span class="nf">check</span><span class="w"> </span><span class="p">(</span><span class="nf">automaton:included?</span><span class="w"> </span><span class="nv">b</span><span class="w"> </span><span class="nv">a</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="open-questions">
+<h2>Open questions<a class="headerlink" href="#open-questions" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Command-line interface.</strong> Settled in <a class="reference internal" href="cli.html"><span class="doc std std-doc">The <code class="docutils literal notranslate"><span class="pre">mata</span></code> command</span></a>: inputs are positional or named with <code class="docutils literal notranslate"><span class="pre">--input</span></code>,
+values come from <code class="docutils literal notranslate"><span class="pre">declare-param</span></code> and <code class="docutils literal notranslate"><span class="pre">--param</span></code>, options and hint defaults are set in the script only, and <code class="docutils literal notranslate"><span class="pre">check</span></code>
+writes its report to standard error. A script written inline in a shell command or in a <code class="docutils literal notranslate"><span class="pre">pycobench</span></code> job still needs
+care, because both can replace <code class="docutils literal notranslate"><span class="pre">$1</span></code> themselves before the interpreter sees it.</p></li>
+<li><p><strong>Loops and recursion</strong> are designed as an option that the first interpreter leaves out. Whether two functions
+should be able to call each other by name is open.</p></li>
+<li><p><strong>Runaway scripts.</strong> A script without the termination guarantee can run forever. Whether the interpreter should
+limit the depth of calls and the number of rounds of a loop is open.</p></li>
+<li><p><strong>Alternating automata</strong> are not covered, as the library does not support them.</p></li>
+<li><p><strong>The exact set of rewrites</strong> of the optimizer, and whether the list of forms that show structure is the right one.</p></li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="automata-format.html">Automata Format</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">(Auto)Mata Script Language</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#a-first-example">A first example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#design-principles">Design principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#lexical-structure">Lexical structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#grammar">Grammar</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#values-and-sorts">Values and sorts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#definitions-functions-and-conditionals">Definitions, functions and conditionals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#inputs">Inputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#script-alphabets">Alphabets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#operations">Operations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reporting-results">Reporting results</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#timing">Timing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#options">Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#optimizer">Optimizer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#portable-core">Portable core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#script-information">Script information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#versions">Versions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#open-questions">Open questions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">The <code class="docutils literal notranslate"><span class="pre">mata</span></code> command</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="automaton.html">Automaton Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="applications.html">Strings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="namespacelist.html">Namespace list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="classlist.html">Class list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="filelist.html">File list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="structlist.html">Struct list</a></li>
+</ul>
+
+
+<hr />
+<ul>
+    
+    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/">Mata website</a></li>
+    
+    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/playground/">Playground</a></li>
+    
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="automata-format.html" title="previous chapter">Automata Format</a></li>
+      <li>Next: <a href="cli.html" title="next chapter">The <code class="docutils literal notranslate"><span class="pre">mata</span></code> command</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.2.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/script-language.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
