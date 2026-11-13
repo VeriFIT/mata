@@ -6,6 +6,7 @@
 #include <limits>
 #include <optional>
 #include <ranges>
+#include <sstream>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
@@ -4121,6 +4122,21 @@ TEST_CASE("mata::nft::print_to_mata()") {
 	aut_big.delta.add(7, 'a', 8);
 	aut_big.final = {3};
 	CHECK(are_equivalent(aut_big, nft::builder::parse_from_mata(aut_big.print_to_mata())));
+}
+
+TEST_CASE("mata::nft::print_to_mata() prints decimals to a stream set to another base") {
+	Nft nft{Nft::with_levels(2, 12)};
+	nft.initial = {10};
+	nft.final = {11};
+	nft.delta.add(10, 12, 11);
+	std::ostringstream output;
+	output << std::hex;
+	nft.print_to_mata(output);
+	CHECK(
+		output.str() ==
+		"@NFT-explicit\n%Alphabet-auto\n%Initial q10\n%Final q11\n%Levels q10:0 q11:0\n%LevelsNum 2\nq10 12 q11\n"
+	);
+	CHECK(output.str() == nft.print_to_mata());
 }
 
 TEST_CASE("mata::nft::print_to_mata() with names that need quoting (#1021)") {

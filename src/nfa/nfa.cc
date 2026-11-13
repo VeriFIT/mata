@@ -17,6 +17,8 @@
 #include <mata/simlib/explicit_lts.hh>
 #include <mata/utils/assert.hh>
 
+#include "../mata-writer.hh"
+
 using namespace mata::utils;
 using namespace mata::nfa;
 using mata::BoolVector;
@@ -299,37 +301,33 @@ void Nfa::print_to_dot(
 	print_to_dot(output, decode_ascii_chars, use_intervals, max_label_length, alphabet);
 }
 
-std::string Nfa::print_to_mata(const Alphabet* alphabet) const {
-	std::stringstream output;
-	print_to_mata(output, alphabet);
-	return output.str();
-}
-
-void Nfa::print_to_mata(std::ostream& output, const Alphabet* alphabet) const {
-	output << "@NFA-explicit\n" << "%Alphabet-auto\n";
+namespace {
+/// Writes @p nfa as @c Nfa::print_to_mata() prints it.
+void write_mata(const Nfa& nfa, const mata::Alphabet* alphabet, mata::parser::MataWriter& writer) {
+	writer << "@NFA-explicit\n" << "%Alphabet-auto\n";
 	// TODO should be this, but we cannot parse %Alphabet-numbers yet
 	//<< "%Alphabet-numbers\n";
 
-	if (!initial.empty()) {
-		output << "%Initial";
-		for (const State init_state : initial) { output << " q" << init_state; }
-		output << '\n';
+	if (!nfa.initial.empty()) {
+		writer << "%Initial";
+		for (const State init_state : nfa.initial) { writer << " q" << init_state; }
+		writer.end_line();
 	}
 
-	if (!final.empty()) {
-		output << "%Final";
-		for (const State final_state : final) { output << " q" << final_state; }
-		output << '\n';
+	if (!nfa.final.empty()) {
+		writer << "%Final";
+		for (const State final_state : nfa.final) { writer << " q" << final_state; }
+		writer.end_line();
 	}
 
-	const Alphabet* const used_alphabet{alphabet != nullptr ? alphabet : this->alphabet.get()};
+	const mata::Alphabet* const used_alphabet{alphabet != nullptr ? alphabet : nfa.alphabet.get()};
 	// Reverse lookups may scan the whole alphabet; translate each symbol once.
 	std::unordered_map<Symbol, std::string> symbol_names{};
-	for (const Transition& trans : delta.transitions()) {
-		output << "q" << trans.source << " ";
+	for (const Transition& trans : nfa.delta.transitions()) {
+		writer << "q" << trans.source << " ";
 		// EPSILON is not a member of any alphabet; print the name the parser maps back.
 		if (trans.symbol == EPSILON) {
-			output << EPSILON_NAME;
+			writer << mata::EPSILON_NAME;
 		} else if (used_alphabet != nullptr) {
 			auto it{symbol_names.find(trans.symbol)};
 			if (it == symbol_names.end()) {
@@ -340,15 +338,26 @@ void Nfa::print_to_mata(std::ostream& output, const Alphabet* alphabet) const {
 						)
 						.first;
 			}
-			output << it->second;
+			writer << it->second;
 		} else {
-			// Plain decimal, independent of the stream's format flags: the parser reads it back as decimal.
-			output << std::to_string(trans.symbol);
+			writer << trans.symbol;
 		}
-		output << " q" << trans.target << '\n';
+		writer << " q" << trans.target;
+		writer.end_line();
 	}
-	// See print_to_dot(): one flush per call instead of one per line.
-	output.flush();
+}
+} // namespace
+
+std::string Nfa::print_to_mata(const Alphabet* alphabet) const {
+	parser::MataWriter writer;
+	write_mata(*this, alphabet, writer);
+	return writer.take();
+}
+
+void Nfa::print_to_mata(std::ostream& output, const Alphabet* alphabet) const {
+	parser::MataWriter writer{output};
+	write_mata(*this, alphabet, writer);
+	writer.flush();
 }
 
 void Nfa::print_to_mata(const std::string& filename, const Alphabet* alphabet) const {

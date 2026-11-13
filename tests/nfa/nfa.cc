@@ -3,6 +3,7 @@
  */
 
 #include <random>
+#include <sstream>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
@@ -6140,6 +6141,16 @@ TEST_CASE("mata::nfa:: print_to_mata") {
 		builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(aut_big_mata))[0], &int_alph);
 
 	CHECK(are_equivalent(aut_big, aut_big_from_mata));
+}
+
+TEST_CASE("mata::nfa:: print_to_mata prints decimals to a stream set to another base") {
+	Nfa nfa{20, {10}, {15}};
+	nfa.delta.add(10, 12, 15);
+	std::ostringstream output;
+	output << std::hex;
+	nfa.print_to_mata(output);
+	CHECK(output.str() == "@NFA-explicit\n%Alphabet-auto\n%Initial q10\n%Final q15\nq10 12 q15\n");
+	CHECK(output.str() == nfa.print_to_mata());
 }
 
 TEST_CASE("mata::nfa:: print_to_mata with names that need quoting (#1021)") {
