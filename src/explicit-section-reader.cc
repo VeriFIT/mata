@@ -12,7 +12,7 @@ using mata::parser::ExplicitSectionReader;
 
 namespace {
 /// @c std::isspace() in the "C" locale, which @c parse_mf() runs in.
-bool is_space(const char ch) { return ch == ' ' || (ch >= '\t' && ch <= '\r'); }
+constexpr bool is_space(const char ch) { return ch == ' ' || (ch >= '\t' && ch <= '\r'); }
 
 /// Whether @p ch may occur in the name of a section type, as in @c parse_mf().
 bool is_type_char(const char ch) {
@@ -32,26 +32,39 @@ bool is_type_char(const char ch) {
 	}
 }
 
-/// Whether @p ch ends an unquoted token in a way only the general reader handles: a Boolean operator or parenthesis
-///  of a transition formula, or a character @c parse_mf() rejects inside a token.
-bool leaves_subset_in_token(const char ch) {
-	switch (ch) {
-		case '"':
-		case '(':
-		case ')':
-		case '@':
-		case '%':
-		case '&':
-		case '|':
-		case '!':
-			return true;
-		default:
-			return false;
-	}
-}
+/// The kinds of characters the tokenizer tells apart.
+enum class CharKind : std::uint8_t {
+	/// Continues an unquoted token.
+	Ordinary,
+	/// See @c is_space().
+	Space,
+	/// Starts a comment.
+	Hash,
+	Quote,
+	/// An operator or parenthesis of a transition formula, which @c parse_mf() makes a token of its own.
+	Formula,
+	/// `@` and `%`, which @c parse_mf() reads specially.
+	Special,
+};
 
-/// Whether @p ch is an operator or parenthesis of a transition formula, which @c parse_mf() makes a token of its own.
-bool is_formula_char(const char ch) { return ch == '&' || ch == '|' || ch == '!' || ch == '(' || ch == ')'; }
+constexpr std::array<CharKind, 256> CHAR_KINDS{[] {
+	std::array<CharKind, 256> kinds{};
+	for (size_t ch{0}; ch < kinds.size(); ++ch) {
+		if (is_space(static_cast<char>(ch))) { kinds[ch] = CharKind::Space; }
+	}
+	kinds['#'] = CharKind::Hash;
+	kinds['"'] = CharKind::Quote;
+	kinds['&'] = CharKind::Formula;
+	kinds['|'] = CharKind::Formula;
+	kinds['!'] = CharKind::Formula;
+	kinds['('] = CharKind::Formula;
+	kinds[')'] = CharKind::Formula;
+	kinds['@'] = CharKind::Special;
+	kinds['%'] = CharKind::Special;
+	return kinds;
+}()};
+
+CharKind char_kind(const char ch) { return CHAR_KINDS[static_cast<unsigned char>(ch)]; }
 } // namespace
 
 std::string mata::parser::read_whole_stream(std::istream& input) {
@@ -193,10 +206,12 @@ bool ExplicitSectionReader::tokenize(const std::string_view line) {
 	size_t i{0};
 	bool first{true};
 	while (true) {
-		while (i < line_size && is_space(line[i])) { ++i; }
-		if (i == line_size || line[i] == '#') { return true; }
+		while (i < line_size && char_kind(line[i]) == CharKind::Space) { ++i; }
+		if (i == line_size) { return true; }
+		const CharKind kind{char_kind(line[i])};
+		if (kind == CharKind::Hash) { return true; }
 
-		if (line[i] == '"') {
+		if (kind == CharKind::Quote) {
 			// parse_mf() reads an operator glued to the quote as the start of an unquoted token, which a quote may
 			//  not continue.
 			if (formulas_ && i > 0 && (line[i - 1] == '&' || line[i - 1] == '|' || line[i - 1] == '!')) {
@@ -227,17 +242,22 @@ bool ExplicitSectionReader::tokenize(const std::string_view line) {
 		}
 
 		const size_t start{i};
-		if (formulas_ && is_formula_char(line[i])) {
+		if (kind == CharKind::Formula && formulas_) {
 			tokens_.push_back({line.substr(i, 1), false});
 			++i;
 			first = false;
 			continue;
 		}
 		// Only the first token of a line may be a %KEY.
-		if (line[i] == '%' ? !first : leaves_subset_in_token(line[i])) { return false; }
-		for (++i; i < line_size && !is_space(line[i]) && line[i] != '#'; ++i) {
-			if (formulas_ && is_formula_char(line[i])) { break; }
-			if (leaves_subset_in_token(line[i])) { return false; }
+		if (kind != CharKind::Ordinary && (line[i] != '%' || !first)) { return false; }
+		for (++i; i < line_size; ++i) {
+			const CharKind next_kind{char_kind(line[i])};
+			if (next_kind == CharKind::Ordinary) { continue; }
+			if (next_kind == CharKind::Space || next_kind == CharKind::Hash ||
+				(next_kind == CharKind::Formula && formulas_)) {
+				break;
+			}
+			return false;
 		}
 		tokens_.push_back({line.substr(start, i - start), false});
 		first = false;
