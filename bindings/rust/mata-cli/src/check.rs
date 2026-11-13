@@ -341,9 +341,7 @@ impl<'a> Checker<'a> {
 	/// A function value in a position that the termination guarantee does not allow; `to_apply` is the
 	/// position of the function a `list:` function applies, the only one it allows.
 	fn consumed(&mut self, sort: Option<&str>, to_apply: bool) {
-		let function = sort.is_some_and(|sort| {
-			sort == "Function" || compound(sort) == Some(("Option", "Function"))
-		});
+		let function = sort.is_some_and(holds_function);
 		if function && !to_apply {
 			self.termination = Switch::Off;
 		}
@@ -1605,12 +1603,16 @@ impl<'a> Checker<'a> {
 	}
 }
 
-/// Whether a value of `sort` may be a function: an `(Option Function)` is one unless it is `none`, which
+/// Whether a value of `sort` may be a function: an optional function is one unless it is `none`, which
 /// the evaluator rejects when it is applied.
 fn may_be_function(sort: &str) -> bool {
-	accepts("Function", sort)
-		|| compound(sort)
-			.is_some_and(|(name, inner)| name == "Option" && accepts("Function", inner))
+	accepts("Function", sort) || holds_function(sort)
+}
+
+/// Whether `sort` is `Function`, possibly inside any number of `Option`s.
+fn holds_function(sort: &str) -> bool {
+	sort == "Function"
+		|| compound(sort).is_some_and(|(name, inner)| name == "Option" && holds_function(inner))
 }
 
 /// Splits `(List Nfa)` into `("List", "Nfa")`; `None` for a simple sort.

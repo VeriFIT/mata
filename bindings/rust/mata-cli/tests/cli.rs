@@ -2984,18 +2984,19 @@ fn check_rejects_a_pipeline_step_that_is_not_a_function() {
 	// A value that may be a function is applied, both as a step and as the head of a call.
 	let output = run_script(
 		"(define (id x) x)\n(define f (Option Function) (id (lambda (x) (+ x 1))))\n\
-		 (print (-> 2 f))\n(print (f 3))",
+		 (define g (as (lambda (x) x) (Option (Option Function))))\n\
+		 (print (-> 2 f))\n(print (f 3))\n(print (-> 5 g))\n(print (g 6))",
 		true,
 		&[],
 	);
 	assert_eq!(status(&output), 0, "{}", stderr(&output));
-	assert_eq!(stdout(&output), "3\n4\n");
+	assert_eq!(stdout(&output), "3\n4\n5\n6\n");
 	// Passed as data, it may call itself, so the guarantee goes.
 	let output = mata([
 		"script",
 		"check",
 		"--expression",
-		"(define g (as (lambda (f x) (f f x)) (Option Function)))\n(g g 0)",
+		"(define g (as (lambda (f x) (f f x)) (Option (Option Function))))\n(g g 0)",
 	]);
 	assert!(
 		stderr(&output).contains("termination: not-guaranteed"),
