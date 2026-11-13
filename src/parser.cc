@@ -10,9 +10,9 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <deque>
+#include <span>
 #include <sstream>
-
-using std::tie;
 
 using mata::parser::Parsed;
 using mata::parser::ParsedSection;
@@ -21,75 +21,90 @@ namespace {
 /// @c std::isspace() in the "C" locale.
 bool is_space(const char ch) { return ch == ' ' || (ch >= '\t' && ch <= '\r'); }
 
-/// One token of a line, as @c get_token_from_line() produced it.
-using Token = std::pair<std::string, bool>;
+/// One token of a line: a view into the input, or into @c LineTokens::unescaped for a quoted token with escapes.
+struct Token {
+	std::string_view text;
+	bool quoted;
+};
 
 /**
- * @brief Gets a token from the line, mirroring @c get_token_from_line() of the stream tokenizer.
- *
- * @param pos The position to read from, advanced past the token and the white space that follows it.
- * @param quoted Receives whether the token was read in quotes.
- * @return The token, empty when the line ends. A comment ends the line: everything from @c # on is dropped.
+ * The tokens of a line and of the lines a backslash continues it with. Unquoted tokens are split at the logical
+ *  operators of a transition formula. The buffers are reused from line to line, so reading a line usually allocates
+ *  nothing.
  */
-Token get_token_from_line(const std::string_view line, size_t& pos, bool* quoted) {
-	MATA_ASSERT(nullptr != quoted);
-	*quoted = false;
-	std::string result;
-	while (true) {
-		while (pos < line.size() && is_space(line[pos])) { ++pos; }
-		if (pos == line.size()) { return {}; }
+class LineTokens {
+  public:
+	const std::vector<Token>& tokens() const { return tokens_; }
 
-		const char ch{line[pos]};
-		if (ch == '#') { // clear the rest of the line
-			pos = line.size();
-			return {};
-		}
-		if (ch == '(' || ch == ')') {
-			++pos;
+	void clear() {
+		tokens_.clear();
+		unescaped_.clear();
+	}
+
+	/**
+	 * Appends the tokens of @p line, which has to outlive them. A comment ends the line: everything from @c # on is
+	 *  dropped.
+	 */
+	void tokenize(const std::string_view line) {
+		size_t pos{0};
+		bool first{true};
+		while (true) {
 			while (pos < line.size() && is_space(line[pos])) { ++pos; }
-			return {std::string(1, ch), false};
+			if (pos == line.size() || line[pos] == '#') { return; }
+			if (const char ch{line[pos]}; ch == '(' || ch == ')') {
+				tokens_.push_back({line.substr(pos++, 1), false});
+			} else if (ch == '"') {
+				read_quoted(line, pos);
+			} else {
+				read_unquoted(line, pos, first);
+			}
+			first = false;
 		}
-		if (ch == '"') {
-			*quoted = true;
-			++pos;
+	}
+
+  private:
+	/// Reads the quoted token at @p pos. Only a quote is escaped; any other character keeps its backslash.
+	void read_quoted(const std::string_view line, size_t& pos) {
+		const size_t start{++pos};
+		while (pos < line.size() && line[pos] != '"' && line[pos] != '\\') { ++pos; }
+		std::string_view token{line.substr(start, pos - start)};
+		if (pos < line.size() && line[pos] == '\\') {
+			std::string result{token};
 			while (pos < line.size() && line[pos] != '"') {
 				if (line[pos] == '\\' && pos + 1 < line.size()) {
-					// Only a quote is escaped; any other character keeps its backslash.
 					if (line[++pos] != '"') { result += '\\'; }
 				}
 				result += line[pos++];
 			}
-			if (pos == line.size()) { throw std::runtime_error("missing ending quotes: " + result); }
-			++pos;
-			if (pos < line.size() && !is_space(line[pos]) && line[pos] != '#' && line[pos] != ')') {
-				std::string msg = "misplaced quotes: \"";
-				msg += result;
+			token = unescaped_.emplace_back(std::move(result));
+		}
+		if (pos == line.size()) { throw std::runtime_error("missing ending quotes: " + std::string{token}); }
+		++pos;
+		if (pos < line.size() && !is_space(line[pos]) && line[pos] != '#' && line[pos] != ')') {
+			std::string msg = "misplaced quotes: \"";
+			msg += token;
+			msg += "_\"_";
+			msg += line.substr(pos);
+			throw std::runtime_error(msg);
+		}
+		tokens_.push_back({token, true});
+	}
+
+	/// Reads the unquoted token at @p pos, which may not contain quotes, @, or % inside; the first character may be @
+	///  or %, unless the token is not the @p first one of the line.
+	void read_unquoted(const std::string_view line, size_t& pos, const bool first) {
+		const size_t start{pos++};
+		for (; pos < line.size(); ++pos) {
+			const char c{line[pos]};
+			if (is_space(c) || c == '#' || c == '(' || c == ')') { break; }
+			if (c == '"') {
+				std::string msg = "misplaced quotes: ";
+				msg += line.substr(start, pos - start);
 				msg += "_\"_";
 				msg += line.substr(pos);
 				throw std::runtime_error(msg);
 			}
-			while (pos < line.size() && is_space(line[pos])) { ++pos; }
-			return {std::move(result), true};
-		}
-
-		// An unquoted token, which may not contain quotes, @, or % inside; the first character may be @ or %.
-		const size_t start{pos};
-		do {
-			const char c{line[pos]};
-			if (is_space(c) || c == '#' || c == '(' || c == ')') { break; }
-			if (c == '"' || c == '@' || c == '%') {
-				if (pos == start) {
-					result += c;
-					++pos;
-					continue;
-				}
-				if (c == '"') {
-					std::string msg = "misplaced quotes: ";
-					msg += line.substr(start, pos - start);
-					msg += "_\"_";
-					msg += line.substr(pos);
-					throw std::runtime_error(msg);
-				}
+			if (c == '@' || c == '%') {
 				std::string msg = "misplaced character '";
 				msg += c;
 				msg += "' in string \"";
@@ -99,80 +114,29 @@ Token get_token_from_line(const std::string_view line, size_t& pos, bool* quoted
 				msg += "\"";
 				throw std::runtime_error(msg);
 			}
-			result += c;
-			++pos;
-		} while (pos < line.size());
-		while (pos < line.size() && is_space(line[pos])) { ++pos; }
-		return {std::move(result), false};
-	}
-}
-
-/**
- * @brief Transforms a line into a vector of tokens
- */
-std::vector<Token> tokenize_line(const std::string_view line) {
-	std::vector<Token> token_line;
-	bool first = true;
-	size_t pos = 0;
-	while (true) {
-		Token token{get_token_from_line(line, pos, &token_line.emplace_back().second)};
-		if (!token.second && token.first.empty()) {
-			token_line.pop_back();
-			break;
 		}
-		token_line.back().first = std::move(token.first);
-
-		if (!first && !token_line.back().second) {
-			MATA_ASSERT(!token_line.back().first.empty());
-			if ('@' == token_line.back().first[0]) {
-				throw std::runtime_error("invalid position of @TYPE: " + std::string(line));
-			}
-			if ('%' == token_line.back().first[0]) {
-				throw std::runtime_error("invalid position of %KEY: " + std::string(line));
-			}
+		const std::string_view token{line.substr(start, pos - start)};
+		if (!first) {
+			if ('@' == token[0]) { throw std::runtime_error("invalid position of @TYPE: " + std::string(line)); }
+			if ('%' == token[0]) { throw std::runtime_error("invalid position of %KEY: " + std::string(line)); }
 		}
-		first = false;
-		if (pos >= line.size()) { break; }
-	}
-
-	return token_line;
-}
-
-std::vector<std::pair<std::string, bool>> split_tokens(std::vector<std::pair<std::string, bool>> tokens) {
-	std::vector<std::pair<std::string, bool>> result;
-	result.reserve(tokens.size());
-	for (auto& token : tokens) {
-		if (token.second) { // is quoted?
-			result.push_back(std::move(token));
-			continue;
-		}
-
-		const std::string_view token_string{token.first};
 		size_t last_operator{0};
-		for (size_t i = 0, token_string_size{token_string.size()}; i < token_string_size; ++i) {
-			// One of the logical operators of a transition formula.
-			if (token_string[i] == '&' || token_string[i] == '|' || token_string[i] == '!') {
-				// there is token before logical operator (this is case of binary operators, e.g., a&b)
-				if (const std::string_view token_candidate = token_string.substr(last_operator, i - last_operator);
-					!token_candidate.empty()) {
-					result.emplace_back(token_candidate, false);
-				}
-				result.emplace_back(std::string(1, token_string[i]), false);
+		for (size_t i{0}; i < token.size(); ++i) {
+			// One of the logical operators of a transition formula, a token of its own.
+			if (token[i] == '&' || token[i] == '|' || token[i] == '!') {
+				if (i > last_operator) { tokens_.push_back({token.substr(last_operator, i - last_operator), false}); }
+				tokens_.push_back({token.substr(i, 1), false});
 				last_operator = i + 1;
 			}
 		}
-
-		const size_t length{token_string.length()};
-		if (last_operator == 0) {
-			result.emplace_back(std::move(token));
-		} else if (last_operator != length) {
-			// operator was not last, we need parse rest of token
-			result.emplace_back(token_string.substr(last_operator, length - last_operator), false);
-		}
+		if (last_operator < token.size()) { tokens_.push_back({token.substr(last_operator), false}); }
 	}
 
-	return result;
-}
+	std::vector<Token> tokens_{};
+	/// The quoted tokens with their escapes resolved; a deque keeps the strings, and so the views of the tokens, in
+	///  place.
+	std::deque<std::string> unescaped_{};
+};
 } // namespace
 
 Parsed mata::parser::parse_mf(const std::string& input, const bool keep_quotes) {
@@ -217,7 +181,7 @@ ParsedSection mata::parser::parse_mf_section_view(std::string_view& input, const
 	ParsedSection result;
 
 	bool reading_type = true;
-	std::vector<std::pair<std::string, bool>> token_line{};
+	LineTokens line_tokens{};
 	bool append_line = false;
 	size_t pos = 0;
 
@@ -283,50 +247,40 @@ ParsedSection mata::parser::parse_mf_section_view(std::string_view& input, const
 			continue;
 		}
 
-		std::vector<std::pair<std::string, bool>> temp_token_line = tokenize_line(line);
-		if (temp_token_line.empty()) { continue; }
-
-		if (append_line) {
-			token_line.insert(
-				token_line.end(), std::make_move_iterator(temp_token_line.begin()),
-				std::make_move_iterator(temp_token_line.end())
-			);
-		} else {
-			token_line = std::move(temp_token_line);
-		}
+		if (!append_line) { line_tokens.clear(); }
+		const size_t num_of_tokens_before{line_tokens.tokens().size()};
+		line_tokens.tokenize(line);
+		if (line_tokens.tokens().size() == num_of_tokens_before) { continue; }
 
 		append_line = backslash_ending;
 		if (append_line) { continue; }
 
-		token_line = split_tokens(std::move(token_line));
+		const std::vector<Token>& tokens{line_tokens.tokens()};
+		const bool quoted{tokens[0].quoted};
+		// An unquoted token is never empty.
+		MATA_ASSERT(quoted || '@' != tokens[0].text[0]);
 
-		const std::string& maybe_key = token_line[0].first;
-		const bool& quoted = token_line[0].second;
-		MATA_ASSERT(quoted || '@' != maybe_key[0]);
-
-		if (!quoted && '%' == maybe_key[0]) {
-			const std::string key = maybe_key.substr(1);
+		if (!quoted && '%' == tokens[0].text[0]) {
+			const std::string key{tokens[0].text.substr(1)};
 			if (key.empty()) { throw std::runtime_error("%KEY name missing: " + std::string(line)); }
 
-			auto it = result.dict.find(key);
-			if (result.dict.end() == it) { // insert an empty list
-				tie(it, std::ignore) = result.dict.insert({key, std::vector<std::string>()});
-			}
-
-			std::vector<std::string>& val_list = it->second;
-			std::transform(
-				std::make_move_iterator(token_line.begin() + 1), std::make_move_iterator(token_line.end()),
-				std::back_inserter(val_list),
-				[](std::pair<std::string, bool>&& token) { return std::move(token.first); }
-			);
+			std::vector<std::string>& val_list = result.dict[key];
+			for (const Token& token : std::span{tokens}.subspan(1)) { val_list.emplace_back(token.text); }
 		} else {
-			BodyLine stripped_token_line;
-			stripped_token_line.reserve(token_line.size());
-			for (auto& [token, token_quoted] : token_line) {
-				if (keep_quotes && token_quoted) { token = "\"" + token + "\""; }
-				stripped_token_line.emplace_back(std::move(token), token_quoted);
+			BodyLine& body_line{result.body.emplace_back()};
+			body_line.reserve(tokens.size());
+			for (const auto& [token, token_quoted] : tokens) {
+				if (keep_quotes && token_quoted) {
+					std::string with_quotes;
+					with_quotes.reserve(token.size() + 2);
+					with_quotes += '"';
+					with_quotes += token;
+					with_quotes += '"';
+					body_line.emplace_back(std::move(with_quotes), true);
+				} else {
+					body_line.emplace_back(std::string{token}, token_quoted);
+				}
 			}
-			result.body.push_back(std::move(stripped_token_line));
 		}
 	}
 
