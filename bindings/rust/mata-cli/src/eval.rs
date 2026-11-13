@@ -292,13 +292,7 @@ impl Engine {
 	pub(crate) fn emit(&mut self, text: &str) -> Result<(), Error> {
 		use std::io::Write as _;
 		match &mut self.sink {
-			Sink::Stdout => {
-				let mut stdout = std::io::stdout().lock();
-				stdout
-					.write_all(text.as_bytes())
-					.and_then(|()| stdout.flush())
-					.map_err(|e| Error::plain(format!("cannot write standard output: {e}")))
-			}
+			Sink::Stdout => crate::write_stdout(text),
 			Sink::File(file) => file
 				.write_all(text.as_bytes())
 				.and_then(|()| file.flush())
@@ -762,8 +756,9 @@ impl Engine {
 					let index: usize = name
 						.parse()
 						.map_err(|_| expression.at("bad input reference".into()))?;
-					self.inputs
-						.get(index - 1)
+					index
+						.checked_sub(1)
+						.and_then(|index| self.inputs.get(index))
 						.cloned()
 						.map(Value::String)
 						.ok_or_else(|| expression.at(format!("no positional input {index}")))
@@ -1183,9 +1178,9 @@ impl Engine {
 		if is_timed(name) && name.ends_with('?') {
 			self.last_witness = None;
 		}
-		// A search for a witness makes a real call, so that the library stores a witness.
-		let remembered =
-			self.options.optimize.on() && !(self.witness_requested.on() && name.ends_with('?'));
+		// A decision whose witness is wanted makes a real call, so that the library stores a witness.
+		let wants_witness = self.witness_requested.on() || self.options.produce_witnesses.on();
+		let remembered = self.options.optimize.on() && !(wants_witness && name.ends_with('?'));
 		let key = if remembered {
 			crate::optimize::Memo::key(
 				name,
@@ -1355,11 +1350,65 @@ impl Engine {
 			.map_err(|e| e.to_string())
 	}
 
-	/// Loads one automaton from a path written in the script, relative to the script's directory.
-	pub(crate) fn load_file(&mut self, path: &str, kind: &str) -> Result<Value, Error> {
-		let resolved = self.resolve_path(path);
-		let text = read_text(&resolved.to_string_lossy())?;
-		self.timed("parsing", |engine| engine.parse_text(&text, kind))
+	/// Loads one automaton from a path written in the script, relative to the script's directory, or
+	/// a list of them from a list of paths.
+	pub(crate) fn load(&mut self, paths: &Value, kind: &str) -> Result<Value, Error> {
+		let Value::List(paths) = paths else {
+			let path = as_string(paths).map_err(Error::plain)?;
+			let resolved = self.resolve_path(&path);
+			let text = read_text(&resolved.to_string_lossy())?;
+			return self.timed("parsing", |engine| engine.parse_text(&text, kind));
+		};
+		let mut texts = Vec::with_capacity(paths.len());
+		for path in paths.iter() {
+			let path = as_string(path).map_err(Error::plain)?;
+			let text = read_text(&self.resolve_path(&path).to_string_lossy())?;
+			let count = sections(&text);
+			if count != 1 {
+				return Err(Error::plain(format!(
+					"'{path}' holds {count} automata; load takes one from each path"
+				)));
+			}
+			if kind == "nft" && holds_bits(&text) {
+				return Err(Error::plain(format!(
+					"{path}: a transducer cannot have a bitvector alphabet"
+				)));
+			}
+			texts.push(text);
+		}
+		// The bitvector automata are parsed in one call, which mintermizes them together.
+		let bits: Vec<&String> = texts.iter().filter(|text| holds_bits(text)).collect();
+		let mut shared = if bits.is_empty() {
+			Vec::new()
+		} else {
+			let joined = bits.iter().fold(String::new(), |mut joined, text| {
+				joined.push_str(text);
+				joined.push('\n');
+				joined
+			});
+			self.timed("parsing", |engine| {
+				Nfa::parse_mata_all(&joined, &mut engine.script_alphabet)
+					.map_err(|e| Error::plain(e.to_string()))
+			})?
+		}
+		.into_iter();
+		if shared.len() != bits.len() {
+			return Err(Error::plain(
+				"cannot tell which file each automaton comes from".into(),
+			));
+		}
+		let mut automata = Vec::with_capacity(texts.len());
+		for text in &texts {
+			automata.push(if holds_bits(text) {
+				let nfa = shared
+					.next()
+					.expect("one parsed automaton per bitvector file");
+				of_kind(kind, Value::Nfa(Rc::new(nfa)))
+			} else {
+				self.timed("parsing", |engine| engine.parse_text(text, kind))?
+			});
+		}
+		Ok(Value::List(Rc::new(automata)))
 	}
 
 	/// Loads one automaton from a path given on the command line, relative to the current directory,

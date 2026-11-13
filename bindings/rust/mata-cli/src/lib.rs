@@ -72,6 +72,17 @@ fn automaton_text(text: &dyn std::fmt::Display) -> String {
 	format!("{}\n", text.to_string().trim_end_matches('\n'))
 }
 
+/// Writes `text` to standard output. A closed pipe is an error that reaches the exit status, where
+/// `print!` would panic.
+pub(crate) fn write_stdout(text: &str) -> Result<(), Error> {
+	use std::io::Write as _;
+	let mut stdout = std::io::stdout().lock();
+	stdout
+		.write_all(text.as_bytes())
+		.and_then(|()| stdout.flush())
+		.map_err(|e| Error::plain(format!("cannot write standard output: {e}")))
+}
+
 /// Displays one value on one or more lines, as `cli.md` specifies.
 pub(crate) fn display_value(value: &Value, engine: &eval::Engine) -> String {
 	match value {

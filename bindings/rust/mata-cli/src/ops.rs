@@ -489,7 +489,14 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 		"",
 		"Alphabet",
 	),
-	op("nfa:load", "nfa_load", 1, Some(1), "String", "Nfa"),
+	op(
+		"nfa:load",
+		"nfa_load",
+		1,
+		Some(1),
+		"String|(List String)",
+		"",
+	),
 	op("nfa:parse", "nfa_parse", 1, Some(1), "String", "Nfa"),
 	op("nfa:literal", "nfa_literal", 0, None, "", "Nfa"),
 	op(
@@ -742,7 +749,14 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 		"",
 		"String",
 	),
-	op("nft:load", "nft_load", 1, Some(1), "String", "Nft"),
+	op(
+		"nft:load",
+		"nft_load",
+		1,
+		Some(1),
+		"String|(List String)",
+		"",
+	),
 	op("nft:parse", "nft_parse", 1, Some(1), "String", "Nft"),
 	op("nft:literal", "nft_literal", 0, None, "", "Nft"),
 	op(
@@ -1188,8 +1202,8 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 		"automaton_load",
 		1,
 		Some(1),
-		"String",
-		"Automaton",
+		"String|(List String)",
+		"",
 	),
 	op(
 		"automaton:parse",
@@ -1829,9 +1843,8 @@ fn dispatch_nfa_inspection(
 ) -> Result<Value, Error> {
 	match handler {
 		"nfa_load" => {
-			let [path] = take(arguments, name)?;
-			let path = as_string(&path).map_err(Error::plain)?;
-			engine.load_file(&path, "nfa")
+			let [paths] = take(arguments, name)?;
+			engine.load(&paths, "nfa")
 		}
 		"nfa_parse" => {
 			let [text] = take(arguments, name)?;
@@ -2329,9 +2342,8 @@ fn dispatch_nft_inspection(
 ) -> Result<Value, Error> {
 	match handler {
 		"nft_load" => {
-			let [path] = take(arguments, name)?;
-			let path = as_string(&path).map_err(Error::plain)?;
-			engine.load_file(&path, "nft")
+			let [paths] = take(arguments, name)?;
+			engine.load(&paths, "nft")
 		}
 		"nft_parse" => {
 			let [text] = take(arguments, name)?;
@@ -2877,9 +2889,8 @@ fn dispatch_automaton(
 			})
 		}
 		"automaton_load" => {
-			let [path] = take(arguments, name)?;
-			let path = as_string(&path).map_err(Error::plain)?;
-			engine.load_file(&path, "automaton")
+			let [paths] = take(arguments, name)?;
+			engine.load(&paths, "automaton")
 		}
 		"automaton_parse" => {
 			let [text] = take(arguments, name)?;

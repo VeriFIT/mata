@@ -2778,3 +2778,115 @@ fn the_output_cannot_be_the_script() {
 	);
 	assert_eq!(workspace.read("program.matasc"), "(print 1)\n");
 }
+
+// Review of #1039: standard output, script sources, DOT shapes and tooltips, inputs, memo witnesses, loads
+
+#[test]
+fn a_closed_standard_output_is_an_error_not_a_panic() {
+	let workspace = Workspace::new("closed-stdout");
+	let a = workspace.file("a.mata", NFA);
+	for arguments in [vec!["nfa", "trim", a.as_str()], vec!["formats"]] {
+		let (reader, writer) = std::io::pipe().expect("a pipe");
+		drop(reader);
+		let output = Command::new(env!("CARGO_BIN_EXE_mata"))
+			.args(&arguments)
+			.stdout(writer)
+			.stderr(Stdio::piped())
+			.output()
+			.expect("the mata binary runs");
+		assert_eq!(status(&output), 2, "{arguments:?}: {}", stderr(&output));
+		assert!(
+			stderr(&output).contains("cannot write standard output"),
+			"{arguments:?}: {}",
+			stderr(&output)
+		);
+	}
+}
+
+#[test]
+fn the_script_option_reads_standard_input_for_a_dash() {
+	for subcommand in ["run", "check"] {
+		let output = mata_with_stdin(["script", subcommand, "--script", "-"], "(print 1)\n");
+		assert_eq!(status(&output), 0, "{subcommand}: {}", stderr(&output));
+		let expected = if subcommand == "run" {
+			"1\n"
+		} else {
+			"checked: <stdin>\n"
+		};
+		assert_eq!(stdout(&output), expected);
+	}
+}
+
+#[test]
+fn a_later_dot_shape_of_a_state_wins() {
+	let output = dot_to_mata(
+		"digraph finiteAutomaton {\nnode [shape=circle];\n0 [shape=doublecircle];\n0 [shape=circle];\n\
+		 1 [shape=circle];\n1 [shape=doublecircle];\n0 -> 1 [label=\"a\"];\ni0 -> 0;\n}\n",
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert!(
+		stdout(&output).contains("%Final q1\n"),
+		"{}",
+		stdout(&output)
+	);
+}
+
+#[test]
+fn a_shortened_dot_label_reads_its_tooltip() {
+	let output = dot_to_mata(
+		"digraph finiteAutomaton {\n0 -> 1 [label=\"a,...\", tooltip=\"a,b,&lt;7&gt;\"];\ni0 -> 0;\n}\n",
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	let text = stdout(&output);
+	assert!(
+		text.contains("q0 a q1\n") && text.contains("q0 b q1\n") && text.contains("q0 7 q1\n"),
+		"{text}"
+	);
+	assert!(!text.contains("..."), "{text}");
+}
+
+#[test]
+fn the_zeroth_positional_input_does_not_exist() {
+	let output = run_script("(print $0)", false, &[]);
+	assert_eq!(status(&output), 2, "{}", stdout(&output));
+	assert!(
+		stderr(&output).contains("no positional input 0"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
+fn a_remembered_decision_keeps_its_witness() {
+	let workspace = Workspace::new("memo-witness");
+	let a = workspace.file("a.mata", NFA);
+	let b = workspace.file("b.mata", &NFA.replace(" a ", " b "));
+	let output = run_script(
+		"(set-option :produce-witnesses true)\n(set-option :optimize true)\n\
+		 (declare-input a Nfa)\n(declare-input b Nfa)\n\
+		 (print (nfa:included? a b))\n(print (get-witness))\n\
+		 (print (nfa:included? a b))\n(print (get-witness))",
+		true,
+		&[&a, &b],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "false\na\nfalse\na\n");
+}
+
+#[test]
+fn a_load_of_a_list_mintermizes_the_files_together() {
+	let workspace = Workspace::new("load-list");
+	workspace.file("a.mata", BITS_A);
+	workspace.file("b.mata", BITS_B);
+	let script = workspace.file(
+		"load.matasc",
+		"(define both (nfa:load (list \"a.mata\" \"b.mata\")))\n\
+		 (print (list:length both))\n\
+		 (print (nfa:intersection-empty? (list:nth both 0) (list:nth both 1)))\n\
+		 (print (nfa:intersection-empty? (nfa:load \"a.mata\") (nfa:load \"b.mata\")))\n",
+	);
+	let output = mata(["script", "run", &script]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	// Loaded separately, each file's one minterm is the same symbol.
+	assert_eq!(stdout(&output), "2\ntrue\nfalse\n");
+}

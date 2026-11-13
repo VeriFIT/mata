@@ -138,7 +138,7 @@ pub(crate) fn check(source: &Source) -> Result<Exit, Error> {
 	let (forms, version) = parse(&text)?;
 	let engine = Engine::for_language(version);
 	let report = crate::check::check(&forms, &engine, None)?;
-	println!("checked: {name}");
+	crate::write_stdout(&format!("checked: {name}\n"))?;
 	eprintln!(
 		"termination: {}",
 		if report.termination {
@@ -164,8 +164,7 @@ pub(crate) fn repl(output: Option<&str>) -> Result<Exit, Error> {
 	let mut stdin = std::io::stdin().lock();
 	loop {
 		if interactive {
-			print!("mata> ");
-			flush();
+			crate::write_stdout("mata> ")?;
 		}
 		let mut line = String::new();
 		let read = stdin
@@ -264,11 +263,6 @@ fn summary(value: &Value, engine: &Engine) -> String {
 		}
 		None => display_value(value, engine),
 	}
-}
-
-fn flush() {
-	use std::io::Write;
-	let _ = std::io::stdout().flush();
 }
 
 /// Binds the declared inputs and parameters, which come first in a script, interleaved only with

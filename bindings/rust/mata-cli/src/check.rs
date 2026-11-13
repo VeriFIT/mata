@@ -1240,11 +1240,15 @@ impl<'a> Checker<'a> {
 	) -> Option<String> {
 		self.hints(operation.name, keywords);
 		self.operation_shape(operation, arguments.len(), expression);
+		let mut first = None;
 		for (index, argument) in arguments.iter().enumerate() {
 			let sort = self.expression(argument, self_name);
 			self.operand(operation, index, arguments.len(), sort.as_deref(), argument);
+			if index == 0 {
+				first = sort;
+			}
 		}
-		(!operation.result.is_empty()).then(|| operation.result.to_owned())
+		result_sort(operation, first.as_deref())
 	}
 
 	/// Checks that a portable core script may call `operation` and that it takes `given` operands.
@@ -1573,7 +1577,7 @@ impl<'a> Checker<'a> {
 		}
 		if let Some(operation) = operation {
 			self.hints(operation.name, keywords);
-			(!operation.result.is_empty()).then(|| operation.result.to_owned())
+			result_sort(operation, piped)
 		} else {
 			for (_, value) in keywords {
 				let _ = self.expression(value, self_name);
@@ -1627,6 +1631,24 @@ fn portable_sort(sort: &str) -> bool {
 		return true;
 	}
 	matches!(compound(sort), Some(("List", argument)) if portable_sort(argument))
+}
+
+/// The sort of the result of `operation` when known, from the sort `first` of its first operand where
+/// it depends on it: a load gives one automaton for a path and a list of them for a list of paths.
+fn result_sort(operation: &crate::ops::Operation, first: Option<&str>) -> Option<String> {
+	let kind = match operation.name {
+		"nfa:load" => "Nfa",
+		"nft:load" => "Nft",
+		"automaton:load" => "Automaton",
+		_ => return (!operation.result.is_empty()).then(|| operation.result.to_owned()),
+	};
+	match first? {
+		"String" => Some(kind.to_owned()),
+		sort if compound(sort).is_some_and(|(name, _)| name == "List") => {
+			Some(format!("(List {kind})"))
+		}
+		_ => None,
+	}
 }
 
 /// Whether a value of sort `actual` fits where `expected` is required. An empty or `Any` expected sort,

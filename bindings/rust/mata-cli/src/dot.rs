@@ -234,8 +234,13 @@ fn parse_node(
 	automaton.states.insert(state);
 	for &(key, value) in attributes {
 		match (key, value) {
-			("shape", "doublecircle") => automaton.final_states.push(state),
-			("shape", "circle") => {}
+			// The last shape of a state wins, as in Graphviz.
+			("shape", "doublecircle") => {
+				if !automaton.final_states.contains(&state) {
+					automaton.final_states.push(state);
+				}
+			}
+			("shape", "circle") => automaton.final_states.retain(|&other| other != state),
 			("shape", "none") => {
 				return Err(Error::plain(format!(
 					"line {line_number}: a marker node is used only through its edge"
@@ -321,10 +326,13 @@ fn parse_edge(
 	automaton.states.insert(source_state);
 	automaton.states.insert(target_state);
 	let mut label = None;
+	let mut tooltip = None;
 	for (key, value) in attributes.unwrap_or_default() {
 		match key {
 			"label" => label = Some(value.to_owned()),
-			"tooltip" => {}
+			// The library writes a shortened label with the whole one as the tooltip, its `<` and `>`
+			// escaped.
+			"tooltip" => tooltip = Some(value.replace("&lt;", "<").replace("&gt;", ">")),
 			_ => {
 				return Err(Error::plain(format!(
 					"line {line_number}: unsupported edge attribute '{key}={value}'"
@@ -332,6 +340,7 @@ fn parse_edge(
 			}
 		}
 	}
+	let label = tooltip.or(label);
 	automaton
 		.transitions
 		.push((source_state, label, target_state));

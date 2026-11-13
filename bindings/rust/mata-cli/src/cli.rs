@@ -37,13 +37,13 @@ pub fn main() -> Exit {
 
 fn dispatch(arguments: &[String]) -> Result<Exit, Error> {
 	let Some(command) = arguments.first() else {
-		println!("{}", main_help());
+		crate::write_stdout(&format!("{}\n", main_help()))?;
 		return Ok(Exit::Success);
 	};
 	match command.as_str() {
 		"help" | "--help" | "-h" => help(&arguments[1..]),
 		"formats" => {
-			formats();
+			crate::write_stdout(&formats())?;
 			Ok(Exit::Success)
 		}
 		"script" => script(&arguments[1..]),
@@ -52,7 +52,7 @@ fn dispatch(arguments: &[String]) -> Result<Exit, Error> {
 		"strings" => direct(&arguments[1..], "strings"),
 		"convert" => crate::convert::main(&arguments[1..]),
 		"version" | "--version" => {
-			print!("{}", version());
+			crate::write_stdout(&version())?;
 			Ok(Exit::Success)
 		}
 		_ => Err(Error::plain(format!("unknown command '{command}'"))),
@@ -70,27 +70,26 @@ fn version() -> String {
 }
 
 fn help(arguments: &[String]) -> Result<Exit, Error> {
-	match arguments.first().map(String::as_str) {
-		None | Some("help") => println!("{}", main_help()),
+	let text = match arguments.first().map(String::as_str) {
+		None | Some("help") => format!("{}\n", main_help()),
 		Some("script") => match arguments.get(1).map(String::as_str) {
-			None => println!("{}", script_help()),
-			Some("run") => println!("{}", run_help()),
-			Some("check") => println!("{}", check_help()),
-			Some("repl") => println!("{}", repl_help()),
+			None => format!("{}\n", script_help()),
+			Some("run") => format!("{}\n", run_help()),
+			Some("check") => format!("{}\n", check_help()),
+			Some("repl") => format!("{}\n", repl_help()),
 			Some(other) => {
 				return Err(Error::plain(format!("unknown script subcommand '{other}'")));
 			}
 		},
-		Some("nfa") => print!("{}", direct_help("nfa")),
-		Some("nft") => print!("{}", direct_help("nft")),
-		Some("strings") => print!("{}", direct_help("strings")),
-		Some("convert") => println!("{}", crate::convert::help()),
-		Some("formats") => println!("{}", formats_help()),
-		Some("version") => print!("{}", version()),
+		Some(namespace @ ("nfa" | "nft" | "strings")) => direct_help(namespace),
+		Some("convert") => format!("{}\n", crate::convert::help()),
+		Some("formats") => format!("{}\n", formats_help()),
+		Some("version") => version(),
 		Some(other) => {
 			return Err(Error::plain(format!("unknown command '{other}'")));
 		}
-	}
+	};
+	crate::write_stdout(&text)?;
 	Ok(Exit::Success)
 }
 
@@ -230,8 +229,10 @@ fn direct_operand_sorts(operation: &Operation) -> Option<Vec<&'static str>> {
 	let mut sorts = Vec::with_capacity(count);
 	for index in 0..count {
 		let sort = match crate::ops::operand_sort(operation, index)? {
-			// A command-line operand cannot tell a file from symbol names, so it is the automaton.
+			// A command-line operand cannot tell a file from symbol names, so it is the automaton,
+			// and it is one path, not a list of them.
 			"Nfa|Word" => "Nfa",
+			"String|(List String)" => "String",
 			sort => sort,
 		};
 		if !matches!(
@@ -278,24 +279,30 @@ fn operand_count(operation: &Operation) -> String {
 	}
 }
 
-fn formats() {
+fn formats() -> String {
+	let mut text = String::new();
 	for format in ["mata", "dot"] {
-		println!("format {format}");
+		writeln!(text, "format {format}").expect("writing to a String cannot fail");
 	}
 	for feature in crate::version::FEATURES {
-		println!(
-			"feature {} {}",
-			feature.name,
-			if feature.implemented {
-				"implemented"
-			} else {
-				"not-implemented"
-			}
-		);
+		let status = if feature.implemented {
+			"implemented"
+		} else {
+			"not-implemented"
+		};
+		writeln!(text, "feature {} {status}", feature.name)
+			.expect("writing to a String cannot fail");
 	}
 	for operation in crate::ops::OPERATIONS {
-		println!("operation {}{}", operation.name, operand_count(operation));
+		writeln!(
+			text,
+			"operation {}{}",
+			operation.name,
+			operand_count(operation)
+		)
+		.expect("writing to a String cannot fail");
 	}
+	text
 }
 
 fn script(arguments: &[String]) -> Result<Exit, Error> {
@@ -309,7 +316,7 @@ fn script(arguments: &[String]) -> Result<Exit, Error> {
 		"check" => script_check(&arguments[1..]),
 		"repl" => script_repl(&arguments[1..]),
 		"--help" | "-h" => {
-			println!("{}", script_help());
+			crate::write_stdout(&format!("{}\n", script_help()))?;
 			Ok(Exit::Success)
 		}
 		_ => Err(Error::plain(format!(
@@ -356,7 +363,7 @@ struct ScriptChoice {
 impl ScriptChoice {
 	fn source(self) -> Result<Source, Error> {
 		match (self.operand, self.path, self.expression) {
-			(Some(operand), None, None) if operand == "-" => Ok(Source::Stdin),
+			(Some(path), None, None) | (None, Some(path), None) if path == "-" => Ok(Source::Stdin),
 			(Some(path), None, None) | (None, Some(path), None) => Ok(Source::File(path)),
 			(None, None, Some(text)) => Ok(Source::Expression(text)),
 			(None, None, None) => Err(Error::plain(
@@ -427,7 +434,7 @@ fn script_run(arguments: &[String]) -> Result<Exit, Error> {
 				index += 1;
 			}
 			"--help" | "-h" => {
-				println!("{}", run_help());
+				crate::write_stdout(&format!("{}\n", run_help()))?;
 				return Ok(Exit::Success);
 			}
 			_ if argument.starts_with("--") => {
@@ -467,7 +474,7 @@ fn script_check(arguments: &[String]) -> Result<Exit, Error> {
 				index += 1;
 			}
 			"--help" | "-h" => {
-				println!("{}", check_help());
+				crate::write_stdout(&format!("{}\n", check_help()))?;
 				return Ok(Exit::Success);
 			}
 			"--" => separator = true,
@@ -489,7 +496,7 @@ fn script_repl(arguments: &[String]) -> Result<Exit, Error> {
 				index += 1;
 			}
 			"--help" | "-h" => {
-				println!("{}", repl_help());
+				crate::write_stdout(&format!("{}\n", repl_help()))?;
 				return Ok(Exit::Success);
 			}
 			_ if argument.starts_with("--") => {
@@ -525,7 +532,7 @@ fn direct(arguments: &[String], namespace: &str) -> Result<Exit, Error> {
 		)));
 	};
 	if name == "--help" || name == "-h" {
-		print!("{}", direct_help(namespace));
+		crate::write_stdout(&direct_help(namespace))?;
 		return Ok(Exit::Success);
 	}
 	let operation = direct_operation(namespace, name)?;
@@ -562,7 +569,7 @@ fn direct(arguments: &[String], namespace: &str) -> Result<Exit, Error> {
 				index += 1;
 			}
 			"--help" | "-h" => {
-				print!("{}", direct_help(namespace));
+				crate::write_stdout(&direct_help(namespace))?;
 				return Ok(Exit::Success);
 			}
 			_ if argument.starts_with("--") => {
@@ -584,7 +591,7 @@ fn direct(arguments: &[String], namespace: &str) -> Result<Exit, Error> {
 	let value = crate::ops::call(operation.name, values, &hints, &mut engine)?;
 	let text = display_value(&value, &engine);
 	match output.as_deref() {
-		None | Some("-") => print!("{text}"),
+		None | Some("-") => engine.emit(&text)?,
 		Some(path) => std::fs::write(path, text)
 			.map_err(|e| Error::plain(format!("cannot write '{path}': {e}")))?,
 	}

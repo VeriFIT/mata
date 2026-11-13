@@ -36,7 +36,7 @@ struct Options {
 /// `mata convert [--from mata|dot] [--to mata|dot] [--kind nfa|nft] [--output PATH] [INPUT…]`.
 pub(crate) fn main(arguments: &[String]) -> Result<Exit, Error> {
 	let Some(options) = parse_arguments(arguments)? else {
-		println!("{}", help());
+		crate::write_stdout(&format!("{}\n", help()))?;
 		return Ok(Exit::Success);
 	};
 	convert(&options)
@@ -217,10 +217,7 @@ fn parse_input(
 
 fn write_stream(text: &str, output: Option<&str>) -> Result<(), Error> {
 	match output {
-		None | Some("-") => {
-			print!("{text}");
-			Ok(())
-		}
+		None | Some("-") => crate::write_stdout(text),
 		Some(path) => std::fs::write(path, text)
 			.map_err(|e| Error::plain(format!("cannot write '{path}': {e}"))),
 	}

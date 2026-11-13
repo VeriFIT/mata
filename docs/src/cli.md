@@ -268,20 +268,20 @@ mata convert [--from mata|dot] [--to mata|dot] [--kind nfa|nft]
 Mata's DOT output is deliberately small: a digraph, one node per state and one edge per transition. Input is parsed
 under fixed conventions, so anything outside them is an error; unsupported constructs are never dropped.
 
-| DOT construct                                        | Meaning                                                |
-| ---------------------------------------------------- | ------------------------------------------------------ |
-| `digraph finiteAutomaton { … }`                      | One automaton; the digraph name is ignored             |
-| `node [shape=circle]`, `node [shape=none, label=""]` | Graph defaults; ignored                                |
-| `s [shape=doublecircle]`                             | State `s` is final                                     |
-| `s [shape=circle]`                                   | State `s` exists and is not final                      |
-| `N [label="N:level"]`                                | State `N` is on `level`, so the graph is a transducer  |
-| `iN -> N` from a `shape=none` node                   | State `N` is initial; the marker node is not a state   |
-| `s -> t [label="a,b"]`, `[label="[a-c]"]`            | One transition under each listed symbol                |
-| `s -> t` without `label`                             | A transition under the abstract symbol `0`             |
-| `[tooltip="…"]` on an edge                           | Ignored; it repeats the full label of a shortened one  |
-| `forcelabels=true`                                   | A transducer; its writer emits it for the state labels |
-| `num_of_levels=N`                                    | A transducer with `N` levels                           |
-| states `0`, `1`, `…`                                 | State numbers; state names must be numbers             |
+| DOT construct                                        | Meaning                                                                                            |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `digraph finiteAutomaton { … }`                      | One automaton; the digraph name is ignored                                                         |
+| `node [shape=circle]`, `node [shape=none, label=""]` | Graph defaults; ignored                                                                            |
+| `s [shape=doublecircle]`                             | State `s` is final, unless a later shape says otherwise                                            |
+| `s [shape=circle]`                                   | State `s` exists and is not final, unless a later shape says otherwise                             |
+| `N [label="N:level"]`                                | State `N` is on `level`, so the graph is a transducer                                              |
+| `iN -> N` from a `shape=none` node                   | State `N` is initial; the marker node is not a state                                               |
+| `s -> t [label="a,b"]`, `[label="[a-c]"]`            | One transition under each listed symbol                                                            |
+| `s -> t` without `label`                             | A transition under the abstract symbol `0`                                                         |
+| `[tooltip="…"]` on an edge                           | The whole label of a shortened one, read instead of `label`, with `&lt;` and `&gt;` as `<` and `>` |
+| `forcelabels=true`                                   | A transducer; its writer emits it for the state labels                                             |
+| `num_of_levels=N`                                    | A transducer with `N` levels                                                                       |
+| states `0`, `1`, `…`                                 | State numbers; state names must be numbers                                                         |
 
 An input holds exactly one graph, and every state from `0` to the highest appears in a statement, as the writer draws
 every state. The library's DOT carries no level count, so `mata convert`, `nfa:print-to-dot` and `nft:print-to-dot`
@@ -453,11 +453,6 @@ language page specifies but this build does not have are listed in the
   wants two. A direct command spells that `(List Int)` operand as numbers separated by commas or spaces:
   `mata strings get-words-of-lengths pair.mata 1,1`; a list of the wrong length is the error
   `expected 2 levels, found 1`.
-- Of the script options, `:alphabet` with `on-the-fly` or `bytes`, `:produce-witnesses`, `:time-operations` and
-  `:default` work. `:optimize` and `:trace` are accepted only as `false`; `true` is rejected as
-  `option :<name> is not implemented`, and `:loops-and-recursion` is always rejected, so `loop`, `recur` and self-calls
-  are errors with the same reason. `mata formats` lists the features a header can require and whether this build has
-  them.
 - Every script option works: `:alphabet` with `on-the-fly` or `bytes`, `:produce-witnesses`, `:time-operations`,
   `:default`, `:optimize`, `:trace` and `:loops-and-recursion`. `mata formats` lists the features a header can require
   and whether this build has them.
