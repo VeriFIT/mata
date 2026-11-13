@@ -7,14 +7,21 @@
 #define MATA_MINTERM_HH
 
 #include <cstdint>
+#include <functional>
+#include <optional>
+#include <string_view>
 
 #include "mata/cudd/cuddObj.hh"
+#include "mata/utils/utils.hh"
 
 #include "inter-aut.hh"
 
 namespace mata {
 
 class Mintermization {
+	// TODO(afa): Re-add the alternating automata support. The AFA code is kept, but not compiled: `MATA_AFA_SUPPORT`
+	//  is never defined.
+#ifdef MATA_AFA_SUPPORT
 	struct OptionalBdd {
 		enum class Type : std::uint8_t { NothingE, BddE };
 
@@ -32,11 +39,30 @@ class Mintermization {
 	};
 
 	using DisjunctStatesPair = std::pair<const FormulaGraph*, const FormulaGraph*>;
+#endif
 
 	Cudd bdd_mng_{}; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
-	std::unordered_map<std::string, BDD> symbol_to_bddvar_{};
-	std::unordered_map<const FormulaGraph*, BDD> trans_to_bddvar_{};
+	/// The constants, apart from @c symbol_to_bddvar_: a symbol may have the name of a constant, as `a\true` does.
+	BDD true_bdd_{bdd_mng_.bddOne()};
+	BDD false_bdd_{bdd_mng_.bddZero()};
+	/// The variables of the symbols, by name.
+	utils::StringMap<BDD> symbol_to_bddvar_{};
+	/// The BDDs of the formulas @c graph_to_bdd_nfa() converted, keyed by a serialization of the formula. A formula
+	///  usually labels many transitions. Its BDD depends only on @c symbol_to_bddvar_, so the entries stay valid across
+	///  calls.
+	std::unordered_map<std::string, BDD> formula_to_bdd_{};
+	/// Buffer for the key of the formula being looked up in @c formula_to_bdd_.
+	std::string formula_key_{};
+	/// Buffer for the BDDs of the operands @c convert_graph_to_bdd_nfa() has yet to combine.
+	std::vector<BDD> operand_bdds_{};
+	/// The BDDs of the symbol parts of the transitions, keyed by the root node of the symbol part.
+	std::unordered_map<const FormulaNode*, BDD> trans_to_bddvar_{};
+	/// The keys added to @c symbol_to_bddvar_ and @c formula_to_bdd_, in their order, for @c rollback().
+	std::vector<const std::string*> added_symbols_{};
+	std::vector<const std::string*> added_formulas_{};
+#ifdef MATA_AFA_SUPPORT
 	std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states_{};
+#endif
 	/// BDDs created from transitions, in the order of their first appearance in the transitions.
 	std::vector<BDD> source_bdds_{};
 	/// Position of each BDD of @c source_bdds_ in that vector.
@@ -46,7 +72,12 @@ class Mintermization {
 	void add_source_bdd(const BDD& bdd);
 
 	void trans_to_bdd_nfa(const IntermediateAut& aut);
+	/// @c graph_to_bdd_nfa() without the lookup in @c formula_to_bdd_. Iterative, so that deep formulas cannot exhaust
+	///  the call stack.
+	BDD convert_graph_to_bdd_nfa(FormulaGraphView graph);
+#ifdef MATA_AFA_SUPPORT
 	void trans_to_bdd_afa(const IntermediateAut& aut);
+#endif
 
   public:
 	/**
@@ -87,8 +118,32 @@ class Mintermization {
 	 * @param graph Graph to be transformed
 	 * @return Resulting BDD
 	 */
-	BDD graph_to_bdd_nfa(const FormulaGraph& graph);
+	BDD graph_to_bdd_nfa(FormulaGraphView graph);
 
+	/**
+	 * The BDD of an operand, as @c graph_to_bdd_nfa() makes it: the @p constant the operand stands for, or else the
+	 *  variable of the bitvector symbol @p name, fresh for the first operand of that name.
+	 * @param name Name of the symbol.
+	 * @param constant The constant (@c \\true or @c \\false) the operand stands for, if it does, whatever its @p name.
+	 * @return The BDD this object keeps for the operand, valid until a @c rollback() past its creation.
+	 */
+	const BDD& symbol_bdd(std::string_view name, std::optional<bool> constant = std::nullopt);
+
+	/// The symbols and formulas converted so far, which @c rollback() returns to.
+	struct Checkpoint {
+		size_t num_of_symbols;
+		size_t num_of_formulas;
+	};
+
+	Checkpoint checkpoint() const { return {added_symbols_.size(), added_formulas_.size()}; }
+
+	/**
+	 * Forgets the symbols and formulas first converted after @p checkpoint, so that a later conversion reads their
+	 *  names as if they had never been seen.
+	 */
+	void rollback(const Checkpoint& checkpoint);
+
+#ifdef MATA_AFA_SUPPORT
 	/**
 	 * Transforms a graph representing formula at transition to bdd.
 	 * This version of method is a more general one and accepts also
@@ -97,6 +152,7 @@ class Mintermization {
 	 * @return Resulting BDD
 	 */
 	OptionalBdd graph_to_bdd_afa(const FormulaGraph& graph);
+#endif
 
 	/**
 	 * Method mintermizes given automaton which has bitvector alphabet.
@@ -128,6 +184,7 @@ class Mintermization {
 		IntermediateAut& res, const IntermediateAut& aut, const std::vector<std::vector<size_t>>& minterms_of_source
 	);
 
+#ifdef MATA_AFA_SUPPORT
 	/**
 	 * The method for mintermization of alternating finite automaton using
 	 * a given set of minterms
@@ -138,8 +195,20 @@ class Mintermization {
 	void minterms_to_aut_afa(
 		IntermediateAut& res, const IntermediateAut& aut, const std::vector<std::vector<size_t>>& minterms_of_source
 	);
+#endif
 
-	Mintermization() : bdd_mng_(0) {}
+	/// The manager starts with a small cache, which CUDD grows on demand: allocating and clearing the default one
+	///  dominates the mintermization of a small automaton.
+	Mintermization() : bdd_mng_(0, 0, CUDD_UNIQUE_SLOTS, INITIAL_CACHE_SLOTS) {}
+	// A copy would keep pointers to the keys of the original's maps in @c added_symbols_ and @c added_formulas_.
+	Mintermization(const Mintermization&) = delete;
+	Mintermization& operator=(const Mintermization&) = delete;
+	Mintermization(Mintermization&&) = default;
+	// An assignment would replace the manager first, freeing the old one, and then release the old BDDs through it.
+	Mintermization& operator=(Mintermization&&) = delete;
+
+  private:
+	static constexpr unsigned INITIAL_CACHE_SLOTS{4'096};
 };
 
 } // namespace mata

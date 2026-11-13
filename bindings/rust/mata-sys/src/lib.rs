@@ -453,8 +453,6 @@ pub mod ffi {
 		fn is_nfa(self: &IntermediateAut) -> bool;
 		/// `IntermediateAut::is_nft`: the section describes an NFT.
 		fn is_nft(self: &IntermediateAut) -> bool;
-		/// `IntermediateAut::is_afa`: the section describes an AFA.
-		fn is_afa(self: &IntermediateAut) -> bool;
 		/// `IntermediateAut::is_bitvector`: the section has a bit-vector alphabet.
 		fn is_bitvector(self: &IntermediateAut) -> bool;
 

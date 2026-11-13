@@ -684,9 +684,10 @@ class Delta {
 	 * @brief Add transitions given in an arbitrary order.
 	 *
 	 * Sorts @p transitions by (source, symbol, target) and deduplicates them once, then writes whole symbol posts,
-	 *  instead of searching and shifting per transition as repeated @c add() does. Duplicates collapse and states
-	 *  up to the largest mentioned one are allocated, exactly as with repeated @c add().
-	 * @param[in,out] transitions Transitions to add; sorted in place, so the vector is consumed.
+	 *  instead of searching and shifting per transition as repeated @c add() does. An empty delta gets the transitions
+	 *  bucketed by source in linear time, which leaves only the transitions of each source to sort. Duplicates collapse
+	 *  and states up to the largest mentioned one are allocated, exactly as with repeated @c add().
+	 * @param[in,out] transitions Transitions to add; consumed.
 	 */
 	void add(std::vector<Transition>&& transitions);
 	void remove(State source, Symbol symbol, State target);
@@ -1073,6 +1074,12 @@ class DeltaBuilder {
 		has_symbol_ = false;
 	}
 
+	/// Reserves room for @p num_of_symbols symbols of the current source state.
+	void reserve_symbols(const size_t num_of_symbols) {
+		MATA_ASSERT(in_state_ && "reserve_symbols() called outside of a state");
+		state_posts_[source_].reserve(num_of_symbols);
+	}
+
 	/// Starts the targets of @p symbol under the current source state.
 	void begin_symbol(const Symbol symbol) {
 		MATA_ASSERT(in_state_ && "begin_symbol() called outside of a state");
@@ -1113,7 +1120,9 @@ class DeltaBuilder {
 	Delta finish() {
 		MATA_ASSERT(!in_state_ && !in_symbol_ && "finish() called inside an unfinished state or symbol");
 		// A target state needs its own (possibly empty) post, like every other state of the delta.
-		if (!state_posts_.empty() && max_target_ >= state_posts_.size()) { state_posts_.resize(max_target_ + 1); }
+		if (!state_posts_.empty() && max_target_ >= state_posts_.size()) {
+			state_posts_.resize(num_of_states_for(max_target_));
+		}
 		Delta delta{};
 		delta.reserve(state_posts_.size());
 		for (StatePost& state_post : state_posts_) { delta.emplace_back(std::move(state_post)); }

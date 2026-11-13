@@ -7,9 +7,9 @@ Native build of [Mata](https://github.com/VeriFIT/mata), the finite automata lib
 
 ## What it contains
 
-- `cxx/shim.hh`, `cxx/shim.cc`: one flat function per operation, in namespace `mata_sys`. The shim turns Mata's templates, overloads and string parameter maps into signatures cxx can bridge, and it checks the preconditions that Mata checks only with debug assertions. Read-only queries take `mata::Automaton`, the base class of NFAs and NFTs, so both share them.
+- `cxx/shim.hh`, `cxx/shim.cc`: one flat function per operation, in namespace `mata_sys`. The shim turns Mata's templates, overloads and string parameter maps into signatures cxx can bridge, and it checks the preconditions that Mata checks only with debug assertions. Read-only queries take `mata::Automaton`, the base class of NFAs and NFTs, so both share them. NFA parsing reads each `.mata` section with the reader Mata's loaders use; it serializes the bitvector reader (used for `@NFA-bits` input), because CUDD swaps a process-wide out-of-memory handler around its allocations.
 - `cxx/nft.hh`, `cxx/nft.cc`: the same for transducers (see [Transducers](#transducers)).
-- `cxx/common.hh`, `cxx/common.cc`: helpers of both, including `.mata` parsing. Parsing serializes mintermization (used for `@NFA-bits` input), because CUDD swaps a process-wide out-of-memory handler around its allocations.
+- `cxx/common.hh`, `cxx/common.cc`: helpers of both.
 - `src/lib.rs`: the bridge `mata_sys::ffi`; `src/nft.rs`: the bridge `mata_sys::nft::ffi`.
 - `build.rs`: builds Mata with CMake, compiles the shim with `-std=c++23`, and links both.
 

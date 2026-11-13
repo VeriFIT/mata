@@ -4,7 +4,7 @@ dynamic = ["version"]
 description = "Python bindings for Mata: A fast and simple automata library"
 readme = "README.md"
 requires-python = ">=3.13"
-keywords = ["automata", "finite automata", "alternating automata"]
+keywords = ["automata", "finite automata"]
 authors = [
   { name = "Lukáš Holík", email = "holik@fit.vutbr.cz" },
   { name = "Ondřej Lengál", email = "lengal@fit.vutbr.cz" },

@@ -371,6 +371,53 @@ fn huge_level_counts_are_rejected() -> Result<(), Error> {
 	Ok(())
 }
 
+#[test]
+fn levels_beyond_the_limit_are_rejected_in_any_entry() {
+	let cases = [
+		// 4294967296 does not fit a Mata level, which would wrap it to 0.
+		"@NFT-explicit\n%Initial p\n%Levels p:0 q:4294967296\n%LevelsNum 2\np 0 q\nq 0 p\n",
+		"@NFT-explicit\n%Initial p\n%Levels p:0 q:1\n%LevelsNum 4294967297\np 0 q\nq 0 p\n",
+		// A later entry for q overwrites the first one.
+		"@NFT-explicit\n%Initial p\n%Levels p:0 q:5000 q:1\n%LevelsNum 2\np 0 q\nq 0 p\n",
+		// Too many digits, whatever their value.
+		"@NFT-explicit\n%Initial p\n%Levels p:0 q:00000000001\n%LevelsNum 2\np 0 q\nq 0 p\n",
+	];
+	for text in cases {
+		let error = Nft::parse_mata(text, &mut Alphabet::new()).unwrap_err();
+		assert!(
+			error.message().contains("supported levels allow"),
+			"{text:?}: {error}"
+		);
+	}
+}
+
+#[test]
+fn sections_are_parsed_in_order_by_either_reader() -> Result<(), Error> {
+	// The second section lists its final states after the transitions, which only Mata's general reader takes.
+	let text = "@NFT-explicit\n%Initial p\n%Final p\n%Levels p:0 q:1\n%LevelsNum 2\np b q\nq c p\n\
+		@NFT-explicit\n%Initial p\n%Levels p:0 q:1\n%LevelsNum 2\np a q\nq b p\n%Final p\n";
+	for sections in [&text[..=text.find("\n@").unwrap()], text] {
+		let mut sigma = Alphabet::new();
+		let parsed = Nft::parse_mata_all(sections, &mut sigma)?;
+		let names: Vec<_> = ["b", "c", "a"]
+			.iter()
+			.map(|name| sigma.symbol(name))
+			.collect();
+		let (b, c) = (Symbol::new(0), Symbol::new(1));
+		assert_eq!(names[..2], [Some(b), Some(c)]);
+		assert!(parsed[0].accepts(&[[b, b], [c, c]]));
+		assert_eq!(parsed[0].num_levels(), 2);
+		if let [_, second] = &parsed[..] {
+			let a = Symbol::new(2);
+			assert_eq!(names[2], Some(a));
+			assert!(second.accepts(&[[a, a], [b, b]]));
+		} else {
+			assert_eq!(parsed.len(), 1);
+		}
+	}
+	Ok(())
+}
+
 /// Mata decides inclusion on the interleaved encodings, where epsilon is a symbol: two transducers for the
 /// same relation that read epsilon at different places are not included in each other.
 #[test]

@@ -167,8 +167,8 @@ TEST_CASE("mata::OnTheFlyAlphabet reserved special-symbol names (#794)") {
 	OnTheFlyAlphabet alphabet{};
 	// The reserved names translate straight to the special symbols and are never registered, so a
 	//  printed automaton parses back with the same transition symbols.
-	CHECK(alphabet.translate_symb(std::string{EPSILON_NAME}) == nfa::EPSILON);
-	CHECK(alphabet.translate_symb(std::string{DONT_CARE_NAME}) == nft::DONT_CARE);
+	CHECK(alphabet.translate_symb(EPSILON_NAME) == nfa::EPSILON);
+	CHECK(alphabet.translate_symb(DONT_CARE_NAME) == nft::DONT_CARE);
 	CHECK(alphabet.get_number_of_symbols() == 0);
 	CHECK(
 		alphabet.translate_word({std::string{EPSILON_NAME}, std::string{DONT_CARE_NAME}}) ==

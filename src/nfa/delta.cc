@@ -18,6 +18,7 @@
 #include <functional>
 #include <iterator>
 #include <limits>
+#include <numeric>
 #include <stdexcept>
 #include <utility>
 
@@ -278,40 +279,79 @@ void Delta::add(const State source, SymbolPost&& symbol_post) {
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 void Delta::add(std::vector<Transition>&& transitions) {
 	if (transitions.empty()) { return; }
-	std::ranges::sort(transitions, [](const Transition& lhs, const Transition& rhs) {
-		return std::tie(lhs.source, lhs.symbol, lhs.target) < std::tie(rhs.source, rhs.symbol, rhs.target);
-	});
-	const auto duplicates{std::ranges::unique(transitions)};
-	transitions.erase(duplicates.begin(), duplicates.end());
-
-	const bool build_from_scratch{empty() && num_of_states() == 0};
-	DeltaBuilder builder{build_from_scratch ? transitions.back().source + 1 : 0};
-	size_t index{0};
-	const size_t size{transitions.size()};
-	while (index < size) {
-		const State source{transitions[index].source};
-		if (build_from_scratch) { builder.begin_state(source); }
-		while (index < size && transitions[index].source == source) {
+	if (!empty()) {
+		std::ranges::sort(transitions, [](const Transition& lhs, const Transition& rhs) {
+			return std::tie(lhs.source, lhs.symbol, lhs.target) < std::tie(rhs.source, rhs.symbol, rhs.target);
+		});
+		const auto duplicates{std::ranges::unique(transitions)};
+		transitions.erase(duplicates.begin(), duplicates.end());
+		size_t index{0};
+		const size_t size{transitions.size()};
+		while (index < size) {
+			const State source{transitions[index].source};
 			const Symbol symbol{transitions[index].symbol};
-			if (build_from_scratch) {
-				builder.begin_symbol(symbol);
-				while (index < size && transitions[index].source == source && transitions[index].symbol == symbol) {
-					builder.push_sorted_target(transitions[index].target);
-					++index;
-				}
-				builder.finish_symbol();
-			} else {
-				SymbolPost symbol_post{symbol};
-				while (index < size && transitions[index].source == source && transitions[index].symbol == symbol) {
-					symbol_post.targets.push_back(transitions[index].target);
-					++index;
-				}
-				add(source, std::move(symbol_post));
+			SymbolPost symbol_post{symbol};
+			while (index < size && transitions[index].source == source && transitions[index].symbol == symbol) {
+				symbol_post.targets.push_back(transitions[index].target);
+				++index;
 			}
+			add(source, std::move(symbol_post));
 		}
-		if (build_from_scratch) { builder.finish_state(); }
+		return;
 	}
-	if (build_from_scratch) { *this = builder.finish(); }
+
+	// A delta without transitions, as readers leave it after adding the states, is built anew, keeping its states. The
+	//  transitions are bucketed by source in linear time, so that only the few transitions of each source get sorted.
+	const size_t num_of_states_before{num_of_states()};
+	const State max_source{std::ranges::max_element(transitions, {}, &Transition::source)->source};
+	const size_t num_of_sources{num_of_states_for(max_source)};
+	// Counted at the next source, so that placing the transitions leaves each source at the end of its bucket.
+	std::vector<size_t> bucket_ends(num_of_sources + 1, 0);
+	for (const Transition& transition : transitions) { ++bucket_ends[static_cast<size_t>(transition.source) + 1]; }
+	std::partial_sum(bucket_ends.begin(), bucket_ends.end(), bucket_ends.begin());
+	std::vector<Transition> by_source(transitions.size());
+	for (const Transition& transition : transitions) {
+		by_source[bucket_ends[static_cast<size_t>(transition.source)]++] = transition;
+	}
+	// Released before the posts take as much memory again.
+	transitions.clear();
+	transitions.shrink_to_fit();
+
+	DeltaBuilder builder{std::max(num_of_states_before, num_of_sources)};
+	size_t begin{0};
+	for (size_t source{0}; source < num_of_sources; ++source) {
+		const size_t end{bucket_ends[source]};
+		if (begin == end) { continue; }
+		std::sort(
+			by_source.begin() + static_cast<std::ptrdiff_t>(begin),
+			by_source.begin() + static_cast<std::ptrdiff_t>(end), [](const Transition& lhs, const Transition& rhs) {
+				return std::tie(lhs.symbol, lhs.target) < std::tie(rhs.symbol, rhs.target);
+			}
+		);
+		builder.begin_state(to_state(source));
+		size_t num_of_symbols{1};
+		for (size_t index{begin + 1}; index < end; ++index) {
+			if (by_source[index].symbol != by_source[index - 1].symbol) { ++num_of_symbols; }
+		}
+		builder.reserve_symbols(num_of_symbols);
+		size_t index{begin};
+		while (index < end) {
+			const Symbol symbol{by_source[index].symbol};
+			builder.begin_symbol(symbol);
+			builder.push_sorted_target(by_source[index].target);
+			for (++index; index < end && by_source[index].symbol == symbol; ++index) {
+				// Duplicates are skipped.
+				if (by_source[index].target != by_source[index - 1].target) {
+					builder.push_sorted_target(by_source[index].target);
+				}
+			}
+			builder.finish_symbol();
+		}
+		builder.finish_state();
+		begin = end;
+	}
+	*this = builder.finish();
+	if (num_of_states() < num_of_states_before) { allocate(num_of_states_before); }
 }
 
 void Delta::remove(const State source, const Symbol symbol, const State target) {

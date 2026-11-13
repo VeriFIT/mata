@@ -371,7 +371,7 @@ std::string Evaluation::run() {
 		while (!names.empty()) {
 			const size_t end{names.find('\n')};
 			if (const std::string_view name{names.substr(0, end)}; !name.empty()) {
-				word.push_back(alphabet_.translate_symb(std::string{name}));
+				word.push_back(alphabet_.translate_symb(name));
 			}
 			names.remove_prefix(end == std::string_view::npos ? names.size() : end + 1);
 		}

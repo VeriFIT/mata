@@ -8,7 +8,11 @@
 #include "mata/utils/sparse-set.hh"
 #include "mata/utils/utils.hh"
 
+#include "../explicit-section-reader.hh"
+
+#include <charconv>
 #include <fstream>
+#include <limits>
 
 using namespace mata::nft;
 using mata::Symbol;
@@ -17,7 +21,7 @@ using mata::nft::Nft;
 namespace {
 /// Maps the printed names of EPSILON and DONT_CARE back to their symbols; every other name goes to the alphabet, which
 /// never sees the special names.
-Symbol translate_symbol_name(mata::Alphabet* alphabet, const std::string& name) {
+Symbol translate_symbol_name(mata::Alphabet* alphabet, const std::string_view name) {
 	if (name == mata::EPSILON_NAME) { return EPSILON; }
 	if (name == mata::DONT_CARE_NAME) { return DONT_CARE; }
 	return alphabet->translate_symb(name);
@@ -25,11 +29,137 @@ Symbol translate_symbol_name(mata::Alphabet* alphabet, const std::string& name) 
 
 /// The per-level variant of @c translate_symbol_name.
 Symbol translate_symbol_name(
-	const std::shared_ptr<mata::AlphabetLevels>& alphabets, const std::string& name, const Level level
+	const std::shared_ptr<mata::AlphabetLevels>& alphabets, const std::string_view name, const Level level
 ) {
 	if (name == mata::EPSILON_NAME) { return EPSILON; }
 	if (name == mata::DONT_CARE_NAME) { return DONT_CARE; }
 	return alphabets->translate_symb(name, level);
+}
+
+/// Parses a level as @c std::stol() would, but only a plain decimal number that fits @c Level, without leading zeros:
+///  a caller can bound the digits of the levels the general reader reads by bounding the values read here.
+/// @return The level, or @c std::nullopt.
+std::optional<Level> parse_plain_level(const std::string_view level) {
+	Level value{};
+	const char* const end{level.data() + level.size()};
+	if (level.empty() || level.front() < '0' || level.front() > '9' || (level.front() == '0' && level.size() > 1)) {
+		return std::nullopt;
+	}
+	if (const auto [ptr, error]{std::from_chars(level.data(), end, value)}; error != std::errc{} || ptr != end) {
+		return std::nullopt;
+	}
+	return value;
+}
+
+/**
+ * Reads an NFT from @p input with @c mata::parser::ExplicitSectionReader, producing the NFT that
+ *  @c builder::construct() produces from @c parser::parse_mf() of @p input, with the states numbered the same.
+ * @return The NFT, or @c std::nullopt when @p input leaves the subset of the format this reader covers.
+ */
+std::optional<Nft>
+	read_explicit_nft(const std::string_view input, mata::Alphabet* alphabet, mata::parser::StateNameMap& state_names) {
+	using mata::parser::ExplicitSectionReader;
+	using mata::parser::ExplicitToken;
+
+	ExplicitSectionReader reader{input};
+	if (const std::optional<std::string_view> type{reader.read_type()};
+		!type.has_value() || (*type != TYPE_NFT && *type != TYPE_NFT + "-explicit")) {
+		return std::nullopt;
+	}
+
+	Nft aut;
+	// See builder::construct(): a name mapped by the caller allocates its state, a new name skips the mapped states.
+	//  Every state allocated is below num_of_states, which spares a name met before the call of add_state().
+	size_t num_of_states{0};
+	const auto get_state{[&](const std::string_view name) {
+		if (const std::optional<State> state{state_names.find(name)}) {
+			if (*state >= num_of_states) {
+				aut.add_state(*state);
+				num_of_states = aut.num_of_states();
+			}
+			return *state;
+		}
+		const State state{aut.add_state(state_names.new_state(num_of_states))};
+		num_of_states = aut.num_of_states();
+		state_names.insert(name, state);
+		return state;
+	}};
+
+	// builder::construct() reads the keys before the body, in this order, whatever their order in the file.
+	std::vector<std::string> initial_names;
+	std::vector<std::string> final_names;
+	std::vector<std::string> levels;
+	// Present even without values; the key alone is malformed.
+	std::optional<std::vector<std::string>> num_of_levels;
+	const auto start_body{[&]() {
+		for (const std::string& name : initial_names) { aut.initial.insert(get_state(name)); }
+		for (const std::string& name : final_names) { aut.final.insert(get_state(name)); }
+		// A state listed twice keeps its last level. Left to the general reader, whose entries callers can check one
+		//  by one, as the Rust binding does.
+		std::vector<bool> has_level;
+		for (const std::string_view state_level : levels) {
+			const size_t colon{state_level.find(':')};
+			if (colon == std::string_view::npos) { return false; }
+			const State state{get_state(state_level.substr(0, colon))};
+			const std::optional<Level> level{parse_plain_level(state_level.substr(colon + 1))};
+			if (!level.has_value()) { return false; }
+			if (state >= has_level.size()) { has_level.resize(state + 1); }
+			if (has_level[state]) { return false; }
+			has_level[state] = true;
+			aut.levels[state] = *level;
+		}
+		if (num_of_levels.has_value()) {
+			if (num_of_levels->size() != 1) { return false; }
+			const std::optional<Level> level{parse_plain_level(num_of_levels->front())};
+			if (!level.has_value()) { return false; }
+			aut.levels.num_of_levels = *level;
+		}
+		return true;
+	}};
+
+	std::vector<Transition> transitions;
+	bool in_body{false};
+	while (true) {
+		switch (reader.read_line()) {
+			case ExplicitSectionReader::Line::Key: {
+				std::vector<std::string>* values{nullptr};
+				if (const std::string_view key{reader.key()}; key == "Initial") {
+					values = &initial_names;
+				} else if (key == "Final") {
+					values = &final_names;
+				} else if (key == "Levels") {
+					values = &levels;
+				} else if (key == "LevelsNum") {
+					if (!num_of_levels.has_value()) { num_of_levels.emplace(); }
+					values = &*num_of_levels;
+				} else { // builder::construct() ignores any other key.
+					break;
+				}
+				// Would be numbered before the body.
+				if (in_body) { return std::nullopt; }
+				for (const ExplicitToken& token : reader.tokens()) { values->emplace_back(token.text); }
+				break;
+			}
+			case ExplicitSectionReader::Line::Body: {
+				if (!in_body && !start_body()) { return std::nullopt; }
+				in_body = true;
+				const std::vector<ExplicitToken>& tokens{reader.tokens()};
+				if (tokens.size() != 3) { return std::nullopt; }
+				const State source{get_state(tokens[0].text)};
+				const Symbol symbol{translate_symbol_name(alphabet, tokens[1].text)};
+				const State target{get_state(tokens[2].text)};
+				transitions.emplace_back(source, symbol, target);
+				break;
+			}
+			case ExplicitSectionReader::Line::End: {
+				if (!in_body && !start_body()) { return std::nullopt; }
+				aut.delta.add(std::move(transitions));
+				return aut;
+			}
+			case ExplicitSectionReader::Line::Unsupported:
+				return std::nullopt;
+		}
+	}
 }
 } // namespace
 
@@ -45,14 +175,15 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 	NameStateMap tmp_state_map;
 	if (nullptr == state_map) { state_map = &tmp_state_map; }
 
-	// a lambda for translating state names to identifiers
-	auto get_state_name = [&](const std::string& str) {
-		if (!state_map->contains(str)) {
-			const State state = aut.add_state();
-			state_map->insert({str, state});
-			return state;
-		}
-		return (*state_map)[str];
+	// a lambda for translating state names to identifiers; a name mapped by the caller allocates its state, which
+	//  gives it a level, and a new name skips the mapped states, so that it never gets the identifier of a mapped name
+	//  read later
+	mata::parser::NewStates new_states{*state_map};
+	auto get_state_name = [&](const std::string_view name) {
+		if (const auto it{state_map->find(name)}; it != state_map->end()) { return aut.add_state(it->second); }
+		const State state = aut.add_state(new_states.next(aut.num_of_states()));
+		state_map->emplace(name, state);
+		return state;
 	};
 
 	auto it = parsec.dict.find("Initial");
@@ -84,7 +215,7 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 
 				const State state = get_state_name(state_name);
 				const long level = std::stol(level_str);
-				if (level < 0) {
+				if (level < 0 || static_cast<unsigned long>(level) > std::numeric_limits<Level>::max()) {
 					throw std::runtime_error("Bad format of levels: level " + level_str + " is out of range.");
 				}
 				aut.levels[state] = static_cast<Level>(level);
@@ -103,7 +234,7 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 		if (it->second.size() > 1) { throw std::runtime_error("Only one LevelsNum can be specified."); }
 		try {
 			const long level = std::stol(it->second[0]);
-			if (level < 0) {
+			if (level < 0 || static_cast<unsigned long>(level) > std::numeric_limits<Level>::max()) {
 				throw std::runtime_error("Bad format of levels: level " + it->second[0] + " is out of range.");
 			}
 			aut.levels.num_of_levels = static_cast<Level>(level);
@@ -142,14 +273,13 @@ Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
 	NameStateMap tmp_state_map;
 	if (nullptr == state_map) { state_map = &tmp_state_map; }
 
-	// a lambda for translating state names to identifiers
-	auto get_state_name = [&state_map, &aut](const std::string& str) {
-		if (!state_map->contains(str)) {
-			const State state = aut.add_state();
-			state_map->insert({str, state});
-			return state;
-		}
-		return (*state_map)[str];
+	// a lambda for translating state names to identifiers, see the ParsedSection overload above
+	mata::parser::NewStates new_states{*state_map};
+	auto get_state_name = [&state_map, &aut, &new_states](const std::string_view name) {
+		if (const auto it{state_map->find(name)}; it != state_map->end()) { return aut.add_state(it->second); }
+		const State state = aut.add_state(new_states.next(aut.num_of_states()));
+		state_map->emplace(name, state);
+		return state;
 	};
 
 	for (const auto& str : inter_aut.initial_formula.collect_node_names()) {
@@ -158,30 +288,32 @@ Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
 	}
 
 	for (const auto& [formula_node, formula_graph] : inter_aut.transitions) {
-		if (formula_graph.children.size() != 2) {
-			if (formula_graph.children.size() == 1) { throw std::runtime_error("Epsilon transitions not supported"); }
+		const FormulaGraphChildren children{formula_graph.children()};
+		if (children.size() != 2) {
+			if (children.size() == 1) { throw std::runtime_error("Epsilon transitions not supported"); }
 			throw std::runtime_error("Invalid transition");
 		}
 
-		const State source = get_state_name(formula_node.name);
-		const Symbol symbol = translate_symbol_name(alphabet, formula_graph.children[0].node.name);
-		const State target = get_state_name(formula_graph.children[1].node.name);
+		const State source = get_state_name(formula_node.name());
+		const Symbol symbol = translate_symbol_name(alphabet, children[0].node().name());
+		const State target = get_state_name(children[1].node().name());
 
 		aut.delta.add(source, symbol, target);
 	}
 
 	std::unordered_set<std::string> final_formula_nodes;
-	if (!(inter_aut.final_formula.node.is_constant())) {
+	if (!(inter_aut.final_formula.node().is_constant())) {
 		// we do not want to parse true/false (constant) as a state so we do not collect it
 		final_formula_nodes = inter_aut.final_formula.collect_node_names();
 	}
 
 	// for constant true, we will pretend that final nodes are negated with empty final_formula_nodes
-	if (inter_aut.final_formula.node.is_true() || inter_aut.are_final_states_conjunction_of_negation()) {
+	if (inter_aut.final_formula.node().is_true() || inter_aut.are_final_states_conjunction_of_negation()) {
 		// Final nodes are negated.
 		// We add all states NOT in final_formula_nodes to final states.
+		// A mapped name the input does not use gets its state allocated here, and with it a level.
 		for (const auto& [state_name, state] : *state_map) {
-			if (!final_formula_nodes.contains(state_name)) { aut.final.insert(state); }
+			if (!final_formula_nodes.contains(state_name)) { aut.final.insert(aut.add_state(state)); }
 		}
 	} else {
 		// we add all states in final_formula_nodes to final states
@@ -217,13 +349,13 @@ Nft builder::construct(
 	NameStateMap tmp_state_map;
 	if (nullptr == state_map) { state_map = &tmp_state_map; }
 
-	auto get_state_name = [&state_map, &aut](const std::string& str) {
-		if (!state_map->contains(str)) {
-			const State state = aut.add_state();
-			state_map->insert({str, state});
-			return state;
-		}
-		return (*state_map)[str];
+	// See the overload with a single alphabet above.
+	mata::parser::NewStates new_states{*state_map};
+	auto get_state_name = [&state_map, &aut, &new_states](const std::string_view name) {
+		if (const auto it{state_map->find(name)}; it != state_map->end()) { return aut.add_state(it->second); }
+		const State state = aut.add_state(new_states.next(aut.num_of_states()));
+		state_map->emplace(name, state);
+		return state;
 	};
 
 	for (const auto& str : inter_aut.initial_formula.collect_node_names()) {
@@ -232,25 +364,26 @@ Nft builder::construct(
 	}
 
 	for (const auto& [formula_node, formula_graph] : inter_aut.transitions) {
-		if (formula_graph.children.size() != 2) {
-			if (formula_graph.children.size() == 1) { throw std::runtime_error("Epsilon transitions not supported"); }
+		const FormulaGraphChildren children{formula_graph.children()};
+		if (children.size() != 2) {
+			if (children.size() == 1) { throw std::runtime_error("Epsilon transitions not supported"); }
 			throw std::runtime_error("Invalid transition");
 		}
 
-		const State source = get_state_name(formula_node.name);
-		const Symbol symbol = translate_symbol_name(alphabets, formula_graph.children[0].node.name, aut.levels[source]);
-		const State target = get_state_name(formula_graph.children[1].node.name);
+		const State source = get_state_name(formula_node.name());
+		const Symbol symbol = translate_symbol_name(alphabets, children[0].node().name(), aut.levels[source]);
+		const State target = get_state_name(children[1].node().name());
 		aut.delta.add(source, symbol, target);
 	}
 
 	std::unordered_set<std::string> final_formula_nodes;
-	if (!(inter_aut.final_formula.node.is_constant())) {
+	if (!(inter_aut.final_formula.node().is_constant())) {
 		final_formula_nodes = inter_aut.final_formula.collect_node_names();
 	}
 
-	if (inter_aut.final_formula.node.is_true() || inter_aut.are_final_states_conjunction_of_negation()) {
+	if (inter_aut.final_formula.node().is_true() || inter_aut.are_final_states_conjunction_of_negation()) {
 		for (const auto& [state_name, state] : *state_map) {
-			if (!final_formula_nodes.contains(state_name)) { aut.final.insert(state); }
+			if (!final_formula_nodes.contains(state_name)) { aut.final.insert(aut.add_state(state)); }
 		}
 	} else {
 		for (const auto& str : final_formula_nodes) { aut.final.insert(get_state_name(str)); }
@@ -295,39 +428,42 @@ Nft builder::create_sigma_star_nft(const std::shared_ptr<mata::Alphabet>& alphab
 	return nft;
 }
 
-Nft builder::parse_from_mata(std::istream& nft_stream) {
-	const std::string nft_str = "NFT";
-	const parser::Parsed parsed{parser::parse_mf(nft_stream)};
+std::optional<Nft>
+	builder::parse_explicit_from_mata(const std::string_view nft_in_mata, Alphabet* alphabet, NameStateMap* state_map) {
+	IntAlphabet int_alphabet;
+	if (alphabet == nullptr) { alphabet = &int_alphabet; }
+	// The caller's map stays untouched when the reader gives up halfway. A state name takes a few bytes of the input,
+	//  which bounds the numbers worth indexing.
+	mata::parser::StateNameMap state_names{state_map != nullptr ? *state_map : NameStateMap{}, nft_in_mata.size() / 4};
+	std::optional<Nft> nft{read_explicit_nft(nft_in_mata, alphabet, state_names)};
+	if (nft.has_value() && state_map != nullptr) { *state_map = state_names.to_map(); }
+	return nft;
+}
+
+Nft builder::parse_from_mata(const std::string& nft_in_mata) {
+	IntAlphabet alphabet;
+	if (std::optional<Nft> nft{parse_explicit_from_mata(nft_in_mata, &alphabet)}) { return std::move(*nft); }
+
+	const parser::Parsed parsed{parser::parse_mf(nft_in_mata)};
 	if (parsed.size() != 1) {
 		throw std::runtime_error(
 			"The number of sections in the input file is '" + std::to_string(parsed.size()) + "'. Required is '1'.\n"
 		);
 	}
-	if (const std::string automaton_type{parsed[0].type}; !automaton_type.starts_with(nft_str)) {
+	if (const std::string& automaton_type{parsed[0].type}; !automaton_type.starts_with(TYPE_NFT)) {
 		throw std::runtime_error("The type of input automaton is '" + automaton_type + "'. Required is 'NFT'\n");
 	}
-	IntAlphabet alphabet;
-	// return construct(IntermediateAut::parse_from_mf(parsed)[0], &alphabet);
 	return construct(parsed[0], &alphabet);
+}
+
+Nft builder::parse_from_mata(std::istream& nft_stream) {
+	return parse_from_mata(parser::read_whole_stream(nft_stream));
 }
 
 Nft builder::parse_from_mata(const std::filesystem::path& nft_file) {
 	std::ifstream file_stream{nft_file};
 	if (!file_stream) { throw std::runtime_error("Could not open file \'" + nft_file.string() + "'\n"); }
-
-	Nft nft;
-	try {
-		nft = parse_from_mata(file_stream);
-	} catch (const std::exception&) {
-		file_stream.close();
-		throw;
-	}
-	return nft;
-}
-
-Nft builder::parse_from_mata(const std::string& nft_in_mata) {
-	std::istringstream nft_stream(nft_in_mata);
-	return parse_from_mata(nft_stream);
+	return parse_from_mata(file_stream);
 }
 
 Nft builder::from_nfa_with_levels_zero(

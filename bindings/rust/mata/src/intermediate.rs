@@ -63,15 +63,15 @@ impl IntermediateAutomaton {
 	///
 	/// # Errors
 	///
-	/// [`IntermediateError::NotMintermizable`] unless every automaton is an NFA or an AFA with a
-	/// bit-vector alphabet.
+	/// [`IntermediateError::NotMintermizable`] unless every automaton is an NFA with a bit-vector
+	/// alphabet.
 	pub fn mintermize(
 		automata: &[&IntermediateAutomaton],
 	) -> Result<Vec<IntermediateAutomaton>, IntermediateError> {
 		let mut refs = ffi::intermediate_refs_new();
 		for (index, automaton) in automata.iter().enumerate() {
 			let raw = automaton.raw();
-			if !(raw.is_nfa() || raw.is_afa()) || !raw.is_bitvector() {
+			if !raw.is_nfa() || !raw.is_bitvector() {
 				return Err(IntermediateError::NotMintermizable { index });
 			}
 			ffi::intermediate_refs_push(refs.pin_mut(), raw);

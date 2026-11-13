@@ -419,7 +419,8 @@ class Nfa : public Automaton {
 	 * If you need to parse the automaton again, use IntAlphabet in construct()
 	 *
 	 * The whole automaton is written with '\n' line endings and @p output is flushed once before returning, so the
-	 *  automaton is on the stream when this returns.
+	 *  automaton is on the stream when this returns. The numbers are plain decimals whatever the format flags of
+	 *  @p output.
 	 *
 	 * @param[out] output Output stream to print the automaton to.
 	 * @param[in] alphabet If specified, translates the symbols to their symbol names in the @p alphabet.

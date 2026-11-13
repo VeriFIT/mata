@@ -1,13 +1,13 @@
 #include "mata-sys/cxx/common.hh"
 
 #include <algorithm>
+#include <charconv>
 #include <mutex>
 #include <optional>
 #include <utility>
 
 #include "mata/nft/types.hh"
 #include "mata/parser/mintermization.hh"
-#include "mata/parser/parser.hh"
 
 namespace mata_sys::detail {
 
@@ -20,9 +20,9 @@ NameTable::NameTable(const rust::Slice<const rust::String> names, const rust::Sl
 	}
 }
 
-Symbol NameTable::translate_symb(const std::string& name) {
+Symbol NameTable::translate_symb(const std::string_view name) {
 	const auto found = by_name_.find(name);
-	if (found == by_name_.end()) { throw std::runtime_error("unknown symbol name '" + name + "'"); }
+	if (found == by_name_.end()) { throw std::runtime_error("unknown symbol name '" + std::string(name) + "'"); }
 	return found->second;
 }
 
@@ -38,31 +38,17 @@ SymbolSet NameTable::get_alphabet_symbols() const {
 	return SymbolSet(std::move(symbols));
 }
 
-std::vector<mata::IntermediateAut> mintermize(const std::vector<const mata::IntermediateAut*>& automata) {
+std::mutex& cudd_mutex() {
 	// CUDD swaps a process-wide out-of-memory handler, so one thread at a time.
-	static auto cudd_mutex = std::mutex();
-	const auto cudd_lock = std::lock_guard(cudd_mutex);
+	static auto mutex = std::mutex();
+	return mutex;
+}
+
+std::vector<mata::IntermediateAut> mintermize(const std::vector<const mata::IntermediateAut*>& automata) {
+	const auto cudd_lock = std::lock_guard(cudd_mutex());
 	auto mintermization = mata::Mintermization();
 	return mintermization.mintermize(automata);
 }
-
-std::vector<mata::IntermediateAut> parse_sections(const rust::Str text) {
-	auto sections = mata::IntermediateAut::parse_from_mf(mata::parser::parse_mf(std::string(text)));
-
-	auto bitvector_sections = std::vector<const mata::IntermediateAut*>();
-	for (const auto& section : sections) {
-		if (section.is_bitvector()) { bitvector_sections.push_back(&section); }
-	}
-	if (!bitvector_sections.empty()) {
-		auto mintermized = mintermize(bitvector_sections);
-		auto next_mintermized = mintermized.begin();
-		for (auto& section : sections) {
-			if (section.is_bitvector()) { section = std::move(*next_mintermized++); }
-		}
-	}
-	return sections;
-}
-
 void check_delta(const mata::Automaton& automaton) {
 	const State num_states = static_cast<State>(automaton.num_of_states());
 	for (State source = 0; source < automaton.delta.num_of_states(); ++source) {
@@ -91,19 +77,20 @@ void check_delta(const mata::Automaton& automaton) {
 	}
 }
 
-Symbol NumberingAlphabet::translate_symb(const std::string& str) {
-	// More than 10 digits is more than any symbol, and too long for stoull. A number is written without
+Symbol NumberingAlphabet::translate_symb(const std::string_view str) {
+	// More than 10 digits is more than any symbol. A number is written without
 	// leading zeros, so `01` is a name, as it is to Mata.
 	if (str.empty() || str.size() > 10 || (str.size() > 1 && str[0] == '0') ||
 		!std::ranges::all_of(str, [](const char c) { return c >= '0' && c <= '9'; }) ||
 		get_symbol_map().contains(str)) {
 		return *taken_.insert(OnTheFlyAlphabet::translate_symb(str)).first;
 	}
-	const auto number{std::stoull(str)};
+	unsigned long long number{};
+	std::from_chars(str.data(), str.data() + str.size(), number);
 	if (number >= mata::nft::DONT_CARE || taken_.contains(static_cast<Symbol>(number))) {
 		return *taken_.insert(OnTheFlyAlphabet::translate_symb(str)).first;
 	}
-	bind(str, static_cast<Symbol>(number));
+	bind(std::string{str}, static_cast<Symbol>(number));
 	return static_cast<Symbol>(number);
 }
 
@@ -147,6 +134,30 @@ void ParseAlphabet::report_new_names(rust::Vec<rust::String>& new_names, rust::V
 		new_symbols.push_back(symbol);
 		new_names.push_back(rust::String(name));
 	}
+}
+
+std::vector<Section> split_sections(const std::string_view text) {
+	const auto is_space = [](const char c) { return c == ' ' || (c >= '\t' && c <= '\r'); };
+	auto sections = std::vector<Section>();
+	std::size_t pos = 0;
+	while (pos < text.size()) {
+		const std::size_t start = pos;
+		auto type = std::optional<std::string_view>();
+		while (true) {
+			while (pos < text.size() && is_space(text[pos])) { ++pos; }
+			if (pos == text.size() || (type.has_value() && text[pos] == '@')) { break; }
+			const std::size_t line_end = std::min(text.find('\n', pos), text.size());
+			const auto line = text.substr(pos, line_end - pos);
+			pos = line_end;
+			if (!type.has_value() && line[0] != '#') {
+				// The type line; errors in it are left to the readers.
+				type =
+					line[0] == '@' ? line.substr(1, line.find_first_of("\"()#%@\\ \t\r", 1) - 1) : std::string_view();
+			}
+		}
+		if (type.has_value()) { sections.push_back({text.substr(start, pos - start), *type}); }
+	}
+	return sections;
 }
 
 } // namespace mata_sys::detail

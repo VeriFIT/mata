@@ -19,7 +19,8 @@ namespace mata::nft::builder {
 
 using namespace mata::nft;
 
-using NameStateMap = std::unordered_map<std::string, State>;
+/// Finds a @c std::string_view name without copying it.
+using NameStateMap = utils::StringMap<State>;
 
 /**
  * Create an automaton accepting only a single @p word.
@@ -68,10 +69,16 @@ Nft create_sigma_star_nft(const std::shared_ptr<Alphabet>& alphabet, size_t num_
  *  the level metadata: `%Levels` assigns `state:level` pairs and `%LevelsNum` sets the number of levels, both of which
  *  the @c IntermediateAut path ignores. The two overloads consequently accept different inputs and cannot be merged
  *  without changing observable behavior.
+ *
+ * @param state_map If not @c nullptr, the map from state names to states, which all overloads and readers fill in the
+ *  same way. The names it maps beforehand keep their states, each allocated (with the default level) when the input
+ *  uses its name; a final formula of an @c IntermediateAut that is true or negates states uses every name of the map
+ *  it does not negate. Every other name gets the lowest state that the automaton does not have yet and that no name
+ *  of the map had beforehand, so that it never shares the state of a mapped name, used later or not at all.
  */
 Nft construct(const parser::ParsedSection& parsec, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 
-/** Loads an automaton from Parsed object */
+/** Loads an automaton from Parsed object; see the overload above for @p state_map. */
 Nft construct(const IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 /** Loads an automaton from Parsed object; version for python binding */
 void construct(Nft* result, const IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr);
@@ -80,7 +87,7 @@ void construct(Nft* result, const IntermediateAut& inter_aut, Alphabet* alphabet
  * @brief Loads an automaton from an IntermediateAut using per-level alphabets.
  *
  * The constructed @c Nft has its @c alphabets member set to @p alphabets and its inherited @c alphabet member left as
- * @c nullptr.
+ * @c nullptr. See the @c ParsedSection overload above for @p state_map.
  */
 Nft construct(
 	const IntermediateAut& inter_aut,
@@ -102,6 +109,24 @@ Nft construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr, NameStat
 } // construct().
 
 /**
+ * Reads an NFT from the `.mata` format in @p nft_in_mata with the fast reader of explicit alphabets.
+ *
+ * The reader skips @c mata::parser::parse_mf(), and reads only the inputs whose transitions are `source symbol target`
+ *  triples, whose `%Initial` and `%Final` lines list states, and whose `%Levels` and `%LevelsNum` lines give each
+ *  state at most one level as a decimal number without leading zeros that fits @c Level. For those, it returns the
+ *  NFT @c construct() returns from @c parse_mf() of @p nft_in_mata, with the states numbered the same.
+ *
+ * @param nft_in_mata Input with a single `@NFT` or `@NFT-explicit` section.
+ * @param alphabet Alphabet translating the symbol names; @c nullptr reads them as numbers (@c IntAlphabet).
+ * @param state_map If not @c nullptr, receives the map from state names to states, see @c construct().
+ * @return The NFT, or @c std::nullopt when @p nft_in_mata needs the general reader, as do malformed inputs.
+ *  @p state_map is then left unchanged, while @p alphabet may have learned symbols of the lines read before.
+ */
+std::optional<Nft> parse_explicit_from_mata(
+	std::string_view nft_in_mata, Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr
+);
+
+/**
  * Parse NFA from the mata format in an input stream.
  *
  * @param nft_stream Input stream containing NFA in mata format.
@@ -111,6 +136,9 @@ Nft parse_from_mata(std::istream& nft_stream);
 
 /**
  * Parse NFA from the mata format in a string.
+ *
+ * Inputs whose `%Initial`, `%Final`, `%Levels`, and `%LevelsNum` lines and transitions are plain lists of names are
+ *  read directly, the others go through @c mata::parser::parse_mf() and @c construct(); both read the same NFT.
  *
  * @param nft_in_mata String containing NFA in mata format.
  * @throws std::runtime_error Parsing of NFA fails.
