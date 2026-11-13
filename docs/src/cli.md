@@ -262,7 +262,7 @@ mata convert [--from mata|dot] [--to mata|dot|regex] [--kind nfa|nft]
   automaton follows the previous one, separated by a blank line, which the `.mata` format reads as a section break.
   Two inputs that would be written to the same file in the directory, such as `one/x.mata` and `two/x.mata`, are an
   error before anything is written.
-- `--to regex` writes one RE2/Latin1 regular expression per NFA. It is for NFAs only; a transducer is an error.
+- `--to regex` writes one RE2 regular expression per NFA. It is for NFAs only; a transducer is an error.
 - `--output -` writes to standard output, the default. `INPUT` of `-` reads standard input, but standard input can be
   used only once.
 - `mata convert --from dot` is the only part that accepts DOT. The DOT it accepts is exactly what
@@ -273,7 +273,9 @@ mata convert [--from mata|dot] [--to mata|dot|regex] [--kind nfa|nft]
 Regex output represents every transition symbol as one character. When the input has an alphabet, the writer uses its
 symbol names: every used symbol's name, or its number if it is unnamed, must be exactly one character, and otherwise
 the conversion is an error. Without an alphabet it writes each symbol's Unicode scalar value, so every symbol must be
-at most `0x10FFFF` and not a surrogate. The output is the RE2/Latin1 syntax that `nfa:create-from-regex` reads.
+at most `0x10FFFF` and not a surrogate. `nfa:create-from-regex` is a Latin1 reader: it reads back symbols through
+`0xFF` exactly. Larger Unicode scalar values require a UTF-8 reader; decoding that reader's UTF-8 automaton then
+recovers the original symbols.
 
 ### DOT conventions
 

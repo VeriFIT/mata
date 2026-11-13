@@ -30,7 +30,9 @@ assert_eq!(a.minimize().num_states(), 4);
 - Operations such as `union`, `intersection`, `determinize` and `minimize` return a new [`Nfa`]. `&`, `|` and `-` are intersection, union and difference.
 - Each check has a variant that returns a counterexample, such as `is_included_in` and `find_word_not_in`.
 - The `_within` methods stop at [`Limits`], for the constructions that can blow up.
-- [`Nfa::parse_mata`], [`Nfa::display_with`] and [`Nfa::dot`] read and write the `.mata` and DOT formats; [`Nfa::regex`] writes an RE2/Latin1 regular expression.
+- [`Nfa::parse_mata`], [`Nfa::display_with`] and [`Nfa::dot`] read and write the `.mata` and DOT formats.
+  [`Nfa::regex`] writes an RE2 regular expression. Symbols through `0xFF` read back directly as one automaton
+  through the Latin1 reader; larger values need a UTF-8 reader and decoding of the resulting automaton.
 - [`nft`] holds finite transducers. Mata's transducers are experimental and moving fast, so expect breaking changes.
 
 ## Building

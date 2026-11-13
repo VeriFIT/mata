@@ -705,12 +705,13 @@ alphabet; `(script-alphabet)`.
 | `(get-witness)`             | See [Witnesses](#witnesses)                                   | `Option Word` |
 
 `print` and `write` return their argument, so they can stand in the middle of a pipeline. An automaton is printed in
-the `.mata` format; use `nfa:print-to-dot` to print a DOT graph instead, or `nfa:print-to-regex` to print an RE2/Latin1
+the `.mata` format; use `nfa:print-to-dot` to print a DOT graph instead, or `nfa:print-to-regex` to print an RE2
 regular expression: `(print (nfa:print-to-dot a))`. `:mode "readable"` asks the regex writer for a shorter, polished
 expression; the default `"fast"` is the machine pipeline output. When the script alphabet is non-empty the regex uses
 its symbol names; every used symbol's name, or its number if it is unnamed, must be one character, and otherwise the
 operation reports an error. Without an alphabet the writer uses Unicode scalar values, since a regex has one character
-per symbol.
+per symbol. The Latin1 `nfa:create-from-regex` reader reads back symbols through `0xFF` exactly. Larger scalar values
+require a UTF-8 reader and decoding of its UTF-8 automaton.
 
 In an interactive session, the value of every top-level expression is shown, with an automaton summarised by its
 kind and size rather than printed in full. When a script is run, the value of a top-level expression is dropped.
