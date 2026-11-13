@@ -204,7 +204,8 @@ class Mintermization {
 	Mintermization(const Mintermization&) = delete;
 	Mintermization& operator=(const Mintermization&) = delete;
 	Mintermization(Mintermization&&) = default;
-	Mintermization& operator=(Mintermization&&) = default;
+	// An assignment would replace the manager first, freeing the old one, and then release the old BDDs through it.
+	Mintermization& operator=(Mintermization&&) = delete;
 
   private:
 	static constexpr unsigned INITIAL_CACHE_SLOTS{4'096};

@@ -4,10 +4,13 @@
 
 #include <algorithm>
 #include <map>
+#include <optional>
 #include <ranges>
 #include <set>
 #include <sstream>
 #include <string>
+#include <type_traits>
+#include <utility>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
@@ -765,4 +768,17 @@ TEST_CASE("mata::Mintermization keeps the constants apart from the symbols of th
 		CHECK(nfa.delta.num_of_transitions() == 3);
 		CHECK(nfa.delta.get_successors(state_map.at("0")).contains(state_map.at("2")));
 	}
+}
+
+TEST_CASE("mata::Mintermization moves by construction only") {
+	// An assignment would release the BDDs of the assigned object through its freed manager.
+	STATIC_CHECK_FALSE(std::is_move_assignable_v<mata::Mintermization>);
+	const mata::IntermediateAut aut{mata::IntermediateAut::parse_from_mf(
+		parse_mf("@NFA-bits\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a1 q1\nq0 !a1 q2\n")
+	)[0]};
+	std::optional<mata::Mintermization> source{std::in_place};
+	CHECK(source->mintermize(aut).transitions.size() == 2);
+	mata::Mintermization moved{std::move(*source)};
+	source.reset();
+	CHECK(moved.mintermize(aut).transitions.size() == 2);
 }
