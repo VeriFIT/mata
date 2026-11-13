@@ -134,4 +134,14 @@ class ParseAlphabet {
 	std::unordered_set<std::string> known_names_ = {};
 };
 
+/// One section of a `.mata` text, and the name of its type (empty if it does not start with a type line).
+struct Section {
+	std::string_view text;
+	std::string_view type;
+};
+
+/// Splits `text` where `parse_mf()` splits it into sections, so that each goes to the reader that takes it. Text
+/// without a type line, only blank lines and comments, is dropped, as `parse_mf()` drops it.
+std::vector<Section> split_sections(std::string_view text);
+
 } // namespace mata_sys::detail

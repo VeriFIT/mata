@@ -26,6 +26,7 @@ namespace {
 using detail::assign;
 using detail::check_state;
 using detail::slice_of;
+using detail::split_sections;
 using detail::SymbolSet;
 using detail::to_symbol_set;
 using detail::to_word;
@@ -126,37 +127,6 @@ const mata::nfa::SymbolPost&
 	const auto& state_post = automaton.delta.state_post(source);
 	if (index >= state_post.size()) { throw std::out_of_range("symbol post index out of range"); }
 	return *(state_post.begin() + static_cast<std::ptrdiff_t>(index));
-}
-
-/// One section of a `.mata` text, and the name of its type (empty if it does not start with a type line).
-struct Section {
-	std::string_view text;
-	std::string_view type;
-};
-
-/// Splits `text` where `parse_mf()` splits it into sections, so that each goes to the reader that takes it. Text
-/// without a type line, only blank lines and comments, is dropped, as `parse_mf()` drops it.
-std::vector<Section> split_sections(const std::string_view text) {
-	const auto is_space = [](const char c) { return c == ' ' || (c >= '\t' && c <= '\r'); };
-	auto sections = std::vector<Section>();
-	std::size_t pos = 0;
-	while (pos < text.size()) {
-		const std::size_t start = pos;
-		auto type = std::optional<std::string_view>();
-		while (true) {
-			while (pos < text.size() && is_space(text[pos])) { ++pos; }
-			if (pos == text.size() || (type.has_value() && text[pos] == '@')) { break; }
-			const std::size_t line_end = std::min(text.find('\n', pos), text.size());
-			const auto line = text.substr(pos, line_end - pos);
-			pos = line_end;
-			if (!type.has_value() && line[0] != '#') {
-				// The type line; errors in it are left to the readers.
-				type = line[0] == '@' ? line.substr(1, line.find_first_of("\"()#%@\\ \t", 1) - 1) : std::string_view();
-			}
-		}
-		if (type.has_value()) { sections.push_back({text.substr(start, pos - start), *type}); }
-	}
-	return sections;
 }
 
 /// Gives the minterms of `nfa`, the symbols `BitvectorNfaReader::build()` gives them without an alphabet, the symbols

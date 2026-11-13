@@ -4,6 +4,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "mata-sys/cxx/common.hh"
@@ -205,6 +206,66 @@ void check_level_entries(const mata::parser::ParsedSection& section) {
 	}
 }
 
+/// Reads every section of `text` with Mata's fast reader of explicit transducers. @return The transducers, or
+/// `std::nullopt` when a section needs the general reader or has levels beyond `MAX_LEVELS`; `alphabet` may then
+/// have learned names.
+std::optional<std::vector<Nft>> read_explicit_nfts(const std::string_view text, mata::Alphabet& alphabet) {
+	const auto sections = detail::split_sections(text);
+	auto transducers = std::vector<Nft>();
+	transducers.reserve(sections.size());
+	for (const auto& section : sections) {
+		auto nft = std::optional<Nft>();
+		try {
+			nft = mata::nft::builder::parse_explicit_from_mata(section.text, &alphabet);
+		} catch (const std::exception&) {
+			return std::nullopt; // A name the alphabet rejects; the general reader reports it.
+		}
+		if (!nft.has_value() || nft->levels.num_of_levels > MAX_LEVELS ||
+			std::ranges::any_of(nft->levels, [](const Level level) { return level >= MAX_LEVELS; })) {
+			return std::nullopt;
+		}
+		transducers.push_back(std::move(*nft));
+	}
+	return transducers;
+}
+
+/// Calls `read`, prefixing its errors with `section N: ` for the section at `index`.
+template <class Read> auto in_section(const std::size_t index, Read&& read) {
+	try {
+		return read();
+	} catch (const std::runtime_error& error) {
+		throw std::runtime_error("section " + std::to_string(index + 1) + ": " + error.what());
+	}
+}
+
+void adopt_parsed(Nft& nft) {
+	nft.alphabets = nullptr;
+	nft_check_well_formed(nft);
+}
+
+/// Reads the sections of `text` with Mata's general reader, from the raw sections, as Mata's parse_from_mata does:
+/// IntermediateAut ignores the levels.
+std::vector<Nft> construct_nfts(const std::string_view text, mata::Alphabet& alphabet) {
+	const auto sections = mata::parser::parse_mf(std::string(text));
+	auto transducers = std::vector<Nft>();
+	transducers.reserve(sections.size());
+	for (std::size_t i = 0; i < sections.size(); ++i) {
+		const auto& type = sections[i].type;
+		if (type != mata::nft::TYPE_NFT && type != mata::nft::TYPE_NFT + "-explicit") {
+			throw std::runtime_error(
+				"section " + std::to_string(i + 1) + " is '@" + type + "', not an explicit NFT ('@NFT-explicit')"
+			);
+		}
+		transducers.push_back(in_section(i, [&]() {
+			check_level_entries(sections[i]);
+			auto nft = mata::nft::builder::construct(sections[i], &alphabet);
+			adopt_parsed(nft);
+			return nft;
+		}));
+	}
+	return transducers;
+}
+
 } // namespace
 
 std::unique_ptr<Nft> ParsedNfts::take(const std::size_t index) {
@@ -301,31 +362,22 @@ std::unique_ptr<ParsedNfts> nft_parse_mata(
 	rust::Vec<rust::String>& new_names,
 	rust::Vec<Symbol>& new_symbols
 ) {
-	auto alphabet = detail::ParseAlphabet(numeric_symbols, names, named_symbols, next_symbol);
-	// From the raw sections, as Mata's parse_from_mata does: IntermediateAut ignores the levels.
-	const auto sections = mata::parser::parse_mf(std::string(text));
-	auto transducers = std::vector<Nft>();
-	transducers.reserve(sections.size());
-	for (std::size_t i = 0; i < sections.size(); ++i) {
-		const auto& type = sections[i].type;
-		if (type != mata::nft::TYPE_NFT && type != mata::nft::TYPE_NFT + "-explicit") {
-			throw std::runtime_error(
-				"section " + std::to_string(i + 1) + " is '@" + type + "', not an explicit NFT ('@NFT-explicit')"
-			);
+	auto alphabet =
+		std::optional<detail::ParseAlphabet>(std::in_place, numeric_symbols, names, named_symbols, next_symbol);
+	const auto input = std::string_view(text.data(), text.size());
+	auto transducers = read_explicit_nfts(input, *alphabet->get());
+	if (transducers.has_value()) {
+		// Accepted sections pass the checks of the general reader, except these.
+		for (std::size_t i = 0; i < transducers->size(); ++i) {
+			in_section(i, [&]() { adopt_parsed((*transducers)[i]); });
 		}
-		auto nft = Nft();
-		try {
-			check_level_entries(sections[i]);
-			nft = mata::nft::builder::construct(sections[i], alphabet.get());
-			nft.alphabets = nullptr;
-			nft_check_well_formed(nft);
-		} catch (const std::runtime_error& error) {
-			throw std::runtime_error("section " + std::to_string(i + 1) + ": " + error.what());
-		}
-		transducers.push_back(std::move(nft));
+	} else {
+		// From a fresh alphabet, so that the general reader numbers the names and reports the errors as always.
+		alphabet.emplace(numeric_symbols, names, named_symbols, next_symbol);
+		transducers = construct_nfts(input, *alphabet->get());
 	}
-	alphabet.report_new_names(new_names, new_symbols);
-	return std::make_unique<ParsedNfts>(std::move(transducers));
+	alphabet->report_new_names(new_names, new_symbols);
+	return std::make_unique<ParsedNfts>(std::move(*transducers));
 }
 
 std::size_t nft_parsed_len(const ParsedNfts& parsed) { return parsed.size(); }
