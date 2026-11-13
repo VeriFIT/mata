@@ -1,0 +1,103 @@
+[package]
+name = "lazymat"
+version = "0.1.0"
+description = "Lazy emptiness checking on combinations of automata and transducers"
+readme = "README.md"
+license.workspace = true
+repository.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+keywords = [
+  "automata",
+  "transducers",
+  "emptiness",
+  "antichains",
+  "verification",
+]
+categories = ["algorithms", "mathematics"]
+# cargo-fuzz targets build with nightly and sanitizers on their own.
+exclude = ["/fuzz"]
+
+[features]
+default = ["mata"]
+## Leaves from Mata automata and transducers (the `mata` crate), and `Formula::materialize`.
+mata = ["dep:mata"]
+## Leaves from regex-automata DFAs (pure Rust).
+regex = ["dep:regex-automata"]
+## Leaves from rustfst transducers (pure Rust).
+rustfst = ["dep:rustfst"]
+
+[dependencies]
+hashbrown.workspace = true
+indexmap.workspace = true
+parking_lot.workspace = true
+rustc-hash.workspace = true
+stacker.workspace = true
+thiserror.workspace = true
+typed-index-collections.workspace = true
+mata = { workspace = true, optional = true }
+regex-automata = { workspace = true, optional = true }
+rustfst = { workspace = true, optional = true }
+
+[dev-dependencies]
+rand.workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+targets = ["x86_64-unknown-linux-gnu"]
+
+[lints]
+workspace = true
+
+[[example]]
+name = "lazy_inclusion"
+required-features = ["mata"]
+
+[[example]]
+name = "model_checking"
+required-features = ["mata"]
+
+[[example]]
+name = "sat_solver"
+required-features = ["mata"]
+
+[[example]]
+name = "mixed_backends"
+required-features = ["mata", "regex", "rustfst"]
+
+[[test]]
+name = "explicit"
+required-features = ["mata"]
+
+[[test]]
+name = "mata"
+required-features = ["mata"]
+
+[[test]]
+name = "oracle"
+required-features = ["mata"]
+
+[[test]]
+name = "port"
+required-features = ["mata"]
+
+[[test]]
+name = "initial"
+required-features = ["mata"]
+
+[[test]]
+name = "products"
+required-features = ["mata"]
+
+[[test]]
+name = "regressions"
+required-features = ["mata"]
+
+[[test]]
+name = "backends"
+required-features = ["mata", "regex", "rustfst"]
+
+[[test]]
+name = "regex"
+required-features = ["regex"]
