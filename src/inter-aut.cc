@@ -8,6 +8,7 @@
 #include "mata/utils/assert.hh"
 #include "mata/utils/utils.hh"
 
+#include <algorithm>
 #include <format>
 #include <span>
 
@@ -100,33 +101,33 @@ bool no_operators(const std::vector<mata::FormulaNode>& nodes) {
 	return std::ranges::all_of(nodes, [](const mata::FormulaNode& node) { return !node.is_operator(); });
 }
 
-std::string serialize_graph(const mata::FormulaGraph& graph) {
-	if (graph.node.is_operand()) { return std::string{graph.node.raw}; }
+std::string serialize_graph(const mata::FormulaGraphView graph) {
+	if (graph.node().is_operand()) { return std::string{graph.node().raw}; }
 
-	if (graph.children.size() == 1) { // unary operator
-		// Recurse on the child graph itself, keeping its children; wrapping only the node would drop them and the
-		//  binary branch below would then read children that do not exist.
-		const auto& child = graph.children.front();
+	const mata::FormulaGraphChildren children{graph.children()};
+	if (children.size() == 1) { // unary operator
+		const mata::FormulaGraphView child{children.front()};
 		const std::string child_name =
-			child.node.is_operand() ? std::string{child.node.raw} : "(" + serialize_graph(child) + ")";
-		return std::string{graph.node.raw} + child_name;
+			child.node().is_operand() ? std::string{child.node().raw} : "(" + serialize_graph(child) + ")";
+		return std::string{graph.node().raw} + child_name;
 	}
 
-	if (!graph.node.is_operator() || graph.children.size() != 2) {
+	if (children.size() != 2) {
 		throw std::runtime_error(
-			"Cannot serialize a formula graph with a non-binary operator node and " +
-			std::to_string(graph.children.size()) + " children."
+			"Cannot serialize a formula graph with a node '" + std::string{graph.node().raw} +
+			"' that is neither an operand nor an operator."
 		);
 	}
-	const auto& left_child = graph.children.front();
-	std::string lhs = (left_child.node.is_operand()) ? std::string{left_child.node.raw} : serialize_graph(left_child);
-	if (left_child.children.size() == 2) { lhs = "(" + lhs + ")"; }
-	const auto& right_child = graph.children[1];
+	const mata::FormulaGraphView left_child{children.front()};
+	std::string lhs =
+		(left_child.node().is_operand()) ? std::string{left_child.node().raw} : serialize_graph(left_child);
+	if (left_child.children().size() == 2) { lhs = "(" + lhs + ")"; }
+	const mata::FormulaGraphView right_child{children[1]};
 	std::string rhs =
-		(right_child.node.is_operand()) ? std::string{right_child.node.raw} : serialize_graph(right_child);
-	if (right_child.children.size() == 2) { rhs = "(" + rhs + ")"; }
+		(right_child.node().is_operand()) ? std::string{right_child.node().raw} : serialize_graph(right_child);
+	if (right_child.children().size() == 2) { rhs = "(" + rhs + ")"; }
 
-	return lhs + " " + std::string{graph.node.raw} + " " + rhs;
+	return lhs + " " + std::string{graph.node().raw} + " " + rhs;
 }
 
 /**
@@ -136,14 +137,6 @@ std::string serialize_graph(const mata::FormulaGraph& graph) {
 mata::FormulaNode stored_copy(const mata::FormulaNode& node, mata::NameStore& names) {
 	mata::FormulaNode copy{node};
 	copy.raw = names.store(node.raw);
-	return copy;
-}
-
-/// Copies @p graph with the names of all its nodes stored in @p names.
-mata::FormulaGraph stored_copy(const mata::FormulaGraph& graph, mata::NameStore& names) {
-	mata::FormulaGraph copy{stored_copy(graph.node, names)};
-	copy.children.reserve(graph.children.size());
-	for (const mata::FormulaGraph& child : graph.children) { copy.children.push_back(stored_copy(child, names)); }
 	return copy;
 }
 
@@ -264,62 +257,6 @@ std::vector<mata::FormulaNode>
 }
 
 /**
- * Create a graph for a postfix representation of transition formula
- * @param postfix A postfix representation of transition formula
- * @return A parsed graph
- */
-mata::FormulaGraph postfix_to_graph(std::vector<mata::FormulaNode> postfix) {
-	std::vector<mata::FormulaGraph> opstack{};
-	opstack.reserve(4);
-	for (mata::FormulaNode& node : postfix) {
-		switch (node.type) {
-			case mata::FormulaNode::Type::Operand:
-				opstack.emplace_back(std::move(node));
-				break;
-			case mata::FormulaNode::Type::Operator: {
-				switch (node.operator_type) {
-					case mata::FormulaNode::OperatorType::Neg: { // 1 child: graph will be a NEG node.
-						if (opstack.empty()) { throw std::runtime_error("Malformed formula: '!' without an operand"); }
-						mata::FormulaGraph gr{std::move(node)};
-						gr.children.emplace_back(std::move(opstack.back()));
-						opstack.pop_back();
-						opstack.push_back(std::move(gr));
-						break;
-					}
-					default: { // 2 children: Graph will be either an AND node, or an OR node.
-						if (opstack.size() < 2) {
-							throw std::runtime_error(
-								"Malformed formula: '" + std::string{node.raw} + "' needs two operands"
-							);
-						}
-						// The operands are taken into the children directly, saving a move of each through a local.
-						mata::FormulaGraph gr{std::move(node)};
-						gr.children.emplace_back(std::move(opstack[opstack.size() - 2]));
-						gr.children.emplace_back(std::move(opstack[opstack.size() - 1]));
-						opstack.pop_back();
-						opstack.pop_back();
-						opstack.push_back(std::move(gr));
-						break;
-					}
-				}
-				break;
-			}
-			default:
-				throw std::runtime_error("Malformed formula: unexpected '" + std::string{node.raw} + "'");
-		}
-	}
-
-	// In case of no transition
-	if (opstack.empty()) { return {}; }
-	if (opstack.size() > 1) {
-		throw std::runtime_error("Malformed formula: operands without an operator between them");
-	}
-
-	MATA_ASSERT(opstack.size() == 1);
-	return std::move(*opstack.begin());
-}
-
-/**
  * Function adds disjunction operators to a postfix form when there are no operators at all.
  * This is currently case of initial and final states of NFA where a user usually doesn't want to write
  * initial or final states as a formula
@@ -407,14 +344,14 @@ mata::IntermediateAut mf_to_aut(const mata::parser::ParsedSection& section) {
 				aut.initial_enumerated = true;
 				postfix = add_disjunction_implicitly(std::move(postfix));
 			}
-			aut.initial_formula = postfix_to_graph(std::move(postfix));
+			aut.initial_formula = mata::FormulaGraph::from_postfix(postfix);
 		} else if (key.starts_with("Final")) {
 			auto postfix = infix_to_postfix(aut, dict_tokens(symbol_names));
 			if (no_operators(postfix)) {
 				postfix = add_disjunction_implicitly(std::move(postfix));
 				aut.final_enumerated = true;
 			}
-			aut.final_formula = postfix_to_graph(std::move(postfix));
+			aut.final_formula = mata::FormulaGraph::from_postfix(postfix);
 		}
 	}
 
@@ -432,18 +369,11 @@ size_t mata::IntermediateAut::get_number_of_disjuncts() const {
 	size_t res = 0;
 
 	for (const auto& formula_graph : this->transitions | std::views::values) {
-		size_t trans_disjuncts = 0;
-		std::vector<const FormulaGraph*> stack;
-		stack.push_back(&formula_graph);
-
-		while (!stack.empty()) {
-			const FormulaGraph* gr = stack.back();
-			stack.pop_back();
-			if (gr->node.is_operator() && gr->node.operator_type == FormulaNode::OperatorType::Or) {
-				trans_disjuncts++;
-			}
-			for (const auto& ch : gr->children) { stack.push_back(&ch); }
-		}
+		const auto trans_disjuncts{
+			static_cast<size_t>(std::ranges::count_if(formula_graph.entries(), [](const FormulaGraphEntry& entry) {
+				return entry.node.is_operator() && entry.node.operator_type == FormulaNode::OperatorType::Or;
+			}))
+		};
 		res += std::max(trans_disjuncts, size_t{1});
 	}
 
@@ -516,44 +446,108 @@ void mata::IntermediateAut::parse_transition(mata::IntermediateAut& aut, const m
 		postfix = infix_to_postfix(aut, rhs);
 	}
 
-	aut.transitions.emplace_back(std::move(lhs), postfix_to_graph(std::move(postfix)));
+	aut.transitions.emplace_back(std::move(lhs), FormulaGraph::from_postfix(postfix));
 }
 
-std::unordered_set<std::string> mata::FormulaGraph::collect_node_names() const {
-	std::unordered_set<std::string> res;
-	std::vector<const mata::FormulaGraph*> stack;
-
-	// FormulaGraph contains a node member, but we alias it as a FormulaGraph for tree traversal.
-	// This is intentional type punning required by the algorithm.
-	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-	stack.emplace_back(reinterpret_cast<const FormulaGraph*>(&(this->node)));
-	while (!stack.empty()) {
-		const FormulaGraph* g = stack.back();
-		MATA_ASSERT(g != nullptr);
-		stack.pop_back();
-
-		if (g->node.type == FormulaNode::Type::Unknown) {
-			continue; // skip undefined nodes
+mata::FormulaGraph mata::FormulaGraph::from_postfix(const std::span<const FormulaNode> postfix) {
+	FormulaGraph graph;
+	graph.entries_.reserve(postfix.size());
+	// The number of the subtrees at the end of the entries that are not children of a node yet.
+	size_t num_trees{0};
+	for (const FormulaNode& node : postfix) {
+		switch (node.type) {
+			case FormulaNode::Type::Operand:
+				graph.entries_.push_back({node, 1});
+				++num_trees;
+				break;
+			case FormulaNode::Type::Operator:
+				if (node.is_neg()) {
+					if (num_trees == 0) { throw std::runtime_error("Malformed formula: '!' without an operand"); }
+				} else {
+					if (num_trees < 2) {
+						throw std::runtime_error(
+							"Malformed formula: '" + std::string{node.raw} + "' needs two operands"
+						);
+					}
+					--num_trees;
+				}
+				graph.append_root(node);
+				break;
+			default:
+				throw std::runtime_error("Malformed formula: unexpected '" + std::string{node.raw} + "'");
 		}
-
-		if (g->node.is_operand()) { res.emplace(g->node.name()); }
-
-		for (const auto& child : g->children) { stack.push_back(&child); }
 	}
+	if (num_trees > 1) { throw std::runtime_error("Malformed formula: operands without an operator between them"); }
+	return graph;
+}
 
+mata::FormulaGraph::FormulaGraph(const FormulaNode& node) {
+	if (node.is_operator()) {
+		throw std::invalid_argument(
+			"Formula graph: the operator '" + std::string{node.raw} + "' needs operands to be a graph"
+		);
+	}
+	entries_.push_back({node, 1});
+}
+
+mata::FormulaGraph::FormulaGraph(const FormulaGraphView tree)
+	: entries_{tree.entries().begin(), tree.entries().end()} {}
+
+mata::FormulaGraph::FormulaGraph(const FormulaNode& op, const FormulaGraphView operand) {
+	if (!op.is_neg() || operand.entries().empty()) {
+		throw std::invalid_argument(
+			"Formula graph: expected a negation of a formula, got '" + std::string{op.raw} + "'"
+		);
+	}
+	entries_.reserve(operand.entries().size() + 1);
+	append(operand);
+	append_root(op);
+}
+
+mata::FormulaGraph::FormulaGraph(const FormulaNode& op, const FormulaGraphView lhs, const FormulaGraphView rhs) {
+	if (!op.is_operator() || op.is_neg() || lhs.entries().empty() || rhs.entries().empty()) {
+		throw std::invalid_argument(
+			"Formula graph: expected a binary operator of two formulas, got '" + std::string{op.raw} + "'"
+		);
+	}
+	entries_.reserve(lhs.entries().size() + rhs.entries().size() + 1);
+	append(lhs);
+	append(rhs);
+	append_root(op);
+}
+
+void mata::FormulaGraph::append(const FormulaGraphView tree) {
+	entries_.insert(entries_.end(), tree.entries().begin(), tree.entries().end());
+}
+
+void mata::FormulaGraph::append_root(const FormulaNode& node) {
+	uint32_t size{1 + entries_.back().subtree_size};
+	if (!node.is_neg()) { size += entries_[entries_.size() - size].subtree_size; }
+	entries_.push_back({node, size});
+}
+
+void mata::FormulaGraph::store_names(NameStore& names) {
+	for (FormulaGraphEntry& entry : entries_) { entry.node.raw = names.store(entry.node.raw); }
+}
+
+std::unordered_set<std::string> mata::FormulaGraphView::collect_node_names() const {
+	std::unordered_set<std::string> res;
+	for (const FormulaGraphEntry& entry : entries()) {
+		if (entry.node.is_operand()) { res.emplace(entry.node.name()); }
+	}
 	return res;
 }
 
-void mata::FormulaGraph::print_tree(std::ostream& os) const {
-	std::vector<const FormulaGraph*> next_level;
+void mata::FormulaGraphView::print_tree(std::ostream& os) const {
+	std::vector<FormulaGraphView> next_level;
 
-	next_level.push_back(this);
+	next_level.push_back(*this);
 	while (!next_level.empty()) {
-		const std::vector<const FormulaGraph*> this_level = next_level;
+		const std::vector<FormulaGraphView> this_level = next_level;
 		next_level.clear();
-		for (const auto& graph : this_level) {
-			for (const auto& child : graph->children) { next_level.push_back(&child); }
-			os << graph->node.raw << "    ";
+		for (const FormulaGraphView graph : this_level) {
+			for (const FormulaGraphView child : graph.children()) { next_level.push_back(child); }
+			os << graph.node().raw << "    ";
 		}
 		os << "\n";
 	}
@@ -574,26 +568,27 @@ std::vector<mata::IntermediateAut> mata::IntermediateAut::parse_from_mf(const ma
 	return result;
 }
 
-const mata::FormulaGraph&
+mata::FormulaGraphView
 	mata::IntermediateAut::get_symbol_part_of_transition(const std::pair<FormulaNode, FormulaGraph>& transition) const {
 	if (!this->is_nfa()) { throw std::runtime_error("We currently support symbol extraction only for NFA"); }
-	const FormulaGraph& rhs = transition.second;
+	const FormulaGraphView rhs{transition.second};
+	const FormulaGraphChildren children{rhs.children()};
 	// A conjunction of the symbol part with the target state.
-	if (!transition.first.is_operand() || !rhs.node.is_operator() || rhs.children.size() != 2 ||
-		!rhs.children[1].node.is_operand()) {
+	if (!transition.first.is_operand() || children.size() != 2 || !children[1].node().is_operand()) {
 		throw std::runtime_error(
 			"Malformed transition from '" + std::string{transition.first.raw} +
 			"': expected a symbol formula and a target state"
 		);
 	}
-	return rhs.children[0];
+	return children[0];
 }
 
-void mata::IntermediateAut::add_transition(const FormulaNode& lhs, const FormulaNode& symbol, const FormulaGraph& rhs) {
+void mata::IntermediateAut::add_transition(
+	const FormulaNode& lhs, const FormulaNode& symbol, const FormulaGraphView rhs
+) {
 	const FormulaNode conjunction(FormulaNode::Type::Operator, "&", FormulaNode::OperatorType::And);
-	FormulaGraph graph(conjunction);
-	graph.children.emplace_back(stored_copy(symbol, *name_store));
-	graph.children.push_back(stored_copy(rhs, *name_store));
+	FormulaGraph graph{conjunction, FormulaGraph{symbol}, rhs};
+	graph.store_names(*name_store);
 	this->transitions.emplace_back(stored_copy(lhs, *name_store), std::move(graph));
 }
 
@@ -618,7 +613,7 @@ std::unordered_set<std::string> mata::IntermediateAut::get_positive_finals() con
 	for (const auto& [formula_node, formula_graph] : this->transitions) {
 		all.emplace(formula_node.name());
 		// get names from state part of transition
-		const auto node_names = formula_graph.children[1].collect_node_names();
+		const auto node_names = formula_graph.children()[1].collect_node_names();
 		all.insert(node_names.begin(), node_names.end());
 	}
 
@@ -627,21 +622,18 @@ std::unordered_set<std::string> mata::IntermediateAut::get_positive_finals() con
 	return all;
 }
 
-bool mata::IntermediateAut::is_graph_conjunction_of_negations(const mata::FormulaGraph& graph) {
-	const FormulaGraph* act_graph = &graph;
-
-	while (act_graph->children.size() == 2) {
+bool mata::IntermediateAut::is_graph_conjunction_of_negations(FormulaGraphView graph) {
+	for (FormulaGraphChildren children{graph.children()}; children.size() == 2; children = graph.children()) {
 		// this node is conjunction and the left son is negation, otherwise returns false
-		if (act_graph->node.is_operator() && act_graph->node.is_and() && act_graph->children[0].node.is_operator() &&
-			act_graph->children[0].node.is_neg()) {
-			act_graph = &act_graph->children[1];
+		if (graph.node().is_and() && children[0].node().is_neg()) {
+			graph = children[1];
 		} else {
 			return false;
 		}
 	}
 
 	// the last child needs to be negation
-	return act_graph->node.is_operator() && act_graph->node.is_neg();
+	return graph.node().is_neg();
 }
 
 std::ostream& std::operator<<(std::ostream& os, const mata::IntermediateAut& inter_aut) {

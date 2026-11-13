@@ -8,9 +8,12 @@
 #ifndef MATA_INTER_AUT_HH
 #define MATA_INTER_AUT_HH
 
+#include <array>
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <span>
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <unordered_set>
@@ -108,7 +111,7 @@ class FormulaNode {
 	bool is_true() const { return is_operand() && operand_type == OperandType::True; }
 	bool is_false() const { return is_operand() && operand_type == OperandType::False; }
 
-	FormulaNode()
+	constexpr FormulaNode()
 		: type(Type::Unknown),
 		  operator_type(OperatorType::NotOperator),
 		  operand_type(OperandType::NotOperand) {}
@@ -160,37 +163,130 @@ class FormulaNode {
 	bool marked_{false};
 };
 
-/**
- * Structure representing a transition formula using a graph.
- * A node of graph consists of node itself and set of children nodes.
- * Nodes are operators and operands of the formula.
- * E.g., a formula q1 & s1 will be transformed to a tree with & as a root node
- * and q1 and s2 being children nodes of the root.
- */
-class FormulaGraph {
-	/// Reserves the exact number of @c FormulaNode children an operator node will get. Operand nodes stay leaves, so
-	///  reserving for them would leave an unused buffer in every leaf of every formula tree.
-	void reserve_children_for_operator() {
-		if (node.is_operator()) { children.reserve(node.operator_type == FormulaNode::OperatorType::Neg ? 1 : 2); }
-	}
-
-  public:
+/// A node of a @c FormulaGraph as the graph stores it.
+struct FormulaGraphEntry {
 	FormulaNode node{};
-	std::vector<FormulaGraph> children{};
+	/// The number of nodes of the subtree this node roots, this one included.
+	uint32_t subtree_size{0};
+};
 
-	FormulaGraph() = default;
-	explicit FormulaGraph(const FormulaNode& n) : node(n) { reserve_children_for_operator(); }
-	explicit FormulaGraph(FormulaNode&& n) : node(std::move(n)) { reserve_children_for_operator(); }
-	FormulaGraph(const FormulaGraph& g) = default;
-	FormulaGraph(FormulaGraph&& g) noexcept : node(std::move(g.node)), children(std::move(g.children)) {}
+class FormulaGraph;
+class FormulaGraphChildren;
 
-	FormulaGraph& operator=(const FormulaGraph&) = default;
-	FormulaGraph& operator=(FormulaGraph&&) noexcept = default;
-	~FormulaGraph() = default;
+/**
+ * A subtree of a @c FormulaGraph: a view, valid while the graph it points into lives and is not modified.
+ * A view of an empty graph is a single node of the type @c FormulaNode::Type::Unknown without children.
+ */
+class FormulaGraphView {
+  public:
+	/// A view of an empty graph.
+	constexpr FormulaGraphView() = default;
+	/// The view of the whole @p graph.
+	FormulaGraphView(const FormulaGraph& graph);
+
+	const FormulaNode& node() const { return entry_->node; }
+	FormulaGraphChildren children() const;
+	/// The nodes of the subtree in postfix order: the subtrees of the children of a node come right before the node.
+	std::span<const FormulaGraphEntry> entries() const {
+		return {entry_ + 1 - entry_->subtree_size, entry_->subtree_size};
+	}
 
 	std::unordered_set<std::string> collect_node_names() const;
 	void print_tree(std::ostream& os) const;
+
+  private:
+	friend class FormulaGraph;
+	explicit constexpr FormulaGraphView(const FormulaGraphEntry* entry) : entry_{entry} {}
+
+	static constexpr FormulaGraphEntry EMPTY_ENTRY{};
+	const FormulaGraphEntry* entry_{&EMPTY_ENTRY};
 };
+
+/// The children of a node of a @c FormulaGraph: none for an operand, one for a negation, two for a conjunction or a
+///  disjunction.
+class FormulaGraphChildren {
+  public:
+	size_t size() const { return size_; }
+	bool empty() const { return size_ == 0; }
+	const FormulaGraphView& operator[](const size_t index) const { return views_[index]; }
+	const FormulaGraphView& at(const size_t index) const {
+		if (index >= size_) { throw std::out_of_range("FormulaGraphChildren::at"); }
+		return views_[index];
+	}
+	const FormulaGraphView& front() const { return views_[0]; }
+	const FormulaGraphView& back() const { return views_[size_ - 1]; }
+	const FormulaGraphView* begin() const { return views_.data(); }
+	const FormulaGraphView* end() const { return views_.data() + size_; }
+
+  private:
+	friend class FormulaGraphView;
+	std::array<FormulaGraphView, 2> views_{};
+	size_t size_{0};
+};
+
+inline FormulaGraphChildren FormulaGraphView::children() const {
+	FormulaGraphChildren children;
+	if (!entry_->node.is_operator()) { return children; }
+	const FormulaGraphEntry* const last{entry_ - 1};
+	if (entry_->node.is_neg()) {
+		children.views_[0] = FormulaGraphView{last};
+		children.size_ = 1;
+	} else {
+		children.views_[0] = FormulaGraphView{last - last->subtree_size};
+		children.views_[1] = FormulaGraphView{last};
+		children.size_ = 2;
+	}
+	return children;
+}
+
+/**
+ * A transition formula as a tree whose nodes are the operators and operands of the formula.
+ * E.g., a formula q1 & s1 is a tree with & as the root node and q1 and s1 as the children of the root.
+ * The nodes are stored in one vector in postfix order, so a whole formula takes a single allocation. A negation has
+ *  one child, a conjunction and a disjunction two, and any other node none.
+ */
+class FormulaGraph {
+  public:
+	/// An empty graph, viewed as a single node of the type @c FormulaNode::Type::Unknown.
+	FormulaGraph() = default;
+	/// A graph of the single node @p node, which has no children, so it must not be an operator.
+	explicit FormulaGraph(const FormulaNode& node);
+	/// A copy of the subtree @p tree.
+	explicit FormulaGraph(FormulaGraphView tree);
+	/// A graph of the negation @p op of @p operand.
+	FormulaGraph(const FormulaNode& op, FormulaGraphView operand);
+	/// A graph of the conjunction or disjunction @p op of @p lhs and @p rhs.
+	FormulaGraph(const FormulaNode& op, FormulaGraphView lhs, FormulaGraphView rhs);
+
+	/**
+	 * Builds the graph of the formula in postfix notation @p postfix.
+	 * @throws std::runtime_error if @p postfix is not a single formula, as when an operator lacks operands.
+	 */
+	static FormulaGraph from_postfix(std::span<const FormulaNode> postfix);
+
+	bool empty() const { return entries_.empty(); }
+	FormulaGraphView root() const { return empty() ? FormulaGraphView{} : FormulaGraphView{&entries_.back()}; }
+	const FormulaNode& node() const { return root().node(); }
+	FormulaGraphChildren children() const { return root().children(); }
+	/// The nodes in postfix order, see @c FormulaGraphView::entries().
+	std::span<const FormulaGraphEntry> entries() const { return entries_; }
+
+	/// Stores the names of all nodes in @p names, so that the graph no longer points into the storage it did.
+	void store_names(NameStore& names);
+
+	std::unordered_set<std::string> collect_node_names() const { return root().collect_node_names(); }
+	void print_tree(std::ostream& os) const { root().print_tree(os); }
+
+  private:
+	/// Appends the subtree @p tree, as the next operand of the node appended after it.
+	void append(FormulaGraphView tree);
+	/// Appends @p node as the root of the subtrees its children are, which end right before it.
+	void append_root(const FormulaNode& node);
+
+	std::vector<FormulaGraphEntry> entries_{};
+};
+
+inline FormulaGraphView::FormulaGraphView(const FormulaGraph& graph) : FormulaGraphView{graph.root()} {}
 
 /**
  * Structure for a general intermediate representation of parsed automaton.
@@ -270,7 +366,7 @@ class IntermediateAut {
 	 * @param transition Transition from which symbol is returned
 	 * @return Graph representing symbol. It may be just an explicit symbol or graph representing bitvector formula
 	 */
-	const FormulaGraph& get_symbol_part_of_transition(const std::pair<FormulaNode, FormulaGraph>& transition) const;
+	FormulaGraphView get_symbol_part_of_transition(const std::pair<FormulaNode, FormulaGraph>& transition) const;
 
 	/**
 	 * @brief A method for building a vector of IntermediateAut for a parsed input.
@@ -302,7 +398,7 @@ class IntermediateAut {
 
 	bool are_final_states_conjunction_of_negation() const { return is_graph_conjunction_of_negations(final_formula); }
 
-	static bool is_graph_conjunction_of_negations(const FormulaGraph& graph);
+	static bool is_graph_conjunction_of_negations(FormulaGraphView graph);
 
 	/**
 	 * Method returns a set of final states in the case that they were entered as a conjunction
@@ -313,7 +409,7 @@ class IntermediateAut {
 	size_t get_number_of_disjuncts() const;
 
 	static void parse_transition(IntermediateAut& aut, const mata::parser::BodyLine& tokens);
-	void add_transition(const FormulaNode& lhs, const FormulaNode& symbol, const FormulaGraph& rhs);
+	void add_transition(const FormulaNode& lhs, const FormulaNode& symbol, FormulaGraphView rhs);
 	void add_transition(const FormulaNode& lhs, const FormulaNode& rhs);
 	void print_transitions_trees(std::ostream& os) const;
 }; // class IntermediateAut.

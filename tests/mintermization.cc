@@ -32,8 +32,8 @@ TEST_CASE("mata::Mintermization::trans_to_bdd_nfa") {
 		std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
 		const auto& aut = auts[0];
 		REQUIRE(aut.transitions[0].first.is_operand());
-		REQUIRE(aut.transitions[0].second.children[0].node.is_operand());
-		const BDD bdd = mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children[0]);
+		REQUIRE(aut.transitions[0].second.children()[0].node().is_operand());
+		const BDD bdd = mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children()[0]);
 		REQUIRE(bdd.nodeCount() == 2);
 	}
 
@@ -48,9 +48,9 @@ TEST_CASE("mata::Mintermization::trans_to_bdd_nfa") {
 		parsed = parse_mf(file);
 		std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
 		const auto& aut = auts[0];
-		REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
-		REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
-		const BDD bdd = mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children[0]);
+		REQUIRE(aut.transitions[0].second.children()[0].node().is_operator());
+		REQUIRE(aut.transitions[0].second.children()[1].node().is_operand());
+		const BDD bdd = mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children()[0]);
 		REQUIRE(bdd.nodeCount() == 3);
 	}
 
@@ -65,9 +65,9 @@ TEST_CASE("mata::Mintermization::trans_to_bdd_nfa") {
 		parsed = parse_mf(file);
 		std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
 		const auto& aut = auts[0];
-		REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
-		REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
-		const BDD bdd = mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children[0]);
+		REQUIRE(aut.transitions[0].second.children()[0].node().is_operator());
+		REQUIRE(aut.transitions[0].second.children()[1].node().is_operand());
+		const BDD bdd = mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children()[0]);
 		REQUIRE(bdd.nodeCount() == 4);
 		int inputs[] = {0, 0, 0, 0};
 		REQUIRE(bdd.Eval(inputs).IsOne());
@@ -92,11 +92,11 @@ TEST_CASE("mata::Mintermization::compute_minterms") {
 		parsed = parse_mf(file);
 		std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
 		const auto& aut = auts[0];
-		REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
-		REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
+		REQUIRE(aut.transitions[0].second.children()[0].node().is_operator());
+		REQUIRE(aut.transitions[0].second.children()[1].node().is_operand());
 		std::unordered_set<BDD> bdds;
-		bdds.insert(mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children[0]));
-		bdds.insert(mintermization.graph_to_bdd_nfa(aut.transitions[1].second.children[0]));
+		bdds.insert(mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children()[0]));
+		bdds.insert(mintermization.graph_to_bdd_nfa(aut.transitions[1].second.children()[0]));
 		auto res = mintermization.compute_minterms(bdds);
 		REQUIRE(res.size() == 4);
 	}
@@ -113,11 +113,11 @@ TEST_CASE("mata::Mintermization::compute_minterms") {
 		parsed = parse_mf(file);
 		std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
 		const auto& aut = auts[0];
-		REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
-		REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
+		REQUIRE(aut.transitions[0].second.children()[0].node().is_operator());
+		REQUIRE(aut.transitions[0].second.children()[1].node().is_operand());
 		std::unordered_set<BDD> bdds;
-		bdds.insert(mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children[0]));
-		bdds.insert(mintermization.graph_to_bdd_nfa(aut.transitions[1].second.children[0]));
+		bdds.insert(mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children()[0]));
+		bdds.insert(mintermization.graph_to_bdd_nfa(aut.transitions[1].second.children()[0]));
 		auto res = mintermization.compute_minterms(bdds);
 		REQUIRE(res.size() == 3);
 	}
@@ -139,8 +139,8 @@ TEST_CASE("mata::Mintermization::mintermization") {
 		parsed = parse_mf(file);
 		std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
 		const auto& aut = auts[0];
-		REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
-		REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
+		REQUIRE(aut.transitions[0].second.children()[0].node().is_operator());
+		REQUIRE(aut.transitions[0].second.children()[1].node().is_operand());
 
 		const auto res = mintermization.mintermize(aut);
 		REQUIRE(res.transitions.size() == 4);
@@ -148,10 +148,10 @@ TEST_CASE("mata::Mintermization::mintermization") {
 		REQUIRE(res.transitions[1].first.name() == "q");
 		REQUIRE(res.transitions[2].first.name() == "s");
 		REQUIRE(res.transitions[3].first.name() == "s");
-		REQUIRE(res.transitions[0].second.children[1].node.name() == "r");
-		REQUIRE(res.transitions[1].second.children[1].node.name() == "r");
-		REQUIRE(res.transitions[2].second.children[1].node.name() == "t");
-		REQUIRE(res.transitions[3].second.children[1].node.name() == "t");
+		REQUIRE(res.transitions[0].second.children()[1].node().name() == "r");
+		REQUIRE(res.transitions[1].second.children()[1].node().name() == "r");
+		REQUIRE(res.transitions[2].second.children()[1].node().name() == "t");
+		REQUIRE(res.transitions[3].second.children()[1].node().name() == "t");
 	}
 
 	SECTION("Mintermization NFA true and false") {
@@ -167,10 +167,10 @@ TEST_CASE("mata::Mintermization::mintermization") {
 		parsed = parse_mf(file);
 		std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
 		const auto& aut = auts[0];
-		REQUIRE(aut.transitions[0].second.children[0].node.is_operand());
-		REQUIRE(aut.transitions[0].second.children[0].node.raw == "\\true");
-		REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
-		REQUIRE(aut.transitions[0].second.children[1].node.raw == "r");
+		REQUIRE(aut.transitions[0].second.children()[0].node().is_operand());
+		REQUIRE(aut.transitions[0].second.children()[0].node().raw == "\\true");
+		REQUIRE(aut.transitions[0].second.children()[1].node().is_operand());
+		REQUIRE(aut.transitions[0].second.children()[1].node().raw == "r");
 
 		const auto res = mintermization.mintermize(aut);
 		REQUIRE(res.transitions.size() == 3);
@@ -210,18 +210,18 @@ TEST_CASE("mata::Mintermization::mintermization") {
 		REQUIRE(res[0].transitions[4].first.name() == "s");
 		REQUIRE(res[0].transitions[5].first.name() == "s");
 		REQUIRE(res[0].transitions[6].first.name() == "s");
-		REQUIRE(res[0].transitions[0].second.children[1].node.name() == "r");
-		REQUIRE(res[0].transitions[1].second.children[1].node.name() == "r");
-		REQUIRE(res[0].transitions[2].second.children[1].node.name() == "r");
-		REQUIRE(res[0].transitions[3].second.children[1].node.name() == "r");
-		REQUIRE(res[0].transitions[4].second.children[1].node.name() == "t");
-		REQUIRE(res[0].transitions[5].second.children[1].node.name() == "t");
-		REQUIRE(res[0].transitions[6].second.children[1].node.name() == "t");
+		REQUIRE(res[0].transitions[0].second.children()[1].node().name() == "r");
+		REQUIRE(res[0].transitions[1].second.children()[1].node().name() == "r");
+		REQUIRE(res[0].transitions[2].second.children()[1].node().name() == "r");
+		REQUIRE(res[0].transitions[3].second.children()[1].node().name() == "r");
+		REQUIRE(res[0].transitions[4].second.children()[1].node().name() == "t");
+		REQUIRE(res[0].transitions[5].second.children()[1].node().name() == "t");
+		REQUIRE(res[0].transitions[6].second.children()[1].node().name() == "t");
 		REQUIRE(res[1].transitions.size() == 2);
 		REQUIRE(res[1].transitions[0].first.name() == "q");
 		REQUIRE(res[1].transitions[1].first.name() == "q");
-		REQUIRE(res[1].transitions[0].second.children[1].node.name() == "r");
-		REQUIRE(res[1].transitions[1].second.children[1].node.name() == "r");
+		REQUIRE(res[1].transitions[0].second.children()[1].node().name() == "r");
+		REQUIRE(res[1].transitions[1].second.children()[1].node().name() == "r");
 	}
 
 	// TODO(afa): Re-add the alternating automata support. The AFA code is kept, but not compiled: `MATA_AFA_SUPPORT`
@@ -257,22 +257,22 @@ TEST_CASE("mata::Mintermization::mintermization") {
 		REQUIRE(res.transitions[5].first.name() == "r");
 
 		// A symbol leaf: an operand numbering a minterm, named by its number and without children.
-		const auto symbol_of = [](const mata::FormulaGraph& graph) {
-			REQUIRE(graph.node.is_operand());
-			REQUIRE(graph.node.is_symbol());
-			REQUIRE(graph.node.raw == graph.node.name());
-			REQUIRE(graph.children.empty());
-			const size_t symbol{std::stoul(std::string{graph.node.name()})};
-			REQUIRE(graph.node.name() == std::to_string(symbol));
+		const auto symbol_of = [](const mata::FormulaGraphView graph) {
+			REQUIRE(graph.node().is_operand());
+			REQUIRE(graph.node().is_symbol());
+			REQUIRE(graph.node().raw == graph.node().name());
+			REQUIRE(graph.children().empty());
+			const size_t symbol{std::stoul(std::string{graph.node().name()})};
+			REQUIRE(graph.node().name() == std::to_string(symbol));
 			REQUIRE(symbol < 3);
 			return symbol;
 		};
-		const auto conjunction_of = [&symbol_of](const mata::FormulaGraph& graph) {
-			REQUIRE(graph.node.is_and());
-			REQUIRE(graph.node.raw == "&");
-			REQUIRE(graph.node.name() == "&");
-			REQUIRE(graph.children.size() == 2);
-			return symbol_of(graph.children[0]);
+		const auto conjunction_of = [&symbol_of](const mata::FormulaGraphView graph) {
+			REQUIRE(graph.node().is_and());
+			REQUIRE(graph.node().raw == "&");
+			REQUIRE(graph.node().name() == "&");
+			REQUIRE(graph.children().size() == 2);
+			return symbol_of(graph.children()[0]);
 		};
 
 		// !a1: a disjunct without a state on the right-hand side is emitted as the bare symbol.
@@ -281,12 +281,12 @@ TEST_CASE("mata::Mintermization::mintermization") {
 		// (a1 & a2) & (r & s): the compound state formula is kept whole next to the symbol.
 		const mata::FormulaGraph& compound{res.transitions[1].second};
 		const size_t conjoined{conjunction_of(compound)};
-		REQUIRE(compound.children[1].node.is_and());
-		REQUIRE(compound.children[1].children.size() == 2);
-		REQUIRE(compound.children[1].children[0].node.is_state());
-		REQUIRE(compound.children[1].children[0].node.name() == "r");
-		REQUIRE(compound.children[1].children[1].node.is_state());
-		REQUIRE(compound.children[1].children[1].node.name() == "s");
+		REQUIRE(compound.children()[1].node().is_and());
+		REQUIRE(compound.children()[1].children().size() == 2);
+		REQUIRE(compound.children()[1].children()[0].node().is_state());
+		REQUIRE(compound.children()[1].children()[0].node().name() == "r");
+		REQUIRE(compound.children()[1].children()[1].node().is_state());
+		REQUIRE(compound.children()[1].children()[1].node().name() == "s");
 
 		// a1 & r and a1 & t: the same BDD on both transitions, so the same two symbols in the same order.
 		const std::vector<size_t> from_q{
@@ -297,13 +297,13 @@ TEST_CASE("mata::Mintermization::mintermization") {
 		};
 		REQUIRE(from_q == from_r);
 		REQUIRE(from_q[0] != from_q[1]);
-		REQUIRE(res.transitions[2].second.children[1].node.is_state());
-		REQUIRE(res.transitions[2].second.children[1].node.name() == "r");
-		REQUIRE(res.transitions[2].second.children[1].children.empty());
-		REQUIRE(res.transitions[3].second.children[1].node.name() == "r");
-		REQUIRE(res.transitions[4].second.children[1].node.is_state());
-		REQUIRE(res.transitions[4].second.children[1].node.name() == "t");
-		REQUIRE(res.transitions[5].second.children[1].node.name() == "t");
+		REQUIRE(res.transitions[2].second.children()[1].node().is_state());
+		REQUIRE(res.transitions[2].second.children()[1].node().name() == "r");
+		REQUIRE(res.transitions[2].second.children()[1].children().empty());
+		REQUIRE(res.transitions[3].second.children()[1].node().name() == "r");
+		REQUIRE(res.transitions[4].second.children()[1].node().is_state());
+		REQUIRE(res.transitions[4].second.children()[1].node().name() == "t");
+		REQUIRE(res.transitions[5].second.children()[1].node().name() == "t");
 
 		// a1 & a2 implies a1, !a1 excludes it, and the three minterms cover the alphabet.
 		REQUIRE(std::ranges::find(from_q, conjoined) != from_q.end());
@@ -331,8 +331,8 @@ TEST_CASE("mata::Mintermization::compute_minterms_with_incidence") {
 		const auto& aut = auts[0];
 
 		std::vector<BDD> sources;
-		sources.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children[0]));
-		sources.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[1].second.children[0]));
+		sources.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children()[0]));
+		sources.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[1].second.children()[0]));
 
 		auto partition = mintermization.compute_minterms_with_incidence(sources);
 
@@ -366,8 +366,8 @@ TEST_CASE("mata::Mintermization::compute_minterms_with_incidence") {
 		const auto& aut = auts[0];
 
 		std::vector<BDD> sources;
-		sources.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children[0]));
-		sources.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[1].second.children[0]));
+		sources.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children()[0]));
+		sources.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[1].second.children()[0]));
 
 		auto partition = mintermization.compute_minterms_with_incidence(sources);
 
@@ -391,8 +391,8 @@ TEST_CASE("mata::Mintermization::compute_minterms_with_incidence") {
 		const auto& aut = auts[0];
 
 		std::vector<BDD> sources;
-		sources.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children[0]));
-		sources.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[1].second.children[0]));
+		sources.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children()[0]));
+		sources.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[1].second.children()[0]));
 
 		auto partition = mintermization.compute_minterms_with_incidence(sources);
 
@@ -417,8 +417,8 @@ TEST_CASE("mata::Mintermization::compute_minterms_with_incidence") {
 		const auto& aut = auts[0];
 
 		std::vector<BDD> sources;
-		sources.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children[0]));
-		sources.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[1].second.children[0]));
+		sources.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children()[0]));
+		sources.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[1].second.children()[0]));
 
 		auto partition = mintermization.compute_minterms_with_incidence(sources);
 
@@ -447,7 +447,7 @@ TEST_CASE("mata::Mintermization::compute_minterms_with_incidence") {
 
 		std::vector<BDD> sources;
 		for (const auto& trans : aut.transitions) {
-			sources.push_back(mintermization.graph_to_bdd_nfa(trans.second.children[0]));
+			sources.push_back(mintermization.graph_to_bdd_nfa(trans.second.children()[0]));
 		}
 
 		auto partition = mintermization.compute_minterms_with_incidence(sources);
@@ -484,7 +484,7 @@ TEST_CASE("mata::Mintermization::compute_minterms_with_incidence") {
 
 		std::vector<BDD> sources;
 		for (const auto& trans : aut.transitions) {
-			sources.push_back(mintermization.graph_to_bdd_nfa(trans.second.children[0]));
+			sources.push_back(mintermization.graph_to_bdd_nfa(trans.second.children()[0]));
 		}
 
 		auto partition = mintermization.compute_minterms_with_incidence(sources);
@@ -511,8 +511,8 @@ TEST_CASE("mata::Mintermization::compute_minterms_with_incidence") {
 		const auto& aut = auts[0];
 
 		std::vector<BDD> sources;
-		sources.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children[0]));
-		sources.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[1].second.children[0]));
+		sources.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children()[0]));
+		sources.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[1].second.children()[0]));
 
 		// Get partition with incidence
 		auto partition = mintermization.compute_minterms_with_incidence(sources);
@@ -594,21 +594,23 @@ TEST_CASE("mata::Mintermization::mintermization produces correct symbol renaming
 	std::map<std::string, Edges> edges_of_symbol{};
 	const mata::IntermediateAut res = mintermization.mintermize(aut);
 	for (const auto& [lhs, rhs] : res.transitions) {
-		edges_of_symbol[std::string{rhs.children[0].node.name()}].emplace(lhs.name(), rhs.children[1].node.name());
+		edges_of_symbol[std::string{rhs.children()[0].node().name()}].emplace(
+			lhs.name(), rhs.children()[1].node().name()
+		);
 	}
 
 	// The same per-minterm edges computed by the reference compute_minterms() and one BDD test per (transition,
 	//  minterm).
 	std::vector<BDD> transition_bdds{};
 	for (const auto& transition : aut.transitions) {
-		transition_bdds.push_back(reference.graph_to_bdd_nfa(transition.second.children[0]));
+		transition_bdds.push_back(reference.graph_to_bdd_nfa(transition.second.children()[0]));
 	}
 	std::vector<Edges> reference_edges{};
 	for (const BDD& minterm : reference.compute_minterms({transition_bdds.begin(), transition_bdds.end()})) {
 		Edges edges{};
 		for (size_t i{0}; i < aut.transitions.size(); ++i) {
 			if (!(transition_bdds[i] * minterm).IsZero()) {
-				edges.emplace(aut.transitions[i].first.name(), aut.transitions[i].second.children[1].node.name());
+				edges.emplace(aut.transitions[i].first.name(), aut.transitions[i].second.children()[1].node().name());
 			}
 		}
 		if (!edges.empty()) { reference_edges.push_back(std::move(edges)); }
@@ -625,15 +627,15 @@ TEST_CASE("mata::Mintermization::mintermization produces correct symbol renaming
 
 TEST_CASE("mata::Mintermization::mintermization preserves non-transition fields") {
 	/// Compare formula node metadata and all descendants recursively.
-	const auto formulas_equal = [](const auto& self, const mata::FormulaGraph& lhs,
-								   const mata::FormulaGraph& rhs) -> bool {
-		if (lhs.node.type != rhs.node.type || lhs.node.raw != rhs.node.raw || lhs.node.name() != rhs.node.name() ||
-			lhs.node.operator_type != rhs.node.operator_type || lhs.node.operand_type != rhs.node.operand_type ||
-			lhs.children.size() != rhs.children.size()) {
+	const auto formulas_equal = [](const auto& self, const mata::FormulaGraphView lhs,
+								   const mata::FormulaGraphView rhs) -> bool {
+		if (lhs.node().type != rhs.node().type || lhs.node().raw != rhs.node().raw ||
+			lhs.node().name() != rhs.node().name() || lhs.node().operator_type != rhs.node().operator_type ||
+			lhs.node().operand_type != rhs.node().operand_type || lhs.children().size() != rhs.children().size()) {
 			return false;
 		}
-		for (size_t i{0}; i < lhs.children.size(); ++i) {
-			if (!self(self, lhs.children[i], rhs.children[i])) { return false; }
+		for (size_t i{0}; i < lhs.children().size(); ++i) {
+			if (!self(self, lhs.children()[i], rhs.children()[i])) { return false; }
 		}
 		return true;
 	};
@@ -662,8 +664,8 @@ TEST_CASE("mata::Mintermization::mintermization preserves non-transition fields"
 			REQUIRE(aut.node_naming == mata::IntermediateAut::Naming::Enum);
 			REQUIRE(aut.initial_enumerated);
 			REQUIRE(aut.final_enumerated);
-			REQUIRE(aut.initial_formula.node.operator_type == mata::FormulaNode::OperatorType::Or);
-			REQUIRE(aut.final_formula.node.operator_type == mata::FormulaNode::OperatorType::Or);
+			REQUIRE(aut.initial_formula.node().operator_type == mata::FormulaNode::OperatorType::Or);
+			REQUIRE(aut.final_formula.node().operator_type == mata::FormulaNode::OperatorType::Or);
 
 			mata::Mintermization mintermization{};
 			const mata::IntermediateAut mintermized_aut = mintermization.mintermize(aut);

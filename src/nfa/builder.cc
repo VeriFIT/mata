@@ -638,17 +638,17 @@ std::vector<Nfa> builder::BitvectorNfaReader::build(Alphabet* alphabet) {
 					impl_->mintermization.graph_to_bdd_nfa(inter_aut.get_symbol_part_of_transition(transition))
 				};
 				if (bdd.IsZero()) { continue; }
+				// The symbol part checked the target to be a single state.
+				const FormulaNode target{transition.second.children()[1].node()};
 				for (const size_t minterm : partition.minterms_of_source[impl_->predicate_index.at(bdd)]) {
 					const std::string name{std::to_string(minterm)};
-					FormulaGraph graph{conjunction};
-					graph.children.emplace_back(
-						FormulaNode{
-							FormulaNode::Type::Operand, mintermized.name_store->store(name),
-							FormulaNode::OperandType::Symbol
-						}
+					const FormulaNode symbol{
+						FormulaNode::Type::Operand, mintermized.name_store->store(name),
+						FormulaNode::OperandType::Symbol
+					};
+					mintermized.transitions.emplace_back(
+						transition.first, FormulaGraph::from_postfix(std::array{symbol, target, conjunction})
 					);
-					graph.children.push_back(transition.second.children[1]);
-					mintermized.transitions.emplace_back(transition.first, std::move(graph));
 				}
 			}
 			result.push_back(construct(mintermized, alphabet, aut.state_map));
@@ -781,27 +781,28 @@ Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, Nam
 	std::vector<Transition> transitions;
 	transitions.reserve(inter_aut.transitions.size());
 	for (const auto& [formula_node, formula_graph] : inter_aut.transitions) {
-		if (formula_graph.children.size() != 2) {
-			if (formula_graph.children.size() == 1) { throw std::runtime_error("Epsilon transitions not supported"); }
+		const FormulaGraphChildren children{formula_graph.children()};
+		if (children.size() != 2) {
+			if (children.size() == 1) { throw std::runtime_error("Epsilon transitions not supported"); }
 			throw std::runtime_error("Invalid transition");
 		}
 
 		const State src_state{get_state_name(formula_node.name())};
-		const Symbol symbol{translate_symbol_name(alphabet, formula_graph.children[0].node.name())};
-		const State tgt_state{get_state_name(formula_graph.children[1].node.name())};
+		const Symbol symbol{translate_symbol_name(alphabet, children[0].node().name())};
+		const State tgt_state{get_state_name(children[1].node().name())};
 
 		transitions.emplace_back(src_state, symbol, tgt_state);
 	}
 	aut.delta.add(std::move(transitions));
 
 	std::unordered_set<std::string> final_formula_nodes;
-	if (!(inter_aut.final_formula.node.is_constant())) {
+	if (!(inter_aut.final_formula.node().is_constant())) {
 		// we do not want to parse true/false (constant) as a state so we do not collect it
 		final_formula_nodes = inter_aut.final_formula.collect_node_names();
 	}
 	// for constant true, we will pretend that final nodes are negated with empty final_formula_nodes
 
-	if (inter_aut.final_formula.node.is_true() || inter_aut.are_final_states_conjunction_of_negation()) {
+	if (inter_aut.final_formula.node().is_true() || inter_aut.are_final_states_conjunction_of_negation()) {
 		// we add all states NOT in final_formula_nodes to final states
 		for (const auto& [state_name, state] : *state_map) {
 			if (!final_formula_nodes.contains(state_name)) { aut.final.insert(state); }

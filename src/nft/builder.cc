@@ -266,26 +266,27 @@ Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
 	}
 
 	for (const auto& [formula_node, formula_graph] : inter_aut.transitions) {
-		if (formula_graph.children.size() != 2) {
-			if (formula_graph.children.size() == 1) { throw std::runtime_error("Epsilon transitions not supported"); }
+		const FormulaGraphChildren children{formula_graph.children()};
+		if (children.size() != 2) {
+			if (children.size() == 1) { throw std::runtime_error("Epsilon transitions not supported"); }
 			throw std::runtime_error("Invalid transition");
 		}
 
 		const State source = get_state_name(formula_node.name());
-		const Symbol symbol = translate_symbol_name(alphabet, formula_graph.children[0].node.name());
-		const State target = get_state_name(formula_graph.children[1].node.name());
+		const Symbol symbol = translate_symbol_name(alphabet, children[0].node().name());
+		const State target = get_state_name(children[1].node().name());
 
 		aut.delta.add(source, symbol, target);
 	}
 
 	std::unordered_set<std::string> final_formula_nodes;
-	if (!(inter_aut.final_formula.node.is_constant())) {
+	if (!(inter_aut.final_formula.node().is_constant())) {
 		// we do not want to parse true/false (constant) as a state so we do not collect it
 		final_formula_nodes = inter_aut.final_formula.collect_node_names();
 	}
 
 	// for constant true, we will pretend that final nodes are negated with empty final_formula_nodes
-	if (inter_aut.final_formula.node.is_true() || inter_aut.are_final_states_conjunction_of_negation()) {
+	if (inter_aut.final_formula.node().is_true() || inter_aut.are_final_states_conjunction_of_negation()) {
 		// Final nodes are negated.
 		// We add all states NOT in final_formula_nodes to final states.
 		for (const auto& [state_name, state] : *state_map) {
@@ -338,24 +339,24 @@ Nft builder::construct(
 	}
 
 	for (const auto& [formula_node, formula_graph] : inter_aut.transitions) {
-		if (formula_graph.children.size() != 2) {
-			if (formula_graph.children.size() == 1) { throw std::runtime_error("Epsilon transitions not supported"); }
+		const FormulaGraphChildren children{formula_graph.children()};
+		if (children.size() != 2) {
+			if (children.size() == 1) { throw std::runtime_error("Epsilon transitions not supported"); }
 			throw std::runtime_error("Invalid transition");
 		}
 
 		const State source = get_state_name(formula_node.name());
-		const Symbol symbol =
-			translate_symbol_name(alphabets, formula_graph.children[0].node.name(), aut.levels[source]);
-		const State target = get_state_name(formula_graph.children[1].node.name());
+		const Symbol symbol = translate_symbol_name(alphabets, children[0].node().name(), aut.levels[source]);
+		const State target = get_state_name(children[1].node().name());
 		aut.delta.add(source, symbol, target);
 	}
 
 	std::unordered_set<std::string> final_formula_nodes;
-	if (!(inter_aut.final_formula.node.is_constant())) {
+	if (!(inter_aut.final_formula.node().is_constant())) {
 		final_formula_nodes = inter_aut.final_formula.collect_node_names();
 	}
 
-	if (inter_aut.final_formula.node.is_true() || inter_aut.are_final_states_conjunction_of_negation()) {
+	if (inter_aut.final_formula.node().is_true() || inter_aut.are_final_states_conjunction_of_negation()) {
 		for (const auto& [state_name, state] : *state_map) {
 			if (!final_formula_nodes.contains(state_name)) { aut.final.insert(state); }
 		}

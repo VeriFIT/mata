@@ -49,7 +49,8 @@ class Mintermization {
 	std::unordered_map<std::string, BDD> formula_to_bdd_{};
 	/// Buffer for the key of the formula being looked up in @c formula_to_bdd_.
 	std::string formula_key_{};
-	std::unordered_map<const FormulaGraph*, BDD> trans_to_bddvar_{};
+	/// The BDDs of the symbol parts of the transitions, keyed by the root node of the symbol part.
+	std::unordered_map<const FormulaNode*, BDD> trans_to_bddvar_{};
 	/// The keys added to @c symbol_to_bddvar_ and @c formula_to_bdd_, in their order, for @c rollback().
 	std::vector<const std::string*> added_symbols_{};
 	std::vector<const std::string*> added_formulas_{};
@@ -66,7 +67,7 @@ class Mintermization {
 
 	void trans_to_bdd_nfa(const IntermediateAut& aut);
 	/// @c graph_to_bdd_nfa() without the lookup in @c formula_to_bdd_, for the formula and its subformulas.
-	BDD convert_graph_to_bdd_nfa(const FormulaGraph& graph);
+	BDD convert_graph_to_bdd_nfa(FormulaGraphView graph);
 #ifdef MATA_AFA_SUPPORT
 	void trans_to_bdd_afa(const IntermediateAut& aut);
 #endif
@@ -110,7 +111,7 @@ class Mintermization {
 	 * @param graph Graph to be transformed
 	 * @return Resulting BDD
 	 */
-	BDD graph_to_bdd_nfa(const FormulaGraph& graph);
+	BDD graph_to_bdd_nfa(FormulaGraphView graph);
 
 	/**
 	 * The BDD of the bitvector symbol @p name, as @c graph_to_bdd_nfa() makes it for an operand of that name: the

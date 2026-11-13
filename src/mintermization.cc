@@ -63,15 +63,11 @@ void mata::Mintermization::trans_to_bdd_nfa(const IntermediateAut& aut) {
 
 	for (const auto& trans : aut.transitions) {
 		// Foreach transition create a BDD
-		const auto& symbol_part = aut.get_symbol_part_of_transition(trans);
-		MATA_ASSERT(
-			symbol_part.node.is_operator() || symbol_part.children.empty(),
-			"Symbol part must be either formula or single symbol"
-		);
+		const FormulaGraphView symbol_part{aut.get_symbol_part_of_transition(trans)};
 		const BDD bdd = graph_to_bdd_nfa(symbol_part);
 		if (bdd.IsZero()) { continue; }
 		add_source_bdd(bdd);
-		trans_to_bddvar_[&symbol_part] = bdd;
+		trans_to_bddvar_[&symbol_part.node()] = bdd;
 	}
 }
 
@@ -290,28 +286,30 @@ void mata::Mintermization::rollback(const Checkpoint& checkpoint) {
 
 namespace {
 /// Appends to @p key a serialization of the formula @p graph that determines its BDD: node kinds, names, and the
-///  shape of the tree in prefix order. Each node starts with a backslash and its type byte, and the name of an
-///  operand follows with its backslashes doubled, so no name can mimic the start of another node.
-void append_formula_key(std::string& key, const mata::FormulaGraph& graph) {
-	key.push_back('\\');
-	const mata::FormulaNode& node{graph.node};
-	if (node.is_operand()) {
+///  shape of the tree in postfix order. Each node starts with a backslash and its type byte, which differs between
+///  operands and operators, and the name of an operand follows with its backslashes doubled, so no name can mimic
+///  the start of another node.
+void append_formula_key(std::string& key, const mata::FormulaGraphView graph) {
+	constexpr char OPERATOR_FLAG{0x40};
+	for (const mata::FormulaGraphEntry& entry : graph.entries()) {
+		const mata::FormulaNode& node{entry.node};
+		key.push_back('\\');
+		if (!node.is_operand()) {
+			key.push_back(static_cast<char>(static_cast<char>(node.operator_type) | OPERATOR_FLAG));
+			continue;
+		}
 		key.push_back(static_cast<char>(node.operand_type));
-		const std::string_view name{node.name()};
-		for (const char c : name) {
+		for (const char c : node.name()) {
 			key.push_back(c);
 			if (c == '\\') { key.push_back('\\'); } // Escape the escape byte.
 		}
-		return;
 	}
-	key.push_back(static_cast<char>(node.operator_type));
-	for (const mata::FormulaGraph& child : graph.children) { append_formula_key(key, child); }
 }
 } // namespace
 
-BDD mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph& graph) {
+BDD mata::Mintermization::graph_to_bdd_nfa(const FormulaGraphView graph) {
 	// A single operand has its own lookup.
-	if (graph.node.is_operand()) { return convert_graph_to_bdd_nfa(graph); }
+	if (graph.node().is_operand()) { return convert_graph_to_bdd_nfa(graph); }
 	formula_key_.clear();
 	append_formula_key(formula_key_, graph);
 	if (const auto it{formula_to_bdd_.find(formula_key_)}; it != formula_to_bdd_.end()) { return it->second; }
@@ -320,42 +318,32 @@ BDD mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph& graph) {
 	return bdd;
 }
 
-BDD mata::Mintermization::convert_graph_to_bdd_nfa(const FormulaGraph& graph) {
-	const FormulaNode& node = graph.node;
+BDD mata::Mintermization::convert_graph_to_bdd_nfa(const FormulaGraphView graph) {
+	const FormulaNode& node = graph.node();
 	if (node.is_operand()) {
 		return symbol_bdd(
 			node.name(), node.is_true() ? std::optional{true} : (node.is_false() ? std::optional{false} : std::nullopt)
 		);
 	}
 
-	if (node.is_operator()) {
-		if (node.operator_type == FormulaNode::OperatorType::And) {
-			MATA_ASSERT(graph.children.size() == 2);
-			const BDD op1 = convert_graph_to_bdd_nfa(graph.children[0]);
-			const BDD op2 = convert_graph_to_bdd_nfa(graph.children[1]);
-			return op1 * op2;
-		}
-		if (node.operator_type == FormulaNode::OperatorType::Or) {
-			MATA_ASSERT(graph.children.size() == 2);
-			const BDD op1 = convert_graph_to_bdd_nfa(graph.children[0]);
-			const BDD op2 = convert_graph_to_bdd_nfa(graph.children[1]);
-			return op1 + op2;
-		}
-		if (node.operator_type == FormulaNode::OperatorType::Neg) {
-			MATA_ASSERT(graph.children.size() == 1);
-			const BDD op1 = convert_graph_to_bdd_nfa(graph.children[0]);
-			return !op1;
-		}
+	if (!node.is_operator()) {
 		MATA_ASSERT(false);
+		return {};
 	}
+	if (node.is_neg()) { return !convert_graph_to_bdd_nfa(graph.children()[0]); }
+	// The left operand first: the operands meeting a symbol first create its variable, which fixes its index.
+	const FormulaGraphChildren children{graph.children()};
+	const BDD lhs{convert_graph_to_bdd_nfa(children[0])};
+	const BDD rhs{convert_graph_to_bdd_nfa(children[1])};
+	if (node.is_and()) { return lhs * rhs; }
+	if (node.operator_type == FormulaNode::OperatorType::Or) { return lhs + rhs; }
 
 	MATA_ASSERT(false);
 	return {};
 }
 
 namespace {
-/// One leaf per minterm holding its symbol, copied into every transition over that symbol. A copied leaf has no
-///  children and so allocates nothing, unlike a graph constructed from a node, which reserves room for children.
+/// One leaf per minterm holding its symbol, copied into every transition over that symbol.
 std::vector<mata::FormulaGraph> symbol_leaves(const size_t num_of_minterms, mata::NameStore& names) {
 	std::vector<mata::FormulaGraph> leaves{};
 	leaves.reserve(num_of_minterms);
@@ -399,7 +387,7 @@ void mata::Mintermization::minterms_to_aut_nfa(
 	// The minterms below the BDD of the symbol part of a transition, or nullptr if the transition had a zero BDD and
 	//  so was not added to the map.
 	const auto minterms_of_transition{[&](const FormulaGraph& formula_graph) -> const std::vector<size_t>* {
-		const auto bdd{trans_to_bddvar_.find(formula_graph.children.data())};
+		const auto bdd{trans_to_bddvar_.find(&formula_graph.children()[0].node())};
 		if (bdd == trans_to_bddvar_.end()) { return nullptr; }
 		return minterms_below(bdd->second, source_bdd_to_index_, minterms_of_source);
 	}};
@@ -418,11 +406,9 @@ void mata::Mintermization::minterms_to_aut_nfa(
 		const std::vector<size_t>* minterms{minterms_of_transition(formula_graph)};
 		if (minterms == nullptr) { continue; }
 		// For each minterm x below BDD_s, add q1,x,q2 to transitions.
+		const FormulaGraphView target{formula_graph.children()[1]};
 		for (const size_t symbol : *minterms) {
-			FormulaGraph graph{conjunction};
-			graph.children.push_back(symbols[symbol]);
-			graph.children.push_back(formula_graph.children[1]);
-			res.transitions.emplace_back(formula_node, std::move(graph));
+			res.transitions.emplace_back(formula_node, FormulaGraph{conjunction, symbols[symbol], target});
 		}
 	}
 }
