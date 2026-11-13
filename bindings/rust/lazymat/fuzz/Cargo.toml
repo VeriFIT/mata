@@ -1,0 +1,34 @@
+[package]
+name = "lazymat-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+# Its own workspace: it builds with nightly and sanitizers, apart from the bindings.
+[workspace]
+
+[dependencies]
+arbitrary = "1.5.0"
+# The automata are its own, but lazymat needs a backend: regex is pure Rust, so no C++ under the sanitizers.
+lazymat = { path = "..", default-features = false, features = ["regex"] }
+libfuzzer-sys = "0.4.13"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "formulas"
+path = "fuzz_targets/formulas.rs"
+test = false
+doc = false
+bench = false
+
+[lints.rust]
+unreachable_pub = "warn"
+unsafe_code = "forbid"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
