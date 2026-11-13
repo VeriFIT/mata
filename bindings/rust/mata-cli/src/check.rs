@@ -1507,26 +1507,37 @@ impl<'a> Checker<'a> {
 		};
 		let mut sort = self.expression(first, self_name);
 		for step in &steps[1..] {
-			let named = match &step.node {
-				Kind::Name(name) => Some((name, &[][..], &[][..])),
+			sort = match &step.node {
+				Kind::Name(name) => {
+					self.pipeline_step(name, sort.as_deref(), &[], &[], step, self_name)
+				}
 				Kind::Call {
 					function,
 					arguments,
 					keywords,
-				} => match &function.node {
-					Kind::Name(head) => Some((head, &arguments[..], &keywords[..])),
-					_ => None,
-				},
-				_ => None,
-			};
-			sort = if let Some((name, arguments, keywords)) = named {
-				self.pipeline_step(name, sort.as_deref(), arguments, keywords, step, self_name)
-			} else {
-				self.reject(
-					step,
-					"a pipeline step must be a name or an application".into(),
-				);
-				None
+				} => {
+					if let Kind::Name(head) = &function.node {
+						self.pipeline_step(
+							head,
+							sort.as_deref(),
+							arguments,
+							keywords,
+							step,
+							self_name,
+						)
+					} else {
+						// A function value, such as a lambda, is checked as any other application.
+						self.consumed(sort.as_deref(), false);
+						self.call(step, self_name)
+					}
+				}
+				_ => {
+					self.reject(
+						step,
+						"a pipeline step must be a name or an application".into(),
+					);
+					None
+				}
 			};
 		}
 		sort

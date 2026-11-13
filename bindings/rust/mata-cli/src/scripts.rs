@@ -7,7 +7,7 @@ use std::io::{BufRead, IsTerminal};
 
 use crate::ast::{self, FormKind, Spanned};
 use crate::cli::Exit;
-use crate::eval::{AutomatonKind, Engine, Sink, Value, kind_of};
+use crate::eval::{AutomatonKind, Engine, Sink, Value, kind_of, narrow_input};
 use crate::{Error, display_value};
 
 /// Where a script comes from: a file, standard input, or the text of `--expression`.
@@ -299,8 +299,15 @@ fn bind_declarations(
 					error
 				};
 				let kind = kind_of(sort);
+				let narrowed = |value| {
+					narrow_input(kind, value)
+						.map_err(|message| form.at(format!("input '{name}': {message}")))
+				};
 				let value = if *variadic {
-					let mut values: Vec<Value> = pending.drain(..).collect();
+					let mut values = pending
+						.drain(..)
+						.map(narrowed)
+						.collect::<Result<Vec<_>, _>>()?;
 					for path in files.by_ref() {
 						values.extend(engine.load_inputs(path, kind).map_err(at)?);
 					}
@@ -308,15 +315,19 @@ fn bind_declarations(
 				} else if let Some(path) = engine.named_inputs.get(name).cloned() {
 					engine.load_input(&path, kind).map_err(at)?
 				} else {
+					// Every section of a file is parsed as the kind it is, then checked against the
+					// declaration that takes it.
 					if pending.is_empty() {
 						let path = files
 							.next()
 							.ok_or_else(|| form.at(format!("no input for '{name}'")))?;
-						pending.extend(engine.load_inputs(path, kind).map_err(at)?);
+						pending.extend(engine.load_inputs(path, "automaton").map_err(at)?);
 					}
-					pending
-						.pop_front()
-						.expect("a loaded input holds an automaton")
+					narrowed(
+						pending
+							.pop_front()
+							.expect("a loaded input holds an automaton"),
+					)?
 				};
 				engine.scope.define(name.clone(), value);
 			}

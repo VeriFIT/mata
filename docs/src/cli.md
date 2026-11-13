@@ -65,14 +65,16 @@ mata script run [options] [SCRIPT] [INPUT…]
   The value is read as the parameter's sort, `String`, `Int` or `Bool`, so `--param count=five` for an `Int` parameter
   is an error before the script runs, and so is a parameter without a default that is given no value.
 - Positional inputs are consumed by `declare-input` first, then by `declare-inputs`; named inputs are always found by
-  name. A file with several automata gives one automaton to each declaration in turn. When a script declares inputs,
+  name. A file with several automata gives one automaton to each declaration in turn; each section is read as the kind
+  it is, NFA or NFT, and one of the other kind than its declaration's sort is an error. When a script declares inputs,
   every input on the command line must be taken by a declaration: an extra positional input, an `--input` the script
   does not declare and a `--param` it does not declare are errors, reported before anything runs. A script without
   declarations reads its inputs as `$1`, `$2`, …, `inputs` or `$name`.
 - A path given on the command line is relative to the current directory, as in every other command; when the script
   file has a directory part, a relative one is made absolute, so `$1` and `inputs` hold the absolute path. A path
   written in the script, as in `(nfa:load "local.mata")`, is relative to the directory of the script file; a script
-  given as `-` or with `--expression` has no file, so its paths are relative to the current directory too.
+  given as `-` or with `--expression` has no file, so its paths are relative to the current directory too. A `-` loaded
+  by the script, as `(nfa:load "-")` or `(nfa:load inputs)` for the input `-`, is standard input.
 - `--output PATH` redirects the script's standard output: `print`, `echo`, `check`, timing records and REPL values are
   written to `PATH` instead of standard output. `--output -` is standard output, the default. Errors always go to
   standard error. An output that is the script file or the file of an input is an error, before anything is written.
@@ -276,7 +278,7 @@ under fixed conventions, so anything outside them is an error; unsupported const
 | `s [shape=circle]`                                   | State `s` exists and is not final, unless a later shape says otherwise                             |
 | `N [label="N:level"]`                                | State `N` is on `level`, so the graph is a transducer                                              |
 | `iN -> N` from a `shape=none` node                   | State `N` is initial; the marker node is not a state                                               |
-| `s -> t [label="a,b"]`, `[label="[a-c]"]`            | One transition under each listed symbol                                                            |
+| `s -> t [label="a,b"]`, `[label="[a-c],e"]`          | One transition under each listed symbol                                                            |
 | `s -> t` without `label`                             | A transition under the abstract symbol `0`                                                         |
 | `[tooltip="…"]` on an edge                           | The whole label of a shortened one, read instead of `label`, with `&lt;` and `&gt;` as `<` and `>` |
 | `forcelabels=true`                                   | A transducer; its writer emits it for the state labels                                             |
@@ -295,7 +297,8 @@ The symbol label is the reverse of the {ref}`script alphabet <script-alphabets>`
 - `<eps>` is epsilon, `<dntcr>` is the don't-care symbol, and `<n>` is the symbol number `n`, even when an escaped
   `\<n>` has made `<n>` a name. A number `n` that is not a known name is symbol `n` too, as the library writes a
   symbol without a name. A new name never takes the number of a symbol the graph lists.
-- A range `[a-c]` expands to every symbol it names; `a,b` expands to the two symbols `a` and `b`.
+- A range `[a-c]` expands to every symbol it names, also as one entry of a list, as in `[a-c],e` or `[a-c],[x-z]`;
+  `a,b` expands to the two symbols `a` and `b`.
 - An empty label is an error.
 - `\\`, `\"`, `\,`, `\[` and `\<` are the characters `\`, `"`, `,`, `[` and `<` inside a name, as Graphviz shows
   them; any other escape is an error. The writers escape these characters in names and write a name of digits or with

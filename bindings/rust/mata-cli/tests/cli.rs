@@ -2892,3 +2892,88 @@ fn a_load_of_a_list_mintermizes_the_files_together() {
 	// Loaded separately, each file's one minterm is the same symbol.
 	assert_eq!(stdout(&output), "2\ntrue\nfalse\n");
 }
+
+// Review of #1039: standard input in loads, the optimizer, DOT ranges, pipelines and input kinds
+
+#[test]
+fn a_load_reads_standard_input_for_a_dash() {
+	let workspace = Workspace::new("load-stdin");
+	for (name, form, expected) in [
+		("list.matasc", "(list:length (nfa:load inputs))", "1\n"),
+		("one.matasc", "(nfa:number-of-states (nfa:load $1))", "2\n"),
+	] {
+		let script = workspace.file(name, &format!("(print {form})\n"));
+		let output = mata_with_stdin(["script", "run", &script, "-"], NFA);
+		assert_eq!(status(&output), 0, "{form}: {}", stderr(&output));
+		assert_eq!(stdout(&output), expected, "{form}");
+	}
+}
+
+#[test]
+fn the_optimizer_keeps_a_value_that_a_dead_definition_still_reads() {
+	let output = run_script(
+		"(set-option :optimize true)\n(define a (nfa:create-empty-string-nfa))\n\
+		 (define b (nfa:trim a))\n(define unused (print (nfa:number-of-states b)))",
+		true,
+		&[],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "1\n");
+}
+
+#[test]
+fn a_dot_label_expands_each_range_it_lists() {
+	let dot = |label: &str| {
+		format!(
+			"digraph finiteAutomaton {{\nnode [shape=circle];\n0 [shape=doublecircle];\n\
+			 0 -> 0 [label=\"{label}\"];\nnode [shape=none, label=\"\"];\ni0 -> 0;\n}}\n"
+		)
+	};
+	let output = dot_to_mata(&dot("[a-c],e"));
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert!(
+		stdout(&output).ends_with("q0 a q0\nq0 b q0\nq0 c q0\nq0 e q0\n"),
+		"{}",
+		stdout(&output)
+	);
+	let output = dot_to_mata(&dot("[a-b],[x-y]"));
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert!(
+		stdout(&output).ends_with("q0 a q0\nq0 b q0\nq0 x q0\nq0 y q0\n"),
+		"{}",
+		stdout(&output)
+	);
+}
+
+#[test]
+fn a_pipeline_step_may_apply_a_function_value() {
+	let output = run_script("(print (-> 1 ((lambda (x) (+ x 1)))))", true, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "2\n");
+}
+
+#[test]
+fn each_section_of_an_input_must_be_the_kind_its_declaration_takes() {
+	let workspace = Workspace::new("section-kinds");
+	let two = workspace.file("two.mata", &format!("{NFA}{NFA}"));
+	let output = run_script(
+		"(declare-input a Nfa)\n(declare-input b Nft)\n(print b)",
+		true,
+		&[&two],
+	);
+	assert_eq!(status(&output), 2);
+	assert!(
+		stderr(&output).contains("input 'b': expected an Nft, but the input holds an Nfa"),
+		"{}",
+		stderr(&output)
+	);
+	let mixed = workspace.file("mixed.mata", &format!("{NFA}{NFT}"));
+	let output = run_script(
+		"(declare-input a Nfa)\n(declare-input b Nft)\n\
+		 (print (nfa:number-of-states a))\n(print (nft:number-of-states b))",
+		true,
+		&[&mixed],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "2\n2\n");
+}

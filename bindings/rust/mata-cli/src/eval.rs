@@ -1355,14 +1355,13 @@ impl Engine {
 	pub(crate) fn load(&mut self, paths: &Value, kind: &str) -> Result<Value, Error> {
 		let Value::List(paths) = paths else {
 			let path = as_string(paths).map_err(Error::plain)?;
-			let resolved = self.resolve_path(&path);
-			let text = read_text(&resolved.to_string_lossy())?;
+			let text = self.read_script_path(&path)?;
 			return self.timed("parsing", |engine| engine.parse_text(&text, kind));
 		};
 		let mut texts = Vec::with_capacity(paths.len());
 		for path in paths.iter() {
 			let path = as_string(path).map_err(Error::plain)?;
-			let text = read_text(&self.resolve_path(&path).to_string_lossy())?;
+			let text = self.read_script_path(&path)?;
 			let count = sections(&text);
 			if count != 1 {
 				return Err(Error::plain(format!(
@@ -1409,6 +1408,15 @@ impl Engine {
 			});
 		}
 		Ok(Value::List(Rc::new(automata)))
+	}
+
+	/// Reads a path written in the script, relative to the script's directory; `-` is standard
+	/// input, as on the command line.
+	fn read_script_path(&self, path: &str) -> Result<String, Error> {
+		if path == "-" {
+			return read_text(path);
+		}
+		read_text(&self.resolve_path(path).to_string_lossy())
 	}
 
 	/// Loads one automaton from a path given on the command line, relative to the current directory,
@@ -1529,12 +1537,23 @@ impl Engine {
 		}
 	}
 
-	/// Every automaton section of `text`; bitvector sections are mintermized together.
+	/// Every automaton section of `text`; bitvector sections are mintermized together. For an
+	/// `automaton` each other section is parsed as the kind it is, so NFAs and NFTs may mix.
 	fn parse_all(&mut self, text: &str, kind: &str) -> Result<Vec<Value>, Error> {
 		let transducer = match kind {
 			"nfa" => false,
 			"nft" => true,
-			_ => holds_transducer(text),
+			_ if holds_bits(text) => false,
+			_ => {
+				let values = split_sections(text)
+					.into_iter()
+					.map(|section| self.parse_text(section, kind))
+					.collect::<Result<Vec<_>, _>>()?;
+				if values.is_empty() {
+					return Err(Error::plain("no automaton in the input".into()));
+				}
+				return Ok(values);
+			}
 		};
 		let wrap = |value: Value| of_kind(kind, value);
 		let values: Vec<Value> = if transducer {
@@ -1577,6 +1596,42 @@ fn sections(text: &str) -> usize {
 	text.lines()
 		.filter(|line| line.trim_start().starts_with('@'))
 		.count()
+}
+
+/// The automaton sections of a `.mata` text, each from its `@TYPE` line; the lines before the first
+/// one, such as comments, go with it.
+fn split_sections(text: &str) -> Vec<&str> {
+	let mut starts: Vec<usize> = Vec::new();
+	let mut offset = 0;
+	for line in text.split_inclusive('\n') {
+		if line.trim_start().starts_with('@') {
+			starts.push(offset);
+		}
+		offset += line.len();
+	}
+	if let Some(first) = starts.first_mut() {
+		*first = 0;
+	}
+	starts
+		.iter()
+		.enumerate()
+		.map(|(index, &start)| &text[start..starts.get(index + 1).copied().unwrap_or(text.len())])
+		.collect()
+}
+
+/// An input loaded as an `automaton` narrowed to the kind a declaration takes; the other kind is an
+/// error.
+pub(crate) fn narrow_input(kind: &str, value: Value) -> Result<Value, String> {
+	let Value::Automaton(automaton) = &value else {
+		return Ok(value);
+	};
+	match (kind, &**automaton) {
+		("nfa", AutomatonKind::Nfa(nfa)) => Ok(Value::Nfa(Rc::clone(nfa))),
+		("nft", AutomatonKind::Nft(nft)) => Ok(Value::Nft(Rc::clone(nft))),
+		("nfa", AutomatonKind::Nft(_)) => Err("expected an Nfa, but the input holds an Nft".into()),
+		("nft", AutomatonKind::Nfa(_)) => Err("expected an Nft, but the input holds an Nfa".into()),
+		_ => Ok(value),
+	}
 }
 
 /// A parsed automaton as the value of `kind`: an `Automaton` wraps either kind.

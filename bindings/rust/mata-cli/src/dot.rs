@@ -520,9 +520,10 @@ fn transition_symbols(
 		.collect()
 }
 
-/// The entries of a label: an edge without one is the symbol 0, a range `[a-c]` names every character
-/// from `a` to `c`, and otherwise the label lists entries separated by commas. `\\`, `\"`, `\,`, `\[` and
-/// `\<` are the escaped character, which then has no meaning in the label's structure.
+/// The entries of a label: an edge without one is the symbol 0, the label lists entries separated by
+/// commas, and an entry `[a-c]` names every character from `a` to `c`, as Mata writes with intervals
+/// (`[a-c],e`). `\\`, `\"`, `\,`, `\[` and `\<` are the escaped character, which then has no
+/// meaning in the label's structure.
 fn label_items(label: Option<&str>, engine: &Engine) -> Result<Vec<Item>, Error> {
 	let Some(label) = label else {
 		return Ok(vec![Item::Number(mata::Symbol::new(0))]);
@@ -531,21 +532,6 @@ fn label_items(label: Option<&str>, engine: &Engine) -> Result<Vec<Item>, Error>
 		return Err(Error::plain(
 			"an edge with an empty label is not allowed".into(),
 		));
-	}
-	if let Some(range) = label.strip_prefix('[').and_then(|l| l.strip_suffix(']')) {
-		let bounds: Vec<&str> = range.split('-').collect();
-		if bounds.len() != 2 || bounds[0].len() != 1 || bounds[1].len() != 1 {
-			return Err(Error::plain(format!(
-				"range label '{label}' must be [a-c] of single characters"
-			)));
-		}
-		let (start, end) = (bounds[0].as_bytes()[0], bounds[1].as_bytes()[0]);
-		if start > end {
-			return Err(Error::plain(format!("range label '{label}' is backwards")));
-		}
-		return (start..=end)
-			.map(|byte| label_item(&char::from(byte).to_string(), false, engine))
-			.collect();
 	}
 	let mut items = Vec::new();
 	let mut name = String::new();
@@ -566,15 +552,46 @@ fn label_items(label: Option<&str>, engine: &Engine) -> Result<Vec<Item>, Error>
 				}
 			},
 			',' => {
-				items.push(label_item(&name, escaped, engine)?);
+				entry_items(&name, escaped, engine, &mut items)?;
 				name.clear();
 				escaped = false;
 			}
 			_ => name.push(c),
 		}
 	}
-	items.push(label_item(&name, escaped, engine)?);
+	entry_items(&name, escaped, engine, &mut items)?;
 	Ok(items)
+}
+
+/// The symbols of one label entry: every character of an unescaped range `[a-c]`, or one symbol.
+fn entry_items(
+	entry: &str,
+	escaped: bool,
+	engine: &Engine,
+	items: &mut Vec<Item>,
+) -> Result<(), Error> {
+	let Some(range) = entry
+		.strip_prefix('[')
+		.and_then(|e| e.strip_suffix(']'))
+		.filter(|_| !escaped)
+	else {
+		items.push(label_item(entry, escaped, engine)?);
+		return Ok(());
+	};
+	let bounds: Vec<&str> = range.split('-').collect();
+	if bounds.len() != 2 || bounds[0].len() != 1 || bounds[1].len() != 1 {
+		return Err(Error::plain(format!(
+			"range '{entry}' must be [a-c] of single characters"
+		)));
+	}
+	let (start, end) = (bounds[0].as_bytes()[0], bounds[1].as_bytes()[0]);
+	if start > end {
+		return Err(Error::plain(format!("range '{entry}' is backwards")));
+	}
+	for byte in start..=end {
+		items.push(label_item(&char::from(byte).to_string(), false, engine)?);
+	}
+	Ok(())
 }
 
 /// One label entry; an `escaped` one is always a name.

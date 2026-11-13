@@ -148,16 +148,18 @@ impl Plan {
 		}
 	}
 
-	/// Marks the value definitions of one body that no other live item of it mentions, the last ones
-	/// first, so a definition used only by dead ones is dead too.
+	/// Marks the value definitions of one body that no other item of it mentions. A definition read
+	/// only by dead ones stays live: the run leaves out a dead one only when its value turns out to
+	/// be an `Nfa`, so a dead reader such as `(define unused (print b))` may still run.
 	fn find_dead(&mut self, items: &[Item<'_>]) {
-		for (index, item) in items.iter().enumerate().rev() {
+		for (index, item) in items.iter().enumerate() {
 			let Some((name, place)) = item.value_definition() else {
 				continue;
 			};
-			let used = items.iter().enumerate().any(|(other, item)| {
-				other != index && !self.dead.contains(&item.place()) && item.mentions(name)
-			});
+			let used = items
+				.iter()
+				.enumerate()
+				.any(|(other, item)| other != index && item.mentions(name));
 			if !used {
 				self.dead.insert(place);
 			}
