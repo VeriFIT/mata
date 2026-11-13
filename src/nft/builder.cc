@@ -68,9 +68,10 @@ std::optional<Nft>
 	}
 
 	Nft aut;
+	// See builder::construct(): a name mapped by the caller allocates its state, a new name skips the mapped states.
 	const auto get_state{[&](const std::string_view name) {
-		if (const std::optional<State> state{state_names.find(name)}) { return *state; }
-		const State state{aut.add_state()};
+		if (const std::optional<State> state{state_names.find(name)}) { return aut.add_state(*state); }
+		const State state{aut.add_state(state_names.new_state(aut.num_of_states()))};
 		state_names.insert(name, state);
 		return state;
 	}};
@@ -165,10 +166,13 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 	NameStateMap tmp_state_map;
 	if (nullptr == state_map) { state_map = &tmp_state_map; }
 
-	// a lambda for translating state names to identifiers
+	// a lambda for translating state names to identifiers; a name mapped by the caller allocates its state, which
+	//  gives it a level, and a new name skips the mapped states, so that it never gets the identifier of a mapped name
+	//  read later
+	mata::parser::NewStates new_states{*state_map};
 	auto get_state_name = [&](const std::string_view name) {
-		if (const auto it{state_map->find(name)}; it != state_map->end()) { return it->second; }
-		const State state = aut.add_state();
+		if (const auto it{state_map->find(name)}; it != state_map->end()) { return aut.add_state(it->second); }
+		const State state = aut.add_state(new_states.next(aut.num_of_states()));
 		state_map->emplace(name, state);
 		return state;
 	};
@@ -260,10 +264,11 @@ Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
 	NameStateMap tmp_state_map;
 	if (nullptr == state_map) { state_map = &tmp_state_map; }
 
-	// a lambda for translating state names to identifiers
-	auto get_state_name = [&state_map, &aut](const std::string_view name) {
-		if (const auto it{state_map->find(name)}; it != state_map->end()) { return it->second; }
-		const State state = aut.add_state();
+	// a lambda for translating state names to identifiers, see the ParsedSection overload above
+	mata::parser::NewStates new_states{*state_map};
+	auto get_state_name = [&state_map, &aut, &new_states](const std::string_view name) {
+		if (const auto it{state_map->find(name)}; it != state_map->end()) { return aut.add_state(it->second); }
+		const State state = aut.add_state(new_states.next(aut.num_of_states()));
 		state_map->emplace(name, state);
 		return state;
 	};
@@ -297,8 +302,9 @@ Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
 	if (inter_aut.final_formula.node().is_true() || inter_aut.are_final_states_conjunction_of_negation()) {
 		// Final nodes are negated.
 		// We add all states NOT in final_formula_nodes to final states.
+		// A mapped name the input does not use gets its state allocated here, and with it a level.
 		for (const auto& [state_name, state] : *state_map) {
-			if (!final_formula_nodes.contains(state_name)) { aut.final.insert(state); }
+			if (!final_formula_nodes.contains(state_name)) { aut.final.insert(aut.add_state(state)); }
 		}
 	} else {
 		// we add all states in final_formula_nodes to final states
@@ -334,9 +340,11 @@ Nft builder::construct(
 	NameStateMap tmp_state_map;
 	if (nullptr == state_map) { state_map = &tmp_state_map; }
 
-	auto get_state_name = [&state_map, &aut](const std::string_view name) {
-		if (const auto it{state_map->find(name)}; it != state_map->end()) { return it->second; }
-		const State state = aut.add_state();
+	// See the overload with a single alphabet above.
+	mata::parser::NewStates new_states{*state_map};
+	auto get_state_name = [&state_map, &aut, &new_states](const std::string_view name) {
+		if (const auto it{state_map->find(name)}; it != state_map->end()) { return aut.add_state(it->second); }
+		const State state = aut.add_state(new_states.next(aut.num_of_states()));
 		state_map->emplace(name, state);
 		return state;
 	};
@@ -366,7 +374,7 @@ Nft builder::construct(
 
 	if (inter_aut.final_formula.node().is_true() || inter_aut.are_final_states_conjunction_of_negation()) {
 		for (const auto& [state_name, state] : *state_map) {
-			if (!final_formula_nodes.contains(state_name)) { aut.final.insert(state); }
+			if (!final_formula_nodes.contains(state_name)) { aut.final.insert(aut.add_state(state)); }
 		}
 	} else {
 		for (const auto& str : final_formula_nodes) { aut.final.insert(get_state_name(str)); }

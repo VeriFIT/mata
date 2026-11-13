@@ -63,7 +63,24 @@ std::string mata::parser::read_whole_stream(std::istream& input) {
 	return text;
 }
 
-mata::parser::StateNameMap::StateNameMap(const Map& names, const size_t max_number) : max_number_{max_number} {
+mata::parser::NewStates::NewStates(const utils::StringMap<State>& mapped) {
+	mapped_.reserve(mapped.size());
+	for (const auto& [name, state] : mapped) { mapped_.push_back(state); }
+	std::ranges::sort(mapped_);
+}
+
+mata::parser::NewStates::State mata::parser::NewStates::next(size_t num_of_states) {
+	// Two names may share a state, so a state of the map is passed over as often as it occurs.
+	while (passed_ < mapped_.size() && mapped_[passed_] <= num_of_states) {
+		if (mapped_[passed_] == num_of_states) { ++num_of_states; }
+		++passed_;
+	}
+	return nfa::to_state(num_of_states);
+}
+
+mata::parser::StateNameMap::StateNameMap(const Map& names, const size_t max_number)
+	: max_number_{max_number},
+	  new_states_{names} {
 	for (const auto& [name, state] : names) { insert(name, state); }
 }
 

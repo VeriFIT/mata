@@ -69,10 +69,16 @@ Nft create_sigma_star_nft(const std::shared_ptr<Alphabet>& alphabet, size_t num_
  *  the level metadata: `%Levels` assigns `state:level` pairs and `%LevelsNum` sets the number of levels, both of which
  *  the @c IntermediateAut path ignores. The two overloads consequently accept different inputs and cannot be merged
  *  without changing observable behavior.
+ *
+ * @param state_map If not @c nullptr, the map from state names to states, which all overloads and readers fill in the
+ *  same way. The names it maps beforehand keep their states, each allocated (with the default level) when the input
+ *  uses its name; a final formula of an @c IntermediateAut that is true or negates states uses every name of the map
+ *  it does not negate. Every other name gets the lowest state that the automaton does not have yet and that no name
+ *  of the map had beforehand, so that it never shares the state of a mapped name, used later or not at all.
  */
 Nft construct(const parser::ParsedSection& parsec, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 
-/** Loads an automaton from Parsed object */
+/** Loads an automaton from Parsed object; see the overload above for @p state_map. */
 Nft construct(const IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 /** Loads an automaton from Parsed object; version for python binding */
 void construct(Nft* result, const IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr);
@@ -81,7 +87,7 @@ void construct(Nft* result, const IntermediateAut& inter_aut, Alphabet* alphabet
  * @brief Loads an automaton from an IntermediateAut using per-level alphabets.
  *
  * The constructed @c Nft has its @c alphabets member set to @p alphabets and its inherited @c alphabet member left as
- * @c nullptr.
+ * @c nullptr. See the @c ParsedSection overload above for @p state_map.
  */
 Nft construct(
 	const IntermediateAut& inter_aut,

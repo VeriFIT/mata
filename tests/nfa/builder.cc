@@ -6,8 +6,11 @@
 #include <optional>
 #include <ranges>
 #include <set>
+#include <string>
 #include <tuple>
 #include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
@@ -639,6 +642,85 @@ TEST_CASE("BitvectorNfaReader leaves no trace of the inputs it does not keep") {
 	const std::vector<Nfa> read{reader.build()};
 	const auto [alone, alone_states]{read_alone(input)};
 	check_same_up_to_names(read, states, alone, alone_states);
+}
+
+namespace {
+/// Checks that @p states keeps the names of @p mapped and gives every other name a state of its own, and that @p nfa
+///  has exactly the edges @p edges between the states of the names @p prefix + source and @p prefix + target.
+void check_new_names_keep_off(
+	const Nfa& nfa,
+	const builder::NameStateMap& states,
+	const builder::NameStateMap& mapped,
+	const std::string& prefix,
+	const std::vector<std::pair<std::string, std::string>>& edges
+) {
+	for (const auto& [name, state] : mapped) { CHECK(states.at(name) == state); }
+	std::set<State> distinct;
+	for (const auto& [name, state] : states) { distinct.insert(state); }
+	CHECK(distinct.size() == states.size());
+	std::set<std::pair<State, State>> expected;
+	for (const auto& [source, target] : edges) {
+		expected.emplace(states.at(prefix + source), states.at(prefix + target));
+	}
+	std::set<std::pair<State, State>> actual;
+	for (const Transition& transition : nfa.delta.transitions()) {
+		actual.emplace(transition.source, transition.target);
+	}
+	CHECK(actual == expected);
+}
+} // namespace
+
+TEST_CASE("mata::nfa::builder readers keep new names off the states of a caller's map") {
+	// The caller maps q1, which the input names after, before, or around new names, and q7, which it does not name.
+	//  IntermediateAut drops the marker q of the state names, the ParsedSection overload of construct() keeps it.
+	const builder::NameStateMap mapped{{"1", 0}, {"7", 3}};
+	const builder::NameStateMap marked_mapped{{"q1", 0}, {"q7", 3}};
+	for (const std::vector<std::pair<std::string, std::string>>& edges : {
+			 std::vector<std::pair<std::string, std::string>>{{"1", "2"}},
+			 std::vector<std::pair<std::string, std::string>>{{"2", "1"}},
+			 std::vector<std::pair<std::string, std::string>>{{"2", "4"}, {"4", "5"}, {"5", "6"}, {"6", "1"}},
+		 }) {
+		std::string body;
+		for (const auto& [source, target] : edges) { body += "q" + source + " x q" + target + "\n"; }
+		CAPTURE(body);
+		const std::string input{"@NFA-explicit\n%Alphabet-auto\n" + body};
+
+		OnTheFlyAlphabet explicit_alphabet;
+		builder::NameStateMap explicit_states{mapped};
+		const std::optional<Nfa> explicit_nfa{
+			builder::parse_explicit_from_mata(input, &explicit_alphabet, &explicit_states)
+		};
+		REQUIRE(explicit_nfa.has_value());
+		check_new_names_keep_off(*explicit_nfa, explicit_states, mapped, "", edges);
+
+		OnTheFlyAlphabet general_alphabet;
+		builder::NameStateMap general_states{mapped};
+		const Nfa general{read_with_general_reader(input, &general_alphabet, &general_states, false)};
+		check_new_names_keep_off(general, general_states, mapped, "", edges);
+		CHECK(general_states == explicit_states);
+
+		OnTheFlyAlphabet section_alphabet;
+		builder::NameStateMap section_states{marked_mapped};
+		const Nfa section{
+			builder::construct(mata::parser::parse_mf("@NFA\n" + body)[0], &section_alphabet, &section_states)
+		};
+		check_new_names_keep_off(section, section_states, marked_mapped, "q", edges);
+
+		// The bitvector reader reads the first input directly, the second by the general reader inside.
+		for (const auto& [final, how] :
+			 {std::pair{"q1", Read::Directly}, std::pair{"q1 | q2", Read::ByGeneralReader}}) {
+			builder::BitvectorNfaReader reader;
+			builder::NameStateMap bitvector_states{mapped};
+			CHECK(
+				reader.add(
+					"@NFA-bits\n%Alphabet-auto\n%Final " + std::string{final} + "\n" + body, false, &bitvector_states
+				) == how
+			);
+			const std::vector<Nfa> read{reader.build()};
+			REQUIRE(read.size() == 1);
+			check_new_names_keep_off(read[0], bitvector_states, mapped, "", edges);
+		}
+	}
 }
 
 TEST_CASE("Create Tabakov-Vardi NFA") {

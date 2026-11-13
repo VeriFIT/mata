@@ -159,10 +159,10 @@ std::optional<Nfa> read_explicit_nfa(
 	}
 
 	Nfa aut;
-	// See builder::construct(): a name mapped by the caller allocates its state.
+	// See builder::construct(): a name mapped by the caller allocates its state, a new name skips the mapped states.
 	const auto get_state{[&](const std::string_view name) {
 		if (const std::optional<State> state{state_names.find(name)}) { return aut.add_state(*state); }
-		const State state{aut.add_state()};
+		const State state{aut.add_state(state_names.new_state(aut.num_of_states()))};
 		state_names.insert(name, state);
 		return state;
 	}};
@@ -441,10 +441,10 @@ std::optional<BitvectorAutomaton> builder::BitvectorNfaReader::Impl::read(
 	aut.state_names.emplace(state_map != nullptr ? *state_map : NameStateMap{}, input.size() / 4);
 	aut.state_map = state_map;
 	mata::parser::StateNameMap& state_names{*aut.state_names};
-	// See builder::construct(): a name mapped by the caller allocates its state.
+	// See builder::construct(): a name mapped by the caller allocates its state, a new name skips the mapped states.
 	const auto get_state{[&](const std::string_view name) {
 		if (const std::optional<State> state{state_names.find(name)}) { return aut.nfa.add_state(*state); }
-		const State state{aut.nfa.add_state()};
+		const State state{aut.nfa.add_state(state_names.new_state(aut.nfa.num_of_states()))};
 		state_names.insert(name, state);
 		return state;
 	}};
@@ -683,7 +683,7 @@ std::vector<Nfa> builder::BitvectorNfaReader::build(Alphabet* alphabet) {
 					if (const std::optional<State> state{state_names.find(name)}) {
 						nfa.final.insert(nfa.add_state(*state));
 					} else {
-						const State added{nfa.add_state()};
+						const State added{nfa.add_state(state_names.new_state(nfa.num_of_states()))};
 						state_names.insert(name, added);
 						nfa.final.insert(added);
 					}
@@ -711,10 +711,12 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 	if (nullptr == state_map) { state_map = &tmp_state_map; }
 
 	// a lambda for translating state names to identifiers; a name mapped by the caller allocates its state, so that
-	//  a new name never gets its identifier while the transitions are only gathered
-	auto get_state_name = [&state_map, &aut](const std::string_view name) {
+	//  a new name never gets its identifier while the transitions are only gathered, and a new name skips the mapped
+	//  states, so that it never gets the identifier of a mapped name read later
+	parser::NewStates new_states{*state_map};
+	auto get_state_name = [&state_map, &aut, &new_states](const std::string_view name) {
 		if (const auto it{state_map->find(name)}; it != state_map->end()) { return aut.add_state(it->second); }
-		const State state = aut.add_state();
+		const State state = aut.add_state(new_states.next(aut.num_of_states()));
 		state_map->emplace(name, state);
 		return state;
 	};
@@ -764,9 +766,10 @@ Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, Nam
 	if (nullptr == state_map) { state_map = &tmp_state_map; }
 
 	// a lambda for translating state names to identifiers, see the ParsedSection overload above
-	auto get_state_name = [&state_map, &aut](const std::string_view name) {
+	parser::NewStates new_states{*state_map};
+	auto get_state_name = [&state_map, &aut, &new_states](const std::string_view name) {
 		if (const auto it{state_map->find(name)}; it != state_map->end()) { return aut.add_state(it->second); }
-		const State state = aut.add_state();
+		const State state = aut.add_state(new_states.next(aut.num_of_states()));
 		state_map->emplace(name, state);
 		return state;
 	};

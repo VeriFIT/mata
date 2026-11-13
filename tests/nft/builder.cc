@@ -1,9 +1,12 @@
 // TODO: some header
 
 #include <fstream>
+#include <memory>
 #include <optional>
 #include <set>
+#include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -11,6 +14,7 @@
 
 #include "mata/nft/builder.hh"
 #include "mata/nft/nft.hh"
+#include "mata/parser/inter-aut.hh"
 #include "mata/parser/parser.hh"
 
 using namespace mata::nft;
@@ -545,4 +549,78 @@ TEST_CASE("mata::nft::builder::from_nfa_with_levels_advancing() gives unreachabl
 	CHECK(nft.levels[2] == 0);
 	CHECK(nft.levels[3] == 0);
 	for (const Level level : nft.levels) { CHECK(level < nft.levels.num_of_levels); }
+}
+
+namespace {
+/// Checks that @p states keeps the names of @p mapped and gives every other name a state of its own, that @p nft has
+///  exactly the edges @p edges between the states of the names @p prefix + source and @p prefix + target, and that
+///  every state of @p nft has a level.
+void check_new_names_keep_off(
+	const Nft& nft,
+	const builder::NameStateMap& states,
+	const builder::NameStateMap& mapped,
+	const std::string& prefix,
+	const std::vector<std::pair<std::string, std::string>>& edges
+) {
+	for (const auto& [name, state] : mapped) { CHECK(states.at(name) == state); }
+	std::set<State> distinct;
+	for (const auto& [name, state] : states) { distinct.insert(state); }
+	CHECK(distinct.size() == states.size());
+	std::set<std::pair<State, State>> expected;
+	for (const auto& [source, target] : edges) {
+		expected.emplace(states.at(prefix + source), states.at(prefix + target));
+	}
+	std::set<std::pair<State, State>> actual;
+	for (const auto& transition : nft.delta.transitions()) { actual.emplace(transition.source, transition.target); }
+	CHECK(actual == expected);
+	CHECK(nft.levels.size() == nft.num_of_states());
+}
+} // namespace
+
+TEST_CASE("mata::nft::builder readers keep new names off the states of a caller's map") {
+	// The caller maps q1, which the input names after, before, or around new names, and q7, which it does not name.
+	//  The %Levels line names a state before the body. IntermediateAut drops the marker q of the state names and
+	//  ignores the levels; its \true final states include q7.
+	const builder::NameStateMap mapped{{"q1", 0}, {"q7", 3}};
+	const builder::NameStateMap unmarked_mapped{{"1", 0}, {"7", 3}};
+	for (const auto& [leveled, edges] : {
+			 std::pair{"q1", std::vector<std::pair<std::string, std::string>>{{"1", "2"}}},
+			 std::pair{"q2", std::vector<std::pair<std::string, std::string>>{{"2", "1"}}},
+			 std::pair{
+				 "q2", std::vector<std::pair<std::string, std::string>>{{"2", "4"}, {"4", "5"}, {"5", "6"}, {"6", "1"}}
+			 },
+		 }) {
+		std::string body;
+		for (const auto& [source, target] : edges) { body += "q" + source + " 5 q" + target + "\n"; }
+		const std::string input{"@NFT\n%Levels " + std::string{leveled} + ":1\n%LevelsNum 2\n" + body};
+		CAPTURE(input);
+
+		builder::NameStateMap explicit_states{mapped};
+		const std::optional<Nft> explicit_nft{builder::parse_explicit_from_mata(input, nullptr, &explicit_states)};
+		REQUIRE(explicit_nft.has_value());
+		check_new_names_keep_off(*explicit_nft, explicit_states, mapped, "q", edges);
+		CHECK(explicit_nft->levels[explicit_states.at(leveled)] == 1);
+
+		IntAlphabet alphabet;
+		builder::NameStateMap general_states{mapped};
+		const Nft general{builder::construct(mata::parser::parse_mf(input)[0], &alphabet, &general_states)};
+		check_new_names_keep_off(general, general_states, mapped, "q", edges);
+		CHECK(general.levels[general_states.at(leveled)] == 1);
+		CHECK(general_states == explicit_states);
+		CHECK(general.delta == explicit_nft->delta);
+
+		const mata::IntermediateAut inter_aut{mata::IntermediateAut::parse_from_mf(
+			mata::parser::parse_mf("@NFT-explicit\n%Alphabet-auto\n%Final \\true\n" + body)
+		)[0]};
+		OnTheFlyAlphabet inter_alphabet;
+		builder::NameStateMap inter_states{unmarked_mapped};
+		check_new_names_keep_off(
+			builder::construct(inter_aut, &inter_alphabet, &inter_states), inter_states, unmarked_mapped, "", edges
+		);
+		const auto alphabets{std::make_shared<mata::AlphabetLevels>(std::make_shared<OnTheFlyAlphabet>())};
+		builder::NameStateMap levels_states{unmarked_mapped};
+		check_new_names_keep_off(
+			builder::construct(inter_aut, alphabets, &levels_states), levels_states, unmarked_mapped, "", edges
+		);
+	}
 }

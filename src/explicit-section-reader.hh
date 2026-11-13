@@ -26,6 +26,29 @@ namespace mata::parser {
 std::string read_whole_stream(std::istream& input);
 
 /**
+ * The states the readers give to the names they meet first, given the names the caller mapped to states beforehand.
+ *  A mapped name gets its state allocated when used. A new name gets the lowest state that the automaton does not have
+ *  yet and no mapped name has, so that it never shares the state of a mapped name, used later or not at all.
+ */
+class NewStates {
+  public:
+	using State = nfa::State;
+
+	/// @param mapped The names the caller mapped.
+	explicit NewStates(const utils::StringMap<State>& mapped);
+
+	/// The state of a new name in an automaton of @p num_of_states states; @p num_of_states never decreases between
+	///  calls, as the caller allocates each state returned.
+	State next(size_t num_of_states);
+
+  private:
+	/// The states of the mapped names, ascending.
+	std::vector<State> mapped_{};
+	/// The number of states of @c mapped_ not above the last state returned.
+	size_t passed_{0};
+};
+
+/**
  * The map from state names to states of the readers, which behaves as the @c std::unordered_map it is built from and
  *  turns into, but finds the names of printed automata, a fixed prefix followed by a number, in a vector.
  */
@@ -36,6 +59,9 @@ class StateNameMap {
 
 	/// @param names The initial names. @param max_number The largest number kept in the vector, which bounds its size.
 	StateNameMap(const Map& names, size_t max_number);
+
+	/// The state of a new name in an automaton of @p num_of_states states, see @c NewStates.
+	State new_state(const size_t num_of_states) { return new_states_.next(num_of_states); }
 
 	/// The state named @p name, if any.
 	std::optional<State> find(std::string_view name);
@@ -70,6 +96,7 @@ class StateNameMap {
 	/// The state of each numbered name, or @c NO_STATE.
 	std::vector<State> numbered_{};
 	Map others_{};
+	NewStates new_states_;
 };
 
 /// One token of a line, as @c parse_mf() reads it.

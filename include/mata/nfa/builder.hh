@@ -88,10 +88,16 @@ Nfa create_random_nfa_tabakov_vardi(
  *  @c IntermediateAut would subject the state names to the naming mode of the section (with the default `%States`
  *  marked naming rejecting every name not starting with `q`) and would renumber states, as the @c IntermediateAut
  *  path collects names from an unordered set.
+ *
+ * @param state_map If not @c nullptr, the map from state names to states, which all overloads and readers fill in the
+ *  same way. The names it maps beforehand keep their states, each allocated when the input uses its name; a final
+ *  formula of an @c IntermediateAut that is true or negates states uses every name of the map it does not negate.
+ *  Every other name gets the lowest state that the automaton does not have yet and that no name of the map had
+ *  beforehand, so that it never shares the state of a mapped name, used later or not at all.
  */
 Nfa construct(const mata::parser::ParsedSection& parsec, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 
-/** Loads an automaton from Parsed object */
+/** Loads an automaton from Parsed object; see the overload above for @p state_map. */
 Nfa construct(const mata::IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 /** Loads an automaton from Parsed object; version for python binding */
 void construct(
