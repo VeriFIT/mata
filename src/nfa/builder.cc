@@ -92,10 +92,11 @@ class Namings {
 	 */
 	std::optional<std::string_view> state_name(const std::string_view token, const bool quoted) const {
 		const char first{token.empty() ? '\0' : token.front()};
-		if (!quoted && (first == '&' || first == '|' || first == '!' || token == "(" || token == ")")) {
+		if (!quoted &&
+			(first == '&' || first == '|' || first == '!' || ((first == '(' || first == ')') && token.size() == 1))) {
 			return std::nullopt;
 		}
-		if (token == "\\true" || token == "\\false") { return std::nullopt; }
+		if (first == '\\' && (token == "\\true" || token == "\\false")) { return std::nullopt; }
 		if (namings_[static_cast<size_t>(Kind::STATES)] == Naming::Marked && first == 'q') { return token.substr(1); }
 		if ((namings_[static_cast<size_t>(Kind::NODES)] == Naming::Marked && first == 'n') ||
 			(namings_[static_cast<size_t>(Kind::SYMBOLS)] == Naming::Marked && first == 'a')) {
