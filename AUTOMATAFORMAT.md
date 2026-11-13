@@ -1,7 +1,7 @@
 # The Mata file format for automata (.mata format)
 
 > [!WARNING]
-> The Mata library currently supports only a subset of the whole format. Notably, the Mata library supports NFAs, but not AFAs nor transducers. The Mata library may also not support all the additional features described in the format, such as special formulas, tracks, etc.
+> The Mata library currently supports only a subset of the whole format. Notably, the Mata library supports NFAs and NFTs (transducers), but not AFAs (their support is disabled). The Mata library may also not support all the additional features described in the format, such as special formulas, tracks, etc.
 
 ## Top-level file structure
 
@@ -43,7 +43,7 @@ We categorise automata by the **alphabet type**, i.e., the representation of sym
 ### AFA (Alternating finite automata)
 
 > [!WARNING]
-> The Mata library currently does not support AFAs.
+> The Mata library currently does not support AFAs; their support is disabled.
 
 - Transition lines are of the form `"<State> <Formula>"` representing the source state and the transition formula - a Boolean formula over symbol literals, states, and nodes.
 - Several lines starting with the same state mean the disjunciton of the formulae. No line for the state means false.
@@ -113,7 +113,7 @@ q [a-z] s
 ## Transducer
 
 > [!WARNING]
-> The Mata library currently does not support transducers.
+> The Mata library supports transducers only as NFTs in `@NFT-explicit` sections, where `%Levels q0:0 q1:1 ...` assigns the states to levels and `%LevelsNum` gives the number of levels. Tracks, as described below, are not supported.
 
 A transducer has named tracks, and it has a key-value line starting with `%Tracks`. We use `<lit>@x` to say that the `<lit>` belongs to the track `x`. We may also specify their names by a type-identifier or enumeration. An example:
 
@@ -154,3 +154,22 @@ It could be good to allow a key-value line `%Alias bla bli`, which specifies an 
 We want to assign attributes to states, symbols, nodes, transducer tracks, transitions. The attributes are meant as something not relevant for the semantics of the automaton, for instance some attributes used when siplaying the automaton, such as colors.
 
 1. An attribute inside a transition is a token such as a state, node, symbol. Its identifier is `t`. We can also give attributes to states, symbols, nodes by writing key-value lines of the form `%Attribute <state> <attribute>`.
+
+## How the Mata library reads the format
+
+The loaders of the Mata library (`mata::nfa::builder::parse_from_mata()`, `mata::nft::builder::parse_from_mata()`, and the NFA loaders of the Python and Rust bindings) give each section to a fast reader when the section stays within the subset the reader covers, and to the general reader (`mata::parser::parse_mf()` followed by `mata::IntermediateAut` and `construct()`) otherwise. Both read the same automaton, up to the numbering of states and of the minterms of bitvector alphabets.
+
+- **Explicit reader** (`mata::nfa::builder::parse_explicit_from_mata()`, and its counterpart for NFTs): a single `@NFA` or `@NFA-explicit` section (`@NFT` or `@NFT-explicit` for NFTs) in which
+  - the `%Initial` and `%Final` lines (and `%Levels` and `%LevelsNum` for NFTs) are plain lists of names,
+  - every transition is a `source symbol target` triple of names,
+  - the namings of states, symbols, and nodes are `auto` or `marked`,
+  - and no unquoted name contains `&`, `|`, `!`, `(`, `)`, `%`, `@`, or `"`.
+- **Bitvector reader** (`mata::nfa::builder::BitvectorNfaReader`): `@NFA-bits` sections, all of which given to one reader share one set of minterms. It reads directly the sections in which
+  - every transition is `source formula target`, where the formula is a Boolean combination of unquoted symbol names, `\true`, and `\false` with `!`, `&`, `|`, and parentheses, not joined to the target by `&`,
+  - `%Initial` is a plain list of states,
+  - `%Final` is a plain list of states, a conjunction of negated states such as `!q1 & !q2`, `\true`, or `\false`,
+  - and the namings are `auto` or `marked`.
+
+  The other `@NFA-bits` sections, such as those with states in transition formulas, a disjunction in `%Initial`, or quoted names, are read by the general reader inside the bitvector reader, still over the shared minterms.
+
+- **General reader**: everything else, such as other section types, Boolean formulas in explicit sections, enumerated namings (`%States-enum`, `%Alphabet-enum`), and malformed inputs, which it reports.
