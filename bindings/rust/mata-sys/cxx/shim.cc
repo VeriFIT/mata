@@ -3,16 +3,20 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <mutex>
+#include <optional>
 #include <set>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "mata-sys/cxx/common.hh"
 #include "mata-sys/src/lib.rs.h"
 #include "mata/applications/strings.hh"
 #include "mata/nfa/builder.hh"
+#include "mata/parser/inter-aut.hh"
 #include "mata/parser/parser.hh"
 
 namespace mata_sys {
@@ -124,6 +128,106 @@ const mata::nfa::SymbolPost&
 	return *(state_post.begin() + static_cast<std::ptrdiff_t>(index));
 }
 
+/// One section of a `.mata` text, and the name of its type (empty if it does not start with a type line).
+struct Section {
+	std::string_view text;
+	std::string_view type;
+};
+
+/// Splits `text` where `parse_mf()` splits it into sections, so that each goes to the reader that takes it. Text
+/// without a type line, only blank lines and comments, is dropped, as `parse_mf()` drops it.
+std::vector<Section> split_sections(const std::string_view text) {
+	const auto is_space = [](const char c) { return c == ' ' || (c >= '\t' && c <= '\r'); };
+	auto sections = std::vector<Section>();
+	std::size_t pos = 0;
+	while (pos < text.size()) {
+		const std::size_t start = pos;
+		auto type = std::optional<std::string_view>();
+		while (true) {
+			while (pos < text.size() && is_space(text[pos])) { ++pos; }
+			if (pos == text.size() || (type.has_value() && text[pos] == '@')) { break; }
+			const std::size_t line_end = std::min(text.find('\n', pos), text.size());
+			const auto line = text.substr(pos, line_end - pos);
+			pos = line_end;
+			if (!type.has_value() && line[0] != '#') {
+				// The type line; errors in it are left to the readers.
+				type = line[0] == '@' ? line.substr(1, line.find_first_of("\"()#%@\\ \t", 1) - 1) : std::string_view();
+			}
+		}
+		if (type.has_value()) { sections.push_back({text.substr(start, pos - start), *type}); }
+	}
+	return sections;
+}
+
+/// Gives the minterms of `nfa`, the symbols `BitvectorNfaReader::build()` gives them without an alphabet, the symbols
+/// of their names in `alphabet`, translated in increasing order.
+void translate_minterms(Nfa& nfa, mata::Alphabet& alphabet) {
+	auto symbols = std::vector<std::optional<Symbol>>();
+	for (const auto& state_post : nfa.delta) {
+		for (const auto& symbol_post : state_post) {
+			if (symbol_post.symbol >= symbols.size()) { symbols.resize(symbol_post.symbol + 1); }
+			symbols[symbol_post.symbol] = symbol_post.symbol;
+		}
+	}
+	bool renamed = false;
+	for (Symbol minterm = 0; minterm < symbols.size(); ++minterm) {
+		if (!symbols[minterm].has_value()) { continue; }
+		symbols[minterm] = alphabet.translate_symb(std::to_string(minterm));
+		renamed = renamed || *symbols[minterm] != minterm;
+	}
+	if (!renamed) { return; }
+	for (State state = 0; state < nfa.delta.num_of_states(); ++state) {
+		auto& state_post = nfa.delta.mutable_state_post(state);
+		for (auto& symbol_post : state_post) { symbol_post.symbol = *symbols[symbol_post.symbol]; }
+		std::sort(state_post.begin(), state_post.end());
+	}
+}
+
+/// Reads the sections of a `.mata` text with the readers Mata's loaders use: `@NFA-bits` sections with the
+/// bitvector reader, which mintermizes them together, the others with the fast reader of explicit automata, and what
+/// it leaves with the general reader.
+std::vector<Nfa> parse_nfas(const std::string_view text, mata::Alphabet& alphabet) {
+	const auto sections = split_sections(text);
+	auto bitvector_nfas = std::vector<Nfa>();
+	auto is_bitvector = std::vector<bool>(sections.size(), false);
+	{
+		// CUDD swaps a process-wide out-of-memory handler, so one thread at a time.
+		static auto cudd_mutex = std::mutex();
+		auto cudd_lock = std::unique_lock<std::mutex>();
+		auto reader = std::optional<mata::nfa::builder::BitvectorNfaReader>();
+		for (std::size_t i = 0; i < sections.size(); ++i) {
+			if (sections[i].type != "NFA-bits") { continue; }
+			if (!reader.has_value()) {
+				cudd_lock = std::unique_lock(cudd_mutex);
+				reader.emplace();
+			}
+			is_bitvector[i] = reader->add(sections[i].text) != mata::nfa::builder::BitvectorNfaReader::Read::Rejected;
+		}
+		if (reader.has_value()) { bitvector_nfas = reader->build(); }
+	}
+
+	auto automata = std::vector<Nfa>();
+	automata.reserve(sections.size());
+	auto next_bitvector = bitvector_nfas.begin();
+	for (std::size_t i = 0; i < sections.size(); ++i) {
+		if (is_bitvector[i]) {
+			// Here, in the order of the sections, as the general reader named the minterms.
+			translate_minterms(*next_bitvector, alphabet);
+			automata.push_back(std::move(*next_bitvector++));
+		} else if (auto nfa = mata::nfa::builder::parse_explicit_from_mata(sections[i].text, &alphabet)) {
+			automata.push_back(std::move(*nfa));
+		} else {
+			const auto section =
+				mata::IntermediateAut::parse_from_mf(mata::parser::parse_mf(std::string(sections[i].text)));
+			if (section.size() != 1 || !section.front().is_nfa()) {
+				throw std::runtime_error("section " + std::to_string(i + 1) + " does not describe an NFA");
+			}
+			automata.push_back(mata::nfa::builder::construct(section.front(), &alphabet));
+		}
+	}
+	return automata;
+}
+
 } // namespace
 
 // ParsedNfas and WordStream.
@@ -204,15 +308,7 @@ std::unique_ptr<ParsedNfas> parse_mata(
 	rust::Vec<Symbol>& new_symbols
 ) {
 	auto alphabet = detail::ParseAlphabet(numeric_symbols, names, named_symbols, next_symbol);
-	const auto sections = detail::parse_sections(text);
-	auto automata = std::vector<Nfa>();
-	automata.reserve(sections.size());
-	for (std::size_t i = 0; i < sections.size(); ++i) {
-		if (!sections[i].is_nfa()) {
-			throw std::runtime_error("section " + std::to_string(i + 1) + " does not describe an NFA");
-		}
-		automata.push_back(mata::nfa::builder::construct(sections[i], alphabet.get()));
-	}
+	auto automata = parse_nfas(std::string_view(text.data(), text.size()), *alphabet.get());
 	alphabet.report_new_names(new_names, new_symbols);
 	return std::make_unique<ParsedNfas>(std::move(automata));
 }

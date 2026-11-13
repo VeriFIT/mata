@@ -387,6 +387,50 @@ fn parse_bitvector_sections() -> Result<(), Error> {
 	Ok(())
 }
 
+/// The states, initial and final states, and transitions of `nfa`.
+fn structure(nfa: &Nfa) -> (usize, Vec<State>, Vec<State>, Vec<Transition>) {
+	let mut finals = nfa.final_states().to_vec();
+	finals.sort();
+	(
+		nfa.num_states(),
+		nfa.initial_states().to_vec(),
+		finals,
+		nfa.transitions().collect(),
+	)
+}
+
+#[test]
+fn parse_sections_read_by_different_readers() -> Result<(), Error> {
+	// Read by the fast reader of explicit automata, by the bitvector reader, and by the general reader.
+	let explicit = "@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a q1\nq1 b q1\n";
+	let bits = "@NFA-bits\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 (x & !y) q1\nq1 (x | y) q1\n";
+	let general =
+		"# comment\n@NFA-explicit\n%Alphabet-auto\n%Initial q0 | q1\n%Final q1\nq0 c q1\n";
+	let mut sigma = Alphabet::new();
+	let parsed = Nfa::parse_mata_all(&[explicit, bits, general].concat(), &mut sigma)?;
+	assert_eq!(parsed.len(), 3);
+	// The two minterms the bit-vector section uses take their symbols in the order of the sections.
+	assert_eq!(sigma.symbol("a"), Some(Symbol::new(0)));
+	assert_eq!(sigma.symbol("b"), Some(Symbol::new(1)));
+	assert_eq!(sigma.symbol("c"), Some(Symbol::new(4)));
+	assert_eq!(parsed[1].used_symbols(), [Symbol::new(2), Symbol::new(3)]);
+	assert_eq!(parsed[1].num_transitions(), 3);
+
+	// Each section reads the same automaton alone, with the names of the others known.
+	let mut known = sigma.clone();
+	let alone = Nfa::parse_mata(explicit, &mut known)?;
+	assert_eq!(structure(&alone), structure(&parsed[0]));
+	let alone = Nfa::parse_mata(general, &mut known)?;
+	assert_eq!(structure(&alone), structure(&parsed[2]));
+	assert_eq!(known, sigma);
+
+	// The bit-vector sections of one text share their minterms, also with numeric symbols.
+	let parsed = Nfa::parse_mata_numeric_all(&[bits, bits].concat())?;
+	assert_eq!(parsed[0].used_symbols(), parsed[1].used_symbols());
+	assert_eq!(structure(&parsed[0]), structure(&parsed[1]));
+	Ok(())
+}
+
 #[test]
 fn named_printing() -> Result<(), Error> {
 	let mut sigma = Alphabet::from_names(["x"])?;

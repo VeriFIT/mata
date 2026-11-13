@@ -7,7 +7,6 @@
 
 #include "mata/nft/types.hh"
 #include "mata/parser/mintermization.hh"
-#include "mata/parser/parser.hh"
 
 namespace mata_sys::detail {
 
@@ -45,24 +44,6 @@ std::vector<mata::IntermediateAut> mintermize(const std::vector<const mata::Inte
 	auto mintermization = mata::Mintermization();
 	return mintermization.mintermize(automata);
 }
-
-std::vector<mata::IntermediateAut> parse_sections(const rust::Str text) {
-	auto sections = mata::IntermediateAut::parse_from_mf(mata::parser::parse_mf(std::string(text)));
-
-	auto bitvector_sections = std::vector<const mata::IntermediateAut*>();
-	for (const auto& section : sections) {
-		if (section.is_bitvector()) { bitvector_sections.push_back(&section); }
-	}
-	if (!bitvector_sections.empty()) {
-		auto mintermized = mintermize(bitvector_sections);
-		auto next_mintermized = mintermized.begin();
-		for (auto& section : sections) {
-			if (section.is_bitvector()) { section = std::move(*next_mintermized++); }
-		}
-	}
-	return sections;
-}
-
 void check_delta(const mata::Automaton& automaton) {
 	const State num_states = static_cast<State>(automaton.num_of_states());
 	for (State source = 0; source < automaton.delta.num_of_states(); ++source) {
