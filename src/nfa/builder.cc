@@ -594,7 +594,7 @@ std::vector<Nfa> builder::BitvectorNfaReader::build(Alphabet* alphabet) {
 			mintermized.automaton_type = inter_aut.automaton_type;
 			mintermized.initial_formula = std::move(inter_aut.initial_formula);
 			mintermized.final_formula = std::move(inter_aut.final_formula);
-			const FormulaNode conjunction{FormulaNode::Type::Operator, "&", "&", FormulaNode::OperatorType::And};
+			const FormulaNode conjunction{FormulaNode::Type::Operator, "&", FormulaNode::OperatorType::And};
 			for (const auto& transition : inter_aut.transitions) {
 				const BDD bdd{
 					impl_->mintermization.graph_to_bdd_nfa(inter_aut.get_symbol_part_of_transition(transition))
@@ -604,7 +604,7 @@ std::vector<Nfa> builder::BitvectorNfaReader::build(Alphabet* alphabet) {
 					const std::string name{std::to_string(minterm)};
 					FormulaGraph graph{conjunction};
 					graph.children.emplace_back(
-						FormulaNode{FormulaNode::Type::Operand, name, name, FormulaNode::OperandType::Symbol}
+						FormulaNode{FormulaNode::Type::Operand, name, FormulaNode::OperandType::Symbol}
 					);
 					graph.children.push_back(transition.second.children[1]);
 					mintermized.transitions.emplace_back(transition.first, std::move(graph));
@@ -741,15 +741,20 @@ Nfa builder::construct(const IntermediateAut& inter_aut, Alphabet* alphabet, Nam
 	// Gathered and imported in one batch, see the ParsedSection overload above.
 	std::vector<Transition> transitions;
 	transitions.reserve(inter_aut.transitions.size());
+	std::string name_buffer;
 	for (const auto& [formula_node, formula_graph] : inter_aut.transitions) {
 		if (formula_graph.children.size() != 2) {
 			if (formula_graph.children.size() == 1) { throw std::runtime_error("Epsilon transitions not supported"); }
 			throw std::runtime_error("Invalid transition");
 		}
 
-		const State src_state{get_state_name(formula_node.name)};
-		const Symbol symbol{translate_symbol_name(alphabet, formula_graph.children[0].node.name)};
-		const State tgt_state{get_state_name(formula_graph.children[1].node.name)};
+		// The names are views; the maps take strings, so one buffer is reused instead of a string per lookup.
+		name_buffer.assign(formula_node.name());
+		const State src_state{get_state_name(name_buffer)};
+		name_buffer.assign(formula_graph.children[0].node.name());
+		const Symbol symbol{translate_symbol_name(alphabet, name_buffer)};
+		name_buffer.assign(formula_graph.children[1].node.name());
+		const State tgt_state{get_state_name(name_buffer)};
 
 		transitions.emplace_back(src_state, symbol, tgt_state);
 	}

@@ -219,7 +219,7 @@ mata::Mintermization::OptionalBdd mata::Mintermization::graph_to_bdd_afa(const F
 	if (node.is_operand()) {
 		if (node.is_state()) { return OptionalBdd(OptionalBdd::Type::NothingE); }
 		return OptionalBdd(symbol_bdd(
-			node.name, node.is_true() ? std::optional{true} : (node.is_false() ? std::optional{false} : std::nullopt)
+			node.name(), node.is_true() ? std::optional{true} : (node.is_false() ? std::optional{false} : std::nullopt)
 		));
 	}
 
@@ -259,7 +259,7 @@ BDD mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph& graph) {
 	const FormulaNode& node = graph.node;
 	if (node.is_operand()) {
 		return symbol_bdd(
-			node.name, node.is_true() ? std::optional{true} : (node.is_false() ? std::optional{false} : std::nullopt)
+			node.name(), node.is_true() ? std::optional{true} : (node.is_false() ? std::optional{false} : std::nullopt)
 		);
 	}
 
@@ -297,7 +297,7 @@ std::vector<mata::FormulaGraph> symbol_leaves(const size_t num_of_minterms) {
 	for (size_t symbol{0}; symbol < num_of_minterms; ++symbol) {
 		const std::string name{std::to_string(symbol)};
 		leaves.emplace_back(
-			mata::FormulaNode{mata::FormulaNode::Type::Operand, name, name, mata::FormulaNode::OperandType::Symbol}
+			mata::FormulaNode{mata::FormulaNode::Type::Operand, name, mata::FormulaNode::OperandType::Symbol}
 		);
 	}
 	return leaves;
@@ -328,7 +328,7 @@ void mata::Mintermization::minterms_to_aut_nfa(
 	IntermediateAut& res, const IntermediateAut& aut, const std::vector<std::vector<size_t>>& minterms_of_source
 ) {
 	const std::vector<FormulaGraph> symbols{symbol_leaves(num_of_symbols(minterms_of_source))};
-	const FormulaNode conjunction{FormulaNode::Type::Operator, "&", "&", FormulaNode::OperatorType::And};
+	const FormulaNode conjunction{FormulaNode::Type::Operator, "&", FormulaNode::OperatorType::And};
 	// The minterms below the BDD of the symbol part of a transition, or nullptr if the transition had a zero BDD and
 	//  so was not added to the map.
 	const auto minterms_of_transition{[&](const FormulaGraph& formula_graph) -> const std::vector<size_t>* {
@@ -364,7 +364,7 @@ void mata::Mintermization::minterms_to_aut_afa(
 	IntermediateAut& res, const IntermediateAut& aut, const std::vector<std::vector<size_t>>& minterms_of_source
 ) {
 	const std::vector<FormulaGraph> symbols{symbol_leaves(num_of_symbols(minterms_of_source))};
-	const FormulaNode conjunction{FormulaNode::Type::Operator, "&", "&", FormulaNode::OperatorType::And};
+	const FormulaNode conjunction{FormulaNode::Type::Operator, "&", FormulaNode::OperatorType::And};
 	for (const auto& formula_node : aut.transitions | std::views::keys) {
 		for (const auto& [disjunct, formula_graph] : lhs_to_disjuncts_and_states_[&formula_node]) {
 			// for each t=(q1,s,q2)

@@ -612,25 +612,25 @@ TEST_CASE("parsing automata to intermediate representation") { // {{{
 		REQUIRE(auts.size() == 1);
 		const mata::IntermediateAut& aut = auts.back();
 		REQUIRE(aut.transitions.size() == 1);
-		REQUIRE(aut.transitions.front().first.name == "q");
+		REQUIRE(aut.transitions.front().first.name() == "q");
 		REQUIRE(aut.transitions.front().first.is_operand());
 		REQUIRE(aut.transitions.front().second.node.is_operator());
-		REQUIRE(aut.transitions.front().second.node.name == "&");
+		REQUIRE(aut.transitions.front().second.node.name() == "&");
 		REQUIRE(aut.transitions.front().second.children.size() == 2);
 		REQUIRE(aut.transitions.front().second.children.front().node.is_operand());
-		REQUIRE(aut.transitions.front().second.children.front().node.name == "symbol");
+		REQUIRE(aut.transitions.front().second.children.front().node.name() == "symbol");
 		REQUIRE(aut.transitions.front().second.children.front().children.empty());
 		REQUIRE(aut.transitions.front().second.children[1].node.is_operand());
-		REQUIRE(aut.transitions.front().second.children[1].node.name == "r");
+		REQUIRE(aut.transitions.front().second.children[1].node.name() == "r");
 		REQUIRE(aut.transitions.front().second.children[1].children.empty());
-		REQUIRE(aut.initial_formula.node.name == "&");
+		REQUIRE(aut.initial_formula.node.name() == "&");
 		REQUIRE(aut.initial_formula.children.size() == 2);
-		REQUIRE(aut.initial_formula.children[0].node.name == "q");
-		REQUIRE(aut.initial_formula.children[1].node.name == "r");
-		REQUIRE(aut.final_formula.node.name == "|");
+		REQUIRE(aut.initial_formula.children[0].node.name() == "q");
+		REQUIRE(aut.initial_formula.children[1].node.name() == "r");
+		REQUIRE(aut.final_formula.node.name() == "|");
 		REQUIRE(aut.final_formula.children.size() == 2);
-		REQUIRE(aut.final_formula.children[0].node.name == "q");
-		REQUIRE(aut.final_formula.children[1].node.name == "r");
+		REQUIRE(aut.final_formula.children[0].node.name() == "q");
+		REQUIRE(aut.final_formula.children[1].node.name() == "r");
 	}
 
 	SECTION("NFA without &") {
@@ -644,16 +644,16 @@ TEST_CASE("parsing automata to intermediate representation") { // {{{
 		REQUIRE(auts.size() == 1);
 		const mata::IntermediateAut& aut = auts.back();
 		REQUIRE(aut.transitions.size() == 1);
-		REQUIRE(aut.transitions.front().first.name == "q");
+		REQUIRE(aut.transitions.front().first.name() == "q");
 		REQUIRE(aut.transitions.front().first.is_operand());
 		REQUIRE(aut.transitions.front().second.node.is_operator());
-		REQUIRE(aut.transitions.front().second.node.name == "&");
+		REQUIRE(aut.transitions.front().second.node.name() == "&");
 		REQUIRE(aut.transitions.front().second.children.size() == 2);
 		REQUIRE(aut.transitions.front().second.children.front().node.is_operand());
-		REQUIRE(aut.transitions.front().second.children.front().node.name == "symbol");
+		REQUIRE(aut.transitions.front().second.children.front().node.name() == "symbol");
 		REQUIRE(aut.transitions.front().second.children.front().children.empty());
 		REQUIRE(aut.transitions.front().second.children[1].node.is_operand());
-		REQUIRE(aut.transitions.front().second.children[1].node.name == "r");
+		REQUIRE(aut.transitions.front().second.children[1].node.name() == "r");
 		REQUIRE(aut.transitions.front().second.children[1].children.empty());
 	}
 
@@ -765,39 +765,39 @@ q1 \false q2
 		REQUIRE(auts.size() == 1);
 		const mata::IntermediateAut& aut = auts.back();
 		REQUIRE(aut.transitions.size() == 2);
-		REQUIRE(aut.transitions.front().first.name == "q");
+		REQUIRE(aut.transitions.front().first.name() == "q");
 		REQUIRE(aut.transitions.front().first.is_operand());
 		REQUIRE(aut.transitions.front().second.node.is_operator());
-		REQUIRE(aut.transitions.front().second.node.name == "|");
+		REQUIRE(aut.transitions.front().second.node.name() == "|");
 		REQUIRE(aut.transitions.front().second.children.size() == 2);
 		REQUIRE(aut.transitions.front().second.children.front().node.is_operand());
-		REQUIRE(aut.transitions.front().second.children.front().node.name == "symbol");
+		REQUIRE(aut.transitions.front().second.children.front().node.name() == "symbol");
 		REQUIRE(aut.transitions.front().second.children.front().children.empty());
 		REQUIRE(aut.transitions.front().second.children[1].node.is_operator());
-		REQUIRE(aut.transitions.front().second.children[1].node.name == "&");
+		REQUIRE(aut.transitions.front().second.children[1].node.name() == "&");
 		REQUIRE(aut.transitions.front().second.children[1].children.size() == 2);
 		REQUIRE(aut.transitions.front().second.children[1].children.front().node.is_operand());
-		REQUIRE(aut.transitions.front().second.children[1].children.front().node.name == "other_symbol");
+		REQUIRE(aut.transitions.front().second.children[1].children.front().node.name() == "other_symbol");
 		REQUIRE(aut.transitions.front().second.children[1].children[1].node.is_operator());
-		REQUIRE(aut.transitions.front().second.children[1].children[1].node.name == "|");
-		REQUIRE(aut.transitions.front().second.children[1].children[1].children.front().node.name == "|");
-		REQUIRE(aut.transitions.front().second.children[1].children[1].children[1].node.name == "s");
+		REQUIRE(aut.transitions.front().second.children[1].children[1].node.name() == "|");
+		REQUIRE(aut.transitions.front().second.children[1].children[1].children.front().node.name() == "|");
+		REQUIRE(aut.transitions.front().second.children[1].children[1].children[1].node.name() == "s");
 		REQUIRE(
-			aut.transitions.front().second.children[1].children[1].children.front().children.front().node.name ==
+			aut.transitions.front().second.children[1].children[1].children.front().children.front().node.name() ==
 			"(r,s)"
 		);
-		REQUIRE(aut.transitions.front().second.children[1].children[1].children.front().children[1].node.name == "r");
+		REQUIRE(aut.transitions.front().second.children[1].children[1].children.front().children[1].node.name() == "r");
 
-		REQUIRE(aut.transitions[1].first.name == "r");
+		REQUIRE(aut.transitions[1].first.name() == "r");
 		REQUIRE(aut.transitions[1].first.is_operand());
 		REQUIRE(aut.transitions[1].second.node.is_operator());
-		REQUIRE(aut.transitions[1].second.node.name == "&");
+		REQUIRE(aut.transitions[1].second.node.name() == "&");
 		REQUIRE(aut.transitions[1].second.children.size() == 2);
 		REQUIRE(aut.transitions[1].second.children.front().node.is_operator());
-		REQUIRE(aut.transitions[1].second.children.front().node.name == "!");
-		REQUIRE(aut.transitions[1].second.children.front().children.front().node.name == "b");
+		REQUIRE(aut.transitions[1].second.children.front().node.name() == "!");
+		REQUIRE(aut.transitions[1].second.children.front().children.front().node.name() == "b");
 		REQUIRE(aut.transitions[1].second.children[1].node.is_operator());
-		REQUIRE(aut.transitions[1].second.children[1].node.name == "&");
+		REQUIRE(aut.transitions[1].second.children[1].node.name() == "&");
 		REQUIRE(aut.transitions[1].second.children[1].children.size() == 2);
 	}
 
@@ -825,7 +825,7 @@ q1 \false q2
 		parsed = parse_mf(file);
 		std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
 		const mata::IntermediateAut aut = auts[0];
-		REQUIRE(aut.transitions.front().first.name == "1");
+		REQUIRE(aut.transitions.front().first.name() == "1");
 		REQUIRE(aut.transitions.front().first.raw == "q1");
 	}
 
@@ -838,7 +838,7 @@ q1 \false q2
 		parsed = parse_mf(file);
 		std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
 		const mata::IntermediateAut aut = auts[0];
-		REQUIRE(aut.transitions.front().first.name == "1");
+		REQUIRE(aut.transitions.front().first.name() == "1");
 		REQUIRE(aut.transitions.front().first.raw == "q1");
 	}
 
@@ -934,7 +934,7 @@ q1 \false q2
 		CHECK(auts[0].symbol_naming == mata::IntermediateAut::Naming::Auto);
 		REQUIRE(auts[0].transitions.size() == 1);
 		CHECK(auts[0].transitions[0].first.raw == "q0");
-		CHECK(auts[0].transitions[0].second.children[0].node.name == "a");
+		CHECK(auts[0].transitions[0].second.children[0].node.name() == "a");
 		CHECK(auts[0].transitions[0].second.children[1].node.raw == "q1");
 	}
 } // parse_mf }}}
@@ -978,9 +978,7 @@ TEST_CASE("malformed formulas in the intermediate representation") { // {{{
 	SECTION("transition without a target state") {
 		mata::IntermediateAut aut;
 		aut.automaton_type = mata::IntermediateAut::AutomatonType::Nfa;
-		const mata::FormulaNode source{
-			mata::FormulaNode::Type::Operand, "q0", "q0", mata::FormulaNode::OperandType::State
-		};
+		const mata::FormulaNode source{mata::FormulaNode::Type::Operand, "q0", mata::FormulaNode::OperandType::State};
 		aut.transitions.emplace_back(source, mata::FormulaGraph{});
 		CHECK_THROWS_WITH(
 			aut.get_symbol_part_of_transition(aut.transitions.front()),
@@ -1024,9 +1022,9 @@ TEST_CASE("mata::IntermediateAut streaming a negated compound formula - #760") {
 		mata::IntermediateAut aut{};
 		aut.automaton_type = mata::IntermediateAut::AutomatonType::Nfa;
 		aut.transitions.emplace_back(
-			mata::FormulaNode{mata::FormulaNode::Type::Operand, "q0", "q0", mata::FormulaNode::OperandType::State},
+			mata::FormulaNode{mata::FormulaNode::Type::Operand, "q0", mata::FormulaNode::OperandType::State},
 			mata::FormulaGraph{
-				mata::FormulaNode{mata::FormulaNode::Type::Operator, "&", "&", mata::FormulaNode::OperatorType::And}
+				mata::FormulaNode{mata::FormulaNode::Type::Operator, "&", mata::FormulaNode::OperatorType::And}
 			}
 		);
 		std::ostringstream out;

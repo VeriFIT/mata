@@ -269,15 +269,20 @@ Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
 		aut.initial.insert(state);
 	}
 
+	// The names are views; the maps take strings, so one buffer is reused instead of a string per lookup.
+	std::string name_buffer;
 	for (const auto& [formula_node, formula_graph] : inter_aut.transitions) {
 		if (formula_graph.children.size() != 2) {
 			if (formula_graph.children.size() == 1) { throw std::runtime_error("Epsilon transitions not supported"); }
 			throw std::runtime_error("Invalid transition");
 		}
 
-		const State source = get_state_name(formula_node.name);
-		const Symbol symbol = translate_symbol_name(alphabet, formula_graph.children[0].node.name);
-		const State target = get_state_name(formula_graph.children[1].node.name);
+		name_buffer.assign(formula_node.name());
+		const State source = get_state_name(name_buffer);
+		name_buffer.assign(formula_graph.children[0].node.name());
+		const Symbol symbol = translate_symbol_name(alphabet, name_buffer);
+		name_buffer.assign(formula_graph.children[1].node.name());
+		const State target = get_state_name(name_buffer);
 
 		aut.delta.add(source, symbol, target);
 	}
@@ -343,15 +348,19 @@ Nft builder::construct(
 		aut.initial.insert(state);
 	}
 
+	std::string name_buffer;
 	for (const auto& [formula_node, formula_graph] : inter_aut.transitions) {
 		if (formula_graph.children.size() != 2) {
 			if (formula_graph.children.size() == 1) { throw std::runtime_error("Epsilon transitions not supported"); }
 			throw std::runtime_error("Invalid transition");
 		}
 
-		const State source = get_state_name(formula_node.name);
-		const Symbol symbol = translate_symbol_name(alphabets, formula_graph.children[0].node.name, aut.levels[source]);
-		const State target = get_state_name(formula_graph.children[1].node.name);
+		name_buffer.assign(formula_node.name());
+		const State source = get_state_name(name_buffer);
+		name_buffer.assign(formula_graph.children[0].node.name());
+		const Symbol symbol = translate_symbol_name(alphabets, name_buffer, aut.levels[source]);
+		name_buffer.assign(formula_graph.children[1].node.name());
+		const State target = get_state_name(name_buffer);
 		aut.delta.add(source, symbol, target);
 	}
 

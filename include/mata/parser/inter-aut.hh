@@ -10,6 +10,7 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -20,8 +21,8 @@ namespace mata {
 
 /**
  * A node of graph representing transition formula. A node could be operator (!,&,|) or operand (symbol, state, node).
- * Each node has a name (in case of marking naming, an initial character defining type of node is removed and stored in
- * name), raw (name including potential type marker), and information about its type.
+ * Each node has its raw name as written in the input, its name (the raw name without the type marker, the initial
+ *  character, under the marked naming), and information about its type.
  */
 class FormulaNode {
   public:
@@ -35,12 +36,13 @@ class FormulaNode {
 	Type type{};
 	/// Raw name of node as it was specified in input text, i.e., including type marker.
 	std::string raw{};
-	/// Parsed name, i.e., a potential type marker (first character) is removed.
-	std::string name{}; // Parsed name. When type marking is used, markers are removed.
 	/// if a node is operator, it defines which one
 	OperatorType operator_type{};
 	/// if a node is operand, it defines which one
 	OperandType operand_type{};
+
+	/// The parsed name: @c raw without the type marker, if the node has one. Valid while @c raw is unchanged.
+	std::string_view name() const { return std::string_view{raw}.substr(marked_ ? 1 : 0); }
 
 	bool is_operand() const { return type == Type::Operand; }
 
@@ -68,24 +70,23 @@ class FormulaNode {
 		  operator_type(OperatorType::NotOperator),
 		  operand_type(OperandType::NotOperand) {}
 
-	FormulaNode(const Type t, std::string raw, std::string name, const OperatorType operator_t)
+	FormulaNode(const Type t, std::string raw, const OperatorType operator_t)
 		: type(t),
 		  raw(std::move(raw)),
-		  name(std::move(name)),
 		  operator_type(operator_t),
 		  operand_type(OperandType::NotOperand) {}
 
-	FormulaNode(const Type t, std::string raw, std::string name, const OperandType operand)
+	/// @param marked Whether the first character of @p raw is a type marker, which the name leaves out.
+	FormulaNode(const Type t, std::string raw, const OperandType operand, const bool marked = false)
 		: type(t),
 		  raw(std::move(raw)),
-		  name(std::move(name)),
 		  operator_type(OperatorType::NotOperator),
-		  operand_type(operand) {}
+		  operand_type(operand),
+		  marked_(marked && !this->raw.empty()) {}
 
-	FormulaNode(const Type t, const std::string& raw)
+	FormulaNode(const Type t, std::string raw)
 		: type(t),
-		  raw(raw),
-		  name(raw),
+		  raw(std::move(raw)),
 		  operator_type(OperatorType::NotOperator),
 		  operand_type(OperandType::NotOperand) {}
 
@@ -96,6 +97,9 @@ class FormulaNode {
 	FormulaNode& operator=(const FormulaNode& other) = default;
 	FormulaNode& operator=(FormulaNode&& other) noexcept = default;
 	~FormulaNode() = default;
+
+  private:
+	bool marked_{false};
 };
 
 /**
