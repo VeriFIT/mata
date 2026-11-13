@@ -25,43 +25,6 @@
 namespace mata {
 
 /**
- * An append-only storage of the names of formula nodes: a node keeps a view into it instead of a string of its own.
- * The bytes handed out are never moved, so a view stays valid for as long as the storage lives. Copies of
- *  @c IntermediateAut share the storage, which keeps the names of their nodes valid.
- */
-class NameStore {
-  public:
-	/**
-	 * @brief Copies @p name into the storage.
-	 * @return A view of the copy, valid for as long as the storage lives.
-	 */
-	std::string_view store(const std::string_view name) {
-		if (chunks_.empty() || chunks_.back().capacity - used_ < name.size()) {
-			const std::size_t capacity{name.size() < chunk_capacity_ ? chunk_capacity_ : name.size()};
-			chunks_.push_back(Chunk{.data = std::make_unique_for_overwrite<char[]>(capacity), .capacity = capacity});
-			used_ = 0;
-		}
-		char* const stored{chunks_.back().data.get() + used_};
-		std::memcpy(stored, name.data(), name.size());
-		used_ += name.size();
-		return {stored, name.size()};
-	}
-
-  private:
-	/// One block of the storage; the bytes of the blocks handed out earlier stay where they are.
-	struct Chunk {
-		std::unique_ptr<char[]> data{};
-		std::size_t capacity{};
-	};
-
-	static constexpr std::size_t chunk_capacity_ = 16 * 1'024;
-
-	std::vector<Chunk> chunks_{};
-	/// The number of bytes used in the last chunk.
-	std::size_t used_{};
-};
-
-/**
  * A node of graph representing transition formula. A node could be operator (!,&,|) or operand (symbol, state, node).
  * Each node has its raw name as written in the input, its name (the raw name without the type marker, the initial
  *  character, under the marked naming), and information about its type.

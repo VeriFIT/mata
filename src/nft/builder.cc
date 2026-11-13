@@ -156,13 +156,11 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 	if (nullptr == state_map) { state_map = &tmp_state_map; }
 
 	// a lambda for translating state names to identifiers
-	auto get_state_name = [&](const std::string& str) {
-		if (!state_map->contains(str)) {
-			const State state = aut.add_state();
-			state_map->insert({str, state});
-			return state;
-		}
-		return (*state_map)[str];
+	auto get_state_name = [&](const std::string_view name) {
+		if (const auto it{state_map->find(name)}; it != state_map->end()) { return it->second; }
+		const State state = aut.add_state();
+		state_map->emplace(name, state);
+		return state;
 	};
 
 	auto it = parsec.dict.find("Initial");

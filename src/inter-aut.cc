@@ -39,7 +39,7 @@ void check_explicit_transition(const mata::parser::BodyLine& tokens, const std::
 		// A quoted token names a symbol, even when the name is that of an operator: the reader quoted it exactly
 		//  so that it is not read for an operator.
 		if (tokens[i].quoted) { continue; }
-		if (const std::string& token = tokens[i].token;
+		if (const std::string_view token = tokens[i].token;
 			token == "&" || token == "|" || token == "!" || token == "(" || token == ")") {
 			throw std::runtime_error(
 				std::format(
@@ -140,14 +140,14 @@ mata::FormulaNode stored_copy(const mata::FormulaNode& node, mata::NameStore& na
 	return copy;
 }
 
-mata::FormulaNode create_node(mata::IntermediateAut& mata, const std::string& token, const bool quoted = false) {
+mata::FormulaNode create_node(mata::IntermediateAut& mata, const std::string_view token, const bool quoted = false) {
 	// A node keeps a view of its name, so the token has to be stored in the automaton first.
 	const std::string_view raw{mata.name_store->store(token)};
 
 	// A quoted token stands for a name, even when the name is that of an operator: the reader quoted it exactly
 	//  so that it is not read for an operator of the transition formula.
 	if (!quoted) {
-		if (is_logical_operator(token[0])) {
+		if (!token.empty() && is_logical_operator(token[0])) {
 			switch (token[0]) {
 				case '&':
 					return {mata::FormulaNode::Type::Operator, raw, mata::FormulaNode::OperatorType::And};
@@ -169,17 +169,17 @@ mata::FormulaNode create_node(mata::IntermediateAut& mata, const std::string& to
 		return {mata::FormulaNode::Type::Operand, raw, mata::FormulaNode::OperandType::True};
 	} else if (token == "\\false"sv) {
 		return {mata::FormulaNode::Type::Operand, raw, mata::FormulaNode::OperandType::False};
-	} else if (is_naming_enum(mata.state_naming) && mata.states_names.contains(token)) {
+	} else if (is_naming_enum(mata.state_naming) && mata.states_names.contains(std::string{token})) {
 		return {mata::FormulaNode::Type::Operand, raw, mata::FormulaNode::OperandType::State};
-	} else if (is_naming_enum(mata.node_naming) && mata.nodes_names.contains(token)) {
+	} else if (is_naming_enum(mata.node_naming) && mata.nodes_names.contains(std::string{token})) {
 		return {mata::FormulaNode::Type::Operand, raw, mata::FormulaNode::OperandType::Node};
-	} else if (is_naming_enum(mata.symbol_naming) && mata.symbols_names.contains(token)) {
+	} else if (is_naming_enum(mata.symbol_naming) && mata.symbols_names.contains(std::string{token})) {
 		return {mata::FormulaNode::Type::Operand, raw, mata::FormulaNode::OperandType::Symbol};
-	} else if (is_naming_marker(mata.state_naming) && token[0] == 'q') {
+	} else if (is_naming_marker(mata.state_naming) && token.starts_with('q')) {
 		return {mata::FormulaNode::Type::Operand, raw, mata::FormulaNode::OperandType::State, true};
-	} else if (is_naming_marker(mata.node_naming) && token[0] == 'n') {
+	} else if (is_naming_marker(mata.node_naming) && token.starts_with('n')) {
 		return {mata::FormulaNode::Type::Operand, raw, mata::FormulaNode::OperandType::Node, true};
-	} else if (is_naming_marker(mata.symbol_naming) && token[0] == 'a') {
+	} else if (is_naming_marker(mata.symbol_naming) && token.starts_with('a')) {
 		return {mata::FormulaNode::Type::Operand, raw, mata::FormulaNode::OperandType::Symbol, true};
 	} else if (is_naming_auto(mata.state_naming)) {
 		return {mata::FormulaNode::Type::Operand, raw, mata::FormulaNode::OperandType::State};
@@ -189,7 +189,7 @@ mata::FormulaNode create_node(mata::IntermediateAut& mata, const std::string& to
 		return {mata::FormulaNode::Type::Operand, raw, mata::FormulaNode::OperandType::Symbol};
 	}
 
-	throw std::runtime_error("Unknown token " + token);
+	throw std::runtime_error("Unknown token " + std::string{token});
 }
 
 /**

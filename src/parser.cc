@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
-#include <deque>
 #include <span>
 #include <sstream>
 
@@ -22,7 +21,7 @@ namespace {
 /// @c std::isspace() in the "C" locale.
 bool is_space(const char ch) { return ch == ' ' || (ch >= '\t' && ch <= '\r'); }
 
-/// One token of a line: a view into the input, or into @c LineTokens::unescaped for a quoted token with escapes.
+/// One token of a line: a view into the line, or into the name storage for a quoted token with escapes.
 struct Token {
 	std::string_view text;
 	bool quoted;
@@ -30,17 +29,17 @@ struct Token {
 
 /**
  * The tokens of a line and of the lines a backslash continues it with. Unquoted tokens are split at the logical
- *  operators of a transition formula. The buffers are reused from line to line, so reading a line usually allocates
+ *  operators of a transition formula. The buffer is reused from line to line, so reading a line usually allocates
  *  nothing.
  */
 class LineTokens {
   public:
+	/// @param names Storage for the quoted tokens whose escapes change them.
+	explicit LineTokens(mata::NameStore& names) : names_{names} {}
+
 	const std::vector<Token>& tokens() const { return tokens_; }
 
-	void clear() {
-		tokens_.clear();
-		unescaped_.clear();
-	}
+	void clear() { tokens_.clear(); }
 
 	/**
 	 * Appends the tokens of @p line, which has to outlive them. A comment ends the line: everything from @c # on is
@@ -77,7 +76,7 @@ class LineTokens {
 				}
 				result += line[pos++];
 			}
-			token = unescaped_.emplace_back(std::move(result));
+			token = names_.store(result);
 		}
 		if (pos == line.size()) { throw std::runtime_error("missing ending quotes: " + std::string{token}); }
 		++pos;
@@ -148,10 +147,8 @@ class LineTokens {
 		return kinds;
 	}()};
 
+	mata::NameStore& names_;
 	std::vector<Token> tokens_{};
-	/// The quoted tokens with their escapes resolved; a deque keeps the strings, and so the views of the tokens, in
-	///  place.
-	std::deque<std::string> unescaped_{};
 };
 } // namespace
 
@@ -197,7 +194,13 @@ ParsedSection mata::parser::parse_mf_section_view(std::string_view& input, const
 	ParsedSection result;
 
 	bool reading_type = true;
-	LineTokens line_tokens{};
+	NameStore& names{*result.name_store};
+	LineTokens line_tokens{names};
+	// Whether the line read, with the lines continuing it, is a %KEY line, whose values become strings of their own.
+	//  The tokens of the other lines are views into the copy of their line in the name storage of the section.
+	bool key_line{false};
+	// A quoted token with its quotes, when they are kept.
+	std::string with_quotes{};
 	bool append_line = false;
 	size_t pos = 0;
 
@@ -263,9 +266,12 @@ ParsedSection mata::parser::parse_mf_section_view(std::string_view& input, const
 			continue;
 		}
 
-		if (!append_line) { line_tokens.clear(); }
+		if (!append_line) {
+			line_tokens.clear();
+			key_line = line.starts_with('%');
+		}
 		const size_t num_of_tokens_before{line_tokens.tokens().size()};
-		line_tokens.tokenize(line);
+		line_tokens.tokenize(key_line || line.starts_with('#') ? line : names.store(line));
 		if (line_tokens.tokens().size() == num_of_tokens_before) { continue; }
 
 		append_line = backslash_ending;
@@ -287,14 +293,12 @@ ParsedSection mata::parser::parse_mf_section_view(std::string_view& input, const
 			body_line.reserve(tokens.size());
 			for (const auto& [token, token_quoted] : tokens) {
 				if (keep_quotes && token_quoted) {
-					std::string with_quotes;
-					with_quotes.reserve(token.size() + 2);
-					with_quotes += '"';
+					with_quotes = '"';
 					with_quotes += token;
 					with_quotes += '"';
-					body_line.emplace_back(std::move(with_quotes), true);
+					body_line.emplace_back(names.store(with_quotes), true);
 				} else {
-					body_line.emplace_back(std::string{token}, token_quoted);
+					body_line.emplace_back(token, token_quoted);
 				}
 			}
 		}

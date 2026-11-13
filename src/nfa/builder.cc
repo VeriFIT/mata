@@ -711,13 +711,11 @@ Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, 
 
 	// a lambda for translating state names to identifiers; a name mapped by the caller allocates its state, so that
 	//  a new name never gets its identifier while the transitions are only gathered
-	auto get_state_name = [&state_map, &aut](const std::string& str) {
-		if (!state_map->contains(str)) {
-			const State state = aut.add_state();
-			state_map->insert({str, state});
-			return state;
-		}
-		return aut.add_state((*state_map)[str]);
+	auto get_state_name = [&state_map, &aut](const std::string_view name) {
+		if (const auto it{state_map->find(name)}; it != state_map->end()) { return aut.add_state(it->second); }
+		const State state = aut.add_state();
+		state_map->emplace(name, state);
+		return state;
 	};
 
 	auto it = parsec.dict.find("Initial");
