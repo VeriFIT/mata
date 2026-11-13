@@ -103,6 +103,24 @@ Nft construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr, NameStat
 } // construct().
 
 /**
+ * Reads an NFT from the `.mata` format in @p nft_in_mata with the fast reader of explicit alphabets.
+ *
+ * The reader skips @c mata::parser::parse_mf(), and reads only the inputs whose transitions are `source symbol target`
+ *  triples, whose `%Initial` and `%Final` lines list states, and whose `%Levels` and `%LevelsNum` lines give each
+ *  state at most one level as a decimal number without leading zeros that fits @c Level. For those, it returns the
+ *  NFT @c construct() returns from @c parse_mf() of @p nft_in_mata, with the states numbered the same.
+ *
+ * @param nft_in_mata Input with a single `@NFT` or `@NFT-explicit` section.
+ * @param alphabet Alphabet translating the symbol names; @c nullptr reads them as numbers (@c IntAlphabet).
+ * @param state_map If not @c nullptr, receives the map from state names to states, see @c construct().
+ * @return The NFT, or @c std::nullopt when @p nft_in_mata needs the general reader, as do malformed inputs.
+ *  @p state_map is then left unchanged, while @p alphabet may have learned symbols of the lines read before.
+ */
+std::optional<Nft> parse_explicit_from_mata(
+	std::string_view nft_in_mata, Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr
+);
+
+/**
  * Parse NFA from the mata format in an input stream.
  *
  * @param nft_stream Input stream containing NFA in mata format.

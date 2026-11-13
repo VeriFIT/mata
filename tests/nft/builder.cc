@@ -502,6 +502,35 @@ TEST_CASE("mata::nft::parse_from_mata() reads what the general reader reads") {
 	}
 }
 
+TEST_CASE("mata::nft::builder::parse_explicit_from_mata()") {
+	SECTION("reads plain transducers with their state map") {
+		builder::NameStateMap state_map;
+		const std::optional<Nft> nft{builder::parse_explicit_from_mata(
+			"@NFT-explicit\n%Initial p\n%Final p\n%Levels p:0 q:1\n%LevelsNum 2\np 7 q\nq 8 p\n", nullptr, &state_map
+		)};
+		REQUIRE(nft.has_value());
+		CHECK(nft->levels.num_of_levels == 2);
+		CHECK(nft->levels[state_map.at("q")] == 1);
+		CHECK(nft->delta.contains(state_map.at("p"), 7, state_map.at("q")));
+		CHECK(builder::parse_explicit_from_mata("@NFT\n%Levels q:4294967295\np 1 q\n").has_value());
+	}
+
+	SECTION("leaves the general reader the levels it would narrow, overwrite, or read with leading zeros") {
+		builder::NameStateMap state_map{{"x", 0}};
+		for (const char* const input : {
+				 "@NFT\n%Levels q:4294967296\np 1 q\n",
+				 "@NFT\n%LevelsNum 4294967296\np 1 q\n",
+				 "@NFT\n%Levels q:5000 q:1\np 1 q\n",
+				 "@NFT\n%Levels q:01\np 1 q\n",
+			 }) {
+			CAPTURE(input);
+			CHECK_FALSE(builder::parse_explicit_from_mata(input, nullptr, &state_map).has_value());
+			CHECK(state_map == builder::NameStateMap{{"x", 0}});
+			check_reads_as_general_reader(input);
+		}
+	}
+}
+
 TEST_CASE("mata::nft::builder::from_nfa_with_levels_advancing() gives unreachable states a valid level - issue #763") {
 	mata::nfa::Nfa nfa(4, {0}, {0});
 	nfa.delta.add(0, 'a', 1);

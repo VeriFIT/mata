@@ -35,11 +35,15 @@ Symbol translate_symbol_name(
 	return alphabets->translate_symb(name, level);
 }
 
-/// Parses a level as @c std::stol() would, but only a plain decimal number. @return The level, or @c std::nullopt.
-std::optional<long> parse_plain_level(const std::string_view level) {
-	long value{};
+/// Parses a level as @c std::stol() would, but only a plain decimal number that fits @c Level, without leading zeros:
+///  a caller can bound the digits of the levels the general reader reads by bounding the values read here.
+/// @return The level, or @c std::nullopt.
+std::optional<Level> parse_plain_level(const std::string_view level) {
+	Level value{};
 	const char* const end{level.data() + level.size()};
-	if (level.empty() || level.front() < '0' || level.front() > '9') { return std::nullopt; }
+	if (level.empty() || level.front() < '0' || level.front() > '9' || (level.front() == '0' && level.size() > 1)) {
+		return std::nullopt;
+	}
 	if (const auto [ptr, error]{std::from_chars(level.data(), end, value)}; error != std::errc{} || ptr != end) {
 		return std::nullopt;
 	}
@@ -51,7 +55,8 @@ std::optional<long> parse_plain_level(const std::string_view level) {
  *  @c builder::construct() produces from @c parser::parse_mf() of @p input, with the states numbered the same.
  * @return The NFT, or @c std::nullopt when @p input leaves the subset of the format this reader covers.
  */
-std::optional<Nft> read_explicit_nft(const std::string_view input, mata::Alphabet* alphabet) {
+std::optional<Nft>
+	read_explicit_nft(const std::string_view input, mata::Alphabet* alphabet, mata::parser::StateNameMap& state_names) {
 	using mata::parser::ExplicitSectionReader;
 	using mata::parser::ExplicitToken;
 
@@ -62,8 +67,6 @@ std::optional<Nft> read_explicit_nft(const std::string_view input, mata::Alphabe
 	}
 
 	Nft aut;
-	// A state name takes a few bytes of the input, which bounds the numbers worth indexing.
-	mata::parser::StateNameMap state_names{{}, input.size() / 4};
 	const auto get_state{[&](const std::string_view name) {
 		if (const std::optional<State> state{state_names.find(name)}) { return *state; }
 		const State state{aut.add_state()};
@@ -80,19 +83,25 @@ std::optional<Nft> read_explicit_nft(const std::string_view input, mata::Alphabe
 	const auto start_body{[&]() {
 		for (const std::string& name : initial_names) { aut.initial.insert(get_state(name)); }
 		for (const std::string& name : final_names) { aut.final.insert(get_state(name)); }
+		// A state listed twice keeps its last level. Left to the general reader, whose entries callers can check one
+		//  by one, as the Rust binding does.
+		std::vector<bool> has_level;
 		for (const std::string_view state_level : levels) {
 			const size_t colon{state_level.find(':')};
 			if (colon == std::string_view::npos) { return false; }
 			const State state{get_state(state_level.substr(0, colon))};
-			const std::optional<long> level{parse_plain_level(state_level.substr(colon + 1))};
+			const std::optional<Level> level{parse_plain_level(state_level.substr(colon + 1))};
 			if (!level.has_value()) { return false; }
-			aut.levels[state] = static_cast<Level>(*level);
+			if (state >= has_level.size()) { has_level.resize(state + 1); }
+			if (has_level[state]) { return false; }
+			has_level[state] = true;
+			aut.levels[state] = *level;
 		}
 		if (num_of_levels.has_value()) {
 			if (num_of_levels->size() != 1) { return false; }
-			const std::optional<long> level{parse_plain_level(num_of_levels->front())};
+			const std::optional<Level> level{parse_plain_level(num_of_levels->front())};
 			if (!level.has_value()) { return false; }
-			aut.levels.num_of_levels = static_cast<Level>(*level);
+			aut.levels.num_of_levels = *level;
 		}
 		return true;
 	}};
@@ -401,9 +410,21 @@ Nft builder::create_sigma_star_nft(const std::shared_ptr<mata::Alphabet>& alphab
 	return nft;
 }
 
+std::optional<Nft>
+	builder::parse_explicit_from_mata(const std::string_view nft_in_mata, Alphabet* alphabet, NameStateMap* state_map) {
+	IntAlphabet int_alphabet;
+	if (alphabet == nullptr) { alphabet = &int_alphabet; }
+	// The caller's map stays untouched when the reader gives up halfway. A state name takes a few bytes of the input,
+	//  which bounds the numbers worth indexing.
+	mata::parser::StateNameMap state_names{state_map != nullptr ? *state_map : NameStateMap{}, nft_in_mata.size() / 4};
+	std::optional<Nft> nft{read_explicit_nft(nft_in_mata, alphabet, state_names)};
+	if (nft.has_value() && state_map != nullptr) { *state_map = state_names.to_map(); }
+	return nft;
+}
+
 Nft builder::parse_from_mata(const std::string& nft_in_mata) {
 	IntAlphabet alphabet;
-	if (std::optional<Nft> nft{read_explicit_nft(nft_in_mata, &alphabet)}) { return std::move(*nft); }
+	if (std::optional<Nft> nft{parse_explicit_from_mata(nft_in_mata, &alphabet)}) { return std::move(*nft); }
 
 	const parser::Parsed parsed{parser::parse_mf(nft_in_mata)};
 	if (parsed.size() != 1) {
