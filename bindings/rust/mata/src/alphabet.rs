@@ -323,9 +323,9 @@ impl Alphabet {
 		self.next_symbol().value()
 	}
 
-	/// Records the names that the parser added, with the symbols it gave them. A name that printing would
-	/// write as the number of a symbol stays unnamed: the parser reads a new number as the symbol of that
-	/// number, so the symbol is kept unnamed and the next parse reads the number as it again.
+	/// Records the names that the parser added, with the symbols it gave them. A number that the parser
+	/// read as the symbol of that number stays unnamed, so the next parse reads the number as it again;
+	/// a number whose own symbol was taken keeps its name, so the next parse finds the same symbol.
 	pub(crate) fn add_parsed_names(&mut self, names: Vec<String>, symbols: &[u32]) {
 		self.add_names(names, symbols, false);
 	}
@@ -339,7 +339,7 @@ impl Alphabet {
 
 	fn add_names(&mut self, names: Vec<String>, symbols: &[u32], keep_numeric: bool) {
 		for (name, &symbol) in names.into_iter().zip(symbols) {
-			if keep_numeric || !is_numeric(&name) {
+			if keep_numeric || !is_numeric(&name) || name != symbol.to_string() {
 				self.add_named(name, Symbol::new(symbol));
 			} else {
 				self.symbols.entry(Symbol::new(symbol)).or_insert(None);

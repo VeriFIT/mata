@@ -2966,6 +2966,42 @@ fn a_pipeline_step_may_apply_a_function_value() {
 }
 
 #[test]
+fn check_rejects_a_pipeline_step_that_is_not_a_function() {
+	let output = mata([
+		"script",
+		"check",
+		"--expression",
+		"(define f Int 1)\n(print (-> 2 f))",
+	]);
+	assert_eq!(status(&output), 2);
+	assert!(
+		stderr(&output).contains("a pipeline step must be a function"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
+fn a_dot_range_of_escaped_names_or_too_many_symbols_is_an_error() {
+	let dot = |label: &str| {
+		format!(
+			"digraph finiteAutomaton {{\nnode [shape=circle];\n0 [shape=doublecircle];\n\
+			 0 -> 0 [label=\"{label}\"];\nnode [shape=none, label=\"\"];\ni0 -> 0;\n}}\n"
+		)
+	};
+	// Escaped, `<1>` is a name, not the symbol number 1.
+	let output = dot_to_mata(&dot("[\\<1>-\\<3>]"));
+	assert_eq!(status(&output), 2, "{}", stdout(&output));
+	let output = dot_to_mata(&dot("[0-4000000000]"));
+	assert_eq!(status(&output), 2, "{}", stdout(&output));
+	assert!(
+		stderr(&output).contains("holds more than 1048576 symbols"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
 fn each_section_of_an_input_must_be_the_kind_its_declaration_takes() {
 	let workspace = Workspace::new("section-kinds");
 	let two = workspace.file("two.mata", &format!("{NFA}{NFA}"));

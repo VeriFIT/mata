@@ -302,7 +302,8 @@ The symbol label is the reverse of the {ref}`script alphabet <script-alphabets>`
   every symbol number between them; otherwise both ends must be single characters, as with ASCII labels, and it is
   every character between them. A DOT file does not carry its alphabet, so a range Mata wrote between names that are
   not consecutive characters, such as `[a-z]` for the symbols `a`, `b` and `z`, reads back right only when the script
-  alphabet already knows those names. `a,b` expands to the two symbols `a` and `b`.
+  alphabet already knows those names. An escaped end is a name, never a number, and a range of more than 1048576
+  symbols is an error. `a,b` expands to the two symbols `a` and `b`.
 - An empty label is an error.
 - `\\`, `\"`, `\,`, `\[` and `\<` are the characters `\`, `"`, `,`, `[` and `<` inside a name, as Graphviz shows
   them; any other escape is an error. The writers escape these characters in names and write a name of digits or with

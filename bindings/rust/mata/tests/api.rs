@@ -796,3 +796,17 @@ fn a_number_parses_as_its_own_symbol_in_every_parse() -> Result<(), Error> {
 	assert_eq!((sigma.name(Symbol::new(5)), sigma.len()), (None, 3));
 	Ok(())
 }
+
+/// A number whose own symbol has a name gets a new symbol once, and keeps it in later parses.
+#[test]
+fn a_number_whose_symbol_is_named_keeps_the_symbol_it_got() -> Result<(), Error> {
+	let section = |symbol: &str| {
+		format!("@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 {symbol} q1\n")
+	};
+	let mut sigma = Alphabet::from_names(["a"])?;
+	let zero = Nfa::parse_mata(&section("0"), &mut sigma)?;
+	assert!(!zero.accepts(&[Symbol::new(0)]));
+	Nfa::parse_mata(&section("b"), &mut sigma)?;
+	assert!(Nfa::parse_mata(&section("0"), &mut sigma)?.is_equivalent_to(&zero));
+	Ok(())
+}

@@ -106,6 +106,12 @@ class NumberingAlphabet final : public mata::OnTheFlyAlphabet {
   public:
 	using OnTheFlyAlphabet::OnTheFlyAlphabet;
 	Symbol translate_symb(const std::string& str) override;
+	/// Binds `name` to `symbol`; every name the parse starts with goes through here.
+	void bind(const std::string& name, Symbol symbol);
+
+  private:
+	/// The symbols some name holds, so a number checks its own symbol without scanning every name.
+	std::unordered_set<Symbol> taken_ = {};
 };
 
 /// The parser's alphabet: integers, or the names of a Rust `Alphabet`, extended on the fly.

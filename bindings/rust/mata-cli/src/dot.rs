@@ -553,9 +553,14 @@ fn label_items(label: Option<&str>, engine: &Engine) -> Result<Vec<Item>, Error>
 			}
 			'[' if name.is_empty() && !escaped => {
 				let mut range = String::new();
+				// Byte offsets of the escaped characters: an end with one is a name, never a number.
+				let mut escape_offsets = Vec::new();
 				loop {
 					match chars.next() {
-						Some('\\') => range.push(unescape(chars.next())?),
+						Some('\\') => {
+							escape_offsets.push(range.len());
+							range.push(unescape(chars.next())?);
+						}
 						Some(']') if matches!(chars.peek(), None | Some(',')) => break,
 						Some(c) => range.push(c),
 						None => {
@@ -565,7 +570,7 @@ fn label_items(label: Option<&str>, engine: &Engine) -> Result<Vec<Item>, Error>
 						}
 					}
 				}
-				range_items(&range, engine, &mut items)?;
+				range_items(&range, &escape_offsets, engine, &mut items)?;
 				after_range = chars.next().is_none();
 			}
 			',' => {
@@ -582,23 +587,34 @@ fn label_items(label: Option<&str>, engine: &Engine) -> Result<Vec<Item>, Error>
 	Ok(items)
 }
 
+/// The most symbols one range may expand to, so that a small DOT file cannot ask for unbounded memory.
+const MAX_RANGE: u32 = 1 << 20;
+
 /// The symbols of a range `[from-to]`. Mata merges consecutive symbol numbers, so when both ends are
 /// known symbols, the range is every symbol number between them; ends the script alphabet does not
 /// know are single characters, as Mata writes with ASCII labels, and the range is every character
-/// between them. The `-` that splits the range is the one that gives such ends.
-fn range_items(range: &str, engine: &Engine, items: &mut Vec<Item>) -> Result<(), Error> {
+/// between them. The `-` that splits the range is the one that gives such ends. `escapes` holds the
+/// byte offsets of the escaped characters; an end with one is a name.
+fn range_items(
+	range: &str,
+	escapes: &[usize],
+	engine: &Engine,
+	items: &mut Vec<Item>,
+) -> Result<(), Error> {
 	let symbol = |item: &Item| match item {
 		Item::Known(symbol) | Item::Number(symbol) => Some(*symbol),
 		Item::Name(_) => None,
 	};
 	let splits = range
 		.char_indices()
-		.filter(|&(index, c)| c == '-' && index > 0 && index + 1 < range.len())
-		.map(|(index, _)| (&range[..index], &range[index + 1..]));
-	for (from, to) in splits.clone() {
+		.filter(|&(index, c)| {
+			c == '-' && index > 0 && index + 1 < range.len() && !escapes.contains(&index)
+		})
+		.map(|(index, _)| (&range[..index], &range[index + 1..], index));
+	for (from, to, index) in splits.clone() {
 		let (Ok(start), Ok(end)) = (
-			label_item(from, false, engine),
-			label_item(to, false, engine),
+			label_item(from, escapes.iter().any(|&at| at < index), engine),
+			label_item(to, escapes.iter().any(|&at| at > index), engine),
 		) else {
 			continue;
 		};
@@ -608,6 +624,11 @@ fn range_items(range: &str, engine: &Engine, items: &mut Vec<Item>) -> Result<()
 		{
 			if start > end {
 				return Err(Error::plain(format!("range '[{range}]' is backwards")));
+			}
+			if end.value() - start.value() >= MAX_RANGE {
+				return Err(Error::plain(format!(
+					"range '[{range}]' holds more than {MAX_RANGE} symbols"
+				)));
 			}
 			for value in start.value()..=end.value() {
 				let symbol = mata::Symbol::new(value);
@@ -619,7 +640,7 @@ fn range_items(range: &str, engine: &Engine, items: &mut Vec<Item>) -> Result<()
 			return Ok(());
 		}
 	}
-	for (from, to) in splits {
+	for (from, to, _) in splits {
 		let (mut from, mut to) = (from.chars(), to.chars());
 		if let (Some(start), None, Some(end), None) =
 			(from.next(), from.next(), to.next(), to.next())

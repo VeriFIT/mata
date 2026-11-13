@@ -1567,7 +1567,11 @@ impl<'a> Checker<'a> {
 			self.operation_shape(operation, given, step);
 			self.operand(operation, 0, given, piped, step);
 		} else {
-			if let Some(expected) = self.arity_of(name)
+			if let Some(sort) = self.sort_of(name)
+				&& !accepts("Function", &sort)
+			{
+				self.reject(step, "a pipeline step must be a function".into());
+			} else if let Some(expected) = self.arity_of(name)
 				&& expected != given
 			{
 				self.reject(

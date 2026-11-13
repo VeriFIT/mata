@@ -96,15 +96,19 @@ Symbol NumberingAlphabet::translate_symb(const std::string& str) {
 	if (str.empty() || str.size() > 10 ||
 		!std::ranges::all_of(str, [](const char c) { return c >= '0' && c <= '9'; }) ||
 		get_symbol_map().contains(str)) {
-		return OnTheFlyAlphabet::translate_symb(str);
+		return *taken_.insert(OnTheFlyAlphabet::translate_symb(str)).first;
 	}
 	const auto number{std::stoull(str)};
-	if (number >= mata::nft::DONT_CARE ||
-		std::ranges::any_of(get_symbol_map(), [&](const auto& entry) { return entry.second == number; })) {
-		return OnTheFlyAlphabet::translate_symb(str);
+	if (number >= mata::nft::DONT_CARE || taken_.contains(static_cast<Symbol>(number))) {
+		return *taken_.insert(OnTheFlyAlphabet::translate_symb(str)).first;
 	}
-	add_new_symbol(str, static_cast<Symbol>(number));
+	bind(str, static_cast<Symbol>(number));
 	return static_cast<Symbol>(number);
+}
+
+void NumberingAlphabet::bind(const std::string& name, const Symbol symbol) {
+	add_new_symbol(name, symbol);
+	taken_.insert(symbol);
 }
 
 ParseAlphabet::ParseAlphabet(
@@ -119,7 +123,7 @@ ParseAlphabet::ParseAlphabet(
 	if (names.size() != named_symbols.size()) { throw std::invalid_argument("names and symbols differ in length"); }
 	for (std::size_t i = 0; i < names.size(); ++i) {
 		auto name = std::string(names[i]);
-		on_the_fly_.add_new_symbol(name, named_symbols[i]);
+		on_the_fly_.bind(name, named_symbols[i]);
 		known_names_.insert(std::move(name));
 	}
 }
