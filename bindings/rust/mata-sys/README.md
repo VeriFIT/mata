@@ -17,12 +17,15 @@ Native build of [Mata](https://github.com/VeriFIT/mata), the finite automata lib
 
 Requirements: CMake 3.23 or newer and a C++23 compiler: GCC 14 or newer, or Clang 18 or newer (on macOS, Homebrew's LLVM; Apple's Clang is too old). Tested on 64-bit Linux and on WebAssembly ([below](#webassembly)).
 
-| Variable                | Effect                                                                                  |
-| ----------------------- | --------------------------------------------------------------------------------------- |
-| `MATA_DIR`              | Use installed Mata with `include/` and `lib/libmata.a` or `lib64/libmata.a`.            |
-| `MATA_SOURCE_DIR`       | Build this Mata source tree instead.                                                    |
-| `MATA_CMAKE_BUILD_TYPE` | CMake type, `Release` by default; `Debug` enables Mata's assertions (the shim follows). |
-| `MATA_VERSION`          | Overrides `LIBRARY_VERSION`; default: CMake package version, or `unknown`.              |
+| Variable                | Effect                                                                             |
+| ----------------------- | ---------------------------------------------------------------------------------- |
+| `MATA_DIR`              | Use installed Mata with `include/` and `lib/libmata.a` or `lib64/libmata.a`.       |
+| `MATA_SOURCE_DIR`       | Build this Mata source tree instead.                                               |
+| `MATA_CMAKE_BUILD_TYPE` | CMake type, `Release` by default; `Debug` enables assertions in Mata and the shim. |
+| `MATA_VERSION`          | Overrides `LIBRARY_VERSION`; default: CMake package version, or `unknown`.         |
+
+With `MATA_DIR`, the installed `libmata` is not rebuilt: `MATA_CMAKE_BUILD_TYPE` then sets only the shim's
+assertions, so it must match the build type of the installed library.
 
 The build script refuses a Mata that the bridge cannot use safely:
 
