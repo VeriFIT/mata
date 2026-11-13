@@ -343,15 +343,17 @@ pub(crate) fn computes_nfa(expression: &Expr, is_nfa: &dyn Fn(&str) -> bool) -> 
 			let Kind::Name(name) = &function.node else {
 				return false;
 			};
+			let hints_are_fixed = keywords.iter().all(|(key, value)| {
+				matches!(&value.node, Kind::String(text)
+					if crate::ops::check_hint(name, key, text).is_ok())
+			});
 			PURE_OPERATIONS.contains(&name.as_str())
 				&& crate::ops::operation(name)
 					.is_some_and(|operation| crate::ops::accepts(operation, arguments.len()))
-				&& keywords.iter().all(|(key, value)| {
-					matches!(&value.node, Kind::String(text)
-						if crate::ops::check_hint(name, key, text).is_ok())
-				}) && arguments
-				.iter()
-				.all(|argument| computes_nfa(argument, is_nfa))
+				&& hints_are_fixed
+				&& arguments
+					.iter()
+					.all(|argument| computes_nfa(argument, is_nfa))
 		}
 		_ => false,
 	}

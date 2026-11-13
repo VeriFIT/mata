@@ -99,7 +99,7 @@ const CORE_OPERATIONS: &[&str] = &[
 /// Sorts a portable core script may use; `script-language.md`, "Portable core".
 const CORE_SORTS: &[&str] = &["Nfa", "Alphabet", "Bool", "Int", "String"];
 
-const SIMPLE_SORTS: &[&str] = &[
+pub(crate) const SIMPLE_SORTS: &[&str] = &[
 	"Nfa",
 	"Nft",
 	"Automaton",

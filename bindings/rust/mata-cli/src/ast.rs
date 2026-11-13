@@ -674,16 +674,7 @@ impl Parser {
 	/// Sorts from the script-language.md sorts table; `(` sorts are only `(List …)` and `(Option …)`.
 	fn starts_sort(tokens: &[Token]) -> bool {
 		match tokens.first().map(|token| &token.kind) {
-			Some(TokenKind::Name(name)) => matches!(
-				name.as_str(),
-				"Nfa"
-					| "Nft" | "Automaton"
-					| "IntermediateAutomaton"
-					| "Alphabet" | "Symbol"
-					| "Word" | "Run"
-					| "Bool" | "Int"
-					| "String" | "Function"
-			),
+			Some(TokenKind::Name(name)) => crate::check::SIMPLE_SORTS.contains(&name.as_str()),
 			Some(TokenKind::LeftParen) => matches!(
 				tokens.get(1).map(|token| &token.kind),
 				Some(TokenKind::Name(name)) if name == "List" || name == "Option"
