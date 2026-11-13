@@ -304,19 +304,22 @@ void Delta::add(std::vector<Transition>&& transitions) {
 	//  transitions are bucketed by source in linear time, so that only the few transitions of each source get sorted.
 	const size_t num_of_states_before{num_of_states()};
 	const State max_source{std::ranges::max_element(transitions, {}, &Transition::source)->source};
+	const size_t num_of_sources{num_of_states_for(max_source)};
 	// Counted at the next source, so that placing the transitions leaves each source at the end of its bucket.
-	std::vector<size_t> bucket_ends(max_source + 2, 0);
-	for (const Transition& transition : transitions) { ++bucket_ends[transition.source + 1]; }
+	std::vector<size_t> bucket_ends(num_of_sources + 1, 0);
+	for (const Transition& transition : transitions) { ++bucket_ends[static_cast<size_t>(transition.source) + 1]; }
 	std::partial_sum(bucket_ends.begin(), bucket_ends.end(), bucket_ends.begin());
 	std::vector<Transition> by_source(transitions.size());
-	for (const Transition& transition : transitions) { by_source[bucket_ends[transition.source]++] = transition; }
+	for (const Transition& transition : transitions) {
+		by_source[bucket_ends[static_cast<size_t>(transition.source)]++] = transition;
+	}
 	// Released before the posts take as much memory again.
 	transitions.clear();
 	transitions.shrink_to_fit();
 
-	DeltaBuilder builder{std::max<size_t>(num_of_states_before, max_source + 1)};
+	DeltaBuilder builder{std::max(num_of_states_before, num_of_sources)};
 	size_t begin{0};
-	for (State source{0}; source <= max_source; ++source) {
+	for (size_t source{0}; source < num_of_sources; ++source) {
 		const size_t end{bucket_ends[source]};
 		if (begin == end) { continue; }
 		std::sort(
@@ -325,7 +328,7 @@ void Delta::add(std::vector<Transition>&& transitions) {
 				return std::tie(lhs.symbol, lhs.target) < std::tie(rhs.symbol, rhs.target);
 			}
 		);
-		builder.begin_state(source);
+		builder.begin_state(to_state(source));
 		size_t num_of_symbols{1};
 		for (size_t index{begin + 1}; index < end; ++index) {
 			if (by_source[index].symbol != by_source[index - 1].symbol) { ++num_of_symbols; }
