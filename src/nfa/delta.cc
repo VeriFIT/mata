@@ -284,8 +284,12 @@ void Delta::add(std::vector<Transition>&& transitions) {
 	const auto duplicates{std::ranges::unique(transitions)};
 	transitions.erase(duplicates.begin(), duplicates.end());
 
-	const bool build_from_scratch{empty() && num_of_states() == 0};
-	DeltaBuilder builder{build_from_scratch ? transitions.back().source + 1 : 0};
+	// A delta without transitions, as readers leave it after adding the states, is built anew, keeping its states.
+	const bool build_from_scratch{empty()};
+	const size_t num_of_states_before{num_of_states()};
+	DeltaBuilder builder{
+		build_from_scratch ? std::max<size_t>(num_of_states_before, transitions.back().source + 1) : 0
+	};
 	size_t index{0};
 	const size_t size{transitions.size()};
 	while (index < size) {
@@ -311,7 +315,10 @@ void Delta::add(std::vector<Transition>&& transitions) {
 		}
 		if (build_from_scratch) { builder.finish_state(); }
 	}
-	if (build_from_scratch) { *this = builder.finish(); }
+	if (build_from_scratch) {
+		*this = builder.finish();
+		if (num_of_states() < num_of_states_before) { allocate(num_of_states_before); }
+	}
 }
 
 void Delta::remove(const State source, const Symbol symbol, const State target) {

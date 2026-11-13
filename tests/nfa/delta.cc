@@ -877,6 +877,20 @@ TEST_CASE("mata::nfa::Delta::add() of a batch of transitions") {
 		CHECK(batched.num_of_states() == 8);
 		CHECK(batched == delta_from_adds({{1, 'a', 7}}));
 	}
+
+	SECTION("a delta with states but no transitions keeps its states") {
+		for (const size_t num_of_states : {size_t{2}, size_t{8}, size_t{12}}) {
+			Delta batched{num_of_states};
+			std::vector<Transition> input{sorted};
+			std::ranges::shuffle(input, std::mt19937{14});
+			batched.add(std::move(input));
+			Delta reference{num_of_states};
+			for (const Transition& transition : sorted) { reference.add(transition); }
+			CHECK(batched == reference);
+			CHECK(batched.num_of_states() == std::max<size_t>(num_of_states, 8));
+			CHECK(batched.num_of_transitions() == sorted.size());
+		}
+	}
 }
 
 TEST_CASE("mata::nfa::State width and state overflow checks") {
