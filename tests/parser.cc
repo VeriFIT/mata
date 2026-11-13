@@ -36,6 +36,13 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()") { // {{{
 		REQUIRE(parsec.body.empty());
 	}
 
+	SECTION("type line ending in CRLF") {
+		parsec = parse_mf_section("@Type\r\n%key1 value1\r\n");
+
+		REQUIRE("Type" == parsec.type);
+		REQUIRE(haskey(parsec.dict, "key1"));
+	}
+
 	SECTION("file with some keys") {
 		std::string file = "@Type\n"
 						   "%key1\n"

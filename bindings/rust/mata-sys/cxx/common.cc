@@ -147,7 +147,8 @@ std::vector<Section> split_sections(const std::string_view text) {
 			pos = line_end;
 			if (!type.has_value() && line[0] != '#') {
 				// The type line; errors in it are left to the readers.
-				type = line[0] == '@' ? line.substr(1, line.find_first_of("\"()#%@\\ \t", 1) - 1) : std::string_view();
+				type =
+					line[0] == '@' ? line.substr(1, line.find_first_of("\"()#%@\\ \t\r", 1) - 1) : std::string_view();
 			}
 		}
 		if (type.has_value()) { sections.push_back({text.substr(start, pos - start), *type}); }

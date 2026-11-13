@@ -250,7 +250,7 @@ ParsedSection mata::parser::parse_mf_section_view(std::string_view& input, const
 			for (i = 1; i < line.size(); ++i) {
 				// A character of the type name, as is_string_char() of the stream tokenizer read it.
 				if (line[i] == '"' || line[i] == '(' || line[i] == ')' || line[i] == '#' || line[i] == '%' ||
-					line[i] == '@' || line[i] == '\\' || line[i] == ' ' || line[i] == '\t') {
+					line[i] == '@' || line[i] == '\\' || line[i] == ' ' || line[i] == '\t' || line[i] == '\r') {
 					break;
 				}
 				type += line[i];

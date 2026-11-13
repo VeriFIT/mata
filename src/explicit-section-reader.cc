@@ -27,6 +27,7 @@ bool is_type_char(const char ch) {
 		case '\\':
 		case ' ':
 		case '\t':
+		case '\r':
 			return false;
 		default:
 			return true;

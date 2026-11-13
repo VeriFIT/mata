@@ -384,6 +384,11 @@ fn parse_bitvector_sections() -> Result<(), Error> {
 	assert_eq!(nfa.used_symbols().len(), 2);
 	assert_eq!(nfa.num_transitions(), 3);
 	assert_eq!(nfa.find_shortest_word().map(|word| word.len()), Some(1));
+
+	// CRLF line endings keep the section type intact through the shim and the bitvector reader.
+	let nfa = Nfa::parse_mata(&text.replace('\n', "\r\n"), &mut sigma)?;
+	assert_eq!(nfa.used_symbols().len(), 2);
+	assert_eq!(nfa.num_transitions(), 3);
 	Ok(())
 }
 
