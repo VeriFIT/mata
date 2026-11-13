@@ -266,11 +266,12 @@ mata::Mintermization::OptionalBdd mata::Mintermization::graph_to_bdd_afa(const F
 }
 #endif
 
-BDD mata::Mintermization::symbol_bdd(const std::string_view name, const std::optional<bool> constant) {
+const BDD& mata::Mintermization::symbol_bdd(const std::string_view name, const std::optional<bool> constant) {
 	if (const auto it{symbol_to_bddvar_.find(name)}; it != symbol_to_bddvar_.end()) { return it->second; }
 	const BDD res{constant.has_value() ? (*constant ? bdd_mng_.bddOne() : bdd_mng_.bddZero()) : bdd_mng_.bddVar()};
-	added_symbols_.push_back(&symbol_to_bddvar_.emplace(name, res).first->first);
-	return res;
+	const auto it{symbol_to_bddvar_.emplace(name, res).first};
+	added_symbols_.push_back(&it->first);
+	return it->second;
 }
 
 void mata::Mintermization::rollback(const Checkpoint& checkpoint) {
@@ -319,27 +320,48 @@ BDD mata::Mintermization::graph_to_bdd_nfa(const FormulaGraphView graph) {
 }
 
 BDD mata::Mintermization::convert_graph_to_bdd_nfa(const FormulaGraphView graph) {
-	const FormulaNode& node = graph.node();
-	if (node.is_operand()) {
-		return symbol_bdd(
-			node.name(), node.is_true() ? std::optional{true} : (node.is_false() ? std::optional{false} : std::nullopt)
-		);
+	// The nodes in postfix order meet the operands from left to right, as a recursive descent would: the operands
+	//  meeting a symbol first create its variable, which fixes its index.
+	std::vector<BDD>& operands{operand_bdds_};
+	operands.clear(); // Left over when a conversion threw.
+	const std::span<const FormulaGraphEntry> entries{graph.entries()};
+	for (size_t i{0}; i < entries.size(); ++i) {
+		const FormulaNode& node{entries[i].node};
+		if (node.is_operand()) {
+			const BDD& bdd{symbol_bdd(
+				node.name(),
+				node.is_true() ? std::optional{true} : (node.is_false() ? std::optional{false} : std::nullopt)
+			)};
+			// The negations of the operand, folded in, spare a reassignment each; BDD has no move.
+			bool negated{false};
+			for (; i + 1 < entries.size() && entries[i + 1].node.is_neg(); ++i) { negated = !negated; }
+			if (negated) {
+				operands.push_back(!bdd);
+			} else {
+				operands.push_back(bdd);
+			}
+		} else if (node.is_neg()) {
+			operands.back() = !operands.back();
+		} else {
+			BDD& lhs{operands[operands.size() - 2]};
+			const BDD& rhs{operands.back()};
+			if (node.is_and()) {
+				lhs *= rhs;
+			} else {
+				MATA_ASSERT(node.operator_type == FormulaNode::OperatorType::Or);
+				lhs += rhs;
+			}
+			operands.pop_back();
+		}
 	}
-
-	if (!node.is_operator()) {
+	if (operands.size() != 1) { // Only the view of an empty graph, whose single node is no operand.
 		MATA_ASSERT(false);
+		operands.clear();
 		return {};
 	}
-	if (node.is_neg()) { return !convert_graph_to_bdd_nfa(graph.children()[0]); }
-	// The left operand first: the operands meeting a symbol first create its variable, which fixes its index.
-	const FormulaGraphChildren children{graph.children()};
-	const BDD lhs{convert_graph_to_bdd_nfa(children[0])};
-	const BDD rhs{convert_graph_to_bdd_nfa(children[1])};
-	if (node.is_and()) { return lhs * rhs; }
-	if (node.operator_type == FormulaNode::OperatorType::Or) { return lhs + rhs; }
-
-	MATA_ASSERT(false);
-	return {};
+	BDD bdd{operands.back()};
+	operands.clear();
+	return bdd;
 }
 
 namespace {

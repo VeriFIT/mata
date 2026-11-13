@@ -49,6 +49,8 @@ class Mintermization {
 	std::unordered_map<std::string, BDD> formula_to_bdd_{};
 	/// Buffer for the key of the formula being looked up in @c formula_to_bdd_.
 	std::string formula_key_{};
+	/// Buffer for the BDDs of the operands @c convert_graph_to_bdd_nfa() has yet to combine.
+	std::vector<BDD> operand_bdds_{};
 	/// The BDDs of the symbol parts of the transitions, keyed by the root node of the symbol part.
 	std::unordered_map<const FormulaNode*, BDD> trans_to_bddvar_{};
 	/// The keys added to @c symbol_to_bddvar_ and @c formula_to_bdd_, in their order, for @c rollback().
@@ -66,7 +68,8 @@ class Mintermization {
 	void add_source_bdd(const BDD& bdd);
 
 	void trans_to_bdd_nfa(const IntermediateAut& aut);
-	/// @c graph_to_bdd_nfa() without the lookup in @c formula_to_bdd_, for the formula and its subformulas.
+	/// @c graph_to_bdd_nfa() without the lookup in @c formula_to_bdd_. Iterative, so that deep formulas cannot exhaust
+	///  the call stack.
 	BDD convert_graph_to_bdd_nfa(FormulaGraphView graph);
 #ifdef MATA_AFA_SUPPORT
 	void trans_to_bdd_afa(const IntermediateAut& aut);
@@ -118,8 +121,9 @@ class Mintermization {
 	 *  BDD of the first operand of that name, which is a fresh variable or the @p constant the operand stands for.
 	 * @param name Name of the symbol.
 	 * @param constant The constant (@c \\true or @c \\false) the operand stands for, if it does.
+	 * @return The BDD this object keeps for @p name, valid until a @c rollback() past its creation.
 	 */
-	BDD symbol_bdd(std::string_view name, std::optional<bool> constant = std::nullopt);
+	const BDD& symbol_bdd(std::string_view name, std::optional<bool> constant = std::nullopt);
 
 	/// The symbols and formulas converted so far, which @c rollback() returns to.
 	struct Checkpoint {

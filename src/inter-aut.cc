@@ -101,33 +101,54 @@ bool no_operators(const std::vector<mata::FormulaNode>& nodes) {
 	return std::ranges::all_of(nodes, [](const mata::FormulaNode& node) { return !node.is_operator(); });
 }
 
+/// Writes @p graph in infix notation, parenthesizing the operand of a negation that is an operator and the operands of
+///  a binary operator that are binary operators. Iterative, so that deep formulas cannot exhaust the call stack.
 std::string serialize_graph(const mata::FormulaGraphView graph) {
-	if (graph.node().is_operand()) { return std::string{graph.node().raw}; }
-
-	const mata::FormulaGraphChildren children{graph.children()};
-	if (children.size() == 1) { // unary operator
-		const mata::FormulaGraphView child{children.front()};
-		const std::string child_name =
-			child.node().is_operand() ? std::string{child.node().raw} : "(" + serialize_graph(child) + ")";
-		return std::string{graph.node().raw} + child_name;
+	/// What is left to write: a subformula, or the text between subformulas.
+	struct Pending {
+		mata::FormulaGraphView graph;
+		std::string_view text;
+		bool is_text;
+	};
+	std::string result;
+	std::vector<Pending> pending{{graph, {}, false}};
+	// Pushed in reverse, as the stack pops them.
+	const auto push_text = [&](const std::string_view text) { pending.push_back({{}, text, true}); };
+	const auto push_operand = [&](const mata::FormulaGraphView operand, const bool parenthesized) {
+		if (parenthesized) { push_text(")"); }
+		pending.push_back({operand, {}, false});
+		if (parenthesized) { push_text("("); }
+	};
+	while (!pending.empty()) {
+		const Pending item{pending.back()};
+		pending.pop_back();
+		if (item.is_text) {
+			result += item.text;
+			continue;
+		}
+		const mata::FormulaNode& node{item.graph.node()};
+		if (node.is_operand()) {
+			result += node.raw;
+			continue;
+		}
+		const mata::FormulaGraphChildren children{item.graph.children()};
+		if (children.size() == 1) { // unary operator
+			result += node.raw;
+			push_operand(children[0], !children[0].node().is_operand());
+		} else if (children.size() == 2) {
+			push_operand(children[1], children[1].children().size() == 2);
+			push_text(" ");
+			push_text(node.raw);
+			push_text(" ");
+			push_operand(children[0], children[0].children().size() == 2);
+		} else {
+			throw std::runtime_error(
+				"Cannot serialize a formula graph with a node '" + std::string{node.raw} +
+				"' that is neither an operand nor an operator."
+			);
+		}
 	}
-
-	if (children.size() != 2) {
-		throw std::runtime_error(
-			"Cannot serialize a formula graph with a node '" + std::string{graph.node().raw} +
-			"' that is neither an operand nor an operator."
-		);
-	}
-	const mata::FormulaGraphView left_child{children.front()};
-	std::string lhs =
-		(left_child.node().is_operand()) ? std::string{left_child.node().raw} : serialize_graph(left_child);
-	if (left_child.children().size() == 2) { lhs = "(" + lhs + ")"; }
-	const mata::FormulaGraphView right_child{children[1]};
-	std::string rhs =
-		(right_child.node().is_operand()) ? std::string{right_child.node().raw} : serialize_graph(right_child);
-	if (right_child.children().size() == 2) { rhs = "(" + rhs + ")"; }
-
-	return lhs + " " + std::string{graph.node().raw} + " " + rhs;
+	return result;
 }
 
 /**

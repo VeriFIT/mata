@@ -6,6 +6,8 @@
 #include <map>
 #include <ranges>
 #include <set>
+#include <sstream>
+#include <string>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
@@ -702,4 +704,30 @@ TEST_CASE("mata::Mintermization::mintermize can be called again on one object") 
 		};
 		CHECK(reused.mintermize(second).transitions.size() == 1);
 	}
+}
+
+TEST_CASE("mata::Mintermization::mintermize converts and prints deep formulas") {
+	constexpr size_t DEPTH{100'000};
+	std::string negations(DEPTH, '!');
+	negations += "a1";
+	std::string conjunctions;
+	for (size_t i{0}; i < DEPTH; ++i) { conjunctions += "(a1 & "; }
+	conjunctions += "a1" + std::string(DEPTH, ')');
+	const mata::IntermediateAut aut{mata::IntermediateAut::parse_from_mf(parse_mf(
+		"@NFA-bits\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 " + negations + " q1\nq0 " + conjunctions +
+		" q1\nq0 !a1 q2\n"
+	))[0]};
+	REQUIRE(aut.transitions.size() == 3);
+
+	std::ostringstream printed;
+	printed << aut;
+	CHECK(printed.str().find("(a1 & (a1 & a1))))") != std::string::npos);
+	CHECK(printed.str().find("!(!(!a1))") != std::string::npos);
+
+	// An even number of negations of a1 and a conjunction of a1 with itself are both a1.
+	const mata::IntermediateAut res{mata::Mintermization{}.mintermize(aut)};
+	REQUIRE(res.transitions.size() == 3);
+	const auto symbol = [&](const size_t index) { return res.transitions[index].second.children()[0].node().name(); };
+	CHECK(symbol(0) == symbol(1));
+	CHECK(symbol(0) != symbol(2));
 }
