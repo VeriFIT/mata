@@ -132,23 +132,27 @@ const mata::nfa::SymbolPost&
 /// Gives the minterms of `nfa`, the symbols `BitvectorNfaReader::build()` gives them without an alphabet, the symbols
 /// of their names in `alphabet`, translated in increasing order.
 void translate_minterms(Nfa& nfa, mata::Alphabet& alphabet) {
-	auto symbols = std::vector<std::optional<Symbol>>();
+	auto minterms = std::vector<Symbol>();
 	for (const auto& state_post : nfa.delta) {
-		for (const auto& symbol_post : state_post) {
-			if (symbol_post.symbol >= symbols.size()) { symbols.resize(symbol_post.symbol + 1); }
-			symbols[symbol_post.symbol] = symbol_post.symbol;
-		}
+		for (const auto& symbol_post : state_post) { minterms.push_back(symbol_post.symbol); }
 	}
+	std::ranges::sort(minterms);
+	minterms.erase(std::ranges::unique(minterms).begin(), minterms.end());
+	auto translations = std::vector<Symbol>();
+	translations.reserve(minterms.size());
 	bool renamed = false;
-	for (Symbol minterm = 0; minterm < symbols.size(); ++minterm) {
-		if (!symbols[minterm].has_value()) { continue; }
-		symbols[minterm] = alphabet.translate_symb(std::to_string(minterm));
-		renamed = renamed || *symbols[minterm] != minterm;
+	for (const Symbol minterm : minterms) {
+		const Symbol translated{alphabet.translate_symb(std::to_string(minterm))};
+		translations.push_back(translated);
+		renamed = renamed || translated != minterm;
 	}
 	if (!renamed) { return; }
 	for (State state = 0; state < nfa.delta.num_of_states(); ++state) {
 		auto& state_post = nfa.delta.mutable_state_post(state);
-		for (auto& symbol_post : state_post) { symbol_post.symbol = *symbols[symbol_post.symbol]; }
+		for (auto& symbol_post : state_post) {
+			const auto found{std::ranges::lower_bound(minterms, symbol_post.symbol)};
+			symbol_post.symbol = translations[static_cast<std::size_t>(found - minterms.begin())];
+		}
 		std::sort(state_post.begin(), state_post.end());
 	}
 }
