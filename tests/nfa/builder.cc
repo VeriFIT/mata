@@ -513,6 +513,10 @@ TEST_CASE("BitvectorNfaReader reads what the general reader and mintermization r
 		check_bitvector_reader_reads({header + "%Final q1\nq0 x & !x q2\nq0 x q1\n"});
 		// Even when that target is a constant, which only a dropped transition may have.
 		check_bitvector_reader_reads({header + "%Final !q1\nq3 \\false \\true\nq0 x q1\n"});
+		// A formula read again, spaced otherwise, or continued on the next line.
+		check_bitvector_reader_reads(
+			{header + "%Final q1\nq0 x & !y q1\nq1 x & !y q0\nq0 x  &  !y q1\nq1 x&!y q1\nq0 x & \\\n!y q0\nq1 y q0\n"}
+		);
 	}
 
 	SECTION("final formulas") {

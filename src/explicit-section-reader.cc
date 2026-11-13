@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <array>
+#include <functional>
 #include <istream>
 
 using mata::parser::ExplicitSectionReader;
@@ -269,4 +270,16 @@ bool ExplicitSectionReader::tokenize(const std::string_view line) {
 		tokens_.push_back({line.substr(start, i - start), false});
 		first = false;
 	}
+}
+
+std::optional<std::string_view> ExplicitSectionReader::source_text(const std::span<const ExplicitToken> tokens) const {
+	if (tokens.empty()) { return std::string_view{}; }
+	const auto in_input{[&](const ExplicitToken& token) {
+		const std::less<const char*> less;
+		return !less(token.text.data(), input_.data()) && !less(input_.data() + input_.size(), token.text.data());
+	}};
+	if (!std::ranges::all_of(tokens, in_input)) { return std::nullopt; }
+	const char* const begin{tokens.front().text.data() - (tokens.front().quoted ? 1 : 0)};
+	const char* const end{tokens.back().text.data() + tokens.back().text.size() + (tokens.back().quoted ? 1 : 0)};
+	return std::string_view{begin, static_cast<size_t>(end - begin)};
 }

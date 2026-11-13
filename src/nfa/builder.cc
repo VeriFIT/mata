@@ -480,10 +480,9 @@ std::optional<BitvectorAutomaton> builder::BitvectorNfaReader::Impl::read(
 
 	std::string source_buffer;
 	std::string target_buffer;
-	// The predicate of each formula read so far, or std::nullopt for an unsatisfiable one, keyed by its tokens. A
-	//  formula usually labels many transitions, and the namings that interpret it do not change in the body.
-	std::unordered_map<std::string, std::optional<size_t>> formula_predicates;
-	std::string formula_key;
+	// The predicate of each formula read so far, or std::nullopt for an unsatisfiable one, keyed by its text in the
+	//  input. A formula usually labels many transitions, and the namings that interpret it do not change in the body.
+	mata::utils::StringMap<std::optional<size_t>> formula_predicates;
 	while (true) {
 		switch (reader.read_line()) {
 			case ExplicitSectionReader::Line::Key: {
@@ -517,23 +516,16 @@ std::optional<BitvectorAutomaton> builder::BitvectorNfaReader::Impl::read(
 				};
 				if (!source_name.has_value()) { return std::nullopt; }
 				const std::span<const ExplicitToken> formula{std::span{tokens}.subspan(1, tokens.size() - 2)};
-				formula_key.clear();
-				for (const ExplicitToken& token : formula) {
-					// The separator (space for an unquoted, quote for a quoted token) is escaped inside the texts, so
-					//  that no pair of tokens can serialize the same way as another one.
-					formula_key.push_back(token.quoted ? '"' : ' ');
-					for (const char c : token.text) {
-						formula_key.push_back(c);
-						if (c == '"' || c == ' ') { formula_key.push_back('\\'); }
-					}
-				}
-				auto predicate{formula_predicates.find(formula_key)};
+				// Escapes are resolved only in quoted tokens, which the formulas of this reader never have.
+				const std::optional<std::string_view> formula_text{reader.source_text(formula)};
+				if (!formula_text.has_value()) { return std::nullopt; }
+				auto predicate{formula_predicates.find(*formula_text)};
 				if (predicate == formula_predicates.end()) {
 					const std::optional<BDD> bdd{FormulaToBdd{formula, namings, mintermization}.read()};
 					if (!bdd.has_value()) { return std::nullopt; }
 					predicate =
 						formula_predicates
-							.emplace(formula_key, bdd->IsZero() ? std::nullopt : std::optional{predicate_of(*bdd)})
+							.emplace(*formula_text, bdd->IsZero() ? std::nullopt : std::optional{predicate_of(*bdd)})
 							.first;
 				}
 				// Mintermization drops a transition over an unsatisfiable predicate before construct() sees it, and

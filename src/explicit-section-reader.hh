@@ -15,6 +15,7 @@
 #include <deque>
 #include <istream>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -149,6 +150,14 @@ class ExplicitSectionReader {
 	/// The values of the last @c Line::Key line, or the tokens of the last @c Line::Body line. Valid until the next
 	///  call of @c read_line().
 	const std::vector<ExplicitToken>& tokens() const { return tokens_; }
+
+	/**
+	 * The text of the input that the consecutive tokens @p tokens of the last line were read from, quotes included.
+	 *  Equal texts read without giving up are equal tokens, as nothing before a token changes how the reader reads
+	 *  it but whether the reader gives up, so the text identifies the tokens.
+	 * @return The text, or @c std::nullopt when a token had its escapes resolved and so has no text of the input.
+	 */
+	std::optional<std::string_view> source_text(std::span<const ExplicitToken> tokens) const;
 
   private:
 	/// Appends the tokens of one physical line to @c tokens_. @return Whether the line stays in the subset.
