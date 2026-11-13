@@ -564,16 +564,23 @@ std::optional<BitvectorAutomaton> builder::BitvectorNfaReader::Impl::read(
 builder::BitvectorNfaReader::Read builder::BitvectorNfaReader::add(
 	const std::string_view nfa_in_mata, const bool keep_quotes, NameStateMap* state_map
 ) {
+	// An input that is not kept leaves no trace: its predicates would refine the partition, and its symbols would fix
+	//  what their names mean in the later inputs, as `\true` does for the marked symbol `a\true`.
 	const size_t num_of_predicates{impl_->predicates.size()};
+	const Mintermization::Checkpoint checkpoint{impl_->mintermization.checkpoint()};
+	const auto roll_back{[&]() {
+		for (size_t i{num_of_predicates}; i < impl_->predicates.size(); ++i) {
+			impl_->predicate_index.erase(impl_->predicates[i]);
+		}
+		impl_->predicates.resize(num_of_predicates);
+		impl_->mintermization.rollback(checkpoint);
+	}};
 	if (std::optional<BitvectorAutomaton> aut{impl_->read(nfa_in_mata, keep_quotes, state_map)}) {
 		impl_->automata.push_back(std::move(*aut));
 		return Read::Directly;
 	}
-	// The predicates of the lines read before giving up are dropped, so that they do not refine the partition.
-	for (size_t i{num_of_predicates}; i < impl_->predicates.size(); ++i) {
-		impl_->predicate_index.erase(impl_->predicates[i]);
-	}
-	impl_->predicates.resize(num_of_predicates);
+	// The general reader starts from scratch, without what the lines read before giving up added.
+	roll_back();
 
 	const parser::Parsed parsed{parser::parse_mf(std::string{nfa_in_mata}, keep_quotes)};
 	if (parsed.size() != 1 || !parsed[0].type.starts_with(TYPE_NFA)) { return Read::Rejected; }

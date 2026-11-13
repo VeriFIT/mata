@@ -273,8 +273,19 @@ mata::Mintermization::OptionalBdd mata::Mintermization::graph_to_bdd_afa(const F
 BDD mata::Mintermization::symbol_bdd(const std::string_view name, const std::optional<bool> constant) {
 	if (const auto it{symbol_to_bddvar_.find(name)}; it != symbol_to_bddvar_.end()) { return it->second; }
 	const BDD res{constant.has_value() ? (*constant ? bdd_mng_.bddOne() : bdd_mng_.bddZero()) : bdd_mng_.bddVar()};
-	symbol_to_bddvar_.emplace(name, res);
+	added_symbols_.push_back(&symbol_to_bddvar_.emplace(name, res).first->first);
 	return res;
+}
+
+void mata::Mintermization::rollback(const Checkpoint& checkpoint) {
+	for (size_t i{checkpoint.num_of_symbols}; i < added_symbols_.size(); ++i) {
+		symbol_to_bddvar_.erase(symbol_to_bddvar_.find(*added_symbols_[i]));
+	}
+	added_symbols_.resize(checkpoint.num_of_symbols);
+	for (size_t i{checkpoint.num_of_formulas}; i < added_formulas_.size(); ++i) {
+		formula_to_bdd_.erase(formula_to_bdd_.find(*added_formulas_[i]));
+	}
+	added_formulas_.resize(checkpoint.num_of_formulas);
 }
 
 namespace {
@@ -305,7 +316,7 @@ BDD mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph& graph) {
 	append_formula_key(formula_key_, graph);
 	if (const auto it{formula_to_bdd_.find(formula_key_)}; it != formula_to_bdd_.end()) { return it->second; }
 	const BDD bdd{convert_graph_to_bdd_nfa(graph)};
-	formula_to_bdd_.emplace(formula_key_, bdd);
+	added_formulas_.push_back(&formula_to_bdd_.emplace(formula_key_, bdd).first->first);
 	return bdd;
 }
 

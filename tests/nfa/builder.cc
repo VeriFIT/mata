@@ -608,6 +608,32 @@ TEST_CASE("BitvectorNfaReader leaves inputs that are not bitvector NFAs") {
 	CHECK(reader.build().empty());
 }
 
+TEST_CASE("BitvectorNfaReader leaves no trace of the inputs it does not keep") {
+	const std::string header{"@NFA-bits\n%Alphabet-auto\n%Initial q0\n%Final q1\n"};
+	// What a fresh reader reads from @p input.
+	const auto read_alone{[](const std::string& input) {
+		builder::BitvectorNfaReader reader;
+		std::vector<builder::NameStateMap> states(1);
+		REQUIRE(reader.add(input, false, states.data()) != Read::Rejected);
+		return std::pair{reader.build(), std::move(states)};
+	}};
+	builder::BitvectorNfaReader reader;
+	std::vector<builder::NameStateMap> states(1);
+	std::string input;
+
+	SECTION("a rejected input") {
+		// The first section reads \true as the constant before the second section rejects the input. The marked
+		//  symbol a\true has the same name, and is a variable.
+		CHECK(reader.add(header + "q0 \\true q1\n@NFA-bits\n%Alphabet-auto\nq0 x q1\n") == Read::Rejected);
+		input = "@NFA-bits\n%Alphabet-marked\n%Initial q0\n%Final q1\nq0 a\\true q1\nq0 !a\\true q2\n";
+		CHECK(reader.add(input, false, states.data()) == Read::Directly);
+	}
+
+	const std::vector<Nfa> read{reader.build()};
+	const auto [alone, alone_states]{read_alone(input)};
+	check_same_up_to_names(read, states, alone, alone_states);
+}
+
 TEST_CASE("Create Tabakov-Vardi NFA") {
 	size_t num_of_states;
 	size_t alphabet_size;

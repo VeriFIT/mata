@@ -50,6 +50,9 @@ class Mintermization {
 	/// Buffer for the key of the formula being looked up in @c formula_to_bdd_.
 	std::string formula_key_{};
 	std::unordered_map<const FormulaGraph*, BDD> trans_to_bddvar_{};
+	/// The keys added to @c symbol_to_bddvar_ and @c formula_to_bdd_, in their order, for @c rollback().
+	std::vector<const std::string*> added_symbols_{};
+	std::vector<const std::string*> added_formulas_{};
 #ifdef MATA_AFA_SUPPORT
 	std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states_{};
 #endif
@@ -117,6 +120,20 @@ class Mintermization {
 	 */
 	BDD symbol_bdd(std::string_view name, std::optional<bool> constant = std::nullopt);
 
+	/// The symbols and formulas converted so far, which @c rollback() returns to.
+	struct Checkpoint {
+		size_t num_of_symbols;
+		size_t num_of_formulas;
+	};
+
+	Checkpoint checkpoint() const { return {added_symbols_.size(), added_formulas_.size()}; }
+
+	/**
+	 * Forgets the symbols and formulas first converted after @p checkpoint, so that a later conversion reads their
+	 *  names as if they had never been seen.
+	 */
+	void rollback(const Checkpoint& checkpoint);
+
 #ifdef MATA_AFA_SUPPORT
 	/**
 	 * Transforms a graph representing formula at transition to bdd.
@@ -174,6 +191,11 @@ class Mintermization {
 	/// The manager starts with a small cache, which CUDD grows on demand: allocating and clearing the default one
 	///  dominates the mintermization of a small automaton.
 	Mintermization() : bdd_mng_(0, 0, CUDD_UNIQUE_SLOTS, INITIAL_CACHE_SLOTS) {}
+	// A copy would keep pointers to the keys of the original's maps in @c added_symbols_ and @c added_formulas_.
+	Mintermization(const Mintermization&) = delete;
+	Mintermization& operator=(const Mintermization&) = delete;
+	Mintermization(Mintermization&&) = default;
+	Mintermization& operator=(Mintermization&&) = default;
 
   private:
 	static constexpr unsigned INITIAL_CACHE_SLOTS{4'096};
