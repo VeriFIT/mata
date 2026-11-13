@@ -15,7 +15,7 @@ inclusion: true
 
 ## Command tree
 
-```
+```text
 mata <command> [arguments]
 ```
 
@@ -177,8 +177,8 @@ $ printf '%s\n' \
 2
 ```
 
-The session prints the prompt `mata> ` only when standard input is a terminal, so a non-interactive session reads
-without printing prompts and is fit for tests and the website playground.
+The session prints `mata>` followed by a space only when standard input is a terminal, so a non-interactive session
+reads without printing prompts and is fit for tests and the website playground.
 
 ## Direct operations
 
@@ -270,20 +270,24 @@ mata convert [--from mata|dot] [--to mata|dot] [--kind nfa|nft]
 Mata's DOT output is deliberately small: a digraph, one node per state and one edge per transition. Input is parsed
 under fixed conventions, so anything outside them is an error; unsupported constructs are never dropped.
 
-| DOT construct                                        | Meaning                                                                                            |
-| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `digraph finiteAutomaton { … }`                      | One automaton; the digraph name is ignored                                                         |
-| `node [shape=circle]`, `node [shape=none, label=""]` | Graph defaults; ignored                                                                            |
-| `s [shape=doublecircle]`                             | State `s` is final, unless a later shape says otherwise                                            |
-| `s [shape=circle]`                                   | State `s` exists and is not final, unless a later shape says otherwise                             |
-| `N [label="N:level"]`                                | State `N` is on `level`, so the graph is a transducer                                              |
-| `iN -> N` from a `shape=none` node                   | State `N` is initial; the marker node is not a state                                               |
-| `s -> t [label="a,b"]`, `[label="[a-c],e"]`          | One transition under each listed symbol                                                            |
-| `s -> t` without `label`                             | A transition under the abstract symbol `0`                                                         |
-| `[tooltip="…"]` on an edge                           | The whole label of a shortened one, read instead of `label`, with `&lt;` and `&gt;` as `<` and `>` |
-| `forcelabels=true`                                   | A transducer; its writer emits it for the state labels                                             |
-| `num_of_levels=N`                                    | A transducer with `N` levels                                                                       |
-| states `0`, `1`, `…`                                 | State numbers; state names must be numbers                                                         |
+| DOT construct                      | Meaning                                                           |
+| ---------------------------------- | ----------------------------------------------------------------- |
+| `digraph finiteAutomaton { … }`    | One automaton; the digraph name is ignored                        |
+| `node [shape=circle]`              | A graph default; ignored                                          |
+| `node [shape=none, label=""]`      | A graph default; ignored                                          |
+| `s [shape=doublecircle]`           | State `s` is final unless a later shape changes it                |
+| `s [shape=circle]`                 | State `s` exists and is non-final unless a later shape changes it |
+| `N [label="N:level"]`              | State `N` is on `level`, so the graph is a transducer             |
+| `iN -> N` from a `shape=none` node | State `N` is initial; the marker node is not a state              |
+| `s -> t [label="a,b"]`             | One transition under each listed symbol                           |
+| `s -> t [label="[a-c],e"]`         | One transition under each listed symbol                           |
+| `s -> t` without `label`           | A transition under the abstract symbol `0`                        |
+| `[tooltip="…"]` on an edge         | The full label of a shortened edge, used instead of `label`       |
+| `forcelabels=true`                 | A transducer; its writer emits it for the state labels            |
+| `num_of_levels=N`                  | A transducer with `N` levels                                      |
+| states `0`, `1`, `…`               | State numbers; state names must be numbers                        |
+
+In a tooltip, `&lt;` and `&gt;` stand for `<` and `>`.
 
 An input holds exactly one graph, and every state from `0` to the highest appears in a statement, as the writer draws
 every state. The library's DOT carries no level count, so `mata convert`, `nfa:print-to-dot` and `nft:print-to-dot`
@@ -336,8 +340,8 @@ label with no listed symbols. Nothing is skipped, guessed or approximated.
   without a place of its own gets the place of the form that was running. A failed `assert` writes
   `mata: assertion failed at <line>:<column>` and the script goes on.
 - The trace of a run, with `(set-option :trace true)`, writes one line per library call to standard error, and only
-  there: `mata: trace: <operation>`, then ` :<key> <value>` for each hint in effect, the defaults first. A call that
-  `:optimize` answers from its memo, and a call that it rewrites away, makes no line.
+  there: `mata: trace: <operation>`, then `:<key> <value>` prefixed by one space for each hint in effect, with the
+  defaults first. A call that `:optimize` answers from its memo, and a call that it rewrites away, makes no line.
 - No progress output, banners or colours are printed, unless standard error is a terminal and the command is
   interactive; the content of the streams never changes, only the prompt.
 
@@ -470,6 +474,6 @@ language page specifies but this build does not have are listed in the
   leaving it out cannot hide an error; the same application of the same values runs once; `(nfa:language-empty?
 (nfa:intersection a b))` calls `nfa:intersection-empty?`; and the last use of a named value is passed on to be
   moved rather than copied.
-- `:trace` writes `mata: trace: <operation>` and the hints in effect, as ` :<key> <value>`, to standard error, for
-  every library call it makes. A call that the memo of `:optimize` answers makes no line, and the defaults of an
-  operation are printed before the hints the script wrote, which win.
+- `:trace` writes `mata: trace: <operation>` and the hints in effect, as `:<key> <value>`, each prefixed by one space,
+  to standard error, for every library call it makes. A call that the memo of `:optimize` answers makes no line, and
+  the defaults of an operation are printed before the hints the script wrote, which win.

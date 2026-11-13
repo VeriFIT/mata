@@ -75,16 +75,16 @@ label.
 
 ## Lexical structure
 
-| Token           | Form                                                                   | Examples                     |
-| --------------- | ---------------------------------------------------------------------- | ---------------------------- |
-| Comment         | `;` to the end of the line; a `#!` first line is skipped too           | `; intersect the filters`    |
-| Name            | Letters, digits and `- _ ? ! * + / < = > .`, not starting with a digit | `filters`, `list:take`       |
-| Namespaced name | `namespace:name`                                                       | `nfa:intersection`           |
-| Keyword         | `:name`                                                                | `:algorithm`                 |
-| Input reference | `$` followed by a position (from 1) or a name                          | `$1`, `$specification`       |
-| Integer         | Decimal digits                                                         | `0`, `42`                    |
-| String          | Between `"`; the only escape is `""` for one `"`; may span lines       | `"a(b\|c)*"`, `"say ""hi"""` |
-| Constant        | `true`, `false`, `none`                                                |                              |
+| Token           | Form                                                             | Examples                     |
+| --------------- | ---------------------------------------------------------------- | ---------------------------- |
+| Comment         | `;` to the end of the line; a `#!` first line is skipped too     | `; intersect the filters`    |
+| Name            | Letters, digits and `- _ ? ! * + / < = > .`; no initial digit    | `filters`, `list:take`       |
+| Namespaced name | `namespace:name`                                                 | `nfa:intersection`           |
+| Keyword         | `:name`                                                          | `:algorithm`                 |
+| Input reference | `$` followed by a position (from 1) or a name                    | `$1`, `$specification`       |
+| Integer         | Decimal digits                                                   | `0`, `42`                    |
+| String          | Between `"`; the only escape is `""` for one `"`; may span lines | `"a(b\|c)*"`, `"say ""hi"""` |
+| Constant        | `true`, `false`, `none`                                          |                              |
 
 Backslash has no meaning in a string, so regular expressions and `.mata` text can be written without doubling it. A
 namespaced name always names an operation: a script cannot define one, so an operation added to a later version never
@@ -455,10 +455,13 @@ The steps are available separately as `intermediate:parse-from-mata`, `intermedi
 A script has one **script alphabet**. Every load, literal, and word made with `(word "a" "b")` or `(symbol "a")`
 translates symbol names through it, so a name means the same symbol everywhere in the script.
 
-| `(set-option :alphabet …)` | Script alphabet                                                                                                                                                                                                                  |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `"on-the-fly"` (default)   | An empty `OnTheFlyAlphabet`; a name gets the next free number when it is first seen                                                                                                                                              |
-| `"bytes"`                  | An `OnTheFlyAlphabet` in which every byte is registered under its own value first, as in the website playground: a printable ASCII character other than the space and the backslash is named by itself, any other byte by `\xHH` |
+| `(set-option :alphabet …)` | Script alphabet                                                                     |
+| -------------------------- | ----------------------------------------------------------------------------------- |
+| `"on-the-fly"` (default)   | An empty `OnTheFlyAlphabet`; a name gets the next free number when it is first seen |
+| `"bytes"`                  | An `OnTheFlyAlphabet` with the byte registration and naming rules below             |
+
+With `"bytes"`, every byte is registered under its own value first, as in the website playground: a printable ASCII
+character other than the space and the backslash is named by itself, and any other byte by `\xHH`.
 
 `nfa:create-from-regex` produces automata whose symbols are byte values. Under `"on-the-fly"`, the name `a` in a
 `.mata` file is the symbol 0 if it is seen first, which is not the byte `a`. A script that combines automata from
@@ -542,52 +545,104 @@ Each application is one library call, with these exceptions:
 
 ### NFA operations
 
-| Script                                                                                   | Library                                                                         |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `nfa:union-nondeterministic`, `nfa:union-deterministic-complete`                         | `union_nondet`, `union_det_complete`                                            |
-| `nfa:intersection`, `nfa:product`, `nfa:language-difference`                             | `intersection`, `product`, `lang_difference`                                    |
-| `nfa:concatenate`, `nfa:concatenate-nth-power`                                           | `concatenate`, `concatenate_nth_power`                                          |
-| `nfa:complement`                                                                         | `complement`                                                                    |
-| `nfa:left-quotient`, `nfa:right-quotient`                                                | `left_quotient`, `right_quotient`                                               |
-| `nfa:determinize`, `nfa:as-dfa`, `nfa:minimize`, `nfa:reduce`                            | `determinize`, `as_dfa`, `minimize`, `reduce`                                   |
-| `nfa:revert`, `nfa:remove-epsilon`, `nfa:trim`, `nfa:make-complete`                      | `revert`, `remove_epsilon`, `trim`, `Nfa::make_complete`                        |
-| `nfa:decode-utf8`, `nfa:get-one-letter-automaton`                                        | `Nfa::decode_utf8`, `Nfa::get_one_letter_aut`                                   |
-| `nfa:language-empty?`, `nfa:intersection-empty?`                                         | `Nfa::is_lang_empty`, `is_intersection_empty`                                   |
-| `nfa:included?`, `nfa:equivalent?`, `nfa:universal?`                                     | `is_included`, `are_equivalent`, `Nfa::is_universal`                            |
-| `nfa:in-language?`, `nfa:in-language-prefix?`                                            | `Nfa::is_in_lang`, `Nfa::is_in_lang_prefix`                                     |
-| `nfa:deterministic?`, `nfa:complete?`, `nfa:minimal?`, `nfa:flat?`, `nfa:identical?`     | `Nfa::is_deterministic`, `is_complete`, `is_minimal`, `is_flat`, `is_identical` |
-| `nfa:get-word`, `nfa:get-shortest-word`, `nfa:get-words`                                 | `Nfa::get_word`, `get_shortest_word`, `get_words`                               |
-| `nfa:get-word-from-complement`, `nfa:get-word-from-language-difference`                  | `Nfa::get_word_from_complement`, `get_word_from_lang_difference`                |
-| `nfa:number-of-states`, `nfa:number-of-transitions`                                      | `Nfa::num_of_states`, `Delta::num_of_transitions`                               |
-| `nfa:create-from-regex`                                                                  | `builder::create_from_regex`, with the members of `Re2Options` as keywords      |
-| `nfa:create-single-word-nfa`, `nfa:create-empty-string-nfa`, `nfa:create-sigma-star-nfa` | The `builder` functions of the same names                                       |
-| `nfa:create-random-nfa-tabakov-vardi`                                                    | `builder::create_random_nfa_tabakov_vardi`                                      |
-| `nfa:construct`                                                                          | `builder::construct`                                                            |
-| `nfa:create-alphabet`, `nfa:encode-word`                                                 | `create_alphabet`, `encode_word`                                                |
-| `nfa:print-to-mata`, `nfa:print-to-dot`                                                  | `Nfa::print_to_mata`, `Nfa::print_to_dot`; both return a string                 |
-| `nfa:load`, `nfa:parse`, `nfa:literal`                                                   | No single library counterpart                                                   |
+| Script                                  | Library                                                         |
+| --------------------------------------- | --------------------------------------------------------------- |
+| `nfa:union-nondeterministic`            | `union_nondet`                                                  |
+| `nfa:union-deterministic-complete`      | `union_det_complete`                                            |
+| `nfa:intersection`                      | `intersection`                                                  |
+| `nfa:product`                           | `product`                                                       |
+| `nfa:language-difference`               | `lang_difference`                                               |
+| `nfa:concatenate`                       | `concatenate`                                                   |
+| `nfa:concatenate-nth-power`             | `concatenate_nth_power`                                         |
+| `nfa:complement`                        | `complement`                                                    |
+| `nfa:left-quotient`                     | `left_quotient`                                                 |
+| `nfa:right-quotient`                    | `right_quotient`                                                |
+| `nfa:determinize`                       | `determinize`                                                   |
+| `nfa:as-dfa`                            | `as_dfa`                                                        |
+| `nfa:minimize`                          | `minimize`                                                      |
+| `nfa:reduce`                            | `reduce`                                                        |
+| `nfa:revert`                            | `revert`                                                        |
+| `nfa:remove-epsilon`                    | `remove_epsilon`                                                |
+| `nfa:trim`                              | `trim`                                                          |
+| `nfa:make-complete`                     | `Nfa::make_complete`                                            |
+| `nfa:decode-utf8`                       | `Nfa::decode_utf8`                                              |
+| `nfa:get-one-letter-automaton`          | `Nfa::get_one_letter_aut`                                       |
+| `nfa:language-empty?`                   | `Nfa::is_lang_empty`                                            |
+| `nfa:intersection-empty?`               | `is_intersection_empty`                                         |
+| `nfa:included?`                         | `is_included`                                                   |
+| `nfa:equivalent?`                       | `are_equivalent`                                                |
+| `nfa:universal?`                        | `Nfa::is_universal`                                             |
+| `nfa:in-language?`                      | `Nfa::is_in_lang`                                               |
+| `nfa:in-language-prefix?`               | `Nfa::is_in_lang_prefix`                                        |
+| `nfa:deterministic?`                    | `Nfa::is_deterministic`                                         |
+| `nfa:complete?`                         | `is_complete`                                                   |
+| `nfa:minimal?`                          | `is_minimal`                                                    |
+| `nfa:flat?`                             | `is_flat`                                                       |
+| `nfa:identical?`                        | `is_identical`                                                  |
+| `nfa:get-word`                          | `Nfa::get_word`                                                 |
+| `nfa:get-shortest-word`                 | `get_shortest_word`                                             |
+| `nfa:get-words`                         | `get_words`                                                     |
+| `nfa:get-word-from-complement`          | `Nfa::get_word_from_complement`                                 |
+| `nfa:get-word-from-language-difference` | `get_word_from_lang_difference`                                 |
+| `nfa:number-of-states`                  | `Nfa::num_of_states`                                            |
+| `nfa:number-of-transitions`             | `Delta::num_of_transitions`                                     |
+| `nfa:create-from-regex`                 | `builder::create_from_regex`; `Re2Options` members are keywords |
+| `nfa:create-single-word-nfa`            | `builder::create_single_word_nfa`                               |
+| `nfa:create-empty-string-nfa`           | `builder::create_empty_string_nfa`                              |
+| `nfa:create-sigma-star-nfa`             | `builder::create_sigma_star_nfa`                                |
+| `nfa:create-random-nfa-tabakov-vardi`   | `builder::create_random_nfa_tabakov_vardi`                      |
+| `nfa:construct`                         | `builder::construct`                                            |
+| `nfa:create-alphabet`                   | `create_alphabet`                                               |
+| `nfa:encode-word`                       | `encode_word`                                                   |
+| `nfa:print-to-mata`                     | `Nfa::print_to_mata`; returns a string                          |
+| `nfa:print-to-dot`                      | `Nfa::print_to_dot`; returns a string                           |
+| `nfa:load`, `nfa:parse`, `nfa:literal`  | No single library counterpart                                   |
 
 ### NFT operations
 
-| Script                                                                                   | Library                                                                              |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `nft:union-nondeterministic`, `nft:intersection`                                         | `union_nondet`, `intersection`                                                       |
-| `nft:concatenate`, `nft:concatenate-nth-power`, `nft:complement`                         | `concatenate`, `concatenate_nth_power`, `complement`                                 |
-| `nft:compose`                                                                            | `compose`                                                                            |
-| `nft:apply`                                                                              | `Nft::apply`, to an `Nfa` or to a `Word`                                             |
-| `nft:project-out`, `nft:project-to`, `nft:insert-level`, `nft:insert-levels`             | `project_out`, `project_to`, `insert_level`, `insert_levels`                         |
-| `nft:invert-levels`, `nft:unwind-jumps`                                                  | `invert_levels`, `Nft::unwind_jumps`                                                 |
-| `nft:determinize`, `nft:reduce`, `nft:revert`, `nft:remove-epsilon`, `nft:trim`          | `determinize`, `reduce`, `revert`, `remove_epsilon`, `Nft::trim`                     |
-| `nft:language-empty?`, `nft:included?`, `nft:equivalent?`, `nft:universal?`              | `Nft::is_lang_empty`, `is_included`, `are_equivalent`, `Nft::is_universal`           |
-| `nft:in-language?`, `nft:in-language-by-levels?`                                         | `Nft::is_in_lang`, `Nft::is_in_lang_by_levels`                                       |
-| `nft:deterministic?`, `nft:complete?`, `nft:identical?`                                  | `Nft::is_deterministic`, `is_complete`, `is_identical`                               |
-| `nft:contains-jump-transitions?`, `nft:has-epsilon-cycle?`                               | `Nft::contains_jump_transitions`, `has_epsilon_cycle`                                |
-| `nft:to-nfa`, `nft:to-nfa-update`                                                        | `Nft::to_nfa_copy` / `to_nfa_move`, `Nft::to_nfa_update_copy` / `to_nfa_update_move` |
-| `nft:from-nfa-with-levels-zero`, `nft:from-nfa-with-levels-advancing`                    | The `builder` functions of the same names                                            |
-| `nft:create-single-word-nft`, `nft:create-empty-string-nft`, `nft:create-sigma-star-nft` | The `builder` functions of the same names                                            |
-| `nft:construct`                                                                          | `builder::construct`                                                                 |
-| `nft:number-of-states`, `nft:print-to-mata`, `nft:print-to-dot`                          | `Nft::num_of_states`, `Nft::print_to_mata`, `Nft::print_to_dot`                      |
-| `nft:load`, `nft:parse`, `nft:literal`                                                   | No single library counterpart                                                        |
+| Script                                 | Library                                           |
+| -------------------------------------- | ------------------------------------------------- |
+| `nft:union-nondeterministic`           | `union_nondet`                                    |
+| `nft:intersection`                     | `intersection`                                    |
+| `nft:concatenate`                      | `concatenate`                                     |
+| `nft:concatenate-nth-power`            | `concatenate_nth_power`                           |
+| `nft:complement`                       | `complement`                                      |
+| `nft:compose`                          | `compose`                                         |
+| `nft:apply`                            | `Nft::apply`, to an `Nfa` or to a `Word`          |
+| `nft:project-out`                      | `project_out`                                     |
+| `nft:project-to`                       | `project_to`                                      |
+| `nft:insert-level`                     | `insert_level`                                    |
+| `nft:insert-levels`                    | `insert_levels`                                   |
+| `nft:invert-levels`                    | `invert_levels`                                   |
+| `nft:unwind-jumps`                     | `Nft::unwind_jumps`                               |
+| `nft:determinize`                      | `determinize`                                     |
+| `nft:reduce`                           | `reduce`                                          |
+| `nft:revert`                           | `revert`                                          |
+| `nft:remove-epsilon`                   | `remove_epsilon`                                  |
+| `nft:trim`                             | `Nft::trim`                                       |
+| `nft:language-empty?`                  | `Nft::is_lang_empty`                              |
+| `nft:included?`                        | `is_included`                                     |
+| `nft:equivalent?`                      | `are_equivalent`                                  |
+| `nft:universal?`                       | `Nft::is_universal`                               |
+| `nft:in-language?`                     | `Nft::is_in_lang`                                 |
+| `nft:in-language-by-levels?`           | `Nft::is_in_lang_by_levels`                       |
+| `nft:deterministic?`                   | `Nft::is_deterministic`                           |
+| `nft:complete?`                        | `is_complete`                                     |
+| `nft:identical?`                       | `is_identical`                                    |
+| `nft:contains-jump-transitions?`       | `Nft::contains_jump_transitions`                  |
+| `nft:has-epsilon-cycle?`               | `has_epsilon_cycle`                               |
+| `nft:to-nfa`                           | `Nft::to_nfa_copy` or `to_nfa_move`               |
+| `nft:to-nfa-update`                    | `Nft::to_nfa_update_copy` or `to_nfa_update_move` |
+| `nft:from-nfa-with-levels-zero`        | `builder::from_nfa_with_levels_zero`              |
+| `nft:from-nfa-with-levels-advancing`   | `builder::from_nfa_with_levels_advancing`         |
+| `nft:create-single-word-nft`           | `builder::create_single_word_nft`                 |
+| `nft:create-empty-string-nft`          | `builder::create_empty_string_nft`                |
+| `nft:create-sigma-star-nft`            | `builder::create_sigma_star_nft`                  |
+| `nft:construct`                        | `builder::construct`                              |
+| `nft:number-of-states`                 | `Nft::num_of_states`                              |
+| `nft:print-to-mata`                    | `Nft::print_to_mata`                              |
+| `nft:print-to-dot`                     | `Nft::print_to_dot`                               |
+| `nft:load`, `nft:parse`, `nft:literal` | No single library counterpart                     |
 
 There is no `nft:minimize`: the library declares `nft::minimize` only under `MATA_NFT_NOT_IMPLEMENTED`.
 
