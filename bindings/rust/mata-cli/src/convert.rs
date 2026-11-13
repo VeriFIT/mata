@@ -2,6 +2,8 @@
 
 use std::path::Path;
 
+use mata::Nfa;
+
 use crate::cli::Exit;
 use crate::eval::Engine;
 use crate::{Error, display_value};
@@ -9,19 +11,22 @@ use crate::{Error, display_value};
 pub(crate) fn help() -> &'static str {
 	"usage: mata convert [options] [INPUT…]
 
-converts automata between the .mata format and DOT. INPUT of `-` reads standard
-input, which can be used only once.
+converts automata from the .mata format or DOT to the .mata format, DOT, or a
+regular expression. INPUT of `-` reads standard input, which can be used only
+once.
 
 options:
   --from mata|dot    the format of the input (default: mata)
-  --to mata|dot      the format of the output (default: dot)
+  --to mata|dot|regex
+                     the format of the output (default: dot)
   --kind nfa|nft     parse every input as this kind (default: detect)
   --output PATH      write to PATH; a directory gets one file per input
   --help             print this text
   --                 every following argument is an operand
 
-Every input must hold the same kind of automaton. With several inputs and no
---output, each converted automaton follows the previous one."
+Every input must hold the same kind of automaton. Regex output is for NFAs only.
+With several inputs and no --output, each converted automaton follows the
+previous one."
 }
 
 /// The options of one `mata convert` invocation, after the arguments are read.
@@ -33,7 +38,7 @@ struct Options {
 	inputs: Vec<String>,
 }
 
-/// `mata convert [--from mata|dot] [--to mata|dot] [--kind nfa|nft] [--output PATH] [INPUT…]`.
+/// `mata convert [--from mata|dot] [--to mata|dot|regex] [--kind nfa|nft] [--output PATH] [INPUT…]`.
 pub(crate) fn main(arguments: &[String]) -> Result<Exit, Error> {
 	let Some(options) = parse_arguments(arguments)? else {
 		crate::write_stdout(&format!("{}\n", help()))?;
@@ -88,10 +93,11 @@ fn parse_arguments(arguments: &[String]) -> Result<Option<Options>, Error> {
 		}
 		index += 1;
 	}
-	for (name, value) in [("--from", &from), ("--to", &to)] {
-		if !matches!(value.as_str(), "mata" | "dot") {
-			return Err(Error::plain(format!("unknown format '{value}' for {name}")));
-		}
+	if !matches!(from.as_str(), "mata" | "dot") {
+		return Err(Error::plain(format!("unknown format '{from}' for --from")));
+	}
+	if !matches!(to.as_str(), "mata" | "dot" | "regex") {
+		return Err(Error::plain(format!("unknown format '{to}' for --to")));
 	}
 	if inputs.is_empty() {
 		inputs.push("-".to_owned());
@@ -115,7 +121,11 @@ fn value_of<'a>(arguments: &'a [String], index: usize, message: &str) -> Result<
 /// Converts every input, into one file per input or into one stream.
 fn convert(options: &Options) -> Result<Exit, Error> {
 	let directory = output_directory(options)?;
-	let extension = if options.to == "dot" { "dot" } else { "mata" };
+	let extension = match options.to.as_str() {
+		"dot" => "dot",
+		"regex" => "regex",
+		_ => "mata",
+	};
 	if directory.is_some() {
 		let mut targets = std::collections::HashMap::new();
 		for input in &options.inputs {
@@ -224,6 +234,21 @@ fn write_stream(text: &str, output: Option<&str>) -> Result<(), Error> {
 }
 
 fn render(value: &crate::eval::Value, engine: &Engine, to: &str) -> Result<String, Error> {
+	if to == "regex" {
+		return match value {
+			crate::eval::Value::Nfa(nfa) => render_regex(nfa, engine),
+			crate::eval::Value::Nft(_) => Err(Error::plain(
+				"the input holds an NFT; regex output is for NFAs only".into(),
+			)),
+			crate::eval::Value::Automaton(automaton) => match &**automaton {
+				crate::eval::AutomatonKind::Nfa(nfa) => render_regex(nfa, engine),
+				crate::eval::AutomatonKind::Nft(_) => Err(Error::plain(
+					"the input holds an NFT; regex output is for NFAs only".into(),
+				)),
+			},
+			_ => Err(Error::plain("the input holds no automaton".into())),
+		};
+	}
 	if to == "dot" {
 		return Ok(match value {
 			crate::eval::Value::Nfa(nfa) => crate::dot::write_nfa(nfa, engine),
@@ -241,6 +266,17 @@ fn render(value: &crate::eval::Value, engine: &Engine, to: &str) -> Result<Strin
 		| crate::eval::Value::Automaton(_) => Ok(display_value(value, engine)),
 		_ => Err(Error::plain("the input holds no automaton".into())),
 	}
+}
+
+fn render_regex(nfa: &Nfa, engine: &Engine) -> Result<String, Error> {
+	let mut regex = nfa.regex();
+	if !engine.script_alphabet.is_empty() {
+		regex = regex.alphabet(&engine.script_alphabet);
+	}
+	regex
+		.render()
+		.map(|regex| format!("{regex}\n"))
+		.map_err(|error| Error::plain(error.to_string()))
 }
 
 fn kind_of(value: &crate::eval::Value) -> &'static str {

@@ -5,7 +5,7 @@ use std::rc::Rc;
 use mata::strings::{self, ReplaceMode};
 use mata::{
 	CheckAlgorithm, Complementation, Direction, Minimization, ProductFinalCondition, Reduction,
-	ResidualConstruction, UnmetRequirement,
+	RegexPrintMode, ResidualConstruction, UnmetRequirement,
 };
 use mata::{IntermediateAutomaton, Nfa, Symbol, Word, nft::Nft};
 
@@ -63,6 +63,8 @@ pub(crate) struct Hint {
 }
 
 const CHECK_ALGORITHMS: &[&str] = &["antichains", "naive"];
+/// `RegexPrintMode`, the default `Fast` first.
+const REGEX_PRINT_MODES: &[&str] = &["fast", "readable"];
 
 /// `strings::replace::ReplaceMode`, the default `All` first.
 const REPLACE_MODES: &[&str] = &["all", "single"];
@@ -92,6 +94,11 @@ pub(crate) const HINTS: &[Hint] = &[
 		operation: "nfa:reduce",
 		name: "direction",
 		values: &["forward", "backward"],
+	},
+	Hint {
+		operation: "nfa:print-to-regex",
+		name: "mode",
+		values: REGEX_PRINT_MODES,
 	},
 	Hint {
 		operation: "nfa:included?",
@@ -510,6 +517,14 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 	op(
 		"nfa:print-to-dot",
 		"nfa_print_to_dot",
+		1,
+		Some(1),
+		"Nfa",
+		"String",
+	),
+	op(
+		"nfa:print-to-regex",
+		"nfa_print_to_regex",
 		1,
 		Some(1),
 		"Nfa",
@@ -1833,8 +1848,8 @@ fn dispatch_runtime(
 }
 
 /// Serves the operations that load, parse, print, and count an `Nfa`: `nfa:load`, `nfa:parse`,
-/// `nfa:literal`, `nfa:print-to-mata`, `nfa:print-to-dot`, `nfa:number-of-states`, and
-/// `nfa:number-of-transitions`.
+/// `nfa:literal`, `nfa:print-to-mata`, `nfa:print-to-dot`, `nfa:print-to-regex`,
+/// `nfa:number-of-states`, and `nfa:number-of-transitions`.
 fn dispatch_nfa_inspection(
 	handler: &str,
 	name: &str,
@@ -1866,6 +1881,23 @@ fn dispatch_nfa_inspection(
 			let [value] = take(arguments, name)?;
 			let nfa = expect_nfa(&value)?;
 			Ok(Value::String(crate::dot::write_nfa(&nfa, engine)))
+		}
+		"nfa_print_to_regex" => {
+			let [value] = take(arguments, name)?;
+			let nfa = expect_nfa(&value)?;
+			let mode = if hint_value(engine, "nfa:print-to-regex", "mode") == "readable" {
+				RegexPrintMode::Readable
+			} else {
+				RegexPrintMode::Fast
+			};
+			let mut regex = nfa.regex().mode(mode);
+			if !engine.script_alphabet.is_empty() {
+				regex = regex.alphabet(&engine.script_alphabet);
+			}
+			regex
+				.render()
+				.map(Value::String)
+				.map_err(|error| Error::plain(error.to_string()))
 		}
 		"nfa_num_states" => {
 			let [value] = take(arguments, name)?;

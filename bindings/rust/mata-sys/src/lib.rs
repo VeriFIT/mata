@@ -104,6 +104,16 @@ pub mod ffi {
 		Antichains,
 	}
 
+	/// What regex printing optimizes for (`mata::nfa::RegexPrintMode`).
+	#[repr(u8)]
+	#[derive(Debug)]
+	enum RegexPrintMode {
+		/// Conversion speed: a regex for a program to read.
+		Fast,
+		/// The length and the legibility of the regex: a regex for a human to read.
+		Readable,
+	}
+
 	unsafe extern "C++" {
 		include!("mata-sys/cxx/shim.hh");
 
@@ -384,6 +394,14 @@ pub mod ffi {
 			ascii_labels: bool,
 			intervals: bool,
 			max_label_length: i32,
+			names: &[String],
+			symbols: &[u32],
+		) -> Result<String>;
+		/// An RE2/Latin1 regular expression, with names from (`names`, `symbols`) and numbers for other
+		/// symbols.
+		fn print_regex(
+			nfa: &Nfa,
+			mode: RegexPrintMode,
 			names: &[String],
 			symbols: &[u32],
 		) -> Result<String>;

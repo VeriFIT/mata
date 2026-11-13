@@ -40,6 +40,7 @@ enum class Reduction : std::uint8_t;
 enum class ResidualConstruction : std::uint8_t;
 enum class Direction : std::uint8_t;
 enum class CheckAlgorithm : std::uint8_t;
+enum class RegexPrintMode : std::uint8_t;
 
 /// The automata of one parsed `.mata` text, taken out one by one with `parsed_take()`.
 class ParsedNfas {
@@ -198,6 +199,9 @@ rust::String print_dot(
 	std::int32_t max_label_length,
 	rust::Slice<const rust::String> names,
 	rust::Slice<const Symbol> symbols
+);
+rust::String print_regex(
+	const Nfa& nfa, RegexPrintMode mode, rust::Slice<const rust::String> names, rust::Slice<const Symbol> symbols
 );
 
 // Further operations of the library.

@@ -545,58 +545,59 @@ Each application is one library call, with these exceptions:
 
 ### NFA operations
 
-| Script                                  | Library                                                         |
-| --------------------------------------- | --------------------------------------------------------------- |
-| `nfa:union-nondeterministic`            | `union_nondet`                                                  |
-| `nfa:union-deterministic-complete`      | `union_det_complete`                                            |
-| `nfa:intersection`                      | `intersection`                                                  |
-| `nfa:product`                           | `product`                                                       |
-| `nfa:language-difference`               | `lang_difference`                                               |
-| `nfa:concatenate`                       | `concatenate`                                                   |
-| `nfa:concatenate-nth-power`             | `concatenate_nth_power`                                         |
-| `nfa:complement`                        | `complement`                                                    |
-| `nfa:left-quotient`                     | `left_quotient`                                                 |
-| `nfa:right-quotient`                    | `right_quotient`                                                |
-| `nfa:determinize`                       | `determinize`                                                   |
-| `nfa:as-dfa`                            | `as_dfa`                                                        |
-| `nfa:minimize`                          | `minimize`                                                      |
-| `nfa:reduce`                            | `reduce`                                                        |
-| `nfa:revert`                            | `revert`                                                        |
-| `nfa:remove-epsilon`                    | `remove_epsilon`                                                |
-| `nfa:trim`                              | `trim`                                                          |
-| `nfa:make-complete`                     | `Nfa::make_complete`                                            |
-| `nfa:decode-utf8`                       | `Nfa::decode_utf8`                                              |
-| `nfa:get-one-letter-automaton`          | `Nfa::get_one_letter_aut`                                       |
-| `nfa:language-empty?`                   | `Nfa::is_lang_empty`                                            |
-| `nfa:intersection-empty?`               | `is_intersection_empty`                                         |
-| `nfa:included?`                         | `is_included`                                                   |
-| `nfa:equivalent?`                       | `are_equivalent`                                                |
-| `nfa:universal?`                        | `Nfa::is_universal`                                             |
-| `nfa:in-language?`                      | `Nfa::is_in_lang`                                               |
-| `nfa:in-language-prefix?`               | `Nfa::is_in_lang_prefix`                                        |
-| `nfa:deterministic?`                    | `Nfa::is_deterministic`                                         |
-| `nfa:complete?`                         | `is_complete`                                                   |
-| `nfa:minimal?`                          | `is_minimal`                                                    |
-| `nfa:flat?`                             | `is_flat`                                                       |
-| `nfa:identical?`                        | `is_identical`                                                  |
-| `nfa:get-word`                          | `Nfa::get_word`                                                 |
-| `nfa:get-shortest-word`                 | `get_shortest_word`                                             |
-| `nfa:get-words`                         | `get_words`                                                     |
-| `nfa:get-word-from-complement`          | `Nfa::get_word_from_complement`                                 |
-| `nfa:get-word-from-language-difference` | `get_word_from_lang_difference`                                 |
-| `nfa:number-of-states`                  | `Nfa::num_of_states`                                            |
-| `nfa:number-of-transitions`             | `Delta::num_of_transitions`                                     |
-| `nfa:create-from-regex`                 | `builder::create_from_regex`; `Re2Options` members are keywords |
-| `nfa:create-single-word-nfa`            | `builder::create_single_word_nfa`                               |
-| `nfa:create-empty-string-nfa`           | `builder::create_empty_string_nfa`                              |
-| `nfa:create-sigma-star-nfa`             | `builder::create_sigma_star_nfa`                                |
-| `nfa:create-random-nfa-tabakov-vardi`   | `builder::create_random_nfa_tabakov_vardi`                      |
-| `nfa:construct`                         | `builder::construct`                                            |
-| `nfa:create-alphabet`                   | `create_alphabet`                                               |
-| `nfa:encode-word`                       | `encode_word`                                                   |
-| `nfa:print-to-mata`                     | `Nfa::print_to_mata`; returns a string                          |
-| `nfa:print-to-dot`                      | `Nfa::print_to_dot`; returns a string                           |
-| `nfa:load`, `nfa:parse`, `nfa:literal`  | No single library counterpart                                   |
+| Script                                  | Library                                                                  |
+| --------------------------------------- | ------------------------------------------------------------------------ |
+| `nfa:union-nondeterministic`            | `union_nondet`                                                           |
+| `nfa:union-deterministic-complete`      | `union_det_complete`                                                     |
+| `nfa:intersection`                      | `intersection`                                                           |
+| `nfa:product`                           | `product`                                                                |
+| `nfa:language-difference`               | `lang_difference`                                                        |
+| `nfa:concatenate`                       | `concatenate`                                                            |
+| `nfa:concatenate-nth-power`             | `concatenate_nth_power`                                                  |
+| `nfa:complement`                        | `complement`                                                             |
+| `nfa:left-quotient`                     | `left_quotient`                                                          |
+| `nfa:right-quotient`                    | `right_quotient`                                                         |
+| `nfa:determinize`                       | `determinize`                                                            |
+| `nfa:as-dfa`                            | `as_dfa`                                                                 |
+| `nfa:minimize`                          | `minimize`                                                               |
+| `nfa:reduce`                            | `reduce`                                                                 |
+| `nfa:revert`                            | `revert`                                                                 |
+| `nfa:remove-epsilon`                    | `remove_epsilon`                                                         |
+| `nfa:trim`                              | `trim`                                                                   |
+| `nfa:make-complete`                     | `Nfa::make_complete`                                                     |
+| `nfa:decode-utf8`                       | `Nfa::decode_utf8`                                                       |
+| `nfa:get-one-letter-automaton`          | `Nfa::get_one_letter_aut`                                                |
+| `nfa:language-empty?`                   | `Nfa::is_lang_empty`                                                     |
+| `nfa:intersection-empty?`               | `is_intersection_empty`                                                  |
+| `nfa:included?`                         | `is_included`                                                            |
+| `nfa:equivalent?`                       | `are_equivalent`                                                         |
+| `nfa:universal?`                        | `Nfa::is_universal`                                                      |
+| `nfa:in-language?`                      | `Nfa::is_in_lang`                                                        |
+| `nfa:in-language-prefix?`               | `Nfa::is_in_lang_prefix`                                                 |
+| `nfa:deterministic?`                    | `Nfa::is_deterministic`                                                  |
+| `nfa:complete?`                         | `is_complete`                                                            |
+| `nfa:minimal?`                          | `is_minimal`                                                             |
+| `nfa:flat?`                             | `is_flat`                                                                |
+| `nfa:identical?`                        | `is_identical`                                                           |
+| `nfa:get-word`                          | `Nfa::get_word`                                                          |
+| `nfa:get-shortest-word`                 | `get_shortest_word`                                                      |
+| `nfa:get-words`                         | `get_words`                                                              |
+| `nfa:get-word-from-complement`          | `Nfa::get_word_from_complement`                                          |
+| `nfa:get-word-from-language-difference` | `get_word_from_lang_difference`                                          |
+| `nfa:number-of-states`                  | `Nfa::num_of_states`                                                     |
+| `nfa:number-of-transitions`             | `Delta::num_of_transitions`                                              |
+| `nfa:create-from-regex`                 | `builder::create_from_regex`; `Re2Options` members are keywords          |
+| `nfa:create-single-word-nfa`            | `builder::create_single_word_nfa`                                        |
+| `nfa:create-empty-string-nfa`           | `builder::create_empty_string_nfa`                                       |
+| `nfa:create-sigma-star-nfa`             | `builder::create_sigma_star_nfa`                                         |
+| `nfa:create-random-nfa-tabakov-vardi`   | `builder::create_random_nfa_tabakov_vardi`                               |
+| `nfa:construct`                         | `builder::construct`                                                     |
+| `nfa:create-alphabet`                   | `create_alphabet`                                                        |
+| `nfa:encode-word`                       | `encode_word`                                                            |
+| `nfa:print-to-mata`                     | `Nfa::print_to_mata`; returns a string                                   |
+| `nfa:print-to-dot`                      | `Nfa::print_to_dot`; returns a string                                    |
+| `nfa:print-to-regex`                    | `Nfa::print_to_regex`; returns a string; `:mode` is `fast` or `readable` |
+| `nfa:load`, `nfa:parse`, `nfa:literal`  | No single library counterpart                                            |
 
 ### NFT operations
 
@@ -704,7 +705,12 @@ alphabet; `(script-alphabet)`.
 | `(get-witness)`             | See [Witnesses](#witnesses)                                   | `Option Word` |
 
 `print` and `write` return their argument, so they can stand in the middle of a pipeline. An automaton is printed in
-the `.mata` format; use `nfa:print-to-dot` to print a DOT graph instead: `(print (nfa:print-to-dot a))`.
+the `.mata` format; use `nfa:print-to-dot` to print a DOT graph instead, or `nfa:print-to-regex` to print an RE2/Latin1
+regular expression: `(print (nfa:print-to-dot a))`. `:mode "readable"` asks the regex writer for a shorter, polished
+expression; the default `"fast"` is the machine pipeline output. When the script alphabet is non-empty the regex uses
+its symbol names; every used symbol's name, or its number if it is unnamed, must be one character, and otherwise the
+operation reports an error. Without an alphabet the writer uses Unicode scalar values, since a regex has one character
+per symbol.
 
 In an interactive session, the value of every top-level expression is shown, with an automaton summarised by its
 kind and size rather than printed in full. When a script is run, the value of a top-level expression is dropped.

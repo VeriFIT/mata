@@ -2,7 +2,8 @@
 
 use mata::{
 	Alphabet, AlphabetError, CheckAlgorithm, Complementation, Determinization, Error,
-	LimitExceeded, Limits, Minimization, Nfa, Side, State, Symbol, Transition, word_from_bytes,
+	LimitExceeded, Limits, Minimization, Nfa, RegexPrintMode, Requirement, Side, State, Symbol,
+	Transition, word_from_bytes,
 };
 
 fn q(index: u32) -> State {
@@ -229,6 +230,53 @@ fn regex_construction_and_errors() -> Result<(), Error> {
 
 	let error = Nfa::from_regex("(ab").unwrap_err();
 	assert!(error.message().contains("missing )"), "{error}");
+	Ok(())
+}
+
+#[test]
+fn regex_rendering_round_trips() -> Result<(), Error> {
+	let nfa = Nfa::from_regex("(a|b)*abb")?;
+	let fast = nfa.regex().render()?;
+	assert!(Nfa::from_regex(&fast)?.is_equivalent_to(&nfa));
+	let readable = nfa.regex().mode(RegexPrintMode::Readable).render()?;
+	assert!(Nfa::from_regex(&readable)?.is_equivalent_to(&nfa));
+	assert!(readable.len() <= fast.len());
+
+	// The names replace the symbols, so the printed regex uses the characters of the names.
+	let mut sigma = Alphabet::new();
+	sigma.insert_named("x", Symbol::from(b'a'))?;
+	sigma.insert_named("y", Symbol::from(b'b'))?;
+	let named = nfa.regex().alphabet(&sigma).render()?;
+	assert!(Nfa::from_regex(&named)?.is_equivalent_to(&Nfa::from_regex("(x|y)*xyy")?));
+	Ok(())
+}
+
+#[test]
+fn regex_symbol_errors_report_the_requirement() -> Result<(), Error> {
+	let mut sigma = Alphabet::new();
+	sigma.insert_named("ab", Symbol::from(b'a'))?;
+	let error = Nfa::from_regex("a")?
+		.regex()
+		.alphabet(&sigma)
+		.render()
+		.unwrap_err();
+	assert_eq!(error.requirement(), Requirement::RegexSymbols);
+	assert!(
+		error.message().contains("not a single character"),
+		"{error}"
+	);
+
+	for symbol in [0x11_0000, 0xD800] {
+		let error = Nfa::from_word(&[Symbol::new(symbol)])
+			.regex()
+			.render()
+			.unwrap_err();
+		assert_eq!(error.requirement(), Requirement::RegexSymbols);
+		assert!(
+			error.message().contains("not a Unicode scalar value"),
+			"{error}"
+		);
+	}
 	Ok(())
 }
 
@@ -547,6 +595,7 @@ fn nfa_is_send_and_sync() {
 	assert_send_sync::<mata::nfa::Words<'_>>();
 	assert_send_sync::<mata::nfa::States>();
 	assert_send_sync::<mata::nfa::Dot<'_>>();
+	assert_send_sync::<mata::nfa::Regex<'_>>();
 }
 
 #[test]
