@@ -11,8 +11,10 @@
 #include "nfa.hh"
 
 #include <filesystem>
+#include <memory>
 #include <optional>
 #include <string_view>
+#include <vector>
 
 /**
  * Namespace providing options to build NFAs.
@@ -124,6 +126,53 @@ std::optional<Nfa> parse_explicit_from_mata(
 	NameStateMap* state_map = nullptr,
 	bool keep_quotes = false
 );
+
+/**
+ * Reads NFAs with bitvector alphabets (`@NFA-bits`) over one shared set of minterms, as the general reader followed by
+ *  @c Mintermization::mintermize() of all of them together does, but without the intermediate representations.
+ *
+ * Transitions whose formulas are the usual Boolean combinations of symbols are read directly into BDDs. Any other
+ *  `@NFA-bits` input goes through the general reader inside @c add(), so that all added automata still share one
+ *  partition. The NFAs are the ones @c parse_from_mata() has always returned, except that the initial and the listed
+ *  final states are numbered in the order of the input.
+ */
+class BitvectorNfaReader {
+  public:
+	BitvectorNfaReader();
+	BitvectorNfaReader(BitvectorNfaReader&&) noexcept;
+	BitvectorNfaReader& operator=(BitvectorNfaReader&&) noexcept;
+	~BitvectorNfaReader();
+
+	/// How @c add() took an input.
+	enum class Read : std::uint8_t {
+		/// Not a single NFA section with a bitvector alphabet; nothing of it is kept.
+		Rejected,
+		/// Read directly into BDDs.
+		Directly,
+		/// Read by the general reader, as the formulas leave the shapes read directly.
+		ByGeneralReader,
+	};
+
+	/**
+	 * Reads @p nfa_in_mata, an input with a single NFA section with a bitvector alphabet.
+	 * @param keep_quotes Whether quoted names of body lines keep their quotes, see @c mata::parser::parse_mf().
+	 * @param state_map If not @c nullptr, the map from state names to states of this automaton, see @c construct().
+	 *  @c build() reads and fills it, so it has to outlive the call of @c build().
+	 * @throws std::runtime_error A bitvector NFA the general reader rejects.
+	 */
+	Read add(std::string_view nfa_in_mata, bool keep_quotes = false, NameStateMap* state_map = nullptr);
+
+	/**
+	 * Builds the NFAs of all the inputs @c add() kept, in the order they were added. Their symbols are the minterms of
+	 *  the predicates of all transitions of all of them, named by their numbers and translated by @p alphabet.
+	 * @param alphabet Alphabet translating the minterm names; @c nullptr reads them as numbers (@c IntAlphabet).
+	 */
+	std::vector<Nfa> build(Alphabet* alphabet = nullptr);
+
+  private:
+	struct Impl;
+	std::unique_ptr<Impl> impl_;
+};
 
 /**
  * Parse NFA from the mata format in a string.

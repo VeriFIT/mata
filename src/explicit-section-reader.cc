@@ -49,6 +49,9 @@ bool leaves_subset_in_token(const char ch) {
 			return false;
 	}
 }
+
+/// Whether @p ch is an operator or parenthesis of a transition formula, which @c parse_mf() makes a token of its own.
+bool is_formula_char(const char ch) { return ch == '&' || ch == '|' || ch == '!' || ch == '(' || ch == ')'; }
 } // namespace
 
 std::string mata::parser::read_whole_stream(std::istream& input) {
@@ -174,6 +177,11 @@ bool ExplicitSectionReader::tokenize(const std::string_view line) {
 		if (i == line_size || line[i] == '#') { return true; }
 
 		if (line[i] == '"') {
+			// parse_mf() reads an operator glued to the quote as the start of an unquoted token, which a quote may
+			//  not continue.
+			if (formulas_ && i > 0 && (line[i - 1] == '&' || line[i - 1] == '|' || line[i - 1] == '!')) {
+				return false;
+			}
 			const size_t start{++i};
 			std::string* unescaped{nullptr};
 			for (; i < line_size && line[i] != '"'; ++i) {
@@ -199,9 +207,16 @@ bool ExplicitSectionReader::tokenize(const std::string_view line) {
 		}
 
 		const size_t start{i};
+		if (formulas_ && is_formula_char(line[i])) {
+			tokens_.push_back({line.substr(i, 1), false});
+			++i;
+			first = false;
+			continue;
+		}
 		// Only the first token of a line may be a %KEY.
 		if (line[i] == '%' ? !first : leaves_subset_in_token(line[i])) { return false; }
 		for (++i; i < line_size && !is_space(line[i]) && line[i] != '#'; ++i) {
+			if (formulas_ && is_formula_char(line[i])) { break; }
 			if (leaves_subset_in_token(line[i])) { return false; }
 		}
 		tokens_.push_back({line.substr(start, i - start), false});

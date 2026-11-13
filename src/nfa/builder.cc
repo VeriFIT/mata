@@ -10,12 +10,15 @@
 
 #include "../explicit-section-reader.hh"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <deque>
 #include <fstream>
 #include <numeric>
 #include <random>
+#include <span>
 #include <unordered_set>
 
 using namespace mata::nfa;
@@ -98,6 +101,28 @@ class Namings {
 			return std::nullopt;
 		}
 		if (namings_[static_cast<size_t>(Kind::STATES)] == Naming::Auto) { return token; }
+		return std::nullopt;
+	}
+
+	/**
+	 * The name @c create_node() of @c IntermediateAut gives the operand @p token, an unquoted token that is not an
+	 *  operator or a parenthesis.
+	 * @param constant Receives the constant @p token stands for, if it is @c \\true or @c \\false.
+	 * @return The name, or @c std::nullopt when @c create_node() rejects @p token.
+	 */
+	std::optional<std::string_view> operand_name(const std::string_view token, std::optional<bool>& constant) const {
+		constant.reset();
+		if (token == "\\true" || token == "\\false") {
+			constant = token == "\\true";
+			return token;
+		}
+		const char first{token.empty() ? '\0' : token.front()};
+		if ((namings_[static_cast<size_t>(Kind::STATES)] == Naming::Marked && first == 'q') ||
+			(namings_[static_cast<size_t>(Kind::NODES)] == Naming::Marked && first == 'n') ||
+			(namings_[static_cast<size_t>(Kind::SYMBOLS)] == Naming::Marked && first == 'a')) {
+			return token.substr(1);
+		}
+		if (std::ranges::contains(namings_, Naming::Auto)) { return token; }
 		return std::nullopt;
 	}
 };
@@ -222,7 +247,415 @@ std::optional<Nfa> read_explicit_nfa(
 		}
 	}
 }
+
+/// The pieces of a `%Initial` or `%Final` formula the bitvector reader covers: a list of states, or a conjunction of
+///  negated states, or a constant.
+struct StateFormula {
+	enum class Kind : std::uint8_t { States, AllBut, True, False };
+	Kind kind{Kind::States};
+	std::vector<std::string> names{};
+};
+
+/**
+ * Reads a `%Initial` or `%Final` formula as @c IntermediateAut::parse_from_mf() and @c builder::construct() do.
+ * @return The formula, or @c std::nullopt when it is not one of the forms of @c StateFormula.
+ */
+std::optional<StateFormula> read_state_formula(
+	const std::vector<mata::parser::ExplicitToken>& tokens, const Namings& namings, const bool initial
+) {
+	StateFormula formula;
+	if (tokens.empty()) { return formula; }
+	if (tokens.size() == 1 && !tokens[0].quoted && (tokens[0].text == "\\true" || tokens[0].text == "\\false")) {
+		// construct() reads a constant initial formula for a state named by the constant.
+		if (initial) { return std::nullopt; }
+		formula.kind = tokens[0].text == "\\true" ? StateFormula::Kind::True : StateFormula::Kind::False;
+		return formula;
+	}
+	const auto state_of{[&](const mata::parser::ExplicitToken& token) -> std::optional<std::string_view> {
+		if (token.quoted) { return std::nullopt; }
+		return namings.state_name(token.text, false);
+	}};
+	// `!s1 & !s2 & ... & !sn`.
+	if (!initial && !tokens[0].quoted && tokens[0].text == "!") {
+		if (tokens.size() % 3 != 2) { return std::nullopt; }
+		formula.kind = StateFormula::Kind::AllBut;
+		for (size_t i{0}; i < tokens.size(); i += 3) {
+			if (tokens[i].quoted || tokens[i].text != "!") { return std::nullopt; }
+			if (i + 2 < tokens.size() && (tokens[i + 2].quoted || tokens[i + 2].text != "&")) { return std::nullopt; }
+			const std::optional<std::string_view> name{state_of(tokens[i + 1])};
+			if (!name.has_value()) { return std::nullopt; }
+			formula.names.emplace_back(*name);
+		}
+		return formula;
+	}
+	for (const mata::parser::ExplicitToken& token : tokens) {
+		const std::optional<std::string_view> name{state_of(token)};
+		if (!name.has_value()) { return std::nullopt; }
+		formula.names.emplace_back(*name);
+	}
+	return formula;
+}
+
+/**
+ * The BDD of a transition formula, a Boolean combination of symbols with the precedence `!` over `&` over `|`, as
+ *  @c IntermediateAut::parse_from_mf() builds the formula and @c Mintermization::graph_to_bdd_nfa() converts it.
+ */
+class FormulaToBdd {
+  public:
+	FormulaToBdd(
+		const std::span<const mata::parser::ExplicitToken> tokens,
+		const Namings& namings,
+		mata::Mintermization& mintermization
+	)
+		: tokens_{tokens},
+		  namings_{namings},
+		  mintermization_{mintermization} {}
+
+	/// @return The BDD, or @c std::nullopt when the formula is not such a combination.
+	std::optional<BDD> read() {
+		std::optional<BDD> bdd{disjunction()};
+		if (position_ != tokens_.size()) { return std::nullopt; }
+		return bdd;
+	}
+
+  private:
+	bool is_operator(const char op) const {
+		return position_ < tokens_.size() && !tokens_[position_].quoted && tokens_[position_].text.size() == 1 &&
+			   tokens_[position_].text[0] == op;
+	}
+
+	std::optional<BDD> disjunction() {
+		std::optional<BDD> bdd{conjunction()};
+		while (bdd.has_value() && is_operator('|')) {
+			++position_;
+			const std::optional<BDD> rhs{conjunction()};
+			if (!rhs.has_value()) { return std::nullopt; }
+			bdd = *bdd + *rhs;
+		}
+		return bdd;
+	}
+
+	std::optional<BDD> conjunction() {
+		std::optional<BDD> bdd{negation()};
+		while (bdd.has_value() && is_operator('&')) {
+			++position_;
+			const std::optional<BDD> rhs{negation()};
+			if (!rhs.has_value()) { return std::nullopt; }
+			bdd = *bdd * *rhs;
+		}
+		return bdd;
+	}
+
+	std::optional<BDD> negation() {
+		if (is_operator('!')) {
+			++position_;
+			const std::optional<BDD> operand{negation()};
+			if (!operand.has_value()) { return std::nullopt; }
+			return !*operand;
+		}
+		return atom();
+	}
+
+	std::optional<BDD> atom() {
+		if (position_ == tokens_.size()) { return std::nullopt; }
+		if (is_operator('(')) {
+			++position_;
+			std::optional<BDD> bdd{disjunction()};
+			if (!bdd.has_value() || !is_operator(')')) { return std::nullopt; }
+			++position_;
+			return bdd;
+		}
+		const mata::parser::ExplicitToken& token{tokens_[position_]};
+		// A quoted operand, an operator, or a parenthesis in operand position goes to the general reader.
+		if (token.quoted || (token.text.size() == 1 && std::string_view{"&|!()"}.contains(token.text[0]))) {
+			return std::nullopt;
+		}
+		std::optional<bool> constant;
+		const std::optional<std::string_view> name{namings_.operand_name(token.text, constant)};
+		if (!name.has_value()) { return std::nullopt; }
+		++position_;
+		return mintermization_.symbol_bdd(*name, constant);
+	}
+
+	std::span<const mata::parser::ExplicitToken> tokens_;
+	const Namings& namings_;
+	mata::Mintermization& mintermization_;
+	size_t position_{0};
+};
 } // namespace
+
+/// A transition with its predicate, before the predicates are refined into minterms.
+struct BitvectorTransition {
+	State source;
+	/// Index of the predicate among the source BDDs.
+	size_t predicate;
+	State target;
+};
+
+/// One automaton added to a @c builder::BitvectorNfaReader.
+struct BitvectorAutomaton {
+	/// Read directly; or the mintermization of @c general, read by the general reader.
+	std::vector<BitvectorTransition> transitions{};
+	std::optional<mata::IntermediateAut> general{};
+	Nfa nfa{};
+	std::optional<mata::parser::StateNameMap> state_names{};
+	builder::NameStateMap* state_map{nullptr};
+	StateFormula final{};
+};
+
+struct builder::BitvectorNfaReader::Impl {
+	Mintermization mintermization{};
+	std::vector<BDD> predicates{};
+	std::unordered_map<BDD, size_t> predicate_index{};
+	std::vector<BitvectorAutomaton> automata{};
+
+	size_t predicate_of(const BDD& bdd) {
+		const auto [it, inserted]{predicate_index.try_emplace(bdd, predicates.size())};
+		if (inserted) { predicates.push_back(bdd); }
+		return it->second;
+	}
+
+	std::optional<BitvectorAutomaton> read(std::string_view input, bool keep_quotes, NameStateMap* state_map);
+};
+
+builder::BitvectorNfaReader::BitvectorNfaReader() : impl_{std::make_unique<Impl>()} {}
+builder::BitvectorNfaReader::BitvectorNfaReader(BitvectorNfaReader&&) noexcept = default;
+builder::BitvectorNfaReader& builder::BitvectorNfaReader::operator=(BitvectorNfaReader&&) noexcept = default;
+builder::BitvectorNfaReader::~BitvectorNfaReader() = default;
+
+std::optional<BitvectorAutomaton> builder::BitvectorNfaReader::Impl::read(
+	const std::string_view input, const bool keep_quotes, NameStateMap* state_map
+) {
+	using mata::parser::ExplicitSectionReader;
+	using mata::parser::ExplicitToken;
+
+	ExplicitSectionReader reader{input, true};
+	if (const std::optional<std::string_view> type{reader.read_type()}; !type.has_value() || *type != "NFA-bits") {
+		return std::nullopt;
+	}
+
+	BitvectorAutomaton aut;
+	aut.state_names.emplace(state_map != nullptr ? *state_map : NameStateMap{}, input.size() / 4);
+	aut.state_map = state_map;
+	mata::parser::StateNameMap& state_names{*aut.state_names};
+	// See builder::construct(): a name mapped by the caller allocates its state.
+	const auto get_state{[&](const std::string_view name) {
+		if (const std::optional<State> state{state_names.find(name)}) { return aut.nfa.add_state(*state); }
+		const State state{aut.nfa.add_state()};
+		state_names.insert(name, state);
+		return state;
+	}};
+
+	Namings namings;
+	// The %Initial and %Final values. Their state names depend on the namings, which may follow them in the file.
+	std::vector<ExplicitToken> initial_tokens;
+	std::vector<ExplicitToken> final_tokens;
+	// A deque never moves its strings, so the views into them stay valid.
+	std::deque<std::string> owned_tokens;
+	bool has_initial{false};
+	bool has_final{false};
+	const auto keep_tokens{[&](std::vector<ExplicitToken>& kept) {
+		// The reader's tokens live only until its next line.
+		for (const ExplicitToken& token : reader.tokens()) {
+			kept.push_back({owned_tokens.emplace_back(token.text), token.quoted});
+		}
+	}};
+
+	bool in_body{false};
+	const auto start_body{[&]() {
+		if (!namings.valid()) { return false; }
+		const std::optional<StateFormula> initial{read_state_formula(initial_tokens, namings, true)};
+		if (!initial.has_value()) { return false; }
+		for (const std::string& name : initial->names) { aut.nfa.initial.insert(get_state(name)); }
+		const std::optional<StateFormula> final{read_state_formula(final_tokens, namings, false)};
+		if (!final.has_value()) { return false; }
+		aut.final = *final;
+		in_body = true;
+		return true;
+	}};
+
+	std::string source_buffer;
+	std::string target_buffer;
+	while (true) {
+		switch (reader.read_line()) {
+			case ExplicitSectionReader::Line::Key: {
+				const std::string_view key{reader.key()};
+				if (Namings::is_naming_key(key)) {
+					if (in_body || key.starts_with("Initial") || key.starts_with("Final") || !namings.apply(key)) {
+						return std::nullopt;
+					}
+				} else if (key.starts_with("Initial")) {
+					// A second %Initial line continues the formula of the first one, which only plain lists survive.
+					if (in_body || key != "Initial" || has_initial) { return std::nullopt; }
+					has_initial = true;
+					keep_tokens(initial_tokens);
+				} else if (key.starts_with("Final")) {
+					if (in_body || key != "Final" || has_final) { return std::nullopt; }
+					has_final = true;
+					keep_tokens(final_tokens);
+				} // IntermediateAut::parse_from_mf() ignores any other key.
+				break;
+			}
+			case ExplicitSectionReader::Line::Body: {
+				if (!in_body && !start_body()) { return std::nullopt; }
+				const std::vector<ExplicitToken>& tokens{reader.tokens()};
+				// `source formula target`, the target not joined by an explicit `&`.
+				if (tokens.size() < 3) { return std::nullopt; }
+				const ExplicitToken& before_target{tokens[tokens.size() - 2]};
+				if (!before_target.quoted && before_target.text == "&") { return std::nullopt; }
+				if (tokens[0].quoted || tokens.back().quoted) { return std::nullopt; }
+				const std::optional<std::string_view> source_name{
+					namings.state_name(body_token(tokens[0], keep_quotes, source_buffer), false)
+				};
+				if (!source_name.has_value()) { return std::nullopt; }
+				const std::optional<BDD> bdd{
+					FormulaToBdd{std::span{tokens}.subspan(1, tokens.size() - 2), namings, mintermization}.read()
+				};
+				if (!bdd.has_value()) { return std::nullopt; }
+				// Mintermization drops a transition over an unsatisfiable predicate before construct() sees it, and
+				//  with it the target, which then may even be a constant, as in `q0 \false \true`.
+				if (bdd->IsZero()) {
+					std::optional<bool> constant;
+					if (!namings.operand_name(tokens.back().text, constant).has_value()) { return std::nullopt; }
+					break;
+				}
+				const std::optional<std::string_view> target_name{
+					namings.state_name(body_token(tokens.back(), keep_quotes, target_buffer), false)
+				};
+				if (!target_name.has_value()) { return std::nullopt; }
+				const State source{get_state(*source_name)};
+				const State target{get_state(*target_name)};
+				aut.transitions.push_back({source, predicate_of(*bdd), target});
+				break;
+			}
+			case ExplicitSectionReader::Line::End: {
+				if (!in_body && !start_body()) { return std::nullopt; }
+				return aut;
+			}
+			case ExplicitSectionReader::Line::Unsupported:
+				return std::nullopt;
+		}
+	}
+}
+
+builder::BitvectorNfaReader::Read builder::BitvectorNfaReader::add(
+	const std::string_view nfa_in_mata, const bool keep_quotes, NameStateMap* state_map
+) {
+	const size_t num_of_predicates{impl_->predicates.size()};
+	if (std::optional<BitvectorAutomaton> aut{impl_->read(nfa_in_mata, keep_quotes, state_map)}) {
+		impl_->automata.push_back(std::move(*aut));
+		return Read::Directly;
+	}
+	// The predicates of the lines read before giving up are dropped, so that they do not refine the partition.
+	for (size_t i{num_of_predicates}; i < impl_->predicates.size(); ++i) {
+		impl_->predicate_index.erase(impl_->predicates[i]);
+	}
+	impl_->predicates.resize(num_of_predicates);
+
+	const parser::Parsed parsed{parser::parse_mf(std::string{nfa_in_mata}, keep_quotes)};
+	if (parsed.size() != 1 || !parsed[0].type.starts_with(TYPE_NFA)) { return Read::Rejected; }
+	IntermediateAut inter_aut{std::move(IntermediateAut::parse_from_mf(parsed)[0])};
+	if (!inter_aut.is_bitvector()) { return Read::Rejected; }
+	BitvectorAutomaton aut;
+	aut.state_map = state_map;
+	for (const auto& transition : inter_aut.transitions) {
+		const BDD bdd{impl_->mintermization.graph_to_bdd_nfa(inter_aut.get_symbol_part_of_transition(transition))};
+		if (!bdd.IsZero()) { impl_->predicate_of(bdd); }
+	}
+	aut.general = std::move(inter_aut);
+	impl_->automata.push_back(std::move(aut));
+	return Read::ByGeneralReader;
+}
+
+std::vector<Nfa> builder::BitvectorNfaReader::build(Alphabet* alphabet) {
+	IntAlphabet int_alphabet;
+	if (alphabet == nullptr) { alphabet = &int_alphabet; }
+	const Mintermization::MintermPartition partition{
+		impl_->mintermization.compute_minterms_with_incidence(impl_->predicates)
+	};
+	// The minterm names, translated once.
+	std::vector<std::optional<Symbol>> symbols(partition.minterms.size());
+	const auto symbol_of{[&](const size_t minterm) {
+		if (!symbols[minterm].has_value()) { symbols[minterm] = alphabet->translate_symb(std::to_string(minterm)); }
+		return *symbols[minterm];
+	}};
+
+	std::vector<Nfa> result;
+	result.reserve(impl_->automata.size());
+	for (BitvectorAutomaton& aut : impl_->automata) {
+		if (aut.general.has_value()) {
+			// The transitions of the general reader's automaton, mintermized over the shared partition.
+			IntermediateAut& inter_aut{*aut.general};
+			IntermediateAut mintermized;
+			mintermized.state_naming = inter_aut.state_naming;
+			mintermized.symbol_naming = inter_aut.symbol_naming;
+			mintermized.node_naming = inter_aut.node_naming;
+			mintermized.alphabet_type = IntermediateAut::AlphabetType::Explicit;
+			mintermized.automaton_type = inter_aut.automaton_type;
+			mintermized.initial_formula = std::move(inter_aut.initial_formula);
+			mintermized.final_formula = std::move(inter_aut.final_formula);
+			const FormulaNode conjunction{FormulaNode::Type::Operator, "&", "&", FormulaNode::OperatorType::And};
+			for (const auto& transition : inter_aut.transitions) {
+				const BDD bdd{
+					impl_->mintermization.graph_to_bdd_nfa(inter_aut.get_symbol_part_of_transition(transition))
+				};
+				if (bdd.IsZero()) { continue; }
+				for (const size_t minterm : partition.minterms_of_source[impl_->predicate_index.at(bdd)]) {
+					const std::string name{std::to_string(minterm)};
+					FormulaGraph graph{conjunction};
+					graph.children.emplace_back(
+						FormulaNode{FormulaNode::Type::Operand, name, name, FormulaNode::OperandType::Symbol}
+					);
+					graph.children.push_back(transition.second.children[1]);
+					mintermized.transitions.emplace_back(transition.first, std::move(graph));
+				}
+			}
+			result.push_back(construct(mintermized, alphabet, aut.state_map));
+			continue;
+		}
+
+		Nfa& nfa{aut.nfa};
+		std::vector<Transition> transitions;
+		for (const BitvectorTransition& transition : aut.transitions) {
+			for (const size_t minterm : partition.minterms_of_source[transition.predicate]) {
+				transitions.emplace_back(transition.source, symbol_of(minterm), transition.target);
+			}
+		}
+		nfa.delta.add(std::move(transitions));
+
+		mata::parser::StateNameMap& state_names{*aut.state_names};
+		switch (aut.final.kind) {
+			case StateFormula::Kind::True:
+			case StateFormula::Kind::AllBut: {
+				// Every state the transitions and the initial formula named, see builder::construct().
+				const std::unordered_set<std::string_view> excluded{aut.final.names.begin(), aut.final.names.end()};
+				state_names.for_each([&](const std::string_view name, const State state) {
+					if (!excluded.contains(name)) { nfa.final.insert(state); }
+				});
+				break;
+			}
+			case StateFormula::Kind::False:
+				break;
+			case StateFormula::Kind::States:
+				for (const std::string& name : aut.final.names) {
+					if (const std::optional<State> state{state_names.find(name)}) {
+						nfa.final.insert(nfa.add_state(*state));
+					} else {
+						const State added{nfa.add_state()};
+						state_names.insert(name, added);
+						nfa.final.insert(added);
+					}
+				}
+				break;
+		}
+		if (aut.state_map != nullptr) { *aut.state_map = state_names.to_map(); }
+		result.push_back(std::move(nfa));
+	}
+	impl_->automata.clear();
+	impl_->predicates.clear();
+	impl_->predicate_index.clear();
+	return result;
+}
 
 Nfa builder::construct(const parser::ParsedSection& parsec, Alphabet* alphabet, NameStateMap* state_map) {
 	Nfa aut;
@@ -485,6 +918,13 @@ Nfa builder::parse_from_mata(
 	if (alphabet == nullptr) { alphabet = &int_alphabet; }
 	if (std::optional<Nfa> nfa{parse_explicit_from_mata(nfa_in_mata, alphabet, state_map, keep_quotes)}) {
 		return std::move(*nfa);
+	}
+	// The bitvector reader handles every single-section `@NFA-bits` input, by the general reader where it has to.
+	if (std::string_view{nfa_in_mata}.contains("@NFA-bits")) {
+		BitvectorNfaReader reader;
+		if (reader.add(nfa_in_mata, keep_quotes, state_map) != BitvectorNfaReader::Read::Rejected) {
+			return std::move(reader.build(alphabet).front());
+		}
 	}
 
 	const parser::Parsed parsed{parser::parse_mf(nfa_in_mata, keep_quotes)};

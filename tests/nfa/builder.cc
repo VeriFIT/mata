@@ -2,8 +2,11 @@
 
 #include <cmath>
 #include <fstream>
+#include <map>
 #include <optional>
+#include <ranges>
 #include <set>
+#include <tuple>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
@@ -390,6 +393,192 @@ TEST_CASE("parse_explicit_from_mata() leaves the general format to the general r
 		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n% q0\n");
 		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q0\nq0 a q1\nq1 b \\");
 	}
+}
+
+namespace {
+/// Reads @p inputs with the general reader and mintermizes them together, as the loaders did before the bitvector
+///  reader.
+std::vector<Nfa> read_bitvector_with_general_reader(
+	const std::vector<std::string>& inputs,
+	mata::Alphabet* alphabet,
+	std::vector<builder::NameStateMap>& state_maps,
+	const bool keep_quotes
+) {
+	std::vector<mata::IntermediateAut> inter_auts;
+	for (const std::string& input : inputs) {
+		inter_auts.push_back(mata::IntermediateAut::parse_from_mf(mata::parser::parse_mf(input, keep_quotes))[0]);
+	}
+	std::vector<mata::IntermediateAut> mintermized{mata::Mintermization{}.mintermize(inter_auts)};
+	std::vector<Nfa> nfas;
+	state_maps.resize(inputs.size());
+	for (size_t i{0}; i < inputs.size(); ++i) {
+		nfas.push_back(builder::construct(mintermized[i], alphabet, &state_maps[i]));
+	}
+	return nfas;
+}
+
+/// Checks that @p lhs and @p rhs are the same NFAs up to the numbering of states and of the minterms.
+void check_same_up_to_names(
+	const std::vector<Nfa>& lhs,
+	const std::vector<builder::NameStateMap>& lhs_states,
+	const std::vector<Nfa>& rhs,
+	const std::vector<builder::NameStateMap>& rhs_states
+) {
+	REQUIRE(lhs.size() == rhs.size());
+	// Each minterm is identified by the transitions over it, in all the automata together.
+	using Edges = std::set<std::tuple<size_t, std::string, std::string>>;
+	const auto edges_of_symbols{[](const std::vector<Nfa>& nfas, const std::vector<builder::NameStateMap>& states) {
+		std::map<Symbol, Edges> edges;
+		for (size_t i{0}; i < nfas.size(); ++i) {
+			std::map<State, std::string> names;
+			for (const auto& [name, state] : states[i]) { names[state] = name; }
+			for (const Transition& transition : nfas[i].delta.transitions()) {
+				edges[transition.symbol].emplace(i, names.at(transition.source), names.at(transition.target));
+			}
+		}
+		std::multiset<Edges> result;
+		for (Edges& symbol_edges : edges | std::views::values) { result.insert(std::move(symbol_edges)); }
+		return result;
+	}};
+	CHECK(edges_of_symbols(lhs, lhs_states) == edges_of_symbols(rhs, rhs_states));
+	for (size_t i{0}; i < lhs.size(); ++i) {
+		CAPTURE(i);
+		REQUIRE(lhs[i].num_of_states() == rhs[i].num_of_states());
+		CHECK(lhs_states[i].size() == rhs_states[i].size());
+		const auto names_of{[](const auto& states, const builder::NameStateMap& map) {
+			std::map<State, std::string> names;
+			for (const auto& [name, state] : map) { names[state] = name; }
+			std::set<std::string> result;
+			for (const State state : states) { result.insert(names.at(state)); }
+			return result;
+		}};
+		CHECK(names_of(lhs[i].initial, lhs_states[i]) == names_of(rhs[i].initial, rhs_states[i]));
+		CHECK(names_of(lhs[i].final, lhs_states[i]) == names_of(rhs[i].final, rhs_states[i]));
+	}
+}
+
+using Read = builder::BitvectorNfaReader::Read;
+
+/// Checks that the bitvector reader reads @p inputs together, each the way @p how says, as the general reader and
+///  @c Mintermization read them.
+void check_bitvector_reader_reads(
+	const std::vector<std::string>& inputs, const Read how = Read::Directly, const bool keep_quotes = false
+) {
+	CAPTURE(inputs, keep_quotes);
+	builder::BitvectorNfaReader reader;
+	std::vector<builder::NameStateMap> reader_states(inputs.size());
+	for (size_t i{0}; i < inputs.size(); ++i) { CHECK(reader.add(inputs[i], keep_quotes, &reader_states[i]) == how); }
+	OnTheFlyAlphabet reader_alphabet;
+	const std::vector<Nfa> read{reader.build(&reader_alphabet)};
+
+	OnTheFlyAlphabet general_alphabet;
+	std::vector<builder::NameStateMap> general_states;
+	const std::vector<Nfa> general{
+		read_bitvector_with_general_reader(inputs, &general_alphabet, general_states, keep_quotes)
+	};
+	CHECK(reader_alphabet.get_symbol_map().size() == general_alphabet.get_symbol_map().size());
+	check_same_up_to_names(read, reader_states, general, general_states);
+
+	// A single input read with parse_from_mata() is the same automaton.
+	if (inputs.size() == 1) {
+		OnTheFlyAlphabet alphabet;
+		std::vector<builder::NameStateMap> states(1);
+		const std::vector<Nfa> parsed{builder::parse_from_mata(inputs[0], &alphabet, states.data(), keep_quotes)};
+		check_same_up_to_names(parsed, states, general, general_states);
+	}
+}
+} // namespace
+
+TEST_CASE("BitvectorNfaReader reads what the general reader and mintermization read") {
+	const std::string header{"@NFA-bits\n%Alphabet-auto\n%Initial q0\n"};
+	SECTION("formulas") {
+		check_bitvector_reader_reads({header + "%Final q1\nq0 x & !y q1\nq1 (x | y) & !z q0\nq0 z q0\n"});
+		check_bitvector_reader_reads({header + "%Final q1\nq0 x&!y q1\nq1 !(x|y)&z q0\nq0 !!x q1\nq1 a|b&c q1\n"});
+		check_bitvector_reader_reads({header + "%Final q1\nq0 (((x))) q1\nq1 x | y | z q0\nq0 x & y & z q1\n"});
+		check_bitvector_reader_reads({header + "%Final q1\nq0 \\true q1\nq1 \\false q0\nq0 x & \\true q1\n"});
+		// An unsatisfiable predicate drops the transition, and leaves the state of its target unnamed.
+		check_bitvector_reader_reads({header + "%Final q1\nq0 x & !x q2\nq0 x q1\n"});
+		// Even when that target is a constant, which only a dropped transition may have.
+		check_bitvector_reader_reads({header + "%Final !q1\nq3 \\false \\true\nq0 x q1\n"});
+	}
+
+	SECTION("final formulas") {
+		check_bitvector_reader_reads({header + "%Final !q0 & !q2\nq0 x q1\nq1 y q2\nq2 z q0\n"});
+		check_bitvector_reader_reads({header + "%Final !q5\nq0 x q1\n"});
+		check_bitvector_reader_reads({header + "%Final \\true\nq0 x q1\n"});
+		check_bitvector_reader_reads({header + "%Final \\false\nq0 x q1\n"});
+		check_bitvector_reader_reads({header + "%Final q1 q2\nq0 x q1\n"});
+		check_bitvector_reader_reads({header + "q0 x q1\n"});
+		check_bitvector_reader_reads({"@NFA-bits\n%Alphabet-auto\nq0 x q1\n"});
+		// Long enough that the kept token texts outgrow any initial storage.
+		std::string all_but{"%Final !q0"};
+		std::string transitions{};
+		for (size_t state{1}; state < 2'000; ++state) {
+			all_but += " & !q" + std::to_string(state);
+			transitions += "q" + std::to_string(state - 1) + " x q" + std::to_string(state) + "\n";
+		}
+		check_bitvector_reader_reads({header + all_but + "\nq1999 y q2000\n" + transitions});
+	}
+
+	SECTION("formulas the general reader reads for the bitvector reader") {
+		check_bitvector_reader_reads({header + "%Final q1 | q0\nq0 x q1\n"}, Read::ByGeneralReader);
+		check_bitvector_reader_reads({header + "%Final !q1 | !q0\nq0 x q1\n"}, Read::ByGeneralReader);
+		check_bitvector_reader_reads({header + "%Final q1\nq0 x & q1\n"}, Read::ByGeneralReader);
+		check_bitvector_reader_reads({header + "%Final q1\nq0 \"x y\" q1\n"}, Read::ByGeneralReader);
+		check_bitvector_reader_reads({"@NFA-bits\n%Alphabet-auto\n%Initial q0 | q1\nq0 x q1\n"}, Read::ByGeneralReader);
+		check_bitvector_reader_reads(
+			{"@NFA-bits\n%Alphabet-auto\n%States-enum p r\n%Initial p\np x r\n"}, Read::ByGeneralReader
+		);
+	}
+
+	SECTION("namings") {
+		check_bitvector_reader_reads({"@NFA-bits\n%Alphabet-marked\n%Initial q0\n%Final q1\nq0 a1 & !a2 q1\n"});
+		check_bitvector_reader_reads(
+			{"@NFA-bits\n%Alphabet-auto\n%Nodes-auto\n%States-auto\n%Initial p\n%Final r\np x & !y r\n"}
+		);
+	}
+
+	SECTION("automata sharing minterms") {
+		check_bitvector_reader_reads({
+			header + "%Final q1\nq0 x & !y q1\nq1 y q0\n",
+			header + "%Final !q0\nq0 x | z q1\nq1 \\true q0\n",
+			header + "%Final q1 q0\nq0 x & y q1\n",
+		});
+		// One of them read by the general reader still shares the minterms.
+		builder::BitvectorNfaReader reader;
+		std::vector<builder::NameStateMap> reader_states(2);
+		const std::vector<std::string> inputs{
+			header + "%Final q1\nq0 x & !y q1\nq1 y q0\n", header + "%Final q1 | q0\nq0 x & y q1\nq1 y & q0\n"
+		};
+		CHECK(reader.add(inputs[0], false, &reader_states[0]) == Read::Directly);
+		CHECK(reader.add(inputs[1], false, &reader_states[1]) == Read::ByGeneralReader);
+		OnTheFlyAlphabet reader_alphabet;
+		const std::vector<Nfa> read{reader.build(&reader_alphabet)};
+		OnTheFlyAlphabet general_alphabet;
+		std::vector<builder::NameStateMap> general_states;
+		const std::vector<Nfa> general{
+			read_bitvector_with_general_reader(inputs, &general_alphabet, general_states, false)
+		};
+		check_same_up_to_names(read, reader_states, general, general_states);
+	}
+
+	SECTION("quoted names") {
+		// IntermediateAut takes a quoted state of a body line for a node or a symbol.
+		check_bitvector_reader_reads({header + "%Final q1\n\"q0\" x \"q1\"\n"}, Read::ByGeneralReader, true);
+		check_bitvector_reader_reads({header + "%Final q1\nq0 \"x\" & y q1\n"}, Read::ByGeneralReader);
+		check_bitvector_reader_reads({header + "%Final q1\nq0 (\"x\") q1\n"}, Read::ByGeneralReader);
+	}
+}
+
+TEST_CASE("BitvectorNfaReader leaves inputs that are not bitvector NFAs") {
+	builder::BitvectorNfaReader reader;
+	CHECK(reader.add("@NFA-explicit\n%Alphabet-auto\n%Initial q0\nq0 a q1\n") == Read::Rejected);
+	CHECK(reader.add("@NFA-bits\n%Alphabet-auto\nq0 x q1\n@NFA-bits\n%Alphabet-auto\nq0 x q1\n") == Read::Rejected);
+	CHECK_THROWS(reader.add("@NFA-bits\n%Alphabet-auto\n%Initial q0\nq0 x & q1\n& y\n"));
+	// The general reader rejects these, so the bitvector reader cannot read them for it.
+	CHECK_THROWS(reader.add("@NFA-bits\n%Alphabet-auto\n%States-auto\n%Initial p\np x r\n"));
+	CHECK_THROWS(reader.add("@NFA-bits\n%Alphabet-auto\n%Initial q0\nq0 x&\"y\" q1\n"));
+	CHECK(reader.build().empty());
 }
 
 TEST_CASE("Create Tabakov-Vardi NFA") {

@@ -7,6 +7,9 @@
 #define MATA_MINTERM_HH
 
 #include <cstdint>
+#include <functional>
+#include <optional>
+#include <string_view>
 
 #include "mata/cudd/cuddObj.hh"
 
@@ -34,7 +37,12 @@ class Mintermization {
 	using DisjunctStatesPair = std::pair<const FormulaGraph*, const FormulaGraph*>;
 
 	Cudd bdd_mng_{}; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
-	std::unordered_map<std::string, BDD> symbol_to_bddvar_{};
+	/// Hashes names given as any string type, so that a @c std::string_view finds a @c std::string key.
+	struct NameHash {
+		using is_transparent = void;
+		size_t operator()(const std::string_view name) const { return std::hash<std::string_view>{}(name); }
+	};
+	std::unordered_map<std::string, BDD, NameHash, std::equal_to<>> symbol_to_bddvar_{};
 	std::unordered_map<const FormulaGraph*, BDD> trans_to_bddvar_{};
 	std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states_{};
 	/// BDDs created from transitions, in the order of their first appearance in the transitions.
@@ -88,6 +96,14 @@ class Mintermization {
 	 * @return Resulting BDD
 	 */
 	BDD graph_to_bdd_nfa(const FormulaGraph& graph);
+
+	/**
+	 * The BDD of the bitvector symbol @p name, as @c graph_to_bdd_nfa() makes it for an operand of that name: the
+	 *  BDD of the first operand of that name, which is a fresh variable or the @p constant the operand stands for.
+	 * @param name Name of the symbol.
+	 * @param constant The constant (@c \\true or @c \\false) the operand stands for, if it does.
+	 */
+	BDD symbol_bdd(std::string_view name, std::optional<bool> constant = std::nullopt);
 
 	/**
 	 * Transforms a graph representing formula at transition to bdd.

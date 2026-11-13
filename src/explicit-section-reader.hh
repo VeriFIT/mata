@@ -46,6 +46,19 @@ class StateNameMap {
 	/// All the names and their states.
 	Map to_map() const;
 
+	/// Calls @p function with every name and its state.
+	template <class Function> void for_each(Function&& function) const {
+		for (const auto& [name, state] : others_) { function(std::string_view{name}, state); }
+		std::string name{prefix_.value_or("")};
+		const size_t prefix_size{name.size()};
+		for (size_t number{0}; number < numbered_.size(); ++number) {
+			if (numbered_[number] == NO_STATE) { continue; }
+			name.resize(prefix_size);
+			name += std::to_string(number);
+			function(std::string_view{name}, numbered_[number]);
+		}
+	}
+
   private:
 	/// The number in @p name if @p name is the prefix of the numbered names followed by a number without leading zeros
 	///  and not larger than @c max_number_. The first such name with any prefix fixes the prefix.
@@ -71,10 +84,12 @@ struct ExplicitToken {
 /**
  * Reads the single section of a `.mata` input line by line, tokenizing every line as @c parse_mf() does.
  *
- * The reader covers only lines that are lists of names: it gives up on anything @c parse_mf() would turn into an
- *  operator of a transition formula (`&`, `|`, `!`, `(`, `)`), on a second section, on a line continuation left open at
- *  the end of the input, and on every input @c parse_mf() rejects. Giving up is reported as @c Line::Unsupported, so
- *  that the caller can hand the input to the general reader, which then either reads it or reports the error.
+ * The reader covers only lines that are lists of names, and in the formula mode also the operators and parentheses of
+ *  transition formulas (`&`, `|`, `!`, `(`, `)`), which it splits off as tokens of their own, as @c parse_mf() does.
+ *  It gives up on anything else @c parse_mf() would turn into an operator, on a second section, on a line continuation
+ *  left open at the end of the input, and on every input @c parse_mf() rejects. Giving up is reported as
+ *  @c Line::Unsupported, so that the caller can hand the input to the general reader, which then either reads it or
+ *  reports the error.
  */
 class ExplicitSectionReader {
   public:
@@ -89,8 +104,11 @@ class ExplicitSectionReader {
 		Unsupported,
 	};
 
-	/// @p input has to outlive the reader and the tokens it returns.
-	explicit ExplicitSectionReader(std::string_view input) : input_{input} {}
+	/// @p input has to outlive the reader and the tokens it returns. @p formulas Whether to read the operators and
+	///  parentheses of transition formulas.
+	explicit ExplicitSectionReader(std::string_view input, const bool formulas = false)
+		: input_{input},
+		  formulas_{formulas} {}
 
 	/// Reads the `@TYPE` line, skipping the comment lines before it.
 	/// @return The section type, or @c std::nullopt when the input does not start with a well-formed type line.
@@ -111,6 +129,7 @@ class ExplicitSectionReader {
 	bool tokenize(std::string_view line);
 
 	std::string_view input_;
+	bool formulas_;
 	size_t position_{0};
 	std::string_view key_{};
 	std::vector<ExplicitToken> tokens_{};
