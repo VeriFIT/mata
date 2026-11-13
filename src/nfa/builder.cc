@@ -19,6 +19,7 @@
 #include <numeric>
 #include <random>
 #include <span>
+#include <unordered_map>
 #include <unordered_set>
 
 using namespace mata::nfa;
@@ -471,6 +472,10 @@ std::optional<BitvectorAutomaton> builder::BitvectorNfaReader::Impl::read(
 
 	std::string source_buffer;
 	std::string target_buffer;
+	// The predicate of each formula read so far, or std::nullopt for an unsatisfiable one, keyed by its tokens. A
+	//  formula usually labels many transitions, and the namings that interpret it do not change in the body.
+	std::unordered_map<std::string, std::optional<size_t>> formula_predicates;
+	std::string formula_key;
 	while (true) {
 		switch (reader.read_line()) {
 			case ExplicitSectionReader::Line::Key: {
@@ -503,13 +508,29 @@ std::optional<BitvectorAutomaton> builder::BitvectorNfaReader::Impl::read(
 					namings.state_name(body_token(tokens[0], keep_quotes, source_buffer), false)
 				};
 				if (!source_name.has_value()) { return std::nullopt; }
-				const std::optional<BDD> bdd{
-					FormulaToBdd{std::span{tokens}.subspan(1, tokens.size() - 2), namings, mintermization}.read()
-				};
-				if (!bdd.has_value()) { return std::nullopt; }
+				const std::span<const ExplicitToken> formula{std::span{tokens}.subspan(1, tokens.size() - 2)};
+				formula_key.clear();
+				for (const ExplicitToken& token : formula) {
+					// The separator (space for an unquoted, quote for a quoted token) is escaped inside the texts, so
+					//  that no pair of tokens can serialize the same way as another one.
+					formula_key.push_back(token.quoted ? '"' : ' ');
+					for (const char c : token.text) {
+						formula_key.push_back(c);
+						if (c == '"' || c == ' ') { formula_key.push_back('\\'); }
+					}
+				}
+				auto predicate{formula_predicates.find(formula_key)};
+				if (predicate == formula_predicates.end()) {
+					const std::optional<BDD> bdd{FormulaToBdd{formula, namings, mintermization}.read()};
+					if (!bdd.has_value()) { return std::nullopt; }
+					predicate =
+						formula_predicates
+							.emplace(formula_key, bdd->IsZero() ? std::nullopt : std::optional{predicate_of(*bdd)})
+							.first;
+				}
 				// Mintermization drops a transition over an unsatisfiable predicate before construct() sees it, and
 				//  with it the target, which then may even be a constant, as in `q0 \false \true`.
-				if (bdd->IsZero()) {
+				if (!predicate->second.has_value()) {
 					std::optional<bool> constant;
 					if (!namings.operand_name(tokens.back().text, constant).has_value()) { return std::nullopt; }
 					break;
@@ -520,7 +541,7 @@ std::optional<BitvectorAutomaton> builder::BitvectorNfaReader::Impl::read(
 				if (!target_name.has_value()) { return std::nullopt; }
 				const State source{get_state(*source_name)};
 				const State target{get_state(*target_name)};
-				aut.transitions.push_back({source, predicate_of(*bdd), target});
+				aut.transitions.push_back({source, *predicate->second, target});
 				break;
 			}
 			case ExplicitSectionReader::Line::End: {
