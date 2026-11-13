@@ -12,6 +12,7 @@
 
 #include <charconv>
 #include <fstream>
+#include <limits>
 
 using namespace mata::nft;
 using mata::Symbol;
@@ -201,7 +202,7 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 
 				const State state = get_state_name(state_name);
 				const long level = std::stol(level_str);
-				if (level < 0) {
+				if (level < 0 || static_cast<unsigned long>(level) > std::numeric_limits<Level>::max()) {
 					throw std::runtime_error("Bad format of levels: level " + level_str + " is out of range.");
 				}
 				aut.levels[state] = static_cast<Level>(level);
@@ -220,7 +221,7 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 		if (it->second.size() > 1) { throw std::runtime_error("Only one LevelsNum can be specified."); }
 		try {
 			const long level = std::stol(it->second[0]);
-			if (level < 0) {
+			if (level < 0 || static_cast<unsigned long>(level) > std::numeric_limits<Level>::max()) {
 				throw std::runtime_error("Bad format of levels: level " + it->second[0] + " is out of range.");
 			}
 			aut.levels.num_of_levels = static_cast<Level>(level);
