@@ -1074,6 +1074,12 @@ class DeltaBuilder {
 		has_symbol_ = false;
 	}
 
+	/// Reserves room for @p num_of_symbols symbols of the current source state.
+	void reserve_symbols(const size_t num_of_symbols) {
+		MATA_ASSERT(in_state_ && "reserve_symbols() called outside of a state");
+		state_posts_[source_].reserve(num_of_symbols);
+	}
+
 	/// Starts the targets of @p symbol under the current source state.
 	void begin_symbol(const Symbol symbol) {
 		MATA_ASSERT(in_state_ && "begin_symbol() called outside of a state");

@@ -326,6 +326,11 @@ void Delta::add(std::vector<Transition>&& transitions) {
 			}
 		);
 		builder.begin_state(source);
+		size_t num_of_symbols{1};
+		for (size_t index{begin + 1}; index < end; ++index) {
+			if (by_source[index].symbol != by_source[index - 1].symbol) { ++num_of_symbols; }
+		}
+		builder.reserve_symbols(num_of_symbols);
 		size_t index{begin};
 		while (index < end) {
 			const Symbol symbol{by_source[index].symbol};
