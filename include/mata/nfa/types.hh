@@ -67,6 +67,12 @@ enum class ProductFinalStateCondition : std::uint8_t {
 	Or, ///< At least one of the original states has to be final.
 };
 
+/// What @c Nfa::print_to_regex() optimizes for.
+enum class RegexPrintMode : std::uint8_t {
+	Fast, ///< The conversion time: a regex for a program to read.
+	Readable, ///< The length and the legibility of the regex: a regex for a human to read. Takes longer.
+};
+
 using StateRenaming = std::unordered_map<State, State>;
 
 /**

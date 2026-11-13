@@ -437,6 +437,68 @@ class Nfa : public Automaton {
 	void print_to_mata(const std::string& filename, const Alphabet* alphabet = nullptr) const;
 
 	/**
+	 * @brief Prints the language of the automaton as a regular expression
+	 *
+	 * The automaton is converted by state elimination, see src/nfa/regex-writer.cc. @p mode chooses what the
+	 *  conversion optimizes for:
+	 *  - @c RegexPrintMode::Fast converts as fast as possible, for a regex read by a program.
+	 *  - @c RegexPrintMode::Readable looks for a short, legible regex, for a regex read by a human: it converts
+	 *    several automata of the same language (the reduced one, the minimal deterministic one, and the minimal one
+	 *    deterministic backwards) in several elimination orders, simplifies the regexes algebraically, and prints
+	 *    the shortest one, which is never longer than the regex of @c RegexPrintMode::Fast. Running these additional
+	 *    conversions takes considerably longer than @c RegexPrintMode::Fast.
+	 *
+	 * The length of the regex is exponential in the number of states in the worst case, in both modes.
+	 *
+	 * The regex is written in the syntax mata::nfa::builder::create_from_regex() reads (RE2), restricted to
+	 *  characters, escapes ('\\n', '\\x41', '\\x{17F}'), character classes ('[a-c]'), groups, '|', '*', '+', '?',
+	 *  and counted repetitions ('{2}', '{2,}', '{2,5}'). The empty word alone is '()', and the empty language is the
+	 *  empty character class '[^\\s\\S]'.
+	 *
+	 * A symbol is the Unicode scalar value of its value, so it has to be at most 0x10FFFF and must not be in the
+	 *  surrogate range 0xD800 to 0xDFFF. With symbols up to 0xFF, reading the regex back gives the same language; with
+	 *  larger ones, reading it back with @c Encoding::Utf8 gives the language encoded in UTF-8. With an alphabet,
+	 *  a symbol is the character its name consists of instead. @c EPSILON is the empty word.
+	 *
+	 * @param[in] mode What to optimize the conversion for.
+	 * @param[in] alphabet If specified, translates the symbols to their symbol names in the @p alphabet. Otherwise,
+	 *  the alphabet of the automaton is used, if it has one.
+	 * @return The regular expression.
+	 * @throws std::invalid_argument If a symbol is larger than 0x10FFFF or a surrogate, or its name in the alphabet is
+	 *  not a single character encoded in UTF-8.
+	 */
+	std::string print_to_regex(RegexPrintMode mode = RegexPrintMode::Fast, const Alphabet* alphabet = nullptr) const;
+
+	/**
+	 * @brief Prints the language of the automaton to the output stream as a regular expression
+	 *
+	 * The regex is written in blocks as it is printed, without a line ending, and @p output is flushed before
+	 *  returning.
+	 *
+	 * @see print_to_regex(RegexPrintMode, const Alphabet*) const for the conversion, the syntax and the symbols.
+	 *
+	 * @param[out] output Output stream to print the regular expression to.
+	 * @param[in] mode What to optimize the conversion for.
+	 * @param[in] alphabet If specified, translates the symbols to their symbol names in the @p alphabet.
+	 */
+	void print_to_regex(
+		std::ostream& output, RegexPrintMode mode = RegexPrintMode::Fast, const Alphabet* alphabet = nullptr
+	) const;
+
+	/**
+	 * @brief Prints the language of the automaton to the file as a regular expression
+	 *
+	 * @see print_to_regex(RegexPrintMode, const Alphabet*) const for the conversion, the syntax and the symbols.
+	 *
+	 * @param filename Name of the file to print the regular expression to
+	 * @param[in] mode What to optimize the conversion for.
+	 * @param[in] alphabet If specified, translates the symbols to their symbol names in the @p alphabet.
+	 */
+	void print_to_regex(
+		const std::string& filename, RegexPrintMode mode = RegexPrintMode::Fast, const Alphabet* alphabet = nullptr
+	) const;
+
+	/**
 	 * @brief Get the set of states reachable from the given set of states over the given symbol.
 	 * TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
 	 *
