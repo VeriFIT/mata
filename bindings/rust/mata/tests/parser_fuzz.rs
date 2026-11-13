@@ -9,7 +9,6 @@ fn line() -> impl Strategy<Value = String> {
 		Just("@NFA-explicit".to_owned()),
 		Just("@NFA-bits".to_owned()),
 		Just("@NFT-explicit".to_owned()),
-		Just("@AFA-explicit".to_owned()),
 		Just("%Alphabet-auto".to_owned()),
 		Just("%Alphabet-enum".to_owned()),
 		Just("%Initial".to_owned()),

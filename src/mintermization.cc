@@ -10,6 +10,9 @@
 #include <algorithm>
 #include <ranges>
 
+// TODO(afa): Re-add the alternating automata support. The AFA code is kept, but not compiled: `MATA_AFA_SUPPORT` is
+//  never defined.
+#ifdef MATA_AFA_SUPPORT
 namespace {
 const mata::FormulaGraph* detect_state_part(const mata::FormulaGraph* node) {
 	if (node->node.is_state()) { return node; }
@@ -45,6 +48,8 @@ const mata::FormulaGraph* detect_state_part(const mata::FormulaGraph* node) {
 	return nullptr;
 }
 } // namespace
+#endif
+
 void mata::Mintermization::add_source_bdd(const BDD& bdd) {
 	if (source_bdd_to_index_.contains(bdd)) {
 		return; // Already registered
@@ -70,6 +75,7 @@ void mata::Mintermization::trans_to_bdd_nfa(const IntermediateAut& aut) {
 	}
 }
 
+#ifdef MATA_AFA_SUPPORT
 void mata::Mintermization::trans_to_bdd_afa(const IntermediateAut& aut) {
 	MATA_ASSERT(aut.is_afa());
 
@@ -112,6 +118,7 @@ void mata::Mintermization::trans_to_bdd_afa(const IntermediateAut& aut) {
 		}
 	}
 }
+#endif
 
 std::unordered_set<BDD> mata::Mintermization::compute_minterms(const std::unordered_set<BDD>& source_bdds) const {
 	std::unordered_set<BDD> stack{bdd_mng_.bddOne()};
@@ -214,6 +221,7 @@ mata::Mintermization::MintermPartition
 	return result;
 }
 
+#ifdef MATA_AFA_SUPPORT
 mata::Mintermization::OptionalBdd mata::Mintermization::graph_to_bdd_afa(const FormulaGraph& graph) {
 	const FormulaNode& node = graph.node;
 	if (node.is_operand()) {
@@ -247,6 +255,7 @@ mata::Mintermization::OptionalBdd mata::Mintermization::graph_to_bdd_afa(const F
 	MATA_ASSERT(false);
 	return {};
 }
+#endif
 
 BDD mata::Mintermization::symbol_bdd(const std::string_view name, const std::optional<bool> constant) {
 	if (const auto it{symbol_to_bddvar_.find(name)}; it != symbol_to_bddvar_.end()) { return it->second; }
@@ -360,6 +369,7 @@ void mata::Mintermization::minterms_to_aut_nfa(
 	}
 }
 
+#ifdef MATA_AFA_SUPPORT
 void mata::Mintermization::minterms_to_aut_afa(
 	IntermediateAut& res, const IntermediateAut& aut, const std::vector<std::vector<size_t>>& minterms_of_source
 ) {
@@ -388,6 +398,7 @@ void mata::Mintermization::minterms_to_aut_afa(
 		}
 	}
 }
+#endif
 
 mata::IntermediateAut mata::Mintermization::mintermize(const IntermediateAut& aut) {
 	return std::move(mintermize(std::vector<const IntermediateAut*>{&aut})[0]);
@@ -403,14 +414,24 @@ std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::v
 	source_bdds_.clear();
 	source_bdd_to_index_.clear();
 	trans_to_bddvar_.clear();
+#ifdef MATA_AFA_SUPPORT
 	lhs_to_disjuncts_and_states_.clear();
+#endif
 
 	for (const IntermediateAut* aut : auts) {
+#ifdef MATA_AFA_SUPPORT
 		if ((!aut->is_nfa() && !aut->is_afa()) || aut->alphabet_type != IntermediateAut::AlphabetType::Bitvector) {
 			throw std::runtime_error("We currently support mintermization only for NFA and AFA with bitvectors");
 		}
 
 		aut->is_nfa() ? trans_to_bdd_nfa(*aut) : trans_to_bdd_afa(*aut);
+#else
+		if (!aut->is_nfa() || aut->alphabet_type != IntermediateAut::AlphabetType::Bitvector) {
+			throw std::runtime_error("We currently support mintermization only for NFA with bitvectors");
+		}
+
+		trans_to_bdd_nfa(*aut);
+#endif
 	}
 
 	// Build minterm tree over BDDs with incidence tracking
@@ -435,8 +456,10 @@ std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::v
 
 		if (aut->is_nfa()) {
 			minterms_to_aut_nfa(mintermized_aut, *aut, partition.minterms_of_source);
+#ifdef MATA_AFA_SUPPORT
 		} else if (aut->is_afa()) {
 			minterms_to_aut_afa(mintermized_aut, *aut, partition.minterms_of_source);
+#endif
 		}
 
 		res.push_back(std::move(mintermized_aut));
@@ -452,6 +475,7 @@ std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::v
 	return mintermize(auts_pointers);
 }
 
+#ifdef MATA_AFA_SUPPORT
 mata::Mintermization::OptionalBdd mata::Mintermization::OptionalBdd::operator*(const OptionalBdd& b) const {
 	if (this->type == Type::NothingE) { return b; }
 	if (b.type == Type::NothingE) { return *this; }
@@ -468,3 +492,4 @@ mata::Mintermization::OptionalBdd mata::Mintermization::OptionalBdd::operator!()
 	if (this->type == Type::NothingE) { return OptionalBdd(Type::NothingE); }
 	return OptionalBdd{Type::BddE, !this->val};
 }
+#endif

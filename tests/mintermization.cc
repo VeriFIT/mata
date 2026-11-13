@@ -224,6 +224,9 @@ TEST_CASE("mata::Mintermization::mintermization") {
 		REQUIRE(res[1].transitions[1].second.children[1].node.name() == "r");
 	}
 
+	// TODO(afa): Re-add the alternating automata support. The AFA code is kept, but not compiled: `MATA_AFA_SUPPORT`
+	//  is never defined.
+#ifdef MATA_AFA_SUPPORT
 	SECTION("Mintermization AFA disjuncts") {
 		Parsed parsed;
 		mata::Mintermization mintermization{};
@@ -307,6 +310,7 @@ TEST_CASE("mata::Mintermization::mintermization") {
 		REQUIRE(std::ranges::find(from_q, negated) == from_q.end());
 		REQUIRE(std::unordered_set<size_t>{negated, from_q[0], from_q[1]} == std::unordered_set<size_t>{0, 1, 2});
 	}
+#endif
 } // TEST_CASE("mata::Mintermization::mintermization")
 
 TEST_CASE("mata::Mintermization::compute_minterms_with_incidence") {
@@ -634,7 +638,11 @@ TEST_CASE("mata::Mintermization::mintermization preserves non-transition fields"
 		return true;
 	};
 
-	for (const std::string automaton_type : {"NFA", "AFA"}) {
+	std::vector<std::string> automaton_types{"NFA"};
+#ifdef MATA_AFA_SUPPORT
+	automaton_types.emplace_back("AFA");
+#endif
+	for (const std::string& automaton_type : automaton_types) {
 		DYNAMIC_SECTION(automaton_type) {
 			std::string file = "@" + automaton_type +
 							   "-bits\n"

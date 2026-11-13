@@ -340,13 +340,17 @@ mata::IntermediateAut mf_to_aut(const mata::parser::ParsedSection& section) {
 
 	if (section.type.find("NFA") != std::string::npos) {
 		aut.automaton_type = mata::IntermediateAut::AutomatonType::Nfa;
+		// TODO(afa): Re-add the alternating automata support. The AFA code is kept, but not compiled:
+		//  `MATA_AFA_SUPPORT` is never defined.
+#ifdef MATA_AFA_SUPPORT
 	} else if (section.type.find("AFA") != std::string::npos) {
 		aut.automaton_type = mata::IntermediateAut::AutomatonType::Afa;
+#endif
 	} else if (section.type.find("NFT") != std::string::npos) {
 		aut.automaton_type = mata::IntermediateAut::AutomatonType::Nft;
 	} else {
 		throw std::runtime_error(
-			"Unknown automaton type '" + section.type + "'; expected type to contain one of: NFA, AFA, NFT"
+			"Unknown automaton type '" + section.type + "'; expected type to contain one of: NFA, NFT"
 		);
 	}
 	aut.alphabet_type = get_alphabet_type(section.type);
@@ -617,8 +621,10 @@ std::ostream& std::operator<<(std::ostream& os, const mata::IntermediateAut& int
 	std::string type;
 	if (inter_aut.is_nfa()) {
 		type = "NFA";
+#ifdef MATA_AFA_SUPPORT
 	} else if (inter_aut.is_afa()) {
 		type = "AFA";
+#endif
 	} else {
 		type = "Unknown";
 	}

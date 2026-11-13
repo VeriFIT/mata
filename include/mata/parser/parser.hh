@@ -12,7 +12,7 @@
 #include <vector>
 
 /**
- * Parser from `.mata` format to automata (currently `Nfa` and `Afa` are supported).
+ * Parser from `.mata` format to automata (currently `Nfa` and `Nft` are supported).
  *
  * This includes parsing either from files or from other streams (strings, etc.).
  */

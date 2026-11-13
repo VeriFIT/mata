@@ -19,6 +19,9 @@
 namespace mata {
 
 class Mintermization {
+	// TODO(afa): Re-add the alternating automata support. The AFA code is kept, but not compiled: `MATA_AFA_SUPPORT`
+	//  is never defined.
+#ifdef MATA_AFA_SUPPORT
 	struct OptionalBdd {
 		enum class Type : std::uint8_t { NothingE, BddE };
 
@@ -36,11 +39,14 @@ class Mintermization {
 	};
 
 	using DisjunctStatesPair = std::pair<const FormulaGraph*, const FormulaGraph*>;
+#endif
 
 	Cudd bdd_mng_{}; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
 	utils::StringMap<BDD> symbol_to_bddvar_{};
 	std::unordered_map<const FormulaGraph*, BDD> trans_to_bddvar_{};
+#ifdef MATA_AFA_SUPPORT
 	std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states_{};
+#endif
 	/// BDDs created from transitions, in the order of their first appearance in the transitions.
 	std::vector<BDD> source_bdds_{};
 	/// Position of each BDD of @c source_bdds_ in that vector.
@@ -50,7 +56,9 @@ class Mintermization {
 	void add_source_bdd(const BDD& bdd);
 
 	void trans_to_bdd_nfa(const IntermediateAut& aut);
+#ifdef MATA_AFA_SUPPORT
 	void trans_to_bdd_afa(const IntermediateAut& aut);
+#endif
 
   public:
 	/**
@@ -101,6 +109,7 @@ class Mintermization {
 	 */
 	BDD symbol_bdd(std::string_view name, std::optional<bool> constant = std::nullopt);
 
+#ifdef MATA_AFA_SUPPORT
 	/**
 	 * Transforms a graph representing formula at transition to bdd.
 	 * This version of method is a more general one and accepts also
@@ -109,6 +118,7 @@ class Mintermization {
 	 * @return Resulting BDD
 	 */
 	OptionalBdd graph_to_bdd_afa(const FormulaGraph& graph);
+#endif
 
 	/**
 	 * Method mintermizes given automaton which has bitvector alphabet.
@@ -140,6 +150,7 @@ class Mintermization {
 		IntermediateAut& res, const IntermediateAut& aut, const std::vector<std::vector<size_t>>& minterms_of_source
 	);
 
+#ifdef MATA_AFA_SUPPORT
 	/**
 	 * The method for mintermization of alternating finite automaton using
 	 * a given set of minterms
@@ -150,6 +161,7 @@ class Mintermization {
 	void minterms_to_aut_afa(
 		IntermediateAut& res, const IntermediateAut& aut, const std::vector<std::vector<size_t>>& minterms_of_source
 	);
+#endif
 
 	/// The manager starts with a small cache, which CUDD grows on demand: allocating and clearing the default one
 	///  dominates the mintermization of a small automaton.

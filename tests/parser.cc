@@ -753,6 +753,22 @@ q1 \false q2
 		CHECK(inter_aut.transitions.at(1).second.children.at(0).node.is_false());
 	}
 
+	SECTION("alternating automata are not supported") {
+		const std::string file{"@AFA-explicit\n%States-enum q r\n%Alphabet-auto\n%Initial q\n%Final r\nq a & r\n"};
+		parsed = parse_mf(file);
+		CHECK_THROWS_WITH(
+			mata::IntermediateAut::parse_from_mf(parsed),
+			Catch::Matchers::ContainsSubstring("Unknown automaton type 'AFA-explicit'")
+		);
+		CHECK_THROWS_WITH(
+			mata::nfa::builder::parse_from_mata(file),
+			Catch::Matchers::ContainsSubstring("The type of input automaton is 'AFA-explicit'")
+		);
+	}
+
+	// TODO(afa): Re-add the alternating automata support. The AFA code is kept, but not compiled: `MATA_AFA_SUPPORT`
+	//  is never defined.
+#ifdef MATA_AFA_SUPPORT
 	SECTION("AFA explicit") {
 		std::string file = "@AFA-explicit\n"
 						   "%States-enum q r s t \"(r,s)\"\n"
@@ -856,6 +872,8 @@ q1 \false q2
 
 		REQUIRE(exception);
 	}
+#endif
+
 	SECTION("malformed transition with one token (#761)") {
 		std::string file = "@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0\n";
 		parsed = parse_mf(file);

@@ -143,12 +143,16 @@ class FormulaGraph {
 class IntermediateAut {
   public:
 	/**
-	 * Type of automaton. So far we support nondeterministic finite automata (NFA) and
-	 * alternating finite automata (AFA)
+	 * Type of automaton. So far we support nondeterministic finite automata (NFA) and nondeterministic finite
+	 *  transducers (NFT).
 	 */
 	enum class AutomatonType : std::uint8_t {
 		Nfa,
+	// TODO(afa): Re-add the alternating automata support. The AFA code is kept, but not compiled:
+	//  `MATA_AFA_SUPPORT` is never defined.
+#ifdef MATA_AFA_SUPPORT
 		Afa,
+#endif
 		Nft,
 	};
 
@@ -225,7 +229,9 @@ class IntermediateAut {
 	bool is_bitvector() const { return alphabet_type == AlphabetType::Bitvector; }
 	bool is_nft() const { return automaton_type == AutomatonType::Nft; }
 	bool is_nfa() const { return automaton_type == AutomatonType::Nfa; }
+#ifdef MATA_AFA_SUPPORT
 	bool is_afa() const { return automaton_type == AutomatonType::Afa; }
+#endif
 
 	std::unordered_set<std::string> get_enumerated_initials() const { return initial_formula.collect_node_names(); }
 	std::unordered_set<std::string> get_enumerated_finals() const { return final_formula.collect_node_names(); }
