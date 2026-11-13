@@ -44,6 +44,16 @@ cdef extern from "mata/nfa/builder.hh" namespace "mata::nfa::builder":
     cdef CNfa parse_from_mata_path "parse_from_mata" (cpath&, CAlphabet*, NameStateMap*, bool) except +
     cdef optional[CNfa] parse_explicit_from_mata(string, CAlphabet*, NameStateMap*, bool) except +
 
+    cdef enum CRead "mata::nfa::builder::BitvectorNfaReader::Read":
+        Rejected "mata::nfa::builder::BitvectorNfaReader::Read::Rejected"
+        Directly "mata::nfa::builder::BitvectorNfaReader::Read::Directly"
+        ByGeneralReader "mata::nfa::builder::BitvectorNfaReader::Read::ByGeneralReader"
+
+    cdef cppclass CBitvectorNfaReader "mata::nfa::builder::BitvectorNfaReader":
+        CBitvectorNfaReader() except +
+        CRead add(string, bool, NameStateMap*) except +
+        vector[CNfa] build(CAlphabet*) except +
+
 cdef extern from "mata/parser/parser.hh" namespace "mata::parser":
     cdef struct CParsedSection "mata::parser::ParsedSection":
         CParsedSection() except +
@@ -54,9 +64,3 @@ cdef extern from "mata/parser/parser.hh" namespace "mata::parser":
 
 cdef extern from "mata/parser/inter-aut.hh" namespace "mata::IntermediateAut":
     vector[CInterAut] parse_from_mf(Parsed&) except +
-
-cdef extern from "mata/parser/mintermization.hh" namespace "mata":
-    cdef cppclass CMintermization "mata::Mintermization":
-        CMintermization()
-        CInterAut  c_mintermize "mata::Mintermization::mintermize" (CInterAut&) except +
-        vector[CInterAut]  c_mintermize_vec "mata::Mintermization::mintermize" (vector[CInterAut]&) except +

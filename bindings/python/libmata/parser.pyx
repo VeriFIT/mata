@@ -44,10 +44,9 @@ def from_mata(src: str | list[str], alph.Alphabet alphabet):
     cdef CAlphabet * c_alphabet = NULL
     cdef optional[CNfa] explicit_aut
     cdef parser.ifstream fs
-    cdef vector[parser.CInterAut] inter_aut
-    cdef vector[parser.CInterAut] mintermized_inter_aut
-    cdef parser.CMintermization mintermization
-    cdef size_t next_inter_aut = 0
+    cdef parser.CBitvectorNfaReader bitvector_reader
+    cdef vector[CNfa] bitvector_auts
+    cdef size_t next_bitvector_aut = 0
 
     if alphabet is None:
         alphabet = IntAlphabet()
@@ -60,32 +59,33 @@ def from_mata(src: str | list[str], alph.Alphabet alphabet):
             parser.parse_from_mata_path(parser.cpath(src.encode('utf-8')), c_alphabet, NULL, True)
         )
         return result
-    # load multiple automata: the inputs the fast reader of explicit alphabets reads are loaded right away, the
-    #  others go through the general reader and are mintermized together
+    # load multiple automata: the inputs the fast reader of explicit alphabets reads are loaded right away, those with
+    #  a bitvector alphabet go to the bitvector reader, which mintermizes them together, and the others go through the
+    #  general reader
     automata = []
     for file in src:
         with open(file, 'rb') as handle:
-            explicit_aut = parser.parse_explicit_from_mata(handle.read(), c_alphabet, NULL, True)
+            content = handle.read()
+        explicit_aut = parser.parse_explicit_from_mata(content, c_alphabet, NULL, True)
         if explicit_aut.has_value():
             result = mata_nfa.Nfa()
             (<mata_nfa.Nfa>result).thisptr = make_shared[CNfa](explicit_aut.value())
             automata.append(result)
+        elif bitvector_reader.add(content, True, NULL) != parser.Rejected:
+            automata.append(None)
         else:
             fs = parser.ifstream(file.encode('utf-8'))
-            inter_aut.push_back(parser.parse_from_mf(parser.parse_mf(fs, True))[0])
-            automata.append(None)
-    if not inter_aut.empty() and inter_aut[0].is_bitvector():
-        mintermized_inter_aut = mintermization.c_mintermize_vec(inter_aut)
-    else:
-        mintermized_inter_aut = inter_aut
+            result = mata_nfa.Nfa()
+            parser.construct(
+                (<mata_nfa.Nfa>result).thisptr.get(), parser.parse_from_mf(parser.parse_mf(fs, True))[0], c_alphabet
+            )
+            automata.append(result)
+    if None in automata:
+        bitvector_auts = bitvector_reader.build(c_alphabet)
     for i, aut in enumerate(automata):
         if aut is None:
             result = mata_nfa.Nfa()
-            parser.construct(
-                (<mata_nfa.Nfa>result).thisptr.get(),
-                mintermized_inter_aut[next_inter_aut],
-                c_alphabet
-            )
-            next_inter_aut += 1
+            (<mata_nfa.Nfa>result).thisptr = make_shared[CNfa](bitvector_auts[next_bitvector_aut])
+            next_bitvector_aut += 1
             automata[i] = result
     return automata

@@ -2,29 +2,12 @@
 #include "mata/nfa/builder.hh"
 #include "mata/nfa/types.hh"
 #include "mata/parser/inter-aut.hh"
-#include <algorithm>
 #include <iterator>
 #include <optional>
 #include <string>
 #include <string_view>
 
 namespace {
-bool has_bitvector_alphabet(const std::vector<mata::IntermediateAut>& inter_auts) {
-	return std::ranges::any_of(inter_auts, [](const mata::IntermediateAut& inter_aut) {
-		return inter_aut.alphabet_type == mata::IntermediateAut::AlphabetType::Bitvector;
-	});
-}
-
-/// `builder::construct()` reads the operands of a transition as literal symbol names, so a bitvector
-///  automaton has to be mintermized before it is constructed. Without mintermization the benchmark
-///  would silently measure a different automaton, hence this combination is rejected.
-bool reject_unmintermized_bitvector(const std::vector<mata::IntermediateAut>& inter_auts, const bool mintermize) {
-	if (mintermize or !has_bitvector_alphabet(inter_auts)) { return false; }
-	std::cerr << "error: the input uses a bitvector alphabet, which cannot be constructed without "
-				 "mintermization; set `MINTERMIZE_AUTOMATA` to `true` for such inputs\n";
-	return true;
-}
-
 /// Announce on stderr, once per process, which build produced this binary. A benchmark run against
 ///  a Debug `libmata.a` measures assertion checks at `-O0`, and nothing in the result CSV would
 ///  otherwise say so. stderr, not stdout: stdout carries the `name: seconds` lines pycobench parses.
@@ -58,10 +41,11 @@ int load_automata(
 	mata::OnTheFlyAlphabet& alphabet,
 	const bool mintermize_automata
 ) {
-	// The inputs the fast reader of explicit alphabets reads are constructed right away; the others go through the
-	//  general reader, and those with a bitvector alphabet are mintermized together.
+	// The inputs the fast reader of explicit alphabets reads are constructed right away. Bitvector inputs go to the
+	//  bitvector reader, which mintermizes them together; the others go through the general reader.
 	std::vector<std::optional<Nfa>> loaded;
-	std::vector<mata::IntermediateAut> inter_auts;
+	mata::nfa::builder::BitvectorNfaReader bitvector_reader;
+	bool has_bitvector{false};
 	TIME_BEGIN(parsing);
 	try {
 		for (const std::string& filename : filenames) {
@@ -73,38 +57,39 @@ int load_automata(
 			const std::string input{std::istreambuf_iterator<char>{file}, std::istreambuf_iterator<char>{}};
 			loaded.push_back(mata::nfa::builder::parse_explicit_from_mata(input, &alphabet, nullptr, true));
 			if (loaded.back().has_value()) { continue; }
+			if (bitvector_reader.add(input, true) != mata::nfa::builder::BitvectorNfaReader::Read::Rejected) {
+				has_bitvector = true;
+				continue;
+			}
+			std::vector<mata::IntermediateAut> inter_auts;
 			if (load_intermediate_automaton(filename, inter_auts) != EXIT_SUCCESS) {
 				std::cerr << "Could not load intermediate autotomaton from \'" << filename << "'\n";
 				return EXIT_FAILURE;
 			}
-			if (!inter_auts.back().is_bitvector()) {
-				loaded.back() = mata::nfa::builder::construct(inter_auts.back(), &alphabet);
-				inter_auts.pop_back();
-			}
+			loaded.back() = mata::nfa::builder::construct(inter_auts.back(), &alphabet);
 		}
 	} catch (const std::exception& ex) {
 		std::cerr << "error: " << ex.what() << "\n";
 		return EXIT_FAILURE;
 	}
 	TIME_END(parsing);
-	if (reject_unmintermized_bitvector(inter_auts, mintermize_automata)) { return EXIT_FAILURE; }
+	// The bitvector symbols exist only as minterms, so without mintermization the benchmark would silently measure a
+	//  different automaton; hence this combination is rejected.
+	if (has_bitvector && !mintermize_automata) {
+		std::cerr << "error: the input uses a bitvector alphabet, which cannot be constructed without "
+					 "mintermization; set `MINTERMIZE_AUTOMATA` to `true` for such inputs\n";
+		return EXIT_FAILURE;
+	}
 	try {
-		std::vector<mata::IntermediateAut> mintermized;
-		if (!inter_auts.empty()) {
-			mata::Mintermization mintermization;
+		std::vector<Nfa> mintermized;
+		if (has_bitvector) {
 			TIME_BEGIN(mintermization);
-			mintermized = mintermization.mintermize(inter_auts);
+			mintermized = bitvector_reader.build(&alphabet);
 			TIME_END(mintermization);
 		}
 		auto next_mintermized{mintermized.begin()};
 		for (std::optional<Nfa>& aut : loaded) {
-			if (aut.has_value()) {
-				auts.push_back(std::move(*aut));
-			} else {
-				// Mintermization always rewrites the alphabet to Explicit (see Mintermization::mintermize()).
-				assert(next_mintermized->alphabet_type == mata::IntermediateAut::AlphabetType::Explicit);
-				auts.push_back(mata::nfa::builder::construct(*next_mintermized++, &alphabet));
-			}
+			auts.push_back(aut.has_value() ? std::move(*aut) : std::move(*next_mintermized++));
 		}
 		return EXIT_SUCCESS;
 	} catch (const std::exception& ex) {
