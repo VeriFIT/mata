@@ -72,7 +72,7 @@ std::optional<size_t> mata::parser::StateNameMap::number_of(const std::string_vi
 	while (digits_begin > 0 && name[digits_begin - 1] >= '0' && name[digits_begin - 1] <= '9') { --digits_begin; }
 	const std::string_view digits{name.substr(digits_begin)};
 	// Leading zeros would map two names to one number.
-	if (digits.empty() || (digits.size() > 1 && digits.front() == '0') || digits.size() > 18) { return std::nullopt; }
+	if (digits.empty() || (digits.size() > 1 && digits.front() == '0')) { return std::nullopt; }
 	const std::string_view prefix{name.substr(0, digits_begin)};
 	if (!prefix_.has_value()) {
 		prefix_.emplace(prefix);
@@ -80,8 +80,12 @@ std::optional<size_t> mata::parser::StateNameMap::number_of(const std::string_vi
 		return std::nullopt;
 	}
 	size_t number{0};
-	for (const char digit : digits) { number = (number * 10) + static_cast<size_t>(digit - '0'); }
-	if (number > max_number_) { return std::nullopt; }
+	for (const char digit : digits) {
+		// Checked before the number can wrap around and so merge two names.
+		const auto value{static_cast<size_t>(digit - '0')};
+		if (number > max_number_ / 10 || value > max_number_ - (number * 10)) { return std::nullopt; }
+		number = (number * 10) + value;
+	}
 	return number;
 }
 

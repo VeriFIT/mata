@@ -343,6 +343,16 @@ TEST_CASE("parse_explicit_from_mata() reads what the general reader reads") {
 		CHECK(explicit_states.at("5") == 3);
 		check_same_up_to_state_names(*explicit_nfa, explicit_states, general_nfa, general_states);
 	}
+
+	SECTION("numbers too large for a size_t") {
+		// 2^32 and 2^64 wrap around to 0, the number of q0, in a 32-bit and a 64-bit size_t.
+		check_explicit_reader_reads(
+			"@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q4294967296\nq0 a q4294967296\n"
+		);
+		check_explicit_reader_reads(
+			"@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q18446744073709551616\nq0 a q18446744073709551616\n"
+		);
+	}
 }
 
 TEST_CASE("parse_explicit_from_mata() leaves the general format to the general reader") {
