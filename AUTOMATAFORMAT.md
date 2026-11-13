@@ -160,10 +160,12 @@ We want to assign attributes to states, symbols, nodes, transducer tracks, trans
 ## How the Mata library reads the format
 
 The loaders of the Mata library (`mata::nfa::builder::parse_from_mata()`, `mata::nft::builder::parse_from_mata()`,
-and the NFA loaders of the Python and Rust bindings) give each section to a fast reader when the section stays within
-the subset the reader covers, and to the general reader (`mata::parser::parse_mf()` followed by
-`mata::IntermediateAut` and `construct()`) otherwise. Both read the same automaton, up to the numbering of states and
-of the minterms of bitvector alphabets.
+and the loaders of the Python and Rust bindings) give each section to a fast reader when the section stays within the
+subset the reader covers, and to the general reader otherwise. Both read the same automaton, up to the numbering of
+states and of the minterms of bitvector alphabets. The general reader parses the section with
+`mata::parser::parse_mf()`. For NFAs, `mata::IntermediateAut` then parses the formulas of the section and
+`construct()` builds the automaton from it. For NFTs, `construct()` builds the transducer from the parsed section
+directly, as its `mata::IntermediateAut` overload ignores `%Levels` and `%LevelsNum`.
 
 - **Explicit reader** (`mata::nfa::builder::parse_explicit_from_mata()`, and its counterpart for NFTs): a single
   `@NFA` or `@NFA-explicit` section (`@NFT` or `@NFT-explicit` for NFTs) in which
