@@ -6,6 +6,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -243,7 +244,6 @@ TEST_CASE("mata::nfa::Nfa::print_to_regex() in the readable mode is never longer
 }
 
 TEST_CASE("mata::nfa::Nfa::print_to_regex() to a stream prints the whole regex") {
-	// A fast-mode regex longer than the blocks it is passed on to the stream in.
 	Nfa nfa{2, {0}, {1}};
 	for (Symbol symbol{0x80}; symbol < 0xD8'00; symbol += 2) { nfa.delta.add(0, symbol, 1); }
 	const std::string regex{nfa.print_to_regex(RegexPrintMode::Fast)};
@@ -253,4 +253,32 @@ TEST_CASE("mata::nfa::Nfa::print_to_regex() to a stream prints the whole regex")
 		nfa.print_to_regex(stream, mode);
 		CHECK(stream.str() == nfa.print_to_regex(mode));
 	}
+}
+
+TEST_CASE("mata::nfa::Nfa::print_to_regex() to a stream writes multiple blocks and the trailing partial block") {
+	// Each character node gives stream output a flushing opportunity; a character class appends all its text at once.
+	Nfa nfa{1, {0}, {}};
+	State previous{0};
+	constexpr Symbol length{140'000};
+	for (Symbol symbol{0}; symbol < length; ++symbol) {
+		const State target{nfa.add_state()};
+		nfa.delta.add(previous, 'a' + symbol % 26, target);
+		previous = target;
+	}
+	nfa.final = {previous};
+	const std::string regex{nfa.print_to_regex(RegexPrintMode::Fast)};
+	REQUIRE(regex.size() > 2 * (size_t{1} << 16U));
+
+	struct CountingBuffer final : std::stringbuf {
+		std::vector<std::streamsize> nonempty_writes{};
+		std::streamsize xsputn(const char* const text, const std::streamsize size) override {
+			if (size > 0) { nonempty_writes.push_back(size); }
+			return std::stringbuf::xsputn(text, size);
+		}
+	} buffer;
+	std::ostream stream{&buffer};
+	nfa.print_to_regex(stream, RegexPrintMode::Fast);
+	INFO("nonempty stream writes: " << buffer.nonempty_writes.size());
+	CHECK(buffer.nonempty_writes.size() > 1);
+	CHECK(buffer.str() == regex);
 }
