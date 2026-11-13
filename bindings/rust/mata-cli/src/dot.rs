@@ -520,10 +520,10 @@ fn transition_symbols(
 		.collect()
 }
 
-/// The entries of a label: an edge without one is the symbol 0, the label lists entries separated by
-/// commas, and an entry `[a-c]` names every character from `a` to `c`, as Mata writes with intervals
-/// (`[a-c],e`). `\\`, `\"`, `\,`, `\[` and `\<` are the escaped character, which then has no
-/// meaning in the label's structure.
+/// The entries of a label: an edge without one is the symbol 0, and the label lists entries separated
+/// by commas. An entry that starts with an unescaped `[` is a range up to the `]` that ends the entry,
+/// commas included, as Mata writes runs of consecutive symbols with intervals (`[,-.],e`). `\\`, `\"`,
+/// `\,`, `\[` and `\<` are the escaped character, which then has no meaning in the label's structure.
 fn label_items(label: Option<&str>, engine: &Engine) -> Result<Vec<Item>, Error> {
 	let Some(label) = label else {
 		return Ok(vec![Item::Number(mata::Symbol::new(0))]);
@@ -533,65 +533,109 @@ fn label_items(label: Option<&str>, engine: &Engine) -> Result<Vec<Item>, Error>
 			"an edge with an empty label is not allowed".into(),
 		));
 	}
+	let unescape = |c: Option<char>| match c {
+		Some(literal @ ('\\' | '"' | ',' | '[' | '<')) => Ok(literal),
+		other => Err(Error::plain(format!(
+			"label '{label}' has the unsupported escape '\\{}'",
+			other.map(String::from).unwrap_or_default()
+		))),
+	};
 	let mut items = Vec::new();
 	let mut name = String::new();
 	let mut escaped = false;
-	let mut chars = label.chars();
+	let mut after_range = false;
+	let mut chars = label.chars().peekable();
 	while let Some(c) = chars.next() {
 		match c {
-			'\\' => match chars.next() {
-				Some(literal @ ('\\' | '"' | ',' | '[' | '<')) => {
-					name.push(literal);
-					escaped = true;
+			'\\' => {
+				name.push(unescape(chars.next())?);
+				escaped = true;
+			}
+			'[' if name.is_empty() && !escaped => {
+				let mut range = String::new();
+				loop {
+					match chars.next() {
+						Some('\\') => range.push(unescape(chars.next())?),
+						Some(']') if matches!(chars.peek(), None | Some(',')) => break,
+						Some(c) => range.push(c),
+						None => {
+							return Err(Error::plain(format!(
+								"label '{label}' has a range without its closing ']'"
+							)));
+						}
+					}
 				}
-				other => {
-					return Err(Error::plain(format!(
-						"label '{label}' has the unsupported escape '\\{}'",
-						other.map(String::from).unwrap_or_default()
-					)));
-				}
-			},
+				range_items(&range, engine, &mut items)?;
+				after_range = chars.next().is_none();
+			}
 			',' => {
-				entry_items(&name, escaped, engine, &mut items)?;
+				items.push(label_item(&name, escaped, engine)?);
 				name.clear();
 				escaped = false;
 			}
 			_ => name.push(c),
 		}
 	}
-	entry_items(&name, escaped, engine, &mut items)?;
+	if !after_range {
+		items.push(label_item(&name, escaped, engine)?);
+	}
 	Ok(items)
 }
 
-/// The symbols of one label entry: every character of an unescaped range `[a-c]`, or one symbol.
-fn entry_items(
-	entry: &str,
-	escaped: bool,
-	engine: &Engine,
-	items: &mut Vec<Item>,
-) -> Result<(), Error> {
-	let Some(range) = entry
-		.strip_prefix('[')
-		.and_then(|e| e.strip_suffix(']'))
-		.filter(|_| !escaped)
-	else {
-		items.push(label_item(entry, escaped, engine)?);
-		return Ok(());
+/// The symbols of a range `[from-to]`. Mata merges consecutive symbol numbers, so when both ends are
+/// known symbols, the range is every symbol number between them; ends the script alphabet does not
+/// know are single characters, as Mata writes with ASCII labels, and the range is every character
+/// between them. The `-` that splits the range is the one that gives such ends.
+fn range_items(range: &str, engine: &Engine, items: &mut Vec<Item>) -> Result<(), Error> {
+	let symbol = |item: &Item| match item {
+		Item::Known(symbol) | Item::Number(symbol) => Some(*symbol),
+		Item::Name(_) => None,
 	};
-	let bounds: Vec<&str> = range.split('-').collect();
-	if bounds.len() != 2 || bounds[0].len() != 1 || bounds[1].len() != 1 {
-		return Err(Error::plain(format!(
-			"range '{entry}' must be [a-c] of single characters"
-		)));
+	let splits = range
+		.char_indices()
+		.filter(|&(index, c)| c == '-' && index > 0 && index + 1 < range.len())
+		.map(|(index, _)| (&range[..index], &range[index + 1..]));
+	for (from, to) in splits.clone() {
+		let (Ok(start), Ok(end)) = (
+			label_item(from, false, engine),
+			label_item(to, false, engine),
+		) else {
+			continue;
+		};
+		if let (Some(start), Some(end)) = (symbol(&start), symbol(&end))
+			&& start != mata::Symbol::EPSILON
+			&& end != mata::Symbol::EPSILON
+		{
+			if start > end {
+				return Err(Error::plain(format!("range '[{range}]' is backwards")));
+			}
+			for value in start.value()..=end.value() {
+				let symbol = mata::Symbol::new(value);
+				items.push(match engine.script_alphabet.name(symbol) {
+					Some(_) => Item::Known(symbol),
+					None => Item::Number(symbol),
+				});
+			}
+			return Ok(());
+		}
 	}
-	let (start, end) = (bounds[0].as_bytes()[0], bounds[1].as_bytes()[0]);
-	if start > end {
-		return Err(Error::plain(format!("range '{entry}' is backwards")));
+	for (from, to) in splits {
+		let (mut from, mut to) = (from.chars(), to.chars());
+		if let (Some(start), None, Some(end), None) =
+			(from.next(), from.next(), to.next(), to.next())
+		{
+			if start > end {
+				return Err(Error::plain(format!("range '[{range}]' is backwards")));
+			}
+			for c in start..=end {
+				items.push(label_item(&c.to_string(), true, engine)?);
+			}
+			return Ok(());
+		}
 	}
-	for byte in start..=end {
-		items.push(label_item(&char::from(byte).to_string(), false, engine)?);
-	}
-	Ok(())
+	Err(Error::plain(format!(
+		"range '[{range}]' must run between two symbols the script alphabet knows or two single characters"
+	)))
 }
 
 /// One label entry; an `escaped` one is always a name.

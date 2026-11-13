@@ -297,8 +297,12 @@ The symbol label is the reverse of the {ref}`script alphabet <script-alphabets>`
 - `<eps>` is epsilon, `<dntcr>` is the don't-care symbol, and `<n>` is the symbol number `n`, even when an escaped
   `\<n>` has made `<n>` a name. A number `n` that is not a known name is symbol `n` too, as the library writes a
   symbol without a name. A new name never takes the number of a symbol the graph lists.
-- A range `[a-c]` expands to every symbol it names, also as one entry of a list, as in `[a-c],e` or `[a-c],[x-z]`;
-  `a,b` expands to the two symbols `a` and `b`.
+- A range `[from-to]`, as Mata writes a run of consecutive symbols, is one entry of a list, commas inside it included,
+  as in `[a-c],e` or `[,-.]`. When both ends are symbols the script alphabet knows, or numbers such as `[10-12]`, it is
+  every symbol number between them; otherwise both ends must be single characters, as with ASCII labels, and it is
+  every character between them. A DOT file does not carry its alphabet, so a range Mata wrote between names that are
+  not consecutive characters, such as `[a-z]` for the symbols `a`, `b` and `z`, reads back right only when the script
+  alphabet already knows those names. `a,b` expands to the two symbols `a` and `b`.
 - An empty label is an error.
 - `\\`, `\"`, `\,`, `\[` and `\<` are the characters `\`, `"`, `,`, `[` and `<` inside a name, as Graphviz shows
   them; any other escape is an error. The writers escape these characters in names and write a name of digits or with
@@ -402,8 +406,9 @@ language page specifies but this build does not have are listed in the
 - The command tree is one module per subcommand; the script lexer, parser, checker and evaluator are one module each,
   used by all of `run`, `check` and `repl`.
 - The evaluator keeps one alphabet for the whole run and maps every symbol name through it, as the script language
-  requires; automata loaded together are parsed through the same alphabet, so bitvector alphabets are mintermized
-  together.
+  requires; the bitvector sections of the inputs loaded together are parsed through the same alphabet, so they are
+  mintermized together, and their other sections are parsed by kind. A `.mata` symbol that is a number the alphabet
+  has no name for is the symbol of that number in every parse, as it is printed.
 - The DOT reader is a new parser in the CLI crate, because the library has none; it rejects everything outside
   [DOT conventions](#dot-conventions) and writes only the `.mata` format.
 - `mata nfa`, `mata nft`, `mata strings` and `mata convert` call the same evaluator functions as the script

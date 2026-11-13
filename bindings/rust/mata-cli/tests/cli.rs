@@ -1540,7 +1540,7 @@ fn a_numbered_dot_label_reads_back_and_keeps_its_number_from_names() {
 	);
 	let mata_text = stdout(&mata(["convert", "--to", "mata", &nfa]));
 	let dot = stdout(&mata(["convert", &nfa]));
-	assert!(dot.contains("[label=\"1\"]"), "{dot}");
+	assert!(dot.contains("[label=\"3\"]"), "{dot}");
 	let back = dot_to_mata(&dot);
 	assert_eq!(status(&back), 0, "{}", stderr(&back));
 	assert_eq!(stdout(&back), mata_text);
@@ -2943,6 +2943,19 @@ fn a_dot_label_expands_each_range_it_lists() {
 		"{}",
 		stdout(&output)
 	);
+	// Mata writes the comma, hyphen and period as one range, and a run of unnamed symbols as numbers.
+	for (label, symbols) in [
+		("[,-.]", "q0 , q0\nq0 - q0\nq0 . q0\n"),
+		("[10-12]", "q0 10 q0\nq0 11 q0\nq0 12 q0\n"),
+	] {
+		let output = dot_to_mata(&dot(label));
+		assert_eq!(status(&output), 0, "{label}: {}", stderr(&output));
+		assert!(
+			stdout(&output).ends_with(symbols),
+			"{label}: {}",
+			stdout(&output)
+		);
+	}
 }
 
 #[test]
@@ -2976,4 +2989,28 @@ fn each_section_of_an_input_must_be_the_kind_its_declaration_takes() {
 	);
 	assert_eq!(status(&output), 0, "{}", stderr(&output));
 	assert_eq!(stdout(&output), "2\n2\n");
+	let bits = workspace.file("bits.mata", &format!("{BITS_A}{NFT}"));
+	let output = run_script(
+		"(declare-input a Nfa)\n(declare-input b Nft)\n(print (nft:number-of-states b))",
+		true,
+		&[&bits],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "2\n");
+}
+
+#[test]
+fn a_number_is_the_same_symbol_in_every_section_and_load() {
+	let workspace = Workspace::new("numeric-symbols");
+	let section = |symbol: &str| NFA.replace(" a ", &format!(" {symbol} "));
+	let two = workspace.file("two.mata", &format!("{}{}", section("0"), section("1")));
+	let one = workspace.file("one.mata", &section("1"));
+	let output = run_script(
+		"(declare-input a Nfa)\n(declare-input b Nfa)\n(declare-input c Nfa)\n\
+		 (print (nfa:intersection-empty? a b))\n(print (nfa:equivalent? b c))",
+		true,
+		&[&two, &one],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "true\ntrue\n");
 }

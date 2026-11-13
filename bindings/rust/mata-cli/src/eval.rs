@@ -165,8 +165,17 @@ pub(crate) enum Sink {
 enum Ahead {
 	/// Its text, parsed when it is loaded.
 	Text(String),
-	/// Its automata, parsed with the bitvector automata of the other inputs so that they share minterms.
-	Bits(Vec<Rc<Nfa>>),
+	/// Its sections, once the bitvector ones are parsed with the bitvector automata of the other inputs
+	/// so that they share minterms; the others are parsed when the input is loaded.
+	Sections(Vec<Section>),
+}
+
+/// One section of an input read ahead.
+enum Section {
+	/// A bitvector NFA, mintermized with the other inputs.
+	Bits(Rc<Nfa>),
+	/// Any other section, parsed as the kind it is.
+	Text(String),
 }
 
 pub(crate) struct Engine {
@@ -1442,16 +1451,32 @@ impl Engine {
 			self.parse_bits_ahead()?;
 		}
 		let text = match position.map(|index| &self.ahead[index].1) {
-			Some(Ahead::Bits(automata)) => {
-				if kind == "nft" {
-					return Err(Error::plain(format!(
-						"{path}: a transducer cannot have a bitvector alphabet"
-					)));
-				}
-				return Ok(automata
+			Some(Ahead::Sections(sections)) => {
+				let sections: Vec<_> = sections
 					.iter()
-					.map(|nfa| of_kind(kind, Value::Nfa(Rc::clone(nfa))))
-					.collect());
+					.map(|section| match section {
+						Section::Bits(nfa) => Ok(Rc::clone(nfa)),
+						Section::Text(text) => Err(text.clone()),
+					})
+					.collect();
+				let mut values = Vec::with_capacity(sections.len());
+				for section in sections {
+					match section {
+						Ok(_) if kind == "nft" => {
+							return Err(Error::plain(format!(
+								"{path}: a transducer cannot have a bitvector alphabet"
+							)));
+						}
+						Ok(nfa) => values.push(of_kind(kind, Value::Nfa(nfa))),
+						Err(text) => values.extend(
+							self.timed("parsing", |engine| engine.parse_all(&text, kind))
+								.map_err(|error| {
+									Error::plain(format!("{path}: {}", error.message))
+								})?,
+						),
+					}
+				}
+				return Ok(values);
 			}
 			Some(Ahead::Text(text)) => text.clone(),
 			None => read_text(path)?,
@@ -1467,7 +1492,7 @@ impl Engine {
 		if let Some((_, ahead)) = self.ahead.iter().find(|(known, _)| known == path) {
 			return Ok(match ahead {
 				Ahead::Text(text) => sections(text),
-				Ahead::Bits(automata) => automata.len(),
+				Ahead::Sections(sections) => sections.len(),
 			});
 		}
 		let text = read_text(path)?;
@@ -1476,7 +1501,8 @@ impl Engine {
 		Ok(count)
 	}
 
-	/// Parses the bitvector inputs read ahead in one call, which mintermizes them together.
+	/// Parses the bitvector sections of the inputs read ahead in one call, which mintermizes them
+	/// together; their other sections wait until their input is loaded.
 	fn parse_bits_ahead(&mut self) -> Result<(), Error> {
 		let mut shared = Vec::new();
 		let mut paths = Vec::new();
@@ -1485,10 +1511,16 @@ impl Engine {
 			if let Ahead::Text(input) = ahead
 				&& holds_bits(input)
 			{
-				shared.push((index, sections(input)));
+				let mut bits = 0;
+				for section in split_sections(input) {
+					if holds_bits(section) {
+						text.push_str(section);
+						text.push('\n');
+						bits += 1;
+					}
+				}
+				shared.push((index, bits));
 				paths.push(path.as_str());
-				text.push_str(input);
-				text.push('\n');
 			}
 		}
 		let paths = paths.join(", ");
@@ -1498,14 +1530,31 @@ impl Engine {
 					.map_err(|e| Error::plain(e.to_string()))
 			})
 			.map_err(|error| Error::plain(format!("{paths}: {}", error.message)))?;
-		if parsed.len() != shared.iter().map(|&(_, count)| count).sum::<usize>() {
+		if parsed.len() != shared.iter().map(|&(_, bits)| bits).sum::<usize>() {
 			return Err(Error::plain(format!(
 				"{paths}: cannot tell which file each automaton comes from"
 			)));
 		}
 		let mut automata = parsed.into_iter().map(Rc::new);
-		for (index, count) in shared {
-			self.ahead[index].1 = Ahead::Bits(automata.by_ref().take(count).collect());
+		for (index, _) in shared {
+			let Ahead::Text(input) = &self.ahead[index].1 else {
+				unreachable!("only unparsed inputs are shared");
+			};
+			let sections = split_sections(input)
+				.into_iter()
+				.map(|section| {
+					if holds_bits(section) {
+						Section::Bits(
+							automata
+								.next()
+								.expect("one parsed automaton per bitvector section"),
+						)
+					} else {
+						Section::Text(section.to_owned())
+					}
+				})
+				.collect();
+			self.ahead[index].1 = Ahead::Sections(sections);
 		}
 		Ok(())
 	}

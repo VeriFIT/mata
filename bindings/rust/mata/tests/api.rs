@@ -781,3 +781,18 @@ fn readme_example() -> Result<(), Error> {
 	assert!(a.accepts(&word_from_bytes("aabb")));
 	Ok(())
 }
+
+/// A number the alphabet has no name for is the symbol of that number in every parse, as it is printed.
+#[test]
+fn a_number_parses_as_its_own_symbol_in_every_parse() -> Result<(), Error> {
+	let section = |symbol: &str| {
+		format!("@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 {symbol} q1\n")
+	};
+	let mut sigma = Alphabet::from_names(["a"])?;
+	let five = Nfa::parse_mata(&section("5"), &mut sigma)?;
+	let one = Nfa::parse_mata(&section("1"), &mut sigma)?;
+	assert!(five.accepts(&[Symbol::new(5)]) && one.accepts(&[Symbol::new(1)]));
+	assert!(Nfa::parse_mata(&section("5"), &mut sigma)?.is_equivalent_to(&five));
+	assert_eq!((sigma.name(Symbol::new(5)), sigma.len()), (None, 3));
+	Ok(())
+}

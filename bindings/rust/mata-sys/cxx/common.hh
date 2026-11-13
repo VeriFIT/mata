@@ -99,6 +99,15 @@ std::vector<mata::IntermediateAut> mintermize(const std::vector<const mata::Inte
 /// Parses the automaton sections of a `.mata` text, mintermizing the bit-vector sections together.
 std::vector<mata::IntermediateAut> parse_sections(rust::Str text);
 
+/// Mata's on-the-fly alphabet, except that a new name of decimal digits is the symbol of that number when
+/// no name has it: the Rust side prints an unnamed symbol as its number, so a number reads back as itself
+/// in every parse, not as whatever symbol happens to be next.
+class NumberingAlphabet final : public mata::OnTheFlyAlphabet {
+  public:
+	using OnTheFlyAlphabet::OnTheFlyAlphabet;
+	Symbol translate_symb(const std::string& str) override;
+};
+
 /// The parser's alphabet: integers, or the names of a Rust `Alphabet`, extended on the fly.
 class ParseAlphabet {
   public:
@@ -118,7 +127,7 @@ class ParseAlphabet {
 	bool numeric_;
 	Symbol first_new_symbol_;
 	mata::IntAlphabet integers_ = {};
-	mata::OnTheFlyAlphabet on_the_fly_;
+	NumberingAlphabet on_the_fly_;
 	std::unordered_set<std::string> known_names_ = {};
 };
 

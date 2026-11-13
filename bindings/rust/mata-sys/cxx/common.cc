@@ -91,6 +91,22 @@ void check_delta(const mata::Automaton& automaton) {
 	}
 }
 
+Symbol NumberingAlphabet::translate_symb(const std::string& str) {
+	// More than 10 digits is more than any symbol, and too long for stoull.
+	if (str.empty() || str.size() > 10 ||
+		!std::ranges::all_of(str, [](const char c) { return c >= '0' && c <= '9'; }) ||
+		get_symbol_map().contains(str)) {
+		return OnTheFlyAlphabet::translate_symb(str);
+	}
+	const auto number{std::stoull(str)};
+	if (number >= mata::nft::DONT_CARE ||
+		std::ranges::any_of(get_symbol_map(), [&](const auto& entry) { return entry.second == number; })) {
+		return OnTheFlyAlphabet::translate_symb(str);
+	}
+	add_new_symbol(str, static_cast<Symbol>(number));
+	return static_cast<Symbol>(number);
+}
+
 ParseAlphabet::ParseAlphabet(
 	const bool numeric_symbols,
 	const rust::Slice<const rust::String> names,
@@ -115,7 +131,8 @@ void ParseAlphabet::report_new_names(rust::Vec<rust::String>& new_names, rust::V
 	auto added = std::vector<std::pair<Symbol, std::string>>();
 	for (const auto& [name, symbol] : on_the_fly_.get_symbol_map()) {
 		if (known_names_.contains(name)) { continue; }
-		if (symbol < first_new_symbol_ || symbol >= mata::nft::DONT_CARE) {
+		// A number that is its own symbol may lie below the first new symbol, in a gap of the alphabet.
+		if ((symbol < first_new_symbol_ && name != std::to_string(symbol)) || symbol >= mata::nft::DONT_CARE) {
 			throw std::runtime_error("the alphabet has no symbol left for the name '" + name + "'");
 		}
 		added.emplace_back(symbol, name);
