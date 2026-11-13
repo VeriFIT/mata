@@ -1142,7 +1142,7 @@ impl<'a> Checker<'a> {
 			return self.call_head(head, arguments, keywords, expression, self_name);
 		}
 		if let Some(sort) = self.expression(function, self_name)
-			&& !accepts("Function", &sort)
+			&& !may_be_function(&sort)
 		{
 			self.reject(
 				function,
@@ -1193,7 +1193,7 @@ impl<'a> Checker<'a> {
 		self.own_reference(head);
 		let sort = self.sort_of(head);
 		if let Some(sort) = &sort
-			&& !accepts("Function", sort)
+			&& !may_be_function(sort)
 		{
 			self.reject(
 				expression,
@@ -1568,7 +1568,7 @@ impl<'a> Checker<'a> {
 			self.operand(operation, 0, given, piped, step);
 		} else {
 			if let Some(sort) = self.sort_of(name)
-				&& !accepts("Function", &sort)
+				&& !may_be_function(&sort)
 			{
 				self.reject(step, "a pipeline step must be a function".into());
 			} else if let Some(expected) = self.arity_of(name)
@@ -1600,6 +1600,14 @@ impl<'a> Checker<'a> {
 			None
 		}
 	}
+}
+
+/// Whether a value of `sort` may be a function: an `(Option Function)` is one unless it is `none`, which
+/// the evaluator rejects when it is applied.
+fn may_be_function(sort: &str) -> bool {
+	accepts("Function", sort)
+		|| compound(sort)
+			.is_some_and(|(name, inner)| name == "Option" && accepts("Function", inner))
 }
 
 /// Splits `(List Nfa)` into `("List", "Nfa")`; `None` for a simple sort.

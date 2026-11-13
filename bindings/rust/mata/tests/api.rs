@@ -808,5 +808,10 @@ fn a_number_whose_symbol_is_named_keeps_the_symbol_it_got() -> Result<(), Error>
 	assert!(!zero.accepts(&[Symbol::new(0)]));
 	Nfa::parse_mata(&section("b"), &mut sigma)?;
 	assert!(Nfa::parse_mata(&section("0"), &mut sigma)?.is_equivalent_to(&zero));
+	// A number with a leading zero is a name, so it never takes the free symbol 3 below the symbol 5.
+	Nfa::parse_mata(&section("5"), &mut sigma)?;
+	let leading = Nfa::parse_mata(&section("03"), &mut sigma)?;
+	assert!(!leading.accepts(&[Symbol::new(3)]));
+	assert!(Nfa::parse_mata(&section("03"), &mut sigma)?.is_equivalent_to(&leading));
 	Ok(())
 }

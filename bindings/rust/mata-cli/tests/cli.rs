@@ -2979,6 +2979,15 @@ fn check_rejects_a_pipeline_step_that_is_not_a_function() {
 		"{}",
 		stderr(&output)
 	);
+	// A value that may be a function is applied, both as a step and as the head of a call.
+	let output = run_script(
+		"(define (id x) x)\n(define f (Option Function) (id (lambda (x) (+ x 1))))\n\
+		 (print (-> 2 f))\n(print (f 3))",
+		true,
+		&[],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "3\n4\n");
 }
 
 #[test]

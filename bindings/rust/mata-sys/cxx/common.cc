@@ -92,8 +92,9 @@ void check_delta(const mata::Automaton& automaton) {
 }
 
 Symbol NumberingAlphabet::translate_symb(const std::string& str) {
-	// More than 10 digits is more than any symbol, and too long for stoull.
-	if (str.empty() || str.size() > 10 ||
+	// More than 10 digits is more than any symbol, and too long for stoull. A number is written without
+	// leading zeros, so `01` is a name, as it is to Mata.
+	if (str.empty() || str.size() > 10 || (str.size() > 1 && str[0] == '0') ||
 		!std::ranges::all_of(str, [](const char c) { return c >= '0' && c <= '9'; }) ||
 		get_symbol_map().contains(str)) {
 		return *taken_.insert(OnTheFlyAlphabet::translate_symb(str)).first;
