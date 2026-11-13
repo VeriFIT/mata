@@ -12,6 +12,7 @@
 #include <string_view>
 
 #include "mata/cudd/cuddObj.hh"
+#include "mata/utils/utils.hh"
 
 #include "inter-aut.hh"
 
@@ -37,12 +38,7 @@ class Mintermization {
 	using DisjunctStatesPair = std::pair<const FormulaGraph*, const FormulaGraph*>;
 
 	Cudd bdd_mng_{}; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
-	/// Hashes names given as any string type, so that a @c std::string_view finds a @c std::string key.
-	struct NameHash {
-		using is_transparent = void;
-		size_t operator()(const std::string_view name) const { return std::hash<std::string_view>{}(name); }
-	};
-	std::unordered_map<std::string, BDD, NameHash, std::equal_to<>> symbol_to_bddvar_{};
+	utils::StringMap<BDD> symbol_to_bddvar_{};
 	std::unordered_map<const FormulaGraph*, BDD> trans_to_bddvar_{};
 	std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states_{};
 	/// BDDs created from transitions, in the order of their first appearance in the transitions.

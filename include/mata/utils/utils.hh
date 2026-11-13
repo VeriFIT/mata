@@ -16,6 +16,8 @@
 #include <set>
 #include <sstream>
 #include <stack>
+#include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -260,6 +262,15 @@ template <class A, class B> struct PairHash {
 		return hash_combine(hash_combine(HASH_SEED, pair.first), pair.second);
 	}
 };
+
+/// A hasher of strings given as any string type, so that a @c std::string_view finds a @c std::string key.
+struct StringHash {
+	using is_transparent = void;
+	size_t operator()(const std::string_view str) const { return std::hash<std::string_view>{}(str); }
+};
+
+/// A map from strings that @c find(), @c contains() and @c count() a @c std::string_view without copying it.
+template <class T> using StringMap = std::unordered_map<std::string, T, StringHash, std::equal_to<>>;
 
 /// checks whether a container with @p find contains a key
 // The decay warning fires for instantiations with a string-literal key, where decaying to 'const char*' is what the
