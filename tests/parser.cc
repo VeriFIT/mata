@@ -1091,6 +1091,23 @@ TEST_CASE("mata::IntermediateAut keeps the names of its formula nodes") { // {{{
 		}
 	}
 
+	SECTION("tokens pointing outside the storage of their section are copied") {
+		std::optional<mata::IntermediateAut> aut{};
+		{
+			mata::parser::ParsedSection section{parse_mf(file).front()};
+			const std::string source{"q0"};
+			const std::string symbol{"a1"};
+			const std::string target{"q2"};
+			section.body.push_back({{source, false}, {symbol, false}, {target, false}});
+			aut = mata::IntermediateAut::parse_from_mf({section}).front();
+		}
+		REQUIRE(aut->transitions.size() == 2);
+		CHECK(aut->transitions[0].second.children()[0].node().raw == "a0");
+		CHECK(aut->transitions[1].first.raw == "q0");
+		CHECK(aut->transitions[1].second.children()[0].node().raw == "a1");
+		CHECK(aut->transitions[1].second.children()[1].node().raw == "q2");
+	}
+
 	SECTION("add_transition stores the names it is given") {
 		mata::IntermediateAut aut{};
 		const std::string source_name{"q0"};

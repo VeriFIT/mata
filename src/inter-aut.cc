@@ -140,9 +140,20 @@ mata::FormulaNode stored_copy(const mata::FormulaNode& node, mata::NameStore& na
 	return copy;
 }
 
-mata::FormulaNode create_node(mata::IntermediateAut& mata, const std::string_view token, const bool quoted = false) {
-	// A node keeps a view of its name, so the token has to be stored in the automaton first.
-	const std::string_view raw{mata.name_store->store(token)};
+/**
+ * @p name as a node of @p aut keeps it: the view itself when it points into the name storage of the section @p aut is
+ *  parsed from, a copy in the name storage of @p aut otherwise.
+ * @param hint Where @c NameStore::contains() looks first.
+ */
+std::string_view kept_name(mata::IntermediateAut& aut, const std::string_view name, size_t& hint) {
+	if (aut.section_names != nullptr && aut.section_names->contains(name, hint)) { return name; }
+	return aut.name_store->store(name);
+}
+
+mata::FormulaNode
+	create_node(mata::IntermediateAut& mata, const std::string_view token, const bool quoted, size_t& names_hint) {
+	// A node keeps a view of its name, so the name has to live as long as the automaton does.
+	const std::string_view raw{kept_name(mata, token, names_hint)};
 
 	// A quoted token stands for a name, even when the name is that of an operator: the reader quoted it exactly
 	//  so that it is not read for an operator of the transition formula.
@@ -204,6 +215,8 @@ bool lower_precedence(const mata::FormulaNode::OperatorType op1, const mata::For
 struct FormulaBuffers {
 	std::vector<mata::FormulaNode> postfix{};
 	std::vector<mata::FormulaNode> opstack{};
+	/// Where to look for the next token in the name storage of the section, see @c NameStore::contains().
+	size_t names_hint{0};
 };
 
 /**
@@ -221,7 +234,7 @@ void infix_to_postfix(
 	output.reserve(output.size() + tokens.size());
 
 	for (const mata::parser::BodyToken& token : tokens) {
-		switch (mata::FormulaNode node = create_node(aut, token.token, token.quoted); node.type) {
+		switch (mata::FormulaNode node = create_node(aut, token.token, token.quoted, buffers.names_hint); node.type) {
 			case mata::FormulaNode::Type::Operand:
 				output.emplace_back(std::move(node));
 				break;
@@ -317,7 +330,8 @@ void parse_transition(mata::IntermediateAut& aut, const mata::parser::BodyLine& 
 			std::to_string(tokens.size())
 		);
 	}
-	mata::FormulaNode lhs = create_node(aut, tokens[0].token, tokens[0].quoted);
+	size_t& names_hint{buffers.names_hint};
+	mata::FormulaNode lhs = create_node(aut, tokens[0].token, tokens[0].quoted, names_hint);
 	const std::span<const mata::parser::BodyToken> rhs{std::span{tokens}.subspan(1)};
 
 	std::vector<mata::FormulaNode>& postfix{buffers.postfix};
@@ -337,15 +351,15 @@ void parse_transition(mata::IntermediateAut& aut, const mata::parser::BodyLine& 
 			check_explicit_transition(tokens, aut.is_nfa() ? "NFA" : "NFT");
 			// The symbol slot is identified by position, not by naming: keep its full name, also when quoted.
 			postfix.emplace_back(
-				mata::FormulaNode::Type::Operand, aut.name_store->store(rhs[0].token),
+				mata::FormulaNode::Type::Operand, kept_name(aut, rhs[0].token, names_hint),
 				mata::FormulaNode::OperandType::Symbol
 			);
-			postfix.emplace_back(create_node(aut, rhs[1].token, rhs[1].quoted));
+			postfix.emplace_back(create_node(aut, rhs[1].token, rhs[1].quoted, names_hint));
 		} else {
 			// This is a case where rhs state is not separated by a conjunction from the rest of the transitions.
 			const mata::parser::BodyToken& last_token{rhs.back()};
 			infix_to_postfix(aut, rhs.first(rhs.size() - 1), buffers);
-			postfix.emplace_back(create_node(aut, last_token.token, last_token.quoted));
+			postfix.emplace_back(create_node(aut, last_token.token, last_token.quoted, names_hint));
 		}
 
 		postfix.emplace_back(mata::FormulaNode::Type::Operator, "&", mata::FormulaNode::OperatorType::And);
@@ -365,6 +379,7 @@ void parse_transition(mata::IntermediateAut& aut, const mata::parser::BodyLine& 
  */
 mata::IntermediateAut mf_to_aut(const mata::parser::ParsedSection& section) {
 	mata::IntermediateAut aut;
+	aut.section_names = section.name_store;
 
 	if (section.type.find("NFA") != std::string::npos) {
 		aut.automaton_type = mata::IntermediateAut::AutomatonType::Nfa;

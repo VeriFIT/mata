@@ -5,6 +5,7 @@
 #define MATA_PARSER_HH_
 
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <list>
 #include <map>
@@ -29,15 +30,20 @@ class NameStore {
 	 * @return A view of the copy, valid for as long as the storage lives.
 	 */
 	std::string_view store(const std::string_view name) {
-		if (chunks_.empty() || chunks_.back().capacity - used_ < name.size()) {
-			const std::size_t capacity{name.size() < chunk_capacity_ ? chunk_capacity_ : name.size()};
-			chunks_.push_back(Chunk{.data = std::make_unique_for_overwrite<char[]>(capacity), .capacity = capacity});
-			used_ = 0;
-		}
+		if (chunks_.empty() || chunks_.back().capacity - used_ < name.size()) { add_chunk(name.size()); }
 		char* const stored{chunks_.back().data.get() + used_};
 		std::memcpy(stored, name.data(), name.size());
 		used_ += name.size();
 		return {stored, name.size()};
+	}
+
+	/**
+	 * Whether @p name is a view into the storage.
+	 * @param hint Where to look first, updated to where @p name was found: names looked up in the order they were
+	 *  stored are mostly found right away. Start with 0.
+	 */
+	bool contains(const std::string_view name, std::size_t& hint) const {
+		return (hint < ranges_.size() && ranges_[hint].spans(name)) || find(name, hint);
 	}
 
   private:
@@ -46,10 +52,27 @@ class NameStore {
 		std::unique_ptr<char[]> data{};
 		std::size_t capacity{};
 	};
+	/// The addresses a chunk spans.
+	struct Range {
+		std::uintptr_t begin{};
+		std::uintptr_t end{};
+
+		bool spans(const std::string_view name) const {
+			const auto address{reinterpret_cast<std::uintptr_t>(name.data())};
+			return begin <= address && address + name.size() <= end;
+		}
+	};
+
+	/// @c contains() without the look at @p hint.
+	bool find(std::string_view name, std::size_t& hint) const;
+	/// Adds a chunk with room for at least @p size bytes.
+	void add_chunk(std::size_t size);
 
 	static constexpr std::size_t chunk_capacity_ = 16 * 1'024;
 
 	std::vector<Chunk> chunks_{};
+	/// The ranges of the chunks, by address.
+	std::vector<Range> ranges_{};
 	/// The number of bytes used in the last chunk.
 	std::size_t used_{};
 };

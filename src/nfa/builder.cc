@@ -625,6 +625,7 @@ std::vector<Nfa> builder::BitvectorNfaReader::build(Alphabet* alphabet) {
 			IntermediateAut mintermized;
 			// The moved formulas and the copied target states below keep their node names as views into @c inter_aut.
 			mintermized.name_store = inter_aut.name_store;
+			mintermized.section_names = inter_aut.section_names;
 			mintermized.state_naming = inter_aut.state_naming;
 			mintermized.symbol_naming = inter_aut.symbol_naming;
 			mintermized.node_naming = inter_aut.node_naming;

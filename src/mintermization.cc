@@ -486,8 +486,9 @@ std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::v
 		// The transitions are replaced below; copying their formula trees only to clear them dominates large inputs.
 		IntermediateAut mintermized_aut;
 		// The formula and transition copies below keep the names of their nodes as views into the source automaton,
-		//  so sharing its name storage keeps them valid for as long as the mintermized automaton lives.
+		//  so sharing its name storages keeps them valid for as long as the mintermized automaton lives.
 		mintermized_aut.name_store = aut->name_store;
+		mintermized_aut.section_names = aut->section_names;
 		mintermized_aut.state_naming = aut->state_naming;
 		mintermized_aut.symbol_naming = aut->symbol_naming;
 		mintermized_aut.node_naming = aut->node_naming;

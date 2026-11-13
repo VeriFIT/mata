@@ -42,7 +42,8 @@ class FormulaNode {
 	/**
 	 * Raw name of node as it was specified in input text, i.e., including type marker.
 	 * The name is not owned: it has to point into the name storage of the automaton the node belongs to
-	 *  (@c IntermediateAut::name_store) or into a literal, so that it lives for as long as the node does.
+	 *  (@c IntermediateAut::name_store or @c IntermediateAut::section_names) or into a literal, so that it lives for
+	 *  as long as the node does.
 	 */
 	std::string_view raw{};
 	/// if a node is operator, it defines which one
@@ -307,6 +308,9 @@ class IntermediateAut {
 	 *  which keeps the names of the nodes of a copy alive when the original is gone.
 	 */
 	std::shared_ptr<NameStore> name_store{std::make_shared<NameStore>()};
+	/// The name storage of the section the automaton was parsed from, which the names of the nodes read from the
+	///  body of the section point into. It is never written to, so automata parsed from one section can share it.
+	std::shared_ptr<const NameStore> section_names{};
 
 	FormulaGraph initial_formula{};
 	FormulaGraph final_formula{};

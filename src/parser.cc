@@ -152,6 +152,24 @@ class LineTokens {
 };
 } // namespace
 
+bool mata::NameStore::find(const std::string_view name, std::size_t& hint) const {
+	// The range of the last chunk starting at or before the name.
+	const auto next{
+		std::ranges::upper_bound(ranges_, reinterpret_cast<std::uintptr_t>(name.data()), {}, &Range::begin)
+	};
+	if (next == ranges_.begin() || !std::prev(next)->spans(name)) { return false; }
+	hint = static_cast<std::size_t>(std::prev(next) - ranges_.begin());
+	return true;
+}
+
+void mata::NameStore::add_chunk(const std::size_t size) {
+	const std::size_t capacity{std::max(size, chunk_capacity_)};
+	chunks_.push_back(Chunk{.data = std::make_unique_for_overwrite<char[]>(capacity), .capacity = capacity});
+	const auto begin{reinterpret_cast<std::uintptr_t>(chunks_.back().data.get())};
+	ranges_.insert(std::ranges::upper_bound(ranges_, begin, {}, &Range::begin), Range{begin, begin + capacity});
+	used_ = 0;
+}
+
 Parsed mata::parser::parse_mf(const std::string& input, const bool keep_quotes) {
 	Parsed result;
 	std::string_view view{input};
