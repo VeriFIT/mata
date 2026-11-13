@@ -229,10 +229,10 @@ std::optional<std::vector<Nft>> read_explicit_nfts(const std::string_view text, 
 	return transducers;
 }
 
-/// Calls `read`, prefixing its errors with `section N: ` for the section at `index`.
-template <class Read> auto in_section(const std::size_t index, Read&& read) {
+/// Calls `parse`, prefixing its errors with `section N: ` for the section at `index`.
+template <class Parse> auto in_section(const std::size_t index, Parse&& parse) {
 	try {
-		return read();
+		return parse();
 	} catch (const std::runtime_error& error) {
 		throw std::runtime_error("section " + std::to_string(index + 1) + ": " + error.what());
 	}

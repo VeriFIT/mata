@@ -309,7 +309,7 @@ class FormulaToBdd {
 		  mintermization_{mintermization} {}
 
 	/// @return The BDD, or @c std::nullopt when the formula is not such a combination.
-	std::optional<BDD> read() {
+	std::optional<BDD> parse() {
 		std::optional<BDD> bdd{formula()};
 		if (position_ != tokens_.size()) { return std::nullopt; }
 		return bdd;
@@ -419,7 +419,7 @@ struct builder::BitvectorNfaReader::Impl {
 		return it->second;
 	}
 
-	std::optional<BitvectorAutomaton> read(std::string_view input, bool keep_quotes, NameStateMap* state_map);
+	std::optional<BitvectorAutomaton> parse(std::string_view input, bool keep_quotes, NameStateMap* state_map);
 };
 
 builder::BitvectorNfaReader::BitvectorNfaReader() : impl_{std::make_unique<Impl>()} {}
@@ -427,7 +427,7 @@ builder::BitvectorNfaReader::BitvectorNfaReader(BitvectorNfaReader&&) noexcept =
 builder::BitvectorNfaReader& builder::BitvectorNfaReader::operator=(BitvectorNfaReader&&) noexcept = default;
 builder::BitvectorNfaReader::~BitvectorNfaReader() = default;
 
-std::optional<BitvectorAutomaton> builder::BitvectorNfaReader::Impl::read(
+std::optional<BitvectorAutomaton> builder::BitvectorNfaReader::Impl::parse(
 	const std::string_view input, const bool keep_quotes, NameStateMap* state_map
 ) {
 	using mata::parser::ExplicitSectionReader;
@@ -521,7 +521,7 @@ std::optional<BitvectorAutomaton> builder::BitvectorNfaReader::Impl::read(
 				if (!formula_text.has_value()) { return std::nullopt; }
 				auto predicate{formula_predicates.find(*formula_text)};
 				if (predicate == formula_predicates.end()) {
-					const std::optional<BDD> bdd{FormulaToBdd{formula, namings, mintermization}.read()};
+					const std::optional<BDD> bdd{FormulaToBdd{formula, namings, mintermization}.parse()};
 					if (!bdd.has_value()) { return std::nullopt; }
 					predicate =
 						formula_predicates
@@ -568,7 +568,7 @@ builder::BitvectorNfaReader::Read builder::BitvectorNfaReader::add(
 		impl_->predicates.resize(num_of_predicates);
 		impl_->mintermization.rollback(checkpoint);
 	}};
-	if (std::optional<BitvectorAutomaton> aut{impl_->read(nfa_in_mata, keep_quotes, state_map)}) {
+	if (std::optional<BitvectorAutomaton> aut{impl_->parse(nfa_in_mata, keep_quotes, state_map)}) {
 		impl_->automata.push_back(std::move(*aut));
 		return Read::Directly;
 	}
