@@ -190,16 +190,17 @@ mata::FormulaNode
 				default:
 					MATA_ASSERT(false);
 			}
-		} else if (token == "("sv) {
+		} else if (token.size() == 1 && token[0] == '(') {
 			return {mata::FormulaNode::Type::LeftParenthesis, raw};
-		} else if (token == ")"sv) {
+		} else if (token.size() == 1 && token[0] == ')') {
 			return {mata::FormulaNode::Type::RightParenthesis, raw};
 		}
 	}
 
-	if (token == "\\true"sv) {
+	// The first character rules out most tokens before a comparison of whole strings.
+	if (token.starts_with('\\') && token == "\\true"sv) {
 		return {mata::FormulaNode::Type::Operand, raw, mata::FormulaNode::OperandType::True};
-	} else if (token == "\\false"sv) {
+	} else if (token.starts_with('\\') && token == "\\false"sv) {
 		return {mata::FormulaNode::Type::Operand, raw, mata::FormulaNode::OperandType::False};
 	} else if (is_naming_enum(mata.state_naming) && mata.states_names.contains(std::string{token})) {
 		return {mata::FormulaNode::Type::Operand, raw, mata::FormulaNode::OperandType::State};
