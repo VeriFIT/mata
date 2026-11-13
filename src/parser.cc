@@ -9,6 +9,7 @@
 #include "explicit-section-reader.hh"
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <deque>
 #include <span>
@@ -93,44 +94,59 @@ class LineTokens {
 	/// Reads the unquoted token at @p pos, which may not contain quotes, @, or % inside; the first character may be @
 	///  or %, unless the token is not the @p first one of the line.
 	void read_unquoted(const std::string_view line, size_t& pos, const bool first) {
-		const size_t start{pos++};
+		const size_t start{pos};
+		// The start of the part of the token after the last operator.
+		size_t piece{pos};
+		if (line[pos] == '@' || line[pos] == '%') { ++pos; }
 		for (; pos < line.size(); ++pos) {
-			const char c{line[pos]};
-			if (is_space(c) || c == '#' || c == '(' || c == ')') { break; }
-			if (c == '"') {
-				std::string msg = "misplaced quotes: ";
-				msg += line.substr(start, pos - start);
-				msg += "_\"_";
-				msg += line.substr(pos);
-				throw std::runtime_error(msg);
-			}
-			if (c == '@' || c == '%') {
-				std::string msg = "misplaced character '";
-				msg += c;
-				msg += "' in string \"";
-				msg += line.substr(start, pos - start);
-				msg += c;
-				msg += line.substr(pos + 1);
-				msg += "\"";
-				throw std::runtime_error(msg);
-			}
-		}
-		const std::string_view token{line.substr(start, pos - start)};
-		if (!first) {
-			if ('@' == token[0]) { throw std::runtime_error("invalid position of @TYPE: " + std::string(line)); }
-			if ('%' == token[0]) { throw std::runtime_error("invalid position of %KEY: " + std::string(line)); }
-		}
-		size_t last_operator{0};
-		for (size_t i{0}; i < token.size(); ++i) {
+			const CharKind kind{CHAR_KINDS[static_cast<unsigned char>(line[pos])]};
+			if (kind == CharKind::Plain) { continue; }
+			if (kind == CharKind::End) { break; }
+			if (kind == CharKind::Misplaced) { throw_misplaced(line, start, pos); }
 			// One of the logical operators of a transition formula, a token of its own.
-			if (token[i] == '&' || token[i] == '|' || token[i] == '!') {
-				if (i > last_operator) { tokens_.push_back({token.substr(last_operator, i - last_operator), false}); }
-				tokens_.push_back({token.substr(i, 1), false});
-				last_operator = i + 1;
-			}
+			if (pos > piece) { tokens_.push_back({line.substr(piece, pos - piece), false}); }
+			tokens_.push_back({line.substr(pos, 1), false});
+			piece = pos + 1;
 		}
-		if (last_operator < token.size()) { tokens_.push_back({token.substr(last_operator), false}); }
+		if (!first) {
+			if ('@' == line[start]) { throw std::runtime_error("invalid position of @TYPE: " + std::string(line)); }
+			if ('%' == line[start]) { throw std::runtime_error("invalid position of %KEY: " + std::string(line)); }
+		}
+		if (pos > piece) { tokens_.push_back({line.substr(piece, pos - piece), false}); }
 	}
+
+	/// Throws the error of the misplaced character at @p pos of the unquoted token at @p start.
+	[[noreturn]] static void throw_misplaced(const std::string_view line, const size_t start, const size_t pos) {
+		const char c{line[pos]};
+		std::string msg;
+		if (c == '"') {
+			msg = "misplaced quotes: ";
+			msg += line.substr(start, pos - start);
+			msg += "_\"_";
+			msg += line.substr(pos);
+		} else {
+			msg = "misplaced character '";
+			msg += c;
+			msg += "' in string \"";
+			msg += line.substr(start, pos - start);
+			msg += c;
+			msg += line.substr(pos + 1);
+			msg += "\"";
+		}
+		throw std::runtime_error(msg);
+	}
+
+	/// How an unquoted token reads a character.
+	enum class CharKind : uint8_t { Plain, End, Misplaced, Operator };
+	static constexpr std::array<CharKind, 256> CHAR_KINDS{[] {
+		std::array<CharKind, 256> kinds{};
+		for (const char c : {' ', '\t', '\n', '\v', '\f', '\r', '#', '(', ')'}) {
+			kinds[static_cast<unsigned char>(c)] = CharKind::End;
+		}
+		for (const char c : {'"', '@', '%'}) { kinds[static_cast<unsigned char>(c)] = CharKind::Misplaced; }
+		for (const char c : {'&', '|', '!'}) { kinds[static_cast<unsigned char>(c)] = CharKind::Operator; }
+		return kinds;
+	}()};
 
 	std::vector<Token> tokens_{};
 	/// The quoted tokens with their escapes resolved; a deque keeps the strings, and so the views of the tokens, in
