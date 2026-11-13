@@ -282,6 +282,11 @@ make release MATA_ARCH_NATIVE=ON
 an installed Mata never inherits it. A binary built with it may crash on an older CPU, so released
 packages must not use it.
 
+`MATA_DELTA_ALLOCATOR` (`std` or `pool`) is not a compiler switch: the CMake option only sets the default of the
+environment variable of the same name, which selects the backend of `Delta`'s heap blocks per process. An A/B
+comparison of the two backends therefore needs one build, run with `MATA_DELTA_ALLOCATOR=std` and
+`MATA_DELTA_ALLOCATOR=pool`. Compare global allocators by `LD_PRELOAD` of the same binaries.
+
 `MATA_ENABLE_IPO` adds `-ffat-lto-objects` on GCC. Without it, CMake's `-fno-fat-lto-objects` would
 leave `libmata.a` holding compiler bytecode only, and every consumer — the Python extension, an
 external `find_package(mata)` user, Z3-Noodler — would have to link with the matching compiler's
