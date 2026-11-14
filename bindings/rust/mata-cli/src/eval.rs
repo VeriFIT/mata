@@ -231,6 +231,13 @@ pub(crate) struct Engine {
 /// stack.
 const MAX_DEPTH: usize = 1000;
 
+/// How deeply a value of any sort is walked when it is printed, compared, or checked against a
+/// sort; deeper is an error message in the walk's place. A second line of defence: the runner
+/// thread of `main` holds a large stack for the evaluator and the drops of nested values, and the
+/// parser limits the nesting of the source, but a value built with millions of nested lists would
+/// still take the walk of its `Drop` down with it.
+pub(crate) const MAX_NESTING: usize = 100_000;
+
 /// A synthetic expression for calling a function value outside of syntax, e.g. from `list:map`.
 pub(crate) fn dummy_expr() -> Expr {
 	Expr {
@@ -742,6 +749,10 @@ impl Engine {
 		if self.recur.is_some() {
 			return Err(expression.at(crate::check::RECUR_NOT_LAST.into()));
 		}
+		self.evaluate_inner(expression)
+	}
+
+	fn evaluate_inner(&mut self, expression: &Expr) -> Result<Value, Error> {
 		match &expression.node {
 			Kind::Bool(value) => Ok(Value::Bool(*value)),
 			Kind::Int(value) => Ok(Value::Int(*value)),
@@ -1890,6 +1901,10 @@ fn check_sort(value: &Value, sort: &str, expression: &Expr) -> Result<(), Error>
 }
 
 pub(crate) fn value_sort(value: &Value) -> String {
+	value_sort_depth(value, 0)
+}
+
+fn value_sort_depth(value: &Value, depth: usize) -> String {
 	match value {
 		Value::Bool(_) => "Bool".into(),
 		Value::Int(_) => "Int".into(),
@@ -1899,7 +1914,10 @@ pub(crate) fn value_sort(value: &Value) -> String {
 		Value::Automaton(_) => "Automaton".into(),
 		Value::Intermediate(_) => "IntermediateAutomaton".into(),
 		Value::List(list) => {
-			let mut sorts = list.iter().map(value_sort);
+			if depth > MAX_NESTING {
+				return "(List …)".into();
+			}
+			let mut sorts = list.iter().map(|value| value_sort_depth(value, depth + 1));
 			let element = match sorts.next() {
 				None => "unknown".into(),
 				Some(first) if sorts.all(|sort| sort == first) => first,
@@ -1919,18 +1937,23 @@ pub(crate) fn value_sort(value: &Value) -> String {
 /// Whether `value` is of sort `sort`: `none` is of every `(Option T)`, a list is a `(List T)` when every
 /// element is a `T`, and an `Automaton` is also of the kind it holds.
 fn fits(value: &Value, sort: &str) -> bool {
+	fits_depth(value, sort, 0)
+}
+
+fn fits_depth(value: &Value, sort: &str, depth: usize) -> bool {
 	if let Some(element) = compound(sort, "List") {
-		return matches!(value, Value::List(items) if items.iter().all(|item| fits(item, element)));
+		return matches!(value, Value::List(items)
+			if depth <= MAX_NESTING && items.iter().all(|item| fits_depth(item, element, depth + 1)));
 	}
 	if let Some(inner) = compound(sort, "Option") {
-		return matches!(value, Value::None) || fits(value, inner);
+		return matches!(value, Value::None) || fits_depth(value, inner, depth + 1);
 	}
 	match (sort, value) {
 		("Any", _) | ("Automaton", Value::Nfa(_) | Value::Nft(_)) => true,
 		("Nfa", Value::Automaton(automaton)) => matches!(**automaton, AutomatonKind::Nfa(_)),
 		("Nft", Value::Automaton(automaton)) => matches!(**automaton, AutomatonKind::Nft(_)),
 		(_, Value::List(_)) => false,
-		_ => value_sort(value) == sort,
+		_ => value_sort_depth(value, depth) == sort,
 	}
 }
 

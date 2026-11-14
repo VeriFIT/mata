@@ -118,10 +118,16 @@ pub(crate) struct Parameter {
 	pub(crate) sort: Option<String>,
 }
 
+/// How deeply a form may nest inside another; deeper is an error rather than an overflow of the
+/// stack. One level is one parenthesised application or body, so a script like a chain of `if`s
+/// takes one level per line of source text it abbreviates.
+pub(crate) const MAX_DEPTH: usize = 1000;
+
 pub(crate) fn parse(source: &str) -> Result<Vec<Spanned<FormKind>>, Error> {
 	Parser {
 		tokens: lexer::lex(source)?,
 		current: 0,
+		depth: 0,
 	}
 	.script()
 }
@@ -153,6 +159,8 @@ const DIRECTIVES: [&str; 11] = [
 struct Parser {
 	tokens: Vec<Token>,
 	current: usize,
+	/// Nesting depth of the form being parsed, against [`MAX_DEPTH`].
+	depth: usize,
 }
 
 impl Parser {
@@ -165,6 +173,16 @@ impl Parser {
 	}
 
 	fn form(&mut self) -> Result<Spanned<FormKind>, Error> {
+		if self.depth >= MAX_DEPTH {
+			return Err(self.here(format!("forms nest deeper than {MAX_DEPTH}")));
+		}
+		self.depth += 1;
+		let form = self.form_inner();
+		self.depth -= 1;
+		form
+	}
+
+	fn form_inner(&mut self) -> Result<Spanned<FormKind>, Error> {
 		let start = self.next();
 		if start.kind != TokenKind::LeftParen {
 			let (line, column) = (start.line, start.column);
@@ -319,6 +337,16 @@ impl Parser {
 	}
 
 	fn expression(&mut self) -> Result<Expr, Error> {
+		if self.depth >= MAX_DEPTH {
+			return Err(self.here(format!("expressions nest deeper than {MAX_DEPTH}")));
+		}
+		self.depth += 1;
+		let expression = self.expression_inner();
+		self.depth -= 1;
+		expression
+	}
+
+	fn expression_inner(&mut self) -> Result<Expr, Error> {
 		let token = self.next();
 		self.expression_from_token(token)
 	}
@@ -442,6 +470,16 @@ impl Parser {
 	}
 
 	fn literal_data(&mut self) -> Result<Expr, Error> {
+		if self.depth >= MAX_DEPTH {
+			return Err(self.here(format!("literal data nests deeper than {MAX_DEPTH}")));
+		}
+		self.depth += 1;
+		let data = self.literal_data_inner();
+		self.depth -= 1;
+		data
+	}
+
+	fn literal_data_inner(&mut self) -> Result<Expr, Error> {
 		let token = self.next();
 		let (line, column) = (token.line, token.column);
 		let node = match token.kind {
@@ -684,6 +722,16 @@ impl Parser {
 	}
 
 	fn sort(&mut self) -> Result<String, Error> {
+		if self.depth >= MAX_DEPTH {
+			return Err(self.here(format!("sorts nest deeper than {MAX_DEPTH}")));
+		}
+		self.depth += 1;
+		let sort = self.sort_inner();
+		self.depth -= 1;
+		sort
+	}
+
+	fn sort_inner(&mut self) -> Result<String, Error> {
 		let token = self.next();
 		match token.kind {
 			TokenKind::Name(name) => Ok(name),

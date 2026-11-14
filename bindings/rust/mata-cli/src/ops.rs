@@ -1525,7 +1525,8 @@ fn dispatch(
 		}
 		"eq" => {
 			let [lhs, rhs] = take(arguments, name)?;
-			Ok(Value::Bool(values_equal(&lhs, &rhs)))
+			let equal = values_equal(&lhs, &rhs).map_err(Error::plain)?;
+			Ok(Value::Bool(equal))
 		}
 		"lt" => {
 			let [lhs, rhs] = take(arguments, name)?;
@@ -1574,6 +1575,7 @@ fn dispatch(
 			let [value] = take(arguments, name)?;
 			Ok(Value::String(match &value {
 				Value::String(text) => text.clone(),
+				Value::List(_) => list_text(&value, engine),
 				other => crate::display_value(other, engine)
 					.trim_end_matches('\n')
 					.to_owned(),
@@ -1628,11 +1630,11 @@ fn dispatch_list_structure(
 		"list" => Ok(Value::List(Rc::new(arguments))),
 		"list_length" => {
 			let [list] = take(arguments, name)?;
-			integer(as_list(&list).map_err(Error::plain)?.len())
+			integer(list_len(&list)?.len())
 		}
 		"list_nth" => {
 			let [list, index] = take(arguments, name)?;
-			let list = as_list(&list).map_err(Error::plain)?;
+			let list = list_len(&list)?;
 			let index = length(
 				as_int(&index)?,
 				"list:nth needs a non-negative index".into(),
@@ -1643,7 +1645,7 @@ fn dispatch_list_structure(
 		}
 		"list_take" | "list_drop" => {
 			let [list, count] = take(arguments, name)?;
-			let list = as_list(&list).map_err(Error::plain)?;
+			let list = list_len(&list)?;
 			let count = length(
 				as_int(&count)?,
 				format!("{name} needs a non-negative count"),
@@ -1660,13 +1662,108 @@ fn dispatch_list_structure(
 			let [start, end] = take(arguments, name)?;
 			let start = as_int(&start)?;
 			let end = as_int(&end)?;
-			if start > end || start < 0 || end - start > i64::from(i32::MAX) {
+			if start < 0 {
+				return Err(Error::plain(format!(
+					"{name} needs a start of at least 0, not {start}"
+				)));
+			}
+			if start > end {
 				return Ok(Value::List(Rc::new(Vec::new())));
+			}
+			// A range is meant for a number of rounds that is known in advance, so one beyond
+			// millions is a script bug; rejecting it keeps a mistaken bound from consuming the
+			// memory of the run.
+			if end - start > MAX_RANGE_SPAN {
+				return Err(Error::plain(format!(
+					"{name} cannot hold {start} to {end}; the span must be at most {MAX_RANGE_SPAN}"
+				)));
 			}
 			Ok(Value::List(Rc::new((start..end).map(Value::Int).collect())))
 		}
 		_ => dispatch_list_iteration(handler, name, arguments, engine),
 	}
+}
+
+/// The elements of a list value, which the callers may clone one element at a time instead of the
+/// whole list.
+fn list_len(value: &Value) -> Result<Rc<Vec<Value>>, String> {
+	match value {
+		Value::List(list) => Ok(Rc::clone(list)),
+		_ => Err("expected a list".into()),
+	}
+}
+
+/// The most elements one `list:range` may hold: a range is meant for a number of rounds that is
+/// known in advance, so one beyond millions is a script bug, and a smaller bound keeps a mistaken
+/// one from consuming the memory of the run.
+const MAX_RANGE_SPAN: i64 = 1 << 24;
+
+/// A list as one line for `to-string`: the elements spaced out, nested lists in parentheses, as
+/// `script-language.md` "Core functions" says: any value on one line. A list nested deeper than
+/// [`MAX_NESTING`] is shown as `…` without a walk, because the walk itself must not follow the
+/// nesting off the stack.
+fn list_text(value: &Value, engine: &Engine) -> String {
+	if nesting_of(value, 0).is_none() {
+		return "…".into();
+	}
+	let mut text = String::new();
+	let mut stack: Vec<(&Value, bool)> = vec![(value, false)];
+	// A depth-first walk with an explicit stack: the `bool` says whether the element is done, so
+	// that a nested list prints its closing parenthesis in order. A `(` attaches to what follows
+	// it, and a `)` to what precedes it; anything else is separated from the last element by one
+	// space.
+	while let Some((element, done)) = stack.pop() {
+		if done {
+			text.push(')');
+			continue;
+		}
+		if !text.is_empty() && !text.ends_with('(') {
+			text.push(' ');
+		}
+		match element {
+			Value::List(list) => {
+				text.push('(');
+				if list.is_empty() {
+					text.push(')');
+				} else {
+					stack.push((element, true));
+					for item in list.as_ref().iter().rev() {
+						stack.push((item, false));
+					}
+				}
+			}
+			Value::Word(word) => {
+				text.push_str(&engine.script_alphabet.display_word(word).to_string());
+			}
+			other => {
+				text.push_str(crate::display_value(other, engine).trim_end_matches('\n'));
+			}
+		}
+	}
+	text
+}
+
+/// The deepest nesting of `value`, or `None` when it nests deeper than [`MAX_NESTING`]. The walk
+/// itself is iterative, so it cannot overflow on the value it measures.
+fn nesting_of(value: &Value, depth: usize) -> Option<usize> {
+	if depth > crate::eval::MAX_NESTING {
+		return None;
+	}
+	let mut deepest = depth;
+	let mut stack: Vec<(&Value, usize)> = match value {
+		Value::List(list) => list.iter().map(|element| (element, depth + 1)).collect(),
+		_ => return Some(depth),
+	};
+	while let Some((element, level)) = stack.pop() {
+		if level > crate::eval::MAX_NESTING {
+			return None;
+		}
+		if let Value::List(list) = element {
+			deepest = deepest.max(level);
+			stack.extend(list.iter().map(|item| (item, level + 1)));
+		}
+	}
+	Some(deepest)
 }
 
 /// Serves the operations that walk a list with a function: `list:map`, `list:filter`, `list:reduce`,
@@ -1680,12 +1777,12 @@ fn dispatch_list_iteration(
 	match handler {
 		"list_map" => {
 			let [function, list] = take(arguments, name)?;
-			let list = as_list(&list).map_err(Error::plain)?;
+			let list = list_len(&list).map_err(Error::plain)?;
 			let mut mapped = Vec::with_capacity(list.len());
-			for element in list {
+			for element in list.as_ref() {
 				mapped.push(engine.call_function(
 					function.clone(),
-					vec![element],
+					vec![element.clone()],
 					&[],
 					&crate::eval::dummy_expr(),
 				)?);
@@ -1694,9 +1791,9 @@ fn dispatch_list_iteration(
 		}
 		"list_filter" => {
 			let [function, list] = take(arguments, name)?;
-			let list = as_list(&list).map_err(Error::plain)?;
+			let list = list_len(&list).map_err(Error::plain)?;
 			let mut kept = Vec::new();
-			for element in list {
+			for element in list.as_ref() {
 				let keep = engine.call_function(
 					function.clone(),
 					vec![element.clone()],
@@ -1704,22 +1801,23 @@ fn dispatch_list_iteration(
 					&crate::eval::dummy_expr(),
 				)?;
 				if as_bool(&keep).map_err(Error::plain)? {
-					kept.push(element);
+					kept.push(element.clone());
 				}
 			}
 			Ok(Value::List(Rc::new(kept)))
 		}
 		"list_reduce" => {
 			let [function, list] = take(arguments, name)?;
-			let list = as_list(&list).map_err(Error::plain)?;
-			let mut values = list.into_iter();
-			let mut accumulated = values
+			let list = list_len(&list).map_err(Error::plain)?;
+			let mut elements = list.as_ref().iter();
+			let mut accumulated = elements
 				.next()
+				.cloned()
 				.ok_or_else(|| Error::plain("list:reduce of an empty list".into()))?;
-			for element in values {
+			for element in elements {
 				accumulated = engine.call_function(
 					function.clone(),
-					vec![accumulated, element],
+					vec![accumulated, element.clone()],
 					&[],
 					&crate::eval::dummy_expr(),
 				)?;
@@ -1728,12 +1826,12 @@ fn dispatch_list_iteration(
 		}
 		"list_fold" => {
 			let [function, initial, list] = take(arguments, name)?;
-			let list = as_list(&list).map_err(Error::plain)?;
+			let list = list_len(&list).map_err(Error::plain)?;
 			let mut accumulated = initial;
-			for element in list {
+			for element in list.as_ref() {
 				accumulated = engine.call_function(
 					function.clone(),
-					vec![accumulated, element],
+					vec![accumulated, element.clone()],
 					&[],
 					&crate::eval::dummy_expr(),
 				)?;
@@ -3088,15 +3186,39 @@ fn optional_alphabet_with(
 	Ok((alphabet, argument))
 }
 
-fn values_equal(lhs: &Value, rhs: &Value) -> bool {
+/// Compares two values. A list nests at most [`MAX_NESTING`] levels deep; comparing deeper ones is
+/// an error rather than a verdict, because the walk must not follow the nesting off the stack, and
+/// a wrong `false` would hide the reason.
+fn values_equal(lhs: &Value, rhs: &Value) -> Result<bool, String> {
+	values_equal_depth(lhs, rhs, 0)
+}
+
+fn values_equal_depth(lhs: &Value, rhs: &Value, depth: usize) -> Result<bool, String> {
+	if depth > crate::eval::MAX_NESTING {
+		return Err(format!(
+			"the values compared nest deeper than {}",
+			crate::eval::MAX_NESTING
+		));
+	}
 	match (lhs, rhs) {
-		(Value::Bool(lhs), Value::Bool(rhs)) => lhs == rhs,
-		(Value::Int(lhs), Value::Int(rhs)) => lhs == rhs,
-		(Value::String(lhs), Value::String(rhs)) => lhs == rhs,
-		(Value::Word(lhs), Value::Word(rhs)) => lhs == rhs,
-		(Value::Symbol(lhs), Value::Symbol(rhs)) => lhs == rhs,
-		(Value::None, Value::None) => true,
-		_ => false,
+		(Value::List(lhs), Value::List(rhs)) => {
+			if lhs.len() != rhs.len() {
+				return Ok(false);
+			}
+			for (lhs, rhs) in lhs.iter().zip(rhs.iter()) {
+				if !values_equal_depth(lhs, rhs, depth + 1)? {
+					return Ok(false);
+				}
+			}
+			Ok(true)
+		}
+		(Value::Bool(lhs), Value::Bool(rhs)) => Ok(lhs == rhs),
+		(Value::Int(lhs), Value::Int(rhs)) => Ok(lhs == rhs),
+		(Value::String(lhs), Value::String(rhs)) => Ok(lhs == rhs),
+		(Value::Word(lhs), Value::Word(rhs)) => Ok(lhs == rhs),
+		(Value::Symbol(lhs), Value::Symbol(rhs)) => Ok(lhs == rhs),
+		(Value::None, Value::None) => Ok(true),
+		_ => Ok(false),
 	}
 }
 

@@ -114,6 +114,10 @@ pub(crate) const SIMPLE_SORTS: &[&str] = &[
 	"Function",
 ];
 
+/// How deeply a checked expression may nest inside another; deeper is an error rather than an
+/// overflow of the stack.
+const MAX_DEPTH: usize = 1000;
+
 /// Static check: names, shapes, arities, sorts where known, declarations, and the termination report.
 /// It never loads an input and never calls a library operation. With `inputs`, the inputs a run is
 /// given are matched against the declarations too.
@@ -197,6 +201,8 @@ struct Checker<'a> {
 	/// The names and sorts of the innermost loop, for `recur`; `None` inside a function, where `recur`
 	/// cannot restart a loop around it.
 	loop_bindings: LoopBindings,
+	/// Nesting depth of the expression being checked, against [`MAX_DEPTH`].
+	depth: usize,
 }
 
 /// The names and sorts that the loops around an expression bound, innermost last; `None` inside a
@@ -223,6 +229,7 @@ impl<'a> Checker<'a> {
 			loops: Switch::Off,
 			options_open: Switch::On,
 			loop_bindings: Vec::new(),
+			depth: 0,
 		}
 	}
 
@@ -855,6 +862,20 @@ impl<'a> Checker<'a> {
 	// Expressions -----------------------------------------------------------------------------------
 
 	fn expression(&mut self, expression: &Expr, self_name: Option<&str>) -> Option<String> {
+		if self.depth >= MAX_DEPTH {
+			self.reject(
+				expression,
+				format!("expressions nest deeper than {MAX_DEPTH}"),
+			);
+			return None;
+		}
+		self.depth += 1;
+		let sort = self.expression_inner(expression, self_name);
+		self.depth -= 1;
+		sort
+	}
+
+	fn expression_inner(&mut self, expression: &Expr, self_name: Option<&str>) -> Option<String> {
 		match &expression.node {
 			Kind::Bool(_) => Some("Bool".into()),
 			Kind::Int(_) => Some("Int".into()),
@@ -1715,6 +1736,21 @@ fn accepts(expected: &str, actual: &str) -> bool {
 /// Reports every `recur` in `expression` that does not restart a loop as the last thing its body
 /// evaluates. `tail`: `expression` is in that place; `in_loop`: a loop of the same function is around.
 fn misplaced_recur(expression: &Expr, tail: bool, in_loop: bool, errors: &mut Vec<Error>) {
+	misplaced_recur_depth(expression, tail, in_loop, 0, errors);
+}
+
+/// [`misplaced_recur`] with the nesting depth of `expression`, against [`MAX_DEPTH`].
+fn misplaced_recur_depth(
+	expression: &Expr,
+	tail: bool,
+	in_loop: bool,
+	depth: usize,
+	errors: &mut Vec<Error>,
+) {
+	if depth > MAX_DEPTH {
+		errors.push(expression.at(format!("expressions nest deeper than {MAX_DEPTH}")));
+		return;
+	}
 	match &expression.node {
 		Kind::Call {
 			function,
@@ -1735,81 +1771,103 @@ fn misplaced_recur(expression: &Expr, tail: bool, in_loop: bool, errors: &mut Ve
 				}
 				"if" => {
 					for (index, argument) in arguments.iter().enumerate() {
-						misplaced_recur(argument, tail && index > 0, in_loop, errors);
+						misplaced_recur_depth(
+							argument,
+							tail && index > 0,
+							in_loop,
+							depth + 1,
+							errors,
+						);
 					}
 					return;
 				}
 				"do" => {
-					misplaced_in_body(arguments, tail, in_loop, errors);
+					misplaced_in_body(arguments, tail, in_loop, depth, errors);
 					return;
 				}
-				_ => misplaced_recur(function, false, in_loop, errors),
+				_ => misplaced_recur_depth(function, false, in_loop, depth + 1, errors),
 			}
 			for argument in arguments
 				.iter()
 				.chain(keywords.iter().map(|(_, value)| value))
 			{
-				misplaced_recur(argument, false, in_loop, errors);
+				misplaced_recur_depth(argument, false, in_loop, depth + 1, errors);
 			}
 		}
-		Kind::List(items) => {
-			let head = match items.first().map(|item| &item.node) {
-				Some(Kind::Name(head)) => head.as_str(),
-				_ => "",
-			};
-			match head {
-				"let" | "loop" => {
-					if let Some(Kind::List(bindings)) = items.get(1).map(|item| &item.node) {
-						for binding in bindings {
-							misplaced_recur(binding, false, in_loop, errors);
-						}
-					}
-					let looping = head == "loop";
-					let body = items.get(2..).unwrap_or_default();
-					misplaced_in_body(body, tail || looping, in_loop || looping, errors);
-				}
-				"cond" => {
-					for clause in &items[1..] {
-						if let Kind::List(pair) = &clause.node {
-							for (index, part) in pair.iter().enumerate() {
-								misplaced_recur(part, tail && index == 1, in_loop, errors);
-							}
-						}
-					}
-				}
-				_ => {
-					for item in items {
-						misplaced_recur(item, false, in_loop, errors);
-					}
-				}
-			}
-		}
+		Kind::List(items) => misplaced_recur_list(items, tail, in_loop, depth, errors),
 		Kind::Lambda { body, .. }
 		| Kind::Definition {
 			parameters: Some(_),
 			body,
 			..
-		} => misplaced_in_body(body, false, false, errors),
+		} => misplaced_in_body(body, false, false, depth, errors),
 		Kind::Definition {
 			parameters: None,
 			body,
 			..
 		} => {
 			for item in body {
-				misplaced_recur(item, false, in_loop, errors);
+				misplaced_recur_depth(item, false, in_loop, depth + 1, errors);
 			}
 		}
 		_ => {}
 	}
 }
 
+/// [`misplaced_recur_depth`] over the items of a `Kind::List` expression, whose heads `let`,
+/// `loop` and `cond` put the parts of their items in the tail position of the form around them.
+fn misplaced_recur_list(
+	items: &[Expr],
+	tail: bool,
+	in_loop: bool,
+	depth: usize,
+	errors: &mut Vec<Error>,
+) {
+	let head = match items.first().map(|item| &item.node) {
+		Some(Kind::Name(head)) => head.as_str(),
+		_ => "",
+	};
+	match head {
+		"let" | "loop" => {
+			if let Some(Kind::List(bindings)) = items.get(1).map(|item| &item.node) {
+				for binding in bindings {
+					misplaced_recur_depth(binding, false, in_loop, depth + 1, errors);
+				}
+			}
+			let looping = head == "loop";
+			let body = items.get(2..).unwrap_or_default();
+			misplaced_in_body(body, tail || looping, in_loop || looping, depth, errors);
+		}
+		"cond" => {
+			for clause in &items[1..] {
+				if let Kind::List(pair) = &clause.node {
+					for (index, part) in pair.iter().enumerate() {
+						misplaced_recur_depth(part, tail && index == 1, in_loop, depth + 1, errors);
+					}
+				}
+			}
+		}
+		_ => {
+			for item in items {
+				misplaced_recur_depth(item, false, in_loop, depth + 1, errors);
+			}
+		}
+	}
+}
+
 /// [`misplaced_recur`] over a body, whose last expression after its definitions is in the place of
 /// the body itself.
-fn misplaced_in_body(body: &[Expr], tail: bool, in_loop: bool, errors: &mut Vec<Error>) {
+fn misplaced_in_body(
+	body: &[Expr],
+	tail: bool,
+	in_loop: bool,
+	depth: usize,
+	errors: &mut Vec<Error>,
+) {
 	let last = body
 		.iter()
 		.rposition(|item| !matches!(item.node, Kind::Definition { .. }));
 	for (index, item) in body.iter().enumerate() {
-		misplaced_recur(item, tail && Some(index) == last, in_loop, errors);
+		misplaced_recur_depth(item, tail && Some(index) == last, in_loop, depth, errors);
 	}
 }
