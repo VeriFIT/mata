@@ -289,6 +289,51 @@ fn the_cache_sees_the_tapes_hidden_in_a_nested_explicit_node() -> Result<(), Err
 	Ok(())
 }
 
+/// The language a*.
+struct AStar;
+
+impl Automaton for AStar {
+	type State = ();
+
+	fn arity(&self) -> usize {
+		1
+	}
+
+	fn initial_states(&self) -> impl IntoIterator<Item = ()> {
+		[()]
+	}
+
+	fn is_final(&self, (): ()) -> bool {
+		true
+	}
+
+	fn for_each_move(&self, (): (), mut visit: impl FnMut(&[Symbol], ())) {
+		visit(&[Symbol::from(b'a')], ());
+	}
+}
+
+#[test]
+fn deeply_nested_explicit_nodes_are_built_and_reused() -> Result<(), Error> {
+	const DEPTH: usize = 10_000;
+
+	let mut formula = Formula::new();
+	let mut term = formula.leaf(&AStar)?;
+	for _ in 0..DEPTH {
+		let complement = formula.complement(term)?;
+		term = formula.explicit(complement)?;
+	}
+
+	// An even number of complements over {a} gives a* back.
+	let first = formula.check(term, &Options::new())?;
+	assert!(!first.is_empty());
+	assert_eq!(first.stats.explicit.len(), DEPTH);
+
+	let second = formula.check(term, &Options::new())?;
+	assert!(second.stats.explicit.iter().all(|explicit| explicit.cached));
+
+	Ok(())
+}
+
 #[test]
 fn limits_stop_the_query() -> Result<(), Error> {
 	let Setup { formula, root, .. } = setup()?;
