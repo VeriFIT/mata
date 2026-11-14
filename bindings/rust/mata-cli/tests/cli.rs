@@ -2631,6 +2631,118 @@ fn a_recursion_that_never_stops_hits_the_depth_limit() {
 }
 
 #[test]
+fn deep_source_nesting_is_an_error_not_a_stack_overflow() {
+	// Ten thousand nested applications once overflowed the stack of the interpreter; the script
+	// goes through standard input, because a command line cannot hold it.
+	let nested = format!("{}1{}", "(let ((a ".repeat(10_000), ")) a)".repeat(10_000));
+	let output = mata_with_stdin(["script", "run", "-"], &format!("(print {nested})\n"));
+	assert_eq!(status(&output), 2, "{}", stdout(&output));
+	assert!(
+		stderr(&output).contains("expressions nest deeper than 1000"),
+		"{}",
+		stderr(&output)
+	);
+	// The check runs the same walk, and the REPL parses with the same limit.
+	let output = mata_with_stdin(["script", "check", "-"], &nested);
+	assert_eq!(status(&output), 2, "{}", stdout(&output));
+	assert!(
+		stderr(&output).contains("expressions nest deeper than 1000"),
+		"{}",
+		stderr(&output)
+	);
+	let output = mata_with_stdin(["script", "repl"], &format!("{nested}\n"));
+	assert_eq!(status(&output), 2, "{}", stdout(&output));
+	assert!(
+		stderr(&output).contains("expressions nest deeper than 1000"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
+fn deep_recursion_hits_the_depth_limit_before_the_stack_runs_out() {
+	// A non-tail recursion of 999 levels once overflowed the stack of a debug build before the
+	// limit of the interpreter was reported.
+	let script = "(set-option :loops-and-recursion true)\n\
+		      (define (f x) (if (= x 0) 0 (+ 1 (f (- x 1)))))\n\
+		      (print (f 999))";
+	let output = run_script(script, false, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "999\n");
+	let script = script.replace("(f 999)", "(f 1000)");
+	let output = run_script(&script, false, &[]);
+	assert_eq!(status(&output), 2, "{}", stdout(&output));
+	assert!(
+		stderr(&output).contains("function calls nest deeper than 1000"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
+fn deeply_nested_values_are_dropped_printed_and_compared() {
+	// A value nested a million lists deep once overflowed the stack when it was dropped.
+	let build = "(list:fold (lambda (acc i) (list acc)) (list) (list:range 0 1000000))";
+	let output = run_script(&format!("(define x {build})\n(echo \"built\")"), false, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "built\n");
+	// Two independently built values of the same shape are equal, and `to-string` shows a list
+	// nested deeper than the walk limit as `…` instead of following it down.
+	let build = "(list:fold (lambda (acc i) (list acc)) (list) (list:range 0 60000))";
+	let output = run_script(
+		&format!("(define lhs {build})\n(define rhs {build})\n(print (= lhs rhs))"),
+		false,
+		&[],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "true\n");
+	let output = run_script(
+		"(print (to-string (list:fold (lambda (acc i) (list acc)) (list) (list:range 0 200000))))",
+		false,
+		&[],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "…\n");
+}
+
+#[test]
+fn list_range_rejects_bounds_it_cannot_honor() {
+	for (script, message) in [
+		(
+			"(print (list:range (- 0 2) 2))",
+			"list:range needs a start of at least 0, not -2",
+		),
+		(
+			"(print (list:range 0 16777217))",
+			"the span must be at most 16777216",
+		),
+	] {
+		let output = run_script(script, false, &[]);
+		assert_eq!(status(&output), 2, "{}", stderr(&output));
+		assert!(stderr(&output).contains(message), "{}", stderr(&output));
+	}
+	// `(list:range 3 0)` stays empty, as the language page specifies.
+	let output = run_script("(print (list:range 3 0))", false, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "");
+}
+
+#[test]
+fn to_string_shows_a_list_on_one_line() {
+	for (script, expected) in [
+		(
+			"(print (to-string (list 1 (list 2 3) \"a\")))",
+			"(1 (2 3) a)\n",
+		),
+		("(print (to-string (list)))", "()\n"),
+	] {
+		let output = run_script(script, false, &[]);
+		assert_eq!(status(&output), 0, "{}", stderr(&output));
+		assert_eq!(stdout(&output), expected);
+	}
+}
+
+#[test]
 fn trace_writes_every_library_call_and_its_hints_to_standard_error() {
 	let workspace = Workspace::new("trace");
 	let a = workspace.file("a.mata", NFA);
@@ -3073,4 +3185,50 @@ fn a_number_is_the_same_symbol_in_every_section_and_load() {
 	);
 	assert_eq!(status(&output), 0, "{}", stderr(&output));
 	assert_eq!(stdout(&output), "true\ntrue\n");
+}
+
+#[test]
+fn the_benchmark_scripts_of_tests_integration_run() {
+	// `tests-integration/scripts/*.matasc` are the Mata Script versions of the C++ benchmark
+	// binaries; they run through this binary, so a change of the interpreter or of the script
+	// language cannot break them silently.
+	let workspace = Workspace::new("benchmark-scripts");
+	let script = |name: &str| {
+		workspace.file(
+			name,
+			&std::fs::read_to_string(format!(
+				"{}/../../../tests-integration/scripts/{name}",
+				env!("CARGO_MANIFEST_DIR")
+			))
+			.expect("a benchmark script"),
+		)
+	};
+	let inclusion = script("automata-inclusion.matasc");
+	let filter = script("email-filter.matasc");
+	let a = workspace.file("a.mata", NFA);
+	let b = workspace.file("b.mata", &NFA.replace(" a ", " b "));
+	let output = mata(["script", "run", &inclusion, &a, &b]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	// `(nfa:included? lhs rhs)`: the language of `a` is not included in the language of `b`,
+	// which also accepts `b`. The times are not compared; they are on their own lines.
+	assert_eq!(
+		stdout(&output)
+			.lines()
+			.map(|line| line.rsplit_once(": ").map_or(line, |(label, _)| label))
+			.collect::<Vec<_>>()
+			.join("\n"),
+		"automata_inclusion_naive\nfalse\nautomata_inclusion_antichains\nfalse"
+	);
+	let output = mata(["script", "run", &filter, &a, &a, &a, &a, &b]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	// `is_included(automata[4], intersect_aut)` as the C++ benchmark calls it: the language of
+	// the four copies of `a` is not included in the language of `b`.
+	assert_eq!(
+		stdout(&output)
+			.lines()
+			.map(|line| line.rsplit_once(": ").map_or(line, |(label, _)| label))
+			.collect::<Vec<_>>()
+			.join("\n"),
+		"automata_inclusion_naive\nfalse\nautomata_inclusion_antichains\nfalse"
+	);
 }
