@@ -1,0 +1,14 @@
+; Automata inclusion (b-armc-incl): the results of CADE'23 for the automata-inclusion
+; benchmarks of nfa-bench, as `bench-automata-inclusion.cc` prints them, once with each
+; inclusion algorithm. Two inputs: the left-hand automaton and the right-hand one.
+(mata-script "0.1.0")
+
+(declare-input lhs Nfa)
+(declare-input rhs Nfa)
+
+(define (inclusion-with algorithm)
+  (time (concat "automata_inclusion_" algorithm)
+    (nfa:included? lhs rhs :algorithm algorithm)))
+
+(check (inclusion-with "naive"))
+(check (inclusion-with "antichains"))

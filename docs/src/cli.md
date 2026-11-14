@@ -427,6 +427,10 @@ language page specifies but this build does not have are listed in the
   by name and never approximated: a script reports `unknown name 'nft:minimize'` and a direct command reports
   `unknown operation 'nft:minimize'`, both exiting `2`. `nft:minimize` is the one operation name of the page that is
   rejected: the library declares it only under `MATA_NFT_NOT_IMPLEMENTED`.
+- The interpreter limits how deeply a script may nest, as an error instead of a crash of the process: a function
+  call chain deeper than 1000 calls, and a source nesting deeper than 1000 levels, are reported where they stand.
+  The whole interpreter runs on a thread with a large stack, so a script that stays inside the limits never
+  overflows it, whatever build or platform it runs on.
 - `automaton:` operations are the names that exist under both `nfa:` and `nft:`, and the kind of their automaton
   operands picks one: `(automaton:determinize a)` is `nfa:determinize` for an NFA and `nft:determinize` for a
   transducer, and the result is an automaton of that kind. The operands must be of one kind: a call that gets both
