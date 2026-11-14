@@ -5,9 +5,10 @@
 //! label is [`EPSILON`](Symbol::EPSILON) and the one below it [`ANY`](Symbol::ANY). An acceptor is the identity
 //! relation of its language; `formula.project(leaf, &[0])` gives the language.
 //!
-//! Weights only decide whether a transition or a final weight exists. Zero ones are dropped, so the leaf
-//! is the support of the weighted relation (for semirings without zero divisors). Like a Mata transducer,
-//! an FST is read in lock step, while rustfst aligns epsilon asynchronously.
+//! Weights only decide whether a transition or a final weight exists. Zero ones are dropped, so the leaf holds
+//! the paths whose weights are all nonzero. That is the support of the weighted relation when nonzero weights
+//! neither multiply nor add up to zero (no zero divisors, zero-sum-free addition). Like a Mata transducer, an
+//! FST is read in lock step, while rustfst aligns epsilon asynchronously.
 //!
 //! ```
 //! use lazymat::Formula;
