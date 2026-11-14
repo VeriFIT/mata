@@ -218,7 +218,7 @@ pub fn check(input: &[u8], trace: bool) -> Result<()> {
 	};
 
 	let budget = Options::new().max_states(BUDGET);
-	let Ok(outcome) = timed("lazy", &budget) else {
+	let Some(outcome) = within_limit(timed("lazy", &budget)) else {
 		return Ok(());
 	};
 
