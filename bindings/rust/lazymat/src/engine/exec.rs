@@ -490,17 +490,25 @@ impl<'f> Emitter<'f> {
 		self.emit(key, Op::Intersection(a, b), arity, cost)
 	}
 
-	/// One union node over the branches of both operands, as a chain of binary unions would copy every
-	/// macrostate into each union above it.
+	/// The branches that `node` adds to a union above it.
+	fn push_branches(&self, node: ExecId, branches: &mut Vec<ExecId>) {
+		match &self.nodes[node].op {
+			Op::Union(inner) => branches.extend_from_slice(inner),
+			_ => branches.push(node),
+		}
+	}
+
 	fn union(&mut self, a: ExecId, b: ExecId) -> ExecId {
 		let mut branches = Vec::new();
-		for node in [a, b] {
-			match &self.nodes[node].op {
-				Op::Union(inner) => branches.extend_from_slice(inner),
-				_ => branches.push(node),
-			}
-		}
+		self.push_branches(a, &mut branches);
+		self.push_branches(b, &mut branches);
 
+		self.union_of(branches)
+	}
+
+	/// One union node over `branches`, as a chain of binary unions would copy every macrostate into each union
+	/// above it.
+	fn union_of(&mut self, mut branches: Vec<ExecId>) -> ExecId {
 		branches.sort_unstable();
 		branches.dedup();
 		if let [only] = branches[..] {
@@ -514,7 +522,7 @@ impl<'f> Emitter<'f> {
 			log_states: log2_sum(costs.map(|cost| cost.log_states)),
 		};
 		branches.sort_by_key(|&branch| self.costs[branch]);
-		let arity = self.nodes[a].arity;
+		let arity = self.nodes[branches[0]].arity;
 
 		self.emit(key, Op::Union(branches.into()), arity, cost)
 	}
@@ -596,11 +604,41 @@ pub(crate) fn build<'f>(
 	marked: &FxHashSet<NodeId>,
 ) -> Exec<'f> {
 	let decisions = Rewriter { formula, marked }.decide_all(root);
+	let inner_unions = inner_unions(&decisions, plain(root));
 	let mut emitter = Emitter::default();
 	let mut built = FxHashMap::default();
+	// The branches of the unions that only one union above uses, which get no node of their own.
+	let mut pending: FxHashMap<Src, Vec<ExecId>> = FxHashMap::default();
 	for (&src, decision) in &decisions {
-		let id = emitter.emit_decision(formula, &built, decision);
-		built.insert(src, id);
+		let Decision::Boolean(Boolean::Union, a, b) = decision else {
+			let id = emitter.emit_decision(formula, &built, decision);
+			built.insert(src, id);
+
+			continue;
+		};
+
+		let [first, second] = [a, b].map(|operand| {
+			pending.remove(operand).unwrap_or_else(|| {
+				let mut branches = Vec::new();
+				emitter.push_branches(built[operand], &mut branches);
+
+				branches
+			})
+		});
+
+		// The larger list takes the smaller, so that a chain of unions costs no more than sorting its branches.
+		let (mut branches, smaller) = if first.len() >= second.len() {
+			(first, second)
+		} else {
+			(second, first)
+		};
+
+		branches.extend(smaller);
+		if inner_unions.contains(&src) {
+			pending.insert(src, branches);
+		} else {
+			built.insert(src, emitter.union_of(branches));
+		}
 	}
 
 	let root = built[&plain(root)];
@@ -613,6 +651,29 @@ pub(crate) fn build<'f>(
 		root,
 		reachable,
 	}
+}
+
+/// The unions, other than `root`, whose only user is one union.
+fn inner_unions(decisions: &BTreeMap<Src, Decision>, root: Src) -> FxHashSet<Src> {
+	let mut users: FxHashMap<Src, (usize, bool)> = FxHashMap::default();
+	for decision in decisions.values() {
+		let by_union = matches!(decision, Decision::Boolean(Boolean::Union, ..));
+		for dep in decision.deps() {
+			let (count, all_unions) = users.entry(dep).or_insert((0, true));
+			*count += 1;
+			*all_unions &= by_union;
+		}
+	}
+
+	decisions
+		.iter()
+		.filter(|&(&src, decision)| {
+			src != root
+				&& matches!(decision, Decision::Boolean(Boolean::Union, ..))
+				&& users.get(&src) == Some(&(1, true))
+		})
+		.map(|(&src, _)| src)
+		.collect()
 }
 
 /// Whether `from` reaches each of `nodes[..=from]`, where children come before their parents.

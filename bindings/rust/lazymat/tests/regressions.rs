@@ -140,6 +140,32 @@ fn long_chains() -> Result<(), Error> {
 	Ok(())
 }
 
+/// Chains of unions, built left-deep and right-deep, become one union without copying every prefix.
+#[test]
+fn union_chains_of_either_shape() -> Result<(), Error> {
+	const CHAIN: u32 = 20_000;
+
+	let mut formula = Formula::new();
+	let leaves = (0..CHAIN)
+		.map(|index| formula.leaf(&single(Symbol::new(index))))
+		.collect::<Result<Vec<_>, _>>()?;
+
+	let mut left_deep = leaves[0];
+	let mut right_deep = leaves[0];
+	for &leaf in &leaves[1..] {
+		left_deep = formula.union(left_deep, leaf)?;
+		right_deep = formula.union(leaf, right_deep)?;
+	}
+
+	for chain in [left_deep, right_deep] {
+		let outcome = formula.check(chain, &Options::new())?;
+		assert!(!outcome.is_empty());
+		assert!(outcome.stats.macrostates < 2 * CHAIN as usize);
+	}
+
+	Ok(())
+}
+
 /// Double complement drops padded words, as a complement has none.
 #[test]
 fn double_complement_of_padded_relation() -> Result<(), Error> {
