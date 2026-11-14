@@ -8,7 +8,7 @@ use std::time::Instant;
 use hashbrown::HashTable;
 use rustc_hash::{FxBuildHasher, FxHashMap};
 
-use super::budget::Limit;
+use super::budget::{Budget, Limit};
 use super::exec::Op;
 use super::join::{GroupJoin, LetterIndex};
 use super::store::{Pair, Store, Tagged};
@@ -120,24 +120,38 @@ impl Digit {
 	}
 }
 
-impl Table {
-	fn new(universes: &[Rc<[Symbol]>], len: usize) -> Table {
-		let mut letters = Vec::with_capacity(len * universes.len());
-		let mut positions = vec![0; universes.len()];
-		for _ in 0..len {
-			letters.extend(
-				positions
-					.iter()
-					.zip(universes)
-					.map(|(&position, universe)| universe[position]),
-			);
-			for (position, universe) in positions.iter_mut().zip(universes).rev() {
-				*position += 1;
-				if *position < universe.len() {
-					break;
-				}
+/// Tuples of a table built between two checks of the query's limits.
+const TABLE_CHUNK: usize = 1 << 10;
 
-				*position = 0;
+/// The most tuples of a table allocated up front, so that a table the limits cut short is not allocated whole.
+const TABLE_RESERVED: usize = 1 << 16;
+
+impl Table {
+	/// The table of `len` tuples over `universes`; past a limit of `budget` it stops, short.
+	fn new(universes: &[Rc<[Symbol]>], len: usize, budget: &mut Budget) -> Table {
+		let mut letters = Vec::with_capacity(len.min(TABLE_RESERVED) * universes.len());
+		let mut positions = vec![0; universes.len()];
+		for start in (0..len).step_by(TABLE_CHUNK) {
+			budget.step(0);
+			if budget.passed() {
+				break;
+			}
+
+			for _ in start..len.min(start + TABLE_CHUNK) {
+				letters.extend(
+					positions
+						.iter()
+						.zip(universes)
+						.map(|(&position, universe)| universe[position]),
+				);
+				for (position, universe) in positions.iter_mut().zip(universes).rev() {
+					*position += 1;
+					if *position < universe.len() {
+						break;
+					}
+
+					*position = 0;
+				}
 			}
 		}
 
@@ -924,7 +938,7 @@ impl Engine<'_> {
 			.iter()
 			.map(|&member| self.post(child, member))
 			.collect::<Result<Vec<Rc<Post>>, Limit>>()?;
-		let table = self.tuple_table(node, &universes, num_tuples);
+		let table = self.tuple_table(node, &universes, num_tuples)?;
 		let mut exact: FxHashMap<usize, Vec<Target>> = FxHashMap::default();
 		let mut wildcards: Vec<(&[Symbol], Target)> = Vec::new();
 		for (tuple, target) in posts.iter().flat_map(|post| post.iter()) {
@@ -982,15 +996,23 @@ impl Engine<'_> {
 		Ok(post)
 	}
 
-	/// Every tuple of the universes of the complement `node`, in odometer order (last tape fastest), built once.
+	/// Every tuple of the universes of the complement `node`, in odometer order (last tape fastest), built once;
+	/// or the limit that the query passed while building it.
 	pub(super) fn tuple_table(
 		&mut self,
 		node: ExecId,
 		universes: &[Rc<[Symbol]>],
 		num_tuples: usize,
-	) -> Rc<Table> {
-		Rc::clone(
-			self.tables[node].get_or_insert_with(|| Rc::new(Table::new(universes, num_tuples))),
-		)
+	) -> Result<Rc<Table>, Limit> {
+		if let Some(table) = &self.tables[node] {
+			return Ok(Rc::clone(table));
+		}
+
+		let table = Rc::new(Table::new(universes, num_tuples, &mut self.budget));
+		// A table that a limit cut short is not kept.
+		self.stopped()?;
+		self.tables[node] = Some(Rc::clone(&table));
+
+		Ok(table)
 	}
 }

@@ -145,6 +145,11 @@ impl Row {
 	}
 }
 
+/// The words per tuple of a row over a child of `len` states.
+fn row_width(len: usize) -> usize {
+	len.div_ceil(64).max(1)
+}
+
 fn set(bits: &mut Bits, x: usize) {
 	bits[x / 64] |= 1 << (x % 64);
 }
@@ -184,7 +189,7 @@ impl Engine<'_> {
 			return Ok(None);
 		}
 
-		let table = self.tuple_table(node, universes, num_tuples);
+		let table = self.tuple_table(node, universes, num_tuples)?;
 		let mut rows = Vec::with_capacity(members.len());
 		for &member in members {
 			if let Some(row) = self.kept_row(node, member) {
@@ -198,12 +203,13 @@ impl Engine<'_> {
 				return Ok(None);
 			};
 
-			let (row, nanos) =
-				self.timed(|engine| engine.build_row(node, &post, &table, num_tuples, len));
-			if !self.admit_row(node, member, &row, nanos) {
+			if !self.row_fits(node, num_tuples, len) {
 				return Ok(None);
 			}
 
+			let (row, nanos) =
+				self.timed(|engine| engine.build_row(node, &post, &table, num_tuples, len));
+			self.keep_row(node, member, &row, nanos);
 			rows.push(row);
 		}
 
@@ -270,7 +276,7 @@ impl Engine<'_> {
 		num_tuples: usize,
 		len: usize,
 	) -> Row {
-		let width = len.div_ceil(64).max(1);
+		let width = row_width(len);
 		let mut bits = vec![0; num_tuples * width];
 		let tapes: Vec<usize> = (0..self.exec.nodes[node].arity).collect();
 		let mut odometer = Odometer::default();
@@ -300,18 +306,31 @@ impl Engine<'_> {
 		}
 	}
 
-	/// Keeps `row` for `member`; `false` if the rows passed [`ROWS_LIMIT`] and the node fell back.
-	fn admit_row(&mut self, node: ExecId, member: StateId, row: &Row, nanos: u64) -> bool {
+	/// Whether one more row over `num_tuples` tuples and a child of `len` states stays within [`ROWS_LIMIT`];
+	/// if not, the node falls back before the row is allocated.
+	fn row_fits(&mut self, node: ExecId, num_tuples: usize, len: usize) -> bool {
+		let bytes = num_tuples
+			.saturating_mul(row_width(len) * size_of::<u64>())
+			.saturating_add(size_of::<Row>());
+		let Some(dense) = &self.dense[node] else {
+			unreachable!("only a dense node keeps rows")
+		};
+
+		if dense.rows_bytes.saturating_add(bytes) <= ROWS_LIMIT {
+			return true;
+		}
+
+		self.fall_back(node);
+
+		false
+	}
+
+	/// Keeps `row` for `member`.
+	fn keep_row(&mut self, node: ExecId, member: StateId, row: &Row, nanos: u64) {
 		let bytes = row.bytes();
 		let Some(dense) = &mut self.dense[node] else {
 			unreachable!("only a dense node keeps rows")
 		};
-
-		if dense.rows_bytes + bytes > ROWS_LIMIT {
-			self.fall_back(node);
-
-			return false;
-		}
 
 		let index = member.index();
 		if dense.rows.len() <= index {
@@ -326,8 +345,6 @@ impl Engine<'_> {
 			let dropped = budget.admit(key, member, nanos, bytes);
 			self.evict(dropped);
 		}
-
-		true
 	}
 
 	/// Drops the row of `member` that the cache budget evicted.

@@ -127,6 +127,48 @@ fn a_query_that_answers_holds_at_most_max_states() -> Result<(), Error> {
 	Ok(())
 }
 
+/// The empty word of four tapes, with no moves.
+struct EmptyWord;
+
+impl Automaton for EmptyWord {
+	type State = ();
+
+	fn arity(&self) -> usize {
+		4
+	}
+
+	fn initial_states(&self) -> impl IntoIterator<Item = ()> {
+		[()]
+	}
+
+	fn is_final(&self, (): ()) -> bool {
+		true
+	}
+
+	fn for_each_move(&self, (): (), _: impl FnMut(&[Symbol], ())) {}
+}
+
+#[test]
+fn a_time_limit_stops_a_complement_over_too_many_tuples() -> Result<(), Error> {
+	let mut formula = Formula::new();
+	let empty_word = formula.leaf(&EmptyWord)?;
+	let complement = formula.complement(empty_word)?;
+
+	// 2^32 tuples of four tapes, which would take 64 GiB of letters at once.
+	let options = Options::new()
+		.alphabet(0..=u8::MAX)
+		.time_limit(Duration::from_millis(10));
+	let start = Instant::now();
+	let outcome = formula.check(complement, &options);
+	assert!(
+		matches!(outcome, Err(Error::TimeLimit { .. })),
+		"{outcome:?}"
+	);
+	assert!(start.elapsed() < Duration::from_secs(5));
+
+	Ok(())
+}
+
 #[test]
 fn a_time_limit_stops_one_large_post() -> Result<(), Error> {
 	let (formula, root) = blowup(20)?;
