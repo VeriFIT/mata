@@ -704,14 +704,20 @@ fn maximal_simulation(
 	work.spend(4 * leaf.num_moves() + size)?;
 	let moves = Moves::new(leaf);
 	// Every move will cost at least a row of work, an intersection or the removals that keep a row.
-	work.afford(moves.post.items.len() * size.div_ceil(WORD_BITS))?;
+	work.afford(
+		moves
+			.post
+			.items
+			.len()
+			.saturating_mul(size.div_ceil(WORD_BITS)),
+	)?;
 	let components = Components::new(&moves.post);
 
 	// Refining pair by pair would start the row of a state on a cycle by matching its moves against every state.
-	let start_checks: usize = (0..size)
+	let start_checks = (0..size)
 		.filter(|&state| components.on_cycle(StateId::new(state)))
-		.map(|state| size * (1 + moves.post.of(state).len()))
-		.sum();
+		.map(|state| size.saturating_mul(1 + moves.post.of(state).len()))
+		.fold(0, usize::saturating_add);
 	work.check_pairs(start_checks)?;
 
 	// Every row starts as the final states if its state is final, else as all states.
