@@ -80,6 +80,13 @@ impl Alphabets {
 	/// The number of tuples over the tapes of `node`, or `None` if `usize` cannot count them.
 	pub(crate) fn tuple_count(&self, node: ExecId) -> Option<usize> {
 		let classes = &self.class_of[self.offsets[node.index()]..self.offsets[node.index() + 1]];
+		// No tuple at all if a tape reads nothing, however many the other tapes would multiply to.
+		if classes
+			.iter()
+			.any(|&class| self.universes[class].is_empty())
+		{
+			return Some(0);
+		}
 
 		classes.iter().try_fold(1_usize, |count, &class| {
 			count.checked_mul(self.universes[class].len())

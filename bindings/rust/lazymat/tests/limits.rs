@@ -179,11 +179,15 @@ fn a_complement_over_no_tuples_is_empty() -> Result<(), Error> {
 	let empty_word = formula.leaf(&EmptyWord { tapes: TAPES })?;
 	let complement = formula.complement(empty_word)?;
 
-	// Tape 0 reads no symbol, and the other tapes have 2^64 tuples of their own.
-	let options = (1..TAPES).fold(Options::new(), |options, tape| {
-		options.tape_alphabet(tape, *b"ab")
-	});
-	assert!(formula.check(complement, &options)?.is_empty());
+	// One tape reads no symbol, and the other tapes have 2^64 tuples of their own.
+	for empty_tape in [0, TAPES - 1] {
+		let options = (0..TAPES)
+			.filter(|&tape| tape != empty_tape)
+			.fold(Options::new(), |options, tape| {
+				options.tape_alphabet(tape, *b"ab")
+			});
+		assert!(formula.check(complement, &options)?.is_empty());
+	}
 
 	Ok(())
 }
