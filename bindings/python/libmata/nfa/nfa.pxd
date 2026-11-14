@@ -143,6 +143,10 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         const State* cbegin() const
         const State* cend() const
 
+    cdef enum CRegexPrintMode "mata::nfa::RegexPrintMode":
+        RegexPrintModeFast "mata::nfa::RegexPrintMode::Fast"
+        RegexPrintModeReadable "mata::nfa::RegexPrintMode::Readable"
+
     # Structural base shared by mata::nfa::Nfa and mata::nft::Nft.
     cdef cppclass CAutomaton "mata::Automaton":
         CSparseSet[State] initial
@@ -200,6 +204,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         shared_ptr[CConstAlphabet] resolve_alphabet(CAlphabet*) except +
         COrdVector[Symbol] get_symbols_to_work_with(CAlphabet*) except +
         string print_to_mata(const CAlphabet*) except +
+        string print_to_regex(CRegexPrintMode, const CAlphabet*) except +
 
     # Automata tests
     cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CAlphabet*, ParameterMap&) except + nogil

@@ -526,6 +526,12 @@ cdef class Delta:
         return str(self)
 
 
+class RegexPrintMode(IntEnum):
+    """What `Nfa.to_regex_str()` optimizes for."""
+    Fast = <int>mata_nfa.RegexPrintModeFast
+    Readable = <int>mata_nfa.RegexPrintModeReadable
+
+
 def _rebuild_nfa(num_of_states, initial_states, final_states, sources, symbols, targets, alphabet):
     """Rebuild an `Nfa` from the state pickled by `Nfa.__reduce__`; the label follows via `Nfa.__setstate__`."""
     aut = Nfa(num_of_states, alphabet=alphabet)
@@ -1012,6 +1018,17 @@ cdef class Nfa:
 
     def __repr__(self):
         return str(self)
+
+    def to_regex_str(self, mode=RegexPrintMode.Fast, alph.Alphabet alphabet = None) -> str:
+        """Transforms the language of the automaton to a regular expression string.
+
+        :param RegexPrintMode mode: `Fast` to optimize conversion speed, `Readable` to optimize readability.
+        :param alph.Alphabet alphabet: Alphabet to name the symbols with; the automaton's own alphabet when `None`.
+        :return: The language of the automaton as an RE2 regular expression.
+        """
+        cdef mata_nfa.CRegexPrintMode c_mode = <mata_nfa.CRegexPrintMode><int>RegexPrintMode(mode)
+        cdef string result = self.thisptr.get().print_to_regex(c_mode, alph.unwrap_alphabet_or_null(alphabet))
+        return result.decode('utf-8')
 
     def to_mata_str(self, alph.Alphabet alphabet = None, encoding='utf-8') -> str:
         """Transforms the automaton to a mata-format string.

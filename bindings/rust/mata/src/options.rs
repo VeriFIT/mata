@@ -90,6 +90,18 @@ pub enum CheckAlgorithm {
 	Antichains,
 }
 
+/// What [`Nfa::regex`](crate::Nfa::regex) optimizes for.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum RegexPrintMode {
+	/// Conversion speed: a regex for a program to read.
+	#[default]
+	Fast,
+	/// The length and the legibility of the regex: a regex for a human to read. Takes longer, and the
+	/// result is never longer than the [`Fast`](RegexPrintMode::Fast) one.
+	Readable,
+}
+
 impl From<Determinization> for ffi::Determinization {
 	fn from(algorithm: Determinization) -> ffi::Determinization {
 		match algorithm {
@@ -140,6 +152,15 @@ impl From<CheckAlgorithm> for ffi::CheckAlgorithm {
 		match algorithm {
 			CheckAlgorithm::Naive => ffi::CheckAlgorithm::Naive,
 			CheckAlgorithm::Antichains => ffi::CheckAlgorithm::Antichains,
+		}
+	}
+}
+
+impl From<RegexPrintMode> for ffi::RegexPrintMode {
+	fn from(mode: RegexPrintMode) -> ffi::RegexPrintMode {
+		match mode {
+			RegexPrintMode::Fast => ffi::RegexPrintMode::Fast,
+			RegexPrintMode::Readable => ffi::RegexPrintMode::Readable,
 		}
 	}
 }

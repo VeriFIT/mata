@@ -27,7 +27,7 @@ mata <command> [arguments]
 | `mata nfa <operation> …`     | Performs one NFA operation directly, with automata as files           |
 | `mata nft <operation> …`     | Performs one NFT operation directly                                   |
 | `mata strings <operation> …` | Performs one string-solving operation directly                        |
-| `mata convert …`             | Converts automata between the `.mata` and DOT formats                 |
+| `mata convert …`             | Converts automata between the `.mata`, DOT and regex formats          |
 | `mata formats`               | Lists the supported formats, language features and every operation    |
 | `mata version`               | Prints the versions of the command, of Mata Script and of the library |
 | `mata help [command]`        | Prints usage; `--help` works everywhere                               |
@@ -231,6 +231,7 @@ determinize`, `mata nfa intersection`, `mata nft compose`, `mata strings get-acc
 - A decision operation prints `true` or `false` to the output stream, one line.
 - A number operation prints the number, one line.
 - A word operation prints one word as a sequence of symbol names separated by spaces, or `ε` for the empty word.
+- A string operation prints its string, one line.
 
 `mata nfa --help` and `mata nft --help` list every operation the installed `mata` command supports as a direct command;
 `mata formats` prints every format, every language feature and every script operation one entry per line, prefixed
@@ -246,24 +247,35 @@ the query convention.
 ## Conversion
 
 ```console
-mata convert [--from mata|dot] [--to mata|dot] [--kind nfa|nft]
+mata convert [--from mata|dot] [--to mata|dot|regex] [--kind nfa|nft]
              [--output PATH] [INPUT…]
 ```
 
 - `--from` defaults to the `.mata` format; `--to` defaults to DOT. `--from dot` converts DOT to `.mata`, so both
-  directions are available.
+  directions are available. Regex is an output format only; `--from regex` is an error.
 - `--kind` selects what the input is parsed as. It defaults to detecting the kind from the first automaton's
   `%LevelsNum` heading: `@NFA-explicit` without levels is an NFA, `@NFT-explicit` or any section with `%LevelsNum` is
   an NFT; a DOT graph with state labels, `forcelabels=true` or `num_of_levels` is an NFT. All inputs of one invocation
   must have the same kind; mixed kinds are an error.
 - Every input is converted in order to the output stream, or to one file per input when `--output PATH` names a
-  directory; with several inputs and no `--output`, each converted automaton follows the previous one, separated by a
-  blank line, as the `.mata` format allows several sections. Two inputs that would be written to the same file in the
-  directory, such as `one/x.mata` and `two/x.mata`, are an error before anything is written.
+  directory, with the extension `.mata`, `.dot` or `.regex`. With several inputs and no `--output`, each converted
+  automaton follows the previous one, separated by a blank line, which the `.mata` format reads as a section break.
+  Two inputs that would be written to the same file in the directory, such as `one/x.mata` and `two/x.mata`, are an
+  error before anything is written.
+- `--to regex` writes one RE2 regular expression per NFA. It is for NFAs only; a transducer is an error.
 - `--output -` writes to standard output, the default. `INPUT` of `-` reads standard input, but standard input can be
   used only once.
 - `mata convert --from dot` is the only part that accepts DOT. The DOT it accepts is exactly what
   `print_to_dot` writes, extended only where another writer is documented here.
+
+### Regex conventions
+
+Regex output represents every transition symbol as one character. When the input has an alphabet, the writer uses its
+symbol names: every used symbol's name, or its number if it is unnamed, must be exactly one character, and otherwise
+the conversion is an error. Without an alphabet it writes each symbol's Unicode scalar value, so every symbol must be
+at most `0x10FFFF` and not a surrogate. `nfa:create-from-regex` is a Latin1 reader: it reads back symbols through
+`0xFF` exactly. Larger Unicode scalar values require a UTF-8 reader; decoding that reader's UTF-8 automaton then
+recovers the original symbols.
 
 ### DOT conventions
 

@@ -815,6 +815,24 @@ rust::String print_dot(
 	return rust::String(nfa.print_to_dot(ascii_labels, intervals, max_label_length, alphabet));
 }
 
+rust::String print_regex(
+	const Nfa& nfa,
+	const RegexPrintMode mode,
+	const bool has_alphabet,
+	const rust::Slice<const rust::String> names,
+	const rust::Slice<const Symbol> symbols
+) {
+	const auto table = detail::NameTable(names, symbols);
+	const mata::Alphabet* const alphabet = has_alphabet ? &table : nullptr;
+	switch (mode) {
+		case RegexPrintMode::Fast:
+			return rust::String(nfa.print_to_regex(mata::nfa::RegexPrintMode::Fast, alphabet));
+		case RegexPrintMode::Readable:
+			return rust::String(nfa.print_to_regex(mata::nfa::RegexPrintMode::Readable, alphabet));
+	}
+	throw std::invalid_argument("unknown RegexPrintMode");
+}
+
 // Further operations of the library.
 
 std::unique_ptr<Nfa> concatenate_over_epsilon(const Nfa& lhs, const Nfa& rhs) {

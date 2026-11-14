@@ -16,8 +16,8 @@ use crate::types::{
 use crate::{
 	Alphabet, CheckAlgorithm, Complementation, Determinization, Direction, Distinction,
 	InvalidAutomaton, LimitExceeded, Limits, Minimization, NoSuchState, ParseError,
-	ProductFinalCondition, Reduction, RegexError, Requirement, ResidualConstruction, Run, Side,
-	State, Symbol, Transition, UnmetRequirement, Word, check,
+	ProductFinalCondition, Reduction, RegexError, RegexPrintMode, Requirement,
+	ResidualConstruction, Run, Side, State, Symbol, Transition, UnmetRequirement, Word, check,
 };
 
 /// A nondeterministic finite automaton with epsilon transitions: Mata's `mata::nfa::Nfa`.
@@ -1022,6 +1022,24 @@ impl Nfa {
 		Dot::new(self)
 	}
 
+	/// The language as an RE2 regular expression; set options on the adapter and render it with
+	/// [`Regex::render`]. [`Nfa::from_regex`] is a Latin1 reader, so these round trips apply to symbols
+	/// through `0xFF`; a larger Unicode scalar value needs a UTF-8 reader and decoding of its UTF-8 automaton.
+	///
+	/// ```
+	/// use mata::{Nfa, RegexPrintMode};
+	///
+	/// let nfa = Nfa::from_regex("ab|b")?;
+	/// let fast = nfa.regex().render()?;
+	/// assert!(Nfa::from_regex(&fast)?.is_equivalent_to(&nfa));
+	/// let readable = nfa.regex().mode(RegexPrintMode::Readable).render()?;
+	/// assert!(readable.len() <= fast.len());
+	/// # Ok::<(), mata::Error>(())
+	/// ```
+	pub fn regex(&self) -> Regex<'_> {
+		Regex::new(self)
+	}
+
 	// ── Further operations of the library ─────────────────────────────────────────────────────────
 
 	/// L(self) · L(other) as [`Nfa::concat`], but joined by epsilon transitions from the final states of
@@ -1406,6 +1424,72 @@ impl fmt::Display for DisplayMata<'_> {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		let (names, symbols) = self.alphabet.raw_names();
 		f.write_str(&check(ffi::print_mata(self.nfa.raw(), &names, &symbols)))
+	}
+}
+
+/// Adapter returned by [`Nfa::regex`]; renders the language as a regular expression with
+/// [`Regex::render`].
+#[derive(Clone, Copy, Debug)]
+#[must_use = "an adapter does nothing until it is rendered"]
+pub struct Regex<'a> {
+	nfa: &'a Nfa,
+	mode: RegexPrintMode,
+	alphabet: Option<&'a Alphabet>,
+}
+
+impl<'a> Regex<'a> {
+	pub(crate) fn new(nfa: &'a Nfa) -> Regex<'a> {
+		Regex {
+			nfa,
+			mode: RegexPrintMode::Fast,
+			alphabet: None,
+		}
+	}
+
+	/// Chooses what the conversion optimizes for.
+	pub fn mode(self, mode: RegexPrintMode) -> Regex<'a> {
+		Regex { mode, ..self }
+	}
+
+	/// Writes the symbols as the names of `alphabet`. Rendering fails when a used symbol's name, or its
+	/// number if it is unnamed, is not exactly one character.
+	///
+	/// ```
+	/// use mata::{Alphabet, Nfa, Symbol};
+	///
+	/// let mut sigma = Alphabet::new();
+	/// sigma.insert_named("x", Symbol::from(b'a'))?;
+	/// sigma.insert_named("y", Symbol::from(b'b'))?;
+	/// let nfa = Nfa::from_regex("ab")?;
+	/// let regex = nfa.regex().alphabet(&sigma).render()?;
+	/// assert_eq!(regex, "xy");
+	/// # Ok::<(), mata::Error>(())
+	/// ```
+	pub fn alphabet(self, alphabet: &'a Alphabet) -> Regex<'a> {
+		Regex {
+			alphabet: Some(alphabet),
+			..self
+		}
+	}
+
+	/// The regular expression.
+	///
+	/// # Errors
+	///
+	/// [`UnmetRequirement`] with [`Requirement::RegexSymbols`] when a symbol has no single-character
+	/// representation: without an alphabet, when it is not a Unicode scalar value (`0..=0x10FFFF`
+	/// except the surrogates); with an alphabet, when its name, or its number if it has no name, is
+	/// not exactly one UTF-8 character.
+	pub fn render(&self) -> Result<String, UnmetRequirement> {
+		let (names, symbols) = self.alphabet.map(Alphabet::raw_names).unwrap_or_default();
+		ffi::print_regex(
+			self.nfa.raw(),
+			self.mode.into(),
+			self.alphabet.is_some(),
+			&names,
+			&symbols,
+		)
+		.map_err(|error| UnmetRequirement::new(Requirement::RegexSymbols, error.what()))
 	}
 }
 
