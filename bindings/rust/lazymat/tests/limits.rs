@@ -127,14 +127,16 @@ fn a_query_that_answers_holds_at_most_max_states() -> Result<(), Error> {
 	Ok(())
 }
 
-/// The empty word of four tapes, with no moves.
-struct EmptyWord;
+/// The empty word of `tapes` tapes, with no moves.
+struct EmptyWord {
+	tapes: usize,
+}
 
 impl Automaton for EmptyWord {
 	type State = ();
 
 	fn arity(&self) -> usize {
-		4
+		self.tapes
 	}
 
 	fn initial_states(&self) -> impl IntoIterator<Item = ()> {
@@ -151,7 +153,7 @@ impl Automaton for EmptyWord {
 #[test]
 fn a_time_limit_stops_a_complement_over_too_many_tuples() -> Result<(), Error> {
 	let mut formula = Formula::new();
-	let empty_word = formula.leaf(&EmptyWord)?;
+	let empty_word = formula.leaf(&EmptyWord { tapes: 4 })?;
 	let complement = formula.complement(empty_word)?;
 
 	// 2^32 tuples of four tapes, which would take 64 GiB of letters at once.
@@ -165,6 +167,23 @@ fn a_time_limit_stops_a_complement_over_too_many_tuples() -> Result<(), Error> {
 		"{outcome:?}"
 	);
 	assert!(start.elapsed() < Duration::from_secs(5));
+
+	Ok(())
+}
+
+#[test]
+fn a_complement_over_no_tuples_is_empty() -> Result<(), Error> {
+	const TAPES: usize = 65;
+
+	let mut formula = Formula::new();
+	let empty_word = formula.leaf(&EmptyWord { tapes: TAPES })?;
+	let complement = formula.complement(empty_word)?;
+
+	// Tape 0 reads no symbol, and the other tapes have 2^64 tuples of their own.
+	let options = (1..TAPES).fold(Options::new(), |options, tape| {
+		options.tape_alphabet(tape, *b"ab")
+	});
+	assert!(formula.check(complement, &options)?.is_empty());
 
 	Ok(())
 }

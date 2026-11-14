@@ -155,9 +155,10 @@ impl Table {
 			}
 		}
 
-		let mut strides = vec![1; universes.len()];
+		let mut strides = vec![1_usize; universes.len()];
 		for tape in (1..universes.len()).rev() {
-			strides[tape - 1] = strides[tape] * universes[tape].len();
+			// Saturates only for a table without tuples, which never reads its strides.
+			strides[tape - 1] = strides[tape].saturating_mul(universes[tape].len());
 		}
 
 		Table {
