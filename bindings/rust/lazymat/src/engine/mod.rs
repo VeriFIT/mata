@@ -105,13 +105,53 @@ enum Explored {
 	OverBudget(usize),
 }
 
-/// The alphabet of every tape below an explicit node, which its automaton depends on.
+/// What the automaton of an explicit node depends on, which is the alphabet of every tape below it and the keys
+/// of the explicit nodes below it.
 #[derive(Debug, PartialEq, Eq, Hash)]
-pub(crate) struct Signature {
+struct Signature {
 	/// The distinct alphabets, in the order the tapes first reach them.
 	universes: Vec<Box<[Symbol]>>,
-	/// The index in `universes` of each tape, in an order that only the subterm decides.
-	tapes: Vec<u32>,
+	/// The tapes and the explicit nodes below, in an order that only the subterm decides.
+	items: Vec<Item>,
+}
+
+/// One entry of a [`Signature`].
+#[derive(Debug, PartialEq, Eq, Hash)]
+enum Item {
+	/// A tape, by the index of its alphabet.
+	Tape(u32),
+	/// An explicit node below, by the number of its key, so that its own tapes are not copied again.
+	Explicit(u64),
+}
+
+/// The automata of the explicit nodes of a formula, kept for later queries.
+#[derive(Debug, Default)]
+pub(crate) struct ExplicitCache {
+	/// The number of every key, by which the keys of the explicit nodes above refer to it.
+	numbers: FxHashMap<(NodeId, Signature), u64>,
+	/// The automata built, by key number.
+	leaves: FxHashMap<u64, Arc<Leaf>>,
+	/// The next number. Clearing the cache does not reuse numbers, so a query running meanwhile cannot mix keys.
+	next: u64,
+}
+
+impl ExplicitCache {
+	/// The number of `key`, given now if the key is new.
+	fn number(&mut self, key: (NodeId, Signature)) -> u64 {
+		match self.numbers.entry(key) {
+			Entry::Occupied(entry) => *entry.get(),
+			Entry::Vacant(entry) => {
+				self.next += 1;
+
+				*entry.insert(self.next - 1)
+			}
+		}
+	}
+
+	pub(crate) fn clear(&mut self) {
+		self.numbers.clear();
+		self.leaves.clear();
+	}
 }
 
 /// How the search first reached a macrostate, from `parent` by the tuple at `offset` in its tuple buffer.
@@ -247,29 +287,20 @@ impl<'f> Engine<'f> {
 
 	/// Builds every explicit node, children first.
 	fn materialize_explicit(&mut self) -> Result<(), Limit> {
-		let explicit: Vec<ExecId> = self
-			.exec
-			.nodes
-			.keys()
-			.filter(|&node| {
-				matches!(self.exec.nodes[node].op, Op::Explicit { .. }) && self.exec.reachable[node]
-			})
-			.collect();
-		// Taken before any node below is replaced by its automaton, which hides the tapes it projects away.
-		let signatures: Vec<Signature> =
-			explicit.iter().map(|&node| self.signature(node)).collect();
-
-		for (node, signature) in explicit.into_iter().zip(signatures) {
-			let Op::Explicit {
+		let mut numbers: FxHashMap<ExecId, u64> = FxHashMap::default();
+		for node in self.exec.nodes.keys() {
+			if let Op::Explicit {
 				child,
 				options,
 				origin,
 			} = self.exec.nodes[node].op
-			else {
-				unreachable!("an explicit node stays explicit until it is built")
-			};
-
-			self.materialize_node(node, child, options, origin, signature)?;
+				&& self.exec.reachable[node]
+			{
+				let key = (origin, self.signature(node, &numbers));
+				let number = self.formula.explicit_cache.lock().number(key);
+				numbers.insert(node, number);
+				self.materialize_node(node, child, options, origin, number)?;
+			}
 		}
 
 		Ok(())
@@ -282,12 +313,17 @@ impl<'f> Engine<'f> {
 		child: ExecId,
 		options: ExplicitOptions,
 		origin: NodeId,
-		signature: Signature,
+		number: u64,
 	) -> Result<(), Limit> {
 		let term = self.formula.term(origin);
-		let key = (origin, signature);
 		// Looked up before the match, whose scrutinee would hold the lock through the insert.
-		let hit = self.formula.explicit_cache.lock().get(&key).cloned();
+		let hit = self
+			.formula
+			.explicit_cache
+			.lock()
+			.leaves
+			.get(&number)
+			.cloned();
 
 		let (leaf, cached) = match hit {
 			Some(leaf) => (leaf, true),
@@ -297,7 +333,8 @@ impl<'f> Engine<'f> {
 					self.formula
 						.explicit_cache
 						.lock()
-						.insert(key, Arc::clone(&leaf));
+						.leaves
+						.insert(number, Arc::clone(&leaf));
 
 					(leaf, false)
 				}
@@ -329,16 +366,23 @@ impl<'f> Engine<'f> {
 	}
 
 	/// The alphabets that the language of the explicit `node` depends on, tape by tape.
-	fn signature(&self, node: ExecId) -> Signature {
+	fn signature(&self, node: ExecId, numbers: &FxHashMap<ExecId, u64>) -> Signature {
 		let mut signature = Signature {
 			universes: Vec::new(),
-			tapes: Vec::new(),
+			items: Vec::new(),
 		};
 		let mut positions: FxHashMap<usize, u32> = FxHashMap::default();
 		let mut seen: FxHashSet<ExecId> = FxHashSet::default();
 		let mut stack = vec![node];
 		while let Some(below) = stack.pop() {
 			if !seen.insert(below) {
+				continue;
+			}
+
+			// An explicit node below, keyed before, stands for its own subterm.
+			if let Some(&number) = numbers.get(&below) {
+				signature.items.push(Item::Explicit(number));
+
 				continue;
 			}
 
@@ -357,7 +401,7 @@ impl<'f> Engine<'f> {
 					}
 				};
 
-				signature.tapes.push(position);
+				signature.items.push(Item::Tape(position));
 			}
 
 			stack.extend(self.exec.nodes[below].op.children());

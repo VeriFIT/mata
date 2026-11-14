@@ -79,9 +79,6 @@ pub(crate) struct SyncSpec {
 	pub(crate) layout: Box<[ResultTape]>,
 }
 
-/// Materialized explicit nodes, by origin node and the alphabets of the tapes below it.
-type ExplicitCache = FxHashMap<(NodeId, engine::Signature), Arc<Leaf>>;
-
 /// A DAG of Boolean and relational operations over automata, checked for emptiness lazily.
 ///
 /// Building a formula does no automata work. [`leaf`](Formula::leaf) copies an automaton, and the other builders add a node. [`is_empty`](Formula::is_empty) and [`check`](Formula::check) explore only the macrostates they need.
@@ -95,7 +92,7 @@ pub struct Formula {
 	/// Whether a word of the node may read padding (a complement never does).
 	pub(crate) pads: TiVec<NodeId, bool>,
 	pub(crate) leaves: TiVec<LeafId, Leaf>,
-	pub(crate) explicit_cache: Mutex<ExplicitCache>,
+	pub(crate) explicit_cache: Mutex<engine::ExplicitCache>,
 }
 
 impl Default for Formula {
@@ -114,7 +111,7 @@ impl Formula {
 			arities: TiVec::default(),
 			pads: TiVec::default(),
 			leaves: TiVec::default(),
-			explicit_cache: Mutex::new(FxHashMap::default()),
+			explicit_cache: Mutex::new(engine::ExplicitCache::default()),
 		}
 	}
 
