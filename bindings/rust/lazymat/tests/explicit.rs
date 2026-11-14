@@ -1,6 +1,6 @@
 //! Explicit nodes give the same answers, and their budgets, cache across queries and statistics work.
 
-use lazymat::{Automaton, Error, ExplicitOptions, Formula, Options, Symbol, Term, Witness};
+use lazymat::{Automaton, Error, ExplicitOptions, Formula, Options, Symbol, Tape, Term, Witness};
 use mata::{Nfa, State};
 
 /// Words over {a, b} whose `n`-th letter from the end is `a`.
@@ -213,6 +213,78 @@ fn the_cache_keeps_the_alphabet_of_each_tape() -> Result<(), Error> {
 			);
 		}
 	}
+
+	Ok(())
+}
+
+/// The relation (a, b)*.
+struct ABStar;
+
+impl Automaton for ABStar {
+	type State = ();
+
+	fn arity(&self) -> usize {
+		2
+	}
+
+	fn initial_states(&self) -> impl IntoIterator<Item = ()> {
+		[()]
+	}
+
+	fn is_final(&self, (): ()) -> bool {
+		true
+	}
+
+	fn for_each_move(&self, (): (), mut visit: impl FnMut(&[Symbol], ())) {
+		visit(&[Symbol::from(b'a'), Symbol::from(b'b')], ());
+	}
+}
+
+/// The language {a}.
+struct JustA;
+
+impl Automaton for JustA {
+	type State = bool;
+
+	fn arity(&self) -> usize {
+		1
+	}
+
+	fn initial_states(&self) -> impl IntoIterator<Item = bool> {
+		[false]
+	}
+
+	fn is_final(&self, read: bool) -> bool {
+		read
+	}
+
+	fn for_each_move(&self, read: bool, mut visit: impl FnMut(&[Symbol], bool)) {
+		if !read {
+			visit(&[Symbol::from(b'a')], true);
+		}
+	}
+}
+
+#[test]
+fn the_cache_sees_the_tapes_hidden_in_a_nested_explicit_node() -> Result<(), Error> {
+	let mut formula = Formula::new();
+	let ab_star = formula.leaf(&ABStar)?;
+	let not_ab_star = formula.complement(ab_star)?;
+	let projected = formula.project(not_ab_star, &[0])?;
+	let inner = formula.explicit(projected)?;
+	let not_inner = formula.complement(inner)?;
+	let outer = formula.explicit(not_inner)?;
+	let just_a = formula.leaf(&JustA)?;
+	let left = formula.intersection(outer, just_a)?;
+	let right = formula.project(ab_star, &[1])?;
+	let product = formula.sync_product(left, right, &[], &[Tape::Lhs(0), Tape::Rhs(0)])?;
+
+	// Without c the inner node is empty, so the outer one holds a.
+	assert!(!formula.is_empty(product)?);
+
+	// With c on the tape of b, the inner node holds a+, so the outer one is {ε} and the product is empty.
+	let with_c = Options::new().tape_alphabet(1, *b"c");
+	assert!(formula.check(product, &with_c)?.is_empty());
 
 	Ok(())
 }

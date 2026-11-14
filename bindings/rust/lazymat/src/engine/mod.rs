@@ -247,16 +247,29 @@ impl<'f> Engine<'f> {
 
 	/// Builds every explicit node, children first.
 	fn materialize_explicit(&mut self) -> Result<(), Limit> {
-		for node in self.exec.nodes.keys() {
-			if let Op::Explicit {
+		let explicit: Vec<ExecId> = self
+			.exec
+			.nodes
+			.keys()
+			.filter(|&node| {
+				matches!(self.exec.nodes[node].op, Op::Explicit { .. }) && self.exec.reachable[node]
+			})
+			.collect();
+		// Taken before any node below is replaced by its automaton, which hides the tapes it projects away.
+		let signatures: Vec<Signature> =
+			explicit.iter().map(|&node| self.signature(node)).collect();
+
+		for (node, signature) in explicit.into_iter().zip(signatures) {
+			let Op::Explicit {
 				child,
 				options,
 				origin,
 			} = self.exec.nodes[node].op
-				&& self.exec.reachable[node]
-			{
-				self.materialize_node(node, child, options, origin)?;
-			}
+			else {
+				unreachable!("an explicit node stays explicit until it is built")
+			};
+
+			self.materialize_node(node, child, options, origin, signature)?;
 		}
 
 		Ok(())
@@ -269,9 +282,10 @@ impl<'f> Engine<'f> {
 		child: ExecId,
 		options: ExplicitOptions,
 		origin: NodeId,
+		signature: Signature,
 	) -> Result<(), Limit> {
 		let term = self.formula.term(origin);
-		let key = (origin, self.signature(node));
+		let key = (origin, signature);
 		// Looked up before the match, whose scrutinee would hold the lock through the insert.
 		let hit = self.formula.explicit_cache.lock().get(&key).cloned();
 
@@ -314,7 +328,7 @@ impl<'f> Engine<'f> {
 		Ok(())
 	}
 
-	/// The alphabets that the language of `node` depends on, tape by tape.
+	/// The alphabets that the language of the explicit `node` depends on, tape by tape.
 	fn signature(&self, node: ExecId) -> Signature {
 		let mut signature = Signature {
 			universes: Vec::new(),
