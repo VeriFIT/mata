@@ -105,6 +105,15 @@ enum Explored {
 	OverBudget(usize),
 }
 
+/// The alphabet of every tape below an explicit node, which its automaton depends on.
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub(crate) struct Signature {
+	/// The distinct alphabets, in the order the tapes first reach them.
+	universes: Vec<Box<[Symbol]>>,
+	/// The index in `universes` of each tape, in an order that only the subterm decides.
+	tapes: Vec<u32>,
+}
+
 /// How the search first reached a macrostate, from `parent` by the tuple at `offset` in its tuple buffer.
 #[derive(Clone, Copy, Debug)]
 struct Step {
@@ -305,21 +314,40 @@ impl<'f> Engine<'f> {
 		Ok(())
 	}
 
-	/// The alphabets that the language of `node` depends on.
-	fn signature(&self, node: ExecId) -> Vec<Box<[Symbol]>> {
-		let classes: FxHashSet<usize> = exec::reachable(&self.exec.nodes, node)
-			.iter_enumerated()
-			.filter(|&(_, &reached)| reached)
-			.flat_map(|(below, _)| {
-				(0..self.exec.nodes[below].arity).map(move |tape| self.alphabets.class(below, tape))
-			})
-			.collect();
+	/// The alphabets that the language of `node` depends on, tape by tape.
+	fn signature(&self, node: ExecId) -> Signature {
+		let mut signature = Signature {
+			universes: Vec::new(),
+			tapes: Vec::new(),
+		};
+		let mut positions: FxHashMap<usize, u32> = FxHashMap::default();
+		let mut seen: FxHashSet<ExecId> = FxHashSet::default();
+		let mut stack = vec![node];
+		while let Some(below) = stack.pop() {
+			if !seen.insert(below) {
+				continue;
+			}
 
-		let mut signature: Vec<Box<[Symbol]>> = classes
-			.into_iter()
-			.map(|class| self.alphabets.class_universe(class).into())
-			.collect();
-		signature.sort_unstable();
+			for tape in 0..self.exec.nodes[below].arity {
+				let class = self.alphabets.class(below, tape);
+				let position = match positions.entry(class) {
+					Entry::Occupied(entry) => *entry.get(),
+					Entry::Vacant(entry) => {
+						let position = u32::try_from(signature.universes.len())
+							.expect("fewer than 2^32 alphabets");
+						signature
+							.universes
+							.push(self.alphabets.class_universe(class).into());
+
+						*entry.insert(position)
+					}
+				};
+
+				signature.tapes.push(position);
+			}
+
+			stack.extend(self.exec.nodes[below].op.children());
+		}
 
 		signature
 	}

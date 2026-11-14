@@ -1,6 +1,6 @@
 //! Explicit nodes give the same answers, and their budgets, cache across queries and statistics work.
 
-use lazymat::{Error, ExplicitOptions, Formula, Options, Symbol, Term, Witness};
+use lazymat::{Automaton, Error, ExplicitOptions, Formula, Options, Symbol, Term, Witness};
 use mata::{Nfa, State};
 
 /// Words over {a, b} whose `n`-th letter from the end is `a`.
@@ -158,6 +158,61 @@ fn explicit_complement_and_nested_explicit_nodes() -> Result<(), Error> {
 	let outcome = formula.check(nested, &Options::new())?;
 	assert_eq!(outcome.is_empty(), expected);
 	assert_eq!(outcome.stats.explicit.len(), 2);
+
+	Ok(())
+}
+
+/// The relation (a, a)*.
+struct SameA;
+
+impl Automaton for SameA {
+	type State = ();
+
+	fn arity(&self) -> usize {
+		2
+	}
+
+	fn initial_states(&self) -> impl IntoIterator<Item = ()> {
+		[()]
+	}
+
+	fn is_final(&self, (): ()) -> bool {
+		true
+	}
+
+	fn for_each_move(&self, (): (), mut visit: impl FnMut(&[Symbol], ())) {
+		let a = Symbol::from(b'a');
+
+		visit(&[a, a], ());
+	}
+}
+
+#[test]
+fn the_cache_keeps_the_alphabet_of_each_tape() -> Result<(), Error> {
+	let mut formula = Formula::new();
+	let same = formula.leaf(&SameA)?;
+	let complement = formula.complement(same)?;
+	let root = formula.explicit(complement)?;
+
+	// The second query swaps the alphabets of the first, so it cannot reuse its automaton.
+	for (first, second) in [(*b"ab", *b"ac"), (*b"ac", *b"ab")] {
+		let options = Options::new()
+			.tape_alphabet(0, first)
+			.tape_alphabet(1, second);
+		let witness = formula
+			.check(root, &options)?
+			.witness
+			.expect("the complement of (a, a)* is not empty");
+
+		for (tape, alphabet) in [(0, first), (1, second)] {
+			let alphabet = alphabet.map(Symbol::from);
+			let word = witness.tape(tape).expect("two tapes");
+			assert!(
+				word.iter().all(|symbol| alphabet.contains(symbol)),
+				"{word:?} on tape {tape}"
+			);
+		}
+	}
 
 	Ok(())
 }

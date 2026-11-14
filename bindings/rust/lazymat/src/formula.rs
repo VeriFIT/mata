@@ -79,8 +79,8 @@ pub(crate) struct SyncSpec {
 	pub(crate) layout: Box<[ResultTape]>,
 }
 
-/// Materialized explicit nodes, by origin node and the universes they were built over.
-type ExplicitCache = FxHashMap<(NodeId, Vec<Box<[Symbol]>>), Arc<Leaf>>;
+/// Materialized explicit nodes, by origin node and the alphabets of the tapes below it.
+type ExplicitCache = FxHashMap<(NodeId, engine::Signature), Arc<Leaf>>;
 
 /// A DAG of Boolean and relational operations over automata, checked for emptiness lazily.
 ///
