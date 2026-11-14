@@ -48,6 +48,8 @@ pub(crate) struct Closures {
 	windows: TiVec<ExecId, Vec<Option<Window>>>,
 	/// The bytes that `words` and `windows` allocate.
 	bytes: usize,
+	/// Whether a closure passed the limit, after which no closure is built.
+	full: bool,
 	/// Working space for building a closure.
 	scratch: Vec<u64>,
 }
@@ -58,11 +60,12 @@ impl Closures {
 			words: Vec::new(),
 			windows: vec![Vec::new(); num_nodes].into(),
 			bytes: 0,
+			full: false,
 			scratch: Vec::new(),
 		}
 	}
 
-	/// The closure of `state` of the complement `node`, built once; `None` if building it passes the limit.
+	/// The closure of `state` of the complement `node`, built once; `None` once the closures pass the limit.
 	pub(crate) fn get_or_build(
 		&mut self,
 		node: ExecId,
@@ -73,6 +76,10 @@ impl Closures {
 		let index = state.index();
 		if let Some(&Some(window)) = self.windows[node].get(index) {
 			return Some(self.view(window));
+		}
+
+		if self.full {
+			return None;
 		}
 
 		let set = store.set(state);
@@ -103,6 +110,8 @@ impl Closures {
 		let (words_len, windows_len) = (self.words.len() + end - offset, index + 1);
 		let more = room(&self.words, words_len) + room(&self.windows[node], windows_len);
 		if self.bytes + more > CLOSURES_LIMIT {
+			self.full = true;
+
 			return None;
 		}
 
@@ -349,6 +358,10 @@ mod tests {
 				&& refused.iter().any(|index| index % 2 == 1)
 		);
 		assert!(refused[0] > 1000, "refused from {}", refused[0]);
+		assert!(
+			(refused[0]..sets.len()).all(|index| !built[index]),
+			"nothing is built after the first refusal"
+		);
 		for (index, &set) in sets.iter().enumerate().filter(|&(index, _)| built[index]) {
 			let closure = closures
 				.get_or_build(ExecId::new(index % 2), &store, set, rows)
