@@ -2,6 +2,7 @@
 
 use lazymat::regex::{self, Regex};
 use lazymat::{Error, Formula, Options, Symbol, Tape};
+use regex_automata::MatchKind;
 use regex_automata::dfa::{StartKind, dense};
 
 #[test]
@@ -35,6 +36,22 @@ fn unanchored_dfas_are_rejected() -> Result<(), Box<dyn std::error::Error>> {
 		.build("a")?;
 
 	assert!(matches!(Regex::from_dfa(dfa), Err(regex::Error::Start(_))));
+
+	Ok(())
+}
+
+#[test]
+fn dfas_that_quit_are_rejected() -> Result<(), Box<dyn std::error::Error>> {
+	let dfa = dense::Builder::new()
+		.configure(
+			dense::Config::new()
+				.start_kind(StartKind::Anchored)
+				.match_kind(MatchKind::All)
+				.quit(b'a', true),
+		)
+		.build("a")?;
+
+	assert!(matches!(Regex::from_dfa(dfa), Err(regex::Error::Quit)));
 
 	Ok(())
 }

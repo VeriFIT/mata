@@ -39,6 +39,9 @@ pub enum Error {
 	/// The DFA has no anchored start state.
 	#[error(transparent)]
 	Start(#[from] StartError),
+	/// The DFA gives up on some input it can reach (a quit byte), so its language is not known.
+	#[error("the DFA quits on some input, so its language is not known")]
+	Quit,
 }
 
 /// The language of a regular expression, as a dense DFA that must match the whole word.
@@ -76,20 +79,21 @@ impl Regex {
 	///
 	/// # Errors
 	///
-	/// [`Start`](Error::Start) if the DFA does not support anchored searches.
+	/// [`Start`](Error::Start) if the DFA does not support anchored searches, or [`Quit`](Error::Quit) if it
+	/// can reach a quit byte, such as a non-ASCII byte under a heuristic Unicode word boundary.
 	pub fn from_dfa(dfa: dense::DFA<Vec<u32>>) -> Result<Regex, Error> {
 		let start = dfa.start_state(&start::Config::new().anchored(Anchored::Yes))?;
-		let live = live_states(&dfa, start);
+		let live = live_states(&dfa, start)?;
 
 		Ok(Regex { dfa, start, live })
 	}
 }
 
-/// The moves of `state` that do not lead to a dead or quit state.
+/// The moves of `state` that do not lead to the dead state.
 fn targets(dfa: &Dfa, state: StateID) -> impl Iterator<Item = (u8, StateID)> {
 	(u8::MIN..=u8::MAX)
 		.map(move |byte| (byte, dfa.next_state(state, byte)))
-		.filter(|&(_, target)| !dfa.is_dead_state(target) && !dfa.is_quit_state(target))
+		.filter(|&(_, target)| !dfa.is_dead_state(target))
 }
 
 /// A DFA reports a match one byte late, so a state accepts if the end of input leads to a match.
@@ -97,13 +101,18 @@ fn accepts(dfa: &Dfa, state: StateID) -> bool {
 	dfa.is_match_state(dfa.next_eoi_state(state))
 }
 
-/// The states reachable from `start` that reach an accepting state.
-fn live_states(dfa: &Dfa, start: StateID) -> FxHashSet<StateID> {
+/// The states reachable from `start` that reach an accepting state; [`Quit`](Error::Quit) if a quit state is
+/// reachable.
+fn live_states(dfa: &Dfa, start: StateID) -> Result<FxHashSet<StateID>, Error> {
 	let mut predecessors: FxHashMap<StateID, Vec<StateID>> = FxHashMap::default();
 	let mut reached = FxHashSet::from_iter([start]);
 	let mut stack = vec![start];
 	while let Some(state) = stack.pop() {
 		for (_, target) in targets(dfa, state) {
+			if dfa.is_quit_state(target) {
+				return Err(Error::Quit);
+			}
+
 			predecessors.entry(target).or_default().push(state);
 			if reached.insert(target) {
 				stack.push(target);
@@ -124,7 +133,7 @@ fn live_states(dfa: &Dfa, start: StateID) -> FxHashSet<StateID> {
 		}
 	}
 
-	live
+	Ok(live)
 }
 
 impl Automaton for Regex {
