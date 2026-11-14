@@ -211,10 +211,10 @@ fn transducer_operations_agree_with_mata() -> Result<(), Error> {
 				empty += 1;
 			}
 
-			if let Some(witness) = witness
-				&& witness.arity() == 2
-			{
-				let words = [mata_word(&witness, 0), mata_word(&witness, 1)];
+			if let Some(witness) = witness {
+				let words: Vec<Vec<Symbol>> = (0..witness.arity())
+					.map(|tape| mata_word(&witness, tape))
+					.collect();
 				assert!(eager.accepts(&words), "seed {seed}: {operation} {witness}");
 			}
 		}
