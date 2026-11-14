@@ -190,6 +190,8 @@ impl Table {
 	}
 
 	/// The index of a concrete tuple of a complement's table, if each letter is in its universe.
+	// Called for every move of the members' posts, so kept inline in the complement's post.
+	#[inline]
 	fn index(&self, tuple: &[Symbol]) -> Option<usize> {
 		debug_assert_eq!(tuple.len(), self.digits.len());
 

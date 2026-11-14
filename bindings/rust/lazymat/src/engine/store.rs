@@ -74,8 +74,6 @@ impl Store {
 	}
 
 	/// Looks `members` up first, so that a known set is not boxed again.
-	// Called for every target of a complement's post, so kept inline in the posts.
-	#[inline]
 	pub(crate) fn intern_set(&mut self, members: &[StateId]) -> StateId {
 		let Store::Set(states) = self else {
 			unreachable!("not a complement node")
