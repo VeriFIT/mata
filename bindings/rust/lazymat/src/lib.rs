@@ -55,7 +55,9 @@
 //!   no wildcards. A double complement gives the term back only when the term has no padded words.
 //! - **Leaves.** [`leaf`](Formula::leaf) copies the part of the automaton reachable from its initial states,
 //!   without silent moves (moves that pad every tape, such as epsilon transitions) and without the states
-//!   that reach no final state.
+//!   that reach no final state. Only leaves drop such moves. A projection keeps a step whose kept tapes all
+//!   read padding, so the projection of {(ε, a)} on tape 0 is one step of padding, and its complement still
+//!   holds the empty word.
 
 #![forbid(unsafe_code)]
 
