@@ -489,6 +489,7 @@ class Nfa : public Automaton {
 	 * @brief Prints the language of the automaton to the file as a regular expression
 	 *
 	 * @see print_to_regex(RegexPrintMode, const Alphabet*) const for the conversion, the syntax and the symbols.
+	 * @throws std::ios_base::failure If the file cannot be opened or output to it fails.
 	 *
 	 * @param filename Name of the file to print the regular expression to
 	 * @param[in] mode What to optimize the conversion for.

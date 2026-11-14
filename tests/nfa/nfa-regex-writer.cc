@@ -297,3 +297,12 @@ TEST_CASE("mata::nfa::Nfa::print_to_regex() produces readable output for a long 
 	// Flattening every retained prefix gives quadratic child storage; the fallback must preserve the language.
 	CHECK(nfa.print_to_regex(RegexPrintMode::Readable) == nfa.print_to_regex(RegexPrintMode::Fast));
 }
+
+#ifndef _WIN32
+// /dev/full opens successfully but rejects every write on POSIX.
+TEST_CASE("mata::nfa::Nfa::print_to_regex() to a file reports a failed write") {
+	Nfa nfa{2, {0}, {1}};
+	nfa.delta.add(0, 'a', 1);
+	CHECK_THROWS_AS(nfa.print_to_regex("/dev/full", RegexPrintMode::Fast), std::ios_base::failure);
+}
+#endif

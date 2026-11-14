@@ -1441,5 +1441,8 @@ void Nfa::print_to_regex(std::ostream& output, const RegexPrintMode mode, const 
 
 void Nfa::print_to_regex(const std::string& filename, const RegexPrintMode mode, const Alphabet* alphabet) const {
 	std::ofstream output(filename);
+	if (!output) { throw std::ios_base::failure("Failed to open file: " + filename); }
+	output.exceptions(std::ios::failbit | std::ios::badbit);
 	print_to_regex(output, mode, alphabet);
+	output.close();
 }
