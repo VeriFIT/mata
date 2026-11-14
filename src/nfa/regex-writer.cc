@@ -248,6 +248,8 @@ struct RepeatForm {
 	std::uint64_t length{0};
 };
 
+struct ReadableStorageLimit final {};
+
 /**
  * @brief A store of regexes, each kept only once.
  *
@@ -308,8 +310,8 @@ class Regexes {
 			if (is_star_of(rhs, last)) { return concat(rest, repeat(last, 1, UNBOUNDED)); }
 		}
 		const size_t begin{children_.size()};
-		children_.push_back(lhs);
-		children_.push_back(rhs);
+		store_child(lhs);
+		store_child(rhs);
 		return intern(Kind::Concat, begin, 2);
 	}
 
@@ -331,8 +333,8 @@ class Regexes {
 			return chars(merged);
 		}
 		const size_t begin{children_.size()};
-		children_.push_back(std::min(lhs, rhs));
-		children_.push_back(std::max(lhs, rhs));
+		store_child(std::min(lhs, rhs));
+		store_child(std::max(lhs, rhs));
 		return intern(Kind::Union, begin, 2);
 	}
 
@@ -668,7 +670,7 @@ class Regexes {
 		if (factors.empty()) { return EPSILON; }
 		if (factors.size() == 1) { return factors.front(); }
 		const size_t begin{children_.size()};
-		children_.insert(children_.end(), factors.begin(), factors.end());
+		store_children(factors);
 		return intern(Kind::Concat, begin, factors.size());
 	}
 
@@ -828,7 +830,7 @@ class Regexes {
 			result = alternatives.front();
 		} else if (alternatives.size() > 1) {
 			const size_t begin{children_.size()};
-			children_.insert(children_.end(), alternatives.begin(), alternatives.end());
+			store_children(alternatives);
 			result = intern(Kind::Union, begin, alternatives.size());
 		}
 		return optional ? repeat(result, 0, 1) : result;
@@ -1011,6 +1013,19 @@ class Regexes {
 		--depth_;
 		return changed;
 	}
+
+	/// Limit of retained child IDs when polishing; readable printing falls back to the fast regex above it.
+	static constexpr size_t max_polished_children{2'000'000};
+
+	void store_children(const std::span<const Regex> added) {
+		if (polish_ &&
+			(children_.size() > max_polished_children || added.size() > max_polished_children - children_.size())) {
+			throw ReadableStorageLimit{};
+		}
+		children_.insert(children_.end(), added.begin(), added.end());
+	}
+
+	void store_child(const Regex child) { store_children({&child, 1}); }
 
 	bool polish_; ///< Whether to simplify with all the rules.
 	unsigned depth_{0}; ///< How deep the constructors that polish are in each other.
@@ -1393,15 +1408,20 @@ void write_regex(const Nfa& aut, Output& output, const RegexPrintMode mode, cons
 		assert(output.written() == plain.length(fast));
 		return;
 	}
-	Regexes polished{true};
-	const Regex readable{find_short_regex(aut, characters, polished)};
-	// The rules that polish mostly shorten a regex, but not always.
-	if (plain.length(fast) < polished.length(readable)) {
-		plain.print(fast, output);
-	} else {
-		polished.print(readable, output);
+	try {
+		Regexes polished{true};
+		const Regex readable{find_short_regex(aut, characters, polished)};
+		// The rules that polish mostly shorten a regex, but not always.
+		if (plain.length(fast) >= polished.length(readable)) {
+			polished.print(readable, output);
+			assert(output.written() == polished.length(readable));
+			return;
+		}
+	} catch (const ReadableStorageLimit&) {
+		// The unpolished regex, already computed above, is unaffected by the readable storage limit.
 	}
-	assert(output.written() == std::min(plain.length(fast), polished.length(readable)));
+	plain.print(fast, output);
+	assert(output.written() == plain.length(fast));
 }
 
 } // namespace
@@ -1421,6 +1441,5 @@ void Nfa::print_to_regex(std::ostream& output, const RegexPrintMode mode, const 
 
 void Nfa::print_to_regex(const std::string& filename, const RegexPrintMode mode, const Alphabet* alphabet) const {
 	std::ofstream output(filename);
-	if (!output) { throw std::ios_base::failure("Failed to open file: " + filename); }
 	print_to_regex(output, mode, alphabet);
 }

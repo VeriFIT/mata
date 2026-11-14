@@ -282,3 +282,18 @@ TEST_CASE("mata::nfa::Nfa::print_to_regex() to a stream writes multiple blocks a
 	CHECK(buffer.nonempty_writes.size() > 1);
 	CHECK(buffer.str() == regex);
 }
+
+TEST_CASE("mata::nfa::Nfa::print_to_regex() produces readable output for a long chain") {
+	Nfa nfa{1, {0}, {}};
+	State previous{0};
+	constexpr Symbol length{140'000};
+	for (Symbol symbol{0}; symbol < length; ++symbol) {
+		const State target{nfa.add_state()};
+		nfa.delta.add(previous, 'a' + (symbol % 26), target);
+		previous = target;
+	}
+	nfa.final = {previous};
+
+	// Flattening every retained prefix gives quadratic child storage; the fallback must preserve the language.
+	CHECK(nfa.print_to_regex(RegexPrintMode::Readable) == nfa.print_to_regex(RegexPrintMode::Fast));
+}
