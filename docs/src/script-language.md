@@ -706,7 +706,7 @@ alphabet; `(script-alphabet)`.
 
 `print` and `write` return their argument, so they can stand in the middle of a pipeline. An automaton is printed in
 the `.mata` format; use `nfa:print-to-dot` to print a DOT graph instead, or `nfa:print-to-regex` to print an RE2
-regular expression: `(print (nfa:print-to-dot a))`. `:mode "readable"` asks the regex writer for a shorter, polished
+regular expression: `(print (nfa:print-to-regex a))`. `:mode "readable"` asks the regex writer for a shorter, polished
 expression; the default `"fast"` is the machine pipeline output. When the script alphabet is non-empty the regex uses
 its symbol names; every used symbol's name, or its number if it is unnamed, must be one character, and otherwise the
 operation reports an error. Without an alphabet the writer uses Unicode scalar values, since a regex has one character
