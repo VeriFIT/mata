@@ -3,7 +3,7 @@
 use std::cell::OnceCell;
 use std::collections::hash_map::Entry;
 use std::hash::Hasher;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 use hashbrown::HashTable;
 use rustc_hash::{FxHashMap, FxHasher};
@@ -371,7 +371,8 @@ struct Side {
 /// A right operand ready to join, with its groups, its moves by code, and the groups that each code merges with.
 #[derive(Debug)]
 struct Prepared {
-	post: Rc<Post>,
+	/// Weak, so that a post the cache drops is freed.
+	post: Weak<Post>,
 	tape: usize,
 	kept: Vec<usize>,
 	side: Side,
@@ -419,7 +420,7 @@ impl Prepared {
 		}
 
 		Some(Prepared {
-			post: Rc::clone(post),
+			post: Rc::downgrade(post),
 			tape,
 			kept: kept.to_vec(),
 			side,
@@ -481,22 +482,23 @@ impl Recent {
 		keys: &mut FxHashMap<u64, u32>,
 		table: &mut HashTable<Group>,
 	) -> Option<&Prepared> {
-		let Recent(prepared) = self;
-		let found = prepared.iter().position(|entry| {
-			Rc::ptr_eq(&entry.post, post) && entry.tape == tape && entry.kept == kept
+		// Entries whose post the cache dropped go, and their masks with them.
+		self.0.retain(|entry| entry.post.strong_count() > 0);
+		let found = self.0.iter().position(|entry| {
+			entry.post.as_ptr() == Rc::as_ptr(post) && entry.tape == tape && entry.kept == kept
 		});
 		let latest = match found {
-			Some(position) => prepared.remove(position),
+			Some(position) => self.0.remove(position),
 			None => Prepared::new(post, tape, kept, index, keys, table)?,
 		};
 
-		if prepared.len() == MAX_PREPARED {
-			prepared.remove(0);
+		if self.0.len() == MAX_PREPARED {
+			self.0.remove(0);
 		}
 
-		prepared.push(latest);
+		self.0.push(latest);
 
-		prepared.last()
+		self.0.last()
 	}
 }
 
@@ -853,5 +855,55 @@ fn visit_while(indices: impl Iterator<Item = MoveIndex>, mut visit: impl FnMut(M
 		if !visit(index) {
 			return;
 		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use std::rc::Rc;
+
+	use hashbrown::HashTable;
+	use rustc_hash::FxHashMap;
+
+	use super::{LetterIndex, Recent};
+	use crate::Symbol;
+	use crate::engine::post::{Post, Target};
+	use crate::ids::{Id, StateId};
+
+	fn post(letter: u8) -> Rc<Post> {
+		let mut post = Post::with_capacity(1, 1);
+		post.push(
+			&[Symbol::from(letter)],
+			Target {
+				state: StateId::new(0),
+				accepting: false,
+			},
+		);
+
+		Rc::new(post)
+	}
+
+	#[test]
+	fn a_dropped_post_leaves_the_recent_operands() {
+		let universe = b"ab".map(Symbol::from);
+		let index = LetterIndex::new(&universe).expect("two letters");
+		let (mut keys, mut table) = (FxHashMap::default(), HashTable::new());
+		let mut recent = Recent::default();
+
+		let first = post(b'a');
+		assert!(
+			recent
+				.prepare(&first, 0, &[], &index, &mut keys, &mut table)
+				.is_some()
+		);
+		drop(first);
+
+		let second = post(b'b');
+		assert!(
+			recent
+				.prepare(&second, 0, &[], &index, &mut keys, &mut table)
+				.is_some()
+		);
+		assert_eq!(recent.0.len(), 1);
 	}
 }
