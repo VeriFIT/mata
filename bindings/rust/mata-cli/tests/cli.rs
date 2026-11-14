@@ -452,6 +452,19 @@ fn convert_writes_a_regex_for_an_nfa() {
 }
 
 #[test]
+fn convert_regex_uses_each_input_alphabet() {
+	let workspace = Workspace::new("convert-regex-alphabets");
+	let named = workspace.file("named.mata", NFA);
+	let numeric = workspace.file(
+		"numeric.mata",
+		"@NFA-explicit\n%Initial q0\n%Final q1\nq0 97 q1\n",
+	);
+	let output = mata(["convert", "--to", "regex", &named, &numeric]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "a\n\na\n");
+}
+
+#[test]
 fn a_regex_rejects_a_symbol_name_that_is_not_one_character() {
 	let workspace = Workspace::new("print-regex-name");
 	let nfa = workspace.file(

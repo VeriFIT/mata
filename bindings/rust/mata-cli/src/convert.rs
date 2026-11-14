@@ -137,10 +137,14 @@ fn convert(options: &Options) -> Result<Exit, Error> {
 			}
 		}
 	}
-	let mut engine = Engine::new();
 	let mut text = String::new();
 	let mut kind: Option<String> = None;
+	let mut engine = Engine::new();
 	for input in &options.inputs {
+		if options.to == "regex" {
+			// Regex output uses the current input's names, not names accumulated from earlier inputs.
+			engine = Engine::new();
+		}
 		let source = crate::eval::read_text(input)?;
 		let (value, detected) = parse_input(input, &source, options, &mut engine)?;
 		match &kind {
@@ -270,7 +274,11 @@ fn render(value: &crate::eval::Value, engine: &Engine, to: &str) -> Result<Strin
 
 fn render_regex(nfa: &Nfa, engine: &Engine) -> Result<String, Error> {
 	let mut regex = nfa.regex();
-	if !engine.script_alphabet.is_empty() {
+	if engine
+		.script_alphabet
+		.iter()
+		.any(|(_, name)| name.is_some())
+	{
 		regex = regex.alphabet(&engine.script_alphabet);
 	}
 	regex
