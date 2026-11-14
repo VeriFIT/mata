@@ -28,6 +28,8 @@ pub(crate) struct CacheBudget {
 	bytes: usize,
 	floor: u64,
 	entries: Vec<FxHashMap<StateId, Entry>>,
+	/// How many entries are cached.
+	live: usize,
 	/// `(priority, key, state, version)` of every push, lowest priority first; a replaced push is skipped.
 	queue: BinaryHeap<Reverse<(u64, usize, StateId, u64)>>,
 	version: u64,
@@ -41,6 +43,7 @@ impl CacheBudget {
 			bytes: 0,
 			floor: 0,
 			entries: vec![FxHashMap::default(); num_keys],
+			live: 0,
 			queue: BinaryHeap::new(),
 			version: 0,
 			dropped: 0,
@@ -61,6 +64,7 @@ impl CacheBudget {
 		entry.version = self.version;
 		self.queue
 			.push(Reverse((entry.priority, key, state, entry.version)));
+		self.compact();
 	}
 
 	/// Records an entry just cached; returns the cached entries to drop, which may include it.
@@ -83,7 +87,11 @@ impl CacheBudget {
 			version: self.version,
 			reads: 1,
 		};
-		self.entries[key].insert(state, entry);
+		let replaced = self.entries[key].insert(state, entry);
+		if replaced.is_none() {
+			self.live += 1;
+		}
+
 		self.bytes += bytes;
 		self.queue
 			.push(Reverse((priority, key, state, self.version)));
@@ -98,6 +106,7 @@ impl CacheBudget {
 			{
 				self.bytes -= entry.bytes;
 				self.entries[key].remove(&state);
+				self.live -= 1;
 				self.floor = priority;
 				dropped.push((key, state));
 			}
@@ -112,13 +121,13 @@ impl CacheBudget {
 	pub(crate) fn remove(&mut self, key: usize, state: StateId) {
 		if let Some(entry) = self.entries[key].remove(&state) {
 			self.bytes -= entry.bytes;
+			self.live -= 1;
 		}
 	}
 
 	/// Rebuilds the queue from the entries once most of its pushes are replaced ones.
 	fn compact(&mut self) {
-		let live: usize = self.entries.iter().map(FxHashMap::len).sum();
-		if self.queue.len() > 4 * live + 1024 {
+		if self.queue.len() > 4 * self.live + 1024 {
 			self.queue = self
 				.entries
 				.iter()
@@ -130,5 +139,23 @@ impl CacheBudget {
 				})
 				.collect();
 		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::CacheBudget;
+	use crate::ids::{Id, StateId};
+
+	#[test]
+	fn reads_without_new_entries_keep_the_queue_small() {
+		let mut budget = CacheBudget::new(1 << 20, 1);
+		let state = StateId::new(0);
+		budget.admit(0, state, 1000, 64);
+		for _ in 0..100_000 {
+			budget.touch(0, state);
+		}
+
+		assert!(budget.queue.len() <= 4 * budget.live + 1024);
 	}
 }
