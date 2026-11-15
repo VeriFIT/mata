@@ -3232,3 +3232,62 @@ fn the_benchmark_scripts_of_tests_integration_run() {
 		"automata_inclusion_naive\nfalse\nautomata_inclusion_antichain\nfalse"
 	);
 }
+
+// Review of #1045: robustness
+
+#[test]
+fn equal_shared_lists_compare_in_one_walk() {
+	// A list that doubles itself at every round once made `=` compare its shared halves again
+	// for every element, which took a time that grew exponentially with the rounds.
+	let script = "(define (grow acc i) (list acc acc))\n\
+		      (define x (list:fold grow (list) (list:range 0 40)))\n\
+		      (print (= x x))";
+	let output = run_script(script, false, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "true\n");
+	// Sharing does not blur the verdicts: a differing element still ends the comparison, and a
+	// pair nested past the walk limit is an error rather than a guessed verdict.
+	let script = "(define (grow acc i) (list acc acc))\n\
+		      (define x (list:fold grow (list 1) (list:range 0 10)))\n\
+		      (define y (list:fold grow (list 2) (list:range 0 10)))\n\
+		      (print (= x y))";
+	let output = run_script(script, false, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "false\n");
+	let script = "(define (grow acc i) (list acc acc))\n\
+		      (define x (list:fold grow (list) (list:range 0 100001)))\n\
+		      (print (= x x))";
+	let output = run_script(script, false, &[]);
+	assert_eq!(status(&output), 2, "{}", stdout(&output));
+	assert!(
+		stderr(&output).contains("the values compared nest deeper than 100000"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
+fn a_list_renders_on_one_line_whatever_its_elements_hold() {
+	// The separator of two elements was read back off the line built so far, so a string ending
+	// in `(` swallowed it; a string holding a line break put the list on two lines.
+	for (script, expected) in [
+		("(print (to-string (list \"(\" \"b\")))", "(( b)\n"),
+		("(print (to-string (list \"a\nb\" 2)))", "(a\\nb 2)\n"),
+	] {
+		let output = run_script(script, false, &[]);
+		assert_eq!(status(&output), 0, "{}", stderr(&output));
+		assert_eq!(stdout(&output), expected);
+	}
+}
+
+#[test]
+fn the_optimizer_keeps_values_whose_uses_it_could_not_see() {
+	// The walk that collects the last use of every name stopped at its depth limit without
+	// saying so, so past the limit it removed a definition as dead that a use it never reached
+	// still needed.
+	let nested = format!("{}a{}", "(let ((y ".repeat(334), ")) y)".repeat(334));
+	let script = format!("(define a Int 7)\n(print a)\n(print {nested})");
+	let output = run_script(&script, false, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "7\n7\n");
+}
