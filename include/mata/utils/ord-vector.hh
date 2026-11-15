@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <iterator>
 #include <span>
+#include <type_traits>
 #include <vector>
 
 #include "assert.hh"
@@ -121,7 +122,7 @@ template <class Key, class Allocator> class OrdVector {
 		return *this;
 	}
 
-	OrdVector& operator=(OrdVector&& other) noexcept {
+	OrdVector& operator=(OrdVector&& other) noexcept(std::is_nothrow_move_assignable_v<VectorType>) {
 		if (&other != this) { vec_ = std::move(other.vec_); }
 		return *this;
 	}

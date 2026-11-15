@@ -48,6 +48,8 @@ template <
 class SmallOrdVector {
 	static_assert(std::is_trivially_copyable_v<Key> && std::is_trivially_destructible_v<Key>);
 	static_assert(InlineCapacity >= 1);
+	// `allocate()` and `release()` default-construct the allocator, so any two instances must be interchangeable.
+	static_assert(std::allocator_traits<Allocator>::is_always_equal::value);
 
   public:
 	using value_type = Key;
