@@ -6,9 +6,9 @@
 (declare-input lhs Nfa)
 (declare-input rhs Nfa)
 
-(define (inclusion-with algorithm)
-  (time (concat "automata_inclusion_" algorithm)
+(define (inclusion-with label algorithm)
+  (time label
     (nfa:included? lhs rhs :algorithm algorithm)))
 
-(check (inclusion-with "naive"))
-(check (inclusion-with "antichains"))
+(check (inclusion-with "automata_inclusion_naive" "naive"))
+(check (inclusion-with "automata_inclusion_antichain" "antichains"))

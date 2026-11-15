@@ -3217,7 +3217,7 @@ fn the_benchmark_scripts_of_tests_integration_run() {
 			.map(|line| line.rsplit_once(": ").map_or(line, |(label, _)| label))
 			.collect::<Vec<_>>()
 			.join("\n"),
-		"automata_inclusion_naive\nfalse\nautomata_inclusion_antichains\nfalse"
+		"automata_inclusion_naive\nfalse\nautomata_inclusion_antichain\nfalse"
 	);
 	let output = mata(["script", "run", &filter, &a, &a, &a, &a, &b]);
 	assert_eq!(status(&output), 0, "{}", stderr(&output));
@@ -3229,6 +3229,6 @@ fn the_benchmark_scripts_of_tests_integration_run() {
 			.map(|line| line.rsplit_once(": ").map_or(line, |(label, _)| label))
 			.collect::<Vec<_>>()
 			.join("\n"),
-		"automata_inclusion_naive\nfalse\nautomata_inclusion_antichains\nfalse"
+		"automata_inclusion_naive\nfalse\nautomata_inclusion_antichain\nfalse"
 	);
 }
