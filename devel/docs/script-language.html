@@ -784,7 +784,10 @@ for every operation whose library function takes two automata and returns one: <
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:print-to-dot</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">Nfa::print_to_dot</span></code>; returns a string</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:load</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:parse</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:literal</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:print-to-regex</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nfa::print_to_regex</span></code>; returns a string; <code class="docutils literal notranslate"><span class="pre">:mode</span></code> is <code class="docutils literal notranslate"><span class="pre">fast</span></code> or <code class="docutils literal notranslate"><span class="pre">readable</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:load</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:parse</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:literal</span></code></p></td>
 <td><p>No single library counterpart</p></td>
 </tr>
 </tbody>
@@ -1053,7 +1056,13 @@ alphabet; <code class="docutils literal notranslate"><span class="pre">(script-a
 </tbody>
 </table>
 <p><code class="docutils literal notranslate"><span class="pre">print</span></code> and <code class="docutils literal notranslate"><span class="pre">write</span></code> return their argument, so they can stand in the middle of a pipeline. An automaton is printed in
-the <code class="docutils literal notranslate"><span class="pre">.mata</span></code> format; use <code class="docutils literal notranslate"><span class="pre">nfa:print-to-dot</span></code> to print a DOT graph instead: <code class="docutils literal notranslate"><span class="pre">(print</span> <span class="pre">(nfa:print-to-dot</span> <span class="pre">a))</span></code>.</p>
+the <code class="docutils literal notranslate"><span class="pre">.mata</span></code> format; use <code class="docutils literal notranslate"><span class="pre">nfa:print-to-dot</span></code> to print a DOT graph instead, or <code class="docutils literal notranslate"><span class="pre">nfa:print-to-regex</span></code> to print an RE2
+regular expression: <code class="docutils literal notranslate"><span class="pre">(print</span> <span class="pre">(nfa:print-to-regex</span> <span class="pre">a))</span></code>. <code class="docutils literal notranslate"><span class="pre">:mode</span> <span class="pre">&quot;readable&quot;</span></code> asks the regex writer for a shorter, polished
+expression; the default <code class="docutils literal notranslate"><span class="pre">&quot;fast&quot;</span></code> is the machine pipeline output. When the script alphabet is non-empty the regex uses
+its symbol names; every used symbol’s name, or its number if it is unnamed, must be one character, and otherwise the
+operation reports an error. Without an alphabet the writer uses Unicode scalar values, since a regex has one character
+per symbol. The Latin1 <code class="docutils literal notranslate"><span class="pre">nfa:create-from-regex</span></code> reader reads back symbols through <code class="docutils literal notranslate"><span class="pre">0xFF</span></code> exactly. Larger scalar values
+require a UTF-8 reader and decoding of its UTF-8 automaton.</p>
 <p>In an interactive session, the value of every top-level expression is shown, with an automaton summarised by its
 kind and size rather than printed in full. When a script is run, the value of a top-level expression is dropped.</p>
 <p>Results and timing records go to standard output, each written as soon as it is printed, so a run stopped by a time

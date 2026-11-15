@@ -3084,6 +3084,25 @@
 
 </dd></dl>
 
+<dl class="cpp enum-class">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa14RegexPrintModeE">
+<span id="_CPPv3N4mata3nfa14RegexPrintModeE"></span><span id="_CPPv2N4mata3nfa14RegexPrintModeE"></span><span class="target" id="namespacemata_1_1nfa_1a268e761f716fb349dea64ecaa01da552"></span><span class="k"><span class="pre">enum</span></span><span class="w"> </span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">RegexPrintMode</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">uint8_t</span></span><a class="headerlink" href="#_CPPv4N4mata3nfa14RegexPrintModeE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>What <code class="docutils literal notranslate"><a class="reference internal" href="namespacemata_1_1nfa.html#classmata_1_1nfa_1_1Nfa_1ab2241043024ec1ee1b0ad8dfa7176488"><span class="std std-ref"><span class="pre">Nfa::print_to_regex()</span></span></a></code> optimizes for. </p>
+<p><em>Values:</em></p>
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa14RegexPrintMode4FastE">
+<span id="_CPPv3N4mata3nfa14RegexPrintMode4FastE"></span><span id="_CPPv2N4mata3nfa14RegexPrintMode4FastE"></span><span class="target" id="namespacemata_1_1nfa_1a268e761f716fb349dea64ecaa01da552ae16b5b7f26f54214445cbe38d72c2828"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Fast</span></span></span><a class="headerlink" href="#_CPPv4N4mata3nfa14RegexPrintMode4FastE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The conversion time: a regex for a program to read. </p>
+</dd></dl>
+
+<dl class="cpp enumerator">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa14RegexPrintMode8ReadableE">
+<span id="_CPPv3N4mata3nfa14RegexPrintMode8ReadableE"></span><span id="_CPPv2N4mata3nfa14RegexPrintMode8ReadableE"></span><span class="target" id="namespacemata_1_1nfa_1a268e761f716fb349dea64ecaa01da552a4b8123df4e2b3456270c11394adf7607"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Readable</span></span></span><a class="headerlink" href="#_CPPv4N4mata3nfa14RegexPrintMode8ReadableE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The length and the legibility of the regex: a regex for a human to read. Takes longer. </p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric" id="breathe-section-title-functions">Functions</p>
@@ -5357,6 +5376,78 @@ Operation is slow, traverses over all symbol posts. </p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>alphabet</strong> – <strong>[in]</strong> If specified, translates the symbols to their symbol names in the <code class="docutils literal notranslate"><span class="pre">alphabet</span></code>. </p></li>
 <li><p><strong>filename</strong> – Name of the file to print the automaton to </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata3nfa3Nfa14print_to_regexE14RegexPrintModePK8Alphabet">
+<span id="_CPPv3NK4mata3nfa3Nfa14print_to_regexE14RegexPrintModePK8Alphabet"></span><span id="_CPPv2NK4mata3nfa3Nfa14print_to_regexE14RegexPrintModePK8Alphabet"></span><span id="mata::nfa::Nfa::print_to_regex__RegexPrintMode.AlphabetCPC"></span><span class="target" id="classmata_1_1nfa_1_1Nfa_1ab2241043024ec1ee1b0ad8dfa7176488"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">print_to_regex</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4N4mata3nfa14RegexPrintModeE" title="mata::nfa::RegexPrintMode"><span class="n"><span class="pre">RegexPrintMode</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">mode</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata3nfa14RegexPrintModeE" title="mata::nfa::RegexPrintMode"><span class="n"><span class="pre">RegexPrintMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="#_CPPv4N4mata3nfa14RegexPrintMode4FastE" title="mata::nfa::RegexPrintMode::Fast"><span class="n"><span class="pre">Fast</span></span></a>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">alphabet</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Prints the language of the automaton as a regular expression. </p>
+<p>The automaton is converted by state elimination, see src/nfa/regex-writer.cc. <code class="docutils literal notranslate"><span class="pre">mode</span></code> chooses what the conversion optimizes for:<ul class="simple">
+<li><p><code class="docutils literal notranslate"><a class="reference internal" href="namespacemata_1_1nfa.html#namespacemata_1_1nfa_1a268e761f716fb349dea64ecaa01da552ae16b5b7f26f54214445cbe38d72c2828"><span class="std std-ref"><span class="pre">RegexPrintMode::Fast</span></span></a></code> converts as fast as possible, for a regex read by a program.</p></li>
+<li><p><code class="docutils literal notranslate"><a class="reference internal" href="namespacemata_1_1nfa.html#namespacemata_1_1nfa_1a268e761f716fb349dea64ecaa01da552a4b8123df4e2b3456270c11394adf7607"><span class="std std-ref"><span class="pre">RegexPrintMode::Readable</span></span></a></code> looks for a short, legible regex, for a regex read by a human: it converts several automata of the same language (the reduced one, the minimal deterministic one, and the minimal one deterministic backwards) in several elimination orders, simplifies the regexes algebraically, and prints the shortest one, which is never longer than the regex of <code class="docutils literal notranslate"><a class="reference internal" href="namespacemata_1_1nfa.html#namespacemata_1_1nfa_1a268e761f716fb349dea64ecaa01da552ae16b5b7f26f54214445cbe38d72c2828"><span class="std std-ref"><span class="pre">RegexPrintMode::Fast</span></span></a></code>. Running these additional conversions takes considerably longer than <code class="docutils literal notranslate"><a class="reference internal" href="namespacemata_1_1nfa.html#namespacemata_1_1nfa_1a268e761f716fb349dea64ecaa01da552ae16b5b7f26f54214445cbe38d72c2828"><span class="std std-ref"><span class="pre">RegexPrintMode::Fast</span></span></a></code>.</p></li>
+</ul>
+</p>
+<p>The length of the regex is exponential in the number of states in the worst case, in both modes.</p>
+<p>The regex is written in the syntax <a class="reference internal" href="namespacemata_1_1nfa_1_1builder.html#namespacemata_1_1nfa_1_1builder_1a4cdacec67845a18d402738db9aa20217"><span class="std std-ref">mata::nfa::builder::create_from_regex()</span></a> reads (RE2), restricted to characters, escapes (‘\n’, ‘\x41’, ‘\x{17F}’), character classes (‘[a-c]’), groups, ‘|’, ‘*’, ‘+’, ‘?’, and counted repetitions (‘{2}’, ‘{2,}’, ‘{2,5}’). The empty word alone is ‘()’, and the empty language is the empty character class ‘[^\s\S]’.</p>
+<p>A symbol is the Unicode scalar value of its value, so it has to be at most 0x10FFFF and must not be in the surrogate range 0xD800 to 0xDFFF. With symbols up to 0xFF, reading the regex back gives the same language; with larger ones, reading it back with <code class="docutils literal notranslate"><a class="reference internal" href="../file/re2parser_8hh.html#re2parser_8hh_1a2b0bc3d01afe63513db0197f4105c808a81f91ccd37ce1d232cbfc1520374319d"><span class="std std-ref"><span class="pre">Encoding::Utf8</span></span></a></code> gives the language encoded in UTF-8. With an alphabet, a symbol is the character its name consists of instead. <code class="docutils literal notranslate"><span class="pre">EPSILON</span></code> is the empty word.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mode</strong> – <strong>[in]</strong> What to optimize the conversion for. </p></li>
+<li><p><strong>alphabet</strong> – <strong>[in]</strong> If specified, translates the symbols to their symbol names in the <code class="docutils literal notranslate"><span class="pre">alphabet</span></code>. Otherwise, the alphabet of the automaton is used, if it has one. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Throws<span class="colon">:</span></dt>
+<dd class="field-even"><p><span><span class="cpp-expr sig sig-inline cpp"><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n">std</span></a><span class="p">::</span><span class="n">invalid_argument</span></span></span> – If a symbol is larger than 0x10FFFF or a surrogate, or its name in the alphabet is not a single character encoded in UTF-8. </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The regular expression. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata3nfa3Nfa14print_to_regexERNSt7ostreamE14RegexPrintModePK8Alphabet">
+<span id="_CPPv3NK4mata3nfa3Nfa14print_to_regexERNSt7ostreamE14RegexPrintModePK8Alphabet"></span><span id="_CPPv2NK4mata3nfa3Nfa14print_to_regexERNSt7ostreamE14RegexPrintModePK8Alphabet"></span><span id="mata::nfa::Nfa::print_to_regex__osR.RegexPrintMode.AlphabetCPC"></span><span class="target" id="classmata_1_1nfa_1_1Nfa_1a9b6e4f7db0e821ef9e81850a5d985c61"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">print_to_regex</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">ostream</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">output</span></span>, <a class="reference internal" href="#_CPPv4N4mata3nfa14RegexPrintModeE" title="mata::nfa::RegexPrintMode"><span class="n"><span class="pre">RegexPrintMode</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">mode</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata3nfa14RegexPrintModeE" title="mata::nfa::RegexPrintMode"><span class="n"><span class="pre">RegexPrintMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="#_CPPv4N4mata3nfa14RegexPrintMode4FastE" title="mata::nfa::RegexPrintMode::Fast"><span class="n"><span class="pre">Fast</span></span></a>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">alphabet</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Prints the language of the automaton to the output stream as a regular expression. </p>
+<p>The regex is written in blocks as it is printed, without a line ending, and <code class="docutils literal notranslate"><span class="pre">output</span></code> is flushed before returning.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="namespacemata_1_1nfa.html#classmata_1_1nfa_1_1Nfa_1ab2241043024ec1ee1b0ad8dfa7176488"><span class="std std-ref">print_to_regex(RegexPrintMode, const Alphabet*) const </span></a>for the conversion, the syntax and the symbols.</p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output</strong> – <strong>[out]</strong> Output stream to print the regular expression to. </p></li>
+<li><p><strong>mode</strong> – <strong>[in]</strong> What to optimize the conversion for. </p></li>
+<li><p><strong>alphabet</strong> – <strong>[in]</strong> If specified, translates the symbols to their symbol names in the <code class="docutils literal notranslate"><span class="pre">alphabet</span></code>. </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata3nfa3Nfa14print_to_regexERKNSt6stringE14RegexPrintModePK8Alphabet">
+<span id="_CPPv3NK4mata3nfa3Nfa14print_to_regexERKNSt6stringE14RegexPrintModePK8Alphabet"></span><span id="_CPPv2NK4mata3nfa3Nfa14print_to_regexERKNSt6stringE14RegexPrintModePK8Alphabet"></span><span id="mata::nfa::Nfa::print_to_regex__ssCR.RegexPrintMode.AlphabetCPC"></span><span class="target" id="classmata_1_1nfa_1_1Nfa_1ace530e45be81764bc61d09eba8b8dcfa"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">print_to_regex</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">filename</span></span>, <a class="reference internal" href="#_CPPv4N4mata3nfa14RegexPrintModeE" title="mata::nfa::RegexPrintMode"><span class="n"><span class="pre">RegexPrintMode</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">mode</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata3nfa14RegexPrintModeE" title="mata::nfa::RegexPrintMode"><span class="n"><span class="pre">RegexPrintMode</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="#_CPPv4N4mata3nfa14RegexPrintMode4FastE" title="mata::nfa::RegexPrintMode::Fast"><span class="n"><span class="pre">Fast</span></span></a>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata8AlphabetE" title="mata::Alphabet"><span class="n"><span class="pre">Alphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">alphabet</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Prints the language of the automaton to the file as a regular expression. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="namespacemata_1_1nfa.html#classmata_1_1nfa_1_1Nfa_1ab2241043024ec1ee1b0ad8dfa7176488"><span class="std std-ref">print_to_regex(RegexPrintMode, const Alphabet*) const </span></a>for the conversion, the syntax and the symbols. </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Throws<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span><span class="cpp-expr sig sig-inline cpp"><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n">std</span></a><span class="p">::</span><span class="n">ios_base</span><span class="p">::</span><span class="n">failure</span></span></span> – If the file cannot be opened or output to it fails.</p>
+</dd>
+<dt class="field-even">Parameters<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>filename</strong> – Name of the file to print the regular expression to </p></li>
+<li><p><strong>mode</strong> – <strong>[in]</strong> What to optimize the conversion for. </p></li>
+<li><p><strong>alphabet</strong> – <strong>[in]</strong> If specified, translates the symbols to their symbol names in the <code class="docutils literal notranslate"><span class="pre">alphabet</span></code>. </p></li>
 </ul>
 </dd>
 </dl>
