@@ -31,16 +31,18 @@ TEST_CASE("mata::utils::DeltaAllocator follows MATA_DELTA_ALLOCATOR", "[delta-al
 }
 
 TEST_CASE("mata::utils::DeltaAllocator returns aligned, disjoint, writable blocks", "[delta-allocator]") {
-	// Sizes around the boundaries of the pool's size classes, its small-block limit and its chunk.
-	const std::vector<std::size_t> sizes{
-		1, 15, 16, 17, 32, 48, 4'095, 4'096, 4'097, 65'536, (std::size_t{1} << 20) + 1
-	};
+	// Zero, and sizes around the boundaries of the pool's size classes, its small-block limit and its chunk.
+	const std::vector<std::size_t> sizes{0,	 1,		15,	   16,	  17,	  32,
+										 48, 4'095, 4'096, 4'097, 65'536, (std::size_t{1} << 20) + 1};
 	std::vector<std::pair<std::byte*, std::size_t>> blocks{};
 	for (int round{0}; round < 64; ++round) {
 		for (const std::size_t size : sizes) {
 			auto* const block{static_cast<std::byte*>(delta_allocate(size))};
 			REQUIRE(block != nullptr);
-			CHECK(reinterpret_cast<std::uintptr_t>(block) % 16 == 0);
+			// What `::operator new` guarantees: an object of `size` bytes is aligned to a power of two dividing `size`
+			//  (mimalloc, for one, 8-aligns a 24-byte block).
+			const std::size_t needed{size == 0 ? 1 : std::min(alignof(std::max_align_t), size & (~size + 1))};
+			CHECK(reinterpret_cast<std::uintptr_t>(block) % needed == 0);
 			std::memset(block, static_cast<int>(blocks.size() & 0xFF), size);
 			blocks.emplace_back(block, size);
 		}

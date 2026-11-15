@@ -17,7 +17,8 @@
 
 namespace mata::utils {
 
-/// Allocate @p bytes (16-byte aligned) for a @c Delta block.
+/// Allocate @p bytes for a @c Delta block, aligned like @c ::operator @c new aligns it: suitably for any object of at
+///  most @p bytes with fundamental alignment.
 /// @throws std::invalid_argument when @c MATA_DELTA_ALLOCATOR is neither @c std nor @c pool on the first call.
 void* delta_allocate(std::size_t bytes);
 /// Release a block of @p bytes from @c delta_allocate().
@@ -27,7 +28,7 @@ const char* delta_allocator_name();
 
 /// Stateless allocator over @c delta_allocate(): all instances are interchangeable.
 template <class T> struct DeltaAllocator {
-	static_assert(alignof(T) <= 16);
+	static_assert(alignof(T) <= alignof(std::max_align_t));
 	using value_type = T;
 	using is_always_equal = std::true_type;
 
