@@ -26,13 +26,13 @@ check: build test
 clean:
 	cargo clean
 
-# Package both crates for crates.io and build the packages, as 'cargo publish' does. ARGS go to 'cargo package'.
+# Package the crates for crates.io and build the packages, as 'cargo publish' does. ARGS go to 'cargo package'.
 package *ARGS: (_with-sources "package" ARGS)
 
 # Publish both crates to crates.io; raise their versions first, also in the workspace 'Cargo.toml'. ARGS go to 'cargo publish'.
 publish *ARGS: (_with-sources "publish" ARGS)
 
-# Run 'cargo COMMAND' on both crates with the committed Mata sources in 'mata-sys/mata/', which the package
+# Run 'cargo COMMAND' on the crates with the committed Mata sources in 'mata-sys/mata/', which the package
 # of 'mata-sys' carries.
 _with-sources COMMAND ARGS:
 	#!/usr/bin/env bash

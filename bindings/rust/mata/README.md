@@ -35,7 +35,7 @@ assert_eq!(a.minimize().num_states(), 4);
 
 ## Building
 
-`mata-sys` builds Mata from source, which needs CMake 3.23 or newer and GCC 14 or newer or Clang 18 or newer (on macOS, Homebrew's LLVM). The minimum supported Rust version is 1.88. See [`mata-sys`](https://docs.rs/mata-sys) for using an installed Mata or building to WebAssembly.
+`mata-sys` builds Mata from source, which needs CMake 3.23 or newer and GCC 14 or newer or Clang 18 or newer (on macOS, Homebrew's LLVM). The minimum supported Rust version is 1.95. See [`mata-sys`](https://docs.rs/mata-sys) for using an installed Mata or building to WebAssembly.
 
 ## Features
 
