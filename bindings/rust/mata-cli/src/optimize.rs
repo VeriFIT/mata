@@ -58,6 +58,7 @@ impl Plan {
 		}
 		let mut last: HashMap<&str, (usize, usize)> = HashMap::new();
 		let mut candidates = Vec::new();
+		let mut complete = true;
 		for form in forms {
 			let place = (form.line, form.column);
 			if let Some(name) = bound_name(&form.node) {
@@ -76,14 +77,17 @@ impl Plan {
 				}
 			}
 			for expression in form.node.expressions() {
-				occurrences(expression, once, &mut last, &mut candidates);
+				complete &= occurrences(expression, once, &mut last, &mut candidates);
 			}
 		}
-		plan.last_uses = candidates
-			.into_iter()
-			.filter(|(name, place)| last.get(name) == Some(place))
-			.map(|(_, place)| place)
-			.collect();
+		// A truncated walk misses reads, so it cannot tell which use is last.
+		if complete {
+			plan.last_uses = candidates
+				.into_iter()
+				.filter(|(name, place)| last.get(name) == Some(place))
+				.map(|(_, place)| place)
+				.collect();
+		}
 		plan
 	}
 
@@ -286,14 +290,17 @@ fn note<'a>(last: &mut HashMap<&'a str, (usize, usize)>, name: &'a str, place: (
 }
 
 /// Records the place of every occurrence of a name in `expression`, and as `candidates` the uses of a
-/// name that run at most once: outside of every function and loop body.
+/// name that run at most once: outside of every function and loop body. `false` is returned when
+/// the walk stopped at [`MAX_DEPTH`](crate::ast::MAX_DEPTH) before the end, so the places it
+/// gathered are incomplete: they may miss the read that is really last, and a last use taken from
+/// them removes a value that a later expression still reads.
 fn occurrences<'a>(
 	expression: &'a Expr,
 	once: bool,
 	last: &mut HashMap<&'a str, (usize, usize)>,
 	candidates: &mut Vec<(&'a str, (usize, usize))>,
-) {
-	occurrences_depth(expression, once, 0, last, candidates);
+) -> bool {
+	occurrences_depth(expression, once, 0, last, candidates)
 }
 
 fn occurrences_depth<'a>(
@@ -302,9 +309,9 @@ fn occurrences_depth<'a>(
 	depth: usize,
 	last: &mut HashMap<&'a str, (usize, usize)>,
 	candidates: &mut Vec<(&'a str, (usize, usize))>,
-) {
+) -> bool {
 	if depth > crate::ast::MAX_DEPTH {
-		return;
+		return false;
 	}
 	let place = (expression.line, expression.column);
 	match &expression.node {
@@ -319,24 +326,30 @@ fn occurrences_depth<'a>(
 			arguments,
 			keywords,
 		} => {
-			occurrences_depth(function, once, depth + 1, last, candidates);
+			if !occurrences_depth(function, once, depth + 1, last, candidates) {
+				return false;
+			}
 			for argument in arguments
 				.iter()
 				.chain(keywords.iter().map(|(_, value)| value))
 			{
-				occurrences_depth(argument, once, depth + 1, last, candidates);
+				if !occurrences_depth(argument, once, depth + 1, last, candidates) {
+					return false;
+				}
 			}
 		}
 		Kind::List(items) => {
 			let looping = matches!(items.first().map(|item| &item.node), Some(Kind::Name(head)) if head == "loop");
 			for (index, item) in items.iter().enumerate() {
-				occurrences_depth(
+				if !occurrences_depth(
 					item,
 					once && !(looping && index > 1),
 					depth + 1,
 					last,
 					candidates,
-				);
+				) {
+					return false;
+				}
 			}
 		}
 		Kind::Lambda { parameters, body } => {
@@ -344,7 +357,9 @@ fn occurrences_depth<'a>(
 				note(last, &parameter.name, place);
 			}
 			for item in body {
-				occurrences_depth(item, false, depth + 1, last, candidates);
+				if !occurrences_depth(item, false, depth + 1, last, candidates) {
+					return false;
+				}
 			}
 		}
 		Kind::Definition {
@@ -358,17 +373,20 @@ fn occurrences_depth<'a>(
 				note(last, &parameter.name, place);
 			}
 			for item in body {
-				occurrences_depth(
+				if !occurrences_depth(
 					item,
 					once && parameters.is_none(),
 					depth + 1,
 					last,
 					candidates,
-				);
+				) {
+					return false;
+				}
 			}
 		}
 		_ => {}
 	}
+	true
 }
 
 /// Whether `expression` computes an `Nfa` from `Nfa` operands with [`PURE_OPERATIONS`] only, so that
