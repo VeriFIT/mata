@@ -4,6 +4,19 @@
 
 use mata_sys::ffi;
 
+/// How [`Nfa::determinize_with`](crate::Nfa::determinize_with) determinizes.
+/// Both give the same DFA, but they may number its states differently.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum Determinization {
+	/// The "Four Russians" subset construction: the post of each part of a macrostate inside a block of
+	/// states is computed once and kept in a table. Usually much faster on large automata.
+	#[default]
+	FourRussians,
+	/// The classical subset construction.
+	Classical,
+}
+
 /// How [`Nfa::minimize_with`](crate::Nfa::minimize_with) minimizes. Both give the minimal (trimmed) DFA.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 #[non_exhaustive]
@@ -77,6 +90,15 @@ pub enum CheckAlgorithm {
 	Antichains,
 }
 
+impl From<Determinization> for ffi::Determinization {
+	fn from(algorithm: Determinization) -> ffi::Determinization {
+		match algorithm {
+			Determinization::FourRussians => ffi::Determinization::FourRussians,
+			Determinization::Classical => ffi::Determinization::Classical,
+		}
+	}
+}
+
 impl From<Minimization> for ffi::Minimization {
 	fn from(algorithm: Minimization) -> ffi::Minimization {
 		match algorithm {
@@ -120,4 +142,17 @@ impl From<CheckAlgorithm> for ffi::CheckAlgorithm {
 			CheckAlgorithm::Antichains => ffi::CheckAlgorithm::Antichains,
 		}
 	}
+}
+
+/// When [`Nfa::product`](crate::Nfa::product) makes a pair of states final (Mata's
+/// `ProductFinalStateCondition`).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum ProductFinalCondition {
+	/// Both states are final: the intersection.
+	#[default]
+	And,
+	/// Either state is final. The product is guaranteed to be the union when both automata have an
+	/// initial state and are complete over the symbols either uses, and may lose words otherwise; see
+	/// [`Nfa::product`](crate::Nfa::product).
+	Or,
 }

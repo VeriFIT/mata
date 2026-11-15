@@ -45,6 +45,8 @@ pkgs.rustPlatform.buildRustPackage {
   env = {
     # `build.rs` defaults to Release anyway; keep the choice explicit.
     MATA_CMAKE_BUILD_TYPE = "Release";
+    # The source has no git tags, so CMake would declare 0.0.0; report the flake's version instead.
+    MATA_VERSION = version;
   };
 
   meta = {

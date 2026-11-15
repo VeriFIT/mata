@@ -6,6 +6,7 @@
 #include <limits>
 #include <optional>
 #include <ranges>
+#include <sstream>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
@@ -4123,6 +4124,21 @@ TEST_CASE("mata::nft::print_to_mata()") {
 	CHECK(are_equivalent(aut_big, nft::builder::parse_from_mata(aut_big.print_to_mata())));
 }
 
+TEST_CASE("mata::nft::print_to_mata() prints decimals to a stream set to another base") {
+	Nft nft{Nft::with_levels(2, 12)};
+	nft.initial = {10};
+	nft.final = {11};
+	nft.delta.add(10, 12, 11);
+	std::ostringstream output;
+	output << std::hex;
+	nft.print_to_mata(output);
+	CHECK(
+		output.str() ==
+		"@NFT-explicit\n%Alphabet-auto\n%Initial q10\n%Final q11\n%Levels q10:0 q11:0\n%LevelsNum 2\nq10 12 q11\n"
+	);
+	CHECK(output.str() == nft.print_to_mata());
+}
+
 TEST_CASE("mata::nft::print_to_mata() with names that need quoting (#1021)") {
 	for (const std::string name :
 		 {"foo bar", "#", "a|b", "(x)", "x\"y", "@at", "%p", "!", "&", "|", "a@b", "a%b", "q5", "n5", ""}) {
@@ -5187,6 +5203,37 @@ TEST_CASE("mata::nft::project_out(jump_mode == JumpMode::RepeatSymbol)") {
 		proj_hard_expected.delta.add(3, 0, 2);
 		proj_hard_expected.delta.add(3, 9, 1);
 		CHECK(are_equivalent(proj_hard, proj_hard_expected, JumpMode::AppendDontCares));
+	}
+}
+
+TEST_CASE("mata::nft::project_out() preserves a sole retained post when projecting all nonzero levels") {
+	const Nft input{[] {
+		Nft nft{Nft::with_levels({3, {0, 1, 2, 2, 0, 0}}, 6, {0}, {5})};
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(1, EPSILON, 2);
+		nft.delta.add(2, EPSILON, 2);
+		nft.delta.add(2, EPSILON, 3);
+		nft.delta.add(3, 'b', 4);
+		nft.delta.add(4, 'c', 5);
+		return nft;
+	}()};
+	Nft expected{Nft::with_levels({1, {0, 0, 0}}, 3, {0}, {2})};
+	expected.delta.add(0, 'a', 1);
+	expected.delta.add(1, 'c', 2);
+
+	for (const JumpMode jump_mode : {JumpMode::AppendDontCares, JumpMode::RepeatSymbol}) {
+		const Nft actual{project_out(input, OrdVector<Level>{1, 2}, jump_mode)};
+		CHECK(are_equivalent(actual, expected, jump_mode));
+	}
+}
+
+TEST_CASE("mata::nft::project_out() preserves a sole empty retained post when projecting a nonzero level") {
+	for (const JumpMode jump_mode : {JumpMode::AppendDontCares, JumpMode::RepeatSymbol}) {
+		Nft empty_retained{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {0})};
+		empty_retained.delta.add(0, EPSILON, 1);
+		empty_retained.delta.add(1, EPSILON, 2);
+		Nft expected_epsilon{Nft::with_levels({1, {0}}, 1, {0}, {0})};
+		CHECK(are_equivalent(project_out(empty_retained, OrdVector<Level>{1}, jump_mode), expected_epsilon, jump_mode));
 	}
 }
 

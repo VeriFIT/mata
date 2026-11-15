@@ -1,6 +1,6 @@
 //! Behaviour of the transducer API on hand-written cases.
 
-use mata::nft::{DONT_CARE, Nft, SyncLevel};
+use mata::nft::{DONT_CARE, MAX_LEVELS, Nft, SyncLevel};
 use mata::{Alphabet, Error, Nfa, NftError, State, Symbol, word_from_bytes};
 
 /// The two-level transducer that replaces every `a` by `b` and keeps `b`.
@@ -225,6 +225,22 @@ fn dont_care_matches_any_symbol() -> Result<(), Error> {
 }
 
 #[test]
+fn dont_care_overlaps_other_symbols_for_determinism() -> Result<(), Error> {
+	let mut t = Nft::new(1)?;
+	let (p, q, r) = (t.add_state(), t.add_state(), t.add_state());
+	t.add_initial(p)?;
+	t.add_final(q)?;
+	t.add_final(r)?;
+	t.add_transition(p, &[Symbol::from(b'a')], q)?;
+	assert!(t.is_deterministic());
+	// The encoding as an NFA keeps DONT_CARE a symbol of its own, so only the transducer sees the overlap.
+	t.add_transition(p, &[DONT_CARE], r)?;
+	assert!(t.to_nfa().is_deterministic());
+	assert!(!t.is_deterministic());
+	Ok(())
+}
+
+#[test]
 fn identity_and_empty_word() -> Result<(), Error> {
 	let nfa = Nfa::from_regex("ab*")?;
 	let identity = Nft::identity(&nfa, 3)?;
@@ -352,6 +368,53 @@ fn huge_level_counts_are_rejected() -> Result<(), Error> {
 	assert!(text.parse::<Nft>().is_err());
 	let max = Nft::new(mata::nft::MAX_LEVELS)?;
 	assert_eq!(max.num_levels(), 1024);
+	Ok(())
+}
+
+#[test]
+fn levels_beyond_the_limit_are_rejected_in_any_entry() {
+	let cases = [
+		// 4294967296 does not fit a Mata level, which would wrap it to 0.
+		"@NFT-explicit\n%Initial p\n%Levels p:0 q:4294967296\n%LevelsNum 2\np 0 q\nq 0 p\n",
+		"@NFT-explicit\n%Initial p\n%Levels p:0 q:1\n%LevelsNum 4294967297\np 0 q\nq 0 p\n",
+		// A later entry for q overwrites the first one.
+		"@NFT-explicit\n%Initial p\n%Levels p:0 q:5000 q:1\n%LevelsNum 2\np 0 q\nq 0 p\n",
+		// Too many digits, whatever their value.
+		"@NFT-explicit\n%Initial p\n%Levels p:0 q:00000000001\n%LevelsNum 2\np 0 q\nq 0 p\n",
+	];
+	for text in cases {
+		let error = Nft::parse_mata(text, &mut Alphabet::new()).unwrap_err();
+		assert!(
+			error.message().contains("supported levels allow"),
+			"{text:?}: {error}"
+		);
+	}
+}
+
+#[test]
+fn sections_are_parsed_in_order_by_either_reader() -> Result<(), Error> {
+	// The second section lists its final states after the transitions, which only Mata's general reader takes.
+	let text = "@NFT-explicit\n%Initial p\n%Final p\n%Levels p:0 q:1\n%LevelsNum 2\np b q\nq c p\n\
+		@NFT-explicit\n%Initial p\n%Levels p:0 q:1\n%LevelsNum 2\np a q\nq b p\n%Final p\n";
+	for sections in [&text[..=text.find("\n@").unwrap()], text] {
+		let mut sigma = Alphabet::new();
+		let parsed = Nft::parse_mata_all(sections, &mut sigma)?;
+		let names: Vec<_> = ["b", "c", "a"]
+			.iter()
+			.map(|name| sigma.symbol(name))
+			.collect();
+		let (b, c) = (Symbol::new(0), Symbol::new(1));
+		assert_eq!(names[..2], [Some(b), Some(c)]);
+		assert!(parsed[0].accepts(&[[b, b], [c, c]]));
+		assert_eq!(parsed[0].num_levels(), 2);
+		if let [_, second] = &parsed[..] {
+			let a = Symbol::new(2);
+			assert_eq!(names[2], Some(a));
+			assert!(second.accepts(&[[a, a], [b, b]]));
+		} else {
+			assert_eq!(parsed.len(), 1);
+		}
+	}
 	Ok(())
 }
 
@@ -500,4 +563,167 @@ fn flags_edges_and_printing() {
 	assert!(t.remove_final(q) && !t.is_final(q) && !t.remove_final(q));
 	assert!(t.remove_initial(q) && !t.is_initial(q));
 	assert!(t.is_lang_empty());
+}
+
+#[test]
+fn complement_completeness_and_universality_over_an_alphabet() -> Result<(), Error> {
+	let (a, b) = (Symbol::from(b'a'), Symbol::from(b'b'));
+	let alphabet = Alphabet::from_symbols([a, b])?;
+	let transducer = a_to_b();
+	assert!(
+		!transducer.is_complete(&alphabet)?,
+		"no edge reads `a` on level 1"
+	);
+	assert!(!transducer.is_universal(&alphabet));
+	let complement = transducer.complement(&alphabet)?;
+	assert!(complement.accepts(&[[a], [a]]));
+	assert!(!complement.accepts(&[[a], [b]]));
+	assert!(complement.intersection(&transducer)?.is_lang_empty());
+	assert!(complement.is_complete(&alphabet)?);
+	assert_eq!(
+		transducer.is_complete(&Alphabet::from_symbols([a])?),
+		Err(NftError::NotInAlphabet)
+	);
+
+	let sigma_star = Nft::sigma_star(1)?;
+	assert!(sigma_star.is_universal(&alphabet) && sigma_star.is_complete(&alphabet)?);
+	assert!(sigma_star.complement(&alphabet)?.is_lang_empty());
+	// Without an initial state there is no word, so the complement has every word.
+	assert!(Nft::new(1)?.complement(&alphabet)?.is_universal(&alphabet));
+	let complement = Nft::new(2)?.complement(&alphabet)?;
+	assert!(complement.accepts(&[[a], [b]]) && complement.accepts(&[[b, b], [a, a]]));
+	// Universal through an epsilon edge, which Mata's check alone does not follow.
+	let mut epsilon = Nft::new(1)?;
+	let (source, target) = (epsilon.add_state(), epsilon.add_state());
+	epsilon.add_initial(source)?;
+	epsilon.add_final(target)?;
+	epsilon.add_transition(source, &[Symbol::EPSILON], target)?;
+	epsilon.add_transition(target, &[DONT_CARE], target)?;
+	assert!(epsilon.is_universal(&alphabet));
+	assert_eq!(
+		epsilon.complement(&alphabet).err(),
+		Some(NftError::EpsilonTransitions)
+	);
+	Ok(())
+}
+
+#[test]
+fn sigma_star_relates_words_of_equal_length() -> Result<(), Error> {
+	let s = Nft::sigma_star(2)?;
+	assert!(s.accepts(&[word_from_bytes(b"ab"), word_from_bytes(b"ba")]));
+	assert!(!s.accepts(&[word_from_bytes(b"a"), word_from_bytes(b"ba")]));
+	assert!(a_to_b().is_included_in(&s)?);
+	assert_eq!(
+		Nft::sigma_star(0).err(),
+		Some(NftError::InvalidNumLevels { num_levels: 0 })
+	);
+	Ok(())
+}
+
+#[test]
+fn interleaved_words_and_automata() -> Result<(), Error> {
+	let t = a_to_b();
+	let word = word_from_bytes(b"abbb");
+	assert!(t.accepts_interleaved(&word, false, true)?);
+	assert!(t.accepts_interleaved(&word, false, false)?);
+	assert!(!t.accepts_interleaved(&word_from_bytes(b"aa"), false, true)?);
+	assert_eq!(
+		t.accepts_interleaved(&word_from_bytes(b"a"), false, true),
+		Err(NftError::InterleavedLength {
+			length: 1,
+			num_levels: 2
+		})
+	);
+
+	let back = Nft::from_interleaved(&t.to_nfa(), 2)?;
+	assert!(back.is_equivalent_to(&t)?);
+	assert_eq!(
+		Nft::from_interleaved(&Nfa::from_word(&word_from_bytes(b"a")), 2).err(),
+		Some(NftError::InconsistentLevels),
+		"the final state would be on level 1"
+	);
+	assert!(!t.contains_jumps());
+	assert!(t.unwind_jumps().is_identical(&t));
+	Ok(())
+}
+
+#[test]
+fn epsilon_cycles_identity_and_reduction() -> Result<(), Error> {
+	let mut t = Nft::new(1)?;
+	let (p, q) = (t.add_state(), t.add_state());
+	t.add_initial(p)?;
+	t.add_final(p)?;
+	t.add_transition(p, &[Symbol::EPSILON], q)?;
+	t.add_transition(q, &[Symbol::EPSILON], p)?;
+	assert!(t.has_epsilon_cycle());
+	assert!(!a_to_b().has_epsilon_cycle());
+	assert_eq!(
+		t.accepts_interleaved(&[], false, false),
+		Err(NftError::EpsilonCycle)
+	);
+	assert!(t.accepts_interleaved(&[], false, true)?);
+
+	let doubled = a_to_b().union(&a_to_b())?;
+	assert!(doubled.is_identical(&doubled.clone()));
+	assert!(!doubled.is_identical(&a_to_b()));
+	let reduced = doubled.reduce();
+	assert!(reduced.num_states() < doubled.num_states());
+	assert!(reduced.is_equivalent_to(&a_to_b())?);
+	Ok(())
+}
+
+#[test]
+fn powers_reversal_and_inserted_levels() -> Result<(), Error> {
+	let (a, b, c) = (Symbol::from(b'a'), Symbol::from(b'b'), Symbol::from(b'c'));
+	let mut transducer = Nft::new(2)?;
+	let (source, sink) = (transducer.add_state(), transducer.add_state());
+	transducer.add_initial(source)?;
+	transducer.add_final(sink)?;
+	transducer.add_path(
+		source,
+		&[word_from_bytes(b"ab"), word_from_bytes(b"c")],
+		sink,
+	)?;
+
+	let cubed = transducer.concat_power(3);
+	assert!(cubed.accepts(&[word_from_bytes(b"ababab"), word_from_bytes(b"ccc")]));
+	assert!(!cubed.accepts(&[word_from_bytes(b"abab"), word_from_bytes(b"cc")]));
+	assert!(
+		transducer
+			.concat_power(0)
+			.accepts(&[[]; 2] as &[[Symbol; 0]])
+	);
+
+	// Mata's revert reverses the words and the order of the levels.
+	assert!(
+		transducer
+			.revert()
+			.accepts(&[word_from_bytes(b"c"), word_from_bytes(b"ba")])
+	);
+	assert!(
+		transducer
+			.revert()
+			.invert_levels()
+			.is_equivalent_to(&transducer.reverse())?
+	);
+
+	let inserted = transducer.insert_level(1)?;
+	assert_eq!(inserted.num_levels(), 3);
+	assert!(inserted.accepts(&[vec![a, b], vec![c, a], vec![c]]));
+	let masked = transducer.insert_levels(&[true, false, false])?;
+	assert!(masked.accepts(&[vec![b, b], vec![a, b], vec![c]]));
+	assert_eq!(
+		transducer.insert_levels(&[true, false]).err(),
+		Some(NftError::LevelMismatch {
+			expected: 2,
+			found: 1
+		})
+	);
+	assert_eq!(
+		transducer.insert_level(MAX_LEVELS).err(),
+		Some(NftError::InvalidNumLevels {
+			num_levels: MAX_LEVELS + 1
+		})
+	);
+	Ok(())
 }

@@ -1,5 +1,13 @@
 cmake_minimum_required (VERSION 3.23.0)
 
+# `find_program()` trusts a cached path even after the executable is gone (e.g. a Nix store path
+#  removed by garbage collection), so a reconfigure would silently lose the tool. Look it up anew.
+foreach (tool_var MATA_GIT_EXECUTABLE CCACHE_PROGRAM DOXYGEN_EXECUTABLE DOXYGEN_DOT_EXECUTABLE MEMORYCHECK_COMMAND)
+	if (DEFINED CACHE{${tool_var}} AND NOT EXISTS "${${tool_var}}")
+		unset (${tool_var} CACHE)
+	endif ()
+endforeach ()
+
 # The source of truth for the version is the `VERSION` file that CI (and the Python sdist) writes.
 #  Outside a release checkout, fall back to the latest git tag, and to 0.0.0 when there is neither.
 #  Tags look like `v1.32.45-dev.25`, while `project(VERSION)` accepts numeric components only, so

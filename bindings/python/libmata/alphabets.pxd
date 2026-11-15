@@ -5,7 +5,7 @@ from libcpp.vector cimport vector
 from libcpp.unordered_map cimport unordered_map as umap
 from libcpp.memory cimport shared_ptr
 from libcpp.optional cimport optional
-from libmata.utils cimport COrdVector
+from libmata.utils cimport COrdVector, CStringHash, CTransparentEqualTo
 
 
 cdef extern from "mata/alphabet.hh" namespace "mata":
@@ -56,7 +56,7 @@ cdef extern from "mata/alphabet.hh" namespace "mata":
         void clear()
 
     cdef cppclass COnTheFlyAlphabet "mata::OnTheFlyAlphabet" (CAlphabet):
-        ctypedef umap[string, Symbol] StringToSymbolMap
+        ctypedef umap[string, Symbol, CStringHash, CTransparentEqualTo] StringToSymbolMap
 
         StringToSymbolMap symbol_map
 

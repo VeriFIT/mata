@@ -32,12 +32,21 @@ This repo also provides a flake (maintained by [@Adda0](https://github.com/Adda0
 nix build github:VeriFIT/mata
 ```
 
+The flake also packages the Rust bindings with their examples (`mataRust`) and the `mata` command-line interface
+(`mataCli`):
+
+```shell
+nix build github:VeriFIT/mata#mataRust
+nix run github:VeriFIT/mata#mataCli -- --help
+```
+
 For development:
 
 ```shell
 nix develop github:VeriFIT/mata
 ```
 
+The development shell includes Cargo, rustc, Clippy, and rustfmt from a lockfile-pinned stable Rust toolchain.
 The Python environment of the development shell is built from `uv.lock`, the same versions `uv sync` installs, with the
 bindings installed editable from the checkout. Build their extensions in place with `just bindings python build`.
 

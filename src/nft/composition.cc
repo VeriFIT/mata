@@ -1156,9 +1156,11 @@ namespace {
 /// The body of @c compose_fast(), with the EPSILON-composition filter compiled in only when @p UseFilter is set; the
 /// inputs are validated by the caller. With @p normalize_generated, the builder records the states it generates and
 /// normalizes the result on them (@c CompositionNormalization::GeneratedOnly). @p Operand is an @c Nft without jump
-/// transitions (fast EPSILON transitions apart) or a @c CursorOperand; the result has no alphabets. Gives up and
-/// returns nothing once the result has more than @p max_num_of_states states.
-template <bool UseFilter, typename Operand>
+/// transitions (fast EPSILON transitions apart) or a @c CursorOperand; the result has no alphabets. @p schedule
+/// drives the construction: it is given a function that builds the result until it has more than the given number of
+/// states and returns whether the result is complete, which it may call again to continue. It returns whether to
+/// keep the result, which has to be complete then; otherwise nothing is returned.
+template <bool UseFilter, typename Operand, typename Schedule>
 std::optional<Nft> compose_fast_with(
 	const Operand& lhs,
 	const Operand& rhs,
@@ -1166,7 +1168,7 @@ std::optional<Nft> compose_fast_with(
 	const Level rhs_sync_level,
 	const bool project_out_sync_levels,
 	const bool normalize_generated,
-	const size_t max_num_of_states
+	Schedule&& schedule
 ) {
 	// Number of Levels and States.
 	const size_t lhs_num_of_states = lhs.num_of_states();
@@ -1920,142 +1922,148 @@ std::optional<Nft> compose_fast_with(
 		}
 	}
 
-	// The maing loop of the composition algorithm.
-	while (not worklist.empty()) {
-		// Every added state is allocated in the delta, whose size is inline; Nft::num_of_states() is a call.
-		if (result.delta.num_of_states() > max_num_of_states) { return std::nullopt; }
-		const CompositionKey<UseFilter> key{worklist.front()};
-		worklist.pop();
-		const State lhs_state{key.lhs_state};
-		const State rhs_state{key.rhs_state};
-		const EpsilonFilterMode epsilon_filter_mode{key.mode()};
-		const State composition_state{key.composition_state};
-		MATA_ASSERT(composition_state == storage_for(epsilon_filter_mode).get(lhs_state, rhs_state));
-		const Level lhs_level = lhs.levels[lhs_state];
-		const Level rhs_level = rhs.levels[rhs_state];
-		const SynchronizationType lhs_sync_type = lhs_sync_props.sync_types_vec[lhs_state];
-		const SynchronizationType rhs_sync_type = rhs_sync_props.sync_types_vec[rhs_state];
+	// The main loop of the composition algorithm, which stops between two configurations.
+	const auto build_until = [&](const size_t max_num_of_states) -> bool {
+		while (not worklist.empty()) {
+			// Every added state is allocated in the delta, whose size is inline; Nft::num_of_states() is a call.
+			if (result.delta.num_of_states() > max_num_of_states) { return false; }
+			const CompositionKey<UseFilter> key{worklist.front()};
+			worklist.pop();
+			const State lhs_state{key.lhs_state};
+			const State rhs_state{key.rhs_state};
+			const EpsilonFilterMode epsilon_filter_mode{key.mode()};
+			const State composition_state{key.composition_state};
+			MATA_ASSERT(composition_state == storage_for(epsilon_filter_mode).get(lhs_state, rhs_state));
+			const Level lhs_level = lhs.levels[lhs_state];
+			const Level rhs_level = rhs.levels[rhs_state];
+			const SynchronizationType lhs_sync_type = lhs_sync_props.sync_types_vec[lhs_state];
+			const SynchronizationType rhs_sync_type = rhs_sync_props.sync_types_vec[rhs_state];
 
-		if (lhs_level == 0 and rhs_level == 0) {
-			// We are at the zero-level states before any synchronization level.
-			// Now is the time to decide whether to continue synchronization and/or
-			// to wait in the lhs_state and/or rhs_state. This is necessary when
-			// there is a synchronization where one of the transducers has an EPSILON
-			// and the other has an alphabet symbol. Note that if future synchronization
-			// is impossible due to the EPSILON, we will simulate waiting in the zero-level
-			// state of the transducer that does not have that EPSILON.
+			if (lhs_level == 0 and rhs_level == 0) {
+				// We are at the zero-level states before any synchronization level.
+				// Now is the time to decide whether to continue synchronization and/or
+				// to wait in the lhs_state and/or rhs_state. This is necessary when
+				// there is a synchronization where one of the transducers has an EPSILON
+				// and the other has an alphabet symbol. Note that if future synchronization
+				// is impossible due to the EPSILON, we will simulate waiting in the zero-level
+				// state of the transducer that does not have that EPSILON.
 
-			// TODO: Optimize/reduce the number of similar combination of waiting simulations.
-			// You can see the table defining operations for pair of synchronization types
-			// in the documentation of the SynchronizationType enum class.
-			const bool perform_wait_on_lhs = exist_intersection(rhs_sync_type, SynchronizationType::OnlyOnEpsilon);
-			const bool perform_wait_on_rhs = exist_intersection(lhs_sync_type, SynchronizationType::OnlyOnEpsilon);
-			const bool can_synchronize_in_the_future =
-				exist_synchronization(lhs_sync_type, rhs_sync_type) &&
-				lhs_sync_props.may_share_a_symbol(lhs_state, rhs_sync_props, rhs_state);
+				// TODO: Optimize/reduce the number of similar combination of waiting simulations.
+				// You can see the table defining operations for pair of synchronization types
+				// in the documentation of the SynchronizationType enum class.
+				const bool perform_wait_on_lhs = exist_intersection(rhs_sync_type, SynchronizationType::OnlyOnEpsilon);
+				const bool perform_wait_on_rhs = exist_intersection(lhs_sync_type, SynchronizationType::OnlyOnEpsilon);
+				const bool can_synchronize_in_the_future =
+					exist_synchronization(lhs_sync_type, rhs_sync_type) &&
+					lhs_sync_props.may_share_a_symbol(lhs_state, rhs_sync_props, rhs_state);
 
-			// The inputs of the EPSILON-composition filter. A silent LHS-only move is a fast EPSILON
-			// move of the LHS or a waiting round of a one-level LHS. The LHS gets stuck once the
-			// filter refuses its silent moves if every move of its state is a silent LHS-only move
-			// (and the state is not final); in that case a silent move of the RHS would lead nowhere.
-			// The filter reads both only for a silent RHS-only move, so they are not computed for the pairs
-			// where the RHS cannot move alone silently, nor at all without the filter.
-			const bool rhs_may_move_alone_silently{
-				UseFilter && ((perform_wait_on_lhs && rhs_sync_props.nft.levels.num_of_levels == 1) ||
-							  has_fast_epsilon_move(rhs_sync_props.nft, rhs_state))
-			};
-			const bool lhs_has_a_silent_lhs_only_move =
-				rhs_may_move_alone_silently && (has_fast_epsilon_move(lhs_sync_props.nft, lhs_state) ||
-												(perform_wait_on_rhs && lhs_sync_props.nft.levels.num_of_levels == 1));
-			const bool lhs_gets_stuck_without_moving = rhs_may_move_alone_silently && !lhs.final.contains(lhs_state) &&
-													   has_only_silent_lhs_only_moves(lhs, lhs_state);
+				// The inputs of the EPSILON-composition filter. A silent LHS-only move is a fast EPSILON
+				// move of the LHS or a waiting round of a one-level LHS. The LHS gets stuck once the
+				// filter refuses its silent moves if every move of its state is a silent LHS-only move
+				// (and the state is not final); in that case a silent move of the RHS would lead nowhere.
+				// The filter reads both only for a silent RHS-only move, so they are not computed for the pairs
+				// where the RHS cannot move alone silently, nor at all without the filter.
+				const bool rhs_may_move_alone_silently{
+					UseFilter && ((perform_wait_on_lhs && rhs_sync_props.nft.levels.num_of_levels == 1) ||
+								  has_fast_epsilon_move(rhs_sync_props.nft, rhs_state))
+				};
+				const bool lhs_has_a_silent_lhs_only_move =
+					rhs_may_move_alone_silently &&
+					(has_fast_epsilon_move(lhs_sync_props.nft, lhs_state) ||
+					 (perform_wait_on_rhs && lhs_sync_props.nft.levels.num_of_levels == 1));
+				const bool lhs_gets_stuck_without_moving = rhs_may_move_alone_silently &&
+														   !lhs.final.contains(lhs_state) &&
+														   has_only_silent_lhs_only_moves(lhs, lhs_state);
 
-			// Process potential fast EPSILON transitions.
-			process_fast_epsilon_transitions(
-				composition_state, lhs_state, rhs_state, epsilon_filter_mode, lhs_has_a_silent_lhs_only_move,
-				lhs_gets_stuck_without_moving
-			);
-
-			if (perform_wait_on_lhs) {
-				// LHS is waiting (i.e., there is an EPSILON in the RHS that LHS can not synchronize on).
-				const bool is_a_silent_move = rhs_sync_props.nft.levels.num_of_levels == 1;
-				const std::optional<EpsilonFilterMode> next_mode = epsilon_filter_step(
-					epsilon_filter_mode,
-					is_a_silent_move ? EpsilonFilterAction::SilentRhsOnlyMove
-									 : EpsilonFilterAction::NonSilentRhsOnlyMove,
-					lhs_has_a_silent_lhs_only_move, lhs_gets_stuck_without_moving
+				// Process potential fast EPSILON transitions.
+				process_fast_epsilon_transitions(
+					composition_state, lhs_state, rhs_state, epsilon_filter_mode, lhs_has_a_silent_lhs_only_move,
+					lhs_gets_stuck_without_moving
 				);
-				if (next_mode) { model_waiting(composition_state, lhs_state, rhs_state, true, *next_mode); }
-			}
-			if (perform_wait_on_rhs) {
-				// RHS is waiting (i.e., there is an EPSILON in the LHS that RHS can not synchronize on).
-				const bool is_a_silent_move = lhs_sync_props.nft.levels.num_of_levels == 1;
-				const std::optional<EpsilonFilterMode> next_mode = epsilon_filter_step(
-					epsilon_filter_mode,
-					is_a_silent_move ? EpsilonFilterAction::SilentLhsOnlyMove
-									 : EpsilonFilterAction::NonSilentLhsOnlyMove,
-					lhs_has_a_silent_lhs_only_move, lhs_gets_stuck_without_moving
-				);
-				if (next_mode) { model_waiting(composition_state, rhs_state, lhs_state, false, *next_mode); }
-			}
-			if (!can_synchronize_in_the_future) {
-				// There is no way to perform the synchronization after these states.
-				// Therefore, it does not make sense to continue exploring this pair.
-				continue;
-			}
-		}
 
-		// It makes sense to continue only if we believe that synchronization is possible,
-		// or if we have already passed the synchronization level (i.e., lhs_sync_type ==
-		// SynchronizationType::Undefined or rhs_sync_type == SynchronizationType::Undefined).
-		MATA_ASSERT(
-			exist_synchronization(lhs_sync_type, rhs_sync_type) ||
-			(lhs_level == 0 && rhs_level > 0 && rhs_sync_type == SynchronizationType::Undefined) ||
-			(rhs_level == 0 && lhs_level > 0 && lhs_sync_type == SynchronizationType::Undefined) ||
-			(lhs_level > lhs_sync_level && rhs_level > rhs_sync_level &&
-			 lhs_sync_type == SynchronizationType::Undefined && rhs_sync_type == SynchronizationType::Undefined)
-		);
+				if (perform_wait_on_lhs) {
+					// LHS is waiting (i.e., there is an EPSILON in the RHS that LHS can not synchronize on).
+					const bool is_a_silent_move = rhs_sync_props.nft.levels.num_of_levels == 1;
+					const std::optional<EpsilonFilterMode> next_mode = epsilon_filter_step(
+						epsilon_filter_mode,
+						is_a_silent_move ? EpsilonFilterAction::SilentRhsOnlyMove
+										 : EpsilonFilterAction::NonSilentRhsOnlyMove,
+						lhs_has_a_silent_lhs_only_move, lhs_gets_stuck_without_moving
+					);
+					if (next_mode) { model_waiting(composition_state, lhs_state, rhs_state, true, *next_mode); }
+				}
+				if (perform_wait_on_rhs) {
+					// RHS is waiting (i.e., there is an EPSILON in the LHS that RHS can not synchronize on).
+					const bool is_a_silent_move = lhs_sync_props.nft.levels.num_of_levels == 1;
+					const std::optional<EpsilonFilterMode> next_mode = epsilon_filter_step(
+						epsilon_filter_mode,
+						is_a_silent_move ? EpsilonFilterAction::SilentLhsOnlyMove
+										 : EpsilonFilterAction::NonSilentLhsOnlyMove,
+						lhs_has_a_silent_lhs_only_move, lhs_gets_stuck_without_moving
+					);
+					if (next_mode) { model_waiting(composition_state, rhs_state, lhs_state, false, *next_mode); }
+				}
+				if (!can_synchronize_in_the_future) {
+					// There is no way to perform the synchronization after these states.
+					// Therefore, it does not make sense to continue exploring this pair.
+					continue;
+				}
+			}
 
-		// Both LHS and RHS can take a step if they are not at the synchronization level.
-		// The LHS always moves before the RHS (i.e., lhs_level < rhs_level).
-		// However, there is a special case when lhs_level < rhs_level, but the LHS cannot move.
-		// This occurs when the LHS has already reached its last (leave) zero-level state,
-		// which happens if there are no transitions after the synchronization level in the LHS.
-		const bool do_step_in_lhs = lhs_level != lhs_sync_level && (lhs_level != 0 || rhs_level == 0);
-		const bool do_step_in_rhs = rhs_level != rhs_sync_level;
-
-		if (do_step_in_lhs) {
-			// Always try to do the step in the LHS first.
-			// We don't need to worry about the case when this is the last
-			// transition in the LHS, the RHS is already at the synchronization level,
-			// and we are projecting out the synchronization levels.
-			// In such situation, the copy_transition function will handle it.
-			copy_transition(composition_state, lhs_state, rhs_state, true);
-		} else if (do_step_in_rhs) {
-			// LHS is probably at the synchronization level or at the last (leave) zero-level state.
-			// It's time for RHS to make a step.
-			// We don't need to worry about the case when this is the last
-			// transition in the RHS, the LHS is already at the synchronization level,
-			// and we are projecting out the synchronization levels.
-			// In such situation, the copy_transition function will handle it.
-			copy_transition(composition_state, rhs_state, lhs_state, false);
-		} else {
-			// Both LHS and RHS are at the synchronization level.
-			// Synchronization at this point is only possible if:
-			// 1) There is at least one transition in either the LHS or
-			//    RHS that follows the synchronization level
-			//    (so we can connect to their successors), or
-			// 2) We are not projecting out the synchronization levels.
-			//    In this case, we use the synchronization transition to
-			//    connect to the zero-level successors that follow.
-			MATA_ASSERT(lhs_level == lhs_sync_level && rhs_level == rhs_sync_level);
+			// It makes sense to continue only if we believe that synchronization is possible,
+			// or if we have already passed the synchronization level (i.e., lhs_sync_type ==
+			// SynchronizationType::Undefined or rhs_sync_type == SynchronizationType::Undefined).
 			MATA_ASSERT(
-				!project_out_sync_levels || lhs_sync_props.num_of_levels_after_sync > 0 ||
-				rhs_sync_props.num_of_levels_after_sync > 0
+				exist_synchronization(lhs_sync_type, rhs_sync_type) ||
+				(lhs_level == 0 && rhs_level > 0 && rhs_sync_type == SynchronizationType::Undefined) ||
+				(rhs_level == 0 && lhs_level > 0 && lhs_sync_type == SynchronizationType::Undefined) ||
+				(lhs_level > lhs_sync_level && rhs_level > rhs_sync_level &&
+				 lhs_sync_type == SynchronizationType::Undefined && rhs_sync_type == SynchronizationType::Undefined)
 			);
-			synchronize(composition_state, lhs_state, rhs_state);
+
+			// Both LHS and RHS can take a step if they are not at the synchronization level.
+			// The LHS always moves before the RHS (i.e., lhs_level < rhs_level).
+			// However, there is a special case when lhs_level < rhs_level, but the LHS cannot move.
+			// This occurs when the LHS has already reached its last (leave) zero-level state,
+			// which happens if there are no transitions after the synchronization level in the LHS.
+			const bool do_step_in_lhs = lhs_level != lhs_sync_level && (lhs_level != 0 || rhs_level == 0);
+			const bool do_step_in_rhs = rhs_level != rhs_sync_level;
+
+			if (do_step_in_lhs) {
+				// Always try to do the step in the LHS first.
+				// We don't need to worry about the case when this is the last
+				// transition in the LHS, the RHS is already at the synchronization level,
+				// and we are projecting out the synchronization levels.
+				// In such situation, the copy_transition function will handle it.
+				copy_transition(composition_state, lhs_state, rhs_state, true);
+			} else if (do_step_in_rhs) {
+				// LHS is probably at the synchronization level or at the last (leave) zero-level state.
+				// It's time for RHS to make a step.
+				// We don't need to worry about the case when this is the last
+				// transition in the RHS, the LHS is already at the synchronization level,
+				// and we are projecting out the synchronization levels.
+				// In such situation, the copy_transition function will handle it.
+				copy_transition(composition_state, rhs_state, lhs_state, false);
+			} else {
+				// Both LHS and RHS are at the synchronization level.
+				// Synchronization at this point is only possible if:
+				// 1) There is at least one transition in either the LHS or
+				//    RHS that follows the synchronization level
+				//    (so we can connect to their successors), or
+				// 2) We are not projecting out the synchronization levels.
+				//    In this case, we use the synchronization transition to
+				//    connect to the zero-level successors that follow.
+				MATA_ASSERT(lhs_level == lhs_sync_level && rhs_level == rhs_sync_level);
+				MATA_ASSERT(
+					!project_out_sync_levels || lhs_sync_props.num_of_levels_after_sync > 0 ||
+					rhs_sync_props.num_of_levels_after_sync > 0
+				);
+				synchronize(composition_state, lhs_state, rhs_state);
+			}
 		}
-	}
+		return true;
+	};
+	if (!schedule(build_until)) { return std::nullopt; }
 
 	if (normalize_generated) {
 		// One compaction serves both the normalization and the trim.
@@ -2071,7 +2079,7 @@ std::optional<Nft> compose_fast_with(
 /// Run @c compose_fast_with() with the EPSILON-composition filter if @p rhs needs it. The filter switches only on a
 ///  silent move of the RHS alone. Without one it keeps every configuration in the LhsMayMoveAlone mode and refuses
 ///  nothing, so the composition runs without its bookkeeping.
-template <typename Operand>
+template <typename Operand, typename Schedule>
 std::optional<Nft> compose_fast_choosing_filter(
 	const Operand& lhs,
 	const Operand& rhs,
@@ -2079,19 +2087,18 @@ std::optional<Nft> compose_fast_choosing_filter(
 	const Level rhs_sync_level,
 	const bool project_out_sync_levels,
 	const bool normalize_generated,
-	const size_t max_num_of_states
+	Schedule&& schedule
 ) {
-	return can_move_alone_silently(rhs) ? compose_fast_with<true>(
-											  lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels,
-											  normalize_generated, max_num_of_states
-										  )
-										: compose_fast_with<false>(
-											  lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels,
-											  normalize_generated, max_num_of_states
-										  );
+	return can_move_alone_silently(rhs)
+			   ? compose_fast_with<true>(
+					 lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, normalize_generated, schedule
+				 )
+			   : compose_fast_with<false>(
+					 lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, normalize_generated, schedule
+				 );
 }
 
-/// @c compose_fast_choosing_filter() without a state budget.
+/// @c compose_fast_choosing_filter() built in one go.
 template <typename Operand>
 Nft compose_fast_at_once(
 	const Operand& lhs,
@@ -2102,14 +2109,15 @@ Nft compose_fast_at_once(
 	const bool normalize_generated
 ) {
 	std::optional<Nft> result{compose_fast_choosing_filter(
-		lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, normalize_generated, SIZE_MAX
+		lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, normalize_generated,
+		[](const auto& build_until) { return build_until(SIZE_MAX); }
 	)};
 	MATA_ASSERT(result.has_value());
 	return std::move(*result);
 }
 
-/// The states a composition may build before it gives up for the other direction; a composition this small takes
-///  milliseconds, so most compositions are built forward only, once.
+/// The states a composition may build before the other direction takes its first turn; a composition this small
+///  takes milliseconds, so most compositions are built forward only.
 constexpr size_t INITIAL_DIRECTION_BUDGET{size_t{1} << 16};
 
 /**
@@ -2122,10 +2130,12 @@ constexpr size_t INITIAL_DIRECTION_BUDGET{size_t{1} << 16};
  *  initial states, the reverted one every state from which a final state is reachable; trimming keeps the states
  *  that are both, so either direction gives the same trimmed relation. On the transducers of string constraints,
  *  either direction can build tens of times more states than the other, and only building them tells which. The two
- *  directions take turns, each starting over with a state budget doubled every round, so the composition costs a
- *  small multiple of the cheaper direction. Starting over keeps the composer an ordinary function: suspending it in
- *  the middle (as a coroutine) makes every composition slower, also those that never take turns. The result has no
- *  alphabets.
+ *  directions take turns with a state budget doubled every round. The forward composition of the first turn is
+ *  thrown away: most compositions finish in it, or in the first turn of the reverted one, which is built faster
+ *  in the memory the forward one has just freed. From then on each direction continues where it stopped, so the
+ *  composition builds at most a small multiple of the states of the cheaper direction. The forward composer then
+ *  runs inside the schedule of the reverted one, which keeps both ordinary functions: suspending the composer as a
+ *  coroutine makes every composition slower, also those that never take turns. The result has no alphabets.
  */
 Nft compose_fast_trimmed(
 	const Nft& lhs,
@@ -2134,30 +2144,45 @@ Nft compose_fast_trimmed(
 	const Level rhs_sync_level,
 	const bool project_out_sync_levels
 ) {
-	std::optional<Nft> reverted_lhs{};
-	std::optional<Nft> reverted_rhs{};
-	for (size_t budget{INITIAL_DIRECTION_BUDGET};; budget = budget > SIZE_MAX / 2 ? SIZE_MAX : budget * 2) {
-		std::optional<Nft> forward{compose_fast_choosing_filter(
-			lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, false, budget
-		)};
-		if (forward.has_value()) {
-			// The composer trims a result without the synchronization levels itself.
-			if (!project_out_sync_levels) { forward->trim(); }
-			return std::move(*forward);
-		}
-		if (!reverted_lhs.has_value()) {
-			reverted_lhs.emplace(revert(lhs));
-			reverted_rhs.emplace(revert(rhs));
-		}
-		std::optional<Nft> backward{compose_fast_choosing_filter(
-			*reverted_rhs, *reverted_lhs, static_cast<Level>(rhs.levels.num_of_levels - 1 - rhs_sync_level),
-			static_cast<Level>(lhs.levels.num_of_levels - 1 - lhs_sync_level), project_out_sync_levels, false, budget
-		)};
-		if (backward.has_value()) {
-			if (!project_out_sync_levels) { backward->trim(); }
-			return revert(*backward);
-		}
+	// The composer trims a result without the synchronization levels itself.
+	const auto trimmed = [&](Nft& result) -> Nft& {
+		if (!project_out_sync_levels) { result.trim(); }
+		return result;
+	};
+	const auto compose_forward = [&](auto&& schedule) {
+		return compose_fast_choosing_filter(
+			lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, false, schedule
+		);
+	};
+	size_t budget{INITIAL_DIRECTION_BUDGET};
+	if (std::optional<Nft> forward{compose_forward([&](const auto& build_forward) { return build_forward(budget); })};
+		forward.has_value()) {
+		return std::move(trimmed(*forward));
 	}
+	const Nft reverted_lhs{revert(lhs)};
+	const Nft reverted_rhs{revert(rhs)};
+	std::optional<Nft> forward{};
+	std::optional<Nft> backward{compose_fast_choosing_filter(
+		reverted_rhs, reverted_lhs, static_cast<Level>(rhs.levels.num_of_levels - 1 - rhs_sync_level),
+		static_cast<Level>(lhs.levels.num_of_levels - 1 - lhs_sync_level), project_out_sync_levels, false,
+		[&](const auto& build_backward) {
+			if (build_backward(budget)) { return true; }
+			bool backward_finished{false};
+			forward = compose_forward([&](const auto& build_forward) {
+				while (true) {
+					budget = budget > SIZE_MAX / 2 ? SIZE_MAX : budget * 2;
+					if (build_forward(budget)) { return true; }
+					if (build_backward(budget)) {
+						backward_finished = true;
+						return false;
+					}
+				}
+			});
+			return backward_finished;
+		}
+	)};
+	if (forward.has_value()) { return std::move(trimmed(*forward)); }
+	return revert(trimmed(*backward));
 }
 
 /// The body of @c compose_fast() and @c compose_fast_no_jump(), which name themselves @p caller in their errors.

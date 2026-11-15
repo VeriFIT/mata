@@ -54,7 +54,7 @@ std::string quote_symbol_name(const std::string_view name);
 class Alphabet {
   public:
 	/// translates a string into a symbol
-	virtual Symbol translate_symb(const std::string& symb) = 0;
+	virtual Symbol translate_symb(std::string_view symb) = 0;
 
 	/**
 	 * Translate sequence of symbol names to sequence of their respective values.
@@ -74,7 +74,7 @@ class Alphabet {
 	virtual std::string reverse_translate_symbol(Symbol symbol) const = 0;
 
 	/// also translates strings to symbols
-	Symbol operator[](const std::string& symb) { return this->translate_symb(symb); }
+	Symbol operator[](const std::string_view symb) { return this->translate_symb(symb); }
 
 	/**
 	 * @brief Get a set of all symbols in the alphabet.
@@ -148,7 +148,7 @@ class IntAlphabet : public Alphabet {
   public:
 	IntAlphabet() : alphabet_instance_(IntAlphabetSingleton::get()) {}
 
-	Symbol translate_symb(const std::string& symb) override;
+	Symbol translate_symb(std::string_view symb) override;
 
 	std::string reverse_translate_symbol(const Symbol symbol) const override { return std::to_string(symbol); }
 
@@ -272,7 +272,7 @@ class EnumAlphabet : public Alphabet {
 	}
 	EnumAlphabet(const std::initializer_list<std::string> l) : EnumAlphabet(l.begin(), l.end()) {}
 
-	Symbol translate_symb(const std::string& str) override;
+	Symbol translate_symb(std::string_view str) override;
 	Word translate_word(const WordName& word_name) const override;
 
 	/**
@@ -354,7 +354,7 @@ class EnumAlphabet : public Alphabet {
  */
 class OnTheFlyAlphabet : public Alphabet {
   public:
-	using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
+	using StringToSymbolMap = utils::StringMap<Symbol>;
 
 	/// Result of the insertion of a new symbol.
 	using InsertionResult = std::pair<StringToSymbolMap::const_iterator, bool>;
@@ -414,7 +414,7 @@ class OnTheFlyAlphabet : public Alphabet {
 	 */
 	void add_symbols_from(const StringToSymbolMap& new_symbol_map);
 
-	Symbol translate_symb(const std::string& str) override;
+	Symbol translate_symb(std::string_view str) override;
 
 	Word translate_word(const WordName& word_name) const override;
 
@@ -686,7 +686,7 @@ class AlphabetLevels {
 	 * When @p level is @c std::nullopt and the instance is in @c Global mode, the shared alphabet is used.
 	 * In @c MultiLevel mode @p level must have a value.
 	 */
-	Symbol translate_symb(const std::string& symb, std::optional<Level> level = std::nullopt);
+	Symbol translate_symb(std::string_view symb, std::optional<Level> level = std::nullopt);
 
 	/**
 	 * @brief Translate a symbol value back to its name using the alphabet for the given level.

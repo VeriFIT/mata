@@ -19,6 +19,7 @@
 #include <unordered_set>
 #include <utility>
 
+#include "../mata-writer.hh"
 #include "mata/alphabet.hh"
 #include "mata/nfa/builder.hh"
 #include "mata/nft/nft.hh"
@@ -341,73 +342,83 @@ void Nft::print_to_dot(
 	print_to_dot(output, decode_ascii_chars, use_intervals, max_label_length, alphabet);
 }
 
-std::string Nft::print_to_mata() const {
-	std::stringstream output;
-	print_to_mata(output);
-	return output.str();
-}
-
-void Nft::print_to_mata(std::ostream& output) const {
-	output << "@NFT-explicit\n" << "%Alphabet-auto\n";
+namespace {
+/// Writes @p nft as @c Nft::print_to_mata() prints it.
+void write_mata(const Nft& nft, mata::parser::MataWriter& writer) {
+	writer << "@NFT-explicit\n" << "%Alphabet-auto\n";
 	// TODO should be this, but we cannot parse %Alphabet-numbers yet
 	//<< "%Alphabet-numbers\n";
 
-	if (!initial.empty()) {
-		output << "%Initial";
-		for (const State init_state : initial) { output << " q" << init_state; }
-		output << '\n';
+	if (!nft.initial.empty()) {
+		writer << "%Initial";
+		for (const State init_state : nft.initial) { writer << " q" << init_state; }
+		writer.end_line();
 	}
 
-	if (!final.empty()) {
-		output << "%Final";
-		for (const State final_state : final) { output << " q" << final_state; }
-		output << '\n';
+	if (!nft.final.empty()) {
+		writer << "%Final";
+		for (const State final_state : nft.final) { writer << " q" << final_state; }
+		writer.end_line();
 	}
 
-	if (!levels.empty()) {
-		BoolVector live_states(num_of_states(), false);
-		for (const State& s : initial) { live_states[s] = true; }
-		for (const State& s : final) { live_states[s] = true; }
-		for (const Transition& trans : delta.transitions()) {
+	if (!nft.levels.empty()) {
+		const size_t num_of_states{nft.num_of_states()};
+		BoolVector live_states(num_of_states, false);
+		for (const State& s : nft.initial) { live_states[s] = true; }
+		for (const State& s : nft.final) { live_states[s] = true; }
+		for (const Transition& trans : nft.delta.transitions()) {
 			live_states[trans.source] = true;
 			live_states[trans.target] = true;
 		}
-		output << "%Levels";
-		for (State s{0}; s < num_of_states(); s++) {
-			if (live_states[s]) { output << " " << "q" << s << ":" << levels[s]; }
+		writer << "%Levels";
+		for (State s{0}; s < num_of_states; s++) {
+			if (live_states[s]) { writer << " q" << s << ':' << nft.levels[s]; }
 		}
-		output << '\n';
+		writer.end_line();
 	}
-	output << "%LevelsNum " << levels.num_of_levels << '\n';
+	writer << "%LevelsNum " << nft.levels.num_of_levels;
+	writer.end_line();
 
 	// Reverse lookups may scan the whole alphabet; translate each (symbol, level) once.
 	std::map<std::pair<Symbol, Level>, std::string> symbol_names{};
-	for (const Transition& trans : delta.transitions()) {
-		output << "q" << trans.source << " ";
+	for (const Transition& trans : nft.delta.transitions()) {
+		writer << "q" << trans.source << " ";
 		// EPSILON and DONT_CARE belong to no alphabet; print the names the parser maps back.
 		if (trans.symbol == EPSILON) {
-			output << EPSILON_NAME;
+			writer << mata::EPSILON_NAME;
 		} else if (trans.symbol == DONT_CARE) {
-			output << DONT_CARE_NAME;
-		} else if (alphabets != nullptr) {
-			const auto key{std::pair{trans.symbol, levels[trans.source]}};
+			writer << mata::DONT_CARE_NAME;
+		} else if (nft.alphabets != nullptr) {
+			const auto key{std::pair{trans.symbol, nft.levels[trans.source]}};
 			auto it{symbol_names.find(key)};
 			if (it == symbol_names.end()) {
-				it = symbol_names
-						 .emplace(
-							 key, mata::quote_symbol_name(alphabets->reverse_translate_symbol(key.first, key.second))
-						 )
-						 .first;
+				it =
+					symbol_names
+						.emplace(
+							key, mata::quote_symbol_name(nft.alphabets->reverse_translate_symbol(key.first, key.second))
+						)
+						.first;
 			}
-			output << it->second;
+			writer << it->second;
 		} else {
-			// Plain decimal, independent of the stream's format flags: the parser reads it back as decimal.
-			output << std::to_string(trans.symbol);
+			writer << trans.symbol;
 		}
-		output << " q" << trans.target << '\n';
+		writer << " q" << trans.target;
+		writer.end_line();
 	}
-	// See print_to_dot(): one flush per call instead of one per line.
-	output.flush();
+}
+} // namespace
+
+std::string Nft::print_to_mata() const {
+	parser::MataWriter writer;
+	write_mata(*this, writer);
+	return writer.take();
+}
+
+void Nft::print_to_mata(std::ostream& output) const {
+	parser::MataWriter writer{output};
+	write_mata(*this, writer);
+	writer.flush();
 }
 
 void Nft::print_to_mata(const std::string& filename) const {

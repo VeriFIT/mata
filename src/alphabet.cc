@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 
 using mata::AlphabetLevels;
 using mata::OnTheFlyAlphabet;
@@ -160,17 +161,15 @@ void mata::OnTheFlyAlphabet::add_symbols_from(const std::vector<std::string>& sy
 	for (const std::string& symbol_name : symbol_names) { add_new_symbol(symbol_name); }
 }
 
-Symbol mata::OnTheFlyAlphabet::translate_symb(const std::string& str) {
+Symbol mata::OnTheFlyAlphabet::translate_symb(const std::string_view str) {
 	// The reserved special-symbol names translate straight to the special symbols and are never registered as ordinary
 	// symbols, so a printed name always parses back to the same symbol.
 	if (str == EPSILON_NAME) { return nfa::EPSILON; }
 	if (str == DONT_CARE_NAME) { return nft::DONT_CARE; }
-	const auto [it, inserted] = symbol_map_.try_emplace(str, next_symbol_value_);
-	if (inserted) {
-		index_name(it);
-		return next_symbol_value_++;
-	}
-	return it->second;
+	// Found first, as try_emplace() would copy the name.
+	if (const auto it{symbol_map_.find(str)}; it != symbol_map_.end()) { return it->second; }
+	index_name(symbol_map_.emplace(str, next_symbol_value_).first);
+	return next_symbol_value_++;
 
 	// TODO: How can the user specify to throw exceptions when we encounter an unknown symbol? How to specify that
 	//  the alphabet should have only the previously fixed symbols?
@@ -259,12 +258,22 @@ std::ostream& mata::IntAlphabet::print(std::ostream& os) const { return os << "I
 
 std::ostream& std::operator<<(std::ostream& os, const mata::Alphabet& alphabet) { return alphabet.print(os); }
 
-Symbol mata::IntAlphabet::translate_symb(const std::string& symb) {
+Symbol mata::IntAlphabet::translate_symb(const std::string_view symb) {
+	// A plain decimal number of up to 9 digits always fits and reads the same as through the stream below, which
+	//  costs much more.
+	if (!symb.empty() && symb.size() <= 9 && symb.front() >= '0' && symb.front() <= '9') {
+		Symbol symbol{};
+		const char* const end{symb.data() + symb.size()};
+		if (const auto [ptr, error]{std::from_chars(symb.data(), end, symbol)}; error == std::errc{} && ptr == end) {
+			return symbol;
+		}
+	}
 	Symbol symbol;
-	std::istringstream stream{symb};
+	const std::string str{symb};
+	std::istringstream stream{str};
 	stream >> symbol;
 	if (stream.fail() || !stream.eof()) {
-		throw std::runtime_error("Cannot translate string '" + symb + "' to symbol.");
+		throw std::runtime_error("Cannot translate string '" + str + "' to symbol.");
 	}
 	return symbol;
 }
@@ -276,8 +285,9 @@ std::string mata::EnumAlphabet::reverse_translate_symbol(const Symbol symbol) co
 	return std::to_string(symbol);
 }
 
-Symbol mata::EnumAlphabet::translate_symb(const std::string& str) {
+Symbol mata::EnumAlphabet::translate_symb(const std::string_view symb) {
 	Symbol symbol;
+	const std::string str{symb};
 	std::istringstream stream{str};
 	stream >> symbol;
 	if (stream.fail() || !stream.eof()) {
@@ -347,7 +357,7 @@ size_t mata::OnTheFlyAlphabet::erase(const std::string& symbol_name) {
 	return 0;
 }
 
-Symbol AlphabetLevels::translate_symb(const std::string& symb, const std::optional<mata::Level> level) {
+Symbol AlphabetLevels::translate_symb(const std::string_view symb, const std::optional<mata::Level> level) {
 	return for_level(level)->translate_symb(symb);
 }
 

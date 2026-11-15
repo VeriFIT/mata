@@ -1,8 +1,8 @@
 //! Behaviour of the public API on hand-written cases.
 
 use mata::{
-	Alphabet, AlphabetError, CheckAlgorithm, Complementation, Error, LimitExceeded, Limits,
-	Minimization, Nfa, Side, State, Symbol, Transition, word_from_bytes,
+	Alphabet, AlphabetError, CheckAlgorithm, Complementation, Determinization, Error,
+	LimitExceeded, Limits, Minimization, Nfa, Side, State, Symbol, Transition, word_from_bytes,
 };
 
 fn q(index: u32) -> State {
@@ -120,6 +120,56 @@ fn epsilon_is_handled_as_the_empty_word() -> Result<(), Error> {
 	Ok(())
 }
 
+/// (a|b)* a (a|b)^k over a = 0 and b = 1.
+fn nth_symbol_from_the_end(k: u32) -> Result<Nfa, Error> {
+	let (a, b) = (Symbol::new(0), Symbol::new(1));
+	let mut nfa = Nfa::with_states(k as usize + 2);
+	nfa.add_initial(q(0))?;
+	nfa.add_final(q(k + 1))?;
+	nfa.add_transition(q(0), a, q(0))?;
+	nfa.add_transition(q(0), b, q(0))?;
+	nfa.add_transition(q(0), a, q(1))?;
+	for state in 1..=k {
+		nfa.add_transition(q(state), a, q(state + 1))?;
+		nfa.add_transition(q(state), b, q(state + 1))?;
+	}
+	Ok(nfa)
+}
+
+#[test]
+fn determinization_algorithms() -> Result<(), Error> {
+	// The same DFA up to the numbering of its states; the default is Four Russians.
+	let nfa = nth_symbol_from_the_end(3)?;
+	let four_russians = nfa.determinize_with(Determinization::FourRussians);
+	let classical = nfa.determinize_with(Determinization::Classical);
+	for dfa in [&four_russians, &classical] {
+		assert!(dfa.is_deterministic());
+		assert_eq!(dfa.num_states(), 16);
+		assert!(dfa.is_equivalent_to(&nfa));
+	}
+	assert!(nfa.determinize().is_identical(&four_russians));
+	Ok(())
+}
+
+#[test]
+fn determinize_the_largest_symbol() -> Result<(), Error> {
+	// The largest symbol but epsilon: its bit in the used symbols must not overflow when usize has
+	// 32 bits (wasm32).
+	let symbol = Symbol::new(u32::MAX - 1);
+	let mut nfa = Nfa::with_states(2);
+	nfa.add_initial(q(0))?;
+	nfa.add_final(q(1))?;
+	nfa.add_transition(q(0), symbol, q(0))?;
+	nfa.add_transition(q(0), symbol, q(1))?;
+	for algorithm in [Determinization::FourRussians, Determinization::Classical] {
+		let dfa = nfa.determinize_with(algorithm);
+		assert!(dfa.is_deterministic());
+		assert_eq!(dfa.num_states(), 2, "{algorithm:?}");
+		assert!(dfa.accepts(&[symbol]) && dfa.accepts(&[symbol, symbol]) && !dfa.accepts(&[]));
+	}
+	Ok(())
+}
+
 #[test]
 fn hopcroft_works_on_nondeterministic_input() -> Result<(), Error> {
 	// Mata's Hopcroft minimization needs a trimmed DFA.
@@ -232,15 +282,72 @@ fn numeric_names_are_rejected() -> Result<(), Error> {
 		Alphabet::from_names(["7"]),
 		Err(AlphabetError::NumericName { name: "7".into() })
 	);
+	// `insert_named` binds a numeric name (the "bytes" script alphabet does), so it must reload.
+	let mut bytes = Alphabet::new();
+	bytes.insert_named("1", Symbol::new(49))?;
 	#[cfg(feature = "serde")]
 	{
-		let error = serde_json::from_str::<Alphabet>("[[1, \"1\"]]").unwrap_err();
-		assert!(error.to_string().contains("only digits"), "{error}");
+		let text = serde_json::to_string(&bytes).unwrap();
+		assert_eq!(serde_json::from_str::<Alphabet>(&text).unwrap(), bytes);
 	}
+	// The parser resolves a name before a number, so the `.mata` text keeps symbol 49.
+	let nfa = Nfa::from_word(&[Symbol::new(49)]);
+	let back = Nfa::parse_mata(&nfa.display_with(&bytes).to_string(), &mut bytes)?;
+	assert!(back.accepts(&[Symbol::new(49)]));
+	assert!(!back.accepts(&[Symbol::new(1)]));
 	// The empty name is digits-and-nothing: not numeric, still rejected by round-trip rules as before.
 	let mut empty = Alphabet::new();
 	let symbol = empty.insert_name("")?;
 	assert_eq!(u32::from(symbol), 0);
+	Ok(())
+}
+
+#[test]
+fn insert_named_rejects_the_epsilon_name() {
+	let mut sigma = Alphabet::new();
+	assert_eq!(
+		sigma.insert_named("<eps>", Symbol::new(5)),
+		Err(AlphabetError::Epsilon)
+	);
+	assert_eq!(sigma.name(Symbol::new(5)), None);
+	assert!(sigma.is_empty());
+}
+
+#[test]
+fn a_numeric_name_bound_by_insert_named_is_found() -> Result<(), Error> {
+	let mut sigma = Alphabet::new();
+	sigma.insert_named("0", Symbol::new(48))?;
+	assert_eq!(sigma.insert_name("0"), Ok(Symbol::new(48)));
+	assert_eq!(
+		sigma.insert_name("1"),
+		Err(AlphabetError::NumericName { name: "1".into() })
+	);
+	Ok(())
+}
+
+#[test]
+fn a_numeric_name_never_shadows_an_unnamed_symbol() -> Result<(), Error> {
+	// Printing writes an unnamed symbol as its number, so that number cannot also name another symbol:
+	// the transition over symbol 1 would read back over symbol 49.
+	let mut sigma = Alphabet::from_symbols([Symbol::new(1)])?;
+	assert_eq!(
+		sigma.insert_named("1", Symbol::new(49)),
+		Err(AlphabetError::NumericName { name: "1".into() })
+	);
+	let nfa = Nfa::from_word(&[Symbol::new(1)]);
+	let back = Nfa::parse_mata(&nfa.display_with(&sigma).to_string(), &mut sigma)?;
+	assert!(back.accepts(&[Symbol::new(1)]));
+
+	let mut named = Alphabet::new();
+	named.insert_named("1", Symbol::new(49))?;
+	assert_eq!(
+		named.insert(Symbol::new(1)),
+		Err(AlphabetError::NumericName { name: "1".into() })
+	);
+	// Naming the symbol itself by its own number is no collision.
+	sigma.insert_named("7", Symbol::new(7))?;
+	#[cfg(feature = "serde")]
+	assert!(serde_json::from_str::<Alphabet>(r#"[[49,"1"],[1,null]]"#).is_err());
 	Ok(())
 }
 
@@ -277,6 +384,55 @@ fn parse_bitvector_sections() -> Result<(), Error> {
 	assert_eq!(nfa.used_symbols().len(), 2);
 	assert_eq!(nfa.num_transitions(), 3);
 	assert_eq!(nfa.find_shortest_word().map(|word| word.len()), Some(1));
+
+	// CRLF line endings keep the section type intact through the shim and the bitvector reader.
+	let nfa = Nfa::parse_mata(&text.replace('\n', "\r\n"), &mut sigma)?;
+	assert_eq!(nfa.used_symbols().len(), 2);
+	assert_eq!(nfa.num_transitions(), 3);
+	Ok(())
+}
+
+/// The states, initial and final states, and transitions of `nfa`.
+fn structure(nfa: &Nfa) -> (usize, Vec<State>, Vec<State>, Vec<Transition>) {
+	let mut finals = nfa.final_states().to_vec();
+	finals.sort();
+	(
+		nfa.num_states(),
+		nfa.initial_states().to_vec(),
+		finals,
+		nfa.transitions().collect(),
+	)
+}
+
+#[test]
+fn parse_sections_read_by_different_readers() -> Result<(), Error> {
+	// Read by the fast reader of explicit automata, by the bitvector reader, and by the general reader.
+	let explicit = "@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a q1\nq1 b q1\n";
+	let bits = "@NFA-bits\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 (x & !y) q1\nq1 (x | y) q1\n";
+	let general =
+		"# comment\n@NFA-explicit\n%Alphabet-auto\n%Initial q0 | q1\n%Final q1\nq0 c q1\n";
+	let mut sigma = Alphabet::new();
+	let parsed = Nfa::parse_mata_all(&[explicit, bits, general].concat(), &mut sigma)?;
+	assert_eq!(parsed.len(), 3);
+	// The two minterms the bit-vector section uses take their symbols in the order of the sections.
+	assert_eq!(sigma.symbol("a"), Some(Symbol::new(0)));
+	assert_eq!(sigma.symbol("b"), Some(Symbol::new(1)));
+	assert_eq!(sigma.symbol("c"), Some(Symbol::new(4)));
+	assert_eq!(parsed[1].used_symbols(), [Symbol::new(2), Symbol::new(3)]);
+	assert_eq!(parsed[1].num_transitions(), 3);
+
+	// Each section reads the same automaton alone, with the names of the others known.
+	let mut known = sigma.clone();
+	let alone = Nfa::parse_mata(explicit, &mut known)?;
+	assert_eq!(structure(&alone), structure(&parsed[0]));
+	let alone = Nfa::parse_mata(general, &mut known)?;
+	assert_eq!(structure(&alone), structure(&parsed[2]));
+	assert_eq!(known, sigma);
+
+	// The bit-vector sections of one text share their minterms, also with numeric symbols.
+	let parsed = Nfa::parse_mata_numeric_all(&[bits, bits].concat())?;
+	assert_eq!(parsed[0].used_symbols(), parsed[1].used_symbols());
+	assert_eq!(structure(&parsed[0]), structure(&parsed[1]));
 	Ok(())
 }
 
@@ -672,5 +828,39 @@ fn readme_example() -> Result<(), Error> {
 	assert!(b.accepts(&witness) && !a.accepts(&witness));
 	assert_eq!(a.minimize().num_states(), 4);
 	assert!(a.accepts(&word_from_bytes("aabb")));
+	Ok(())
+}
+
+/// A number the alphabet has no name for is the symbol of that number in every parse, as it is printed.
+#[test]
+fn a_number_parses_as_its_own_symbol_in_every_parse() -> Result<(), Error> {
+	let section = |symbol: &str| {
+		format!("@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 {symbol} q1\n")
+	};
+	let mut sigma = Alphabet::from_names(["a"])?;
+	let five = Nfa::parse_mata(&section("5"), &mut sigma)?;
+	let one = Nfa::parse_mata(&section("1"), &mut sigma)?;
+	assert!(five.accepts(&[Symbol::new(5)]) && one.accepts(&[Symbol::new(1)]));
+	assert!(Nfa::parse_mata(&section("5"), &mut sigma)?.is_equivalent_to(&five));
+	assert_eq!((sigma.name(Symbol::new(5)), sigma.len()), (None, 3));
+	Ok(())
+}
+
+/// A number whose own symbol has a name gets a new symbol once, and keeps it in later parses.
+#[test]
+fn a_number_whose_symbol_is_named_keeps_the_symbol_it_got() -> Result<(), Error> {
+	let section = |symbol: &str| {
+		format!("@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 {symbol} q1\n")
+	};
+	let mut sigma = Alphabet::from_names(["a"])?;
+	let zero = Nfa::parse_mata(&section("0"), &mut sigma)?;
+	assert!(!zero.accepts(&[Symbol::new(0)]));
+	Nfa::parse_mata(&section("b"), &mut sigma)?;
+	assert!(Nfa::parse_mata(&section("0"), &mut sigma)?.is_equivalent_to(&zero));
+	// A number with a leading zero is a name, so it never takes the free symbol 3 below the symbol 5.
+	Nfa::parse_mata(&section("5"), &mut sigma)?;
+	let leading = Nfa::parse_mata(&section("03"), &mut sigma)?;
+	assert!(!leading.accepts(&[Symbol::new(3)]));
+	assert!(Nfa::parse_mata(&section("03"), &mut sigma)?.is_equivalent_to(&leading));
 	Ok(())
 }

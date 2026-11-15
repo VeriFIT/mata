@@ -7,9 +7,9 @@ Native build of [Mata](https://github.com/VeriFIT/mata), the finite automata lib
 
 ## What it contains
 
-- `cxx/shim.hh`, `cxx/shim.cc`: one flat function per operation, in namespace `mata_sys`. The shim turns Mata's templates, overloads and string parameter maps into signatures cxx can bridge, and it checks the preconditions that Mata checks only with debug assertions. Read-only queries take `mata::Automaton`, the base class of NFAs and NFTs, so both share them.
+- `cxx/shim.hh`, `cxx/shim.cc`: one flat function per operation, in namespace `mata_sys`. The shim turns Mata's templates, overloads and string parameter maps into signatures cxx can bridge, and it checks the preconditions that Mata checks only with debug assertions. Read-only queries take `mata::Automaton`, the base class of NFAs and NFTs, so both share them. NFA parsing reads each `.mata` section with the reader Mata's loaders use; it serializes the bitvector reader (used for `@NFA-bits` input), because CUDD swaps a process-wide out-of-memory handler around its allocations.
 - `cxx/nft.hh`, `cxx/nft.cc`: the same for transducers (see [Transducers](#transducers)).
-- `cxx/common.hh`, `cxx/common.cc`: helpers of both, including `.mata` parsing. Parsing serializes mintermization (used for `@NFA-bits` input), because CUDD swaps a process-wide out-of-memory handler around its allocations.
+- `cxx/common.hh`, `cxx/common.cc`: helpers of both.
 - `src/lib.rs`: the bridge `mata_sys::ffi`; `src/nft.rs`: the bridge `mata_sys::nft::ffi`.
 - `build.rs`: builds Mata with CMake, compiles the shim with `-std=c++23`, and links both.
 
@@ -17,11 +17,15 @@ Native build of [Mata](https://github.com/VeriFIT/mata), the finite automata lib
 
 Requirements: CMake 3.23 or newer and a C++23 compiler: GCC 14 or newer, or Clang 18 or newer (on macOS, Homebrew's LLVM; Apple's Clang is too old). Tested on 64-bit Linux and on WebAssembly ([below](#webassembly)).
 
-| Variable                | Effect                                                                                                 |
-| ----------------------- | ------------------------------------------------------------------------------------------------------ |
-| `MATA_DIR`              | Use an installed Mata (`include/` and `lib/libmata.a` or `lib64/libmata.a`) instead of building one.   |
-| `MATA_SOURCE_DIR`       | Build this Mata source tree instead.                                                                   |
-| `MATA_CMAKE_BUILD_TYPE` | CMake build type of Mata, `Release` by default. `Debug` turns on Mata's assertions (the shim follows). |
+| Variable                | Effect                                                                             |
+| ----------------------- | ---------------------------------------------------------------------------------- |
+| `MATA_DIR`              | Use installed Mata with `include/` and `lib/libmata.a` or `lib64/libmata.a`.       |
+| `MATA_SOURCE_DIR`       | Build this Mata source tree instead.                                               |
+| `MATA_CMAKE_BUILD_TYPE` | CMake type, `Release` by default; `Debug` enables assertions in Mata and the shim. |
+| `MATA_VERSION`          | Overrides `LIBRARY_VERSION`; default: CMake package version, or `unknown`.         |
+
+With `MATA_DIR`, the installed `libmata` is not rebuilt: `MATA_CMAKE_BUILD_TYPE` then sets only the shim's
+assertions, so it must match the build type of the installed library.
 
 The build script refuses a Mata that the bridge cannot use safely:
 

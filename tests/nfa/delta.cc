@@ -566,8 +566,7 @@ TEST_CASE("mata::nfa::Delta::add_symbols_to()") {
 	delta.add_symbols_to(alphabet);
 	CHECK(alphabet.get_symbol_map().size() == 4);
 	CHECK(
-		alphabet.get_symbol_map() ==
-		std::unordered_map<std::string, mata::Symbol>{{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}}
+		alphabet.get_symbol_map() == mata::OnTheFlyAlphabet::StringToSymbolMap{{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}}
 	);
 }
 
@@ -878,6 +877,20 @@ TEST_CASE("mata::nfa::Delta::add() of a batch of transitions") {
 		CHECK(batched.num_of_states() == 8);
 		CHECK(batched == delta_from_adds({{1, 'a', 7}}));
 	}
+
+	SECTION("a delta with states but no transitions keeps its states") {
+		for (const size_t num_of_states : {size_t{2}, size_t{8}, size_t{12}}) {
+			Delta batched{num_of_states};
+			std::vector<Transition> input{sorted};
+			std::ranges::shuffle(input, std::mt19937{14});
+			batched.add(std::move(input));
+			Delta reference{num_of_states};
+			for (const Transition& transition : sorted) { reference.add(transition); }
+			CHECK(batched == reference);
+			CHECK(batched.num_of_states() == std::max<size_t>(num_of_states, 8));
+			CHECK(batched.num_of_transitions() == sorted.size());
+		}
+	}
 }
 
 TEST_CASE("mata::nfa::State width and state overflow checks") {
@@ -904,7 +917,12 @@ TEST_CASE("mata::nfa::State width and state overflow checks") {
 		CHECK_THROWS_AS(delta.add(Limits::max_state, 0, 0), std::overflow_error);
 		CHECK_THROWS_AS(delta.add(0, 0, Limits::max_state), std::overflow_error);
 		CHECK_THROWS_AS(delta.mutable_state_post(Limits::max_state), std::overflow_error);
+		CHECK_THROWS_AS(delta.add(std::vector<Transition>{{Limits::max_state, 0, 0}}), std::overflow_error);
+		CHECK_THROWS_AS(delta.add(std::vector<Transition>{{0, 0, Limits::max_state}}), std::overflow_error);
 		CHECK(delta.num_of_states() == 0);
+		Delta preallocated{5};
+		CHECK_THROWS_AS(preallocated.add(std::vector<Transition>{{Limits::max_state, 0, 0}}), std::overflow_error);
+		CHECK(preallocated.num_of_states() == 5);
 
 		Nfa nfa{};
 		CHECK_THROWS_AS(nfa.add_state(Limits::max_state), std::overflow_error);

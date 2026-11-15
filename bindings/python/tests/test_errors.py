@@ -27,11 +27,6 @@ CASES = [
     pytest.param(
         "import libmata.parser as p, libmata.alphabets as a",
         "p.from_mata('/nonexistent.mata', a.OnTheFlyAlphabet())",
-        marks=pytest.mark.xfail(
-            reason="#730: from_mata does not validate its input",
-            strict=True,
-            raises=AssertionError,
-        ),
         id="from-mata-missing-file",
     ),
 ]

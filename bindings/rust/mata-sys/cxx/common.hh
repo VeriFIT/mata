@@ -3,8 +3,10 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <mutex>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -51,6 +53,19 @@ template <class T, class Range> void assign(rust::Vec<T>& out, const Range& valu
 	for (const auto value : values) { out.push_back(value); }
 }
 
+/// Writes `words` as the bridge returns them: all symbols concatenated into `symbols`, and the length of each word
+///  into `lengths`.
+template <class Words>
+void assign_words(rust::Vec<Symbol>& symbols, rust::Vec<std::size_t>& lengths, const Words& words) {
+	symbols.clear();
+	lengths.clear();
+	lengths.reserve(std::size(words));
+	for (const Word& word : words) {
+		for (const Symbol symbol : word) { symbols.push_back(symbol); }
+		lengths.push_back(word.size());
+	}
+}
+
 /// Throws unless `state` is a state of `automaton` (Mata would grow the automaton instead).
 inline void check_state(const mata::Automaton& automaton, const State state) {
 	if (state >= automaton.num_of_states()) {
@@ -70,19 +85,36 @@ class NameTable final : public mata::Alphabet {
   public:
 	NameTable(rust::Slice<const rust::String> names, rust::Slice<const Symbol> symbols);
 
-	Symbol translate_symb(const std::string& name) override;
+	Symbol translate_symb(std::string_view name) override;
 	std::string reverse_translate_symbol(Symbol symbol) const override;
 	SymbolSet get_alphabet_symbols() const override;
 	bool empty() const override { return by_symbol_.empty(); }
 
   private:
 	std::unordered_map<Symbol, std::string> by_symbol_ = {};
-	std::unordered_map<std::string, Symbol> by_name_ = {};
+	mata::utils::StringMap<Symbol> by_name_ = {};
 };
 
-/// Parses the automaton sections of a `.mata` text, mintermizing the bit-vector sections together.
-std::vector<mata::IntermediateAut> parse_sections(rust::Str text);
+/// Serializes every CUDD entry point that swaps the process-wide out-of-memory handler.
+std::mutex& cudd_mutex();
 
+/// Mata's `Mintermization::mintermize()` of `automata` together, one thread at a time.
+std::vector<mata::IntermediateAut> mintermize(const std::vector<const mata::IntermediateAut*>& automata);
+
+/// Mata's on-the-fly alphabet, except that a new number without leading zeros is the symbol of that number when
+/// no name has it: the Rust side prints an unnamed symbol as its number, so a number reads back as itself
+/// in every parse, not as whatever symbol happens to be next.
+class NumberingAlphabet final : public mata::OnTheFlyAlphabet {
+  public:
+	using OnTheFlyAlphabet::OnTheFlyAlphabet;
+	Symbol translate_symb(std::string_view str) override;
+	/// Binds `name` to `symbol`; every name the parse starts with goes through here.
+	void bind(const std::string& name, Symbol symbol);
+
+  private:
+	/// The symbols some name holds, so a number checks its own symbol without scanning every name.
+	std::unordered_set<Symbol> taken_ = {};
+};
 /// The parser's alphabet: integers, or the names of a Rust `Alphabet`, extended on the fly.
 class ParseAlphabet {
   public:
@@ -102,8 +134,18 @@ class ParseAlphabet {
 	bool numeric_;
 	Symbol first_new_symbol_;
 	mata::IntAlphabet integers_ = {};
-	mata::OnTheFlyAlphabet on_the_fly_;
+	NumberingAlphabet on_the_fly_;
 	std::unordered_set<std::string> known_names_ = {};
 };
+
+/// One section of a `.mata` text, and the name of its type (empty if it does not start with a type line).
+struct Section {
+	std::string_view text;
+	std::string_view type;
+};
+
+/// Splits `text` where `parse_mf()` splits it into sections, so that each goes to the reader that takes it. Text
+/// without a type line, only blank lines and comments, is dropped, as `parse_mf()` drops it.
+std::vector<Section> split_sections(std::string_view text);
 
 } // namespace mata_sys::detail

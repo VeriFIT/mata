@@ -4,6 +4,12 @@
 /// The most levels a transducer may have (the shim unwinds jumps into one state per level).
 pub const MAX_LEVELS: usize = 1024;
 
+/// The library's default begin marker of a regex replace (`strings::replace::BEGIN_MARKER`).
+pub const BEGIN_MARKER: u32 = u32::MAX - 100;
+
+/// The library's default end marker of a literal replace (`strings::replace::END_MARKER`).
+pub const END_MARKER: u32 = u32::MAX - 99;
+
 /// The NFT bridge.
 #[cxx::bridge(namespace = "mata_sys")]
 pub mod ffi {
@@ -151,6 +157,76 @@ pub mod ffi {
 		fn nft_is_included(smaller: &Nft, bigger: &Nft) -> Result<bool>;
 		/// Whether the relations are equal.
 		fn nft_are_equivalent(lhs: &Nft, rhs: &Nft) -> Result<bool>;
+		/// Mata's `Nft::is_deterministic`: one initial state and at most one edge per state and symbol,
+		/// where `DONT_CARE` overlaps every symbol but epsilon unless both edges reach the same state.
+		fn nft_is_deterministic(nft: &Nft) -> Result<bool>;
+
+		// Strings (`mata::applications::strings`). `alphabet` lists the symbols of the library's
+		// `const Alphabet*` parameter; it must not contain epsilon, `DONT_CARE` or the marker of the call.
+		// `single` chooses `ReplaceMode::Single` over `ReplaceMode::All`.
+
+		/// The library's `replace::BEGIN_MARKER`, [`BEGIN_MARKER`](super::BEGIN_MARKER).
+		fn strings_begin_marker() -> u32;
+		/// The library's `replace::END_MARKER`, [`END_MARKER`](super::END_MARKER).
+		fn strings_end_marker() -> u32;
+		/// One word per level with the lengths `lengths` whose tuple is in the relation
+		/// (`get_words_of_lengths`), written as `symbols` and `word_lengths` as for `nft_insert_words`;
+		/// false if there is none. Throws unless there is one length per level, or if the lengths span
+		/// too many configurations.
+		fn strings_words_of_lengths(
+			nft: &Nft,
+			lengths: &[u32],
+			symbols: &mut Vec<u32>,
+			word_lengths: &mut Vec<usize>,
+		) -> Result<bool>;
+		/// The identity relation on all words over `alphabet` with `num_levels` levels
+		/// (`replace::create_identity`).
+		fn strings_create_identity(alphabet: &[u32], num_levels: usize) -> Result<UniquePtr<Nft>>;
+		/// The two-level identity over `alphabet` that writes `replacement` for `from_symbol`
+		/// (`replace::create_identity_with_single_symbol_replace`; its `Symbol` overload is this one with a
+		/// one-letter word). Throws unless `from_symbol` is in `alphabet`.
+		fn strings_identity_with_replace(
+			alphabet: &[u32],
+			from_symbol: u32,
+			replacement: &[u32],
+			single: bool,
+		) -> Result<UniquePtr<Nft>>;
+		/// The reluctant leftmost replace of the RE2 pattern `regex` by `replacement`
+		/// (`replace::replace_reluctant_regex`). Throws on an invalid pattern.
+		fn strings_replace_regex(
+			regex: &str,
+			replacement: &[u32],
+			alphabet: &[u32],
+			single: bool,
+			begin_marker: u32,
+		) -> Result<UniquePtr<Nft>>;
+		/// As `strings_replace_regex`, with the language of `regex` to replace; the automaton is made
+		/// epsilon-free and deterministic first, as the library requires.
+		fn strings_replace_regex_nfa(
+			regex: &Nfa,
+			replacement: &[u32],
+			alphabet: &[u32],
+			single: bool,
+			begin_marker: u32,
+		) -> Result<UniquePtr<Nft>>;
+		/// The reluctant leftmost replace of the word `literal` by `replacement`
+		/// (`replace::replace_reluctant_literal`).
+		fn strings_replace_literal(
+			literal: &[u32],
+			replacement: &[u32],
+			alphabet: &[u32],
+			single: bool,
+			end_marker: u32,
+		) -> Result<UniquePtr<Nft>>;
+		/// The reluctant leftmost replace of `from_symbol` by `replacement`
+		/// (`replace::replace_reluctant_single_symbol`; its `Symbol` overload is this one with a one-letter
+		/// word). Throws unless `from_symbol` is in `alphabet`.
+		fn strings_replace_symbol(
+			from_symbol: u32,
+			replacement: &[u32],
+			alphabet: &[u32],
+			single: bool,
+		) -> Result<UniquePtr<Nft>>;
 
 		// Printing.
 
@@ -165,6 +241,71 @@ pub mod ffi {
 			names: &[String],
 			symbols: &[u32],
 		) -> Result<String>;
+
+		// The other operations of the script language's `nft:` namespace.
+
+		/// Mata's `complement` (classical) over `symbols`, after spelling out `DONT_CARE` over them.
+		/// Throws if the transducer has epsilon transitions, which Mata's complement does not support.
+		fn nft_complement(nft: &Nft, symbols: &[u32]) -> Result<UniquePtr<Nft>>;
+		/// Mata's `Nft::is_complete` over `symbols`. Throws if a reachable state reads a symbol outside them.
+		fn nft_is_complete(nft: &Nft, symbols: &[u32]) -> Result<bool>;
+		/// Mata's `concatenate_nth_power`: the relation concatenated with itself `power` times.
+		fn nft_concatenate_nth_power(nft: &Nft, power: u32) -> Result<UniquePtr<Nft>>;
+		/// Mata's `Nft::contains_jump_transitions`.
+		fn nft_contains_jump_transitions(nft: &Nft) -> Result<bool>;
+		/// Mata's `create_sigma_star_nft(num_levels)`: a `DONT_CARE` loop on every level.
+		fn nft_sigma_star(num_levels: usize) -> Result<UniquePtr<Nft>>;
+		/// Mata's `from_nfa_with_levels_advancing`. Throws if a state would get two levels or a final
+		/// state a level other than 0.
+		fn nft_from_nfa_with_levels_advancing(
+			nfa: &Nfa,
+			num_levels: usize,
+		) -> Result<UniquePtr<Nft>>;
+		/// Mata's `has_epsilon_cycle`.
+		fn nft_has_epsilon_cycle(nft: &Nft) -> Result<bool>;
+		/// Mata's `Nft::is_identical`, which also compares the levels, and the same number of states.
+		fn nft_is_identical(lhs: &Nft, rhs: &Nft) -> Result<bool>;
+		/// Mata's `Nft::is_in_lang` of an interleaved word (symbol `i` on level `i` modulo the number of
+		/// levels), optionally of a prefix. Throws if its length is not a multiple of the number of levels,
+		/// or if `has_epsilon_cycles` is false but there is one (Mata would search forever).
+		fn nft_is_in_lang(
+			nft: &Nft,
+			word: &[u32],
+			match_prefix: bool,
+			has_epsilon_cycles: bool,
+		) -> Result<bool>;
+		/// Mata's `insert_level`. Throws if the result would have more than `MAX_LEVELS` levels.
+		fn nft_insert_level(nft: &Nft, level: usize) -> Result<UniquePtr<Nft>>;
+		/// Mata's `insert_levels`: `true` in `mask` is a new level. Throws unless `mask` has one `false`
+		/// per level and at most `MAX_LEVELS` entries.
+		fn nft_insert_levels(nft: &Nft, mask: &[bool]) -> Result<UniquePtr<Nft>>;
+		/// Mata's `reduce` (simulation).
+		fn nft_reduce(nft: &Nft) -> Result<UniquePtr<Nft>>;
+		/// Mata's `revert`: every transition reversed, which also reverses the order of the levels.
+		fn nft_revert(nft: &Nft) -> Result<UniquePtr<Nft>>;
+		/// Mata's `Nft::is_universal` (antichains) over `symbols`, after Mata's `remove_epsilon`, as for
+		/// NFAs: the check itself takes no epsilon closure.
+		fn nft_is_universal(nft: &Nft, symbols: &[u32]) -> Result<bool>;
+		/// Mata's `Nft::unwind_jumps` with its defaults.
+		fn nft_unwind_jumps(nft: &Nft) -> Result<UniquePtr<Nft>>;
+
+		// Intermediate automata.
+
+		/// `mata::IntermediateAut`, from the main bridge.
+		#[namespace = "mata"]
+		type IntermediateAut = crate::ffi::IntermediateAut;
+
+		/// `nft::builder::construct` of an explicit NFT section, with symbol names as in
+		/// `crate::ffi::parse_mata`. Mata reads no `%Levels` there: every state is on level 0 of a
+		/// two-level transducer.
+		fn intermediate_construct_nft(
+			automaton: &IntermediateAut,
+			names: &[String],
+			named_symbols: &[u32],
+			next_symbol: u32,
+			new_names: &mut Vec<String>,
+			new_symbols: &mut Vec<u32>,
+		) -> Result<UniquePtr<Nft>>;
 	}
 }
 
@@ -190,5 +331,11 @@ mod tests {
 	#[test]
 	fn max_levels_agrees_with_the_shim() {
 		assert_eq!(super::ffi::nft_max_levels(), super::MAX_LEVELS);
+	}
+
+	#[test]
+	fn replace_markers_agree_with_the_library() {
+		assert_eq!(super::ffi::strings_begin_marker(), super::BEGIN_MARKER);
+		assert_eq!(super::ffi::strings_end_marker(), super::END_MARKER);
 	}
 }

@@ -843,6 +843,68 @@ TEST_CASE(
 	CHECK(bounded_tuples(kept, 4, 2) == std::set<std::vector<Word>>{{Word{x}, Word{y}, Word{z}}});
 }
 
+// Both directions build more states than the first turn of CompositionNormalization::Trim allows, so each is
+//  continued in later turns: nothing built in an earlier turn may be lost or built twice, whichever direction
+//  finishes.
+TEST_CASE("mata::nft differential: Trim continues both directions over several turns", "[differential]") {
+	constexpr Symbol a{0};
+	constexpr State chain_length{50'000};
+	// lhs: a chain of a/a steps from the initial to the final state.
+	const auto make_lhs = [&]() {
+		Nft lhs{Nft::with_levels(2)};
+		for (State state{0}; state <= chain_length; ++state) { lhs.add_state_with_level(0); }
+		for (State state{0}; state < chain_length; ++state) {
+			const State inner{lhs.add_state_with_level(1)};
+			lhs.delta.add(state, a, inner);
+			lhs.delta.add(inner, a, state + 1);
+		}
+		lhs.initial.insert(0);
+		lhs.final.insert(chain_length);
+		return lhs;
+	};
+	// rhs: a/a forever.
+	Nft rhs{Nft::with_levels(2)};
+	const State rhs_root{rhs.add_state_with_level(0)};
+	const State rhs_inner{rhs.add_state_with_level(1)};
+	rhs.delta.add(rhs_root, a, rhs_inner);
+	rhs.delta.add(rhs_inner, a, rhs_root);
+	rhs.initial.insert(rhs_root);
+	rhs.final.insert(rhs_root);
+
+	const auto check = [&](const Nft& lhs) {
+		Nft expected{compose(
+			lhs, rhs, 1, 0, false, JumpMode::NoJump, CompositionMode::FastNoJump, CompositionNormalization::None
+		)};
+		expected.trim();
+		const Nft trimmed{compose(
+			lhs, rhs, 1, 0, false, JumpMode::NoJump, CompositionMode::FastNoJump, CompositionNormalization::Trim
+		)};
+		// The relation is the single chain, one state per level of each step.
+		REQUIRE(expected.num_of_states() == 3 * chain_length + 1);
+		CHECK(trimmed.num_of_states() == expected.num_of_states());
+		CHECK(trimmed.delta.num_of_transitions() == expected.delta.num_of_transitions());
+		CHECK(trimmed.initial.size() == 1);
+		CHECK(trimmed.final.size() == 1);
+		CHECK(trimmed.levels.num_of_levels == 3);
+	};
+
+	SECTION("The forward composition finishes in a later turn") { check(make_lhs()); }
+
+	SECTION("The composition of the reverted operands finishes in a later turn") {
+		// A dead cycle entered from the initial state, which only the forward composition builds.
+		constexpr State cycle_length{150'000};
+		Nft lhs{make_lhs()};
+		const State cycle_start{static_cast<State>(lhs.num_of_states())};
+		for (State state{0}; state < cycle_length; ++state) { lhs.add_state_with_level(0); }
+		for (State state{0}; state < cycle_length; ++state) {
+			const State inner{lhs.add_state_with_level(1)};
+			lhs.delta.add(state == 0 ? State{0} : cycle_start + state, a, inner);
+			lhs.delta.add(inner, a, cycle_start + (state + 1) % cycle_length);
+		}
+		check(lhs);
+	}
+}
+
 // is_universal() carries the NFA antichain algorithm over unchanged: it demands a final state after
 //  every single symbol, while a transducer with n levels can only be final after a multiple of n
 //  symbols. On genuine multi-level transducers it therefore answers false even for the complete one

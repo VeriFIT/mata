@@ -4,14 +4,87 @@
 #ifndef MATA_PARSER_HH_
 #define MATA_PARSER_HH_
 
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <list>
 #include <map>
+#include <memory>
+#include <mutex>
 #include <ostream>
 #include <string>
+#include <string_view>
 #include <vector>
 
+namespace mata {
+
 /**
- * Parser from `.mata` format to automata (currently `Nfa` and `Afa` are supported).
+ * An append-only storage of names: the tokens of a parsed section and the formula nodes of an intermediate automaton
+ *  keep views into it instead of strings of their own.
+ * The bytes handed out are never moved, so a view stays valid for as long as the storage lives. Copies of
+ *  @c parser::ParsedSection and of @c IntermediateAut share the storage, which keeps the views of the copies valid.
+ */
+class NameStore {
+  public:
+	/**
+	 * @brief Copies @p name into the storage. Threads may store concurrently; each view points to its own copy.
+	 * @return A view of the copy, valid for as long as the storage lives.
+	 */
+	std::string_view store(const std::string_view name) {
+		const std::scoped_lock lock{store_mutex_};
+		if (chunks_.empty() || chunks_.back().capacity - used_ < name.size()) { add_chunk(name.size()); }
+		char* const stored{chunks_.back().data.get() + used_};
+		std::memcpy(stored, name.data(), name.size());
+		used_ += name.size();
+		return {stored, name.size()};
+	}
+
+	/**
+	 * Whether @p name is a view into the storage.
+	 * @param hint Where to look first, updated to where @p name was found: names looked up in the order they were
+	 *  stored are mostly found right away. Start with 0.
+	 */
+	bool contains(const std::string_view name, std::size_t& hint) const {
+		return (hint < ranges_.size() && ranges_[hint].spans(name)) || find(name, hint);
+	}
+
+  private:
+	/// One block of the storage; the bytes of the blocks handed out earlier stay where they are.
+	struct Chunk {
+		std::unique_ptr<char[]> data{};
+		std::size_t capacity{};
+	};
+	/// The addresses a chunk spans.
+	struct Range {
+		std::uintptr_t begin{};
+		std::uintptr_t end{};
+
+		bool spans(const std::string_view name) const {
+			const auto address{reinterpret_cast<std::uintptr_t>(name.data())};
+			return begin <= address && address + name.size() <= end;
+		}
+	};
+
+	/// @c contains() without the look at @p hint.
+	bool find(std::string_view name, std::size_t& hint) const;
+	/// Adds a chunk with room for at least @p size bytes.
+	void add_chunk(std::size_t size);
+
+	static constexpr std::size_t chunk_capacity_ = 16 * 1'024;
+
+	std::vector<Chunk> chunks_{};
+	/// The ranges of the chunks, by address.
+	std::vector<Range> ranges_{};
+	/// The number of bytes used in the last chunk.
+	std::size_t used_{};
+	/// Serializes the writes to @c chunks_, @c ranges_, and @c used_.
+	std::mutex store_mutex_{};
+};
+
+} // namespace mata
+
+/**
+ * Parser from `.mata` format to automata (currently `Nfa` and `Nft` are supported).
  *
  * This includes parsing either from files or from other streams (strings, etc.).
  */
@@ -23,15 +96,21 @@ using KeyListStore = std::map<std::string, std::vector<std::string>>;
  * One token of a body line, with the flag telling whether the reader read it in quotes.
  * @c create_node() lets a quoted token be an operand even when it starts with @c & @c | or @c !, which the
  * unquoted reader would take for an operator of the transition formula.
+ * The token is a view: @c parse_mf() points it into the name storage of its section, other code has to keep the
+ *  bytes alive for as long as the token is used.
  */
 struct BodyToken {
-	std::string token{};
+	std::string_view token{};
 	bool quoted{false};
 
 	BodyToken() = default;
-	BodyToken(std::string token, const bool quoted) : token{std::move(token)}, quoted{quoted} {}
+	BodyToken(const std::string_view token, const bool quoted) : token{token}, quoted{quoted} {}
 	/// An unquoted token, so that a body line reads as a list of plain names in tests and call sites.
 	BodyToken(const char* token) : token{token} {}
+	/// A literal, which the overloads for strings and views could both take.
+	BodyToken(const char* const token, const bool quoted) : token{token}, quoted{quoted} {}
+	// A view of a temporary string would dangle.
+	BodyToken(std::string&&, bool) = delete;
 	bool operator==(const BodyToken& rhs) const = default;
 };
 
@@ -43,7 +122,9 @@ using BodyLine = std::vector<BodyToken>;
 struct ParsedSection {
 	std::string type{};
 	KeyListStore dict{};
-	std::list<BodyLine> body{};
+	std::vector<BodyLine> body{};
+	/// The storage the tokens of @c body point into; copies of the section share it.
+	std::shared_ptr<NameStore> name_store{std::make_shared<NameStore>()};
 
 	ParsedSection() = default;
 
@@ -74,6 +155,9 @@ ParsedSection parse_mf_section(std::istream& input, bool keep_quotes = false);
 
 /** Parses one section from a string into an intermediary structure */
 ParsedSection parse_mf_section(const std::string& input, bool keep_quotes = false);
+
+/** Parses one section from the beginning of @p input into an intermediary structure, advancing @p input past it. */
+ParsedSection parse_mf_section_view(std::string_view& input, bool keep_quotes = false);
 
 /// registers dispatcher
 void init();

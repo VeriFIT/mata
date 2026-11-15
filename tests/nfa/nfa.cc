@@ -3,9 +3,11 @@
  */
 
 #include <random>
+#include <sstream>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "utils.hh"
@@ -535,12 +537,16 @@ TEST_CASE("mata::nfa::Nfa queries on a delta with an empty prefix") {
 }
 
 TEST_CASE("mata::nfa::determinize()") {
+	// Both algorithms; they give the same DFA up to the numbering of its states, and the same numbering here.
+	const std::string algorithm = GENERATE("four_russians", "classical");
+	CAPTURE(algorithm);
+	const ParameterMap params{{"algorithm", algorithm}};
 	Nfa aut(3);
 	Nfa result;
 	std::unordered_map<StateSet, State> subset_map;
 
 	SECTION("empty automaton") {
-		result = determinize(aut);
+		result = determinize(aut, params);
 
 		REQUIRE(result.final.empty());
 		REQUIRE(result.delta.empty());
@@ -550,10 +556,10 @@ TEST_CASE("mata::nfa::determinize()") {
 	SECTION("simple automaton 1") {
 		aut.initial = {1};
 		aut.final = {1};
-		result = determinize(aut, &subset_map);
+		result = determinize(aut, &subset_map, std::nullopt, nullptr, params);
 
-		REQUIRE(result.initial[subset_map[{1}]]);
-		REQUIRE(result.final[subset_map[{1}]]);
+		REQUIRE(result.initial[subset_map.at({1})]);
+		REQUIRE(result.final[subset_map.at({1})]);
 		REQUIRE(result.delta.empty());
 	}
 
@@ -561,7 +567,7 @@ TEST_CASE("mata::nfa::determinize()") {
 		aut.initial = {1};
 		aut.final = {2};
 		aut.delta.add(1, 'a', 2);
-		result = determinize(aut, &subset_map);
+		result = determinize(aut, &subset_map, std::nullopt, nullptr, params);
 
 		REQUIRE(result.initial[subset_map[{1}]]);
 		REQUIRE(result.final[subset_map[{2}]]);
@@ -584,7 +590,7 @@ TEST_CASE("mata::nfa::determinize()") {
 		x.delta.add(2, 2, 2);
 		x.delta.add(2, 0, 4);
 		OnTheFlyAlphabet alphabet{};
-		auto complement_result{determinize(x)};
+		auto complement_result{determinize(x, params)};
 	}
 
 	SECTION("subset map and discovery callback see every macrostate exactly once") {
@@ -598,11 +604,15 @@ TEST_CASE("mata::nfa::determinize()") {
 		nfa.delta.add(3, 'a', 1);
 		nfa.delta.add(3, 'a', 2);
 		std::vector<StateSet> discovered;
-		result = determinize(nfa, &subset_map, [&](const Nfa&, const State state, const StateSet& macrostate) {
-			CHECK(subset_map.at(macrostate) == state);
-			discovered.push_back(macrostate);
-			return true;
-		});
+		result = determinize(
+			nfa, &subset_map,
+			[&](const Nfa&, const State state, const StateSet& macrostate) {
+				CHECK(subset_map.at(macrostate) == state);
+				discovered.push_back(macrostate);
+				return true;
+			},
+			nullptr, params
+		);
 		CHECK(result.num_of_states() == 3);
 		CHECK(subset_map == std::unordered_map<StateSet, State>{{{0}, 0}, {{1, 2}, 1}, {{3}, 2}});
 		CHECK(discovered == std::vector<StateSet>{{0}, {1, 2}, {3}});
@@ -611,10 +621,14 @@ TEST_CASE("mata::nfa::determinize()") {
 		subset_map.clear();
 		discovered.clear();
 		// Stopping on the first new macrostate leaves it in the result, without exploring it.
-		result = determinize(nfa, &subset_map, [&](const Nfa&, const State, const StateSet& macrostate) {
-			discovered.push_back(macrostate);
-			return discovered.size() < 2;
-		});
+		result = determinize(
+			nfa, &subset_map,
+			[&](const Nfa&, const State, const StateSet& macrostate) {
+				discovered.push_back(macrostate);
+				return discovered.size() < 2;
+			},
+			nullptr, params
+		);
 		CHECK(discovered == std::vector<StateSet>{{0}, {1, 2}});
 		CHECK(result.num_of_states() == 2);
 		CHECK(result.delta.num_of_transitions() == 1);
@@ -632,7 +646,7 @@ TEST_CASE("mata::nfa::determinize()") {
 		nfa.delta.add(3, 'a', 1);
 		REQUIRE(!nfa.is_deterministic());
 
-		result = determinize(nfa, nullptr, std::nullopt, &symbols);
+		result = determinize(nfa, nullptr, std::nullopt, &symbols, params);
 		CHECK(result.num_of_states() == 2);
 		CHECK(result.delta.get_used_symbols() == OrdVector<Symbol>{'a'});
 		CHECK(result.is_in_lang(Word{'a'}));
@@ -649,7 +663,7 @@ TEST_CASE("mata::nfa::determinize()") {
 		dfa.delta.add(2, 'a', 1);
 		REQUIRE(dfa.is_deterministic());
 
-		result = determinize(dfa, nullptr, std::nullopt, &symbols);
+		result = determinize(dfa, nullptr, std::nullopt, &symbols, params);
 		CHECK(result.num_of_states() == 2);
 		CHECK(result.delta.get_used_symbols() == OrdVector<Symbol>{'a'});
 		CHECK(result.is_in_lang(Word{'a'}));
@@ -668,13 +682,17 @@ TEST_CASE("mata::nfa::determinize()") {
 		REQUIRE(aut.is_deterministic());
 
 		std::vector<StateSet> discovered{};
-		result = determinize(aut, &subset_map, [&discovered](const Nfa&, const State, const StateSet& set) -> bool {
-			discovered.push_back(set);
-			return true;
-		});
+		result = determinize(
+			aut, &subset_map,
+			[&discovered](const Nfa&, const State, const StateSet& set) -> bool {
+				discovered.push_back(set);
+				return true;
+			},
+			nullptr, params
+		);
 
-		// Depth-first renumbering: initial {1} -> 0, first-seen a- and b-targets {2} -> 1, {3} -> 1's
-		//  sibling 2; unreachable state 4 never appears.
+		// Depth-first renumbering (breadth-first in the Four Russians construction, the same here): initial {1} -> 0,
+		//  first-seen a- and b-targets {2} -> 1, {3} -> 1's sibling 2; unreachable state 4 never appears.
 		CHECK(result.num_of_states() == 3);
 		CHECK(result.initial.contains(0));
 		CHECK(result.initial.size() == 1);
@@ -694,9 +712,11 @@ TEST_CASE("mata::nfa::determinize()") {
 		aut.delta.add(0, 'a', 1);
 		aut.delta.add(1, 'a', 2);
 		aut.final = {2};
-		result = determinize(aut, nullptr, [](const Nfa&, const State, const StateSet& set) -> bool {
-			return set.size() == 1 && set.front() == 0;
-		});
+		result = determinize(
+			aut, nullptr,
+			[](const Nfa&, const State, const StateSet& set) -> bool { return set.size() == 1 && set.front() == 0; },
+			nullptr, params
+		);
 		// The stop fires on discovering {1}: the state and the 0-a->1 edge were already emitted, but {1}
 		//  is never expanded and the final {2} is never reached.
 		CHECK(result.num_of_states() == 2);
@@ -4325,6 +4345,58 @@ TEST_CASE("mata::nfa::reduce_size_by_simulation()") {
 			CHECK(state_renaming == expected_renaming);
 		}
 	}
+
+	SECTION("symbol posts without targets do not constrain the simulation") {
+		// States 0 and 1 are final without transitions; the empty 'a' post of 0 is no transition, so they simulate
+		//  each other. The post of 2 has two targets, so the simulation itself is computed.
+		Nfa nfa(3);
+		nfa.initial.insert(2);
+		nfa.final = {0, 1};
+		nfa.delta.mutable_state_post(0).emplace_back('a');
+		nfa.delta.add(2, 'b', 0);
+		nfa.delta.add(2, 'b', 1);
+
+		const Nfa result{reduce(nfa, &state_renaming)};
+		CHECK(result.num_of_states() == 2);
+		CHECK(state_renaming.at(0) == state_renaming.at(1));
+		CHECK(are_equivalent(result, nfa));
+	}
+
+	SECTION("automata over small and large alphabets give the quotient by the simulation") {
+		// More than 64 states, so the rows of the simulation take several words. Few transitions over many symbols
+		//  give rows of a-predecessors only to the a-targets; few symbols give rows to all states.
+		std::mt19937 gen{13};
+		for (size_t iteration{0}; iteration < 40; ++iteration) {
+			const Symbol num_of_symbols{iteration % 2 == 0 ? 4U : 200U};
+			const State num_of_states{static_cast<State>(65 + gen() % 190)};
+			std::uniform_int_distribution<State> state_dist{0, num_of_states - 1};
+			Nfa nfa(num_of_states);
+			nfa.initial.insert(state_dist(gen));
+			for (State state{0}; state < num_of_states; ++state) {
+				if (gen() % 3 == 0) { nfa.final.insert(state); }
+				for (size_t num_of_posts{1 + (gen() % 3)}; num_of_posts > 0; --num_of_posts) {
+					// Symbols far apart, up to 59'700.
+					const Symbol symbol{static_cast<Symbol>(gen() % num_of_symbols) * 300};
+					for (size_t num_of_targets{1 + (gen() % 2)}; num_of_targets > 0; --num_of_targets) {
+						nfa.delta.add(state, symbol, state_dist(gen));
+					}
+				}
+			}
+
+			const auto relation{algorithms::compute_relation(nfa)};
+			std::vector<size_t> quot_proj;
+			relation.get_symmetric_quotient_projection(quot_proj);
+			StateRenaming expected_renaming;
+			const Nfa expected{
+				algorithms::quotient_by_simulation(nfa, relation, quot_proj, nullptr, &expected_renaming)
+			};
+
+			INFO("iteration " << iteration);
+			const Nfa result{reduce(nfa, &state_renaming)};
+			CHECK(result.is_identical(expected));
+			CHECK(state_renaming == expected_renaming);
+		}
+	}
 }
 
 TEST_CASE("mata::nfa::algorithms::minimize_hopcroft()") {
@@ -6069,6 +6141,16 @@ TEST_CASE("mata::nfa:: print_to_mata") {
 		builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(aut_big_mata))[0], &int_alph);
 
 	CHECK(are_equivalent(aut_big, aut_big_from_mata));
+}
+
+TEST_CASE("mata::nfa:: print_to_mata prints decimals to a stream set to another base") {
+	Nfa nfa{20, {10}, {15}};
+	nfa.delta.add(10, 12, 15);
+	std::ostringstream output;
+	output << std::hex;
+	nfa.print_to_mata(output);
+	CHECK(output.str() == "@NFA-explicit\n%Alphabet-auto\n%Initial q10\n%Final q15\nq10 12 q15\n");
+	CHECK(output.str() == nfa.print_to_mata());
 }
 
 TEST_CASE("mata::nfa:: print_to_mata with names that need quoting (#1021)") {

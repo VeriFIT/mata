@@ -115,16 +115,13 @@ fn transducers_on_many_threads() {
 				(0..ROUNDS / 10).all(|_| {
 					let own = make();
 					let composed = own.compose(&shared).unwrap();
+					let intersected = own.intersection(&shared).unwrap();
+					let image = own.apply(&Nfa::from_regex("a*").unwrap(), 0).unwrap();
 					composed.accepts(&[[a, b, a], [b, b, b]])
-						&& own
-							.intersection(&shared)
-							.unwrap()
-							.is_equivalent_to(&own)
-							.unwrap() && own
-						.apply(&Nfa::from_regex("a*").unwrap(), 0)
-						.unwrap()
-						.to_nfa()
-						.is_equivalent_to(&Nfa::from_regex("b*").unwrap())
+						&& intersected.is_equivalent_to(&own).unwrap()
+						&& image
+							.to_nfa()
+							.is_equivalent_to(&Nfa::from_regex("b*").unwrap())
 				})
 			})
 		})

@@ -495,11 +495,15 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 	std::vector<size_t> in_degree(num_of_states, 0);
 	for (const Transition& transition : aut.delta.transitions()) { ++in_degree[transition.target]; }
 
-	// this vector will collect epsilon run from level 0 state to level 0 state
-	// that contains only epsilon transitions, and all states inbetween (i.e.
-	// not-level-0 states) will have only one transition going to it and one
-	// transition going from it (the epsilon transitions)
-	std::vector<std::vector<State>> safe_epsilon_runs;
+	// These nodes represent epsilon runs from level 0 states to level 0 states. All intermediate states have only one
+	// incoming and one outgoing transition, both epsilon. Runs share their prefix nodes, and node 0 terminates
+	// reconstruction.
+	struct EpsilonRun {
+		size_t predecessor;
+		State target;
+	};
+	std::vector<EpsilonRun> epsilon_runs{{0, 0}}; // Node 0 marks the end of epsilon-run reconstruction.
+	std::vector<size_t> safe_epsilon_runs;
 
 	// for each level 0 state q, eps_delta[q] represents all states to which
 	// we can get to by some safe epsilon run
@@ -509,11 +513,12 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 
 	for (State state = 0; state != num_of_states; ++state) {
 		if (aut.levels[state] == DEFAULT_LEVEL) {
-			std::vector<std::vector<State>> state_safe_epsilon_runs{{state}};
+			epsilon_runs.push_back({0, state});
+			std::vector<size_t> state_safe_epsilon_runs{epsilon_runs.size() - 1};
 			for (Level cur_level = 0; cur_level < aut.levels.num_of_levels; ++cur_level) {
-				std::vector<std::vector<State>> new_state_safe_epsilon_runs;
-				for (const std::vector<State>& safe_epsilon_run : state_safe_epsilon_runs) {
-					const State state_s = safe_epsilon_run.back();
+				std::vector<size_t> new_state_safe_epsilon_runs;
+				for (const size_t safe_epsilon_run_index : state_safe_epsilon_runs) {
+					const State state_s = epsilon_runs[safe_epsilon_run_index].target;
 					const StatePost& post_s{aut.delta[state_s]};
 					if (const auto eps_move_it_s{post_s.find(epsilon)}; eps_move_it_s != post_s.end()) {
 						if (cur_level != DEFAULT_LEVEL && (aut.delta[state_s].size() != 1)) {
@@ -532,22 +537,20 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 							if (cur_level == aut.levels.num_of_levels - 1) {
 								// we are at the last level, next level will be 0
 								MATA_ASSERT(aut.levels[target] == DEFAULT_LEVEL);
-								std::vector<State> new_safe_epsilon_run = safe_epsilon_run;
-								new_safe_epsilon_run.push_back(target);
+								epsilon_runs.push_back({safe_epsilon_run_index, target});
 								// we finish with generating this safe epsilon run and push it to safe_epsilon_runs
 								// directly
-								safe_epsilon_runs.push_back(std::move(new_safe_epsilon_run));
+								safe_epsilon_runs.push_back(epsilon_runs.size() - 1);
 								eps_delta[state].insert(target);
 								eps_delta_inverse[target].insert(state);
 							} else if (in_degree[target] == 1) {
 								// we are not at the last level, next state must be level incremented by one (assuming
 								// no jumps)
 								MATA_ASSERT(aut.levels[target] == cur_level + 1);
-								std::vector<State> new_safe_epsilon_run = safe_epsilon_run;
-								new_safe_epsilon_run.push_back(target);
+								epsilon_runs.push_back({safe_epsilon_run_index, target});
 								// this safe epsilon run is not finished yet, we save new_state_safe_epsilon_runs to
 								// return to it
-								new_state_safe_epsilon_runs.push_back(std::move(new_safe_epsilon_run));
+								new_state_safe_epsilon_runs.push_back(epsilon_runs.size() - 1);
 							}
 						}
 					}
@@ -590,7 +593,14 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 
 	// we first remove all epsilon transitions
 	std::set<Transition> safe_epsilon_runs_transitions;
-	for (const auto& safe_epsilon_run : safe_epsilon_runs) {
+	for (const size_t safe_epsilon_run_index : safe_epsilon_runs) {
+		std::vector<State> safe_epsilon_run;
+		safe_epsilon_run.reserve(aut.levels.num_of_levels + 1);
+		for (size_t node_index = safe_epsilon_run_index; node_index != 0;
+			 node_index = epsilon_runs[node_index].predecessor) {
+			safe_epsilon_run.push_back(epsilon_runs[node_index].target);
+		}
+		std::ranges::reverse(safe_epsilon_run);
 		for (size_t i = 0; i < safe_epsilon_run.size() - 1; ++i) {
 			if (const Transition safe_epsilon_run_transition{safe_epsilon_run[i], epsilon, safe_epsilon_run[i + 1]};
 				!safe_epsilon_runs_transitions.contains(safe_epsilon_run_transition)) {
@@ -625,13 +635,17 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 	// Checks if a given state is being projected out based on the levels_to_project vector.
 	auto is_projected_out = [&](const State state) { return is_level_projected[nft.levels[state]]; };
 
+	// The first unprojected level at or after each level answers range queries in constant time.
+	std::vector<Level> next_unprojected(nft.levels.num_of_levels + 1, static_cast<Level>(nft.levels.num_of_levels));
+	for (Level level{static_cast<Level>(nft.levels.num_of_levels)}; level != 0;) {
+		--level;
+		next_unprojected[level] = is_level_projected[level] ? next_unprojected[level + 1] : level;
+	}
+
 	// Checks if each level between given states is being projected out.
 	auto is_projected_along_path = [&](const State src, const State tgt) {
 		const Level stop_lvl = (nft.levels[tgt] == 0) ? static_cast<Level>(nft.levels.num_of_levels) : nft.levels[tgt];
-		for (Level lvl{nft.levels[src]}; lvl < stop_lvl; lvl++) {
-			if (!is_level_projected[lvl]) { return false; }
-		}
-		return true;
+		return next_unprojected[nft.levels[src]] >= stop_lvl;
 	};
 
 	// Determines the transition length between two states based on their levels.
@@ -709,6 +723,7 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 	//  then appended to its post in order.
 	Nft result{Nft::with_levels(nft.levels, Delta{}, nft.initial, nft.final, nft.alphabets)};
 	std::vector<std::pair<Symbol, State>> moves{};
+	const bool projected_moves_are_discarded{seq_start_idx == 1};
 	for (State src_state{0}; src_state < num_of_states_in_delta; src_state++) { // For every state.
 		const Level src_level{nft.levels[src_state]};
 		if (!is_projected_out(src_state) && std::ranges::none_of(nft.delta[src_state], [&](const SymbolPost& move) {
@@ -725,6 +740,25 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 			closure[src_state].empty() ? std::span<const State>{&src_state, 1}
 									   : std::span<const State>{closure[src_state]}
 		};
+		if (projected_moves_are_discarded && is_projected_out(src_state)) {
+			// Projected states contribute no moves when every nonzero level is projected.
+			State retained_state{};
+			size_t retained_states{};
+			for (const State cls_state : closure_of_src) {
+				if (!is_projected_out(cls_state)) {
+					retained_state = cls_state;
+					if (++retained_states > 1) { break; }
+				}
+			}
+			if (retained_states == 1) {
+				// Its post is sorted and deduplicated, so rebuilding it is unnecessary.
+				for (const State cls_state : closure_of_src) {
+					if (nft.final[cls_state] && can_be_final(src_state)) { result.final.insert(src_state); }
+				}
+				result.delta.emplace_back(nft.delta[retained_state]);
+				continue;
+			}
+		}
 		for (const State cls_state : closure_of_src) { // For every state in its epsilon closure.
 			if (nft.final[cls_state] && can_be_final(src_state)) { result.final.insert(src_state); }
 			for (const SymbolPost& move : nft.delta[cls_state]) {

@@ -1,6 +1,6 @@
 //! Error types.
 
-use crate::State;
+use crate::{State, Symbol};
 
 /// Any error of this crate, for code that propagates several kinds with `?`.
 #[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
@@ -27,6 +27,15 @@ pub enum Error {
 	/// An automaton from other C++ code that breaks Mata's invariants.
 	#[error(transparent)]
 	InvalidAutomaton(#[from] InvalidAutomaton),
+	/// An operand or argument that does not meet a requirement of the operation.
+	#[error(transparent)]
+	UnmetRequirement(#[from] UnmetRequirement),
+	/// An argument that a replace transducer cannot be built from.
+	#[error(transparent)]
+	Replace(#[from] ReplaceError),
+	/// A step of loading in separate steps that its intermediate automaton does not allow.
+	#[error(transparent)]
+	Intermediate(#[from] IntermediateError),
 }
 
 /// Error from parsing the `.mata` format. It carries Mata's message.
@@ -165,6 +174,62 @@ pub enum NftError {
 	/// A path whose words are all empty.
 	#[error("at least one word of a path must be nonempty")]
 	EmptyPath,
+	/// An interleaved word whose length is not a multiple of the number of levels.
+	#[error("a word of {length} symbols does not interleave {num_levels} levels")]
+	InterleavedLength {
+		/// The length of the word.
+		length: usize,
+		/// The number of levels of the transducer.
+		num_levels: usize,
+	},
+	/// An automaton that does not encode a transducer: a state would get two levels, or a final state a
+	/// level other than 0.
+	#[error("the automaton does not encode a transducer with that many levels")]
+	InconsistentLevels,
+	/// A transducer with epsilon edges, which the operation does not support.
+	#[error("the operation needs a transducer without epsilon transitions")]
+	EpsilonTransitions,
+	/// A reachable state has an edge under a symbol outside the alphabet.
+	#[error("the transducer reads a symbol outside the alphabet")]
+	NotInAlphabet,
+	/// A transducer with a cycle of epsilon edges where the caller promised none.
+	#[error("the transducer has a cycle of epsilon transitions")]
+	EpsilonCycle,
+	/// Word lengths that span more configurations of a search than can be indexed.
+	#[error("the word lengths span too many configurations")]
+	TooManyConfigurations,
+}
+
+/// Error from an argument of a [`strings`](crate::strings) transducer construction.
+#[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
+pub enum ReplaceError {
+	/// The symbol to replace is not in the alphabet.
+	#[error("symbol {symbol} is not in the alphabet")]
+	SymbolNotInAlphabet {
+		/// The symbol that was passed.
+		symbol: Symbol,
+	},
+	/// The alphabet contains a symbol that the construction gives another meaning:
+	/// [`DONT_CARE`](crate::nft::DONT_CARE), or the marker of the call.
+	#[error("the alphabet contains symbol {symbol}, which the construction reserves")]
+	ReservedSymbol {
+		/// The reserved symbol.
+		symbol: Symbol,
+	},
+	/// The marker of the call is epsilon or [`DONT_CARE`](crate::nft::DONT_CARE), which read as moves,
+	/// not as a symbol that can mark a position.
+	#[error("the marker cannot be symbol {marker}, which is epsilon or DONT_CARE")]
+	ReservedMarker {
+		/// The marker that was passed.
+		marker: Symbol,
+	},
+	/// Invalid regular expression.
+	#[error(transparent)]
+	Regex(#[from] RegexError),
+	/// A number of levels that a transducer cannot have.
+	#[error(transparent)]
+	Nft(#[from] NftError),
 }
 
 /// An automaton from other C++ code that breaks Mata's invariants. It carries the shim's message.
@@ -186,4 +251,76 @@ impl InvalidAutomaton {
 	pub fn message(&self) -> &str {
 		&self.message
 	}
+}
+
+/// An operand or argument that does not meet a requirement of the operation, such as a deterministic
+/// and complete automaton for [`Nfa::union_det_complete`](crate::Nfa::union_det_complete). It carries
+/// which requirement failed and the shim's message.
+#[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
+#[error("{message}")]
+pub struct UnmetRequirement {
+	requirement: Requirement,
+	message: String,
+}
+
+impl UnmetRequirement {
+	pub(crate) fn new(requirement: Requirement, message: impl Into<String>) -> UnmetRequirement {
+		UnmetRequirement {
+			requirement,
+			message: message.into(),
+		}
+	}
+
+	/// The requirement that failed.
+	#[must_use]
+	pub fn requirement(&self) -> Requirement {
+		self.requirement
+	}
+
+	/// What failed, for diagnostics.
+	#[must_use]
+	pub fn message(&self) -> &str {
+		&self.message
+	}
+}
+
+/// The requirement that an [`UnmetRequirement`] reports.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum Requirement {
+	/// An operand must have an initial state and be deterministic.
+	Deterministic,
+	/// An operand must be complete over the alphabet of the call.
+	Complete,
+	/// The automaton must read UTF-8 encoded bytes.
+	Utf8,
+	/// A numeric parameter must be in its range.
+	ParameterRange,
+}
+
+/// Error from a step of loading in separate steps on an
+/// [`IntermediateAutomaton`](crate::IntermediateAutomaton).
+#[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
+#[non_exhaustive]
+pub enum IntermediateError {
+	/// [`mintermize`](crate::IntermediateAutomaton::mintermize) takes only NFAs and AFAs with a
+	/// bit-vector alphabet.
+	#[error("automaton {index} is not an NFA or AFA with a bit-vector alphabet")]
+	NotMintermizable {
+		/// The position of the automaton in the call, from 0.
+		index: usize,
+	},
+	/// The section is not of the kind the construction builds.
+	#[error("the intermediate automaton is not an {expected}")]
+	WrongKind {
+		/// `"NFA"` or `"NFT"`.
+		expected: &'static str,
+	},
+	/// The section still has a bit-vector alphabet; mintermize it first.
+	#[error("the intermediate automaton has a bit-vector alphabet; mintermize it first")]
+	NeedsMintermization,
+	/// Mata could not parse the text, or construct a transition of the section, or the alphabet has no
+	/// symbol left for a new name.
+	#[error(transparent)]
+	Parse(#[from] ParseError),
 }

@@ -4,8 +4,8 @@
 use std::collections::BTreeSet;
 
 use mata::{
-	Alphabet, CheckAlgorithm, Complementation, Direction, LimitExceeded, Limits, Minimization, Nfa,
-	Reduction, ResidualConstruction, Side, State, Symbol, Transition, Word,
+	Alphabet, CheckAlgorithm, Complementation, Determinization, Direction, LimitExceeded, Limits,
+	Minimization, Nfa, Reduction, ResidualConstruction, Side, State, Symbol, Transition, Word,
 };
 use proptest::prelude::*;
 use proptest::test_runner::FileFailurePersistence;
@@ -221,6 +221,12 @@ proptest! {
 		let dfa = nfa.determinize();
 		prop_assert!(dfa.is_deterministic());
 		assert_language(&dfa, |w| m.accepts(w), "determinize");
+		// The classical construction, the same size and language
+		let classical = nfa.determinize_with(Determinization::Classical);
+		prop_assert!(classical.is_deterministic());
+		prop_assert_eq!(classical.num_states(), dfa.num_states());
+		prop_assert_eq!(classical.num_transitions(), dfa.num_transitions());
+		assert_language(&classical, |w| m.accepts(w), "determinize classical");
 
 		let brzozowski = nfa.minimize_with(Minimization::Brzozowski);
 		let hopcroft = nfa.minimize_with(Minimization::Hopcroft);
@@ -361,6 +367,9 @@ proptest! {
 		let naive = nfa.find_rejected_word_with(&sigma(), CheckAlgorithm::Naive);
 		let antichains = nfa.find_rejected_word_with(&sigma(), CheckAlgorithm::Antichains);
 		prop_assert_eq!(naive.is_none(), antichains.is_none());
+		for algorithm in [CheckAlgorithm::Naive, CheckAlgorithm::Antichains] {
+			prop_assert_eq!(nfa.is_universal_with(&sigma(), algorithm), naive.is_none());
+		}
 		match antichains {
 			Some(w) => prop_assert!(!m.accepts(&raw(&w))),
 			None => prop_assert!(all_words().iter().all(|w| m.accepts(w))),
@@ -374,6 +383,13 @@ proptest! {
 		let naive = x.find_word_not_in_with(&y, CheckAlgorithm::Naive);
 		let antichains = x.find_word_not_in_with(&y, CheckAlgorithm::Antichains);
 		prop_assert_eq!(naive.is_none(), antichains.is_none());
+		for algorithm in [CheckAlgorithm::Naive, CheckAlgorithm::Antichains] {
+			prop_assert_eq!(x.is_included_in_with(&y, algorithm), naive.is_none());
+			prop_assert_eq!(
+				x.is_equivalent_to_with(&y, algorithm),
+				x.find_distinguishing_word_with(&y, algorithm).is_none()
+			);
+		}
 		for witness in [naive, antichains] {
 			match witness {
 				Some(w) => prop_assert!(a.accepts(&raw(&w)) && !b.accepts(&raw(&w)), "witness {w:?}"),
@@ -387,6 +403,7 @@ proptest! {
 			Some(w) => prop_assert!(a.accepts(&raw(&w)) && b.accepts(&raw(&w)), "common word {w:?}"),
 			None => prop_assert!(all_words().iter().all(|w| !a.accepts(w) || !b.accepts(w))),
 		}
+		prop_assert_eq!(x.is_disjoint_from(&y), x.find_common_word(&y).is_none());
 		prop_assert_eq!(x.is_disjoint_from(&y), x.intersection(&y).is_lang_empty());
 
 		match x.find_distinguishing_word(&y) {

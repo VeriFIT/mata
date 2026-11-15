@@ -457,7 +457,6 @@ TEST_CASE("mata::nft::Delta::add_symbols_to()") {
 	delta.add_symbols_to(alphabet);
 	CHECK(alphabet.get_symbol_map().size() == 4);
 	CHECK(
-		alphabet.get_symbol_map() ==
-		std::unordered_map<std::string, mata::Symbol>{{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}}
+		alphabet.get_symbol_map() == mata::OnTheFlyAlphabet::StringToSymbolMap{{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}}
 	);
 }

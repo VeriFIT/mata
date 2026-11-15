@@ -1,9 +1,16 @@
 from libcpp cimport bool
+from libcpp.optional cimport optional
 from libcpp.string cimport string
+from libcpp.unordered_map cimport unordered_map
 from libcpp.vector cimport vector
 
-from libmata.nfa.nfa cimport CNfa
+cdef extern from "<filesystem>" namespace "std" nogil:
+    cdef cppclass cpath "std::filesystem::path":
+        cpath(string other)
+
+from libmata.nfa.nfa cimport CNfa, State
 from libmata.alphabets cimport CAlphabet, Symbol
+from libmata.utils cimport CStringHash, CTransparentEqualTo
 
 cdef extern from "<iostream>" namespace "std":
     cdef cppclass istream:
@@ -31,7 +38,22 @@ cdef extern from "mata/parser/inter-aut.hh" namespace "mata":
 
 
 cdef extern from "mata/nfa/builder.hh" namespace "mata::nfa::builder":
+    ctypedef unordered_map[string, State, CStringHash, CTransparentEqualTo] NameStateMap
+
     cdef void construct(CNfa*, CInterAut&, CAlphabet*) except +
+    cdef CNfa parse_from_mata(string, CAlphabet*, NameStateMap*, bool) except +
+    cdef CNfa parse_from_mata_path "parse_from_mata" (cpath&, CAlphabet*, NameStateMap*, bool) except +
+    cdef optional[CNfa] parse_explicit_from_mata(string, CAlphabet*, NameStateMap*, bool) except +
+
+    cdef enum CRead "mata::nfa::builder::BitvectorNfaReader::Read":
+        Rejected "mata::nfa::builder::BitvectorNfaReader::Read::Rejected"
+        Directly "mata::nfa::builder::BitvectorNfaReader::Read::Directly"
+        ByGeneralReader "mata::nfa::builder::BitvectorNfaReader::Read::ByGeneralReader"
+
+    cdef cppclass CBitvectorNfaReader "mata::nfa::builder::BitvectorNfaReader":
+        CBitvectorNfaReader() except +
+        CRead add(string, bool, NameStateMap*) except +
+        vector[CNfa] build(CAlphabet*) except +
 
 cdef extern from "mata/parser/parser.hh" namespace "mata::parser":
     cdef struct CParsedSection "mata::parser::ParsedSection":
@@ -43,9 +65,3 @@ cdef extern from "mata/parser/parser.hh" namespace "mata::parser":
 
 cdef extern from "mata/parser/inter-aut.hh" namespace "mata::IntermediateAut":
     vector[CInterAut] parse_from_mf(Parsed&) except +
-
-cdef extern from "mata/parser/mintermization.hh" namespace "mata":
-    cdef cppclass CMintermization "mata::Mintermization":
-        CMintermization()
-        CInterAut  c_mintermize "mata::Mintermization::mintermize" (CInterAut&) except +
-        vector[CInterAut]  c_mintermize_vec "mata::Mintermization::mintermize" (vector[CInterAut]&) except +

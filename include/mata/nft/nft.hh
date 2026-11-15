@@ -903,7 +903,8 @@ class Nft : public mata::Automaton {
 	 * @see print_to_mata() for how symbols are printed.
 	 *
 	 * The whole transducer is written with '\n' line endings and @p output is flushed once before returning, so the
-	 *  transducer is on the stream when this returns.
+	 *  transducer is on the stream when this returns. The numbers are plain decimals whatever the format flags of
+	 *  @p output.
 	 */
 	void print_to_mata(std::ostream& output) const;
 

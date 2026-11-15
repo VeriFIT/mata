@@ -1,6 +1,8 @@
 /* nft-concatenation.cc -- Concatenation of NFTs
  */
 
+#include <algorithm>
+#include <span>
 #include <type_traits>
 #include <utility>
 
@@ -86,13 +88,24 @@ Nft concatenate_eps_consuming(
 		++result_state_index;
 	}
 
-	// Add epsilon transitions connecting lhs and rhs automata.
-	// The epsilon transitions lead from lhs original final states to rhs original initial states.
-	const std::vector<Symbol> nft_epsilon(result.levels.num_of_levels, epsilon);
-	for (const State& lhs_final_state : lhs_final_states) {
-		for (const State& rhs_initial_state : rhs.initial) {
-			result.add_transition_by_levels(lhs_final_state, nft_epsilon, rhs_states_renaming[rhs_initial_state]);
+	// Share one epsilon chain per lhs final state across all rhs initial states.
+	std::vector<State> shifted_rhs_initials{};
+	shifted_rhs_initials.reserve(rhs.initial.size());
+	for (const State rhs_initial_state : rhs.initial) {
+		shifted_rhs_initials.push_back(rhs_states_renaming[rhs_initial_state]);
+	}
+	std::ranges::sort(shifted_rhs_initials);
+	for (const State lhs_final_state : lhs_final_states) {
+		State source{lhs_final_state};
+		Level level{result.levels[source]};
+		for (size_t level_index{1}; level_index < num_of_levels; ++level_index) {
+			level = result.levels.next_level_after(level);
+			const State inner_state{result.add_state_with_level(level)};
+			result.delta.add(source, epsilon, inner_state);
+			source = inner_state;
 		}
+		// Sorted above because SparseSet iteration is unordered; rhs.initial also makes the targets duplicate-free.
+		result.delta.add(source, epsilon, std::span<const State>{shifted_rhs_initials});
 	}
 
 	// Make result final states.
