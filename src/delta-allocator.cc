@@ -55,7 +55,8 @@ struct DeltaPool {
 
 	void deallocate(void* const ptr, const std::size_t bytes) noexcept {
 		if (bytes > max_small) {
-			::operator delete(ptr, bytes);
+			// Unsized: Clang 18 declares the sized form only with `-fsized-deallocation`.
+			::operator delete(ptr);
 			return;
 		}
 		const std::size_t cls{class_of(bytes)};
@@ -111,7 +112,7 @@ void delta_deallocate(void* const ptr, const std::size_t bytes) noexcept {
 		DELTA_POOL.deallocate(ptr, bytes);
 		return;
 	}
-	::operator delete(ptr, bytes);
+	::operator delete(ptr);
 }
 
 const char* delta_allocator_name() { return backend() == DeltaBackend::Pool ? "pool" : "std"; }
