@@ -174,7 +174,13 @@ impl Parser {
 
 	fn form(&mut self) -> Result<Spanned<FormKind>, Error> {
 		if self.depth >= MAX_DEPTH {
-			return Err(self.here(format!("forms nest deeper than {MAX_DEPTH}")));
+			let token = self.tokens.last().cloned();
+			return Err(match token {
+				None => self.here(format!("forms nest deeper than {MAX_DEPTH}")),
+				Some(token) => {
+					Self::error_at(&token, format!("forms nest deeper than {MAX_DEPTH}"))
+				}
+			});
 		}
 		self.depth += 1;
 		let form = self.form_inner();
@@ -817,26 +823,26 @@ mod tests {
 		// depth of an expression, so a chain of conditions nested past the limit parsed anyway,
 		// and the parser followed it off the stack of a small one. The walk down the limit needs
 		// the stack the executable gives the interpreter, so the test parses on one like it. The
-		// WebAssembly targets of the binding cannot spawn threads, and the stack of their one
-		// thread holds the walk of the depth limit as it is.
-		let parse = || {
+		// WebAssembly targets of the binding cannot spawn threads, and their single thread runs
+		// under the engine of the runner, whose stack the runner grows to hold the walk of the
+		// whole chain (bindings/rust/.cargo/config.toml).
+		let chain = || {
 			let mut nested = "1".to_owned();
 			for _ in 0..=MAX_DEPTH {
 				nested = format!("(cond ({nested} 1))");
 			}
-			let error = parse(&nested).expect_err("the depth limit");
-			assert!(
-				error.render().contains("expressions nest deeper than"),
-				"{}",
-				error.render()
-			);
+			parse(&nested).expect_err("the depth limit")
 		};
-		match std::thread::Builder::new().stack_size(1 << 30).spawn(parse) {
-			Ok(thread) => {
-				thread.join().expect("no panic");
-			}
-			Err(error) if error.kind() == std::io::ErrorKind::Unsupported => parse(),
+		let error = match std::thread::Builder::new().stack_size(1 << 30).spawn(chain) {
+			Ok(thread) => thread.join().expect("no panic"),
+			Err(error) if error.kind() == std::io::ErrorKind::Unsupported => chain(),
 			Err(error) => panic!("a thread with the stack of the interpreter: {error}"),
-		}
+		};
+		assert_eq!(error.message, "expressions nest deeper than 1000");
+		assert!(
+			error.at.is_some_and(|(line, _)| line == 1),
+			"the limit names where the chain got too deep: {:?}",
+			error.at
+		);
 	}
 }
