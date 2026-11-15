@@ -5,7 +5,7 @@ mod common;
 
 use automata::{nft, single, star, tuple};
 use common::nfa;
-use lazymat::{Error, Formula, Options};
+use lazymat::{Error, ExplicitOptions, Formula, Options};
 use mata::Symbol;
 use mata::nft::DONT_CARE;
 
@@ -162,6 +162,44 @@ fn union_chains_of_either_shape() -> Result<(), Error> {
 		assert!(!outcome.is_empty());
 		assert!(outcome.stats.macrostates < 2 * CHAIN as usize);
 	}
+
+	Ok(())
+}
+
+/// A complement ranks the members of its sets through the whole product below it, once the product has more states
+/// than a dense complement takes. The lazy explicit node keeps the complement above the product.
+#[test]
+fn complement_over_a_deep_product() -> Result<(), Error> {
+	const DEPTH: usize = 20_000;
+	const LENGTH: u32 = 300;
+
+	// Two lines of states, each stepping to the next state of both lines, with the second line final.
+	let moves: Vec<(u32, Symbol, u32)> = (0..LENGTH - 1)
+		.flat_map(|step| {
+			[step, LENGTH + step]
+				.into_iter()
+				.flat_map(move |source| [(source, A, step + 1), (source, A, LENGTH + step + 1)])
+		})
+		.collect();
+	let finals: Vec<u32> = (LENGTH..2 * LENGTH).collect();
+	let lines = nfa(2 * LENGTH, &[0], &finals, &moves);
+
+	let mut formula = Formula::new();
+	let mut product = formula.leaf(&star(A))?;
+	for _ in 1..DEPTH {
+		let a_star = formula.leaf(&star(A))?;
+		product = formula.intersection(a_star, product)?;
+	}
+
+	let top = formula.leaf(&lines)?;
+	let product = formula.intersection(top, product)?;
+	let lazy = formula.explicit_with(product, ExplicitOptions::new().max_states(1))?;
+	let complement = formula.complement(lazy)?;
+	let lines = formula.leaf(&lines)?;
+	let none = formula.intersection(complement, lines)?;
+	let outcome = formula.check(none, &Options::new())?;
+	assert!(outcome.is_empty());
+	assert!(outcome.stats.explicit[0].lazy);
 
 	Ok(())
 }
