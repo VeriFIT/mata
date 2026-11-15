@@ -337,26 +337,25 @@ impl Parser {
 	}
 
 	fn expression(&mut self) -> Result<Expr, Error> {
-		if self.depth >= MAX_DEPTH {
-			return Err(self.here(format!("expressions nest deeper than {MAX_DEPTH}")));
-		}
-		self.depth += 1;
-		let expression = self.expression_inner();
-		self.depth -= 1;
-		expression
-	}
-
-	fn expression_inner(&mut self) -> Result<Expr, Error> {
 		let token = self.next();
 		self.expression_from_token(token)
 	}
 
 	fn expression_from_token(&mut self, token: Token) -> Result<Expr, Error> {
-		if token.kind == TokenKind::LeftParen {
+		if self.depth >= MAX_DEPTH {
+			return Err(Self::error_at(
+				&token,
+				format!("expressions nest deeper than {MAX_DEPTH}"),
+			));
+		}
+		self.depth += 1;
+		let expression = if token.kind == TokenKind::LeftParen {
 			self.application(&token)
 		} else {
 			self.expression_from(token)
-		}
+		};
+		self.depth -= 1;
+		expression
 	}
 
 	fn expression_from(&mut self, token: Token) -> Result<Expr, Error> {
@@ -805,5 +804,39 @@ impl Parser {
 			self.current += 1;
 		}
 		token
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn a_cond_condition_counts_against_the_depth_limit() {
+		// The condition of a `cond` clause reached the parser by a path that did not count the
+		// depth of an expression, so a chain of conditions nested past the limit parsed anyway,
+		// and the parser followed it off the stack of a small one. The walk down the limit needs
+		// the stack the executable gives the interpreter, so the test parses on one like it. The
+		// WebAssembly targets of the binding cannot spawn threads, and the stack of their one
+		// thread holds the walk of the depth limit as it is.
+		let parse = || {
+			let mut nested = "1".to_owned();
+			for _ in 0..=MAX_DEPTH {
+				nested = format!("(cond ({nested} 1))");
+			}
+			let error = parse(&nested).expect_err("the depth limit");
+			assert!(
+				error.render().contains("expressions nest deeper than"),
+				"{}",
+				error.render()
+			);
+		};
+		match std::thread::Builder::new().stack_size(1 << 30).spawn(parse) {
+			Ok(thread) => {
+				thread.join().expect("no panic");
+			}
+			Err(error) if error.kind() == std::io::ErrorKind::Unsupported => parse(),
+			Err(error) => panic!("a thread with the stack of the interpreter: {error}"),
+		}
 	}
 }
