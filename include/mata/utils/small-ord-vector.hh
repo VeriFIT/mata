@@ -41,7 +41,10 @@ namespace mata::utils {
 //  pointer.
 // NOLINTBEGIN(cppcoreguidelines-pro-type-union-access,
 // cppcoreguidelines-avoid-c-arrays, modernize-avoid-c-arrays, cppcoreguidelines-pro-bounds-array-to-pointer-decay)
-template <class Key, std::size_t InlineCapacity = std::max<std::size_t>(1, sizeof(std::uintptr_t) / sizeof(Key))>
+template <
+	class Key,
+	std::size_t InlineCapacity = std::max<std::size_t>(1, sizeof(std::uintptr_t) / sizeof(Key)),
+	class Allocator = std::allocator<Key>>
 class SmallOrdVector {
 	static_assert(std::is_trivially_copyable_v<Key> && std::is_trivially_destructible_v<Key>);
 	static_assert(InlineCapacity >= 1);
@@ -295,7 +298,7 @@ class SmallOrdVector {
 
 	static Key* allocate(const size_type capacity) {
 		MATA_ASSERT(capacity <= max_size);
-		Key* const block{std::allocator<Key>{}.allocate(header_keys + capacity)};
+		Key* const block{Allocator{}.allocate(header_keys + capacity)};
 		const auto stored_capacity{static_cast<std::uint32_t>(capacity)};
 		std::memcpy(block, &stored_capacity, sizeof(stored_capacity));
 		return block;
@@ -306,7 +309,7 @@ class SmallOrdVector {
 		return capacity;
 	}
 	void release() noexcept {
-		if (on_heap()) { std::allocator<Key>{}.deallocate(buffer_.block_, header_keys + heap_capacity()); }
+		if (on_heap()) { Allocator{}.deallocate(buffer_.block_, header_keys + heap_capacity()); }
 	}
 	size_type grown_capacity(const size_type needed) const noexcept { return std::max(needed, 2 * capacity()); }
 	void reallocate(const size_type capacity) {

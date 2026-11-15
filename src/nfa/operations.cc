@@ -2489,7 +2489,7 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
 	auto subset_map_it{subset_map.emplace(initial, new_initial).first};
 	worklist.emplace_back(subset_map_it.operator->());
 
-	using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
+	using Iterator = StatePost::const_iterator;
 	SynchronizedExistentialSymbolPostIterator synchronized_iterator{};
 
 	const utils::OrdVector<Symbol> symbols{get_symbols_to_work_with(alphabet)};
@@ -2601,7 +2601,7 @@ Nfa mata::nfa::lang_difference(
 		return nfa_lang_difference;
 	}
 
-	using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
+	using Iterator = StatePost::const_iterator;
 	SynchronizedExistentialSymbolPostIterator synchronized_iterator_included{};
 	SynchronizedExistentialSymbolPostIterator synchronized_iterator_excluded{};
 
@@ -2918,7 +2918,7 @@ Nfa mata::nfa::algorithms::reduce_residual_with(const Nfa& nfa) {
 
 	if (nfa.delta.empty()) { return result; }
 
-	using Iterator = OrdVector<SymbolPost>::const_iterator;
+	using Iterator = StatePost::const_iterator;
 	SynchronizedExistentialSymbolPostIterator synchronized_iterator;
 
 	while (!worklist.empty()) {

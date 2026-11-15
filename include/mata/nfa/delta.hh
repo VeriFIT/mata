@@ -175,12 +175,12 @@ class SymbolPost {
  * It is an ordered vector containing possible @c SymbolPost (i.e., pair of symbol and target states).
  * @c SymbolPosts in the vector are ordered by symbols in @c SymbolPosts.
  */
-class StatePost : utils::OrdVector<SymbolPost> {
-	using super = OrdVector<SymbolPost>;
+class StatePost : utils::OrdVector<SymbolPost, utils::DeltaAllocator<SymbolPost>> {
+	using super = OrdVector<SymbolPost, utils::DeltaAllocator<SymbolPost>>;
 
   public:
 	using super::begin, super::end, super::cbegin, super::cend;
-	using super::iterator, super::const_iterator;
+	using super::iterator, super::const_iterator, super::VectorType;
 	using super::OrdVector;
 	using super::operator=;
 	using super::operator==;
@@ -447,7 +447,7 @@ class StatePost::Moves::const_iterator {
  * @brief Specialization of utils::SynchronizedExistentialIterator for iterating over SymbolPosts.
  */
 class SynchronizedExistentialSymbolPostIterator
-	: public utils::SynchronizedExistentialIterator<utils::OrdVector<SymbolPost>::const_iterator> {
+	: public utils::SynchronizedExistentialIterator<StatePost::const_iterator> {
   public:
 	/**
 	 * @brief Get union of all targets.

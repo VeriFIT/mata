@@ -1810,7 +1810,7 @@ Nft nft::determinize(const Nft& nft, std::unordered_map<StateSet, State>* subset
 
 	(*subset_map)[sources_init] = source_init_res;
 
-	using Iterator = OrdVector<SymbolPost>::const_iterator;
+	using Iterator = StatePost::const_iterator;
 	SynchronizedExistentialSymbolPostIterator synchronized_iterator{};
 	// A map of jumps from a `result` source state to a set of targets in the `nft` that is yet to be added to the
 	//  `result`.

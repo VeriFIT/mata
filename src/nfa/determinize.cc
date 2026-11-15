@@ -1705,7 +1705,7 @@ Nfa determinize_classical_with(
 		return result;
 	}
 
-	using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
+	using Iterator = StatePost::const_iterator;
 	SynchronizedExistentialSymbolPostIterator synchronized_iterator;
 
 	while (!worklist.empty()) {
