@@ -45,6 +45,12 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
     cdef const State CMAX_STATE "mata::nfa::Limits::max_state"
 
     cdef cppclass CStatePost "mata::nfa::StatePost":
+        # Its own iterator, not OrdVector[SymbolPost]'s: StatePost stores its symbol posts with Mata's Delta allocator.
+        cppclass const_iterator:
+            bool operator==(const_iterator&)
+            bool operator!=(const_iterator&)
+            CSymbolPost& operator*()
+            const_iterator& operator++()
         void insert(CSymbolPost&)
         CSymbolPost& operator[](Symbol)
         CSymbolPost& back()
@@ -52,8 +58,8 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         void remove(CSymbolPost&)
         bool empty()
         vector[CSymbolPost] to_vector()
-        COrdVector[CSymbolPost].const_iterator cbegin()
-        COrdVector[CSymbolPost].const_iterator cend()
+        const_iterator cbegin()
+        const_iterator cend()
 
     cdef cppclass CTransitions "mata::nfa::Delta::Transitions":
         cppclass const_iterator:
@@ -88,8 +94,8 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         CTransitions transitions()
         vector[CTrans] get_transitions_to(State) except +
         vector[CTrans] get_transitions_between(State, State) except +
-        COrdVector[CSymbolPost].const_iterator epsilon_symbol_posts(State state, Symbol epsilon)
-        COrdVector[CSymbolPost].const_iterator epsilon_symbol_posts(CStatePost& post, Symbol epsilon)
+        CStatePost.const_iterator epsilon_symbol_posts(State state, Symbol epsilon)
+        CStatePost.const_iterator epsilon_symbol_posts(CStatePost& post, Symbol epsilon)
         void add(vector[CTrans]&) except +
         COrdVector[Symbol] get_used_symbols()
 
