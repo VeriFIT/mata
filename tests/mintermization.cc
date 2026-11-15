@@ -710,6 +710,30 @@ TEST_CASE("mata::Mintermization::mintermize can be called again on one object") 
 	}
 }
 
+TEST_CASE("mata::Mintermization::mintermize on a reused object matches a fresh object") {
+	const auto parse = [](const std::string& file) { return mata::IntermediateAut::parse_from_mf(parse_mf(file))[0]; };
+	const auto symbols_of = [](const mata::IntermediateAut& aut) {
+		std::set<std::string> symbols;
+		for (const auto& formula : aut.transitions | std::views::values) {
+			symbols.emplace(formula.children()[0].node().name());
+		}
+		return symbols;
+	};
+	const mata::IntermediateAut first{
+		parse("@NFA-bits\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a1 & a2 q1\nq0 !a1 & a3 q1\nq1 a4 q1\n")
+	};
+	const mata::IntermediateAut second{parse("@NFA-bits\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a5 q1\n")};
+
+	const mata::IntermediateAut fresh{mata::Mintermization{}.mintermize(second)};
+	mata::Mintermization reused{};
+	(void) reused.mintermize(first);
+	// The BDDs of the first call must not split the minterms of the second.
+	const mata::IntermediateAut again{reused.mintermize(second)};
+	CHECK(fresh.transitions.size() == 1);
+	CHECK(again.transitions.size() == fresh.transitions.size());
+	CHECK(symbols_of(again).size() == symbols_of(fresh).size());
+}
+
 TEST_CASE("mata::Mintermization::mintermize converts and prints deep formulas") {
 	constexpr size_t DEPTH{100'000};
 	std::string negations(DEPTH, '!');
