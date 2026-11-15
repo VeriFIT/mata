@@ -688,7 +688,8 @@ is not part of the language.
 
 `not`, `=`, `<`, `<=`, `+`, `-` on `Bool`, `Int`, `String` and `Word` as applicable; `(concat string…)`, which joins
 strings; `(to-string value)`, which shows any value as one line, the way `print` would, with a list on one line as
-`(1 (2 3) a)`, and `…` for a list nested deeper than an interpreter chooses to walk; `(string->int string)`; `none?`
+`(1 (2 3) a)`, a line break inside a string as `\n`, and `…` for a list nested deeper than an interpreter chooses to
+walk; `(string->int string)`; `none?`
 and `get` on an `Option`; `list`; `(word "a" "b")` and `(symbol "a")`, which translate names through the script
 alphabet; `(script-alphabet)`. `=` is also true of two lists of the same length whose elements are equal in this
 sense, pairwise, so `(= (list 1 (list 2)) (list 1 (list 2)))` is `true`; an interpreter limits how deep a pair it

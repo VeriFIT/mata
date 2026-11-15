@@ -1707,17 +1707,17 @@ fn list_text(value: &Value, engine: &Engine) -> String {
 		return "…".into();
 	}
 	let mut text = String::new();
-	let mut stack: Vec<(&Value, bool)> = vec![(value, false)];
 	// A depth-first walk with an explicit stack: the `bool` says whether the element is done, so
-	// that a nested list prints its closing parenthesis in order. A `(` attaches to what follows
-	// it, and a `)` to what precedes it; anything else is separated from the last element by one
-	// space.
-	while let Some((element, done)) = stack.pop() {
+	// that a nested list prints its closing parenthesis in order, and whether the element is the
+	// first of its list, which is what earns it the leading space of a separator. The text an
+	// element renders to is its business, so the separator may not be read back off it.
+	let mut stack: Vec<(&Value, bool, bool)> = vec![(value, false, true)];
+	while let Some((element, done, first)) = stack.pop() {
 		if done {
 			text.push(')');
 			continue;
 		}
-		if !text.is_empty() && !text.ends_with('(') {
+		if !first && !text.is_empty() {
 			text.push(' ');
 		}
 		match element {
@@ -1726,9 +1726,9 @@ fn list_text(value: &Value, engine: &Engine) -> String {
 				if list.is_empty() {
 					text.push(')');
 				} else {
-					stack.push((element, true));
-					for item in list.as_ref().iter().rev() {
-						stack.push((item, false));
+					stack.push((element, true, false));
+					for (index, item) in list.as_ref().iter().enumerate().rev() {
+						stack.push((item, false, index == 0));
 					}
 				}
 			}
@@ -1736,7 +1736,10 @@ fn list_text(value: &Value, engine: &Engine) -> String {
 				text.push_str(&engine.script_alphabet.display_word(word).to_string());
 			}
 			other => {
-				text.push_str(crate::display_value(other, engine).trim_end_matches('\n'));
+				// A string (or an automaton) whose text runs onto more lines is shown on the one
+				// line of the list, with a line break as `\n`.
+				let element = crate::display_value(other, engine);
+				text.push_str(&element.trim_end_matches('\n').replace('\n', "\\n"));
 			}
 		}
 	}
