@@ -24,7 +24,7 @@ pub use limits::Limits;
 pub use nfa::Nfa;
 pub use options::{
 	CheckAlgorithm, Complementation, Determinization, Direction, Minimization,
-	ProductFinalCondition, Reduction, ResidualConstruction,
+	ProductFinalCondition, Reduction, RegexPrintMode, ResidualConstruction,
 };
 pub use types::{Distinction, Run, Side, State, Symbol, Transition, Word, word_from_bytes};
 

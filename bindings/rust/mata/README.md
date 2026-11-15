@@ -31,6 +31,8 @@ assert_eq!(a.minimize().num_states(), 4);
 - Each check has a variant that returns a counterexample, such as `is_included_in` and `find_word_not_in`.
 - The `_within` methods stop at [`Limits`], for the constructions that can blow up.
 - [`Nfa::parse_mata`], [`Nfa::display_with`] and [`Nfa::dot`] read and write the `.mata` and DOT formats.
+  [`Nfa::regex`] writes an RE2 regular expression. Symbols through `0xFF` read back directly as one automaton
+  through the Latin1 reader; larger values need a UTF-8 reader and decoding of the resulting automaton.
 - [`nft`] holds finite transducers. Mata's transducers are experimental and moving fast, so expect breaking changes.
 
 ## Building
@@ -50,6 +52,7 @@ assert_eq!(a.minimize().num_states(), 4);
 [`Nfa::dot`]: https://docs.rs/mata/latest/mata/nfa/struct.Nfa.html#method.dot
 [`Nfa::from_regex`]: https://docs.rs/mata/latest/mata/nfa/struct.Nfa.html#method.from_regex
 [`Nfa::parse_mata`]: https://docs.rs/mata/latest/mata/nfa/struct.Nfa.html#method.parse_mata
+[`Nfa::regex`]: https://docs.rs/mata/latest/mata/nfa/struct.Nfa.html#method.regex
 [`Nfa::reduce`]: https://docs.rs/mata/latest/mata/nfa/struct.Nfa.html#method.reduce
 [`nft`]: https://docs.rs/mata/latest/mata/nft/index.html
 [`State`]: https://docs.rs/mata/latest/mata/struct.State.html

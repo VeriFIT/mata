@@ -148,6 +148,12 @@ class Delta:
         """Get the set of symbols used on the transitions in Delta."""
     def __eq__(self, other: Self) -> bool: ...
 
+class RegexPrintMode(IntEnum):
+    """What `Nfa.to_regex_str()` optimizes for."""
+
+    Fast = 0
+    Readable = 1
+
 class Nfa:
     """Wrapper over NFA
 
@@ -422,6 +428,13 @@ class Nfa:
 
         :param Symbol symbol: The symbol to check.
         :return: True if the passed symbol is epsilon symbol, False otherwise.
+        """
+    def to_regex_str(self, mode: RegexPrintMode = RegexPrintMode.Fast, alphabet: alph.Alphabet | None = None) -> str:
+        """Transforms the language of the automaton to a regular expression string.
+
+        :param RegexPrintMode mode: `Fast` to optimize conversion speed, `Readable` to optimize readability.
+        :param alph.Alphabet alphabet: Alphabet to name the symbols with; the automaton's own alphabet when `None`.
+        :return: The language of the automaton as an RE2 regular expression.
         """
     def to_mata_str(self, alphabet: alph.Alphabet | None = None, encoding: str = "utf-8") -> str:
         """Transforms the automaton to a mata-format string.

@@ -101,7 +101,7 @@ commands:
   nfa <operation> …        one NFA operation on automata in the .mata format
   nft <operation> …        one NFT operation on automata in the .mata format
   strings <operation> …    one string-solving operation on automata in the .mata format
-  convert [options]        convert automata between the .mata and DOT formats
+  convert [options]        convert automata between the .mata, DOT, and regex formats
   formats                  list the supported formats, features, and every operation
   version                  print the versions of this command, the language, and the library
   help [command]           print this text, or the text of one command
@@ -281,7 +281,7 @@ fn operand_count(operation: &Operation) -> String {
 
 fn formats() -> String {
 	let mut text = String::new();
-	for format in ["mata", "dot"] {
+	for format in ["mata", "dot", "regex"] {
 		writeln!(text, "format {format}").expect("writing to a String cannot fail");
 	}
 	for feature in crate::version::FEATURES {

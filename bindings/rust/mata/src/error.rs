@@ -296,6 +296,9 @@ pub enum Requirement {
 	Utf8,
 	/// A numeric parameter must be in its range.
 	ParameterRange,
+	/// Without an alphabet, every symbol must be a Unicode scalar value; with one, every used
+	/// symbol's name, or its number if it is unnamed, must be a single character.
+	RegexSymbols,
 }
 
 /// Error from a step of loading in separate steps on an

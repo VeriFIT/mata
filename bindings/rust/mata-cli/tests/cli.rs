@@ -148,7 +148,10 @@ fn formats_lists_every_format_feature_and_operation() {
 	let output = mata(["formats"]);
 	assert_eq!(status(&output), 0);
 	let text = stdout(&output);
-	assert!(text.starts_with("format mata\nformat dot\n"), "{text}");
+	assert!(
+		text.starts_with("format mata\nformat dot\nformat regex\n"),
+		"{text}"
+	);
 	assert!(text.contains("feature hints implemented\n"), "{text}");
 	assert!(
 		text.contains("feature loops-and-recursion implemented\n"),
@@ -431,6 +434,72 @@ fn convert_rejects_inputs_of_different_kinds() {
 		"{}",
 		stderr(&output)
 	);
+}
+
+#[test]
+fn convert_writes_a_regex_for_an_nfa() {
+	let workspace = Workspace::new("convert-regex");
+	let nfa = workspace.file("a.mata", NFA);
+	let output = mata(["convert", "--to", "regex", &nfa]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "a\n");
+
+	let directory = workspace.join("out");
+	std::fs::create_dir(&directory).expect("a directory for the conversions");
+	let output = mata(["convert", "--to", "regex", &nfa, "--output", &directory]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(workspace.read("out/a.regex"), "a\n");
+}
+
+#[test]
+fn convert_regex_uses_each_input_alphabet() {
+	let workspace = Workspace::new("convert-regex-alphabets");
+	let named = workspace.file("named.mata", NFA);
+	let numeric = workspace.file(
+		"numeric.mata",
+		"@NFA-explicit\n%Initial q0\n%Final q1\nq0 97 q1\n",
+	);
+	let output = mata(["convert", "--to", "regex", &named, &numeric]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "a\n\na\n");
+}
+
+#[test]
+fn a_regex_rejects_a_symbol_name_that_is_not_one_character() {
+	let workspace = Workspace::new("print-regex-name");
+	let nfa = workspace.file(
+		"ab.mata",
+		"@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 ab q1\n",
+	);
+	let output = mata(["nfa", "print-to-regex", &nfa]);
+	assert_eq!(status(&output), 2);
+	assert_eq!(
+		stderr(&output),
+		"mata: print_to_regex: the name 'ab' of symbol 0 is not a single character\n"
+	);
+
+	let output = mata(["convert", "--to", "regex", &nfa]);
+	assert_eq!(status(&output), 2);
+	assert_eq!(
+		stderr(&output),
+		"mata: print_to_regex: the name 'ab' of symbol 0 is not a single character\n"
+	);
+}
+
+#[test]
+fn convert_rejects_regex_output_for_a_transducer() {
+	let workspace = Workspace::new("convert-regex-nft");
+	let nft = workspace.file("t.nft.mata", NFT);
+	let output = mata(["convert", "--to", "regex", &nft]);
+	assert_eq!(status(&output), 2);
+	assert_eq!(
+		stderr(&output),
+		"mata: the input holds an NFT; regex output is for NFAs only\n"
+	);
+
+	let output = mata(["convert", "--from", "regex", "--to", "mata", "-"]);
+	assert_eq!(status(&output), 2);
+	assert_eq!(stderr(&output), "mata: unknown format 'regex' for --from\n");
 }
 
 #[test]
@@ -968,6 +1037,46 @@ fn print_to_dot_labels_transitions_with_symbol_names() {
 		"{}",
 		stdout(&output)
 	);
+}
+
+#[test]
+fn print_to_regex_writes_the_language_with_symbol_names() {
+	let workspace = Workspace::new("print-regex");
+	let nfa = workspace.file("a.mata", NFA);
+	let output = mata(["nfa", "print-to-regex", &nfa]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "a\n");
+
+	for mode in ["fast", "readable"] {
+		let hint = format!("mode={mode}");
+		let output = mata(["nfa", "print-to-regex", &nfa, "--hint", &hint]);
+		assert_eq!(status(&output), 0, "{}", stderr(&output));
+		assert_eq!(stdout(&output), "a\n");
+	}
+}
+
+#[test]
+fn a_wrong_regex_mode_hint_is_rejected() {
+	let workspace = Workspace::new("print-regex-hint");
+	let nfa = workspace.file("a.mata", NFA);
+	let output = mata(["nfa", "print-to-regex", &nfa, "--hint", "mode=slow"]);
+	assert_eq!(status(&output), 2);
+	assert_eq!(
+		stderr(&output),
+		"mata: hint :mode of nfa:print-to-regex is one of \"fast\", \"readable\", not \"slow\"\n"
+	);
+}
+
+#[test]
+fn a_script_prints_a_regex_in_each_mode() {
+	let script = "(declare-input a Nfa)\n\
+	              (print (nfa:print-to-regex a))\n\
+	              (print (nfa:print-to-regex a :mode \"readable\"))";
+	let workspace = Workspace::new("script-regex");
+	let nfa = workspace.file("a.mata", NFA);
+	let output = run_script(script, true, &[&nfa]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "a\na\n");
 }
 
 #[test]
