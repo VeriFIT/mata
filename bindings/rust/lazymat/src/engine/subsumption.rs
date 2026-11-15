@@ -33,6 +33,8 @@ pub(crate) struct Subsumption {
 	deadline: Option<Instant>,
 	/// Whether a simulation or a minimization passed the deadline; then leaves without one use the identity.
 	late: bool,
+	/// The nodes and states that [`rank`](Subsumption::rank) has yet to visit, kept to reuse the memory.
+	pending: Vec<(ExecId, StateId)>,
 }
 
 impl Subsumption {
@@ -43,6 +45,7 @@ impl Subsumption {
 			closures: Closures::new(num_nodes),
 			deadline,
 			late: false,
+			pending: Vec::new(),
 		}
 	}
 
@@ -267,31 +270,39 @@ impl Subsumption {
 		node: ExecId,
 		state: StateId,
 	) -> i64 {
-		let op = &exec.nodes[node].op;
-		if let Some(child) = op.transparent_child() {
-			return self.rank(exec, stores, child, state);
+		// A walk without recursion, as products can be deeper than the stack.
+		self.pending.push((node, state));
+		let mut rank = 0;
+
+		while let Some((node, state)) = self.pending.pop() {
+			let node = exec.owner(node);
+			let store = &stores[node];
+			match exec.nodes[node].op {
+				// The states above a state are above every state below it.
+				Op::Leaf(ref leaf) => {
+					let above = self.simulation(leaf).count_above(state);
+					rank -= i64::try_from(above).unwrap_or(i64::MAX);
+				}
+				Op::Union(ref branches) => {
+					let tagged = store.tagged(state);
+					self.pending
+						.push((branches[tagged.branch as usize], tagged.state));
+				}
+				Op::Intersection(a, b) | Op::Sync(a, b, _) | Op::Diagonal(a, b) => {
+					let pair = store.pair(state);
+					// The left one first, as the leaves may compute their simulations in this order.
+					self.pending.push((b, pair.rhs));
+					self.pending.push((a, pair.lhs));
+				}
+				// A set is only below sets that are not larger.
+				Op::Complement(_) => {
+					rank -= i64::try_from(store.set(state).len()).unwrap_or(i64::MAX);
+				}
+				_ => unreachable!("owners are not transparent"),
+			}
 		}
 
-		let store = &stores[node];
-		match *op {
-			// The states above a state are above every state below it.
-			Op::Leaf(ref leaf) => {
-				-i64::try_from(self.simulation(leaf).count_above(state)).unwrap_or(i64::MAX)
-			}
-			Op::Union(ref branches) => {
-				let tagged = store.tagged(state);
-
-				self.rank(exec, stores, branches[tagged.branch as usize], tagged.state)
-			}
-			Op::Intersection(a, b) | Op::Sync(a, b, _) | Op::Diagonal(a, b) => {
-				let pair = store.pair(state);
-
-				self.rank(exec, stores, a, pair.lhs) + self.rank(exec, stores, b, pair.rhs)
-			}
-			// A set is only below sets that are not larger.
-			Op::Complement(_) => -i64::try_from(store.set(state).len()).unwrap_or(i64::MAX),
-			_ => unreachable!("transparent nodes are handled above"),
-		}
+		rank
 	}
 }
 
