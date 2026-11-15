@@ -3190,49 +3190,50 @@ fn optional_alphabet_with(
 }
 
 /// Compares two values. A list nests at most [`MAX_NESTING`] levels deep; comparing deeper ones is
-/// an error rather than a verdict, because the walk must not follow the nesting off the stack, and
-/// a wrong `false` would hide the reason. Equal verdicts for list pairs are memoized by identity, so
-/// shared lists compare in one walk instead of exponentially many.
+/// an error rather than a verdict, because a wrong `false` would hide the reason. The pairs left to
+/// compare wait on an explicit stack, so the nesting never grows the call stack, which the supported
+/// WebAssembly targets cannot grow past their default. Equal verdicts for list pairs are memoized by
+/// identity, so shared lists compare in one walk instead of exponentially many.
 fn values_equal(lhs: &Value, rhs: &Value) -> Result<bool, String> {
 	let mut equal_lists = std::collections::HashSet::new();
-	values_equal_depth(lhs, rhs, 0, &mut equal_lists)
-}
-
-fn values_equal_depth(
-	lhs: &Value,
-	rhs: &Value,
-	depth: usize,
-	equal_lists: &mut std::collections::HashSet<(*const Vec<Value>, *const Vec<Value>)>,
-) -> Result<bool, String> {
-	if depth > crate::eval::MAX_NESTING {
-		return Err(format!(
-			"the values compared nest deeper than {}",
-			crate::eval::MAX_NESTING
-		));
-	}
-	if let (Value::List(lhs), Value::List(rhs)) = (lhs, rhs) {
-		if !equal_lists.insert((std::ptr::from_ref(&**lhs), std::ptr::from_ref(&**rhs))) {
-			return Ok(true);
+	let mut pending = vec![(lhs, rhs, 0)];
+	while let Some((lhs, rhs, depth)) = pending.pop() {
+		if depth > crate::eval::MAX_NESTING {
+			return Err(format!(
+				"the values compared nest deeper than {}",
+				crate::eval::MAX_NESTING
+			));
 		}
-		if lhs.len() != rhs.len() {
-			return Ok(false);
-		}
-		for (lhs, rhs) in lhs.iter().zip(rhs.iter()) {
-			if !values_equal_depth(lhs, rhs, depth + 1, equal_lists)? {
-				return Ok(false);
+		match (lhs, rhs) {
+			(Value::List(lhs), Value::List(rhs)) => {
+				// A pair whose verdict an earlier one left behind is never recorded wrongly: a
+				// differing element or a too deep pair ends the whole comparison instead of being
+				// recorded, so the pairs stored here are the ones whose walk finished.
+				if !equal_lists.insert((std::ptr::from_ref(&**lhs), std::ptr::from_ref(&**rhs))) {
+					continue;
+				}
+				if lhs.len() != rhs.len() {
+					return Ok(false);
+				}
+				for (lhs, rhs) in lhs.iter().zip(rhs.iter()) {
+					pending.push((lhs, rhs, depth + 1));
+				}
 			}
+			(Value::Bool(lhs), Value::Bool(rhs)) if lhs != rhs => return Ok(false),
+			(Value::Int(lhs), Value::Int(rhs)) if lhs != rhs => return Ok(false),
+			(Value::String(lhs), Value::String(rhs)) if lhs != rhs => return Ok(false),
+			(Value::Word(lhs), Value::Word(rhs)) if lhs != rhs => return Ok(false),
+			(Value::Symbol(lhs), Value::Symbol(rhs)) if lhs != rhs => return Ok(false),
+			(Value::Bool(_), Value::Bool(_))
+			| (Value::Int(_), Value::Int(_))
+			| (Value::String(_), Value::String(_))
+			| (Value::Word(_), Value::Word(_))
+			| (Value::Symbol(_), Value::Symbol(_))
+			| (Value::None, Value::None) => {}
+			_ => return Ok(false),
 		}
-		return Ok(true);
 	}
-	match (lhs, rhs) {
-		(Value::Bool(lhs), Value::Bool(rhs)) => Ok(lhs == rhs),
-		(Value::Int(lhs), Value::Int(rhs)) => Ok(lhs == rhs),
-		(Value::String(lhs), Value::String(rhs)) => Ok(lhs == rhs),
-		(Value::Word(lhs), Value::Word(rhs)) => Ok(lhs == rhs),
-		(Value::Symbol(lhs), Value::Symbol(rhs)) => Ok(lhs == rhs),
-		(Value::None, Value::None) => Ok(true),
-		_ => Ok(false),
-	}
+	Ok(true)
 }
 
 pub(crate) fn expect_nfa(value: &Value) -> Result<Rc<Nfa>, String> {
@@ -3292,4 +3293,49 @@ fn level_list(value: &Value) -> Result<Vec<usize>, String> {
 		levels.push(level);
 	}
 	Ok(levels)
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn a_deep_comparison_keeps_its_pairs_off_the_call_stack() {
+		// The deepest comparison the nesting limit accepts is far past what a call stack holds on
+		// the WebAssembly targets, so the walk keeps the pairs it still has to compare on an
+		// explicit stack. A thread with a quarter of a megabyte of stack must survive one; the
+		// WebAssembly targets cannot spawn threads, so their stack must too. Dropping a value that
+		// deep recurses on its own, so the test unrolls the two chains level by level, one
+		// element at a time, instead of letting the drop of the whole value take the stack.
+		let compare = || {
+			let nest = || {
+				let mut value = Value::Int(1);
+				for _ in 0..crate::eval::MAX_NESTING {
+					value = Value::List(Rc::new(vec![value]));
+				}
+				value
+			};
+			let (lhs, rhs) = (nest(), nest());
+			assert_eq!(values_equal(&lhs, &rhs), Ok(true));
+			for mut value in [lhs, rhs] {
+				while let Value::List(list) = value {
+					let mut sole = Rc::try_unwrap(list)
+						.ok()
+						.expect("a chain of single elements");
+					value = sole.pop().expect("a list with one element");
+				}
+				assert!(matches!(value, Value::Int(1)));
+			}
+		};
+		match std::thread::Builder::new()
+			.stack_size(1 << 18)
+			.spawn(compare)
+		{
+			Ok(thread) => {
+				thread.join().expect("no panic");
+			}
+			Err(error) if error.kind() == std::io::ErrorKind::Unsupported => compare(),
+			Err(error) => panic!("a thread with a small stack: {error}"),
+		}
+	}
 }
