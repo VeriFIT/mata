@@ -2,7 +2,7 @@
 # else is an error, refined into a crash or a memout by pycobench itself.
 # The `b-*-matasc` jobs run the Mata Script versions of the `b-armc-incl` and
 # `b-regex` benchmarks through the `mata` command, which pycobench finds through
-# `@MATA_CLI_BIN@`; see `nix/mata-cli.nix` and `scripts/*.matasc`.
+# `@MATA_CLI_CMD@`; see `nix/mata-cli.nix` and `scripts/*.matasc`.
 defaults:
   return_codes:
     0: finished
@@ -12,13 +12,13 @@ b-armc-incl:
     cmd: @CMAKE_CURRENT_BINARY_DIR@/bench-automata-inclusion $1 $2
 
 b-armc-incl-matasc:
-    cmd: @MATA_CLI_BIN@ script run @CMAKE_CURRENT_SOURCE_DIR@/scripts/automata-inclusion.matasc $1 $2
+    cmd: @MATA_CLI_CMD@ script run @CMAKE_CURRENT_SOURCE_DIR@/scripts/automata-inclusion.matasc $1 $2
 
 b-regex:
     cmd: @CMAKE_CURRENT_BINARY_DIR@/bench-email-filter $1 $2 $3 $4 $5
 
 b-regex-matasc:
-    cmd: @MATA_CLI_BIN@ script run @CMAKE_CURRENT_SOURCE_DIR@/scripts/email-filter.matasc $1 $2 $3 $4 $5
+    cmd: @MATA_CLI_CMD@ script run @CMAKE_CURRENT_SOURCE_DIR@/scripts/email-filter.matasc $1 $2 $3 $4 $5
 
 b-param-diff:
     cmd: @CMAKE_CURRENT_BINARY_DIR@/bench-bool-comb-cox-diff $1 $2

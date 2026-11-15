@@ -19,6 +19,15 @@ find_program (MATA_CLI_BIN_FOUND mata DOC "The `mata` command that runs the Mata
 if (NOT MATA_CLI_BIN AND MATA_CLI_BIN_FOUND)
 	set (MATA_CLI_BIN "${MATA_CLI_BIN_FOUND}")
 endif ()
+# `configure_file()` replaces an empty `MATA_CLI_BIN` with nothing, which makes the generated job
+# run the unrelated `script` program. The marker keeps the command visibly missing instead, until
+# the cache variable or the PATH provides one; pycobench then reports the job as a failed command
+# only when it runs it.
+if (MATA_CLI_BIN)
+	set (MATA_CLI_CMD "${MATA_CLI_BIN}")
+else ()
+	set (MATA_CLI_CMD "@MATA_CLI_BIN@")
+endif ()
 
 # Generate into the build directory. These files embed `CMAKE_CURRENT_BINARY_DIR`, so writing them
 #  into the source tree made every configured build directory overwrite the other's job files: after
