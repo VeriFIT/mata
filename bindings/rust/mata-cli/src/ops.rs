@@ -3188,30 +3188,40 @@ fn optional_alphabet_with(
 
 /// Compares two values. A list nests at most [`MAX_NESTING`] levels deep; comparing deeper ones is
 /// an error rather than a verdict, because the walk must not follow the nesting off the stack, and
-/// a wrong `false` would hide the reason.
+/// a wrong `false` would hide the reason. Equal verdicts for list pairs are memoized by identity, so
+/// shared lists compare in one walk instead of exponentially many.
 fn values_equal(lhs: &Value, rhs: &Value) -> Result<bool, String> {
-	values_equal_depth(lhs, rhs, 0)
+	let mut equal_lists = std::collections::HashSet::new();
+	values_equal_depth(lhs, rhs, 0, &mut equal_lists)
 }
 
-fn values_equal_depth(lhs: &Value, rhs: &Value, depth: usize) -> Result<bool, String> {
+fn values_equal_depth(
+	lhs: &Value,
+	rhs: &Value,
+	depth: usize,
+	equal_lists: &mut std::collections::HashSet<(*const Vec<Value>, *const Vec<Value>)>,
+) -> Result<bool, String> {
 	if depth > crate::eval::MAX_NESTING {
 		return Err(format!(
 			"the values compared nest deeper than {}",
 			crate::eval::MAX_NESTING
 		));
 	}
-	match (lhs, rhs) {
-		(Value::List(lhs), Value::List(rhs)) => {
-			if lhs.len() != rhs.len() {
+	if let (Value::List(lhs), Value::List(rhs)) = (lhs, rhs) {
+		if !equal_lists.insert((std::ptr::from_ref(&**lhs), std::ptr::from_ref(&**rhs))) {
+			return Ok(true);
+		}
+		if lhs.len() != rhs.len() {
+			return Ok(false);
+		}
+		for (lhs, rhs) in lhs.iter().zip(rhs.iter()) {
+			if !values_equal_depth(lhs, rhs, depth + 1, equal_lists)? {
 				return Ok(false);
 			}
-			for (lhs, rhs) in lhs.iter().zip(rhs.iter()) {
-				if !values_equal_depth(lhs, rhs, depth + 1)? {
-					return Ok(false);
-				}
-			}
-			Ok(true)
 		}
+		return Ok(true);
+	}
+	match (lhs, rhs) {
 		(Value::Bool(lhs), Value::Bool(rhs)) => Ok(lhs == rhs),
 		(Value::Int(lhs), Value::Int(rhs)) => Ok(lhs == rhs),
 		(Value::String(lhs), Value::String(rhs)) => Ok(lhs == rhs),
