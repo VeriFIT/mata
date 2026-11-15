@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <iterator>
 #include <span>
+#include <type_traits>
 #include <vector>
 
 #include "assert.hh"
@@ -14,7 +15,7 @@
 
 namespace mata::utils {
 
-template <class Key> class OrdVector;
+template <class Key, class Allocator = std::allocator<Key>> class OrdVector;
 
 template <class T> bool are_disjoint(const utils::OrdVector<T>& lhs, const utils::OrdVector<T>& rhs) {
 	auto it_lhs = lhs.begin();
@@ -30,7 +31,7 @@ template <class T> bool are_disjoint(const utils::OrdVector<T>& lhs, const utils
 	return true;
 }
 
-template <class Key> bool is_sorted(const std::vector<Key>& vec) {
+template <class Key, class Allocator> bool is_sorted(const std::vector<Key, Allocator>& vec) {
 	for (auto it_vec = vec.cbegin() + 1; it_vec < vec.cend(); ++it_vec) {
 		if (!(*(it_vec - 1) < *it_vec)) {
 			// In case there is an unordered pair (or there is one element twice).
@@ -60,9 +61,9 @@ inline constexpr sorted_unique_t sorted_unique{};
  * @tparam  Key  Key type: type of the elements contained in the container.
  *               Each element in a set is also its key.
  */
-template <class Key> class OrdVector {
+template <class Key, class Allocator> class OrdVector {
   public: // Public data types
-	using VectorType = std::vector<Key>;
+	using VectorType = std::vector<Key, Allocator>;
 	using value_type = Key;
 	using size_type = size_t;
 	using iterator = VectorType::iterator;
@@ -121,7 +122,7 @@ template <class Key> class OrdVector {
 		return *this;
 	}
 
-	OrdVector& operator=(OrdVector&& other) noexcept {
+	OrdVector& operator=(OrdVector&& other) noexcept(std::is_nothrow_move_assignable_v<VectorType>) {
 		if (&other != this) { vec_ = std::move(other.vec_); }
 		return *this;
 	}
@@ -416,8 +417,8 @@ template <class Key> class OrdVector {
 		return vec_ <=> rhs.vec_;
 	}
 
-	const std::vector<Key>& to_vector() const { return vec_; }
-	std::vector<Key>& to_vector_mut() const { return vec_; }
+	const VectorType& to_vector() const { return vec_; }
+	VectorType& to_vector_mut() const { return vec_; }
 
 	bool is_subset_of(const OrdVector& bigger) const {
 		return std::includes(bigger.cbegin(), bigger.cend(), this->cbegin(), this->cend());
@@ -539,8 +540,8 @@ template <class Key> class OrdVector {
 
 } // Namespace mata::utils.
 
-template <class Key> struct std::hash<mata::utils::OrdVector<Key>> {
-	std::size_t operator()(const mata::utils::OrdVector<Key>& vec) const {
+template <class Key, class Allocator> struct std::hash<mata::utils::OrdVector<Key, Allocator>> {
+	std::size_t operator()(const mata::utils::OrdVector<Key, Allocator>& vec) const {
 		return mata::utils::hash_range(vec.begin(), vec.end());
 	}
 };

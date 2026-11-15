@@ -7,6 +7,7 @@
 
 #include "mata/alphabet.hh"
 #include "mata/config.hh"
+#include "mata/utils/delta-allocator.hh"
 #include "mata/utils/small-ord-vector.hh"
 
 #include <cstddef>
@@ -25,7 +26,10 @@ using State = std::conditional_t<MATA_STATE_BITS == 32, std::uint32_t, std::uint
 static_assert(sizeof(State) <= sizeof(size_t), "MATA_STATE_BITS=64 needs a 64-bit target");
 using StateSet = utils::OrdVector<State>;
 /// Target states of a @c SymbolPost: an ordered set that stores small sets inline.
-using SmallStateSet = utils::SmallOrdVector<State>;
+using SmallStateSet = utils::SmallOrdVector<
+	State,
+	std::max<std::size_t>(1, sizeof(std::uintptr_t) / sizeof(State)),
+	utils::DeltaAllocator<State>>;
 
 struct Run {
 	Word word{}; ///< A finite-length word.

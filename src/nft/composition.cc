@@ -854,7 +854,7 @@ class GeneratedStatesNormalizer {
 		} else if (to_post.empty()) {
 			to_post = from_post;
 		} else {
-			std::vector<SymbolPost> merged{};
+			StatePost::VectorType merged{};
 			merged.reserve(to_post.size() + from_post.size());
 			auto to_it{to_post.begin()};
 			auto from_it{from_post.begin()};
@@ -1386,8 +1386,9 @@ std::optional<Nft> compose_fast_with(
 				is_remaining_transition_in_lhs ? rhs_sync_targets : lhs_sync_targets;
 			const Operand& moving_nft = is_remaining_transition_in_lhs ? lhs : rhs;
 
-			mata::utils::SynchronizedExistentialIterator<mata::utils::OrdVector<SymbolPost>::const_iterator>
-				moving_sync_iterator(moving_sync_targets.size());
+			mata::utils::SynchronizedExistentialIterator<StatePost::const_iterator> moving_sync_iterator(
+				moving_sync_targets.size()
+			);
 			for (const State moving_sync_target : moving_sync_targets) {
 				mata::utils::push_back(moving_sync_iterator, moving_nft.delta[moving_sync_target]);
 			}
@@ -1434,7 +1435,7 @@ std::optional<Nft> compose_fast_with(
 		};
 
 		// The body of the synchronization.
-		mata::utils::SynchronizedUniversalIterator<mata::utils::OrdVector<SymbolPost>::const_iterator> sync_iterator(2);
+		mata::utils::SynchronizedUniversalIterator<StatePost::const_iterator> sync_iterator(2);
 		mata::utils::push_back(sync_iterator, lhs.delta[lhs_state]);
 		mata::utils::push_back(sync_iterator, rhs.delta[rhs_state]);
 		while (sync_iterator.advance()) {

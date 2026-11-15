@@ -104,6 +104,20 @@ else ()
 	message (STATUS "Not using mimalloc")
 endif ()
 
+# Default backend of the heap blocks of `Delta` (see `mata/utils/delta-allocator.hh`): `std` (global operator new) or
+#  `pool` (thread-local bump region with size-class free lists). The environment variable of the same name overrides
+#  it per process, without rebuilding.
+set (
+	MATA_DELTA_ALLOCATOR
+	"std"
+	CACHE STRING "Default allocator of the Delta blocks: std or pool"
+)
+set_property (CACHE MATA_DELTA_ALLOCATOR PROPERTY STRINGS std pool)
+if (NOT MATA_DELTA_ALLOCATOR MATCHES "^(std|pool)$")
+	message (FATAL_ERROR "MATA_DELTA_ALLOCATOR must be std or pool; got '${MATA_DELTA_ALLOCATOR}'")
+endif ()
+message (STATUS "Default Delta allocator: ${MATA_DELTA_ALLOCATOR}")
+
 # Profile-guided optimization, driven in two stages: a `generate` build writes a profile while it
 #  runs the training workload, a `use` build reads it back. A profile belongs to one exact compiler
 #  and source tree, so it is never installed and never committed. `just cpp::pgo` runs both stages.

@@ -375,7 +375,7 @@ class LazyUnwinding {
 	/// The original states with a link that is not a single one: their moves differ from their posts in the delta.
 	std::vector<bool> rewritten_;
 	/// The one move of each cursor.
-	std::vector<SymbolPost> cursor_moves_{};
+	StatePost::VectorType cursor_moves_{};
 	std::vector<bool> cursor_visited_{};
 	std::vector<State> cursor_buffer_{};
 	Counters counters_{};

@@ -76,7 +76,7 @@ cdef list _targets_list(const CSmallStateSet& targets):
 
 cdef list _symbol_posts_list(const CStatePost& state_post):
     """Copy the symbol posts of a state post, read in place, into a list of `SymbolPost`."""
-    cdef COrdVector[CSymbolPost].const_iterator it = state_post.cbegin()
+    cdef CStatePost.const_iterator it = state_post.cbegin()
     symbol_posts = []
     while it != state_post.cend():
         symbol_posts.append(SymbolPost(dereference(it).symbol, _targets_list(dereference(it).targets)))
@@ -454,7 +454,7 @@ cdef class Delta:
         :return: Generator of Transition instances.
         """
         cdef const CStatePost* c_state_post = &self.automaton_ptr.get().delta[source]
-        cdef COrdVector[CSymbolPost].const_iterator c_state_post_it = c_state_post.cbegin()
+        cdef CStatePost.const_iterator c_state_post_it = c_state_post.cbegin()
         cdef CSymbolPost c_symbol_post
         cdef const State* c_symbol_post_it
         while c_state_post_it != c_state_post.cend():
@@ -473,7 +473,7 @@ cdef class Delta:
         """
         transitions = []
         cdef const CStatePost* c_state_post = &self.automaton_ptr.get().delta[source]
-        cdef COrdVector[CSymbolPost].const_iterator c_state_post_it = c_state_post.cbegin()
+        cdef CStatePost.const_iterator c_state_post_it = c_state_post.cbegin()
         cdef const State* c_targets
         cdef size_t i
         while c_state_post_it != c_state_post.cend():
@@ -848,7 +848,7 @@ cdef class Nfa:
         :return: Generator of Transition instances.
         """
         cdef const CStatePost* c_state_post = &self.thisptr.get().delta[source]
-        cdef COrdVector[CSymbolPost].const_iterator c_state_post_it = c_state_post.cbegin()
+        cdef CStatePost.const_iterator c_state_post_it = c_state_post.cbegin()
         cdef CSymbolPost c_symbol_post
         cdef const State* c_symbol_post_it
         while c_state_post_it != c_state_post.cend():
@@ -1194,7 +1194,7 @@ cdef class Nfa:
         :param epsilon: Epsilon symbol.
         :return: Epsilon transitions if there are any epsilon transitions for the passed state. None otherwise.
         """
-        cdef COrdVector[CSymbolPost].const_iterator c_epsilon_symbol_posts_iter = self.thisptr.get().delta.epsilon_symbol_posts(
+        cdef CStatePost.const_iterator c_epsilon_symbol_posts_iter = self.thisptr.get().delta.epsilon_symbol_posts(
             state, epsilon
         )
         if c_epsilon_symbol_posts_iter == self.thisptr.get().delta.state_post(state).cend():
