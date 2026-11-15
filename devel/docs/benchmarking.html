@@ -372,6 +372,10 @@ make<span class="w"> </span>release<span class="w"> </span><span class="nv">MATA
 <p><code class="docutils literal notranslate"><span class="pre">MATA_ARCH_NATIVE</span></code> is attached privately, so it never reaches <code class="docutils literal notranslate"><span class="pre">mataTargets.cmake</span></code> and a consumer of
 an installed Mata never inherits it. A binary built with it may crash on an older CPU, so released
 packages must not use it.</p>
+<p><code class="docutils literal notranslate"><span class="pre">MATA_DELTA_ALLOCATOR</span></code> (<code class="docutils literal notranslate"><span class="pre">std</span></code> or <code class="docutils literal notranslate"><span class="pre">pool</span></code>) is not a compiler switch: the CMake option only sets the default of the
+environment variable of the same name, which selects the backend of <code class="docutils literal notranslate"><span class="pre">Delta</span></code>’s heap blocks per process. An A/B
+comparison of the two backends therefore needs one build, run with <code class="docutils literal notranslate"><span class="pre">MATA_DELTA_ALLOCATOR=std</span></code> and
+<code class="docutils literal notranslate"><span class="pre">MATA_DELTA_ALLOCATOR=pool</span></code>. Compare global allocators by <code class="docutils literal notranslate"><span class="pre">LD_PRELOAD</span></code> of the same binaries.</p>
 <p><code class="docutils literal notranslate"><span class="pre">MATA_ENABLE_IPO</span></code> adds <code class="docutils literal notranslate"><span class="pre">-ffat-lto-objects</span></code> on GCC. Without it, CMake’s <code class="docutils literal notranslate"><span class="pre">-fno-fat-lto-objects</span></code> would
 leave <code class="docutils literal notranslate"><span class="pre">libmata.a</span></code> holding compiler bytecode only, and every consumer — the Python extension, an
 external <code class="docutils literal notranslate"><span class="pre">find_package(mata)</span></code> user, Z3-Noodler — would have to link with the matching compiler’s

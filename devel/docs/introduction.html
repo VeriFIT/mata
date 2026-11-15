@@ -108,6 +108,25 @@ make<span class="w"> </span>release
 <p>The option is off by default and <code class="docutils literal notranslate"><span class="pre">cmake</span></code> fails if mimalloc cannot be found. The Nix C++ package enables it.
 The allocator applies to the final executable, so consumers linking <code class="docutils literal notranslate"><span class="pre">libmata.a</span></code> without the exported CMake target must also link mimalloc themselves.
 A measurement over Mata operations on the automata-lib-bench TACAS’24 experiments and selected NFT programs reduced total runtime by 26.6%; the effect varies by workload.</p>
+<p>Independently of the global allocator, Mata chooses how it allocates the heap blocks of <code class="docutils literal notranslate"><span class="pre">Delta</span></code> (the transitions of
+automata), with <code class="docutils literal notranslate"><span class="pre">MATA_DELTA_ALLOCATOR</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">std</span></code> (the default) takes them from the global <code class="docutils literal notranslate"><span class="pre">operator</span> <span class="pre">new</span></code>/<code class="docutils literal notranslate"><span class="pre">delete</span></code>, i.e., whatever allocator the executable uses.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pool</span></code> carves them from thread-local 1 MiB chunks in allocation order, so a <code class="docutils literal notranslate"><span class="pre">Delta</span></code> built state by state lies in
+consecutive memory. It is faster on composition-heavy workloads. The chunks are reused, but never returned to the
+operating system before the process exits.</p></li>
+</ul>
+<p>Select it per process with the environment variable, without rebuilding:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nv">MATA_DELTA_ALLOCATOR</span><span class="o">=</span>pool<span class="w"> </span>./my-program
+</pre></div>
+</div>
+<p>The variable is read on the first allocation and fixed for the rest of the process; an unknown value throws
+<code class="docutils literal notranslate"><span class="pre">std::invalid_argument</span></code>. The CMake option of the same name sets the default used when the variable is unset:
+<code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">release</span> <span class="pre">MATA_DELTA_ALLOCATOR=pool</span></code>.</p>
+<p>mimalloc, in contrast, replaces the allocator of the whole process, so it is chosen when the executable is linked
+(<code class="docutils literal notranslate"><span class="pre">MATA_USE_MIMALLOC=ON</span></code>) or started (<code class="docutils literal notranslate"><span class="pre">LD_PRELOAD=/path/to/libmimalloc.so</span> <span class="pre">./my-program</span></code>), never while it runs. The two
+combine freely. When the memory runs out, the system allocator makes Mata throw <code class="docutils literal notranslate"><span class="pre">std::bad_alloc</span></code>, while mimalloc may
+abort the process instead.</p>
 <p>In order to install the library, you can run</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>make<span class="w"> </span>install
 </pre></div>

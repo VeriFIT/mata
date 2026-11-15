@@ -1,0 +1,4 @@
+File delta-allocator.hh
+=======================
+
+.. doxygenfile:: delta-allocator.hh
