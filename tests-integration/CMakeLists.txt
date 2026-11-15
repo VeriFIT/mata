@@ -10,7 +10,11 @@ file (GLOB INPUTS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/inputs/*.input.
 # found on the PATH, or pinned with `-DMATA_CLI_BIN=/path/to/mata`. When neither holds,
 # the jobs stay in the generated file with their variable unsubstituted, and pycobench
 # reports them as failed commands only when it runs them.
-set (MATA_CLI_BIN "" CACHE FILEPATH "The `mata` command that runs the Mata Script benchmarks; found on the PATH when unset")
+set (
+	MATA_CLI_BIN
+	""
+	CACHE FILEPATH "The `mata` command that runs the Mata Script benchmarks; found on the PATH when unset"
+)
 find_program (MATA_CLI_BIN_FOUND mata DOC "The `mata` command that runs the Mata Script benchmarks")
 if (NOT MATA_CLI_BIN AND MATA_CLI_BIN_FOUND)
 	set (MATA_CLI_BIN "${MATA_CLI_BIN_FOUND}")
