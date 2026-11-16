@@ -3269,10 +3269,12 @@ fn equal_shared_lists_compare_in_one_walk() {
 #[test]
 fn a_list_renders_on_one_line_whatever_its_elements_hold() {
 	// The separator of two elements was read back off the line built so far, so a string ending
-	// in `(` swallowed it; a string holding a line break put the list on two lines.
+	// in `(` swallowed it; a string holding a line break put the list on two lines, and one
+	// ending in a line break lost it along with the terminator of its display.
 	for (script, expected) in [
 		("(print (to-string (list \"(\" \"b\")))", "(( b)\n"),
 		("(print (to-string (list \"a\nb\" 2)))", "(a\\nb 2)\n"),
+		("(print (to-string (list \"a\n\" 2)))", "(a\\n 2)\n"),
 	] {
 		let output = run_script(script, false, &[]);
 		assert_eq!(status(&output), 0, "{}", stderr(&output));

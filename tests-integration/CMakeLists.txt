@@ -8,8 +8,8 @@ file (GLOB INPUTS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/inputs/*.input.
 
 # The `mata` command runs the Mata Script versions of the benchmarks (jobs `b-*-matasc`);
 # found on the PATH, or pinned with `-DMATA_CLI_BIN=/path/to/mata`. When neither holds,
-# the jobs stay in the generated file with their variable unsubstituted, and pycobench
-# reports them as failed commands only when it runs them.
+# the jobs name the missing command, and pycobench reports them as failed commands only
+# when it runs them.
 set (
 	MATA_CLI_BIN
 	""
@@ -22,11 +22,12 @@ endif ()
 # `configure_file()` replaces an empty `MATA_CLI_BIN` with nothing, which makes the generated job
 # run the unrelated `script` program. The marker keeps the command visibly missing instead, until
 # the cache variable or the PATH provides one; pycobench then reports the job as a failed command
-# only when it runs it.
+# only when it runs it. A YAML scalar cannot start with `@`, so the marker follows CMake's
+# `<VAR>-NOTFOUND` convention rather than leaving the variable unsubstituted.
 if (MATA_CLI_BIN)
 	set (MATA_CLI_CMD "${MATA_CLI_BIN}")
 else ()
-	set (MATA_CLI_CMD "@MATA_CLI_BIN@")
+	set (MATA_CLI_CMD "MATA_CLI_BIN-NOTFOUND")
 endif ()
 
 # Generate into the build directory. These files embed `CMAKE_CURRENT_BINARY_DIR`, so writing them

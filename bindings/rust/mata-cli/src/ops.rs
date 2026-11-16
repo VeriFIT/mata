@@ -1737,9 +1737,11 @@ fn list_text(value: &Value, engine: &Engine) -> String {
 			}
 			other => {
 				// A string (or an automaton) whose text runs onto more lines is shown on the one
-				// line of the list, with a line break as `\n`.
+				// line of the list, with a line break as `\n`. Only the terminator the display
+				// adds is dropped; a line break the string itself ends in is escaped like any other.
 				let element = crate::display_value(other, engine);
-				text.push_str(&element.trim_end_matches('\n').replace('\n', "\\n"));
+				let element = element.strip_suffix('\n').unwrap_or(&element);
+				text.push_str(&element.replace('\n', "\\n"));
 			}
 		}
 	}
