@@ -30,3 +30,18 @@ cargo test --workspace --all-features
 ```
 
 or `just bindings rust` from the repository root. The [`mata-sys` README](mata-sys/README.md) covers building against an installed Mata and building to WebAssembly.
+
+## The `mata` command
+
+The `mata-cli` crate of this workspace builds the `mata` command: the interpreter of
+[Mata Script](../../docs/src/cli.md) and the one-off automata operations of
+[the `mata` command page](../../docs/src/cli.md):
+
+```sh
+cd bindings/rust
+cargo build --release --package mata-cli
+target/release/mata --help
+```
+
+The Nix package `mataCli` of the flake builds the same command; the tests of the CLI run with
+`cargo test --package mata-cli` and with the whole workspace above.

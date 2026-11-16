@@ -58,6 +58,7 @@ impl Plan {
 		}
 		let mut last: HashMap<&str, (usize, usize)> = HashMap::new();
 		let mut candidates = Vec::new();
+		let mut complete = true;
 		for form in forms {
 			let place = (form.line, form.column);
 			if let Some(name) = bound_name(&form.node) {
@@ -76,14 +77,17 @@ impl Plan {
 				}
 			}
 			for expression in form.node.expressions() {
-				occurrences(expression, once, &mut last, &mut candidates);
+				complete &= occurrences(expression, once, &mut last, &mut candidates);
 			}
 		}
-		plan.last_uses = candidates
-			.into_iter()
-			.filter(|(name, place)| last.get(name) == Some(place))
-			.map(|(_, place)| place)
-			.collect();
+		// A truncated walk misses reads, so it cannot tell which use is last.
+		if complete {
+			plan.last_uses = candidates
+				.into_iter()
+				.filter(|(name, place)| last.get(name) == Some(place))
+				.map(|(_, place)| place)
+				.collect();
+		}
 		plan
 	}
 
@@ -100,18 +104,25 @@ impl Plan {
 
 	/// Finds the dead definitions of every body inside `expression`.
 	fn walk(&mut self, expression: &Expr) {
+		self.walk_depth(expression, 0);
+	}
+
+	fn walk_depth(&mut self, expression: &Expr, depth: usize) {
+		if depth > crate::ast::MAX_DEPTH {
+			return;
+		}
 		match &expression.node {
 			Kind::Call {
 				function,
 				arguments,
 				keywords,
 			} => {
-				self.walk(function);
+				self.walk_depth(function, depth + 1);
 				for argument in arguments
 					.iter()
 					.chain(keywords.iter().map(|(_, value)| value))
 				{
-					self.walk(argument);
+					self.walk_depth(argument, depth + 1);
 				}
 			}
 			Kind::List(items) => {
@@ -125,7 +136,7 @@ impl Plan {
 					self.find_dead(&body.iter().map(Item::Expression).collect::<Vec<_>>());
 				}
 				for item in items {
-					self.walk(item);
+					self.walk_depth(item, depth + 1);
 				}
 			}
 			Kind::Lambda { body, .. }
@@ -136,12 +147,12 @@ impl Plan {
 			} => {
 				self.find_dead(&body.iter().map(Item::Expression).collect::<Vec<_>>());
 				for item in body {
-					self.walk(item);
+					self.walk_depth(item, depth + 1);
 				}
 			}
 			Kind::Definition { body, .. } => {
 				for item in body {
-					self.walk(item);
+					self.walk_depth(item, depth + 1);
 				}
 			}
 			_ => {}
@@ -233,6 +244,14 @@ fn bound_name(form: &FormKind) -> Option<&str> {
 
 /// Whether `name` occurs in `expression` in any role: used, bound, or a parameter.
 fn mentions(expression: &Expr, name: &str) -> bool {
+	mentions_depth(expression, name, 0)
+}
+
+fn mentions_depth(expression: &Expr, name: &str, depth: usize) -> bool {
+	if depth > crate::ast::MAX_DEPTH {
+		return true;
+	}
+	let recurse = |expression| mentions_depth(expression, name, depth + 1);
 	match &expression.node {
 		Kind::Name(found) => found == name,
 		Kind::Call {
@@ -240,14 +259,13 @@ fn mentions(expression: &Expr, name: &str) -> bool {
 			arguments,
 			keywords,
 		} => {
-			mentions(function, name)
-				|| arguments.iter().any(|argument| mentions(argument, name))
-				|| keywords.iter().any(|(_, value)| mentions(value, name))
+			recurse(function)
+				|| arguments.iter().any(recurse)
+				|| keywords.iter().any(|(_, value)| recurse(value))
 		}
-		Kind::List(items) => items.iter().any(|item| mentions(item, name)),
+		Kind::List(items) => items.iter().any(recurse),
 		Kind::Lambda { parameters, body } => {
-			parameters.iter().any(|parameter| parameter.name == name)
-				|| body.iter().any(|item| mentions(item, name))
+			parameters.iter().any(|parameter| parameter.name == name) || body.iter().any(recurse)
 		}
 		Kind::Definition {
 			name: defined,
@@ -260,7 +278,7 @@ fn mentions(expression: &Expr, name: &str) -> bool {
 					.iter()
 					.flatten()
 					.any(|parameter| parameter.name == name)
-				|| body.iter().any(|item| mentions(item, name))
+				|| body.iter().any(recurse)
 		}
 		_ => false,
 	}
@@ -272,13 +290,29 @@ fn note<'a>(last: &mut HashMap<&'a str, (usize, usize)>, name: &'a str, place: (
 }
 
 /// Records the place of every occurrence of a name in `expression`, and as `candidates` the uses of a
-/// name that run at most once: outside of every function and loop body.
+/// name that run at most once: outside of every function and loop body. `false` is returned when
+/// the walk stopped at [`MAX_DEPTH`](crate::ast::MAX_DEPTH) before the end, so the places it
+/// gathered are incomplete: they may miss the read that is really last, and a last use taken from
+/// them removes a value that a later expression still reads.
 fn occurrences<'a>(
 	expression: &'a Expr,
 	once: bool,
 	last: &mut HashMap<&'a str, (usize, usize)>,
 	candidates: &mut Vec<(&'a str, (usize, usize))>,
-) {
+) -> bool {
+	occurrences_depth(expression, once, 0, last, candidates)
+}
+
+fn occurrences_depth<'a>(
+	expression: &'a Expr,
+	once: bool,
+	depth: usize,
+	last: &mut HashMap<&'a str, (usize, usize)>,
+	candidates: &mut Vec<(&'a str, (usize, usize))>,
+) -> bool {
+	if depth > crate::ast::MAX_DEPTH {
+		return false;
+	}
 	let place = (expression.line, expression.column);
 	match &expression.node {
 		Kind::Name(name) => {
@@ -292,18 +326,30 @@ fn occurrences<'a>(
 			arguments,
 			keywords,
 		} => {
-			occurrences(function, once, last, candidates);
+			if !occurrences_depth(function, once, depth + 1, last, candidates) {
+				return false;
+			}
 			for argument in arguments
 				.iter()
 				.chain(keywords.iter().map(|(_, value)| value))
 			{
-				occurrences(argument, once, last, candidates);
+				if !occurrences_depth(argument, once, depth + 1, last, candidates) {
+					return false;
+				}
 			}
 		}
 		Kind::List(items) => {
 			let looping = matches!(items.first().map(|item| &item.node), Some(Kind::Name(head)) if head == "loop");
 			for (index, item) in items.iter().enumerate() {
-				occurrences(item, once && !(looping && index > 1), last, candidates);
+				if !occurrences_depth(
+					item,
+					once && !(looping && index > 1),
+					depth + 1,
+					last,
+					candidates,
+				) {
+					return false;
+				}
 			}
 		}
 		Kind::Lambda { parameters, body } => {
@@ -311,7 +357,9 @@ fn occurrences<'a>(
 				note(last, &parameter.name, place);
 			}
 			for item in body {
-				occurrences(item, false, last, candidates);
+				if !occurrences_depth(item, false, depth + 1, last, candidates) {
+					return false;
+				}
 			}
 		}
 		Kind::Definition {
@@ -325,16 +373,32 @@ fn occurrences<'a>(
 				note(last, &parameter.name, place);
 			}
 			for item in body {
-				occurrences(item, once && parameters.is_none(), last, candidates);
+				if !occurrences_depth(
+					item,
+					once && parameters.is_none(),
+					depth + 1,
+					last,
+					candidates,
+				) {
+					return false;
+				}
 			}
 		}
 		_ => {}
 	}
+	true
 }
 
 /// Whether `expression` computes an `Nfa` from `Nfa` operands with [`PURE_OPERATIONS`] only, so that
 /// leaving it out cannot hide an error. `is_nfa` tells whether a name holds an `Nfa` now.
 pub(crate) fn computes_nfa(expression: &Expr, is_nfa: &dyn Fn(&str) -> bool) -> bool {
+	computes_nfa_depth(expression, is_nfa, 0)
+}
+
+fn computes_nfa_depth(expression: &Expr, is_nfa: &dyn Fn(&str) -> bool, depth: usize) -> bool {
+	if depth > crate::ast::MAX_DEPTH {
+		return false;
+	}
 	match &expression.node {
 		Kind::Name(name) => is_nfa(name),
 		Kind::Call {
@@ -355,7 +419,7 @@ pub(crate) fn computes_nfa(expression: &Expr, is_nfa: &dyn Fn(&str) -> bool) -> 
 				&& hints_are_fixed
 				&& arguments
 					.iter()
-					.all(|argument| computes_nfa(argument, is_nfa))
+					.all(|argument| computes_nfa_depth(argument, is_nfa, depth + 1))
 		}
 		_ => false,
 	}

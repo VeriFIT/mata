@@ -83,8 +83,17 @@ pub(crate) fn write_stdout(text: &str) -> Result<(), Error> {
 		.map_err(|e| Error::plain(format!("cannot write standard output: {e}")))
 }
 
-/// Displays one value on one or more lines, as `cli.md` specifies.
+/// Displays one value on one or more lines, as `cli.md` specifies. A list nests at most
+/// [`MAX_NESTING`] levels deep; a deeper one is an error message in its place, because the walk
+/// must not overflow the stack.
 pub(crate) fn display_value(value: &Value, engine: &eval::Engine) -> String {
+	display_value_depth(value, engine, 0)
+}
+
+fn display_value_depth(value: &Value, engine: &eval::Engine, depth: usize) -> String {
+	if depth > eval::MAX_NESTING {
+		return "…\n".to_owned();
+	}
 	match value {
 		Value::Bool(value) => format!("{value}\n"),
 		Value::Int(value) => format!("{value}\n"),
@@ -98,7 +107,7 @@ pub(crate) fn display_value(value: &Value, engine: &eval::Engine) -> String {
 		Value::Intermediate(automaton) => automaton_text(automaton),
 		Value::List(list) => list
 			.iter()
-			.map(|element| display_value(element, engine))
+			.map(|element| display_value_depth(element, engine, depth + 1))
 			.collect::<String>(),
 		Value::Word(word) => format!("{}\n", engine.script_alphabet.display_word(word)),
 		Value::Alphabet(alphabet) => format!(

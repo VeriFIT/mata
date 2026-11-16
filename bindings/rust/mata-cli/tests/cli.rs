@@ -998,6 +998,24 @@ fn the_repl_reads_utf8_shows_automata_by_size_and_exits_two_after_an_error() {
 }
 
 #[test]
+fn the_repl_reports_definitions_nested_past_the_limit_and_reads_on() {
+	// The depth error of a form was placed at the end of the input, which marks an error as
+	// incomplete, so the REPL kept waiting for more and swallowed the commands after it.
+	let mut nested = "(define (f) 1)".to_owned();
+	for _ in 0..1000 {
+		nested = format!("(define (f) {nested} 1)");
+	}
+	let output = mata_with_stdin(["script", "repl"], &format!("{nested}\n(print 2)\n"));
+	assert_eq!(status(&output), 2);
+	assert!(
+		stderr(&output).contains("forms nest deeper than 1000"),
+		"{}",
+		stderr(&output)
+	);
+	assert!(stdout(&output).contains('2'), "{}", stdout(&output));
+}
+
+#[test]
 fn convert_refuses_two_inputs_that_would_overwrite_one_file() {
 	let workspace = Workspace::new("convert-collision");
 	std::fs::create_dir_all(workspace.path.join("one")).expect("a directory");
@@ -2740,6 +2758,156 @@ fn a_recursion_that_never_stops_hits_the_depth_limit() {
 }
 
 #[test]
+fn deep_source_nesting_is_an_error_not_a_stack_overflow() {
+	// Ten thousand nested applications once overflowed the stack of the interpreter; the script
+	// goes through standard input, because a command line cannot hold it.
+	let nested = format!("{}1{}", "(let ((a ".repeat(10_000), ")) a)".repeat(10_000));
+	let output = mata_with_stdin(["script", "run", "-"], &format!("(print {nested})\n"));
+	assert_eq!(status(&output), 2, "{}", stdout(&output));
+	assert!(
+		stderr(&output).contains("expressions nest deeper than 1000"),
+		"{}",
+		stderr(&output)
+	);
+	// The check runs the same walk, and the REPL parses with the same limit.
+	let output = mata_with_stdin(["script", "check", "-"], &nested);
+	assert_eq!(status(&output), 2, "{}", stdout(&output));
+	assert!(
+		stderr(&output).contains("expressions nest deeper than 1000"),
+		"{}",
+		stderr(&output)
+	);
+	let output = mata_with_stdin(["script", "repl"], &format!("{nested}\n"));
+	assert_eq!(status(&output), 2, "{}", stdout(&output));
+	assert!(
+		stderr(&output).contains("expressions nest deeper than 1000"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
+fn deep_recursion_hits_the_depth_limit_before_the_stack_runs_out() {
+	// A non-tail recursion of 999 levels once overflowed the stack of a debug build before the
+	// limit of the interpreter was reported.
+	let script = "(set-option :loops-and-recursion true)\n\
+		      (define (f x) (if (= x 0) 0 (+ 1 (f (- x 1)))))\n\
+		      (print (f 999))";
+	let output = run_script(script, false, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "999\n");
+	let script = script.replace("(f 999)", "(f 1000)");
+	let output = run_script(&script, false, &[]);
+	assert_eq!(status(&output), 2, "{}", stdout(&output));
+	assert!(
+		stderr(&output).contains("function calls nest deeper than 1000"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
+fn deeply_nested_values_are_dropped_printed_and_compared() {
+	// A value nested a million lists deep once overflowed the stack when it was dropped.
+	let build = "(list:fold (lambda (acc i) (list acc)) (list) (list:range 0 1000000))";
+	let output = run_script(&format!("(define x {build})\n(echo \"built\")"), false, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "built\n");
+	// Two independently built values of the same shape are equal, and `to-string` shows a list
+	// nested deeper than the walk limit as `…` instead of following it down.
+	let build = "(list:fold (lambda (acc i) (list acc)) (list) (list:range 0 60000))";
+	let output = run_script(
+		&format!("(define lhs {build})\n(define rhs {build})\n(print (= lhs rhs))"),
+		false,
+		&[],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "true\n");
+	let output = run_script(
+		"(print (to-string (list:fold (lambda (acc i) (list acc)) (list) (list:range 0 200000))))",
+		false,
+		&[],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "…\n");
+}
+
+#[test]
+fn a_shared_list_is_measured_once_how_often_it_is_held() {
+	// Doubling a list at every round leaves one walk path per copy: 30 rounds of `(list acc acc)`
+	// on a list nested 10 deep are 2^30 paths of about 40 levels each. The walk remembers the
+	// height of a list by its identity, so the shared tree costs one measurement, and the deep
+	// chain after it decides the `…` without the shared tree being walked again.
+	let base = "(list:fold (lambda (acc i) (list acc)) (list) (list:range 0 10))";
+	let shared = format!("(list:fold (lambda (acc i) (list acc acc)) {base} (list:range 0 30))");
+	let deep = "(list:fold (lambda (acc i) (list acc)) (list) (list:range 0 100001))";
+	let output = run_script(
+		&format!(
+			"(define deep {deep})\n(define shared {shared})\n(print (to-string (list deep shared)))"
+		),
+		false,
+		&[],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "…\n");
+}
+
+#[test]
+fn a_scalar_below_a_shared_list_counts_against_the_limit_either_way() {
+	// A list holds a scalar child one level below itself, which the height remembered for the
+	// list has to count: `x` with 99999 wrappers ends in its `1` at 100000 lists. Held first
+	// through one more wrapper, the walk of `x` misses that scalar, so the shallower copy of `x`
+	// later passed the limit on the saved height, and the element order decided whether
+	// `to-string` abbreviated.
+	let output = run_script(
+		"(define x (list:fold (lambda (acc i) (list acc)) 1 (list:range 0 99999)))\n\
+		 (print (to-string (list (list x) x)))\n\
+		 (print (to-string (list x (list x))))",
+		false,
+		&[],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "…\n…\n");
+}
+
+#[test]
+fn list_range_rejects_bounds_it_cannot_honor() {
+	for (script, message) in [
+		(
+			"(print (list:range (- 0 2) 2))",
+			"list:range needs a start of at least 0, not -2",
+		),
+		(
+			"(print (list:range 0 16777217))",
+			"the span must be at most 16777216",
+		),
+	] {
+		let output = run_script(script, false, &[]);
+		assert_eq!(status(&output), 2, "{}", stderr(&output));
+		assert!(stderr(&output).contains(message), "{}", stderr(&output));
+	}
+	// `(list:range 3 0)` stays empty, as the language page specifies.
+	let output = run_script("(print (list:range 3 0))", false, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "");
+}
+
+#[test]
+fn to_string_shows_a_list_on_one_line() {
+	for (script, expected) in [
+		(
+			"(print (to-string (list 1 (list 2 3) \"a\")))",
+			"(1 (2 3) a)\n",
+		),
+		("(print (to-string (list)))", "()\n"),
+	] {
+		let output = run_script(script, false, &[]);
+		assert_eq!(status(&output), 0, "{}", stderr(&output));
+		assert_eq!(stdout(&output), expected);
+	}
+}
+
+#[test]
 fn trace_writes_every_library_call_and_its_hints_to_standard_error() {
 	let workspace = Workspace::new("trace");
 	let a = workspace.file("a.mata", NFA);
@@ -3182,4 +3350,133 @@ fn a_number_is_the_same_symbol_in_every_section_and_load() {
 	);
 	assert_eq!(status(&output), 0, "{}", stderr(&output));
 	assert_eq!(stdout(&output), "true\ntrue\n");
+}
+
+#[test]
+fn the_benchmark_scripts_of_tests_integration_run() {
+	// `tests-integration/scripts/*.matasc` are the Mata Script versions of the C++ benchmark
+	// binaries; they run through this binary, so a change of the interpreter or of the script
+	// language cannot break them silently.
+	let workspace = Workspace::new("benchmark-scripts");
+	let script = |name: &str| {
+		workspace.file(
+			name,
+			&std::fs::read_to_string(format!(
+				"{}/../../../tests-integration/scripts/{name}",
+				env!("CARGO_MANIFEST_DIR")
+			))
+			.expect("a benchmark script"),
+		)
+	};
+	let inclusion = script("automata-inclusion.matasc");
+	let filter = script("email-filter.matasc");
+	let a = workspace.file("a.mata", NFA);
+	let b = workspace.file("b.mata", &NFA.replace(" a ", " b "));
+	let output = mata(["script", "run", &inclusion, &a, &b]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	// `(nfa:included? lhs rhs)`: the language of `a` is not included in the language of `b`,
+	// which also accepts `b`. The times are not compared; they are on their own lines.
+	assert_eq!(
+		stdout(&output)
+			.lines()
+			.map(|line| line.rsplit_once(": ").map_or(line, |(label, _)| label))
+			.collect::<Vec<_>>()
+			.join("\n"),
+		"automata_inclusion_naive\nfalse\nautomata_inclusion_antichain\nfalse"
+	);
+	let output = mata(["script", "run", &filter, &a, &a, &a, &a, &b]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	// `is_included(automata[4], intersect_aut)` as the C++ benchmark calls it: the language of
+	// the four copies of `a` is not included in the language of `b`.
+	assert_eq!(
+		stdout(&output)
+			.lines()
+			.map(|line| line.rsplit_once(": ").map_or(line, |(label, _)| label))
+			.collect::<Vec<_>>()
+			.join("\n"),
+		"automata_inclusion_naive\nfalse\nautomata_inclusion_antichain\nfalse"
+	);
+}
+
+// Review of #1045: robustness
+
+#[test]
+fn equal_shared_lists_compare_in_one_walk() {
+	// A list that doubles itself at every round once made `=` compare its shared halves again
+	// for every element, which took a time that grew exponentially with the rounds.
+	let script = "(define (grow acc i) (list acc acc))\n\
+		      (define x (list:fold grow (list) (list:range 0 40)))\n\
+		      (print (= x x))";
+	let output = run_script(script, false, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "true\n");
+	// Sharing does not blur the verdicts: a differing element still ends the comparison, and a
+	// pair nested past the walk limit is an error rather than a guessed verdict.
+	let script = "(define (grow acc i) (list acc acc))\n\
+		      (define x (list:fold grow (list 1) (list:range 0 10)))\n\
+		      (define y (list:fold grow (list 2) (list:range 0 10)))\n\
+		      (print (= x y))";
+	let output = run_script(script, false, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "false\n");
+	let script = "(define (grow acc i) (list acc acc))\n\
+		      (define x (list:fold grow (list) (list:range 0 100001)))\n\
+		      (print (= x x))";
+	let output = run_script(script, false, &[]);
+	assert_eq!(status(&output), 2, "{}", stdout(&output));
+	assert!(
+		stderr(&output).contains("the values compared nest deeper than 100000"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
+fn sharing_does_not_lift_the_depth_limit_of_a_comparison() {
+	// A pair of lists was remembered by identity alone, so a shared list walked first at a
+	// shallow level was skipped when it came again deeper, and the order of the elements decided
+	// whether the comparison went past the limit.
+	for outer in ["(list (list x) x)", "(list x (list x))"] {
+		let script = format!(
+			"(define (wrap acc i) (list acc))\n\
+			 (define x (list:fold wrap (list) (list:range 0 99999)))\n\
+			 (define y {outer})\n\
+			 (print (= y y))"
+		);
+		let output = run_script(&script, false, &[]);
+		assert_eq!(status(&output), 2, "{outer}: {}", stdout(&output));
+		assert!(
+			stderr(&output).contains("the values compared nest deeper than 100000"),
+			"{outer}: {}",
+			stderr(&output)
+		);
+	}
+}
+
+#[test]
+fn a_list_renders_on_one_line_whatever_its_elements_hold() {
+	// The separator of two elements was read back off the line built so far, so a string ending
+	// in `(` swallowed it; a string holding a line break put the list on two lines, and one
+	// ending in a line break lost it along with the terminator of its display.
+	for (script, expected) in [
+		("(print (to-string (list \"(\" \"b\")))", "(( b)\n"),
+		("(print (to-string (list \"a\nb\" 2)))", "(a\\nb 2)\n"),
+		("(print (to-string (list \"a\n\" 2)))", "(a\\n 2)\n"),
+	] {
+		let output = run_script(script, false, &[]);
+		assert_eq!(status(&output), 0, "{}", stderr(&output));
+		assert_eq!(stdout(&output), expected);
+	}
+}
+
+#[test]
+fn the_optimizer_keeps_values_whose_uses_it_could_not_see() {
+	// The walk that collects the last use of every name stopped at its depth limit without
+	// saying so, so past the limit it removed a definition as dead that a use it never reached
+	// still needed.
+	let nested = format!("{}a{}", "(let ((y ".repeat(334), ")) y)".repeat(334));
+	let script = format!("(define a Int 7)\n(print a)\n(print {nested})");
+	let output = run_script(&script, false, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "7\n7\n");
 }

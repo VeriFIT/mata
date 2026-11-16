@@ -196,6 +196,8 @@ The binaries take files with NFAs written in the `.mata` automata format as a co
   The mata binaries return a nonzero code only on failure, so the mata job configurations map only `0` to `finished` globally in the top-level `defaults` section; an individual operation can override the mapping with its own `return_codes`.
   A return code left to the catch-all entry is recognized as a `crash` when a signal killed the binary (e.g. a segfault), and as a `memout` when the run reached the limit given by `--memout`.
 
+- Some jobs run Mata Script programs through the `mata` command instead of a compiled binary: the `b-armc-incl-matasc` and `b-regex-matasc` jobs of `bench-cade-23.yaml` run `tests-integration/scripts/*.matasc` on the same inputs as `bench-automata-inclusion` and `bench-email-filter`, so a script run and a C++ run can be compared on one instance. CMake finds the command on the `PATH`, or takes `-DMATA_CLI_BIN=/path/to/mata`; without either, the `cmd` of those jobs names the missing command `MATA_CLI_BIN-NOTFOUND`, and only running such a job reports it. A script run prints one `label: seconds` record per timed call, six fractional digits, and the verdicts the C++ binary prints.
+
 - with specific options such as setting the timeout, number of parallel jobs, the identifier appended to the results file, etc.
 
 To run a set of benchmark instances on a set of operations through `pycobench`, use the utility script `run_pyco.sh` under `./tests-integration/scripts/`:
