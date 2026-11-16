@@ -2724,6 +2724,26 @@ fn deeply_nested_values_are_dropped_printed_and_compared() {
 }
 
 #[test]
+fn a_shared_list_is_measured_once_how_often_it_is_held() {
+	// Doubling a list at every round leaves one walk path per copy: 30 rounds of `(list acc acc)`
+	// on a list nested 10 deep are 2^30 paths of about 40 levels each. The walk remembers the
+	// height of a list by its identity, so the shared tree costs one measurement, and the deep
+	// chain after it decides the `…` without the shared tree being walked again.
+	let base = "(list:fold (lambda (acc i) (list acc)) (list) (list:range 0 10))";
+	let shared = format!("(list:fold (lambda (acc i) (list acc acc)) {base} (list:range 0 30))");
+	let deep = "(list:fold (lambda (acc i) (list acc)) (list) (list:range 0 100001))";
+	let output = run_script(
+		&format!(
+			"(define deep {deep})\n(define shared {shared})\n(print (to-string (list deep shared)))"
+		),
+		false,
+		&[],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "…\n");
+}
+
+#[test]
 fn list_range_rejects_bounds_it_cannot_honor() {
 	for (script, message) in [
 		(

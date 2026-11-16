@@ -1748,24 +1748,62 @@ fn list_text(value: &Value, engine: &Engine) -> String {
 	text
 }
 
+/// One step of the walk: entering a value at a level, or a list whose children have run and whose
+/// height can now be read back from the map.
+enum Step<'a> {
+	Enter(&'a Value, usize),
+	Exit(&'a Rc<Vec<Value>>, usize),
+}
+
 /// The deepest nesting of `value`, or `None` when it nests deeper than [`MAX_NESTING`]. The walk
-/// itself is iterative, so it cannot overflow on the value it measures.
+/// itself is iterative, so it cannot overflow on the value it measures, and the height of a list
+/// is remembered by identity, so a list the value holds at many places is measured once, not once
+/// per place.
 fn nesting_of(value: &Value, depth: usize) -> Option<usize> {
 	if depth > crate::eval::MAX_NESTING {
 		return None;
 	}
+	let mut heights: std::collections::HashMap<usize, usize> = std::collections::HashMap::new();
 	let mut deepest = depth;
-	let mut stack: Vec<(&Value, usize)> = match value {
-		Value::List(list) => list.iter().map(|element| (element, depth + 1)).collect(),
-		_ => return Some(depth),
-	};
-	while let Some((element, level)) = stack.pop() {
-		if level > crate::eval::MAX_NESTING {
-			return None;
-		}
-		if let Value::List(list) = element {
-			deepest = deepest.max(level);
-			stack.extend(list.iter().map(|item| (item, level + 1)));
+	let mut stack = vec![Step::Enter(value, depth)];
+	while let Some(step) = stack.pop() {
+		match step {
+			Step::Enter(element, level) => {
+				if level > crate::eval::MAX_NESTING {
+					return None;
+				}
+				let Value::List(list) = element else {
+					deepest = deepest.max(level);
+					continue;
+				};
+				if let Some(&height) = heights.get(&(Rc::as_ptr(list) as usize)) {
+					deepest = deepest.max(level + height - 1);
+					if deepest > crate::eval::MAX_NESTING {
+						return None;
+					}
+				} else {
+					stack.push(Step::Exit(list, level));
+					for item in list.iter() {
+						stack.push(Step::Enter(item, level + 1));
+					}
+				}
+			}
+			Step::Exit(list, level) => {
+				// The children ran before this step, so every list among them has its height.
+				let height = 1 + list
+					.iter()
+					.map(|item| match item {
+						Value::List(inner) => heights[&(Rc::as_ptr(inner) as usize)],
+						_ => 0,
+					})
+					.max()
+					.unwrap_or(0);
+				if level + height - 1 > crate::eval::MAX_NESTING {
+					return None;
+				}
+				heights.insert(Rc::as_ptr(list) as usize, height);
+				deepest = deepest.max(level + height - 1);
+			}
 		}
 	}
 	Some(deepest)
