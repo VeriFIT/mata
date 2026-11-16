@@ -1789,12 +1789,14 @@ fn nesting_of(value: &Value, depth: usize) -> Option<usize> {
 				}
 			}
 			Step::Exit(list, level) => {
-				// The children ran before this step, so every list among them has its height.
+				// The children ran before this step, so every list among them has its height. A
+				// child nests one level below the list, whether it is a list of that height or a
+				// scalar, so both count as one level plus the child's own depth.
 				let height = 1 + list
 					.iter()
 					.map(|item| match item {
 						Value::List(inner) => heights[&(Rc::as_ptr(inner) as usize)],
-						_ => 0,
+						_ => 1,
 					})
 					.max()
 					.unwrap_or(0);

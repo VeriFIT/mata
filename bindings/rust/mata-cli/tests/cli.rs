@@ -2744,6 +2744,24 @@ fn a_shared_list_is_measured_once_how_often_it_is_held() {
 }
 
 #[test]
+fn a_scalar_below_a_shared_list_counts_against_the_limit_either_way() {
+	// A list holds a scalar child one level below itself, which the height remembered for the
+	// list has to count: `x` with 99999 wrappers ends in its `1` at 100000 lists. Held first
+	// through one more wrapper, the walk of `x` misses that scalar, so the shallower copy of `x`
+	// later passed the limit on the saved height, and the element order decided whether
+	// `to-string` abbreviated.
+	let output = run_script(
+		"(define x (list:fold (lambda (acc i) (list acc)) 1 (list:range 0 99999)))\n\
+		 (print (to-string (list (list x) x)))\n\
+		 (print (to-string (list x (list x))))",
+		false,
+		&[],
+	);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "…\n…\n");
+}
+
+#[test]
 fn list_range_rejects_bounds_it_cannot_honor() {
 	for (script, message) in [
 		(
