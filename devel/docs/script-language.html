@@ -1010,9 +1010,13 @@ is not part of the language.</p>
 <section id="core-functions">
 <h3>Core functions<a class="headerlink" href="#core-functions" title="Link to this heading">¶</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">not</span></code>, <code class="docutils literal notranslate"><span class="pre">=</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;</span></code>, <code class="docutils literal notranslate"><span class="pre">&lt;=</span></code>, <code class="docutils literal notranslate"><span class="pre">+</span></code>, <code class="docutils literal notranslate"><span class="pre">-</span></code> on <code class="docutils literal notranslate"><span class="pre">Bool</span></code>, <code class="docutils literal notranslate"><span class="pre">Int</span></code>, <code class="docutils literal notranslate"><span class="pre">String</span></code> and <code class="docutils literal notranslate"><span class="pre">Word</span></code> as applicable; <code class="docutils literal notranslate"><span class="pre">(concat</span> <span class="pre">string…)</span></code>, which joins
-strings; <code class="docutils literal notranslate"><span class="pre">(to-string</span> <span class="pre">value)</span></code>, which shows any value as one line, the way <code class="docutils literal notranslate"><span class="pre">print</span></code> would; <code class="docutils literal notranslate"><span class="pre">(string-&gt;int</span> <span class="pre">string)</span></code>; <code class="docutils literal notranslate"><span class="pre">none?</span></code>
+strings; <code class="docutils literal notranslate"><span class="pre">(to-string</span> <span class="pre">value)</span></code>, which shows any value as one line, the way <code class="docutils literal notranslate"><span class="pre">print</span></code> would, with a list on one line as
+<code class="docutils literal notranslate"><span class="pre">(1</span> <span class="pre">(2</span> <span class="pre">3)</span> <span class="pre">a)</span></code>, a line break inside a string as <code class="docutils literal notranslate"><span class="pre">\n</span></code>, and <code class="docutils literal notranslate"><span class="pre">…</span></code> for a list nested deeper than an interpreter chooses to
+walk; <code class="docutils literal notranslate"><span class="pre">(string-&gt;int</span> <span class="pre">string)</span></code>; <code class="docutils literal notranslate"><span class="pre">none?</span></code>
 and <code class="docutils literal notranslate"><span class="pre">get</span></code> on an <code class="docutils literal notranslate"><span class="pre">Option</span></code>; <code class="docutils literal notranslate"><span class="pre">list</span></code>; <code class="docutils literal notranslate"><span class="pre">(word</span> <span class="pre">&quot;a&quot;</span> <span class="pre">&quot;b&quot;)</span></code> and <code class="docutils literal notranslate"><span class="pre">(symbol</span> <span class="pre">&quot;a&quot;)</span></code>, which translate names through the script
-alphabet; <code class="docutils literal notranslate"><span class="pre">(script-alphabet)</span></code>.</p>
+alphabet; <code class="docutils literal notranslate"><span class="pre">(script-alphabet)</span></code>. <code class="docutils literal notranslate"><span class="pre">=</span></code> is also true of two lists of the same length whose elements are equal in this
+sense, pairwise, so <code class="docutils literal notranslate"><span class="pre">(=</span> <span class="pre">(list</span> <span class="pre">1</span> <span class="pre">(list</span> <span class="pre">2))</span> <span class="pre">(list</span> <span class="pre">1</span> <span class="pre">(list</span> <span class="pre">2)))</span></code> is <code class="docutils literal notranslate"><span class="pre">true</span></code>; an interpreter limits how deep a pair it
+compares may nest.</p>
 </section>
 </section>
 <section id="reporting-results">
@@ -1375,8 +1379,9 @@ writes its report to standard error. A script written inline in a shell command 
 care, because both can replace <code class="docutils literal notranslate"><span class="pre">$1</span></code> themselves before the interpreter sees it.</p></li>
 <li><p><strong>Loops and recursion</strong> are designed as an option that the first interpreter leaves out. Whether two functions
 should be able to call each other by name is open.</p></li>
-<li><p><strong>Runaway scripts.</strong> A script without the termination guarantee can run forever. Whether the interpreter should
-limit the depth of calls and the number of rounds of a loop is open.</p></li>
+<li><p><strong>Runaway scripts.</strong> A script without the termination guarantee can run forever: an interpreter of the language
+limits the depth of calls to an error, as <code class="docutils literal notranslate"><span class="pre">mata</span></code> does, but does not limit the number of rounds of a loop. A
+script that runs forever has to be stopped from the outside.</p></li>
 <li><p><strong>Alternating automata</strong> are not covered, as the library does not support them.</p></li>
 <li><p><strong>The exact set of rewrites</strong> of the optimizer, and whether the list of forms that show structure is the right one.</p></li>
 </ul>

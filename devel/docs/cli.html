@@ -522,6 +522,10 @@ so every operation of the <a class="reference internal" href="script-language.ht
 by name and never approximated: a script reports <code class="docutils literal notranslate"><span class="pre">unknown</span> <span class="pre">name</span> <span class="pre">'nft:minimize'</span></code> and a direct command reports
 <code class="docutils literal notranslate"><span class="pre">unknown</span> <span class="pre">operation</span> <span class="pre">'nft:minimize'</span></code>, both exiting <code class="docutils literal notranslate"><span class="pre">2</span></code>. <code class="docutils literal notranslate"><span class="pre">nft:minimize</span></code> is the one operation name of the page that is
 rejected: the library declares it only under <code class="docutils literal notranslate"><span class="pre">MATA_NFT_NOT_IMPLEMENTED</span></code>.</p></li>
+<li><p>The interpreter limits how deeply a script may nest, as an error instead of a crash of the process: a function
+call chain deeper than 1000 calls, and a source nesting deeper than 1000 levels, are reported where they stand.
+The whole interpreter runs on a thread with a large stack, so a script that stays inside the limits never
+overflows it, whatever build or platform it runs on.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">automaton:</span></code> operations are the names that exist under both <code class="docutils literal notranslate"><span class="pre">nfa:</span></code> and <code class="docutils literal notranslate"><span class="pre">nft:</span></code>, and the kind of their automaton
 operands picks one: <code class="docutils literal notranslate"><span class="pre">(automaton:determinize</span> <span class="pre">a)</span></code> is <code class="docutils literal notranslate"><span class="pre">nfa:determinize</span></code> for an NFA and <code class="docutils literal notranslate"><span class="pre">nft:determinize</span></code> for a
 transducer, and the result is an automaton of that kind. The operands must be of one kind: a call that gets both

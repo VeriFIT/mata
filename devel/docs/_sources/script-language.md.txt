@@ -688,9 +688,13 @@ is not part of the language.
 ### Core functions
 
 `not`, `=`, `<`, `<=`, `+`, `-` on `Bool`, `Int`, `String` and `Word` as applicable; `(concat string…)`, which joins
-strings; `(to-string value)`, which shows any value as one line, the way `print` would; `(string->int string)`; `none?`
+strings; `(to-string value)`, which shows any value as one line, the way `print` would, with a list on one line as
+`(1 (2 3) a)`, a line break inside a string as `\n`, and `…` for a list nested deeper than an interpreter chooses to
+walk; `(string->int string)`; `none?`
 and `get` on an `Option`; `list`; `(word "a" "b")` and `(symbol "a")`, which translate names through the script
-alphabet; `(script-alphabet)`.
+alphabet; `(script-alphabet)`. `=` is also true of two lists of the same length whose elements are equal in this
+sense, pairwise, so `(= (list 1 (list 2)) (list 1 (list 2)))` is `true`; an interpreter limits how deep a pair it
+compares may nest.
 
 ## Reporting results
 
@@ -964,7 +968,8 @@ A script that works on an input of either kind:
   care, because both can replace `$1` themselves before the interpreter sees it.
 - **Loops and recursion** are designed as an option that the first interpreter leaves out. Whether two functions
   should be able to call each other by name is open.
-- **Runaway scripts.** A script without the termination guarantee can run forever. Whether the interpreter should
-  limit the depth of calls and the number of rounds of a loop is open.
+- **Runaway scripts.** A script without the termination guarantee can run forever: an interpreter of the language
+  limits the depth of calls to an error, as `mata` does, but does not limit the number of rounds of a loop. A
+  script that runs forever has to be stopped from the outside.
 - **Alternating automata** are not covered, as the library does not support them.
 - **The exact set of rewrites** of the optimizer, and whether the list of forms that show structure is the right one.
