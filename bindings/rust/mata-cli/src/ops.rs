@@ -3195,9 +3195,10 @@ fn optional_alphabet_with(
 /// an error rather than a verdict, because a wrong `false` would hide the reason. The pairs left to
 /// compare wait on an explicit stack, so the nesting never grows the call stack, which the supported
 /// WebAssembly targets cannot grow past their default. Equal verdicts for list pairs are memoized by
-/// identity, so shared lists compare in one walk instead of exponentially many.
+/// identity with the deepest level they were walked at, so shared lists compare in one walk instead
+/// of exponentially many, and a pair met deeper than before is walked again against the limit.
 fn values_equal(lhs: &Value, rhs: &Value) -> Result<bool, String> {
-	let mut equal_lists = std::collections::HashSet::new();
+	let mut equal_lists = std::collections::HashMap::new();
 	let mut pending = vec![(lhs, rhs, 0)];
 	while let Some((lhs, rhs, depth)) = pending.pop() {
 		if depth > crate::eval::MAX_NESTING {
@@ -3210,9 +3211,14 @@ fn values_equal(lhs: &Value, rhs: &Value) -> Result<bool, String> {
 			(Value::List(lhs), Value::List(rhs)) => {
 				// A pair whose verdict an earlier one left behind is never recorded wrongly: a
 				// differing element or a too deep pair ends the whole comparison instead of being
-				// recorded, so the pairs stored here are the ones whose walk finished.
-				if !equal_lists.insert((std::ptr::from_ref(&**lhs), std::ptr::from_ref(&**rhs))) {
-					continue;
+				// recorded, so the pairs stored here are the ones whose walk finished. Their walk
+				// covers this one only from a level at least as deep, where the limit was closer.
+				let key = (std::ptr::from_ref(&**lhs), std::ptr::from_ref(&**rhs));
+				match equal_lists.get(&key) {
+					Some(&walked) if walked >= depth => continue,
+					_ => {
+						equal_lists.insert(key, depth);
+					}
 				}
 				if lhs.len() != rhs.len() {
 					return Ok(false);

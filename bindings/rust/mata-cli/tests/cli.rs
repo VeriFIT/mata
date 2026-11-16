@@ -929,6 +929,24 @@ fn the_repl_reads_utf8_shows_automata_by_size_and_exits_two_after_an_error() {
 }
 
 #[test]
+fn the_repl_reports_definitions_nested_past_the_limit_and_reads_on() {
+	// The depth error of a form was placed at the end of the input, which marks an error as
+	// incomplete, so the REPL kept waiting for more and swallowed the commands after it.
+	let mut nested = "(define (f) 1)".to_owned();
+	for _ in 0..1000 {
+		nested = format!("(define (f) {nested} 1)");
+	}
+	let output = mata_with_stdin(["script", "repl"], &format!("{nested}\n(print 2)\n"));
+	assert_eq!(status(&output), 2);
+	assert!(
+		stderr(&output).contains("forms nest deeper than 1000"),
+		"{}",
+		stderr(&output)
+	);
+	assert!(stdout(&output).contains('2'), "{}", stdout(&output));
+}
+
+#[test]
 fn convert_refuses_two_inputs_that_would_overwrite_one_file() {
 	let workspace = Workspace::new("convert-collision");
 	std::fs::create_dir_all(workspace.path.join("one")).expect("a directory");
@@ -3264,6 +3282,28 @@ fn equal_shared_lists_compare_in_one_walk() {
 		"{}",
 		stderr(&output)
 	);
+}
+
+#[test]
+fn sharing_does_not_lift_the_depth_limit_of_a_comparison() {
+	// A pair of lists was remembered by identity alone, so a shared list walked first at a
+	// shallow level was skipped when it came again deeper, and the order of the elements decided
+	// whether the comparison went past the limit.
+	for outer in ["(list (list x) x)", "(list x (list x))"] {
+		let script = format!(
+			"(define (wrap acc i) (list acc))\n\
+			 (define x (list:fold wrap (list) (list:range 0 99999)))\n\
+			 (define y {outer})\n\
+			 (print (= y y))"
+		);
+		let output = run_script(&script, false, &[]);
+		assert_eq!(status(&output), 2, "{outer}: {}", stdout(&output));
+		assert!(
+			stderr(&output).contains("the values compared nest deeper than 100000"),
+			"{outer}: {}",
+			stderr(&output)
+		);
+	}
 }
 
 #[test]

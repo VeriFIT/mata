@@ -174,13 +174,7 @@ impl Parser {
 
 	fn form(&mut self) -> Result<Spanned<FormKind>, Error> {
 		if self.depth >= MAX_DEPTH {
-			let token = self.tokens.last().cloned();
-			return Err(match token {
-				None => self.here(format!("forms nest deeper than {MAX_DEPTH}")),
-				Some(token) => {
-					Self::error_at(&token, format!("forms nest deeper than {MAX_DEPTH}"))
-				}
-			});
+			return Err(self.here(format!("forms nest deeper than {MAX_DEPTH}")));
 		}
 		self.depth += 1;
 		let form = self.form_inner();
