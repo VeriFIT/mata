@@ -1482,3 +1482,32 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation_lazy() emits the noodles of 
 	CHECK(take_all(seg_nfa::noodlify_for_equation_lazy({empty_left[0]}, Nfa{})).empty());
 }
 #endif
+
+TEST_CASE("mata::nfa::SegNfa::noodlify() keeps the empty noodles of an automaton with no final state") {
+	// One ε-transition over two segments, no final state: with include_empty, the single noodle keeps its last
+	//  segment empty; without it, there is none.
+	Nfa aut{3};
+	aut.initial.insert(0);
+	aut.delta.add(0, 'a', 1);
+	aut.delta.add(1, EPSILON, 2);
+	aut.delta.add(2, 'b', 2);
+
+	CHECK(seg_nfa::noodlify(aut, EPSILON, false).empty());
+	const std::vector<seg_nfa::Noodle> with_empty{seg_nfa::noodlify(aut, EPSILON, true)};
+	REQUIRE(with_empty.size() == 1);
+	REQUIRE(with_empty[0].size() == 2);
+	CHECK(are_equivalent(with_empty[0][0].to_nfa(), [&] {
+		Nfa first{2};
+		first.initial.insert(0);
+		first.final.insert(1);
+		first.delta.add(0, 'a', 1);
+		return first;
+	}()));
+	CHECK(with_empty[0][1].to_nfa().is_lang_empty());
+
+#if MATA_HAS_GENERATOR_SUPPORT
+	std::vector<seg_nfa::Noodle> lazy{};
+	for (const seg_nfa::Noodle& noodle : seg_nfa::noodlify_lazy(aut, EPSILON, true)) { lazy.push_back(noodle); }
+	CHECK(same_noodles_in_order(lazy, with_empty));
+#endif
+}

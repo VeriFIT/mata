@@ -421,7 +421,11 @@ class NoodleEnumerator {
 		};
 		const auto is_reached = [&](const State fin) { return include_empty_ || reached[fin]; };
 		if (seg_id + 1 == segments_.size()) {
-			if (std::ranges::any_of(segment.final, is_reached)) { iter->second.push_back(unused_state_); }
+			// One child per initial state: the pairs of the last segment reach a final state or, with include_empty,
+			//  hold the empty last segment even when the segment has no final state at all.
+			if (include_empty_ || std::ranges::any_of(segment.final, is_reached)) {
+				iter->second.push_back(unused_state_);
+			}
 		} else {
 			for (const State fin : segment.final) {
 				if (is_reached(fin)) { iter->second.push_back(fin); }
