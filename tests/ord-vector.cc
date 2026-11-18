@@ -395,6 +395,18 @@ struct Rank {
 	int value;
 	std::strong_ordering operator<=>(const Rank& other) const { return value <=> other.value; }
 };
+
+/// An allocator without a default constructor: a container using it has to be given one.
+template <class T> struct TaggedAllocator {
+	using value_type = T;
+	int tag;
+	explicit TaggedAllocator(const int allocator_tag) : tag{allocator_tag} {}
+	template <class U>
+	TaggedAllocator(const TaggedAllocator<U>& other) : tag{other.tag} {} // NOLINT(google-explicit-constructor)
+	T* allocate(const size_t n) { return std::allocator<T>{}.allocate(n); }
+	void deallocate(T* const ptr, const size_t n) { std::allocator<T>{}.deallocate(ptr, n); }
+	friend bool operator==(const TaggedAllocator& lhs, const TaggedAllocator& rhs) { return lhs.tag == rhs.tag; }
+};
 } // namespace
 
 TEST_CASE("mata::utils::OrdVector range constructor reads what the range yields - issue #769") {
@@ -428,6 +440,36 @@ TEST_CASE("mata::utils::OrdVector::insert() works for keys with relational opera
 	CHECK(!searched_new);
 	CHECK(searched->value == 1);
 	CHECK(vec.size() == 3);
+}
+
+TEST_CASE("mata::utils::OrdVector lookups work for keys with relational operators only - issue #769") {
+	OrdVector<Rank> vec{mata::utils::sorted_unique, std::vector<Rank>{{1}, {5}}};
+	CHECK(!vec.insert(Rank{5}).second);
+	CHECK(vec.insert(Rank{3}).second);
+	CHECK(vec.find(Rank{5}) != vec.end());
+	CHECK(std::as_const(vec).find(Rank{4}) == vec.end());
+	CHECK(vec.contains(Rank{3}));
+	CHECK(vec.count(Rank{1}) == 1);
+	CHECK(vec.count(Rank{2}) == 0);
+	CHECK(vec.erase(Rank{3}) == 1);
+	CHECK(vec.erase(Rank{3}) == 0);
+	CHECK(vec.size() == 2);
+}
+
+TEST_CASE("mata::utils::OrdVector mutable vector and set arguments use their own constructors - issue #769") {
+	SECTION("a mutable vector keeps its allocator") {
+		std::vector<int, TaggedAllocator<int>> values({3, 1, 3}, TaggedAllocator<int>{7});
+		const OrdVector<int, TaggedAllocator<int>> ord_vector{values};
+		CHECK(ord_vector.to_vector().get_allocator().tag == 7);
+		CHECK(ord_vector.to_vector() == std::vector<int, TaggedAllocator<int>>({1, 3}, TaggedAllocator<int>{7}));
+	}
+
+	SECTION("a mutable set of keys with relational operators only") {
+		std::set<Rank> ranks{{4}, {2}};
+		const OrdVector<Rank> ord_vector{ranks};
+		CHECK(ord_vector.size() == 2);
+		CHECK(ord_vector.front().value == 2);
+	}
 }
 
 TEST_CASE("mata::BoolVector::get_elements() returns the indices of the set bits - issue #769") {

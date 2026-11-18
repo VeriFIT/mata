@@ -109,9 +109,13 @@ template <class Key, class Allocator> class OrdVector {
 	/// Construct from any input range whose elements convert to @c Key. A forwarding reference keeps ranges with
 	///  non-const @c begin() (e.g. a named @c std::views::filter result) usable; the elements are converted from the
 	///  references the range yields, and a sentinel of a different type than the iterator is supported.
+	/// @c VectorType and @c std::set<Key> are excluded, also as mutable lvalues: their own constructors keep the
+	///  vector's allocator and skip sorting the already sorted set.
 	template <class T>
 		requires std::ranges::input_range<T> && std::convertible_to<std::ranges::range_reference_t<T>, Key> &&
-				 (!std::same_as<std::remove_cvref_t<T>, OrdVector>)
+				 (!std::same_as<std::remove_cvref_t<T>, OrdVector>) &&
+				 (!std::same_as<std::remove_cvref_t<T>, VectorType>) &&
+				 (!std::same_as<std::remove_cvref_t<T>, std::set<Key>>)
 	explicit OrdVector(T&& set) : vec_() {
 		if constexpr (std::ranges::sized_range<T>) { vec_.reserve(std::ranges::size(set)); }
 		// The sentinel may have a type of its own: one combined declaration would require a common type.
@@ -216,7 +220,7 @@ template <class Key, class Allocator> class OrdVector {
 
 		auto pos = std::lower_bound(vec_.begin(), vec_.end(), x);
 		bool inserted{false};
-		if (pos == vec_.end() || *pos != x) {
+		if (pos == vec_.end() || x < *pos) { // lower_bound gives !(*pos < x), so `x < *pos` is the only way to differ.
 			pos = vec_.insert(pos, std::move(x));
 			inserted = true;
 		}
@@ -266,11 +270,12 @@ template <class Key, class Allocator> class OrdVector {
 
 	OrdVector intersection(const OrdVector& rhs) const { return intersection(*this, rhs); }
 
+	// Lookups use equivalence under `<`, as insert() does, so a key with relational operators only works as well.
 	const_iterator find(const Key& key) const {
 		MATA_EXPENSIVE_ASSERT(is_sorted());
 
 		auto it = std::lower_bound(vec_.begin(), vec_.end(), key);
-		if (it == vec_.end() || *it != key) { return vec_.end(); }
+		if (it == vec_.end() || key < *it) { return vec_.end(); }
 		return it;
 	}
 
@@ -278,7 +283,7 @@ template <class Key, class Allocator> class OrdVector {
 		MATA_EXPENSIVE_ASSERT(is_sorted());
 
 		auto it = std::lower_bound(vec_.begin(), vec_.end(), key);
-		if (it == vec_.end() || *it != key) { return vec_.end(); }
+		if (it == vec_.end() || key < *it) { return vec_.end(); }
 		return it;
 	}
 
@@ -320,16 +325,11 @@ template <class Key, class Allocator> class OrdVector {
 	 */
 	size_t erase(const Key& k) {
 		MATA_EXPENSIVE_ASSERT(is_sorted());
-		auto found_value_it = std::lower_bound(vec_.begin(), vec_.end(), k);
-		if (found_value_it != vec_.end()) {
-			if (*found_value_it == k) {
-				vec_.erase(found_value_it);
-				MATA_EXPENSIVE_ASSERT(is_sorted());
-				return 1;
-			}
-		}
-
-		return 0;
+		const auto found_value_it = find(k);
+		if (found_value_it == vec_.end()) { return 0; }
+		vec_.erase(found_value_it);
+		MATA_EXPENSIVE_ASSERT(is_sorted());
+		return 1;
 	}
 
 	bool empty() const { return vec_.empty(); }
