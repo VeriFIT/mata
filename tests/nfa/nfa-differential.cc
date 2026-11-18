@@ -245,15 +245,17 @@ void check_nfa_properties(
 	CHECK(same_language_on(reduce(nfa, nullptr, RESIDUAL_AFTER), nfa, words));
 	CHECK(same_language_on(reduce(nfa, nullptr, RESIDUAL_WITH), nfa, words));
 
-	// Brzozowski minimizes the automaton itself; Hopcroft needs a determinized and trimmed input
-	//  (see #734), and then has to agree with Brzozowski both in language and in state count.
+	// Both minimization algorithms accept the raw automaton now: "hopcroft" normalizes its input first
+	//  (#734), so it has to agree with Brzozowski both in language and in state count.
 	const Nfa brzozowski{minimize(nfa, BRZOZOWSKI)};
 	CHECK(same_language_on(brzozowski, nfa, words));
+	const Nfa hopcroft{minimize(nfa, HOPCROFT)};
+	CHECK(same_language_on(hopcroft, nfa, words));
+	if (!brzozowski.final.empty()) { CHECK(hopcroft.num_of_states() == brzozowski.num_of_states()); }
+
+	// A deterministic copy is needed by the deterministic shortcut of the complement below.
 	Nfa deterministic{determinize(nfa)};
 	deterministic.trim();
-	const Nfa hopcroft{minimize(deterministic, HOPCROFT)};
-	CHECK(same_language_on(hopcroft, nfa, words));
-	if (!deterministic.final.empty()) { CHECK(hopcroft.num_of_states() == brzozowski.num_of_states()); }
 
 	// The three revert variants build the same transition relation, and reverting twice gives
 	//  the original delta back.
@@ -474,10 +476,7 @@ TEST_CASE("mata::nfa differential: the forward simulation is the greatest fixpoi
 	for (unsigned seed{0}; seed < 400; ++seed) { check_simulation(seed); }
 }
 
-// No randomized check of minimize(nfa, hopcroft) on a raw NFA (#734): minimize_hopcroft() guards its
-//  determinism precondition with an assertion, so such a check aborts the Debug build instead of
-//  failing, and [!shouldfail] cannot express it. The legal use of Hopcroft, on a determinized and
-//  trimmed input, is checked above; the raw-NFA property belongs with the fix for #734 (#901).
+// minimize(nfa, "hopcroft") on the raw random NFA is checked above since #734 fixed its input normalization.
 
 // A hidden sweep over larger automata and longer words; the tagged-out default run stays fast.
 TEST_CASE("mata::nfa differential: larger sweep", "[.differential-sweep]") {

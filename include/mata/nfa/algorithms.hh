@@ -109,6 +109,8 @@ Nfa minimize_brzozowski(const Nfa& aut);
  *  The algorithm works in O(a*n*log(n)) time and O(m+n+a) space, where: n is the number of states, a is the size
  *  of the alphabet, and m is the number of transitions. [https://dl.acm.org/doi/10.1016/j.ipl.2011.12.004]
  * @param[in] dfa_trimmed Deterministic automaton without useless states. Perform trimming before calling this function.
+ * @throws std::invalid_argument If @p dfa_trimmed is not deterministic. Trimming is not checked: skipping it costs
+ *  minimality, not the language.
  * @return Minimized deterministic automaton.
  */
 Nfa minimize_hopcroft(const Nfa& dfa_trimmed);

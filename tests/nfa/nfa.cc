@@ -4687,6 +4687,44 @@ TEST_CASE("mata::nfa::minimize() with the default \"auto\" strategy") {
 		}
 		CHECK(num_of_nondeterministic > 30);
 	}
+
+	SECTION("\"hopcroft\" normalizes its input - issue #734") {
+		// `minimize_hopcroft()` keeps one target per symbol post, so asking for it by name on a
+		//  nondeterministic input used to return a different language, and on an untrimmed DFA a result that
+		//  was not minimal. Both preconditions were checked only by an assertion, so Release builds were
+		//  silent about it.
+		Nfa nfa{3, {0}, {2}};
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(0, 'a', 2);
+		nfa.delta.add(1, 'b', 2);
+		const Nfa minimized{minimize(nfa, {{"algorithm", "hopcroft"}})};
+		CHECK(are_equivalent(minimized, nfa));
+		CHECK(minimized.is_in_lang(Word{'a'}));
+		CHECK(minimized.is_in_lang(Word{'a', 'b'}));
+		CHECK(is_minimal_dfa(minimized));
+
+		Nfa untrimmed{3, {0}, {1}};
+		untrimmed.delta.add(0, 'a', 1);
+		untrimmed.delta.add(0, 'b', 2);
+		untrimmed.delta.add(2, 'a', 2); // State 2 is useless.
+		const Nfa from_untrimmed{minimize(untrimmed, {{"algorithm", "hopcroft"}})};
+		CHECK(are_equivalent(from_untrimmed, untrimmed));
+		CHECK(from_untrimmed.num_of_states() == minimize(untrimmed, {{"algorithm", "brzozowski"}}).num_of_states());
+
+		Nfa two_initials{3, {0, 1}, {2}};
+		two_initials.delta.add(0, 'a', 2);
+		two_initials.delta.add(1, 'a', 2);
+		CHECK(are_equivalent(minimize(two_initials, {{"algorithm", "hopcroft"}}), two_initials));
+
+		CHECK(minimize(Nfa{}, {{"algorithm", "hopcroft"}}).is_lang_empty());
+	}
+
+	SECTION("the Hopcroft core rejects a nondeterministic input - issue #734") {
+		Nfa nfa{3, {0}, {2}};
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(0, 'a', 2);
+		CHECK_THROWS_AS(algorithms::minimize_hopcroft(nfa), std::invalid_argument);
+	}
 }
 
 TEST_CASE("mata::nfa::Nfa::is_minimal()") {

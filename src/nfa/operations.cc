@@ -1337,7 +1337,10 @@ Nfa mata::nfa::minimize(const Nfa& aut, const ParameterMap& params) {
 	} else if ("brzozowski" == str_algo) {
 		algo = algorithms::minimize_brzozowski;
 	} else if ("hopcroft" == str_algo) {
-		algo = algorithms::minimize_hopcroft;
+		// `minimize_hopcroft()` only refines an existing partition, so it needs a deterministic input; on an
+		//  NFA it used to keep one target per symbol post and return a different language. Normalize the
+		//  input first, which is what the "auto" strategy does before it runs the same core.
+		algo = algorithms::minimize_auto;
 	} else {
 		throw std::runtime_error(
 			std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + str_algo
@@ -1884,8 +1887,14 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
 		// The automaton is trivially minimal.
 		return Nfa{dfa_trimmed};
 	}
-	MATA_ASSERT(dfa_trimmed.is_deterministic());
-	MATA_ASSERT(dfa_trimmed.get_useful_states().count() == dfa_trimmed.num_of_states());
+	if (!dfa_trimmed.is_deterministic()) {
+		throw std::invalid_argument(
+			"mata::nfa::algorithms::minimize_hopcroft() requires a deterministic automaton; the refinement keeps "
+			"one target per symbol post, so a nondeterministic input yields a different language. Call "
+			"minimize() with algorithm=\"auto\", or determinize() and trim() the automaton first."
+		);
+	}
+	// Only minimality, not the language, depends on the input being trimmed.
 
 	const RefinablePartition<State> brp{refine_by_hopcroft(dfa_trimmed)};
 
