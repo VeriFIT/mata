@@ -5,7 +5,11 @@ import libmata.alphabets as alph
 import libmata.nfa.nfa as mata_nfa
 
 def from_regex(
-    regex: str, encoding: str = "utf-8", reduce: bool = True, trim: bool = True, keep_epsilon: bool = False
+    regex: str,
+    encoding: str = "utf-8",
+    reduce: bool = True,
+    trim: bool = True,
+    keep_epsilon: bool = False,
 ) -> mata_nfa.Nfa:
     """Creates automaton from the regular expression
 
@@ -24,11 +28,8 @@ def from_regex(
 def from_mata(src: str, alphabet: alph.Alphabet | None = None) -> mata_nfa.Nfa:
     """Loads automata from single file.
 
-    All automata passed in sources are mintermized together.
-
     :param src: single path
     :param alphabet: target alphabet; when omitted, the symbols are read as numbers
-    :raises ValueError: when @p src is an empty iterable
     :return: single automaton
     """
 
@@ -36,10 +37,10 @@ def from_mata(src: str, alphabet: alph.Alphabet | None = None) -> mata_nfa.Nfa:
 def from_mata(src: Iterable[str], alphabet: alph.Alphabet | None = None) -> list[mata_nfa.Nfa]:
     """Loads automata from list or other stream of files.
 
-    All automata passed in sources are mintermized together. If you wish to load
-    multiple automata and mintermize them, then you have to pass them as a list.
+    All automata passed in sources are mintermized together. The sources can be a list or any other
+    iterable of paths, such as a generator.
 
-    :param src: list of paths to automata
+    :param src: iterable of paths to automata
     :param alphabet: target alphabet; when omitted, the symbols are read as numbers
     :raises ValueError: when @p src is an empty iterable
     :return: list of automata
