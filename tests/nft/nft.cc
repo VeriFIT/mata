@@ -716,6 +716,30 @@ TEST_CASE("mata::nft::determinize()") {
 		}
 	}
 
+	SECTION("two symbols with the same mixed target set each inherit their own pending jump - issue #736") {
+		// `A -a-> { x, y }` and `A -b-> { x, y }` resolve to the same set { x } on the nearest level, but they carry
+		// different pending jumps (`a -> { y }` and `b -> { y }`). The state built for { x } therefore stands for the
+		// pair (target set, symbol): sharing it between the two symbols would keep the jump of one of them only and
+		// lose the word (bb, bb) from the language.
+		Nft nft{Nft::with_levels(Levels{2, {0, 1, 0}}, 3, {0}, {2})};
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(0, 'a', 2);
+		nft.delta.add(0, 'b', 1);
+		nft.delta.add(0, 'b', 2);
+		const Nft determinized{determinize(nft)};
+		CHECK(are_equivalent(nft, determinized));
+		// The jump `0 -a-> 2` repeats its symbol on both levels, so only the words with one symbol on both levels
+		//  are in the language. Each has to come out of `determinize()` with its own pending jump.
+		CHECK(nft.is_in_lang_by_levels({Word{'a'}, Word{'a'}}));
+		CHECK(determinized.is_in_lang_by_levels({Word{'a'}, Word{'a'}}));
+		CHECK(nft.is_in_lang_by_levels({Word{'b'}, Word{'b'}}));
+		CHECK(determinized.is_in_lang_by_levels({Word{'b'}, Word{'b'}}));
+		CHECK_FALSE(nft.is_in_lang_by_levels({Word{'a'}, Word{'b'}}));
+		CHECK_FALSE(determinized.is_in_lang_by_levels({Word{'a'}, Word{'b'}}));
+		CHECK_FALSE(nft.is_in_lang_by_levels({Word{'b'}, Word{'a'}}));
+		CHECK_FALSE(determinized.is_in_lang_by_levels({Word{'b'}, Word{'a'}}));
+	}
+
 	// SECTION("This broke Delta when delta[q] could cause re-allocation of post")
 	// {
 	//     Nft x{};
