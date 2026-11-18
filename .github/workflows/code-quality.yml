@@ -96,7 +96,7 @@ jobs:
       - uses: ./.github/workflows/actions/install-solvers
         with:
           os: ${{ matrix.os }}
-      - name: Set up Python and its dependencies ${{ inputs.python-version }}
+      - name: Set up Python and its dependencies ${{ matrix.python-version }}
         uses: ./.github/workflows/actions/setup-python
         with:
           os: ${{ matrix.os }}
