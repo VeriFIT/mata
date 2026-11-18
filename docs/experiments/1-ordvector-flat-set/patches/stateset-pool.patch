@@ -1,0 +1,144 @@
+From a97546033d0fef37a0647fb994c71c602abb162c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Wed, 18 Nov 2026 18:57:40 +0100
+Subject: [PATCH 1/2] EXPERIMENT cmake: default Delta allocator is the pool
+
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5beb8b1e5..494254f77 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -109,7 +109,7 @@ endif ()
+ #  it per process, without rebuilding.
+ set (
+ 	MATA_DELTA_ALLOCATOR
+-	"std"
++	"pool"
+ 	CACHE STRING "Default allocator of the Delta blocks: std or pool"
+ )
+ set_property (CACHE MATA_DELTA_ALLOCATOR PROPERTY STRINGS std pool)
+
+From 503c614cb26fcf1d40d700fe6234b356a0cf862b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Wed, 18 Nov 2026 18:57:40 +0100
+Subject: [PATCH 2/2] EXPERIMENT nfa: StateSet allocates through the Delta
+ allocator
+
+---
+ include/mata/nfa/types.hh              | 3 ++-
+ include/mata/utils/small-ord-vector.hh | 5 +++--
+ src/nfa/delta.cc                       | 8 ++++++--
+ src/nfa/operations.cc                  | 6 +++---
+ src/nft/operations.cc                  | 2 +-
+ 5 files changed, 15 insertions(+), 9 deletions(-)
+
+diff --git a/include/mata/nfa/types.hh b/include/mata/nfa/types.hh
+index 04ec4a477..9089cab58 100644
+--- a/include/mata/nfa/types.hh
++++ b/include/mata/nfa/types.hh
+@@ -24,7 +24,8 @@ static_assert(MATA_STATE_BITS == 32 || MATA_STATE_BITS == 64, "MATA_STATE_BITS m
+ using State = std::conditional_t<MATA_STATE_BITS == 32, std::uint32_t, std::uint64_t>;
+ // State counts and indices into state-indexed vectors are `size_t`; they must hold every state.
+ static_assert(sizeof(State) <= sizeof(size_t), "MATA_STATE_BITS=64 needs a 64-bit target");
+-using StateSet = utils::OrdVector<State>;
++// EXPERIMENT: state sets allocate through the Delta allocator, so MATA_DELTA_ALLOCATOR=pool pools them too.
++using StateSet = utils::OrdVector<State, utils::DeltaAllocator<State>>;
+ /// Target states of a @c SymbolPost: an ordered set that stores small sets inline.
+ using SmallStateSet = utils::SmallOrdVector<
+ 	State,
+diff --git a/include/mata/utils/small-ord-vector.hh b/include/mata/utils/small-ord-vector.hh
+index 16338607f..75a239881 100644
+--- a/include/mata/utils/small-ord-vector.hh
++++ b/include/mata/utils/small-ord-vector.hh
+@@ -94,7 +94,7 @@ class SmallOrdVector {
+ 		}
+ 		return *this;
+ 	}
+-	SmallOrdVector& operator=(const OrdVector<Key>& set) {
++	template <class OtherAllocator> SmallOrdVector& operator=(const OrdVector<Key, OtherAllocator>& set) {
+ 		assign_sorted(set);
+ 		return *this;
+ 	}
+@@ -268,7 +268,8 @@ class SmallOrdVector {
+ 	}
+ 
+ 	bool operator==(const SmallOrdVector& other) const { return std::ranges::equal(span(), other.span()); }
+-	friend bool operator==(const SmallOrdVector& lhs, const OrdVector<Key>& rhs) {
++	template <class OtherAllocator>
++	friend bool operator==(const SmallOrdVector& lhs, const OrdVector<Key, OtherAllocator>& rhs) {
+ 		return std::ranges::equal(lhs.span(), rhs);
+ 	}
+ 	auto operator<=>(const SmallOrdVector& other) const {
+diff --git a/src/nfa/delta.cc b/src/nfa/delta.cc
+index f532d763f..a5555e96f 100644
+--- a/src/nfa/delta.cc
++++ b/src/nfa/delta.cc
+@@ -131,7 +131,9 @@ StateSet Delta::post(
+ 		workspace.sources.assign(states.begin(), states.end());
+ 		close_over_epsilons(*this, epsilons, workspace.sources, workspace);
+ 	}
+-	const std::vector<State>& sources{closes_before(epsilon_closure_opt) ? workspace.sources : states.to_vector()};
++	const std::span<const State> sources{
++		closes_before(epsilon_closure_opt) ? std::span<const State>{workspace.sources} : std::span<const State>{states}
++	};
+ 
+ 	std::vector<State>& gathered{workspace.gathered};
+ 	gathered.clear();
+@@ -160,7 +162,9 @@ StateSet Delta::post_adopt_buffer(
+ 		workspace.sources.assign(states.begin(), states.end());
+ 		close_over_epsilons(*this, epsilons, workspace.sources, workspace);
+ 	}
+-	const std::vector<State>& sources{closes_before(epsilon_closure_opt) ? workspace.sources : states.to_vector()};
++	const std::span<const State> sources{
++		closes_before(epsilon_closure_opt) ? std::span<const State>{workspace.sources} : std::span<const State>{states}
++	};
+ 
+ 	std::vector<State>& gathered{workspace.gathered};
+ 	gathered.clear();
+diff --git a/src/nfa/operations.cc b/src/nfa/operations.cc
+index 1242270fc..650c255b8 100644
+--- a/src/nfa/operations.cc
++++ b/src/nfa/operations.cc
+@@ -2912,7 +2912,7 @@ Nfa mata::nfa::algorithms::reduce_residual_with(const Nfa& nfa) {
+ 	if (nfa.final.intersects_with(initials_orig)) { result.final.insert(initial_res); }
+ 	worklist.emplace_back(initial_res, initials_orig);
+ 
+-	(subset_map)[mata::utils::OrdVector<State>(initials_orig)] = initial_res;
++	(subset_map)[StateSet(initials_orig)] = initial_res;
+ 	covering_states.emplace_back();
+ 	covering_indexes.emplace_back();
+ 
+@@ -2955,7 +2955,7 @@ Nfa mata::nfa::algorithms::reduce_residual_with(const Nfa& nfa) {
+ 				);
+ 
+ 				if (targets != covering_states[target_res]) { // new state is not covered, replace transitions
+-					subset_map[mata::utils::OrdVector<State>(targets)] = target_res; // add to map
++					subset_map[StateSet(targets)] = target_res; // add to map
+ 
+ 					if (nfa.final.intersects_with(targets)) { // add to final
+ 						result.final.insert(target_res);
+@@ -2965,7 +2965,7 @@ Nfa mata::nfa::algorithms::reduce_residual_with(const Nfa& nfa) {
+ 					add = true;
+ 
+ 				} else { // new state is covered
+-					covered[mata::utils::OrdVector<State>(targets)] = target_res;
++					covered[StateSet(targets)] = target_res;
+ 				}
+ 			}
+ 
+diff --git a/src/nft/operations.cc b/src/nft/operations.cc
+index 9c5cacef3..1d37edd23 100644
+--- a/src/nft/operations.cc
++++ b/src/nft/operations.cc
+@@ -1865,7 +1865,7 @@ Nft nft::determinize(const Nft& nft, std::unordered_map<StateSet, State>* subset
+ 				inserted) {
+ 				if (!target_res_exists) {
+ 					target_res = result.add_state_with_level(next_level);
+-					(*subset_map)[mata::utils::OrdVector<State>(targets_resolved)] = target_res;
++					(*subset_map)[StateSet(targets_resolved)] = target_res;
+ 					if (!targets_partial.empty()) {
+ 						// Some targets were not resolved at this step, so we need to store them for further processing.
+ 						wip_jumps.emplace(target_res, StatePost{{current_symbol, targets_partial}});

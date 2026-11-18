@@ -1,0 +1,38 @@
+From 6030bfcd53db4aaf27250ee8f103579c2f50047e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Wed, 18 Nov 2026 18:54:41 +0100
+Subject: [PATCH] EXPERIMENT utils: OrdVector single-key insert appends keys
+ above the maximum without a search
+
+---
+ include/mata/utils/ord-vector.hh | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/include/mata/utils/ord-vector.hh b/include/mata/utils/ord-vector.hh
+index 3495bde31..4621a1661 100644
+--- a/include/mata/utils/ord-vector.hh
++++ b/include/mata/utils/ord-vector.hh
+@@ -176,7 +176,11 @@ template <class Key, class Allocator> class OrdVector {
+ 	std::pair<iterator, bool> insert(const Key& x) {
+ 		MATA_EXPENSIVE_ASSERT(is_sorted());
+ 
+-		// Tomas Fiedor: article about better binary search here https://mhdm.dev/posts/sb_lower_bound/.
++		// EXPERIMENT: append fast path for keys above the maximum.
++		if (empty() || vec_.back() < x) {
++			vec_.push_back(x);
++			return {std::prev(vec_.end()), true};
++		}
+ 		auto pos = std::lower_bound(vec_.begin(), vec_.end(), x);
+ 		bool inserted{false};
+ 		if (pos == vec_.end() || *pos != x) {
+@@ -233,6 +237,10 @@ template <class Key, class Allocator> class OrdVector {
+ 	std::pair<iterator, bool> insert(Key&& x) {
+ 		MATA_EXPENSIVE_ASSERT(is_sorted());
+ 
++		if (empty() || vec_.back() < x) {
++			vec_.push_back(std::move(x));
++			return {std::prev(vec_.end()), true};
++		}
+ 		auto pos = std::lower_bound(vec_.begin(), vec_.end(), x);
+ 		bool inserted{false};
+ 		if (pos == vec_.end() || *pos != x) {

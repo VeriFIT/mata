@@ -12,6 +12,8 @@ truth. Read the linked file before doing the related task, and follow it as if y
   imports), or run `just help`.
 - For benchmarking, profiling, and performance comparisons, read [BENCHMARKING.md](BENCHMARKING.md) and
   [tests-integration/README.md](tests-integration/README.md).
+- Before a performance or design change, check [docs/experiments/](docs/experiments/README.md) for experiments that
+  have already been tried and rejected.
 - For the automata file format (`.mata`), read [AUTOMATAFORMAT.md](AUTOMATAFORMAT.md).
 - For the Python binding, read [bindings/python/README.md](bindings/python/README.md).
 - For the Rust binding, read [bindings/rust/README.md](bindings/rust/README.md).
