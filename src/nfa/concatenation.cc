@@ -56,8 +56,10 @@ Nfa concatenate_eps_consuming(
 		}
 	};
 
-	// Also on the empty result: the rhs shift must be representable before it is written into a requested map.
-	check_num_of_states(lhs_states_num + rhs_states_num);
+	// The rhs shift must be representable before it is written into a requested map, also on the empty return.
+	if (rhs_state_renaming != nullptr && Limits::max_num_of_states - lhs_states_num < rhs_states_num) {
+		throw_state_overflow();
+	}
 	if (concatenation_is_empty(lhs, rhs)) {
 		output_renamings();
 		lhs = Nfa{};
@@ -66,7 +68,6 @@ Nfa concatenate_eps_consuming(
 	}
 
 	const size_t result_num_of_states{lhs_states_num + rhs_states_num};
-	check_num_of_states(result_num_of_states);
 
 	output_renamings();
 
@@ -232,7 +233,9 @@ Nfa algorithms::concatenate_eps(
 	// The consuming path fills the requested renaming maps also for the empty result.
 	if (concatenation_is_empty(lhs, rhs)) {
 		// Do not clone a possibly large lhs only to throw it away: fill the requested maps from the original counts.
-		if (rhs_state_renaming != nullptr) { check_num_of_states(lhs.num_of_states() + rhs.num_of_states()); }
+		if (rhs_state_renaming != nullptr && Limits::max_num_of_states - lhs.num_of_states() < rhs.num_of_states()) {
+			throw_state_overflow();
+		}
 		if (lhs_state_renaming != nullptr) {
 			lhs_state_renaming->clear();
 			lhs_state_renaming->reserve(lhs.num_of_states());

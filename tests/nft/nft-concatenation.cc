@@ -1440,8 +1440,8 @@ TEST_CASE("mata::nft::concatenate_eps() does not read a renaming through its sym
 	rhs.final.insert(0);
 	StateRenaming lhs_map{};
 	StateRenaming rhs_map{{0, 3}};
-	// Since Symbol and State are the same type, this is also the value the caller wants removed as the connector.
-	const Symbol epsilon{rhs_map.at(0)};
-	const Nft result{algorithms::concatenate_eps(lhs, rhs, epsilon, false, &lhs_map, &rhs_map)};
+	// Since Symbol and State are the same type, pass a map entry to exercise the aliased symbol argument.
+	constexpr Symbol epsilon{3};
+	const Nft result{algorithms::concatenate_eps(lhs, rhs, rhs_map.at(0), false, &lhs_map, &rhs_map)};
 	CHECK(!result.delta.get_used_symbols().contains(epsilon));
 }
