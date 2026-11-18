@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <random>
+#include <ranges>
 #include <set>
 #include <vector>
 
@@ -135,6 +136,13 @@ TEST_CASE("mata::utils::SparseSet equality compares the contents - issue #769") 
 	inserted_in_other_order.insert(7);
 	CHECK(inserted_in_order != inserted_in_other_order);
 	CHECK(inserted_in_other_order != inserted_in_order);
+
+	// Equal size but different elements: {3,5} vs {3,7}.
+	SparseSet<unsigned long> with_other_element{};
+	with_other_element.insert(3);
+	with_other_element.insert(7);
+	CHECK(inserted_in_order != with_other_element);
+	CHECK(with_other_element != inserted_in_order);
 }
 
 TEST_CASE("mata::utils::SparseSet constructors - issue #769") {
@@ -160,6 +168,13 @@ TEST_CASE("mata::utils::SparseSet constructors - issue #769") {
 		CHECK(from_const == SparseSet<unsigned long>{1, 2, 3});
 		const SparseSet<unsigned long> from_temporary{std::vector<unsigned long>{4, 6}};
 		CHECK(from_temporary == SparseSet<unsigned long>{4, 6});
+	}
+
+	SECTION("a named filter view still constructs") {
+		std::vector<unsigned long> values{1, 2, 3, 4, 5};
+		auto evens = values | std::views::filter([](const unsigned long v) { return v % 2 == 0; });
+		const SparseSet<unsigned long> from_filter{evens};
+		CHECK(from_filter == SparseSet<unsigned long>{2, 4});
 	}
 }
 

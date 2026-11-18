@@ -308,7 +308,7 @@ TEST_CASE("mata::utils::OrdVector::insert() with a hint - issue #769") {
 	OrdVector<int> vec{1, 5, 9};
 
 	SECTION("a correct hint inserts at the hinted place") {
-		const auto [it, inserted] = vec.insert(vec.begin() + 1, 7);
+		const auto [it, inserted] = vec.insert(vec.begin() + 2, 7);
 		CHECK(inserted);
 		CHECK(*it == 7);
 		CHECK(vec == OrdVector<int>{1, 5, 7, 9});

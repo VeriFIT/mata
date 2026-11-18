@@ -150,11 +150,17 @@ template <typename Number> class SparseSet {
 		MATA_ASSERT(consistent());
 	}
 
+	/// Construct from any range of numbers convertible to @c Number.
+	///
+	/// A forwarding reference keeps ranges whose @c begin()/@c end() are callable
+	/// on a non-const object only (e.g. a named @c std::views::filter result) usable.
+	/// @c SparseSet and @c BoolVector are excluded so that the copy/move and
+	/// bit-index constructors win over this greedy template.
 	template <class T>
 		requires std::ranges::input_range<T> && std::convertible_to<std::ranges::range_value_t<T>, Number> &&
 				 (!std::same_as<std::remove_cvref_t<T>, SparseSet>) &&
 				 (!std::same_as<std::remove_cvref_t<T>, BoolVector>)
-	explicit SparseSet(const T& container) {
+	explicit SparseSet(T&& container) {
 		insert(container.begin(), container.end());
 		MATA_ASSERT(consistent());
 	}
