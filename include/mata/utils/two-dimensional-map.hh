@@ -73,10 +73,11 @@ template <typename T, bool TrackInverted = true, size_t MaxMatrixBytes = 200'000
 		using Counter = std::conditional_t<(sizeof(T) <= sizeof(uint32_t)), uint32_t, uint64_t>;
 		/// Number of stored keys.
 		Counter size{0};
-		/// Width of @c Counter - log2 of the number of slots.
+		/// Bits of a 64-bit hash discarded to index the slots: 64 - log2 of the number of slots. Always 64, never
+		///  @c Counter: capacity() must stay representable even when a row has @c Counter-many keys.
 		Counter shift{0};
 
-		size_t capacity() const noexcept { return size_t{1} << (8 * sizeof(Counter) - shift); }
+		size_t capacity() const noexcept { return size_t{1} << (64 - shift); }
 	};
 	using SparseStorage = std::vector<SparseRow>;
 	/// A slot of the single hash table used for the largest dimensions: the packed pair of keys and its value.
@@ -290,13 +291,11 @@ template <typename T, bool TrackInverted = true, size_t MaxMatrixBytes = 200'000
 
 	/// Find the slot of the allocated @p row holding @p key, or the empty slot where @p key would be inserted.
 	static size_t find_sparse_slot(const SparseRow& row, const T key) noexcept {
-		using Counter = typename SparseRow::Counter;
-		// Fibonacci hashing in the width of the keys.
-		constexpr Counter multiplier{
-			static_cast<Counter>(sizeof(Counter) == sizeof(uint32_t) ? 0x9e'37'79'b9ULL : 0x9e'37'79'b9'7f'4a'7c'15ULL)
-		};
+		// Fibonacci hashing in 64 bits, however wide the keys are: the shift counts the bits discarded from this
+		//  64-bit hash, so growing a row cannot shift by the width of a narrower hash (undefined behavior).
+		constexpr uint64_t multiplier{0x9e'37'79'b9'7f'4a'7c'15ULL};
 		const size_t mask{row.capacity() - 1};
-		size_t index{static_cast<Counter>(static_cast<Counter>(key) * multiplier) >> row.shift};
+		size_t index{(static_cast<uint64_t>(key) * multiplier) >> row.shift};
 		while (row.slots[index].key != key && row.slots[index].key != no_value) { index = (index + 1) & mask; }
 		return index;
 	}
@@ -306,9 +305,7 @@ template <typename T, bool TrackInverted = true, size_t MaxMatrixBytes = 200'000
 		SparseRow& row{sparse_storage_[row_key]};
 		if (row.slots == nullptr) {
 			row.slots = make_sparse_slots(min_sparse_row_capacity);
-			row.shift = static_cast<typename SparseRow::Counter>(
-				8 * sizeof(typename SparseRow::Counter) - std::countr_zero(min_sparse_row_capacity)
-			);
+			row.shift = static_cast<typename SparseRow::Counter>(64 - std::countr_zero(min_sparse_row_capacity));
 		}
 		size_t index{find_sparse_slot(row, key)};
 		if (row.slots[index].key == key) { return {row.slots[index], false}; }

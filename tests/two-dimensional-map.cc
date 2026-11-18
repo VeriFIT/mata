@@ -337,6 +337,42 @@ TEST_CASE("mata::utils::TwoDimensionalMap switches to large mode above MaxMatrix
 	}
 }
 
+TEST_CASE("mata::utils::TwoDimensionalMap sparse rows grow with second keys above 2^32") {
+	// The row budget keeps the storage on SparseRows with uint64_t keys: growth, rehashing and missing keys of the
+	//  64-bit Fibonacci probing path.
+	TwoDimensionalMap<uint64_t, true, 512> map(20, uint64_t{1} << 63);
+	constexpr uint64_t high{(uint64_t{1} << 32) + 7};
+	for (uint64_t second = high; second < high + 64; ++second) { map.insert(0, second, second + 1); }
+	for (uint64_t first = 0; first < 20; ++first) {
+		for (uint64_t second = high; second < high + 64; ++second) {
+			map.insert_if_absent(first, second, second + first + 1);
+		}
+	}
+	for (uint64_t first = 0; first < 20; ++first) {
+		for (uint64_t second = high; second < high + 64; ++second) {
+			const uint64_t expected{second + (first == 0 ? uint64_t{1} : first + 1)};
+			CHECK(map.get(first, second) == expected);
+			CHECK(map.get(first, second + 1'000) == TwoDimensionalMap<uint64_t, true, 512>::no_value);
+		}
+	}
+}
+
+TEST_CASE("mata::utils::TwoDimensionalMap sparse rows do not pack their keys") {
+	// Three rows fit the row budget, so the map uses SparseRows even though 3 * 2^63 overflows 64 bits: no packed
+	//  pair of keys exists, and second keys must stay full-width.
+	TwoDimensionalMap<uint64_t, true, 512> map(3, uint64_t{1} << 63);
+	constexpr uint64_t second{(uint64_t{1} << 62) + 13};
+	map.insert(0, second, 7);
+	map.insert(2, second, 8);
+	CHECK(map.get(0, second) == 7);
+	CHECK(map.get(2, second) == 8);
+	CHECK(map.get(1, second) == TwoDimensionalMap<uint64_t, true, 512>::no_value);
+	map.insert_if_absent(0, second, 9);
+	CHECK(map.get(0, second) == 7);
+	CHECK(map.get_first_inverted(7) == 0);
+	CHECK(map.get_second_inverted(7) == second);
+}
+
 TEST_CASE("mata::utils::TwoDimensionalMap keeps one hash table per first key") {
 	// A matrix would need 20 * 100 cells, but 20 rows of 16 Bytes fit into 512 Bytes, so the map uses sparse rows.
 	constexpr uint16_t first_dim_size{20};
@@ -361,7 +397,7 @@ TEST_CASE("mata::utils::TwoDimensionalMap keeps one hash table per first key") {
 		}
 		for (uint16_t first = 0; first < first_dim_size; ++first) {
 			for (uint16_t second = 0; second < second_dim_size; ++second) {
-				const uint16_t value{first * second_dim_size + second};
+				const uint16_t value{static_cast<uint16_t>(first * second_dim_size + second)};
 				CHECK(map.get(first, second) == value);
 				CHECK(map.get_first_inverted(value) == first);
 				CHECK(map.get_second_inverted(value) == second);
