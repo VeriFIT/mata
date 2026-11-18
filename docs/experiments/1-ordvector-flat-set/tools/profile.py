@@ -12,6 +12,7 @@ import glob
 import os
 import pathlib
 import random
+import shlex
 import subprocess
 import sys
 
@@ -74,15 +75,17 @@ def main(binary, out_dir):
     for name, (program, src) in EXPS.items():
         with open(src) as file:
             lines = [line.strip() for line in file if line.strip()]
-        script = ["set +e"]
+        script = []
         for line in rng.sample(lines, min(SAMPLE, len(lines))):
             fields = line.split(";")
             if program is None:
                 args = [fields[0]] + [f for pattern in fields[1:] for f in sorted(glob.glob(pattern))]
             else:
-                args = [program] + fields
-            # Unquoted on purpose: the shell expands the globs of the variadic inputs (noodler-inter).
-            script.append(f"timeout {TIMEOUT} {binary} {' '.join(args)} >/dev/null 2>&1")
+                # The variadic inputs (noodler-inter) hold globs; expand them here so every argument is quoted.
+                args = [program] + [f for field in fields for f in (sorted(glob.glob(field)) or [field])]
+            script.append(f"timeout {TIMEOUT} {shlex.join([binary, *args])} >/dev/null 2>&1")
+        # A timed-out or failing instance is expected; only a failure of perf itself stops the run.
+        script.append("exit 0")
         commands = pathlib.Path(out_dir, f"{name}.sh")
         commands.write_text("\n".join(script) + "\n")
         data = os.path.join(out_dir, f"{name}.data")
