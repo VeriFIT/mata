@@ -239,6 +239,47 @@ TEST_CASE("mata::OnTheFlyAlphabet next symbol value (#759)") {
 		CHECK(alphabet.get_number_of_symbols() == 1);
 	}
 
+	SECTION("an exhausted symbol space is reported instead of handing out DONT_CARE or EPSILON") {
+		// DONT_CARE (EPSILON - 1) and EPSILON are reserved, so an ordinary name must not get either value.
+		for (Symbol top : {Symbol{nft::DONT_CARE}, Symbol{nfa::EPSILON}}) {
+			OnTheFlyAlphabet alphabet{};
+			alphabet.add_new_symbol("top", top);
+			if (top == nft::DONT_CARE) {
+				// The counter reaches DONT_CARE, so no ordinary name may be allocated any more.
+				CHECK_THROWS_AS(alphabet.translate_symb("new"), std::runtime_error);
+				CHECK_THROWS_AS(alphabet.add_new_symbol("new"), std::runtime_error);
+				CHECK(alphabet.translate_symb("top") == top);
+				CHECK(alphabet.get_number_of_symbols() == 1);
+			} else {
+				// An explicitly bound EPSILON never advances the counter; the low values stay available.
+				CHECK(alphabet.translate_symb("new") == 0);
+			}
+		}
+	}
+
+	SECTION("erasing one of two names of a symbol does not hand its value out again") {
+		for (bool by_symbol : {false, true}) {
+			OnTheFlyAlphabet alphabet{};
+			alphabet.add_new_symbol("a", 5);
+			alphabet.add_new_symbol("b", 5);
+			CHECK(alphabet.get_next_value() == 6);
+			if (by_symbol) {
+				CHECK(alphabet.erase(Symbol{5}) == 1);
+			} else {
+				CHECK(alphabet.erase("a") == 1);
+			}
+			// The value 5 still belongs to the other name, so it must not be reused for a new letter.
+			CHECK(alphabet.get_next_value() == 6);
+			if (by_symbol) {
+				CHECK(alphabet.erase(Symbol{5}) == 1);
+			} else {
+				CHECK(alphabet.erase("b") == 1);
+			}
+			// The last name of the top value is gone, so its value is handed out again.
+			CHECK(alphabet.translate_symb("new") == 5);
+		}
+	}
+
 	SECTION("an explicitly added EPSILON does not wrap the counter") {
 		OnTheFlyAlphabet alphabet{};
 		alphabet.add_new_symbol("a", 3);

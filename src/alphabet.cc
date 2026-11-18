@@ -224,9 +224,11 @@ void mata::OnTheFlyAlphabet::update_next_symbol_value(const Symbol value) {
 }
 
 void mata::OnTheFlyAlphabet::throw_if_symbol_space_exhausted(const std::string_view name) const {
-	if (next_symbol_value_ >= nfa::EPSILON) {
+	// DONT_CARE (EPSILON - 1) is reserved as well: handing it to an ordinary name would make its NFT transitions
+	// wildcards.
+	if (next_symbol_value_ >= nft::DONT_CARE) {
 		throw std::runtime_error(
-			"Symbol space exhausted; cannot allocate a new symbol for '" + std::string{name} + "'."
+			"the alphabet has no symbol left for the name '" + std::string{name} + "' (space exhausted below DONT_CARE)"
 		);
 	}
 }
@@ -344,7 +346,10 @@ size_t mata::EnumAlphabet::erase(const Symbol symbol) {
 size_t mata::OnTheFlyAlphabet::erase(const Symbol symbol) {
 	const SymbolNames* const names{find_names(symbol)};
 	if (names == nullptr) { return 0; }
-	if (next_symbol_value_ != 0 && symbol == next_symbol_value_ - 1) { --next_symbol_value_; }
+	// Reclaim the value only once its last name is gone; other names may still map to it.
+	if (names->num_of_names == 1 && next_symbol_value_ != 0 && symbol == next_symbol_value_ - 1) {
+		--next_symbol_value_;
+	}
 	const auto name_it{symbol_map_.find(*names->name)};
 	unindex_name(name_it);
 	symbol_map_.erase(name_it);
@@ -353,7 +358,11 @@ size_t mata::OnTheFlyAlphabet::erase(const Symbol symbol) {
 
 size_t mata::OnTheFlyAlphabet::erase(const std::string& symbol_name) {
 	if (const auto found_it{symbol_map_.find(symbol_name)}; found_it != symbol_map_.end()) {
-		if (next_symbol_value_ != 0 && found_it->second == next_symbol_value_ - 1) { --next_symbol_value_; }
+		const SymbolNames* const names{find_names(found_it->second)};
+		if (names != nullptr && names->num_of_names == 1 && next_symbol_value_ != 0 &&
+			found_it->second == next_symbol_value_ - 1) {
+			--next_symbol_value_;
+		}
 		unindex_name(found_it);
 		symbol_map_.erase(found_it);
 		return 1;

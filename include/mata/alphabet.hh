@@ -465,8 +465,8 @@ class OnTheFlyAlphabet : public Alphabet {
 	Symbol get_next_value() const { return next_symbol_value_; }
 
 	/**
-	 * Get the number of existing symbols, epsilon symbols excluded.
-	 * @return The number of symbols.
+	 * Get the number of registered names, including aliases and explicit mappings (also ones with a reserved value).
+	 * @return The number of names in the symbol map.
 	 */
 	size_t get_number_of_symbols() const { return symbol_map_.size(); }
 
