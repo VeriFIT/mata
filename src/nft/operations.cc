@@ -223,8 +223,22 @@ Nft reduce_by_merge_and_simulation(const Nft& aut, StateRenaming& state_renaming
 /// against aut.levels.num_of_levels, and the general post()-based path's edge-case handling (e.g. an empty delta)
 /// likewise lives at that shared level rather than being duplicated here.
 /// @warning Correct only under JumpMode::RepeatSymbol or JumpMode::NoJump, and only on an automaton without epsilon
-/// cycles. This search keeps no visited set. That is what makes it fast.
-bool is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::vector<Word>& level_words, const bool match_prefix) {
+/// cycles. This search keeps no visited set. It returns nullopt once it has expanded more configurations than can be
+/// distinct; the caller must then use the general search, which deduplicates them.
+std::optional<bool>
+	is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::vector<Word>& level_words, const bool match_prefix) {
+	// The exact configuration space has (num_of_states + 1) times one position past each word symbol configurations.
+	// Once it is exceeded, repeated expansion is certain. Saturation only postpones the conservative fallback when the
+	// space is too large to count anyway; it does not change the answer.
+	uint64_t max_num_configurations{aut.num_of_states() + 1};
+	for (const Word& level_word : level_words) {
+		const uint64_t radix{level_word.size() + 1};
+		if (max_num_configurations > std::numeric_limits<uint64_t>::max() / radix) {
+			max_num_configurations = std::numeric_limits<uint64_t>::max();
+			break;
+		}
+		max_num_configurations *= radix;
+	}
 	std::vector<Word::const_iterator> track_words_begins(aut.levels.num_of_levels);
 	for (size_t track{0}; track < aut.levels.num_of_levels; ++track) {
 		track_words_begins[track] = level_words[track].begin();
@@ -252,7 +266,10 @@ bool is_in_lang_by_levels_repeat_symbol(const Nft& aut, const std::vector<Word>&
 	using StateWordBeginsPair = std::pair<State, std::vector<Word::const_iterator>>;
 	std::deque<StateWordBeginsPair> worklist{};
 	for (const State state : aut.initial) { worklist.emplace_back(state, track_words_begins); }
+	uint64_t num_expanded_configurations{0};
 	while (!worklist.empty()) {
+		if (num_expanded_configurations == max_num_configurations) { return std::nullopt; }
+		++num_expanded_configurations;
 		const auto [state, words_its]{std::move(worklist.front())};
 		worklist.pop_front();
 		const Level level = aut.levels[state];
@@ -1459,17 +1476,21 @@ bool Nft::is_in_lang_by_levels(
 
 	// JumpMode::RepeatSymbol (the common mode) is handled by the dedicated hand-rolled worklist: it is a constant
 	// factor faster than the general post()-based path on this mode. What buys that speed is keeping no visited set.
-	// The caller is trusted on the absence of epsilon cycles, it would be too expensive to check for them every time.
+	// Once duplicate expansion is certain, deduplication costs less than revisiting an exponential configuration tree.
+	// The caller is trusted on the absence of epsilon cycles; it would be too expensive to check for them every time.
 	if ((jump_mode == JumpMode::RepeatSymbol || jump_mode == JumpMode::NoJump) && !has_epsilon_cycles) {
 		MATA_ASSERT(!has_epsilon_cycle(*this));
-		return is_in_lang_by_levels_repeat_symbol(*this, level_words, match_prefix);
+		if (const std::optional<bool> accepted{is_in_lang_by_levels_repeat_symbol(*this, level_words, match_prefix)};
+			accepted.has_value()) {
+			return *accepted;
+		}
 	}
 
-	// Every other jump mode goes through the general post()-based algorithm (post() interprets jump_mode itself,
-	// including the DONT_CARE-padded jumps of JumpMode::AppendDontCares). Membership is a thin consumer of the
-	// reachability primitive post(): the level words are in the language iff a final state is reachable after
-	// consuming all of them; for a prefix query it suffices to reach a final zero-level state after consuming any
-	// prefix.
+	// Every other jump mode, and a duplicate-heavy membership search, goes through the general post()-based algorithm
+	// (post() interprets jump_mode itself, including the DONT_CARE-padded jumps of JumpMode::AppendDontCares).
+	// Membership is a thin consumer of the reachability primitive post(): the level words are in the language iff a
+	// final state is reachable after consuming all of them; for a prefix query it suffices to reach a final zero-level
+	// state after consuming any prefix.
 	//
 	// post() has no notion of final states, so on its own it would explore the whole reachable configuration space.
 	// We give it a stop condition that fires the moment a final zero-level state is reached (with all input
