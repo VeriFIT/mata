@@ -2931,6 +2931,33 @@ TEST_CASE("mata::nft::Nft::is_in_lang[_prefix][_by_levels]()") {
 	}
 }
 
+TEST_CASE("mata::nft membership after the expansion budget also honors prefix matching") {
+	Nft nft{Nft::with_levels(2)};
+	const State q0 = nft.add_state_with_level(0, 0);
+	const State a1 = nft.add_state_with_level(1, 1);
+	const State a2 = nft.add_state_with_level(1, 1);
+	const State accept = nft.add_state_with_level(0, 0);
+	nft.initial.insert(q0);
+	nft.final.insert(accept);
+	nft.delta.add(q0, 'a', a1);
+	nft.delta.add(q0, 'a', a2);
+	nft.delta.add(a1, 'a', q0);
+	nft.delta.add(a2, 'a', q0);
+	nft.delta.add(q0, 'b', accept);
+	nft.delta.add(accept, 'b', accept);
+
+	// 'b' arrives after many duplicate expansions, with 'c' unread on both tracks.
+	std::vector<Word> word(2, Word(64, 'a'));
+	word[0].push_back('b');
+	word[1].push_back('b');
+	word[0].push_back('c');
+	word[1].push_back('c');
+	for (const JumpMode mode : {JumpMode::RepeatSymbol, JumpMode::NoJump}) {
+		CHECK(nft.is_in_lang_by_levels(word, true, mode, false));
+		CHECK_FALSE(nft.is_in_lang_by_levels(word, false, mode, false));
+	}
+}
+
 TEST_CASE("mata::nft::Nft::read_word[_by_levels]()") {
 	Nft nft{Nft::with_levels(3)};
 
