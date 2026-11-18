@@ -249,6 +249,9 @@ Nfa parse_from_mata(
  *
  * @param regex regular expression
  * @param reduce whether to reduce the NFA using simulation reduction; costly for large regexes
+ *
+ * @throw std::invalid_argument on a regex RE2 cannot parse or cannot compile within its program memory budget.
+ * @throw std::runtime_error on a regex program containing an instruction the converter does not support.
  */
 Nfa create_from_regex(const std::string& regex, bool reduce = true);
 
@@ -259,6 +262,8 @@ Nfa create_from_regex(const std::string& regex, bool reduce = true);
  *
  * @param regex regular expression
  * @param options conversion and post-processing options
+ * @throw std::invalid_argument on a regex RE2 cannot parse or cannot compile within its program memory budget.
+ * @throw std::runtime_error on a regex program containing an instruction the converter does not support.
  */
 Nfa create_from_regex(const std::string& regex, const parser::Re2Options& options);
 
