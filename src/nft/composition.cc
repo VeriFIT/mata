@@ -2436,7 +2436,8 @@ class RoundLookahead {
 		const bool chooses_again
 	)
 		: facts_(num_of_places, ANYTHING),
-		  sync_symbols_(num_of_places, ~uint64_t{0}) {
+		  // Signatures are written only for real states; cursor entries fall back to ALL_SYMBOLS in sync_symbols_of().
+		  sync_symbols_(nft.num_of_states(), ~uint64_t{0}) {
 		const size_t num_of_levels{nft.levels.num_of_levels};
 		BoolVector is_sync(num_of_levels, false);
 		for (const Level level : sync_levels) { is_sync[level] = true; }

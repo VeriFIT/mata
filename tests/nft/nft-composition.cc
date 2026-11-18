@@ -3210,6 +3210,37 @@ TEST_CASE("mata::nft::algorithms::compose_general_direct() - issue #814") {
 		CHECK(direct->is_in_lang_by_levels({{a, a}}));
 	}
 
+	SECTION("a jump is chosen again for a round its earlier fixed jumps cannot cover") {
+		// LHS has four levels, RHS three, synchronized on {1,2,3} against {0,1,2}. The LHS starts on 'a' and can only
+		//  continue on 'x' at the first synchronization level, which the RHS labels 'x','a','a': the 'a' jump cannot
+		//  match that, so the all-bits fallback must let it choose its jumps again.
+		Nft jumps{Nft::with_levels(4)};
+		const State start = jumps.add_state_with_level(0);
+		const State accept = jumps.add_state_with_level(0);
+		const State dead = jumps.add_state_with_level(3);
+		jumps.initial.insert(start);
+		jumps.final.insert(accept);
+		jumps.delta.add(start, 'a', accept);
+		jumps.delta.add(start, 'x', dead);
+		Nft round{Nft::with_levels(3)};
+		const State q0 = round.add_state_with_level(0);
+		const State q1 = round.add_state_with_level(1);
+		const State q2 = round.add_state_with_level(2);
+		const State q3 = round.add_state_with_level(0);
+		round.initial.insert(q0);
+		round.final.insert(q3);
+		round.delta.add(q0, 'x', q1);
+		round.delta.add(q1, 'a', q2);
+		round.delta.add(q2, 'a', q3);
+
+		const std::optional<Nft> direct{algorithms::compose_general_direct(jumps, round, {1, 2, 3}, {0, 1, 2}, false)};
+		REQUIRE(direct.has_value());
+		CHECK(
+			are_equivalent(*direct, algorithms::compose_general_reference(jumps, round, {1, 2, 3}, {0, 1, 2}, false))
+		);
+		CHECK(direct->is_in_lang_by_levels({{'a'}, {'x'}, {'a'}, {'a'}}));
+	}
+
 	SECTION("outside the domain") {
 		// A transition back to the level it starts on.
 		Nft backwards{Nft::with_levels({2, {0, 1, 1}}, 3, {0}, {0})};
