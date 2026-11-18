@@ -1416,11 +1416,14 @@ def test_reduce_errors():
     nfa.add_transition(0, 0, 1)
     with pytest.raises(RuntimeError, match="unknown value"):
         mata_nfa.reduce(nfa, {"algorithm": "unknown"})
-    for algorithm in ("sat", "qbf"):
-        with pytest.raises(RuntimeError, match="unknown type"):
-            mata_nfa.reduce(nfa, {"algorithm": algorithm, "type": "after"})
-    with pytest.raises(RuntimeError, match="unknown type"):
-        mata_nfa.reduce(nfa, {"algorithm": "qbf", "type": "dfa"})
+    for params in (
+        {"algorithm": "sat", "type": "after"},
+        {"algorithm": "qbf", "type": "after"},
+        {"algorithm": "qbf", "type": "dfa"},
+    ):
+        with pytest.raises(RuntimeError, match="unknown type") as error:
+            mata_nfa.reduce(nfa, params)
+        assert not isinstance(error.value, mata_nfa.ExternalSolverNotFound)
     with pytest.raises(RuntimeError, match="does not support state_renaming"):
         mata_nfa.reduce_with_state_map(nfa, {"algorithm": "residual", "type": "after", "direction": "forward"})
 
