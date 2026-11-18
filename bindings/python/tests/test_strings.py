@@ -1,6 +1,8 @@
 import libmata.nfa.nfa as mata_nfa
 import libmata.nfa.strings as mata_strings
 import libmata.nft.nft as mata_nft
+import libmata.utils as mata_utils
+import pytest
 from libmata import alphabets
 
 
@@ -274,6 +276,118 @@ def test_noodlify_for_transducer_lets_other_threads_run(runs_without_the_gil):
     identity_nft.insert_identity(0, [0, 1], mata_nft.JumpMode.NoJump)
     left, right = _random_nfa(1, 22), _random_nfa(2, 22)
     assert runs_without_the_gil(lambda: mata_strings.noodlify_for_transducer(identity_nft, [left], [right]))
+
+
+needs_generator_support = pytest.mark.skipif(
+    not mata_utils.HAS_GENERATOR_SUPPORT,
+    reason="the noodlify_*_lazy() functions need a standard library implementing std::generator",
+)
+
+
+def _two_level_identity():
+    identity_nft = mata_nft.Nft(1, num_of_levels=2)
+    identity_nft.make_initial_state(0)
+    identity_nft.make_final_state(0)
+    identity_nft.insert_identity(0, [0, 1], mata_nft.JumpMode.NoJump)
+    return identity_nft
+
+
+def _eager_and_lazy_noodlifications():
+    """Pairs of a list-returning noodlification and its lazy counterpart, each taking an order and a seed."""
+    aut = _random_nfa(3, 8)
+    for source, target in ((2, 3), (2, 4), (5, 6), (4, 6)):
+        aut.add_transition(source, 200, target)
+    identity_nft = _two_level_identity()
+    return [
+        (
+            lambda: mata_strings.noodlify(aut, 200),
+            lambda order, seed: mata_strings.noodlify_lazy(aut, 200, order=order, seed=seed),
+        ),
+        (
+            lambda: mata_strings.noodlify_mult_eps(aut, {200}),
+            lambda order, seed: mata_strings.noodlify_mult_eps_lazy(aut, {200}, order=order, seed=seed),
+        ),
+        (
+            # Fresh left sides: the noodlification unifies their initial and final states in place.
+            lambda: mata_strings.noodlify_for_equation([_random_nfa(4, 6), _random_nfa(5, 6)], _random_nfa(6, 9)),
+            lambda order, seed: mata_strings.noodlify_for_equation_lazy(
+                [_random_nfa(4, 6), _random_nfa(5, 6)], _random_nfa(6, 9), order=order, seed=seed
+            ),
+        ),
+        (
+            lambda: mata_strings.noodlify_for_equation_sides(
+                [_random_nfa(4, 6), _random_nfa(5, 6)], [_random_nfa(6, 9)]
+            ),
+            lambda order, seed: mata_strings.noodlify_for_equation_sides_lazy(
+                [_random_nfa(4, 6), _random_nfa(5, 6)], [_random_nfa(6, 9)], order=order, seed=seed
+            ),
+        ),
+        (
+            lambda: mata_strings.noodlify_for_transducer(
+                identity_nft, [_random_nfa(4, 6), _random_nfa(5, 6)], [_random_nfa(6, 9)]
+            ),
+            lambda order, seed: mata_strings.noodlify_for_transducer_lazy(
+                identity_nft, [_random_nfa(4, 6), _random_nfa(5, 6)], [_random_nfa(6, 9)], order=order, seed=seed
+            ),
+        ),
+    ]
+
+
+@needs_generator_support
+def test_lazy_noodlifications_emit_the_noodles_of_the_eager_ones():
+    for eager, lazy in _eager_and_lazy_noodlifications():
+        expected = _snapshot(eager())
+        assert len(expected) > 1
+        assert _snapshot(list(lazy(mata_strings.NoodleOrder.Forward, 0))) == expected
+        assert _snapshot(list(lazy(mata_strings.NoodleOrder.Reverse, 0))) == expected[::-1]
+        for order in (mata_strings.NoodleOrder.SmallestFirst, mata_strings.NoodleOrder.LargestFirst):
+            assert sorted(_snapshot(list(lazy(order, 0)))) == sorted(expected)
+        random_order = _snapshot(list(lazy(mata_strings.NoodleOrder.Random, 7)))
+        assert sorted(random_order) == sorted(expected)
+        assert _snapshot(list(lazy(mata_strings.NoodleOrder.Random, 7))) == random_order
+        # Stopping early takes the first noodle only.
+        assert _snapshot(next(lazy(mata_strings.NoodleOrder.Forward, 0))) == expected[0]
+
+
+@needs_generator_support
+def test_consecutive_lazy_noodles_share_the_wrapped_segments():
+    nfa = mata_nfa.Nfa(5)
+    nfa.make_initial_state(0)
+    nfa.make_final_state(4)
+    nfa.add_transition(0, 1, 1)
+    nfa.add_transition(1, 200, 2)
+    nfa.add_transition(1, 200, 3)
+    nfa.add_transition(2, 2, 4)
+    nfa.add_transition(3, 3, 4)
+
+    noodles = list(mata_strings.noodlify_lazy(nfa, 200))
+    mult_eps_noodles = [
+        [segment for segment, _ in noodle] for noodle in mata_strings.noodlify_mult_eps_lazy(nfa, {200})
+    ]
+    for result in (noodles, mult_eps_noodles):
+        assert len(result) == 2
+        assert result[0][0] is result[1][0]
+        assert result[0][1] is not result[1][1]
+
+
+@needs_generator_support
+def test_lazy_noodles_are_taken_without_the_gil(runs_without_the_gil):
+    left, right = _random_nfa(1, 100), _random_nfa(2, 100)
+    assert runs_without_the_gil(lambda: list(mata_strings.noodlify_for_equation_sides_lazy([left], [right])))
+    small_left, small_right = _random_nfa(1, 22), _random_nfa(2, 22)
+    identity_nft = _two_level_identity()
+    assert runs_without_the_gil(
+        lambda: list(mata_strings.noodlify_for_transducer_lazy(identity_nft, [small_left], [small_right]))
+    )
+
+
+@pytest.mark.skipif(
+    mata_utils.HAS_GENERATOR_SUPPORT,
+    reason="the noodlify_*_lazy() functions only fail without a standard library implementing std::generator",
+)
+def test_lazy_noodlify_without_generator_support():
+    with pytest.raises(RuntimeError):
+        mata_strings.noodlify_lazy(_random_nfa(1, 4), 200)
 
 
 def test_process_eps_map():

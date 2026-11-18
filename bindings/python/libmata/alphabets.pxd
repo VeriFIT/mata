@@ -14,7 +14,7 @@ cdef extern from "mata/alphabet.hh" namespace "mata":
 
     cdef cppclass CConstAlphabet "const mata::Alphabet"
 
-cdef extern from "mata/utils/lazy-word-generator.hh" namespace "mata::utils":
+cdef extern from "mata/utils/lazy-generator.hh" namespace "mata::utils":
     # Constructed only on the C++ side, via e.g. CNfa's/CNft's get_words_lazy_ptr() — never directly from
     #  Cython, since std::generator (what it wraps) is move-only and not default-constructible, which
     #  Cython's own code generation cannot accommodate as an intermediate value.

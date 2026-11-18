@@ -7,6 +7,7 @@
 #include <random>
 #include <ranges>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <unordered_set>
@@ -1026,4 +1027,136 @@ std::generator<TransducerNoodle> noodlify_for_transducer_lazy(
 }
 MATA_GENERATOR_COROUTINE_END
 #endif
+
+namespace {
+#if MATA_HAS_GENERATOR_SUPPORT
+template <class T> utils::LazyGenerator<T>* heap_generator(std::generator<T>&& generator) {
+	return new utils::LazyGenerator<T>{std::move(generator)};
+}
+
+// A coroutine copies its by-value parameters into its frame, but keeps its by-reference ones as references. The
+//  bindings create a generator in one call and take the noodles from it in later ones, so every argument the
+//  reference-based lazy noodlification functions read after their first suspension has to be owned by a frame that
+//  outlives the call: these coroutines own their arguments and drive those functions from their own frame.
+MATA_GENERATOR_COROUTINE_BEGIN
+std::generator<Noodle> owned_noodles(
+	std::vector<std::shared_ptr<Nfa>> lhs_automata,
+	std::shared_ptr<Nfa> rhs_automaton,
+	ParameterMap params,
+	const bool include_empty,
+	const NoodleOrder order
+) {
+	std::vector<Nfa*> lhs_pointers;
+	lhs_pointers.reserve(lhs_automata.size());
+	for (const std::shared_ptr<Nfa>& lhs_aut : lhs_automata) { lhs_pointers.push_back(lhs_aut.get()); }
+	for (Noodle noodle : noodlify_for_equation_lazy(lhs_pointers, *rhs_automaton, include_empty, params, order)) {
+		co_yield std::move(noodle);
+	}
+}
+
+std::generator<NoodleWithEpsilonsCounter> owned_noodles(
+	std::vector<std::shared_ptr<Nfa>> lhs_automata,
+	std::vector<std::shared_ptr<Nfa>> rhs_automata,
+	ParameterMap params,
+	const bool include_empty,
+	const NoodleOrder order
+) {
+	for (NoodleWithEpsilonsCounter noodle :
+		 noodlify_for_equation_lazy(lhs_automata, rhs_automata, include_empty, params, order)) {
+		co_yield std::move(noodle);
+	}
+}
+
+std::generator<TransducerNoodle> owned_noodles(
+	std::shared_ptr<Nft> nft,
+	std::vector<std::shared_ptr<Nfa>> input_automata,
+	std::vector<std::shared_ptr<Nfa>> output_automata,
+	const bool reduce_intersection,
+	const bool use_homomorphic_heuristic,
+	const NoodleOrder order
+) {
+	for (TransducerNoodle noodle : noodlify_for_transducer_lazy(
+			 nft, input_automata, output_automata, reduce_intersection, use_homomorphic_heuristic, order
+		 )) {
+		co_yield std::move(noodle);
+	}
+}
+MATA_GENERATOR_COROUTINE_END
+#else
+[[noreturn]] void no_generator_support(const std::string& function) {
+	throw std::runtime_error("mata was built without std::generator support, " + function + "() is unavailable");
+}
+#endif
+} // namespace
+
+utils::LazyGenerator<Noodle>* noodlify_lazy_ptr(
+	[[maybe_unused]] const SegNfa& aut,
+	[[maybe_unused]] const Symbol epsilon,
+	[[maybe_unused]] const bool include_empty,
+	[[maybe_unused]] const NoodleOrder order
+) {
+#if MATA_HAS_GENERATOR_SUPPORT
+	return heap_generator(noodlify_lazy(aut, epsilon, include_empty, order));
+#else
+	no_generator_support("noodlify_lazy");
+#endif
+}
+
+utils::LazyGenerator<NoodleWithEpsilonsCounter>* noodlify_mult_eps_lazy_ptr(
+	[[maybe_unused]] const SegNfa& aut,
+	[[maybe_unused]] const std::set<Symbol>& epsilons,
+	[[maybe_unused]] const bool include_empty,
+	[[maybe_unused]] const NoodleOrder order
+) {
+#if MATA_HAS_GENERATOR_SUPPORT
+	return heap_generator(noodlify_mult_eps_lazy(aut, epsilons, include_empty, order));
+#else
+	no_generator_support("noodlify_mult_eps_lazy");
+#endif
+}
+
+utils::LazyGenerator<Noodle>* noodlify_for_equation_lazy_ptr(
+	[[maybe_unused]] const std::vector<std::shared_ptr<Nfa>>& lhs_automata,
+	[[maybe_unused]] const std::shared_ptr<Nfa>& rhs_automaton,
+	[[maybe_unused]] const bool include_empty,
+	[[maybe_unused]] const ParameterMap& params,
+	[[maybe_unused]] const NoodleOrder order
+) {
+#if MATA_HAS_GENERATOR_SUPPORT
+	return heap_generator(owned_noodles(lhs_automata, rhs_automaton, params, include_empty, order));
+#else
+	no_generator_support("noodlify_for_equation_lazy");
+#endif
+}
+
+utils::LazyGenerator<NoodleWithEpsilonsCounter>* noodlify_for_equation_lazy_ptr(
+	[[maybe_unused]] const std::vector<std::shared_ptr<Nfa>>& lhs_automata,
+	[[maybe_unused]] const std::vector<std::shared_ptr<Nfa>>& rhs_automata,
+	[[maybe_unused]] const bool include_empty,
+	[[maybe_unused]] const ParameterMap& params,
+	[[maybe_unused]] const NoodleOrder order
+) {
+#if MATA_HAS_GENERATOR_SUPPORT
+	return heap_generator(owned_noodles(lhs_automata, rhs_automata, params, include_empty, order));
+#else
+	no_generator_support("noodlify_for_equation_lazy");
+#endif
+}
+
+utils::LazyGenerator<TransducerNoodle>* noodlify_for_transducer_lazy_ptr(
+	[[maybe_unused]] const std::shared_ptr<Nft>& nft,
+	[[maybe_unused]] const std::vector<std::shared_ptr<Nfa>>& input_automata,
+	[[maybe_unused]] const std::vector<std::shared_ptr<Nfa>>& output_automata,
+	[[maybe_unused]] const bool reduce_intersection,
+	[[maybe_unused]] const bool use_homomorphic_heuristic,
+	[[maybe_unused]] const NoodleOrder order
+) {
+#if MATA_HAS_GENERATOR_SUPPORT
+	return heap_generator(
+		owned_noodles(nft, input_automata, output_automata, reduce_intersection, use_homomorphic_heuristic, order)
+	);
+#else
+	no_generator_support("noodlify_for_transducer_lazy");
+#endif
+}
 } // namespace mata::applications::strings::seg_nfa

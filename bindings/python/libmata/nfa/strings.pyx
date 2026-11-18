@@ -110,13 +110,18 @@ cdef class ShortestWordsMap:
             result = self.thisptr.get_shortest_words_from(StateSet(c_states_vec))
         return {tuple(word) for word in result}
 
-cdef _wrap_noodle_segment(mata_strings.CNoodleSegment& c_segment, dict wrapped):
+cdef _wrap_noodle_segment(mata_strings.CNoodleSegment& c_segment, dict wrapped, dict previous = None):
     """Wrap a trimmed copy of `c_segment`, once per (automaton, initial state) in `wrapped`.
 
-    Noodles share segments: the copy is made once per call and the same `Nfa` returned for every occurrence.
+    Noodles share segments: the copy is made once per call and the same `Nfa` returned for every occurrence. A lazy
+    noodlification passes the wrappers of the previous noodle as `previous` instead of keeping those of all noodles.
     """
     key = (<size_t>c_segment.automaton.get(), c_segment.initial)
     segment = wrapped.get(key)
+    if segment is None and previous is not None:
+        segment = previous.get(key)
+        if segment is not None:
+            wrapped[key] = segment
     if segment is None:
         segment = mata_nfa.Nfa()
         (<mata_nfa.Nfa>segment).thisptr = make_shared[CNfa](c_segment.to_nfa())
@@ -216,17 +221,18 @@ def noodlify_for_equation(left_side_automata: list, mata_nfa.Nfa right_side_auto
     return noodle_segments
 
 
+cdef list _wrap_noodle_with_epsilons_counter(
+    mata_strings.CNoodleWithEpsilonsCounter& c_noodle, dict wrapped, dict previous = None
+):
+    return [
+        (_wrap_noodle_segment(c_segment_with_counter.first, wrapped, previous), list(c_segment_with_counter.second))
+        for c_segment_with_counter in c_noodle
+    ]
+
+
 cdef _wrap_noodles_with_epsilons_counter(vector[mata_strings.CNoodleWithEpsilonsCounter]& c_noodles):
     wrapped = {}
-    noodles = []
-    for c_noodle in c_noodles:
-        noodle = []
-        for c_segment_with_counter in c_noodle:
-            noodle.append(
-                (_wrap_noodle_segment(c_segment_with_counter.first, wrapped), list(c_segment_with_counter.second))
-            )
-        noodles.append(noodle)
-    return noodles
+    return [_wrap_noodle_with_epsilons_counter(c_noodle, wrapped) for c_noodle in c_noodles]
 
 
 def noodlify_mult_eps(mata_nfa.Nfa aut, epsilons, include_empty = False):
@@ -308,20 +314,274 @@ def noodlify_for_transducer(
         c_noodles = mata_strings.c_noodlify_for_transducer(
             c_nft, c_input_automata, c_output_automata, c_reduce_intersection, c_use_homomorphic_heuristic
         )
-    noodles = []
-    cdef mata_strings.CTransducerNoodle c_noodle
+    return [_wrap_transducer_noodle(c_noodle) for c_noodle in c_noodles]
+
+
+cdef list _wrap_transducer_noodle(mata_strings.CTransducerNoodle& c_noodle):
+    noodle = []
     cdef size_t i
-    for c_noodle in c_noodles:
-        noodle = []
-        for i in range(c_noodle.size()):
-            transducer = mata_nft.Nft.__new__(mata_nft.Nft)
-            (<mata_nft.Nft>transducer).thisptr = c_noodle[i].transducer
-            input_aut = mata_nfa.Nfa()
-            (<mata_nfa.Nfa>input_aut).thisptr = c_noodle[i].input_aut
-            output_aut = mata_nfa.Nfa()
-            (<mata_nfa.Nfa>output_aut).thisptr = c_noodle[i].output_aut
-            noodle.append((transducer, input_aut, c_noodle[i].input_index, output_aut, c_noodle[i].output_index))
-        noodles.append(noodle)
+    for i in range(c_noodle.size()):
+        transducer = mata_nft.Nft.__new__(mata_nft.Nft)
+        (<mata_nft.Nft>transducer).thisptr = c_noodle[i].transducer
+        input_aut = mata_nfa.Nfa()
+        (<mata_nfa.Nfa>input_aut).thisptr = c_noodle[i].input_aut
+        output_aut = mata_nfa.Nfa()
+        (<mata_nfa.Nfa>output_aut).thisptr = c_noodle[i].output_aut
+        noodle.append((transducer, input_aut, c_noodle[i].input_index, output_aut, c_noodle[i].output_index))
+    return noodle
+
+
+class NoodleOrder(IntEnum):
+    """The order in which the `noodlify_*_lazy()` functions emit the noodles.
+
+    The search is depth-first over the segments and orders the candidates for the next segment at every node, so the
+    size orders are greedy: the candidate ranked first leads to the next noodle, not necessarily to the best one.
+    """
+    Forward = <int>mata_strings.NoodleOrderForward
+    """The order of the list-returning functions."""
+    Reverse = <int>mata_strings.NoodleOrderReverse
+    """The reverse of `Forward`."""
+    SmallestFirst = <int>mata_strings.NoodleOrderSmallestFirst
+    """The candidate whose segment has the fewest states first, ties in the forward order."""
+    LargestFirst = <int>mata_strings.NoodleOrderLargestFirst
+    """The candidate whose segment has the most states first, ties in the forward order."""
+    Random = <int>mata_strings.NoodleOrderRandom
+    """The candidates of every node shuffled by a generator seeded with `seed`."""
+
+
+cdef mata_strings.CNoodleOrder _c_noodle_order(order, seed):
+    cdef mata_strings.CNoodleOrder c_order
+    c_order.kind = <mata_strings.CNoodleOrderKind><int>NoodleOrder(order)
+    c_order.seed = seed
+    return c_order
+
+
+cdef class _LazyNoodles:
+    """Iterator over the noodles of `noodlify_lazy()` and `noodlify_for_equation_lazy()`.
+
+    Consecutive noodles share the `Nfa` of a segment they share; the wrappers of older noodles are not kept, so the
+    memory is bounded by the current noodle and the search instead of all noodles.
+    """
+    cdef mata_strings.CLazyNoodleGenerator* it
+    cdef dict previous
+
+    def __dealloc__(self):
+        del self.it
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        cdef mata_strings.CNoodle c_noodle
+        if self.it.done():
+            raise StopIteration
+        with nogil:
+            c_noodle = self.it.next()
+        wrapped = {}
+        noodle = [_wrap_noodle_segment(c_segment, wrapped, self.previous) for c_segment in c_noodle]
+        self.previous = wrapped
+        return noodle
+
+
+cdef _LazyNoodles _lazy_noodles(mata_strings.CLazyNoodleGenerator* it):
+    cdef _LazyNoodles noodles = _LazyNoodles.__new__(_LazyNoodles)
+    noodles.it = it
+    noodles.previous = {}
+    return noodles
+
+
+cdef class _LazyNoodlesWithEpsilonsCounter:
+    """Iterator over the noodles of `noodlify_mult_eps_lazy()` and `noodlify_for_equation_sides_lazy()`; see
+    `_LazyNoodles`."""
+    cdef mata_strings.CLazyNoodleWithEpsilonsCounterGenerator* it
+    cdef dict previous
+
+    def __dealloc__(self):
+        del self.it
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        cdef mata_strings.CNoodleWithEpsilonsCounter c_noodle
+        if self.it.done():
+            raise StopIteration
+        with nogil:
+            c_noodle = self.it.next()
+        wrapped = {}
+        noodle = _wrap_noodle_with_epsilons_counter(c_noodle, wrapped, self.previous)
+        self.previous = wrapped
+        return noodle
+
+
+cdef _LazyNoodlesWithEpsilonsCounter _lazy_noodles_with_epsilons_counter(
+    mata_strings.CLazyNoodleWithEpsilonsCounterGenerator* it
+):
+    cdef _LazyNoodlesWithEpsilonsCounter noodles = _LazyNoodlesWithEpsilonsCounter.__new__(
+        _LazyNoodlesWithEpsilonsCounter
+    )
+    noodles.it = it
+    noodles.previous = {}
+    return noodles
+
+
+cdef class _LazyTransducerNoodles:
+    """Iterator over the noodles of `noodlify_for_transducer_lazy()`."""
+    cdef mata_strings.CLazyTransducerNoodleGenerator* it
+
+    def __dealloc__(self):
+        del self.it
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        cdef mata_strings.CTransducerNoodle c_noodle
+        if self.it.done():
+            raise StopIteration
+        with nogil:
+            c_noodle = self.it.next()
+        return _wrap_transducer_noodle(c_noodle)
+
+
+def noodlify_lazy(mata_nfa.Nfa aut, Symbol symbol, include_empty = False, order = NoodleOrder.Forward, seed = 0):
+    """Emit the noodles of `noodlify()` one at a time.
+
+    The search runs only as far as the noodles are taken, keeping one noodle and the search in memory instead of all
+    noodles. The automaton is copied in the call, so it may be released right after it.
+
+    Raises `RuntimeError` when mata was built with a standard library that does not implement `std::generator`.
+
+    :param mata_nfa.Nfa aut: Segment automaton to noodlify.
+    :param Symbol symbol: Epsilon symbol to noodlify for.
+    :param bool include_empty: Whether to also include empty noodles.
+    :param NoodleOrder order: The order of the noodles.
+    :param int seed: The seed of `NoodleOrder.Random`.
+    :return: Iterator over the noodles, each a list of segment automata.
+    """
+    cdef CNfa* c_aut = aut.thisptr.get()
+    cdef bool c_include_empty = include_empty
+    cdef mata_strings.CNoodleOrder c_order = _c_noodle_order(order, seed)
+    cdef mata_strings.CLazyNoodleGenerator* it
+    with nogil:
+        it = mata_strings.c_noodlify_lazy_ptr(dereference(c_aut), symbol, c_include_empty, c_order)
+    return _lazy_noodles(it)
+
+
+def noodlify_mult_eps_lazy(mata_nfa.Nfa aut, epsilons, include_empty = False, order = NoodleOrder.Forward, seed = 0):
+    """Emit the noodles of `noodlify_mult_eps()` one at a time; see `noodlify_lazy()`.
+
+    :return: Iterator over the noodles, each a list of (segment, visited-epsilons-counter-vector) pairs.
+    """
+    cdef cset[Symbol] c_epsilons = epsilons
+    cdef CNfa* c_aut = aut.thisptr.get()
+    cdef bool c_include_empty = include_empty
+    cdef mata_strings.CNoodleOrder c_order = _c_noodle_order(order, seed)
+    cdef mata_strings.CLazyNoodleWithEpsilonsCounterGenerator* it
+    with nogil:
+        it = mata_strings.c_noodlify_mult_eps_lazy_ptr(dereference(c_aut), c_epsilons, c_include_empty, c_order)
+    return _lazy_noodles_with_epsilons_counter(it)
+
+
+def noodlify_for_equation_lazy(
+    left_side_automata: list,
+    mata_nfa.Nfa right_side_automaton,
+    include_empty = False,
+    params = None,
+    order = NoodleOrder.Forward,
+    seed = 0,
+):
+    """Emit the noodles of `noodlify_for_equation()` one at a time; see `noodlify_lazy()`.
+
+    The automata of the sides are kept alive by the iterator and read as the noodles are taken. As
+    `noodlify_for_equation()`, the call unifies the initial and final states of the left side automata in place when
+    reducing, so the left side automata are copied then.
+
+    :return: Iterator over the noodles, each a list of segment automata.
+    """
+    params = params or {}
+    # As noodlify_for_equation(): the C++ side unifies the left side automata in place when reducing, so pass it
+    #  copies then.
+    copy_lhs = params.get("reduce", "false") != "false"
+    cdef vector[shared_ptr[CNfa]] c_left_side_automata
+    for lhs_aut in left_side_automata:
+        if copy_lhs:
+            c_left_side_automata.push_back(make_shared[CNfa](dereference((<mata_nfa.Nfa>lhs_aut).thisptr)))
+        else:
+            c_left_side_automata.push_back((<mata_nfa.Nfa>lhs_aut).thisptr)
+    cdef umap[string, string] c_params = mata_nfa.encode_params(params)
+    cdef bool c_include_empty = include_empty
+    cdef mata_strings.CNoodleOrder c_order = _c_noodle_order(order, seed)
+    cdef mata_strings.CLazyNoodleGenerator* it
+    with nogil:
+        it = mata_strings.c_noodlify_for_equation_lazy_ptr(
+            c_left_side_automata, (<mata_nfa.Nfa>right_side_automaton).thisptr, c_include_empty, c_params, c_order
+        )
+    return _lazy_noodles(it)
+
+
+def noodlify_for_equation_sides_lazy(
+    left_side_automata, right_side_automata, include_empty = False, params = None, order = NoodleOrder.Forward, seed = 0
+):
+    """Emit the noodles of `noodlify_for_equation_sides()` one at a time; see `noodlify_lazy()`.
+
+    The automata of the sides are kept alive by the iterator and read as the noodles are taken; they are not
+    modified.
+
+    :return: Iterator over the noodles, each a list of (segment, visited-epsilons-counter-vector) pairs.
+    """
+    cdef vector[shared_ptr[CNfa]] c_left_side_automata
+    cdef vector[shared_ptr[CNfa]] c_right_side_automata
+    for lhs_aut in left_side_automata:
+        c_left_side_automata.push_back(_unification_input(lhs_aut))
+    for rhs_aut in right_side_automata:
+        c_right_side_automata.push_back(_unification_input(rhs_aut))
+    params = params or {}
+    cdef umap[string, string] c_params = mata_nfa.encode_params(params)
+    cdef bool c_include_empty = include_empty
+    cdef mata_strings.CNoodleOrder c_order = _c_noodle_order(order, seed)
+    cdef mata_strings.CLazyNoodleWithEpsilonsCounterGenerator* it
+    with nogil:
+        it = mata_strings.c_noodlify_for_equation_sides_lazy_ptr(
+            c_left_side_automata, c_right_side_automata, c_include_empty, c_params, c_order
+        )
+    return _lazy_noodles_with_epsilons_counter(it)
+
+
+def noodlify_for_transducer_lazy(
+    mata_nft.Nft nft,
+    input_automata,
+    output_automata,
+    reduce_intersection = True,
+    use_homomorphic_heuristic = True,
+    order = NoodleOrder.Forward,
+    seed = 0,
+):
+    """Emit the noodles of `noodlify_for_transducer()` one at a time; see `noodlify_lazy()`.
+
+    The composition with the transducer is computed as the noodles are taken; the inputs are kept alive by the
+    iterator and not modified.
+
+    :return: Iterator over the noodles, each a list of (transducer, input_aut, input_index, output_aut, output_index)
+        tuples.
+    """
+    cdef shared_ptr[CNft] c_nft = (<mata_nft.Nft>nft).thisptr
+    cdef vector[shared_ptr[CNfa]] c_input_automata
+    cdef vector[shared_ptr[CNfa]] c_output_automata
+    for input_aut in input_automata:
+        c_input_automata.push_back(_unification_input(input_aut))
+    for output_aut in output_automata:
+        c_output_automata.push_back(_unification_input(output_aut))
+    cdef bool c_reduce_intersection = reduce_intersection
+    cdef bool c_use_homomorphic_heuristic = use_homomorphic_heuristic
+    cdef mata_strings.CNoodleOrder c_order = _c_noodle_order(order, seed)
+    cdef mata_strings.CLazyTransducerNoodleGenerator* it
+    with nogil:
+        it = mata_strings.c_noodlify_for_transducer_lazy_ptr(
+            c_nft, c_input_automata, c_output_automata, c_reduce_intersection, c_use_homomorphic_heuristic, c_order
+        )
+    cdef _LazyTransducerNoodles noodles = _LazyTransducerNoodles.__new__(_LazyTransducerNoodles)
+    noodles.it = it
     return noodles
 
 
