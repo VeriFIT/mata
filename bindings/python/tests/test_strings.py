@@ -79,7 +79,10 @@ def test_segments_keep_the_alphabet_and_are_independent_copies():
     nfa.add_transition(2, 2, 3)
 
     segmentation = mata_strings.Segmentation(nfa, {epsilon})
-    for segments in (segmentation.get_segments(), segmentation.get_untrimmed_segments()):
+    for segments in (
+        segmentation.get_segments(),
+        segmentation.get_untrimmed_segments(),
+    ):
         for segment in segments:
             assert segment.alphabet is not None
             assert segment.alphabet.translate_symbol("b") == 2
@@ -142,6 +145,19 @@ def test_noodlify_for_equation_sides():
 
     noodles = mata_strings.noodlify_for_equation_sides([left], [right])
     assert len(noodles) == 1
+
+
+@pytest.mark.parametrize(
+    "noodlify",
+    [mata_strings.noodlify_for_equation, mata_strings.noodlify_for_equation_lazy],
+)
+@pytest.mark.parametrize("params", [None, {"reduce": "forward"}])
+def test_noodlify_for_equation_rejects_non_nfa_left_sides(noodlify, params):
+    right = mata_nfa.Nfa(1)
+    right.make_initial_state(0)
+    right.make_final_state(0)
+    with pytest.raises(TypeError, match="left_side_automata must contain only Nfa objects"):
+        noodlify([None], right, params=params)
 
 
 def test_noodlify_for_transducer():
@@ -252,7 +268,12 @@ def test_noodlify_variants_threaded_match_single_threaded_results():
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         results = [future.result() for future in [executor.submit(run) for _ in range(3)]]
     for result in results:
-        assert result == (expected_noodles, expected_mult_eps, expected_sides, expected_transducer)
+        assert result == (
+            expected_noodles,
+            expected_mult_eps,
+            expected_sides,
+            expected_transducer,
+        )
 
 
 def _random_nfa(seed, num_states):
@@ -314,7 +335,10 @@ def _eager_and_lazy_noodlifications():
             # Fresh left sides: the noodlification unifies their initial and final states in place.
             lambda: mata_strings.noodlify_for_equation([_random_nfa(4, 6), _random_nfa(5, 6)], _random_nfa(6, 9)),
             lambda order, seed: mata_strings.noodlify_for_equation_lazy(
-                [_random_nfa(4, 6), _random_nfa(5, 6)], _random_nfa(6, 9), order=order, seed=seed
+                [_random_nfa(4, 6), _random_nfa(5, 6)],
+                _random_nfa(6, 9),
+                order=order,
+                seed=seed,
             ),
         ),
         (
@@ -322,15 +346,24 @@ def _eager_and_lazy_noodlifications():
                 [_random_nfa(4, 6), _random_nfa(5, 6)], [_random_nfa(6, 9)]
             ),
             lambda order, seed: mata_strings.noodlify_for_equation_sides_lazy(
-                [_random_nfa(4, 6), _random_nfa(5, 6)], [_random_nfa(6, 9)], order=order, seed=seed
+                [_random_nfa(4, 6), _random_nfa(5, 6)],
+                [_random_nfa(6, 9)],
+                order=order,
+                seed=seed,
             ),
         ),
         (
             lambda: mata_strings.noodlify_for_transducer(
-                identity_nft, [_random_nfa(4, 6), _random_nfa(5, 6)], [_random_nfa(6, 9)]
+                identity_nft,
+                [_random_nfa(4, 6), _random_nfa(5, 6)],
+                [_random_nfa(6, 9)],
             ),
             lambda order, seed: mata_strings.noodlify_for_transducer_lazy(
-                identity_nft, [_random_nfa(4, 6), _random_nfa(5, 6)], [_random_nfa(6, 9)], order=order, seed=seed
+                identity_nft,
+                [_random_nfa(4, 6), _random_nfa(5, 6)],
+                [_random_nfa(6, 9)],
+                order=order,
+                seed=seed,
             ),
         ),
     ]
@@ -343,7 +376,10 @@ def test_lazy_noodlifications_emit_the_noodles_of_the_eager_ones():
         assert len(expected) > 1
         assert _snapshot(list(lazy(mata_strings.NoodleOrder.Forward, 0))) == expected
         assert _snapshot(list(lazy(mata_strings.NoodleOrder.Reverse, 0))) == expected[::-1]
-        for order in (mata_strings.NoodleOrder.SmallestFirst, mata_strings.NoodleOrder.LargestFirst):
+        for order in (
+            mata_strings.NoodleOrder.SmallestFirst,
+            mata_strings.NoodleOrder.LargestFirst,
+        ):
             assert sorted(_snapshot(list(lazy(order, 0)))) == sorted(expected)
         random_order = _snapshot(list(lazy(mata_strings.NoodleOrder.Random, 7)))
         assert sorted(random_order) == sorted(expected)
@@ -376,12 +412,12 @@ def test_consecutive_lazy_noodles_share_the_wrapped_segments():
 @needs_generator_support
 def test_lazy_noodles_are_taken_without_the_gil(runs_without_the_gil):
     left, right = _random_nfa(1, 100), _random_nfa(2, 100)
-    assert runs_without_the_gil(lambda: list(mata_strings.noodlify_for_equation_sides_lazy([left], [right])))
+    noodles = mata_strings.noodlify_for_equation_sides_lazy([left], [right])
+    assert runs_without_the_gil(lambda: list(noodles))
     small_left, small_right = _random_nfa(1, 22), _random_nfa(2, 22)
     identity_nft = _two_level_identity()
-    assert runs_without_the_gil(
-        lambda: list(mata_strings.noodlify_for_transducer_lazy(identity_nft, [small_left], [small_right]))
-    )
+    transducer_noodles = mata_strings.noodlify_for_transducer_lazy(identity_nft, [small_left], [small_right])
+    assert runs_without_the_gil(lambda: list(transducer_noodles))
 
 
 @pytest.mark.skipif(
@@ -427,24 +463,25 @@ def test_lazy_noodlify_takes_the_first_noodle_without_the_rest_of_the_search():
 def test_lazy_noodlify_iterator_rejects_a_second_thread():
     if not getattr(sys, "_is_gil_enabled", lambda: True)():
         pytest.skip("the interpreter has no GIL")
-    # 2**22 routes take the second next() about a second, far longer than the main thread needs to wake up.
-    noodles = mata_strings.noodlify_mult_eps_lazy(_epsilon_lattice(22), {200})
+    noodles = mata_strings.noodlify_mult_eps_lazy(_epsilon_lattice(1), {200})
     assert len(next(noodles)) == 2
 
     entered = threading.Event()
+    release = threading.Event()
     outcome = []
 
+    def before_advance():
+        if not entered.is_set():
+            entered.set()
+            release.wait()
+
     def run():
-        entered.set()
         try:
             next(noodles)
         except StopIteration:
             outcome.append(StopIteration)
 
-    switch_interval = sys.getswitchinterval()
-    # As in `runs_without_the_gil`: the worker holds the GIL from `entered.set()` until the search releases it inside
-    #  next(), so the main thread wakes only once that next() is running.
-    sys.setswitchinterval(60)
+    noodles._before_advance_for_tests(before_advance)
     worker = threading.Thread(target=run)
     try:
         worker.start()
@@ -452,8 +489,8 @@ def test_lazy_noodlify_iterator_rejects_a_second_thread():
         with pytest.raises(RuntimeError, match="from two threads at once"):
             next(noodles)
     finally:
+        release.set()
         worker.join()
-        sys.setswitchinterval(switch_interval)
     assert outcome == [StopIteration]
     with pytest.raises(StopIteration):
         next(noodles)

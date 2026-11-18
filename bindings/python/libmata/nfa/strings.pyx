@@ -197,6 +197,8 @@ def noodlify_for_equation(left_side_automata: list, mata_nfa.Nfa right_side_auto
     lhs_copies = []
     cdef vector[CNfa*] c_left_side_automata
     for lhs_aut in left_side_automata:
+        if not isinstance(lhs_aut, mata_nfa.Nfa):
+            raise TypeError("left_side_automata must contain only Nfa objects")
         if copy_lhs:
             lhs_aut = (<mata_nfa.Nfa>lhs_aut).__copy__()
             lhs_copies.append(lhs_aut)
@@ -348,7 +350,7 @@ class NoodleOrder(IntEnum):
     Forward = <int>mata_strings.NoodleOrderForward
     """The order of the list-returning functions."""
     Reverse = <int>mata_strings.NoodleOrderReverse
-    """The reverse of `Forward`."""
+    """The reverse of the `Forward` search order. A noodle finished more than once can differ in position from the reverse of `Forward`."""
     SmallestFirst = <int>mata_strings.NoodleOrderSmallestFirst
     """The candidate whose segment has the fewest states first, ties in the forward order."""
     LargestFirst = <int>mata_strings.NoodleOrderLargestFirst
@@ -416,6 +418,10 @@ cdef class _LazyNoodlesWithEpsilonsCounter:
     cdef mata_strings.CLazyNoodleWithEpsilonsCounterGenerator* it
     cdef dict previous
     cdef bint busy
+    cdef object before_advance
+
+    def _before_advance_for_tests(self, hook):
+        self.before_advance = hook
 
     def __dealloc__(self):
         del self.it
@@ -430,6 +436,8 @@ cdef class _LazyNoodlesWithEpsilonsCounter:
             raise RuntimeError("a noodlify_*_lazy() iterator cannot be advanced from two threads at once")
         self.busy = True
         try:
+            if self.before_advance is not None:
+                self.before_advance()
             with nogil:
                 exhausted = self.it.done()
                 if not exhausted:
@@ -488,8 +496,10 @@ cdef class _LazyTransducerNoodles:
 def noodlify_lazy(mata_nfa.Nfa aut, Symbol symbol, include_empty = False, order = NoodleOrder.Forward, seed = 0):
     """Emit the noodles of `noodlify()` one at a time.
 
-    The search runs only as far as the noodles are taken, keeping one noodle and the search in memory instead of all
-    noodles. The automaton is copied in the call, so it may be released right after it.
+    Construction prepares the first noodle, even if the caller never calls `next()`; later pulls search for subsequent
+    noodles. Equation-product and transducer-composition variants also perform that work during construction. Only the
+    current noodle and the search are kept in memory instead of all noodles. The automaton is copied in the call, so it
+    may be released right after it.
 
     Raises `RuntimeError` when mata was built with a standard library that does not implement `std::generator`.
 
@@ -511,6 +521,9 @@ def noodlify_lazy(mata_nfa.Nfa aut, Symbol symbol, include_empty = False, order 
 
 def noodlify_mult_eps_lazy(mata_nfa.Nfa aut, epsilons, include_empty = False, order = NoodleOrder.Forward, seed = 0):
     """Emit the noodles of `noodlify_mult_eps()` one at a time; see `noodlify_lazy()`.
+
+    Deduplication retains a key for each distinct emitted noodle that omits an epsilon-only segment, so memory can
+    grow with the number of results.
 
     :return: Iterator over the noodles, each a list of (segment, visited-epsilons-counter-vector) pairs.
     """
@@ -546,6 +559,8 @@ def noodlify_for_equation_lazy(
     copy_lhs = _unifies_left_side(c_params)
     cdef vector[shared_ptr[CNfa]] c_left_side_automata
     for lhs_aut in left_side_automata:
+        if not isinstance(lhs_aut, mata_nfa.Nfa):
+            raise TypeError("left_side_automata must contain only Nfa objects")
         if copy_lhs:
             c_left_side_automata.push_back(make_shared[CNfa](dereference((<mata_nfa.Nfa>lhs_aut).thisptr)))
         else:
@@ -566,7 +581,8 @@ def noodlify_for_equation_sides_lazy(
     """Emit the noodles of `noodlify_for_equation_sides()` one at a time; see `noodlify_lazy()`.
 
     The automata of the sides are kept alive by the iterator and read as the noodles are taken; they are not
-    modified.
+    modified. Deduplication retains a key for each distinct emitted noodle that omits an epsilon-only segment, so
+    memory can grow with the number of results.
 
     :return: Iterator over the noodles, each a list of (segment, visited-epsilons-counter-vector) pairs.
     """
@@ -599,8 +615,9 @@ def noodlify_for_transducer_lazy(
 ):
     """Emit the noodles of `noodlify_for_transducer()` one at a time; see `noodlify_lazy()`.
 
-    The composition with the transducer is computed as the noodles are taken; the inputs are kept alive by the
-    iterator and not modified.
+    The composition with the transducer is computed during construction; the inputs are kept alive by the iterator
+    and not modified. Deduplication retains a key for each distinct emitted noodle that omits an epsilon-only segment,
+    so memory can grow with the number of results.
 
     :return: Iterator over the noodles, each a list of (transducer, input_aut, input_index, output_aut, output_index)
         tuples.
