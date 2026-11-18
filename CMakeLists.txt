@@ -369,9 +369,11 @@ if (MATA_ENABLE_COVERAGE)
 	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g --coverage")
 endif ()
 
-# Get git hash (used in src/)
-include (GetGitRevisionDescription)
-get_git_head_revision (GIT_REFSPEC GIT_SHA1)
+# Git hash embedded into `mata::g_GIT_SHA1`. It is read by a build step of `libmata` (see
+#  `cmake/GetGitSha.cmake` and `src/CMakeLists.txt`), so no build directory depends on
+#  `${GIT_DIR}/HEAD` at configure time; only the path of the git binary is resolved here.
+find_package (Git QUIET)
+
 
 ##### SUBDIRECTORIES #####
 add_subdirectory (src)

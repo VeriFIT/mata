@@ -1,5 +1,20 @@
-# create config.cc file that contains definitions of global variables (such as version, verbosity, etc.)
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/config.cc.in" "${CMAKE_CURRENT_BINARY_DIR}/config.cc" @ONLY)
+# `config.cc` embeds the hash of the git HEAD, which changes with every commit and every checkout.
+#  Generating it with `configure_file()` here made `${GIT_DIR}/HEAD` a configure dependency of every
+#  build directory, so the next build after any such change re-ran the whole configure step before
+#  compiling anything. The script below runs as a build step and rewrites `config.cc` only when the
+#  hash really changed, so a new HEAD recompiles one object instead.
+set (MATA_CONFIG_CC "${CMAKE_CURRENT_BINARY_DIR}/config.cc")
+add_custom_target (mata-config-cc
+	BYPRODUCTS "${MATA_CONFIG_CC}"
+	COMMAND "${CMAKE_COMMAND}"
+		"-DSOURCE_DIR=${PROJECT_SOURCE_DIR}"
+		"-DCONFIG_IN=${CMAKE_CURRENT_SOURCE_DIR}/config.cc.in"
+		"-DCONFIG_OUT=${MATA_CONFIG_CC}"
+		-P "${PROJECT_SOURCE_DIR}/cmake/GetGitSha.cmake"
+	COMMENT "Checking the git revision embedded in libmata"
+	VERBATIM
+)
+set_source_files_properties ("${MATA_CONFIG_CC}" PROPERTIES GENERATED TRUE)
 
 # create glob all source files with .cc and .hh extensions
 file (GLOB_RECURSE MATA_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
@@ -11,7 +26,7 @@ file (GLOB_RECURSE MATA_HEADERS CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/include
 add_library (
 	libmata STATIC
 	${MATA_SOURCES}
-	"${CMAKE_CURRENT_BINARY_DIR}/config.cc"
+	"${MATA_CONFIG_CC}"
 	# we add files from the libraries here, so we create one static library libmata.a with everything and so that we can export only libmata
 	$<TARGET_OBJECTS:cudd>
 	$<TARGET_OBJECTS:simlib>
@@ -20,6 +35,10 @@ add_library (
 
 # Same spelling for `add_subdirectory()`/`FetchContent` consumers and for `find_package(mata)` ones.
 add_library (mata::libmata ALIAS libmata)
+
+# The build step above has to run before any object of `libmata` is compiled: `config.cc` is one of
+#  its sources.
+add_dependencies (libmata mata-config-cc)
 
 target_compile_features (libmata PUBLIC cxx_std_23)
 

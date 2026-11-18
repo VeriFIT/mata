@@ -1,6 +1,8 @@
-# Instrument the integration benchmarks for gcov. Off by default: the previous unconditional
-#  `-fprofile-arcs` was never paired with `-ftest-coverage`, so no `.gcno` files were produced and
-#  the `.gcda` files every run writes at exit were useless to gcov and only littered the build tree.
+# Instrument the integration benchmarks for gcov, and nothing else; `MATA_ENABLE_COVERAGE` already
+#  instruments them together with the library and the unit tests. BENCHMARKING.md explains which of
+#  the two to use. Off by default: the previous unconditional `-fprofile-arcs` was never paired with
+#  `-ftest-coverage`, so no `.gcno` files were produced and the `.gcda` files every run writes at
+#  exit were useless to gcov and only littered the build tree.
 option (MATA_BENCH_PROFILING "Instrument the integration benchmarks for gcov" OFF)
 
 file (GLOB JOBS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/jobs/*.yaml.in")
@@ -61,6 +63,14 @@ foreach (SOURCE ${SOURCES})
 	#  `add_executable()` gave every target the directory computed for the previous source file of
 	#  the sorted glob, and the last target none at all.
 	set_target_properties (${TARGET} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_PATH}")
+
+	# The templates exist to be copied, not to be run: no job file refers to them, and each of them
+	#  compiles `src/utils/utils.cc` a second time. Keep them out of `all`; building one explicitly
+	#  (`cmake --build <dir> --target template-with-cli-args`) still works.
+	if (TARGET_PATH STREQUAL "templates")
+		set_target_properties (${TARGET} PROPERTIES EXCLUDE_FROM_ALL TRUE)
+	endif ()
+
 	target_link_libraries (${TARGET} libmata)
 	# For the generated `utils/config.hh`.
 	target_include_directories (${TARGET} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src")

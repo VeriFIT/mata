@@ -1,4 +1,7 @@
  /* config.cc -- definition of global symbols used in library
+ *
+ * Expanded into '<build>/src/config.cc' by 'cmake/GetGitSha.cmake', which runs as a build step of
+ * libmata and rewrites the file only when the git hash changes.
  */
 
 #include "mata/utils/utils.hh"
