@@ -108,8 +108,10 @@ Nfa minimize_brzozowski(const Nfa& aut);
  *  "Efficient Minimization of DFAs With Partial Transition Functions" by Antti Valmari and Petri Lehtinen.
  *  The algorithm works in O(a*n*log(n)) time and O(m+n+a) space, where: n is the number of states, a is the size
  *  of the alphabet, and m is the number of transitions. [https://dl.acm.org/doi/10.1016/j.ipl.2011.12.004]
- * @param[in] dfa_trimmed Deterministic automaton without useless states. Trim it before calling this function:
- *  skipping the trimming is not an error, it only costs minimality.
+ * @param[in] dfa_trimmed Deterministic automaton without useless states, with no empty symbol posts. Trim it before
+ *  calling this function and drop empty posts from the delta first: an empty post is not a transition, but the core
+ *  validates and refines posts as stored, so it cannot be accepted. Skipping the trimming is not an error, it only
+ *  costs minimality.
  * @throws std::invalid_argument If @p dfa_trimmed has a transition and is not deterministic, or has several
  *  initial states. A transition-free automaton with at most one initial state is returned without refinement.
  * @return Minimized deterministic automaton, refined from the reachable part of @p dfa_trimmed. A transition-free

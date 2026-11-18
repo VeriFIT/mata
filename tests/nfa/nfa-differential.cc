@@ -251,6 +251,8 @@ void check_nfa_properties(
 	CHECK(same_language_on(brzozowski, nfa, words));
 	const Nfa hopcroft{minimize(nfa, HOPCROFT)};
 	CHECK(same_language_on(hopcroft, nfa, words));
+	// The language and the state count alone can also be met by an NFA, so require a DFA unconditionally.
+	CHECK(hopcroft.is_deterministic());
 	if (!brzozowski.final.empty()) { CHECK(hopcroft.num_of_states() == brzozowski.num_of_states()); }
 
 	// A deterministic copy is needed by the deterministic shortcut of the complement below.

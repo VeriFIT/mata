@@ -1308,7 +1308,11 @@ Nfa mata::nfa::algorithms::minimize_auto(const Nfa& aut) {
 	// Brzozowski determinizes twice, so it can blow up exponentially even on an input that already is a trimmed
 	//  DFA; Hopcroft is O(a*n*log(n)) on such an input and supports partial transition functions, so the
 	//  determinization is only needed when the input is not deterministic.
-	Nfa deterministic{aut.is_deterministic() ? aut : determinize(aut)};
+	// Trim a nondeterministic input before the subset construction: states that cannot reach a final state would
+	//  otherwise generate reachable subsets which the trim can never remove again (every reachable subset still holds
+	//  some state reachable from the initial states, and only non-final ones). On a large non-accepting branch the
+	//  determinization can then blow up before any minimization runs. Trimming changes no accepted word.
+	Nfa deterministic{aut.is_deterministic() ? aut : determinize(trim(aut))};
 	deterministic.trim();
 	if (deterministic.num_of_states() == 0) {
 		// Trimming an automaton with an empty language removes every state. Return the canonical automaton of the

@@ -4713,7 +4713,7 @@ TEST_CASE("mata::nfa::minimize() with the default \"auto\" strategy") {
 
 		Nfa two_initials{3, {0, 1}, {2}};
 		two_initials.delta.add(0, 'a', 2);
-		two_initials.delta.add(1, 'a', 2);
+		two_initials.delta.add(1, 'b', 2); // A different word: dropping either initial branch must be caught.
 		CHECK(are_equivalent(minimize(two_initials, {{"algorithm", "hopcroft"}}), two_initials));
 
 		const Nfa empty{minimize(Nfa{}, {{"algorithm", "hopcroft"}})};
