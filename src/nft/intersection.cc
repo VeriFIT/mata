@@ -165,10 +165,11 @@ Nft mata::nft::algorithms::product(
 			//  the same product state within one symbol post: deduplicate, do not only sort.
 			utils::sort_and_rmdupl(product_targets);
 			if (product_targets.empty()) { continue; }
-			SymbolPost product_symbol_post{specific_symbol_post.symbol, std::span<const State>{product_targets}};
 			StatePost& product_state_post{product.delta.mutable_state_post(product_source)};
-			const auto product_state_post_find_it = product_state_post.find(product_symbol_post.symbol);
+			const auto product_state_post_find_it = product_state_post.find(specific_symbol_post.symbol);
 			if (product_state_post_find_it == product_state_post.end()) {
+				// Only a missing symbol pays for the temporary post; on a hit, insert from the span instead.
+				SymbolPost product_symbol_post{specific_symbol_post.symbol, std::span<const State>{product_targets}};
 				if (product_state_post.empty() || product_state_post.back().symbol < product_symbol_post.symbol) {
 					// Optimization: If the new symbol is greater than the last one, we can simply push it back.
 					product_state_post.push_back(std::move(product_symbol_post));
@@ -177,8 +178,8 @@ Nft mata::nft::algorithms::product(
 					product_state_post.insert(std::move(product_symbol_post));
 				}
 			} else {
-				// The targets coming out of @c product_targets are ids of states the product creates on the fly,
-				//  so they are greater than anything stored yet and the merge appends them in order. Reserve the
+				// Every incoming target follows the ones stored so far (they may be older product states read back
+				//  from product_storage, not just newly created ones), so the merge appends them in order. Reserve the
 				//  exact combined size first: SmallOrdVector would otherwise keep doubling the capacity on append.
 				if (product_state_post_find_it->targets.back() < product_targets.front()) {
 					product_state_post_find_it->targets.reserve(
