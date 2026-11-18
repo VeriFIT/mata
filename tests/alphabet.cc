@@ -308,3 +308,53 @@ TEST_CASE("mata::Alphabet streaming - #760") {
 		CHECK(out.str() == "IntAlphabet");
 	}
 }
+
+TEST_CASE("mata::Alphabet numeric symbol parsing and translate_word (#758)") {
+	SECTION("EnumAlphabet::translate_word() parses every element independently") {
+		EnumAlphabet alphabet{1, 2, 3};
+		CHECK(alphabet.translate_word({"1", "2", "3"}) == Word{1, 2, 3});
+		CHECK(alphabet.translate_word({"3", "1"}) == Word{3, 1});
+		CHECK_THROWS(alphabet.translate_word({"1", "7"}));
+	}
+
+	SECTION("IntAlphabet::translate_word()") {
+		IntAlphabet alphabet{};
+		CHECK(alphabet.translate_word({"1", "2", "300", "1234567890"}) == Word{1, 2, 300, 1'234'567'890});
+		CHECK_THROWS_AS(alphabet.translate_word({"1", "-1"}), std::runtime_error);
+	}
+
+	SECTION("the numeric parsers accept exactly a whole decimal number that fits a Symbol") {
+		IntAlphabet int_alphabet{};
+		EnumAlphabet enum_alphabet{1, 2, 3, 5};
+		for (Alphabet* alphabet : {static_cast<Alphabet*>(&int_alphabet), static_cast<Alphabet*>(&enum_alphabet)}) {
+			CHECK(alphabet->translate_symb("5") == 5);
+			CHECK_THROWS_AS(alphabet->translate_symb("-1"), std::runtime_error);
+			CHECK_THROWS_AS(alphabet->translate_symb("+5"), std::runtime_error);
+			CHECK_THROWS_AS(alphabet->translate_symb(" 5"), std::runtime_error);
+			CHECK_THROWS_AS(alphabet->translate_symb("5 "), std::runtime_error);
+			CHECK_THROWS_AS(alphabet->translate_symb("abc"), std::runtime_error);
+			CHECK_THROWS_AS(alphabet->translate_symb(""), std::runtime_error);
+			CHECK_THROWS_AS(alphabet->translate_symb("4294967296"), std::runtime_error);
+		}
+	}
+
+	SECTION("EnumAlphabet::add_new_symbol() rejects a name that is no number") {
+		EnumAlphabet alphabet{};
+		CHECK_THROWS_AS(alphabet.add_new_symbol(std::string{"abc"}), std::runtime_error);
+		CHECK_THROWS_AS(alphabet.add_new_symbol(std::string{"-1"}), std::runtime_error);
+		CHECK(alphabet.empty());
+		alphabet.add_new_symbol(std::string{"7"});
+		CHECK(alphabet.get_alphabet_symbols() == OrdVector<Symbol>{7});
+	}
+
+	SECTION("encode_word() over an EnumAlphabet") {
+		Nfa nfa{3};
+		nfa.initial.insert(0);
+		nfa.delta.add(0, 1, 1);
+		nfa.delta.add(1, 2, 2);
+		nfa.final.insert(2);
+		EnumAlphabet alphabet{1, 2};
+		CHECK(nfa.is_in_lang(encode_word(&alphabet, {"1", "2"})));
+		CHECK(!nfa.is_in_lang(encode_word(&alphabet, {"2", "1"})));
+	}
+}

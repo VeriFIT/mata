@@ -148,7 +148,11 @@ class IntAlphabet : public Alphabet {
   public:
 	IntAlphabet() : alphabet_instance_(IntAlphabetSingleton::get()) {}
 
+	/// Parses @p symb as a decimal number; throws unless the whole of @p symb is one that fits a @c Symbol.
 	Symbol translate_symb(std::string_view symb) override;
+
+	/// Parses each name of @p word_name as @c translate_symb() does.
+	Word translate_word(const WordName& word_name) const override;
 
 	std::string reverse_translate_symbol(const Symbol symbol) const override { return std::to_string(symbol); }
 
@@ -277,6 +281,8 @@ class EnumAlphabet : public Alphabet {
 
 	/**
 	 * @brief Add new symbol to the alphabet with the value identical to its string representation.
+	 *
+	 * Throws unless the whole of @p symbol is a decimal number that fits a @c Symbol.
 	 *
 	 * @param[in] symbol User-space representation of the symbol.
 	 * @return Result of the insertion as @c InsertionResult.

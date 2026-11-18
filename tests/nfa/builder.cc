@@ -992,3 +992,10 @@ TEST_CASE("Create Tabakov-Vardi NFA") {
 		for (const Symbol symbol : alphabet_symbols) { CHECK(nfa_copy.delta.contains(sink, symbol, sink)); }
 	}
 }
+
+TEST_CASE("parse_from_mata() rejects a negative symbol (#758)") {
+	// "-1" used to read as the wrapped-around Symbol 4294967295, which is EPSILON, so the transition silently became an
+	//  epsilon transition.
+	const std::string negative_symbol{"@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 -1 q1\n"};
+	CHECK_THROWS_AS(builder::parse_from_mata(negative_symbol), std::runtime_error);
+}
