@@ -4002,7 +4002,13 @@ Transitions over symbols outside of the chosen alphabet are ignored; the automat
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>regex</strong> – regular expression </p></li>
-<li><p><strong>reduce</strong> – whether to reduce the NFA using simulation reduction; costly for large regexes </p></li>
+<li><p><strong>reduce</strong> – whether to reduce the NFA using simulation reduction; costly for large regexes</p></li>
+</ul>
+</dd>
+<dt class="field-even">Throws<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><span><span class="cpp-expr sig sig-inline cpp"><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n">std</span></a><span class="p">::</span><span class="n">invalid_argument</span></span></span> – on a regex RE2 cannot parse or cannot compile within its program memory budget. </p></li>
+<li><p><span><span class="cpp-expr sig sig-inline cpp"><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n">std</span></a><span class="p">::</span><span class="n">runtime_error</span></span></span> – on a regex program containing an instruction the converter does not support. </p></li>
 </ul>
 </dd>
 </dl>
@@ -4022,6 +4028,12 @@ Transitions over symbols outside of the chosen alphabet are ignored; the automat
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>regex</strong> – regular expression </p></li>
 <li><p><strong>options</strong> – conversion and post-processing options </p></li>
+</ul>
+</dd>
+<dt class="field-even">Throws<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><span><span class="cpp-expr sig sig-inline cpp"><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n">std</span></a><span class="p">::</span><span class="n">invalid_argument</span></span></span> – on a regex RE2 cannot parse or cannot compile within its program memory budget. </p></li>
+<li><p><span><span class="cpp-expr sig sig-inline cpp"><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n">std</span></a><span class="p">::</span><span class="n">runtime_error</span></span></span> – on a regex program containing an instruction the converter does not support. </p></li>
 </ul>
 </dd>
 </dl>
