@@ -387,49 +387,47 @@ jobs:
             exit 1
           fi
           echo "This pull request introduces no new warnings."
-  format-check:
+  # The only check of the Nix outputs and of uv.lock, which only the development shells are built from.
+  # Evaluates the flake and lists its checks; `nix-build` below builds one check per runner in parallel instead
+  #  of `nix flake check`'s serial loop over all of them on a single runner.
+  nix-list-checks:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    timeout-minutes: 15
+    outputs:
+      checks: ${{ steps.list.outputs.checks }}
     steps:
       - uses: cachix/install-nix-action@v31
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable
       - uses: actions/checkout@v6
         with:
-          # fetch-depth: 0
-          # If PR, checkout the PR's repo (needed for PRs coming from forks).
           repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: ./.github/workflows/actions/setup
-      - name: Check .treefmt.toml is in sync with nix/treefmt.nix
+      # `--no-build` still evaluates every check and package, so a broken Nix expression or a missing attribute
+      #  fails here.
+      - name: Evaluate the flake
+        run: nix flake check --no-build --print-build-logs
+      # `nix-build` consumes the check names from this output, so a check added to the flake later gets its own
+      #  runner without anyone remembering this workflow.
+      - name: List the checks
+        id: list
+        shell: bash
         run: |
-          nix run .#write-treefmt-toml
-          if [ -n "$(git status --porcelain -- .treefmt.toml)" ]; then
-              echo "ERROR: .treefmt.toml is out of date with nix/treefmt.nix. Run 'nix run .#write-treefmt-toml' locally and commit the changes:"
-              git diff -- .treefmt.toml
-              exit 1
-          else
-              echo ".treefmt.toml is in sync with nix/treefmt.nix."
-          fi
-      - name: Check formatting using treefmt through Nix
-        run: |
-          nix fmt
-          if [ -n "$(git status --porcelain)" ]; then
-              echo "ERROR: Code is not properly formatted. Please run 'nix fmt' or 'treefmt' locally and commit the changes:"
-              git diff
-              exit 1
-          else
-              echo "Code is properly formatted."
-          fi
-  # The only check of the Nix outputs and of uv.lock, which only the development shells are built from.
-  nix-flake-check:
+          checks="$(nix eval --json .#checks.x86_64-linux --apply builtins.attrNames)"
+          echo "checks=$checks" >> "$GITHUB_OUTPUT"
+  # Builds and tests one check per runner; a failing one shows up as its own red job instead of a line in the
+  #  serial `nix flake check` output.
+  nix-build:
+    needs: nix-list-checks
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        check: ${{ fromJSON(needs.nix-list-checks.outputs.checks) }}
     steps:
       - uses: cachix/install-nix-action@v31
-      # Pull only: pull requests build unreviewed dependency updates, so they never get the write token. `nix-cache.yml`
-      #  pushes after a merge.
+      # Pull only: pull requests build unreviewed dependency updates, so they never get the write token. Merging to
+      #  `devel` does not refresh the cache either: `nix-cache.yml` only runs on `workflow_dispatch`, so a maintainer
+      #  has to dispatch it to push the new `devel` outputs.
       - uses: cachix/cachix-action@v17
         with:
           name: mata
@@ -438,10 +436,42 @@ jobs:
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Build all packages and run the flake checks
-        run: nix flake check --print-build-logs
+      - name: Build and test ${{ matrix.check }}
+        # The check name comes from the pull request's flake: pass it as data, not as shell source. The escaped quotes
+        #  make Nix select the whole name as one attribute, so a name containing a dot is not read as a nested path.
+        env:
+          CHECK: ${{ matrix.check }}
+        run: nix build --no-link --print-build-logs ".#checks.x86_64-linux.\"$CHECK\""
+  # The only check of uv.lock, which only the development shells are built from.
+  nix-devshells:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: cachix/install-nix-action@v31
+      # Pull only: pull requests build unreviewed dependency updates, so they never get the write token. Merging to
+      #  `devel` does not refresh the cache either: `nix-cache.yml` only runs on `workflow_dispatch`, so a maintainer
+      #  has to dispatch it to push the new `devel` outputs.
+      - uses: cachix/cachix-action@v17
+        with:
+          name: mata
+          skipPush: true
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Build the development shells
         run: nix build --no-link --print-build-logs .#devShells.x86_64-linux.{default,clang,gcc}
+  # One check for the whole Nix side under the name pull requests merged on before. It runs even when a job it
+  #  needs failed and fails itself then: a skipped job would count as passed for a required status check.
+  nix-flake-check:
+    needs: [nix-build, nix-devshells]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every Nix job to pass
+        run: |
+          test "${{ needs.nix-build.result }}" = success
+          test "${{ needs.nix-devshells.result }}" = success
   sanitizers:
     runs-on: ubuntu-latest
     steps:

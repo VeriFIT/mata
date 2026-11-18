@@ -7,7 +7,28 @@
       pkgs,
       ...
     }:
+    let
+      # Callers set root to the checkout (writer) or a temporary directory (check).
+      writeTreefmtToml = ''
+        {
+          echo "# GENERATED FILE. DO NOT EDIT."
+          echo "# Source of truth is the \`treefmt\` option in nix/treefmt.nix. Regenerate with: nix run .#write-treefmt-toml"
+          echo
+          # Strip the store path of every executable, both in 'command =' and inside inlined formatter scripts, so
+          #  that the committed config resolves the tools from PATH.
+          ${lib.getExe pkgs.gnused} -E 's|/nix/store/[^/"[:space:]]+/bin/||g' ${config.treefmt.build.configFile}
+        } > "$root/.treefmt.toml"
+        ${lib.getExe config.treefmt.build.wrapper} --no-cache --working-dir "$root" "$root/.treefmt.toml"
+      '';
+    in
     {
+      checks.treefmtToml = pkgs.runCommand "treefmt-toml" { } ''
+        root="$TMPDIR"
+        ${writeTreefmtToml}
+        ${lib.getExe' pkgs.diffutils "diff"} -u ${../.treefmt.toml} "$root/.treefmt.toml"
+        touch "$out"
+      '';
+
       treefmt = {
         # Not '.git/config': in a git worktree or a jj workspace '.git' is a file, so treefmt would walk up to and
         #  format the enclosing main checkout instead.
@@ -62,15 +83,7 @@
           pkgs.writeShellScript "write-treefmt-toml" ''
             set -euo pipefail
             root="$(${lib.getExe pkgs.git} rev-parse --show-toplevel)"
-            {
-              echo "# GENERATED FILE. DO NOT EDIT."
-              echo "# Source of truth is the \`treefmt\` option in nix/treefmt.nix. Regenerate with: nix run .#write-treefmt-toml"
-              echo
-              # Strip the store path of every executable, both in 'command =' and inside inlined formatter scripts, so
-              #  that the committed config resolves the tools from PATH.
-              ${lib.getExe pkgs.gnused} -E 's|/nix/store/[^/"[:space:]]+/bin/||g' ${config.treefmt.build.configFile}
-            } > "$root/.treefmt.toml"
-            ${lib.getExe config.treefmt.build.wrapper} --working-dir "$root" "$root/.treefmt.toml"
+            ${writeTreefmtToml}
             echo "Wrote $root/.treefmt.toml"
           ''
         );
