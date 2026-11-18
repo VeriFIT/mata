@@ -227,6 +227,22 @@ TEST_CASE("mata::utils::SynchronizedUniversalIterator over zero inputs in releas
 }
 #endif // NDEBUG
 
+TEST_CASE("mata::utils::SynchronizedExistentialIterator when the last position runs out - issue #769") {
+	// The last position runs out first: it is popped, and its slot must not be compared with its end afterwards
+	//  (a singular-iterator abort under _GLIBCXX_DEBUG).
+	const std::vector<int> longer{1, 2};
+	const std::vector<int> shorter{1};
+	SynchronizedExistentialIterator<std::vector<int>::const_iterator> sync_iterator;
+	sync_iterator.push_back(longer.cbegin(), longer.cend());
+	sync_iterator.push_back(shorter.cbegin(), shorter.cend());
+	REQUIRE(sync_iterator.advance());
+	CHECK(sync_iterator.get_current().size() == 2);
+	REQUIRE(sync_iterator.advance());
+	REQUIRE(sync_iterator.get_current().size() == 1);
+	CHECK(*sync_iterator.get_current()[0] == 2);
+	CHECK(!sync_iterator.advance());
+}
+
 namespace {
 
 /// Draw a value in [0, bound) from the raw generator output, portably across standard libraries.

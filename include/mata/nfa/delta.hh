@@ -690,8 +690,17 @@ class Delta {
 	 * @param[in,out] transitions Transitions to add; consumed.
 	 */
 	void add(std::vector<Transition>&& transitions);
-	void remove(State source, Symbol symbol, State target);
-	void remove(const Transition& transition) { remove(transition.source, transition.symbol, transition.target); }
+	/**
+	 * @brief Remove the transition (@p source, @p symbol, @p target) if the delta contains it.
+	 *
+	 * A missing transition is not an error, whichever part of it is missing: a source beyond the allocated
+	 *  states, a missing symbol post and a missing target all remove nothing and return @c false.
+	 * @return @c true if the transition was there and was removed.
+	 */
+	bool remove(State source, Symbol symbol, State target);
+	bool remove(const Transition& transition) {
+		return remove(transition.source, transition.symbol, transition.target);
+	}
 
 	/**
 	 * Check whether @c Delta contains a passed transition.

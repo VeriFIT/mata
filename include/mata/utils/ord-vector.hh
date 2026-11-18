@@ -5,7 +5,9 @@
 #define MATA_ORD_VECTOR_HH_
 
 #include <algorithm>
+#include <concepts>
 #include <iterator>
+#include <ranges>
 #include <span>
 #include <type_traits>
 #include <vector>
@@ -32,13 +34,9 @@ template <class T> bool are_disjoint(const utils::OrdVector<T>& lhs, const utils
 }
 
 template <class Key, class Allocator> bool is_sorted(const std::vector<Key, Allocator>& vec) {
-	for (auto it_vec = vec.cbegin() + 1; it_vec < vec.cend(); ++it_vec) {
-		if (!(*(it_vec - 1) < *it_vec)) {
-			// In case there is an unordered pair (or there is one element twice).
-			return false;
-		}
-	}
-	return true;
+	// Needs only operator<, and an empty vector has no cbegin() + 1 to start from.
+	return std::adjacent_find(vec.cbegin(), vec.cend(), [](const Key& lhs, const Key& rhs) { return !(lhs < rhs); }) ==
+		   vec.cend();
 }
 
 /**
@@ -108,7 +106,12 @@ template <class Key, class Allocator> class OrdVector {
 	OrdVector(sorted_unique_t /*tag*/, VectorType&& vec) : vec_{std::move(vec)} { MATA_EXPENSIVE_ASSERT(is_sorted()); }
 	/// @note @c std::set is already sorted and free of duplicates, so its elements are copied as they are.
 	explicit OrdVector(const std::set<Key>& set) : vec_{set.begin(), set.end()} {}
-	template <class T> explicit OrdVector(const T& set) : vec_(set.begin(), set.end()) { utils::sort_and_rmdupl(vec_); }
+	template <class T>
+		requires std::ranges::range<T> && std::convertible_to<std::ranges::range_value_t<T>, Key> &&
+				 (!std::same_as<std::remove_cvref_t<T>, OrdVector>)
+	explicit OrdVector(const T& set) : vec_(set.begin(), set.end()) {
+		utils::sort_and_rmdupl(vec_);
+	}
 	OrdVector(std::initializer_list<Key> list) : vec_(list) { utils::sort_and_rmdupl(vec_); }
 	OrdVector(const OrdVector& rhs) = default;
 	OrdVector(OrdVector&& other) noexcept : vec_{std::move(other.vec_)} {}
@@ -143,9 +146,10 @@ template <class Key, class Allocator> class OrdVector {
 	}
 
 	std::pair<iterator, bool> insert(iterator itr, const Key& x) {
-		if (empty() || itr == end()) { return {vec_.insert(itr, x), true}; }
-		if (x >= *itr || (itr != begin() && x <= *(itr - 1))) { return {itr, false}; }
-		return {vec_.insert(itr, x), true};
+		if ((itr == end() || x < *itr) && (itr == begin() || *(itr - 1) < x)) { return {vec_.insert(itr, x), true}; }
+		if (itr != end() && *itr == x) { return {itr, false}; }
+		// The hint was wrong: fall back to the binary search.
+		return insert(x);
 	}
 
 	// EMPLACE_BACK WHICH BREAKS SORTEDNESS,

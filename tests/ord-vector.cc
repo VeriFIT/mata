@@ -304,6 +304,104 @@ TEST_CASE("mata::utils::OrdVector::filter() and filter_indexes() take a move-onl
 	CHECK(indexed == OrdVector<int>{10, 20});
 }
 
+TEST_CASE("mata::utils::OrdVector::insert() with a hint - issue #769") {
+	OrdVector<int> vec{1, 5, 9};
+
+	SECTION("a correct hint inserts at the hinted place") {
+		const auto [it, inserted] = vec.insert(vec.begin() + 1, 7);
+		CHECK(inserted);
+		CHECK(*it == 7);
+		CHECK(vec == OrdVector<int>{1, 5, 7, 9});
+	}
+
+	SECTION("a correct end() hint appends") {
+		const auto [it, inserted] = vec.insert(vec.end(), 10);
+		CHECK(inserted);
+		CHECK(*it == 10);
+		CHECK(vec == OrdVector<int>{1, 5, 9, 10});
+	}
+
+	SECTION("a wrong end() hint falls back to the search and keeps the vector sorted") {
+		const auto [it, inserted] = vec.insert(vec.end(), 3);
+		CHECK(inserted);
+		CHECK(*it == 3);
+		CHECK(vec.to_vector() == std::vector<int>{1, 3, 5, 9});
+	}
+
+	SECTION("a wrong inner hint still inserts") {
+		const auto [it, inserted] = vec.insert(vec.begin(), 7);
+		CHECK(inserted);
+		CHECK(*it == 7);
+		CHECK(vec.to_vector() == std::vector<int>{1, 5, 7, 9});
+	}
+
+	SECTION("a present element is not inserted again, wherever the hint points") {
+		for (const std::ptrdiff_t hint : {0, 1, 2, 3}) {
+			const auto [it, inserted] = vec.insert(vec.begin() + hint, 5);
+			CHECK(!inserted);
+			CHECK(*it == 5);
+			CHECK(vec.to_vector() == std::vector<int>{1, 5, 9});
+		}
+	}
+
+	SECTION("an empty vector") {
+		OrdVector<int> empty{};
+		const auto [it, inserted] = empty.insert(empty.end(), 4);
+		CHECK(inserted);
+		CHECK(*it == 4);
+		CHECK(empty == OrdVector<int>{4});
+	}
+}
+
+TEST_CASE("mata::utils::is_sorted() - issue #769") {
+	CHECK(mata::utils::is_sorted(std::vector<int>{}));
+	CHECK(mata::utils::is_sorted(std::vector<int>{1}));
+	CHECK(mata::utils::is_sorted(std::vector<int>{1, 2, 3}));
+	CHECK(!mata::utils::is_sorted(std::vector<int>{1, 1}));
+	CHECK(!mata::utils::is_sorted(std::vector<int>{3, 2}));
+}
+
+TEST_CASE("mata::utils::OrdVector constructors take only ranges of keys - issue #769") {
+	// A scalar convertible to the key is one key, not a range to iterate.
+	const OrdVector<size_t> from_int(3);
+	CHECK(from_int.to_vector() == std::vector<size_t>{3});
+
+	const std::vector<unsigned> unsorted{5, 1, 5, 3};
+	const OrdVector<size_t> from_range(unsorted);
+	CHECK(from_range.to_vector() == std::vector<size_t>{1, 3, 5});
+
+	OrdVector<int> mutable_vec{2, 1};
+	mutable_vec.to_vector_mut().push_back(3);
+	CHECK(mutable_vec.to_vector() == std::vector<int>{1, 2, 3});
+}
+
+TEST_CASE("mata::BoolVector::get_elements() returns the indices of the set bits - issue #769") {
+	mata::BoolVector bool_vector{0, 1, 0, 1, 1};
+	std::vector<size_t> elements{7};
+	mata::BoolVector::get_elements(&elements, bool_vector);
+	CHECK(elements == std::vector<size_t>{1, 3, 4});
+
+	std::vector<size_t> member_elements{7};
+	bool_vector.get_elements(member_elements);
+	CHECK(member_elements == std::vector<size_t>{1, 3, 4});
+
+	const mata::BoolVector& const_bool_vector{bool_vector};
+	std::vector<size_t> const_elements{};
+	const_bool_vector.get_elements(const_elements);
+	CHECK(const_elements == std::vector<size_t>{1, 3, 4});
+}
+
+TEST_CASE("mata::utils::rename() renames every element - issue #769") {
+	// Every element equals its index: each has to be renamed nonetheless.
+	std::vector<size_t> values{0, 1, 2};
+	mata::utils::rename(values, std::vector<size_t>{2, 0, 1});
+	CHECK(values == std::vector<size_t>{2, 0, 1});
+
+	OrdVector<size_t> ord_vector{0, 1};
+	ord_vector.rename({1, 2});
+	CHECK(ord_vector == OrdVector<size_t>{1, 2});
+}
+
 TEST_CASE("mata::utils::OrdVector::OrdVector(VectorType&&) - issue #847") {
 	using OrdVectorT = OrdVector<int>;
 

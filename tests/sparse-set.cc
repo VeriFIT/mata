@@ -115,13 +115,60 @@ TEST_CASE("mata::utils::SparseSet") {
 	}
 }
 
+TEST_CASE("mata::utils::SparseSet equality compares the contents - issue #769") {
+	SparseSet<unsigned long> inserted_in_order{};
+	inserted_in_order.insert(5);
+	inserted_in_order.insert(3);
+
+	SparseSet<unsigned long> inserted_in_other_order{};
+	inserted_in_other_order.insert(3);
+	inserted_in_other_order.insert(5);
+	CHECK(inserted_in_order == inserted_in_other_order);
+
+	SparseSet<unsigned long> with_bigger_domain{};
+	with_bigger_domain.insert(100);
+	with_bigger_domain.erase(100);
+	with_bigger_domain.insert(3);
+	with_bigger_domain.insert(5);
+	CHECK(with_bigger_domain == inserted_in_order);
+
+	inserted_in_other_order.insert(7);
+	CHECK(inserted_in_order != inserted_in_other_order);
+	CHECK(inserted_in_other_order != inserted_in_order);
+}
+
+TEST_CASE("mata::utils::SparseSet constructors - issue #769") {
+	SECTION("a non-const SparseSet is copied, not re-inserted") {
+		SparseSet<unsigned long> original{};
+		original.insert(100);
+		original.erase(100);
+		original.insert(4);
+		SparseSet<unsigned long> copy{original};
+		CHECK(copy == original);
+		CHECK(copy.domain_size() == original.domain_size());
+	}
+
+	SECTION("a non-const BoolVector gives the indices of its set bits") {
+		mata::BoolVector bool_vector{0, 1, 0, 1};
+		const SparseSet<unsigned long> from_bool_vector{bool_vector};
+		CHECK(from_bool_vector == SparseSet<unsigned long>{1, 3});
+	}
+
+	SECTION("a const and a temporary container") {
+		const std::vector<unsigned long> values{1, 2, 3};
+		const SparseSet<unsigned long> from_const{values};
+		CHECK(from_const == SparseSet<unsigned long>{1, 2, 3});
+		const SparseSet<unsigned long> from_temporary{std::vector<unsigned long>{4, 6}};
+		CHECK(from_temporary == SparseSet<unsigned long>{4, 6});
+	}
+}
+
 namespace {
 
 /// Draw a value in [0, bound) from the raw generator output, portably across standard libraries.
 size_t draw(std::mt19937& rng, const size_t bound) { return static_cast<size_t>(rng()) % bound; }
 
-/// The elements of @p set in ascending order. Only the contents are compared: @c SparseSet::operator== compares
-///  the internal buffers, insertion history included (#769).
+/// The elements of @p set in ascending order, comparable with @c elements() of a @c std::set.
 std::vector<State> sorted_elements(const SparseSet<State>& set) {
 	std::vector<State> elements{set.begin(), set.end()};
 	std::ranges::sort(elements);
