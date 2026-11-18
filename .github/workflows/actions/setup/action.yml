@@ -12,14 +12,12 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Building MacOS dependencies
+    # Otherwise Homebrew updates itself before every later `brew install` (LLVM here, the solvers and Graphviz
+    #  in the other actions).
+    - name: Skip Homebrew's auto-update (macOS)
       if: ${{ inputs.os == 'macos-latest' }}
       shell: sh
-      run: brew install lcov gcovr automake
-    - name: Building Unix dependencies
-      if: ${{ inputs.os == 'ubuntu-latest' }}
-      shell: sh
-      run: sudo apt install -y build-essential lcov gcovr xdg-utils
+      run: echo "HOMEBREW_NO_AUTO_UPDATE=1" >> "$GITHUB_ENV"
     # Mata uses C++23. The distro's default gcc/g++ (unversioned) can lag behind, so pick the
     #  newest versioned gcc-<N>/g++-<N> package available in apt instead of hardcoding a version.
     - name: Select GCC (Linux)
