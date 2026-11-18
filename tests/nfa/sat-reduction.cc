@@ -14,6 +14,7 @@
 #include <locale>
 #include <optional>
 #include <string>
+#include <system_error>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -115,13 +116,37 @@ Nfa nfa_with_three_state_minimum() {
 }
 
 #ifdef MATA_TESTS_FAKE_SOLVERS
+/// A private temporary directory removed with its contents on destruction.
+class TemporaryDirectory {
+  public:
+	explicit TemporaryDirectory(const std::string& name) : path_{create(name)} {}
+	TemporaryDirectory(const TemporaryDirectory&) = delete;
+	TemporaryDirectory& operator=(const TemporaryDirectory&) = delete;
+	~TemporaryDirectory() {
+		std::error_code error{};
+		std::filesystem::remove_all(path_, error);
+	}
+
+	const std::filesystem::path& path() const { return path_; }
+
+  private:
+	std::filesystem::path path_{};
+
+	static std::filesystem::path create(const std::string& name) {
+		std::string directory{(std::filesystem::temp_directory_path() / (name + "-XXXXXX")).string()};
+		if (::mkdtemp(directory.data()) == nullptr) {
+			throw std::system_error(errno, std::generic_category(), "cannot create a test directory");
+		}
+		return directory;
+	}
+};
+
 /// Whether a shell script written next to the fake solvers can be executed at all: TMPDIR or /tmp is mounted noexec
 ///  on hardened systems and in containers started with '--tmpfs /tmp'.
 bool executable_scripts_work() {
 	static const bool works{[] {
-		const std::filesystem::path path{
-			std::filesystem::temp_directory_path() / ("mata exec probe-" + std::to_string(::getpid()))
-		};
+		const TemporaryDirectory directory{"mata exec probe"};
+		const std::filesystem::path path{directory.path() / "probe"};
 		std::ofstream{path} << "#!/bin/sh\nexit 0\n";
 		std::filesystem::permissions(path, std::filesystem::perms::owner_all);
 		std::string argument{path.string()};
@@ -134,8 +159,6 @@ bool executable_scripts_work() {
 			while (::waitpid(process, &status, 0) == -1 && errno == EINTR) {}
 			result = WIFEXITED(status) && WEXITSTATUS(status) == 0;
 		}
-		std::error_code error{};
-		std::filesystem::remove(path, error);
 		return result;
 	}()};
 	return works;
@@ -145,34 +168,28 @@ bool executable_scripts_work() {
 class FakeSolver {
   public:
 	explicit FakeSolver(const std::string& script, const std::string& name = "solver")
-		: directory_{std::filesystem::temp_directory_path() / ("mata fake solver-" + std::to_string(::getpid()) + "-" + std::to_string(counter_++))},
-		  path_{directory_ / name} {
+		: directory_{"mata fake solver"},
+		  path_{directory_.path() / name} {
 		if (!executable_scripts_work()) {
 			SKIP(
 				"Scripts in " + std::filesystem::temp_directory_path().string() +
 				" cannot be executed; the directory is probably mounted noexec."
 			);
 		}
-		std::filesystem::create_directories(directory_);
 		std::ofstream{path_} << "#!/bin/sh\n" << script << '\n';
 		std::filesystem::permissions(path_, std::filesystem::perms::owner_all);
 	}
 	FakeSolver(const FakeSolver&) = delete;
 	FakeSolver& operator=(const FakeSolver&) = delete;
-	~FakeSolver() {
-		std::error_code error{};
-		std::filesystem::remove_all(directory_, error);
-	}
 
 	/// The command running the solver, with its path quoted.
 	std::string command() const { return "'" + path_.string() + "'"; }
 
 	const std::filesystem::path& path() const { return path_; }
-	const std::filesystem::path& directory() const { return directory_; }
+	const std::filesystem::path& directory() const { return directory_.path(); }
 
   private:
-	static inline unsigned counter_{0};
-	std::filesystem::path directory_;
+	TemporaryDirectory directory_;
 	std::filesystem::path path_;
 };
 
@@ -227,8 +244,7 @@ std::string check_arguments(const std::vector<std::string>& arguments = {}) {
 ///  so that even the small formulae of the tests are affected.
 class GroupingLocale {
   public:
-	GroupingLocale()
-		: previous_{std::locale::global(std::locale{std::locale::classic(), new Grouping{}})} {}
+	GroupingLocale() : previous_{std::locale::global(std::locale{std::locale::classic(), new Grouping{}})} {}
 	GroupingLocale(const GroupingLocale&) = delete;
 	GroupingLocale& operator=(const GroupingLocale&) = delete;
 	~GroupingLocale() { std::locale::global(previous_); }
@@ -262,6 +278,23 @@ class IgnoredChildSignal {
 } // namespace
 
 #ifdef MATA_TESTS_FAKE_SOLVERS
+TEST_CASE("mata::nfa::reduce() execution probe does not follow a predictable symlink") {
+	const TemporaryDirectory victim_directory{"mata symlink target"};
+	const std::filesystem::path victim{victim_directory.path() / "victim"};
+	std::ofstream{victim} << "do not overwrite";
+	const std::filesystem::path link{
+		std::filesystem::temp_directory_path() / ("mata exec probe-" + std::to_string(::getpid()))
+	};
+	std::error_code error{};
+	std::filesystem::remove(link, error);
+	std::filesystem::create_symlink(victim, link);
+	(void) executable_scripts_work();
+	std::string contents{};
+	std::getline(std::ifstream{victim}, contents);
+	CHECK(contents == "do not overwrite");
+	std::filesystem::remove(link, error);
+}
+
 TEST_CASE("mata::nfa::reduce() with algorithms \"sat\" and \"qbf\" running fake solvers") {
 	const Nfa input{determinize(kth_last_symbol_is_one(2))};
 
@@ -420,9 +453,7 @@ TEST_CASE("mata::nfa::reduce() with algorithms \"sat\" and \"qbf\" running fake 
 				CHECK(are_equivalent(nfa, input));
 			}
 			{ // Given by the "solver" parameter, by its full path.
-				const Nfa nfa{
-					reduce(input, nullptr, {{"algorithm", "qbf"}, {"solver", depqbf->command() + " --qdo"}})
-				};
+				const Nfa nfa{reduce(input, nullptr, {{"algorithm", "qbf"}, {"solver", depqbf->command() + " --qdo"}})};
 				CHECK(nfa.num_of_states() == 4);
 				CHECK(are_equivalent(nfa, input));
 			}
@@ -456,8 +487,7 @@ TEST_CASE("mata::nfa::reduce() with algorithms \"sat\" and \"qbf\" running fake 
 		// No solver is run: the type is checked first.
 		for (const char* const algorithm : {"sat", "qbf"}) {
 			CHECK_THROWS_WITH(
-				reduce(input, nullptr, {{"algorithm", algorithm}, {"type", "after"}}),
-				ContainsSubstring("unknown type")
+				reduce(input, nullptr, {{"algorithm", algorithm}, {"type", "after"}}), ContainsSubstring("unknown type")
 			);
 		}
 		// "dfa" is a type of "sat" only; "qbf" always computes an NFA.
