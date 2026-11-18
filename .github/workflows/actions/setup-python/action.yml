@@ -14,8 +14,7 @@ inputs:
     default: "v0.0.0-dev.1"
   install-binding:
     description: >-
-      Whether to install the binding itself ("true") or only its dependencies ("false"), for jobs that build
-      the binding later anyway.
+      Whether to install the binding itself ("true") or only its dependencies ("false"), for jobs that build the binding later anyway.
     required: false
     default: "true"
 runs:
