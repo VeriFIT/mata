@@ -153,4 +153,20 @@ TEST_CASE("mata::nft::complement()") {
 		CHECK(complemented.is_in_lang_by_levels(pb_pa));
 		CHECK_FALSE(complemented.is_in_lang_by_levels({Word{'p', 'b'}, Word{'p', 'c'}}));
 	}
+
+	SECTION("two symbols with the same mixed target set in the complement - issue #736") {
+		// `0 -a-> { 1, 2 }` and `0 -b-> { 1, 2 }` reach one mixed set: { 1 } is resolved now and the jump to 2 pending.
+		//  Each pending jump must stay with its symbol; keying the mixed state by the set alone would keep one of them
+		//  and the complement would accept (aa) or (bb) by mistake.
+		Nft nft{Nft::with_levels(Levels{2, {0, 1, 0}}, 3, {0}, {2})};
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(0, 'a', 2);
+		nft.delta.add(0, 'b', 1);
+		nft.delta.add(0, 'b', 2);
+		const Nft complemented{complement(nft, EnumAlphabet{'a', 'b'})};
+		CHECK_FALSE(complemented.is_in_lang_by_levels({Word{'a'}, Word{'a'}}));
+		CHECK_FALSE(complemented.is_in_lang_by_levels({Word{'b'}, Word{'b'}}));
+		CHECK(complemented.is_in_lang_by_levels({Word{'a'}, Word{'b'}}));
+		CHECK(complemented.is_in_lang_by_levels({Word{'b'}, Word{'a'}}));
+	}
 }
