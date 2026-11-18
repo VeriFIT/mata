@@ -1358,13 +1358,14 @@ bool same_single_epsilon_noodles(
 	return true;
 }
 
+#if MATA_HAS_GENERATOR_SUPPORT
+// Only the lazy-enumeration checks use it; without std::generator it would be an unused function.
 std::vector<Nfa> segment_automata(const seg_nfa::Noodle& noodle) {
 	std::vector<Nfa> automata{};
 	for (const seg_nfa::NoodleSegment& segment : noodle) { automata.push_back(segment.to_nfa()); }
 	return automata;
 }
 
-#if MATA_HAS_GENERATOR_SUPPORT
 template <class Noodles> std::vector<seg_nfa::Noodle> take_all(Noodles&& noodles) {
 	std::vector<seg_nfa::Noodle> result{};
 	for (auto&& noodle : noodles) { result.push_back(std::move(noodle)); }
@@ -1378,6 +1379,25 @@ bool same_noodles_in_order(const std::vector<seg_nfa::Noodle>& lhs, const std::v
 }
 #endif
 } // namespace
+
+#if MATA_HAS_GENERATOR_SUPPORT
+	#include <memory>
+static_assert(MATA_HAS_GENERATOR_SUPPORT == 1, "the configured support and the library support must agree");
+	#include "mata/utils/lazy-generator.hh"
+
+TEST_CASE("mata::utils::LazyGenerator returns a reference generator's reference") {
+	int value = 42;
+	const auto values{[&]() -> std::generator<int&> { co_yield value; }};
+	mata::utils::LazyGenerator<int&> lazy{values()};
+	CHECK_FALSE(lazy.done());
+	int& taken = lazy.next();
+	CHECK(&taken == &value);
+	value = 7;
+	CHECK(taken == 7);
+	CHECK(lazy.done());
+}
+
+#endif
 
 TEST_CASE("mata::nfa::SegNfa::noodlify() matches a brute-force enumeration") {
 	size_t num_of_noodles{0};
@@ -1409,6 +1429,8 @@ TEST_CASE("mata::nfa::SegNfa::noodlify() matches a brute-force enumeration") {
 			}
 			// Stopping early leaves the rest of the search undone.
 			for (const seg_nfa::Noodle& noodle : seg_nfa::noodlify_lazy(aut, EPSILON, include_empty)) {
+				// The eager result may be empty after a regression the CHECKs above record; do not read past it.
+				REQUIRE_FALSE(actual.empty());
 				CHECK(same_segments(noodle, segment_automata(actual.front())));
 				break;
 			}

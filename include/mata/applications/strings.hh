@@ -589,6 +589,10 @@ struct NoodleOrder {
  *  stack in memory instead of all noodles, and the shared automaton of a final state (see NoodleSegment) is built
  *  when the search first reaches the final state. A consumer that stops early skips the rest of the work.
  *
+ * Suppressing repeated noodles (possible when ε-only segments are omitted) keeps the key of every distinct result
+ *  until enumeration ends, so memory also grows with the number of results; MultEps and the transducer lazy paths
+ *  have this output-dependent cost.
+ *
  * With NoodleOrder::Kind::Reverse, the noodles come in the reverse order of NoodleOrder::Kind::Forward. A noodle that
  *  the search finishes more than once (possible only when segments with the language {ε} are left out) is emitted
  *  where it is finished first in the given order, so another order may place such a noodle elsewhere.

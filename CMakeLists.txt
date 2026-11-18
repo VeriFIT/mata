@@ -76,6 +76,32 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_VERSION VER
 	)
 endif ()
 
+# Whether the standard library implements std::generator. Written into the installed `mata/config.hh`: the layout of
+#  the exported `mata::utils::LazyGenerator` depends on it, so a consumer must see the value the library was built
+#  with, not whatever its own standard library reports.
+include (CheckCXXSourceCompiles)
+# check_cxx_source_compiles() honours CMAKE_CXX_STANDARD (policy CMP0067); libmata itself requests cxx_std_23.
+set (MATA_SAVED_CXX_STANDARD "${CMAKE_CXX_STANDARD}")
+set (CMAKE_CXX_STANDARD 23)
+check_cxx_source_compiles (
+	"#include <version>
+	#ifndef __cpp_lib_generator
+	#error no std::generator
+	#endif
+	int main() { return 0; }"
+	MATA_STD_GENERATOR_FOUND
+)
+if (MATA_SAVED_CXX_STANDARD)
+	set (CMAKE_CXX_STANDARD "${MATA_SAVED_CXX_STANDARD}")
+else ()
+	unset (CMAKE_CXX_STANDARD)
+endif ()
+if (MATA_STD_GENERATOR_FOUND)
+	set (MATA_HAS_GENERATOR_SUPPORT 1)
+else ()
+	set (MATA_HAS_GENERATOR_SUPPORT 0)
+endif ()
+
 # 3rd party modules
 set (CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 

@@ -190,10 +190,10 @@ def noodlify_for_equation(left_side_automata: list, mata_nfa.Nfa right_side_auto
                     minimization before noodlification. When "reduce" is set, the caller's left-side automata are not mutated.
     :return: List of automata: A list of all (non-empty) noodles.
     """
-    params = params or {}
+    cdef umap[string, string] c_params = mata_nfa.encode_params(params or {})
     # When reducing, the C++ side unifies the initial and final states of the left side automata in place; pass it
     #  copies instead. `lhs_copies` keeps the copies alive while C++ holds their raw pointers.
-    copy_lhs = params.get("reduce", "false") != "false"
+    copy_lhs = _unifies_left_side(c_params)
     lhs_copies = []
     cdef vector[CNfa*] c_left_side_automata
     for lhs_aut in left_side_automata:
@@ -205,11 +205,7 @@ def noodlify_for_equation(left_side_automata: list, mata_nfa.Nfa right_side_auto
     noodle_segments = []
     wrapped = {}
     cdef vector[mata_strings.CNoodle] c_noodle_segments = mata_strings.c_noodlify_for_equation(
-        c_left_side_automata, dereference(right_side_automaton.thisptr.get()), include_empty,
-        {
-            k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-            for k, v in params.items()
-        },
+        c_left_side_automata, dereference(right_side_automaton.thisptr.get()), include_empty, c_params
     )
     for c_noodle in c_noodle_segments:
         noodle = []
@@ -219,6 +215,18 @@ def noodlify_for_equation(left_side_automata: list, mata_nfa.Nfa right_side_auto
         noodle_segments.append(noodle)
 
     return noodle_segments
+
+cdef bool _unifies_left_side(const umap[string, string]& c_params):
+    """Whether `noodlify_for_equation()` unifies the left side automata in place for these encoded parameters.
+
+    Decided on the map passed to C++, with the C++ rule (`unify_left_side()`), so `str` and `bytes` keys and values
+    are treated alike.
+    """
+    cdef string reduce_key = b"reduce"
+    if c_params.count(reduce_key) == 0:
+        return False
+    cdef string value = c_params.at(reduce_key)
+    return value == b"forward" or value == b"backward" or value == b"bidirectional"
 
 
 cdef list _wrap_noodle_with_epsilons_counter(
@@ -532,17 +540,16 @@ def noodlify_for_equation_lazy(
 
     :return: Iterator over the noodles, each a list of segment automata.
     """
-    params = params or {}
+    cdef umap[string, string] c_params = mata_nfa.encode_params(params or {})
     # As noodlify_for_equation(): the C++ side unifies the left side automata in place when reducing, so pass it
-    #  copies then.
-    copy_lhs = params.get("reduce", "false") != "false"
+    #  copies then. Decided on the encoded map, so `bytes` parameters are treated as `str` ones.
+    copy_lhs = _unifies_left_side(c_params)
     cdef vector[shared_ptr[CNfa]] c_left_side_automata
     for lhs_aut in left_side_automata:
         if copy_lhs:
             c_left_side_automata.push_back(make_shared[CNfa](dereference((<mata_nfa.Nfa>lhs_aut).thisptr)))
         else:
             c_left_side_automata.push_back((<mata_nfa.Nfa>lhs_aut).thisptr)
-    cdef umap[string, string] c_params = mata_nfa.encode_params(params)
     cdef bool c_include_empty = include_empty
     cdef mata_strings.CNoodleOrder c_order = _c_noodle_order(order, seed)
     cdef mata_strings.CLazyNoodleGenerator* it

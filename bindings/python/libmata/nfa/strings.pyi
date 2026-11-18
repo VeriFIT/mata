@@ -165,7 +165,6 @@ def noodlify_for_transducer_lazy(
 def process_eps_map(eps_cnt: dict[int, int]) -> list[int]:
     """Process an epsilon count map to a sequence of values (sorted by key, descending)."""
 
-
 def get_words_of_lengths(nft: mata_nft.Nft, lengths: list[int]) -> list[list[Symbol]] | None:
     """Get the accepting words for each tape of `nft` with the specific `lengths`."""
 

@@ -45,10 +45,12 @@ template <class T> class LazyGenerator {
 	}
 
 	/// Take the next value. @pre !done().
+	/// Returns the generator's own reference: a value generator yields an rvalue, so the value is moved out, and a
+	///  reference generator (e.g. @c std::generator<int&>) keeps its reference.
 	T next() {
 		done();
 		holds_value_ = false;
-		return std::move(*it_);
+		return *it_;
 	}
 
   private:

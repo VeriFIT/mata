@@ -3,15 +3,19 @@
 
 #include <version>
 
-/// Defined to 1 when @c std::generator (C++23 `<generator>`, P2502) is actually available, 0 otherwise. Some
-///  standard libraries -- notably Apple's system libc++ shipped with Xcode on macOS -- do not implement it at all,
-///  regardless of `-std=c++23`, so code that depends on it must be guarded by this macro instead of assuming C++23
-///  support implies it.
-// A macro, not a 'constexpr' constant: it guards '#if' blocks around the declarations that need 'std::generator'.
-#ifdef __cpp_lib_generator
-	#define MATA_HAS_GENERATOR_SUPPORT 1
-#else
-	#define MATA_HAS_GENERATOR_SUPPORT 0
+#include "mata/config.hh"
+
+/// @c MATA_HAS_GENERATOR_SUPPORT (from the generated @c mata/config.hh) is 1 when @c std::generator (C++23
+///  `<generator>`, P2502) was available to the standard library libmata was built with, 0 otherwise. Some standard
+///  libraries -- notably Apple's system libc++ shipped with Xcode on macOS -- do not implement it at all, regardless
+///  of `-std=c++23`, so code that depends on it must be guarded by this macro instead of assuming C++23 support
+///  implies it. The value is pinned at build time because the layout of the exported @c mata::utils::LazyGenerator
+///  depends on it; a consumer whose standard library disagrees is rejected here instead of silently compiling a
+///  different layout.
+#if MATA_HAS_GENERATOR_SUPPORT && !defined(__cpp_lib_generator)
+	#error "libmata was built with std::generator support, but this standard library has no std::generator"
+#elif !MATA_HAS_GENERATOR_SUPPORT && defined(__cpp_lib_generator)
+	#error "libmata was built without std::generator support, but this standard library has std::generator"
 #endif
 
 /// Brackets for definitions of coroutines returning @c std::generator. GCC's `-Wmismatched-new-delete` (part of
