@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <memory>
 #include <random>
 #include <ranges>
 #include <set>
@@ -1511,3 +1512,35 @@ TEST_CASE("mata::nfa::SegNfa::noodlify() keeps the empty noodles of an automaton
 	CHECK(same_noodles_in_order(lazy, with_empty));
 #endif
 }
+
+#if MATA_HAS_GENERATOR_SUPPORT
+TEST_CASE("mata::nfa::SegNfa::noodlify_mult_eps_lazy_ptr() does not search past the noodle it returns") {
+	// An 'a'-loop segment, 64 levels of two ε-only states each with an ε-transition from every state of the previous
+	//  level, and a final 'b'-loop segment: all 2^64 routes give the one noodle [a*, b*] (the ε-only segments are
+	//  left out), so the search past that noodle walks every route and would not end. The adaptor must resume the
+	//  generator only when the next value is asked for.
+	const size_t depth{64};
+	Nfa aut{};
+	const State first{aut.add_state()};
+	aut.initial.insert(first);
+	aut.delta.add(first, 'a', first);
+	std::vector<State> level{first};
+	for (size_t i{0}; i < depth; ++i) {
+		const std::vector<State> next_level{aut.add_state(), aut.add_state()};
+		for (const State source : level) {
+			for (const State target : next_level) { aut.delta.add(source, EPSILON, target); }
+		}
+		level = next_level;
+	}
+	const State last{aut.add_state()};
+	aut.delta.add(last, 'b', last);
+	aut.final.insert(last);
+	for (const State source : level) { aut.delta.add(source, EPSILON, last); }
+
+	std::unique_ptr<mata::utils::LazyGenerator<seg_nfa::NoodleWithEpsilonsCounter>> it{
+		seg_nfa::noodlify_mult_eps_lazy_ptr(aut, {EPSILON}, false, seg_nfa::NoodleOrder{})
+	};
+	REQUIRE(!it->done());
+	CHECK(it->next().size() == 2);
+}
+#endif

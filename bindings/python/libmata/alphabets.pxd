@@ -19,7 +19,7 @@ cdef extern from "mata/utils/lazy-generator.hh" namespace "mata::utils":
     #  Cython, since std::generator (what it wraps) is move-only and not default-constructible, which
     #  Cython's own code generation cannot accommodate as an intermediate value.
     cdef cppclass CLazyWordGenerator "mata::utils::LazyWordGenerator":
-        bool done()
+        bool done() except +
         vector[Symbol] next() except +
 
 

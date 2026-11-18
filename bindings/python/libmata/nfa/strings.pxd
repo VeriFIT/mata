@@ -87,21 +87,22 @@ cdef extern from "mata/applications/strings.hh" namespace "mata::applications::s
 ctypedef vector[CTransducerNoodleElement] CTransducerNoodle
 
 # Pull adaptors over the noodlify_*_lazy() generators, created only by the *_lazy_ptr() functions below; see
-#  CLazyWordGenerator in alphabets.pxd. `next()` runs the search to the following noodle, so it runs without the GIL.
+#  CLazyWordGenerator in alphabets.pxd. `done()`/`next()` run the search to the noodle they return, so they run
+#  without the GIL.
 cdef extern from "mata/utils/lazy-generator.hh" namespace "mata::utils":
     cdef cppclass CLazyNoodleGenerator \
         "mata::utils::LazyGenerator<mata::applications::strings::seg_nfa::Noodle>":
-        bool done()
+        bool done() except + nogil
         CNoodle next() except + nogil
 
     cdef cppclass CLazyNoodleWithEpsilonsCounterGenerator \
         "mata::utils::LazyGenerator<mata::applications::strings::seg_nfa::NoodleWithEpsilonsCounter>":
-        bool done()
+        bool done() except + nogil
         CNoodleWithEpsilonsCounter next() except + nogil
 
     cdef cppclass CLazyTransducerNoodleGenerator \
         "mata::utils::LazyGenerator<mata::applications::strings::seg_nfa::TransducerNoodle>":
-        bool done()
+        bool done() except + nogil
         CTransducerNoodle next() except + nogil
 
 cdef extern from "mata/applications/strings.hh" namespace "mata::applications::strings::seg_nfa":

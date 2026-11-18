@@ -390,6 +390,36 @@ def test_lazy_noodlify_without_generator_support():
         mata_strings.noodlify_lazy(_random_nfa(1, 4), 200)
 
 
+def _epsilon_lattice(depth):
+    """An 'a'-loop segment, `depth` levels of two ε-only states each with an ε-transition from every state of the
+    previous level, and a final 'b'-loop segment: all 2**depth routes give the one noodle [a*, b*], which
+    noodlify_mult_eps*() leaves the ε-only segments out of, so the search past that noodle walks every route."""
+    nfa = mata_nfa.Nfa()
+    first = nfa.add_new_state()
+    nfa.make_initial_state(first)
+    nfa.add_transition(first, ord("a"), first)
+    level = [first]
+    for _ in range(depth):
+        next_level = [nfa.add_new_state(), nfa.add_new_state()]
+        for source in level:
+            for target in next_level:
+                nfa.add_transition(source, 200, target)
+        level = next_level
+    last = nfa.add_new_state()
+    nfa.add_transition(last, ord("b"), last)
+    nfa.make_final_state(last)
+    for source in level:
+        nfa.add_transition(source, 200, last)
+    return nfa
+
+
+@needs_generator_support
+def test_lazy_noodlify_takes_the_first_noodle_without_the_rest_of_the_search():
+    # 2**64 routes after the first noodle: taking it must not search for the next one, which would not end.
+    noodles = mata_strings.noodlify_mult_eps_lazy(_epsilon_lattice(64), {200})
+    assert len(next(noodles)) == 2
+
+
 def test_process_eps_map():
     assert mata_strings.process_eps_map({3: 2, 1: 5}) == [2, 5]
 

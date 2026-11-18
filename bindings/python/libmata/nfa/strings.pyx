@@ -360,7 +360,7 @@ cdef class _LazyNoodles:
     """Iterator over the noodles of `noodlify_lazy()` and `noodlify_for_equation_lazy()`.
 
     Consecutive noodles share the `Nfa` of a segment they share; the wrappers of older noodles are not kept, so the
-    memory is bounded by the current noodle and the search instead of all noodles.
+    memory is bounded by the current noodle and the search instead of all noodles. The search runs without the GIL.
     """
     cdef mata_strings.CLazyNoodleGenerator* it
     cdef dict previous
@@ -373,10 +373,13 @@ cdef class _LazyNoodles:
 
     def __next__(self):
         cdef mata_strings.CNoodle c_noodle
-        if self.it.done():
-            raise StopIteration
+        cdef bint exhausted
         with nogil:
-            c_noodle = self.it.next()
+            exhausted = self.it.done()
+            if not exhausted:
+                c_noodle = self.it.next()
+        if exhausted:
+            raise StopIteration
         wrapped = {}
         noodle = [_wrap_noodle_segment(c_segment, wrapped, self.previous) for c_segment in c_noodle]
         self.previous = wrapped
@@ -404,10 +407,13 @@ cdef class _LazyNoodlesWithEpsilonsCounter:
 
     def __next__(self):
         cdef mata_strings.CNoodleWithEpsilonsCounter c_noodle
-        if self.it.done():
-            raise StopIteration
+        cdef bint exhausted
         with nogil:
-            c_noodle = self.it.next()
+            exhausted = self.it.done()
+            if not exhausted:
+                c_noodle = self.it.next()
+        if exhausted:
+            raise StopIteration
         wrapped = {}
         noodle = _wrap_noodle_with_epsilons_counter(c_noodle, wrapped, self.previous)
         self.previous = wrapped
@@ -426,7 +432,7 @@ cdef _LazyNoodlesWithEpsilonsCounter _lazy_noodles_with_epsilons_counter(
 
 
 cdef class _LazyTransducerNoodles:
-    """Iterator over the noodles of `noodlify_for_transducer_lazy()`."""
+    """Iterator over the noodles of `noodlify_for_transducer_lazy()`; see `_LazyNoodles`."""
     cdef mata_strings.CLazyTransducerNoodleGenerator* it
 
     def __dealloc__(self):
@@ -437,10 +443,13 @@ cdef class _LazyTransducerNoodles:
 
     def __next__(self):
         cdef mata_strings.CTransducerNoodle c_noodle
-        if self.it.done():
-            raise StopIteration
+        cdef bint exhausted
         with nogil:
-            c_noodle = self.it.next()
+            exhausted = self.it.done()
+            if not exhausted:
+                c_noodle = self.it.next()
+        if exhausted:
+            raise StopIteration
         return _wrap_transducer_noodle(c_noodle)
 
 
