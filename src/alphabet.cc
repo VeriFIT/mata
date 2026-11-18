@@ -40,7 +40,10 @@ OnTheFlyAlphabet::OnTheFlyAlphabet(const OnTheFlyAlphabet& alphabet)
 }
 
 OnTheFlyAlphabet::OnTheFlyAlphabet(StringToSymbolMap str_sym_map) : symbol_map_(std::move(str_sym_map)) {
-	for (auto it{symbol_map_.cbegin()}, end{symbol_map_.cend()}; it != end; ++it) { index_name(it); }
+	for (auto it{symbol_map_.cbegin()}, end{symbol_map_.cend()}; it != end; ++it) {
+		index_name(it);
+		update_next_symbol_value(it->second);
+	}
 }
 
 OnTheFlyAlphabet& OnTheFlyAlphabet::operator=(const OnTheFlyAlphabet& rhs) {
@@ -168,18 +171,9 @@ Symbol mata::OnTheFlyAlphabet::translate_symb(const std::string_view str) {
 	if (str == DONT_CARE_NAME) { return nft::DONT_CARE; }
 	// Found first, as try_emplace() would copy the name.
 	if (const auto it{symbol_map_.find(str)}; it != symbol_map_.end()) { return it->second; }
+	throw_if_symbol_space_exhausted(str);
 	index_name(symbol_map_.emplace(str, next_symbol_value_).first);
 	return next_symbol_value_++;
-
-	// TODO: How can the user specify to throw exceptions when we encounter an unknown symbol? How to specify that
-	//  the alphabet should have only the previously fixed symbols?
-	// auto it = symbol_map.find(str);
-	// if (symbol_map.end() == it)
-	//{
-	//    throw std::runtime_error("unknown symbol \'" + str + "\'");
-	//}
-
-	// return it->second;
 }
 
 mata::Word mata::OnTheFlyAlphabet::translate_word(const mata::WordName& word_name) const {
@@ -206,6 +200,7 @@ mata::Word mata::OnTheFlyAlphabet::translate_word(const mata::WordName& word_nam
 }
 
 OnTheFlyAlphabet::InsertionResult mata::OnTheFlyAlphabet::add_new_symbol(const std::string& key) {
+	throw_if_symbol_space_exhausted(key);
 	InsertionResult insertion_result{try_add_new_symbol(key, next_symbol_value_)};
 	if (!insertion_result.second) { // If the insertion of key-value pair failed.
 		throw std::runtime_error("multiple occurrences of the same symbol");
@@ -224,7 +219,16 @@ OnTheFlyAlphabet::InsertionResult mata::OnTheFlyAlphabet::add_new_symbol(const s
 }
 
 void mata::OnTheFlyAlphabet::update_next_symbol_value(const Symbol value) {
-	if (next_symbol_value_ <= value) { next_symbol_value_ = value + 1; }
+	// EPSILON (and anything above it) is never handed out, so it does not advance the counter; value + 1 would wrap.
+	if (value < nfa::EPSILON && next_symbol_value_ <= value) { next_symbol_value_ = value + 1; }
+}
+
+void mata::OnTheFlyAlphabet::throw_if_symbol_space_exhausted(const std::string_view name) const {
+	if (next_symbol_value_ >= nfa::EPSILON) {
+		throw std::runtime_error(
+			"Symbol space exhausted; cannot allocate a new symbol for '" + std::string{name} + "'."
+		);
+	}
 }
 
 std::ostream& mata::OnTheFlyAlphabet::print(std::ostream& os) const {
@@ -340,7 +344,7 @@ size_t mata::EnumAlphabet::erase(const Symbol symbol) {
 size_t mata::OnTheFlyAlphabet::erase(const Symbol symbol) {
 	const SymbolNames* const names{find_names(symbol)};
 	if (names == nullptr) { return 0; }
-	if (symbol == next_symbol_value_ - 1) { --next_symbol_value_; }
+	if (next_symbol_value_ != 0 && symbol == next_symbol_value_ - 1) { --next_symbol_value_; }
 	const auto name_it{symbol_map_.find(*names->name)};
 	unindex_name(name_it);
 	symbol_map_.erase(name_it);
@@ -349,7 +353,7 @@ size_t mata::OnTheFlyAlphabet::erase(const Symbol symbol) {
 
 size_t mata::OnTheFlyAlphabet::erase(const std::string& symbol_name) {
 	if (const auto found_it{symbol_map_.find(symbol_name)}; found_it != symbol_map_.end()) {
-		if (found_it->second == next_symbol_value_ - 1) { --next_symbol_value_; }
+		if (next_symbol_value_ != 0 && found_it->second == next_symbol_value_ - 1) { --next_symbol_value_; }
 		unindex_name(found_it);
 		symbol_map_.erase(found_it);
 		return 1;

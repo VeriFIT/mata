@@ -604,7 +604,7 @@ class Nfa : public Automaton {
 	bool is_flat() const;
 
 	/**
-	 * Fill @p alphabet_to_fill with symbols from @p nfa.
+	 * Fill @p alphabet_to_fill with symbols from @p nfa; @c EPSILON is skipped.
 	 * @param[out] alphabet_to_fill Alphabet to be filled with symbols from @p nfa.
 	 */
 	void fill_alphabet(mata::OnTheFlyAlphabet& alphabet_to_fill) const;
