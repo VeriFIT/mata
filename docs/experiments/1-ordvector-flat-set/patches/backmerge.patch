@@ -1,0 +1,52 @@
+From df33c2bfcfc6a484019544656c24d6e293b2680c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Wed, 18 Nov 2026 18:54:25 +0100
+Subject: [PATCH] EXPERIMENT utils: OrdVector range insert merges back to front
+ in place
+
+---
+ include/mata/utils/ord-vector.hh | 31 ++++++++++++++++++++++++-------
+ 1 file changed, 24 insertions(+), 7 deletions(-)
+
+diff --git a/include/mata/utils/ord-vector.hh b/include/mata/utils/ord-vector.hh
+index 3495bde31..3ffb8f87b 100644
+--- a/include/mata/utils/ord-vector.hh
++++ b/include/mata/utils/ord-vector.hh
+@@ -256,13 +256,30 @@ template <class Key, class Allocator> class OrdVector {
+ 			return true;
+ 		}
+ 
+-		// The merge buffer is local. It used to be a function-local `static` shared by every thread in
+-		//  the process, which corrupted the result of concurrent unions over unrelated containers.
+-		VectorType merged{};
+-		merged.reserve(vec_.size() + keys.size());
+-		std::ranges::set_union(vec_, keys, std::back_inserter(merged));
+-		const bool inserted{merged.size() > vec_.size()};
+-		vec_ = std::move(merged);
++		// EXPERIMENT: merge back to front in place into the grown vector, then close the gap that duplicates left at
++		//  the front: no temporary buffer, and the vector keeps its capacity.
++		const size_t old_size{vec_.size()};
++		vec_.resize(old_size + keys.size());
++		Key* const out{vec_.data()};
++		auto lhs{static_cast<std::ptrdiff_t>(old_size) - 1};
++		auto rhs{static_cast<std::ptrdiff_t>(keys.size()) - 1};
++		auto write{static_cast<std::ptrdiff_t>(vec_.size()) - 1};
++		while (rhs >= 0) {
++			const Key& key{keys[static_cast<size_t>(rhs)]};
++			if (lhs >= 0 && key < out[lhs]) {
++				out[write--] = std::move(out[lhs--]);
++			} else {
++				if (lhs >= 0 && out[lhs] == key) { --lhs; }
++				out[write--] = key;
++				--rhs;
++			}
++		}
++		// out[0..lhs] never moved; the merged suffix starts at write + 1.
++		if (const std::ptrdiff_t gap{write - lhs}; gap > 0) {
++			std::move(out + write + 1, out + vec_.size(), out + lhs + 1);
++			vec_.resize(vec_.size() - static_cast<size_t>(gap));
++		}
++		const bool inserted{vec_.size() > old_size};
+ 		MATA_EXPENSIVE_ASSERT(is_sorted());
+ 		return inserted;
+ 	}

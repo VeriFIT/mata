@@ -68,6 +68,10 @@ This process helps ensure that:
 - We avoid duplicate work.
 - The implementation follows the project's patterns and conventions.
 
+Before working on a performance or design change, check [docs/experiments/](docs/experiments/README.md): it records
+experiments that did not make it into the code, with their results and when they would be worth revisiting. When your
+own experiment does not land, add a record there.
+
 ## Pull Request Process
 
 1. Ensure your code builds successfully.

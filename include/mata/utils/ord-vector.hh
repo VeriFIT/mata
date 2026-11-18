@@ -57,6 +57,8 @@ inline constexpr sorted_unique_t sorted_unique{};
  *
  * This class implements the interface of a set (the same interface as
  * std::set) using ordered vector as the underlying data structure.
+ * Replacing it with @c std::flat_set, or its merge and search with alternatives, was measured and rejected:
+ *  see EXP-1 in docs/experiments/.
  *
  * @tparam  Key  Key type: type of the elements contained in the container.
  *               Each element in a set is also its key.

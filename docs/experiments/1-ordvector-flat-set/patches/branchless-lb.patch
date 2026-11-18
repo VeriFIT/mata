@@ -1,0 +1,102 @@
+From 0e9a8fc76479fa9cdb89b9e825c8ec347a046045 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Wed, 18 Nov 2026 18:55:07 +0100
+Subject: [PATCH] EXPERIMENT utils: OrdVector and SmallOrdVector search with a
+ branchless lower bound
+
+---
+ include/mata/utils/ord-vector.hh       | 23 ++++++++++++++++++-----
+ include/mata/utils/small-ord-vector.hh |  4 ++--
+ 2 files changed, 20 insertions(+), 7 deletions(-)
+
+diff --git a/include/mata/utils/ord-vector.hh b/include/mata/utils/ord-vector.hh
+index 3495bde31..53f44df16 100644
+--- a/include/mata/utils/ord-vector.hh
++++ b/include/mata/utils/ord-vector.hh
+@@ -52,6 +52,19 @@ struct sorted_unique_t {
+ };
+ inline constexpr sorted_unique_t sorted_unique{};
+ 
++/// EXPERIMENT: branchless lower bound (https://mhdm.dev/posts/sb_lower_bound/): the halving step compiles to a
++///  conditional move instead of a branch the predictor cannot learn.
++template <std::random_access_iterator Iterator, class T>
++Iterator branchless_lower_bound(Iterator first, const Iterator last, const T& value) {
++	auto length{last - first};
++	while (length > 0) {
++		const auto rem{length % 2};
++		length /= 2;
++		first += (first[length] < value) ? length + rem : 0;
++	}
++	return first;
++}
++
+ /**
+  * @brief  Implementation of a set using ordered vector
+  *
+@@ -177,7 +190,7 @@ template <class Key, class Allocator> class OrdVector {
+ 		MATA_EXPENSIVE_ASSERT(is_sorted());
+ 
+ 		// Tomas Fiedor: article about better binary search here https://mhdm.dev/posts/sb_lower_bound/.
+-		auto pos = std::lower_bound(vec_.begin(), vec_.end(), x);
++		auto pos = branchless_lower_bound(vec_.begin(), vec_.end(), x);
+ 		bool inserted{false};
+ 		if (pos == vec_.end() || *pos != x) {
+ 			pos = vec_.insert(pos, x);
+@@ -233,7 +246,7 @@ template <class Key, class Allocator> class OrdVector {
+ 	std::pair<iterator, bool> insert(Key&& x) {
+ 		MATA_EXPENSIVE_ASSERT(is_sorted());
+ 
+-		auto pos = std::lower_bound(vec_.begin(), vec_.end(), x);
++		auto pos = branchless_lower_bound(vec_.begin(), vec_.end(), x);
+ 		bool inserted{false};
+ 		if (pos == vec_.end() || *pos != x) {
+ 			pos = vec_.insert(pos, std::move(x));
+@@ -292,7 +305,7 @@ template <class Key, class Allocator> class OrdVector {
+ 	const_iterator find(const Key& key) const {
+ 		MATA_EXPENSIVE_ASSERT(is_sorted());
+ 
+-		auto it = std::lower_bound(vec_.begin(), vec_.end(), key);
++		auto it = branchless_lower_bound(vec_.begin(), vec_.end(), key);
+ 		if (it == vec_.end() || *it != key) { return vec_.end(); }
+ 		return it;
+ 	}
+@@ -300,7 +313,7 @@ template <class Key, class Allocator> class OrdVector {
+ 	iterator find(const Key& key) {
+ 		MATA_EXPENSIVE_ASSERT(is_sorted());
+ 
+-		auto it = std::lower_bound(vec_.begin(), vec_.end(), key);
++		auto it = branchless_lower_bound(vec_.begin(), vec_.end(), key);
+ 		if (it == vec_.end() || *it != key) { return vec_.end(); }
+ 		return it;
+ 	}
+@@ -343,7 +356,7 @@ template <class Key, class Allocator> class OrdVector {
+ 	 */
+ 	size_t erase(const Key& k) {
+ 		MATA_EXPENSIVE_ASSERT(is_sorted());
+-		auto found_value_it = std::lower_bound(vec_.begin(), vec_.end(), k);
++		auto found_value_it = branchless_lower_bound(vec_.begin(), vec_.end(), k);
+ 		if (found_value_it != vec_.end()) {
+ 			if (*found_value_it == k) {
+ 				vec_.erase(found_value_it);
+diff --git a/include/mata/utils/small-ord-vector.hh b/include/mata/utils/small-ord-vector.hh
+index 16338607f..8c41b33cf 100644
+--- a/include/mata/utils/small-ord-vector.hh
++++ b/include/mata/utils/small-ord-vector.hh
+@@ -143,7 +143,7 @@ class SmallOrdVector {
+ 		MATA_ASSERT(is_sorted_unique());
+ 		const Key* const first{data()};
+ 		const Key* const last{first + size()};
+-		const Key* const it{std::lower_bound(first, last, key)};
++		const Key* const it{branchless_lower_bound(first, last, key)};
+ 		return (it != last && *it == key) ? it : last;
+ 	}
+ 	iterator find(const Key key) { return const_cast<iterator>(std::as_const(*this).find(key)); }
+@@ -163,7 +163,7 @@ class SmallOrdVector {
+ 		}
+ 		// Returned as the mutable 'iterator' of the pair below, which the check does not follow.
+ 		// NOLINTNEXTLINE(misc-const-correctness)
+-		Key* pos{std::lower_bound(data(), data() + n, key)};
++		Key* pos{branchless_lower_bound(data(), data() + n, key)};
+ 		if (*pos == key) { return {pos, false}; }
+ 		const auto index{static_cast<size_type>(pos - data())};
+ 		if (n == capacity()) { reallocate(grown_capacity(n + 1)); }
