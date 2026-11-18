@@ -1849,6 +1849,11 @@ Nft nft::determinize(const Nft& nft, std::unordered_map<StateSet, State>* subset
 	// A map of jumps from a `result` source state to a set of targets in the `nft` that is yet to be added to the
 	//  `result`.
 	std::unordered_map<State, StatePost> wip_jumps{};
+	// States whose targets lie on several levels: only the targets on the nearest level are resolved now, the rest
+	//  stay in `wip_jumps` and repeat the current symbol. Such a state therefore stands for the whole target set
+	//  together with the symbol that reached it, and must not be reused for an unrelated macrostate with the same
+	//  resolved part, which would inherit the pending jump. `*subset_map` holds only single-level sets.
+	std::map<std::pair<StateSet, Symbol>, State> mixed_map{};
 	while (!worklist.empty()) {
 		auto [source_res, sources] = std::move(worklist.back());
 		worklist.pop_back();
@@ -1871,24 +1876,32 @@ Nft nft::determinize(const Nft& nft, std::unordered_map<StateSet, State>* subset
 			const std::vector<Iterator>& moves = synchronized_iterator.get_current();
 			const Symbol current_symbol{(*moves.begin())->symbol};
 			StateSet targets{synchronized_iterator.unify_targets()};
-			const auto existing_targets_it = subset_map->find(targets);
-			const bool target_res_exists{existing_targets_it != subset_map->end()};
+			// The created target has the minimal level between all the original targets.
+			const Level next_level{*nft.levels.get_minimal_next_level_of(targets)};
+			const bool is_mixed{next_level != 0 && std::ranges::any_of(targets, [&](const State state) {
+									return nft.levels[state] != next_level;
+								})};
 
-			State target_res;
+			State target_res{Limits::max_state};
 			// Targets that need further processing because they were not reached yet at this step.
 			StateSet targets_partial{};
 			StateSet targets_resolved{};
-			Level next_level;
-			if (target_res_exists) {
-				target_res = existing_targets_it->second;
-				next_level = result.levels[target_res];
-			} else {
-				// Create target of the minimal level between all the original targets.
-				next_level = *nft.levels.get_minimal_next_level_of(targets);
-				if (next_level != 0) {
+			bool target_res_exists;
+			if (is_mixed) {
+				const auto existing_targets_it{mixed_map.find({targets, current_symbol})};
+				target_res_exists = existing_targets_it != mixed_map.end();
+				if (target_res_exists) {
+					target_res = existing_targets_it->second;
+				} else {
 					for (const State state : targets) {
 						(nft.levels[state] == next_level ? targets_resolved : targets_partial).push_back(state);
 					}
+				}
+			} else {
+				const auto existing_targets_it{subset_map->find(targets)};
+				target_res_exists = existing_targets_it != subset_map->end();
+				if (target_res_exists) {
+					target_res = existing_targets_it->second;
 				} else {
 					targets_resolved = std::move(targets);
 				}
@@ -1899,10 +1912,12 @@ Nft nft::determinize(const Nft& nft, std::unordered_map<StateSet, State>* subset
 				inserted) {
 				if (!target_res_exists) {
 					target_res = result.add_state_with_level(next_level);
-					(*subset_map)[mata::utils::OrdVector<State>(targets_resolved)] = target_res;
-					if (!targets_partial.empty()) {
+					if (is_mixed) {
+						mixed_map.emplace(std::pair{std::move(targets), current_symbol}, target_res);
 						// Some targets were not resolved at this step, so we need to store them for further processing.
 						wip_jumps.emplace(target_res, StatePost{{current_symbol, targets_partial}});
+					} else {
+						subset_map->emplace(targets_resolved, target_res);
 					}
 					worklist.emplace_back(target_res, targets_resolved);
 					if (next_level == 0) {

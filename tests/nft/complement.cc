@@ -132,4 +132,25 @@ TEST_CASE("mata::nft::complement()") {
 		nft_complemented = complement(nft, *alphabet);
 		CHECK_SHARED();
 	}
+
+	SECTION("word rejected only because of a pending jump inherited in determinize() - issue #736") {
+		// Relation { (qa, qa), (qa, qc), (pb, pc) }: `2 -a-> 6` jumps over level 1, so the targets of `2 -a-> { 5, 6 }`
+		// lie on two levels. The state built for { 5 } parks the jump; reusing it for `4 -b-> { 5 }` made the
+		// determinized automaton accept (pb, pa), and the complement reject it.
+		Nft relation{Nft::with_levels(Levels{2, {0, 1, 0, 1, 0, 1, 0, 0}}, 8, {0}, {6, 7})};
+		relation.delta.add(0, 'q', 1);
+		relation.delta.add(1, 'q', 2);
+		relation.delta.add(0, 'p', 3);
+		relation.delta.add(3, 'p', 4);
+		relation.delta.add(2, 'a', 5);
+		relation.delta.add(2, 'a', 6);
+		relation.delta.add(4, 'b', 5);
+		relation.delta.add(5, 'c', 7);
+
+		const std::vector<Word> pb_pa{Word{'p', 'b'}, Word{'p', 'a'}};
+		REQUIRE_FALSE(relation.is_in_lang_by_levels(pb_pa));
+		const Nft complemented{complement(relation, EnumAlphabet{'a', 'b', 'c', 'p', 'q'})};
+		CHECK(complemented.is_in_lang_by_levels(pb_pa));
+		CHECK_FALSE(complemented.is_in_lang_by_levels({Word{'p', 'b'}, Word{'p', 'c'}}));
+	}
 }

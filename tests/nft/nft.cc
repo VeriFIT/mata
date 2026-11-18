@@ -679,6 +679,43 @@ TEST_CASE("mata::nft::determinize()") {
 		CHECK_SHARED();
 	}
 
+	SECTION("state with a pending jump is not reused by an unrelated macrostate - issue #736") {
+		// Relation { (ua, ua), (ua, uc), (vb, vc) }, over states 0 I, 1 m, 2 A, 3 m', 4 B, 5 x, 6 y, 7 z.
+		// `A -a-> y` jumps from level 0 over level 1, so the targets of `A -a-> { x, y }` lie on two levels: the
+		// state built for { x } parks `a -> { y }` as a pending jump. `B -b-> { x }` must not reuse that state and
+		// inherit the jump, which would accept (vb, va).
+		const auto make = [](const Symbol u, const Symbol v) {
+			Nft nft{Nft::with_levels(Levels{2, {0, 1, 0, 1, 0, 1, 0, 0}}, 8, {0}, {6, 7})};
+			nft.delta.add(0, u, 1);
+			nft.delta.add(1, u, 2);
+			nft.delta.add(0, v, 3);
+			nft.delta.add(3, v, 4);
+			nft.delta.add(2, 'a', 5);
+			nft.delta.add(2, 'a', 6);
+			nft.delta.add(4, 'b', 5);
+			nft.delta.add(5, 'c', 7);
+			return nft;
+		};
+		// The worklist is a stack, so the symbol order decides whether { x } is first reached as a plain set.
+		for (const auto& [u, v] : std::vector<std::pair<Symbol, Symbol>>{{'q', 'p'}, {'p', 'q'}}) {
+			const Nft original{make(u, v)};
+			const Nft determinized{determinize(original)};
+			CHECK(are_equivalent(original, determinized));
+			CHECK(original.is_in_lang_by_levels({Word{v, 'b'}, Word{v, 'c'}}));
+			CHECK(determinized.is_in_lang_by_levels({Word{v, 'b'}, Word{v, 'c'}}));
+			CHECK_FALSE(original.is_in_lang_by_levels({Word{v, 'b'}, Word{v, 'a'}}));
+			CHECK_FALSE(determinized.is_in_lang_by_levels({Word{v, 'b'}, Word{v, 'a'}}));
+			// Naive inclusion complements `original` through `determinize()`, so it answered `true` here.
+			Nft single{Nft::with_levels(Levels{2, {0, 1, 0, 1, 0}}, 5, {0}, {4})}; // { (vb, va) }
+			single.delta.add(0, v, 1);
+			single.delta.add(1, v, 2);
+			single.delta.add(2, 'b', 3);
+			single.delta.add(3, 'a', 4);
+			CHECK_FALSE(is_included(single, original, nullptr, JumpMode::RepeatSymbol, {{"algorithm", "naive"}}));
+			CHECK_FALSE(is_included(single, original, nullptr, JumpMode::RepeatSymbol, {{"algorithm", "antichains"}}));
+		}
+	}
+
 	// SECTION("This broke Delta when delta[q] could cause re-allocation of post")
 	// {
 	//     Nft x{};

@@ -1997,7 +1997,10 @@ Nft minimize(const Nft& aut, const ParameterMap& params = {{"algorithm", "brzozo
  * @brief Determinize automaton.
  *
  * @param[in] nft Automaton to determinize.
- * @param[out] subset_map Map that maps sets of states of input automaton to states of determinized automaton.
+ * @param[out] subset_map Map that maps sets of states of input automaton to states of determinized automaton. Only
+ *  sets whose states all lie on the same level are reported: a transition into several levels is split into a state
+ *  for the nearest level and a pending jump for the rest, and such a state stands for the pair (target set, symbol),
+ *  not for a set alone.
  * @return Determinized automaton.
  */
 Nft determinize(const Nft& nft, std::unordered_map<StateSet, State>* subset_map = nullptr);
