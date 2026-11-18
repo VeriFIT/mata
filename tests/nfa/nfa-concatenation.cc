@@ -607,6 +607,71 @@ TEST_CASE("Bug with epsilon transitions") {
 	CHECK(are_equivalent(result, expected));
 }
 
+TEST_CASE("mata::nfa::concatenate() fills the state renaming maps") {
+	// A chain 0 --a--> 1 --a--> 2, initial 0, final 2.
+	Nfa lhs{};
+	lhs.add_state(2);
+	lhs.initial.insert(0);
+	lhs.final.insert(2);
+	lhs.delta.add(0, 'a', 1);
+	lhs.delta.add(1, 'a', 2);
+	// A one-state loop over 'b', initial and final.
+	Nfa rhs{};
+	rhs.add_state();
+	rhs.initial.insert(0);
+	rhs.final.insert(0);
+	rhs.delta.add(0, 'b', 0);
+
+	const StateRenaming expected_lhs_renaming{{0, 0}, {1, 1}, {2, 2}};
+	const StateRenaming expected_rhs_renaming{{0, 3}};
+
+	SECTION("an ordinary call fills both maps") {
+		StateRenaming lhs_renaming{{7, 7}}; // Stale entries must not survive a requested map.
+		StateRenaming rhs_renaming{{7, 7}};
+		const Nfa result{concatenate(lhs, rhs, true, &lhs_renaming, &rhs_renaming)};
+
+		CHECK(lhs_renaming == expected_lhs_renaming);
+		CHECK(rhs_renaming == expected_rhs_renaming);
+		CHECK(result.num_of_states() == 4);
+		CHECK(result.delta.contains(2, EPSILON, 3));
+	}
+
+	SECTION("a requested map is filled even when the result is empty") {
+		// No final state in rhs: the concatenation is empty, yet the maps still describe the full concatenation.
+		Nfa no_final_rhs{rhs};
+		no_final_rhs.final.clear();
+
+		StateRenaming lhs_renaming{};
+		StateRenaming rhs_renaming{};
+		const Nfa result{concatenate(lhs, no_final_rhs, true, &lhs_renaming, &rhs_renaming)};
+
+		CHECK(result.num_of_states() == 0);
+		CHECK(lhs_renaming == expected_lhs_renaming);
+		CHECK(rhs_renaming == expected_rhs_renaming);
+	}
+
+	SECTION("an operand without states maps only its own states") {
+		StateRenaming lhs_renaming{{7, 7}};
+		StateRenaming rhs_renaming{{7, 7}};
+		const Nfa result{concatenate(lhs, Nfa{}, true, &lhs_renaming, &rhs_renaming)};
+
+		CHECK(result.num_of_states() == 0);
+		CHECK(lhs_renaming == expected_lhs_renaming);
+		CHECK(rhs_renaming.empty());
+	}
+
+	SECTION("nullptr maps are skipped") {
+		CHECK_NOTHROW(concatenate(lhs, rhs, true));
+		CHECK_NOTHROW(concatenate(lhs, rhs, true, nullptr, nullptr));
+		StateRenaming lhs_renaming{};
+		StateRenaming rhs_renaming{};
+		CHECK_NOTHROW(concatenate(lhs, rhs, true, nullptr, &rhs_renaming));
+		CHECK(rhs_renaming == expected_rhs_renaming);
+		CHECK_NOTHROW(concatenate(lhs, rhs, true, &lhs_renaming, nullptr));
+		CHECK(lhs_renaming == expected_lhs_renaming);
+	}
+}
+
 TEST_CASE("mata::nfa::concatenate() inplace") {
 	SECTION("Empty automaton without states") {
 		Nfa lhs{};

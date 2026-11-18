@@ -205,10 +205,28 @@ TEST_CASE("mata::nfa::concatenate() rvalue overloads") {
 		for (const bool use_epsilon : {false, true}) {
 			for (const auto& [lhs, rhs] : operands) {
 				const Nfa expected{algorithms::concatenate_eps(lhs, rhs, epsilon, use_epsilon)};
+				StateRenaming expected_lhs_renaming{};
+				StateRenaming expected_rhs_renaming{};
+				algorithms::concatenate_eps(lhs, rhs, epsilon, use_epsilon, &expected_lhs_renaming, &expected_rhs_renaming);
+
 				Nfa moved_lhs{lhs};
 				CHECK(
 					algorithms::concatenate_eps(std::move(moved_lhs), rhs, epsilon, use_epsilon).is_identical(expected)
 				);
+				// The requested maps are filled also on the empty-result early return of the consuming path.
+				StateRenaming consumed_lhs_renaming{};
+				StateRenaming consumed_rhs_renaming{};
+				Nfa consumed_lhs{lhs};
+				CHECK(
+					algorithms::concatenate_eps(
+						std::move(consumed_lhs), rhs, epsilon, use_epsilon, &consumed_lhs_renaming,
+						&consumed_rhs_renaming
+					)
+						.is_identical(expected)
+				);
+				CHECK(consumed_lhs_renaming == expected_lhs_renaming);
+				CHECK(consumed_rhs_renaming == expected_rhs_renaming);
+				CHECK(consumed_lhs.num_of_states() == 0);
 			}
 		}
 	}

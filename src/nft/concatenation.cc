@@ -41,18 +41,38 @@ Nft concatenate_eps_consuming(
 	MATA_ASSERT(lhs.levels.num_of_levels == rhs.levels.num_of_levels);
 	const size_t num_of_levels{lhs.levels.num_of_levels};
 	const size_t rhs_num_of_levels{rhs.levels.num_of_levels};
+	const size_t lhs_states_num{lhs.num_of_states()};
+	const size_t rhs_states_num{rhs.num_of_states()};
+
+	// The renamings are arithmetic: lhs states keep their indices, rhs states shift by the number of lhs states.
+	//  Computing the maps costs one entry per state, so they are filled only when the caller asked for them, and
+	//  also on the early return, where they keep describing the (empty) concatenation.
+	auto output_renamings = [&] {
+		if (lhs_state_renaming != nullptr) {
+			lhs_state_renaming->clear();
+			lhs_state_renaming->reserve(lhs_states_num);
+			for (State state{0}; state < lhs_states_num; ++state) { lhs_state_renaming->emplace(state, state); }
+		}
+		if (rhs_state_renaming != nullptr) {
+			rhs_state_renaming->clear();
+			rhs_state_renaming->reserve(rhs_states_num);
+			for (State state{0}; state < rhs_states_num; ++state) {
+				rhs_state_renaming->emplace(state, static_cast<State>(lhs_states_num) + state);
+			}
+		}
+	};
+
 	if (concatenation_is_empty(lhs, rhs)) {
+		output_renamings();
 		lhs = Nft::with_levels(num_of_levels);
 		if constexpr (consume_rhs) { rhs = Nft::with_levels(rhs_num_of_levels); }
 		return Nft::with_levels(num_of_levels);
 	}
 
-	const size_t lhs_states_num{lhs.num_of_states()};
-	const size_t rhs_states_num{rhs.num_of_states()};
 	const size_t result_num_of_states{lhs_states_num + rhs_states_num};
 	nfa::check_num_of_states(result_num_of_states);
-	StateRenaming lhs_states_renaming{}; // Map mapping lhs states to result states.
-	StateRenaming rhs_states_renaming{}; // Map mapping rhs states to result states.
+
+	output_renamings();
 
 	// The lhs states keep their indices in the result, so its delta and initial states move in as they are.
 	// The final states and levels of lhs are only read here.
@@ -70,30 +90,18 @@ Nft concatenate_eps_consuming(
 	} else {
 		result.delta.append_shifted(rhs.delta, static_cast<State>(lhs_states_num));
 	}
+	// The result states are the lhs states followed by the shifted rhs states, and so are their levels.
+	result.levels.append(lhs_levels);
+	result.levels.append(rhs.levels);
 	result.add_state(static_cast<State>(result_num_of_states - 1));
-
-	// Map lhs states to result states.
-	lhs_states_renaming.reserve(lhs_states_num);
-	State result_state_index{0};
-	for (State lhs_state{0}; lhs_state < lhs_states_num; ++lhs_state) {
-		lhs_states_renaming.insert(std::make_pair(lhs_state, result_state_index));
-		result.levels[result_state_index] = lhs_levels[lhs_state];
-		++result_state_index;
-	}
-	// Map rhs states to result states.
-	rhs_states_renaming.reserve(rhs_states_num);
-	for (State rhs_state{0}; rhs_state < rhs_states_num; ++rhs_state) {
-		rhs_states_renaming.insert(std::make_pair(rhs_state, result_state_index));
-		result.levels[result_state_index] = rhs.levels[rhs_state];
-		++result_state_index;
-	}
 
 	// Share one epsilon chain per lhs final state across all rhs initial states.
 	std::vector<State> shifted_rhs_initials{};
 	shifted_rhs_initials.reserve(rhs.initial.size());
 	for (const State rhs_initial_state : rhs.initial) {
-		shifted_rhs_initials.push_back(rhs_states_renaming[rhs_initial_state]);
+		shifted_rhs_initials.push_back(static_cast<State>(lhs_states_num) + rhs_initial_state);
 	}
+
 	std::ranges::sort(shifted_rhs_initials);
 	for (const State lhs_final_state : lhs_final_states) {
 		State source{lhs_final_state};
@@ -109,12 +117,10 @@ Nft concatenate_eps_consuming(
 	}
 
 	// Make result final states.
-	for (const State& rhs_final_state : rhs.final) { result.final.insert(rhs_states_renaming[rhs_final_state]); }
+	for (const State rhs_final_state : rhs.final) { result.final.insert(static_cast<State>(lhs_states_num) + rhs_final_state); }
 	if constexpr (consume_rhs) { rhs = Nft::with_levels(rhs_num_of_levels); }
 
 	if (!use_epsilon) { result.remove_epsilon(epsilon); }
-	if (lhs_state_renaming != nullptr) { *lhs_state_renaming = lhs_states_renaming; }
-	if (rhs_state_renaming != nullptr) { *rhs_state_renaming = rhs_states_renaming; }
 	return result;
 }
 
@@ -244,7 +250,7 @@ Nft algorithms::concatenate_eps(
 	MATA_ASSERT(lhs.levels.num_of_levels == rhs.levels.num_of_levels);
 	// Compute concatenation of given automata.
 	// Concatenation will proceed in the order of the passed automata: Result is 'lhs . rhs'.
-	if (concatenation_is_empty(lhs, rhs)) { return Nft::with_levels(lhs.levels.num_of_levels); }
+	// The consuming path fills the requested renaming maps also for the empty result.
 	// The one intentional copy: the parts of lhs that the result is built on. The copy cannot alias rhs.
 	return concatenate_eps_consuming(
 		Nft{lhs.delta, lhs.initial, lhs.final, lhs.levels}, rhs, epsilon, use_epsilon, lhs_state_renaming,
