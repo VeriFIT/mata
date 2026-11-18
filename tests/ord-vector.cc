@@ -42,6 +42,26 @@ TEST_CASE("mata::utils::OrdVector::erase()") {
 	CHECK(set.erase(0) == 0);
 }
 
+TEST_CASE("mata::utils::OrdVector::count()") {
+	const OrdVector<int> set{1, 3, 5, 7};
+	CHECK(set.count(1) == 1);
+	CHECK(set.count(7) == 1);
+	CHECK(set.count(0) == 0);
+	CHECK(set.count(4) == 0);
+	CHECK(set.count(8) == 0);
+	CHECK(OrdVector<int>{}.count(1) == 0);
+}
+
+template <class T>
+concept HasToVectorMut = requires(T& vec) { vec.to_vector_mut(); };
+
+TEST_CASE("mata::utils::OrdVector::to_vector_mut()") {
+	static_assert(!HasToVectorMut<const OrdVector<int>>, "a const OrdVector must not hand out its vector mutably");
+	OrdVector<int> set{1, 2, 3};
+	set.to_vector_mut().push_back(4);
+	CHECK(set == OrdVector<int>{1, 2, 3, 4});
+}
+
 TEST_CASE("mata::utils::OrdVector::front())") {
 	OrdVector<int> vector{0, 1, 2, 3};
 	CHECK(vector.front() == 0);
