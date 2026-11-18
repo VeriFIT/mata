@@ -164,7 +164,8 @@ uv sync --python 3.13
 ```
 
 Besides the dependencies of the bindings, `uv sync` installs the `dev` dependency group: the tools to build the bindings
-in place, to sync the notebooks, and to render the documentation.
+in place, the packages the tests and the notebooks import, and the tools to sync the notebooks and to render the
+documentation.
 
 Or using `pip`:
 
@@ -175,6 +176,9 @@ make -C bindings/python init
 sudo apt -qq update
 sudo apt -qq install -y graphviz graphviz-dev
 ```
+
+`make init` installs the bindings with the `dev`, `pandas` and `plotting` extras: Cython and setuptools for the in-place
+build, pytest, and the packages the tests import. `pip install libmata` alone installs no dependencies.
 
 Now, you can install the library.
 

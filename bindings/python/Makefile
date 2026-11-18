@@ -17,8 +17,9 @@ install:
 test:
 	python3 -m pytest --durations=5 --cov=./ --cov-report term-missing:skip-covered tests/
 
+# The tests exercise to_dataframe() and to_networkx_graph(), hence the pandas and plotting extras.
 init:
-	pip3 install ./
+	pip3 install "./[dev,pandas,plotting]"
 
 build-install: build-ext install
 

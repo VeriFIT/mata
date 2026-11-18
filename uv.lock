@@ -903,6 +903,7 @@ source = { editable = "bindings/python" }
 [package.optional-dependencies]
 all = [
     { name = "coverage" },
+    { name = "cython" },
     { name = "graphviz" },
     { name = "ipykernel" },
     { name = "ipython" },
@@ -912,12 +913,15 @@ all = [
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "seaborn" },
+    { name = "setuptools" },
     { name = "tabulate" },
 ]
 dev = [
     { name = "coverage" },
+    { name = "cython" },
     { name = "pytest" },
     { name = "pytest-cov" },
+    { name = "setuptools" },
 ]
 notebooks = [
     { name = "ipykernel" },
@@ -939,12 +943,20 @@ dev = [
     { name = "breathe" },
     { name = "coverage" },
     { name = "cython" },
+    { name = "graphviz" },
+    { name = "ipykernel" },
+    { name = "ipython" },
     { name = "jupytext" },
     { name = "myst-parser" },
+    { name = "networkx" },
+    { name = "pandas" },
+    { name = "papermill" },
     { name = "pytest" },
     { name = "pytest-cov" },
+    { name = "seaborn" },
     { name = "setuptools" },
     { name = "sphinx" },
+    { name = "tabulate" },
 ]
 
 [[package]]
