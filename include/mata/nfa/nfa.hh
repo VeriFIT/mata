@@ -1273,8 +1273,9 @@ Nfa complement(
  *   - "auto" (default): determinize the automaton if it is not deterministic, trim it, and run Hopcroft
  *     minimization. An automaton with an empty language is returned as a single non-final initial state.
  *   - "hopcroft": the same normalization as "auto", followed by Hopcroft minimization. The core itself is
- *     @c algorithms::minimize_hopcroft(), which requires a trimmed deterministic automaton and throws on
- *     anything else.
+ *     @c algorithms::minimize_hopcroft(), which throws @c std::invalid_argument for a nondeterministic input
+ *     (except a transition-free automaton without initial states). It does not check trimming: an untrimmed
+ *     deterministic input yields a nonminimal result, so the caller has to trim it first.
  *   - "brzozowski": revert, determinize, revert, determinize. Accepts any automaton, but determinizes twice and
  *     can therefore blow up exponentially, even on an input that already is a trimmed deterministic automaton.
  * @return Minimal deterministic automaton.

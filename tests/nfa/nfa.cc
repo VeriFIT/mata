@@ -4724,6 +4724,10 @@ TEST_CASE("mata::nfa::minimize() with the default \"auto\" strategy") {
 		nfa.delta.add(0, 'a', 1);
 		nfa.delta.add(0, 'a', 2);
 		CHECK_THROWS_AS(algorithms::minimize_hopcroft(nfa), std::invalid_argument);
+
+		// Without transitions, the core used to return a copy of the input before checking determinism, so an
+		//  automaton with several initial states was handed back as "minimal" without an error.
+		CHECK_THROWS_AS(algorithms::minimize_hopcroft(Nfa{2, {0, 1}, {0, 1}}), std::invalid_argument);
 	}
 }
 

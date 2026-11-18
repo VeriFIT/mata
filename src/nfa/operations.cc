@@ -1880,21 +1880,27 @@ Nfa quotient_by_bisimulation(const Nfa& aut, StateRenaming& state_renaming) {
 	}
 	return result;
 }
+
+[[noreturn]] void throw_nondeterministic_hopcroft_input() {
+	throw std::invalid_argument(
+		"mata::nfa::algorithms::minimize_hopcroft() requires a deterministic automaton; the refinement keeps "
+		"one target per symbol post, so a nondeterministic input yields a different language. Call "
+		"minimize() with algorithm=\"auto\", or determinize() and trim() the automaton first."
+	);
+}
 } // namespace
 
 Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
 	if (dfa_trimmed.delta.empty()) {
-		// The automaton is trivially minimal.
+		// There is no symbol post to refine, so the language follows from the initial and final states only. A
+		//  transition-free automaton without an initial state is still accepted as the empty language, but
+		//  several initial states are nondeterministic and would be returned unminimized.
+		if (dfa_trimmed.initial.size() > 1) { throw_nondeterministic_hopcroft_input(); }
 		return Nfa{dfa_trimmed};
 	}
-	if (!dfa_trimmed.is_deterministic()) {
-		throw std::invalid_argument(
-			"mata::nfa::algorithms::minimize_hopcroft() requires a deterministic automaton; the refinement keeps "
-			"one target per symbol post, so a nondeterministic input yields a different language. Call "
-			"minimize() with algorithm=\"auto\", or determinize() and trim() the automaton first."
-		);
-	}
-	// Only minimality, not the language, depends on the input being trimmed.
+	if (!dfa_trimmed.is_deterministic()) { throw_nondeterministic_hopcroft_input(); }
+	// Only minimality, not the language, depends on the input being trimmed. Trim the automaton first for a
+	//  minimal result; trimming is deliberately not checked, because it only costs minimality, not the language.
 
 	const RefinablePartition<State> brp{refine_by_hopcroft(dfa_trimmed)};
 
