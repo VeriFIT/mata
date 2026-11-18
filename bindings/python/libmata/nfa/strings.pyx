@@ -360,10 +360,12 @@ cdef class _LazyNoodles:
     """Iterator over the noodles of `noodlify_lazy()` and `noodlify_for_equation_lazy()`.
 
     Consecutive noodles share the `Nfa` of a segment they share; the wrappers of older noodles are not kept, so the
-    memory is bounded by the current noodle and the search instead of all noodles. The search runs without the GIL.
+    memory is bounded by the current noodle and the search instead of all noodles. The search runs without the GIL;
+    `next()` from a second thread while it runs raises `RuntimeError`.
     """
     cdef mata_strings.CLazyNoodleGenerator* it
     cdef dict previous
+    cdef bint busy
 
     def __dealloc__(self):
         del self.it
@@ -374,10 +376,16 @@ cdef class _LazyNoodles:
     def __next__(self):
         cdef mata_strings.CNoodle c_noodle
         cdef bint exhausted
-        with nogil:
-            exhausted = self.it.done()
-            if not exhausted:
-                c_noodle = self.it.next()
+        if self.busy:
+            raise RuntimeError("a noodlify_*_lazy() iterator cannot be advanced from two threads at once")
+        self.busy = True
+        try:
+            with nogil:
+                exhausted = self.it.done()
+                if not exhausted:
+                    c_noodle = self.it.next()
+        finally:
+            self.busy = False
         if exhausted:
             raise StopIteration
         wrapped = {}
@@ -390,6 +398,7 @@ cdef _LazyNoodles _lazy_noodles(mata_strings.CLazyNoodleGenerator* it):
     cdef _LazyNoodles noodles = _LazyNoodles.__new__(_LazyNoodles)
     noodles.it = it
     noodles.previous = {}
+    noodles.busy = False
     return noodles
 
 
@@ -398,6 +407,7 @@ cdef class _LazyNoodlesWithEpsilonsCounter:
     `_LazyNoodles`."""
     cdef mata_strings.CLazyNoodleWithEpsilonsCounterGenerator* it
     cdef dict previous
+    cdef bint busy
 
     def __dealloc__(self):
         del self.it
@@ -408,10 +418,16 @@ cdef class _LazyNoodlesWithEpsilonsCounter:
     def __next__(self):
         cdef mata_strings.CNoodleWithEpsilonsCounter c_noodle
         cdef bint exhausted
-        with nogil:
-            exhausted = self.it.done()
-            if not exhausted:
-                c_noodle = self.it.next()
+        if self.busy:
+            raise RuntimeError("a noodlify_*_lazy() iterator cannot be advanced from two threads at once")
+        self.busy = True
+        try:
+            with nogil:
+                exhausted = self.it.done()
+                if not exhausted:
+                    c_noodle = self.it.next()
+        finally:
+            self.busy = False
         if exhausted:
             raise StopIteration
         wrapped = {}
@@ -428,12 +444,14 @@ cdef _LazyNoodlesWithEpsilonsCounter _lazy_noodles_with_epsilons_counter(
     )
     noodles.it = it
     noodles.previous = {}
+    noodles.busy = False
     return noodles
 
 
 cdef class _LazyTransducerNoodles:
     """Iterator over the noodles of `noodlify_for_transducer_lazy()`; see `_LazyNoodles`."""
     cdef mata_strings.CLazyTransducerNoodleGenerator* it
+    cdef bint busy
 
     def __dealloc__(self):
         del self.it
@@ -444,10 +462,16 @@ cdef class _LazyTransducerNoodles:
     def __next__(self):
         cdef mata_strings.CTransducerNoodle c_noodle
         cdef bint exhausted
-        with nogil:
-            exhausted = self.it.done()
-            if not exhausted:
-                c_noodle = self.it.next()
+        if self.busy:
+            raise RuntimeError("a noodlify_*_lazy() iterator cannot be advanced from two threads at once")
+        self.busy = True
+        try:
+            with nogil:
+                exhausted = self.it.done()
+                if not exhausted:
+                    c_noodle = self.it.next()
+        finally:
+            self.busy = False
         if exhausted:
             raise StopIteration
         return _wrap_transducer_noodle(c_noodle)

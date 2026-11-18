@@ -1,3 +1,6 @@
+import sys
+import threading
+
 import libmata.nfa.nfa as mata_nfa
 import libmata.nfa.strings as mata_strings
 import libmata.nft.nft as mata_nft
@@ -418,6 +421,42 @@ def test_lazy_noodlify_takes_the_first_noodle_without_the_rest_of_the_search():
     # 2**64 routes after the first noodle: taking it must not search for the next one, which would not end.
     noodles = mata_strings.noodlify_mult_eps_lazy(_epsilon_lattice(64), {200})
     assert len(next(noodles)) == 2
+
+
+@needs_generator_support
+def test_lazy_noodlify_iterator_rejects_a_second_thread():
+    if not getattr(sys, "_is_gil_enabled", lambda: True)():
+        pytest.skip("the interpreter has no GIL")
+    # 2**22 routes take the second next() about a second, far longer than the main thread needs to wake up.
+    noodles = mata_strings.noodlify_mult_eps_lazy(_epsilon_lattice(22), {200})
+    assert len(next(noodles)) == 2
+
+    entered = threading.Event()
+    outcome = []
+
+    def run():
+        entered.set()
+        try:
+            next(noodles)
+        except StopIteration:
+            outcome.append(StopIteration)
+
+    switch_interval = sys.getswitchinterval()
+    # As in `runs_without_the_gil`: the worker holds the GIL from `entered.set()` until the search releases it inside
+    #  next(), so the main thread wakes only once that next() is running.
+    sys.setswitchinterval(60)
+    worker = threading.Thread(target=run)
+    try:
+        worker.start()
+        entered.wait()
+        with pytest.raises(RuntimeError, match="from two threads at once"):
+            next(noodles)
+    finally:
+        worker.join()
+        sys.setswitchinterval(switch_interval)
+    assert outcome == [StopIteration]
+    with pytest.raises(StopIteration):
+        next(noodles)
 
 
 def test_process_eps_map():
