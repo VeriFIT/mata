@@ -1818,6 +1818,28 @@ TEST_CASE("mata::nft::are_equivalent") {
 	}
 }
 
+TEST_CASE("mata::nft comparison keeps wildcard-only languages non-empty") {
+	// With no concrete letter, create_alphabet() is empty because DONT_CARE is no letter. The comparison still has to
+	//  read the wildcard as matching the one-symbol words over any concrete letter, not drop its transitions.
+	const Nft empty{Nft::with_levels(1, 2, {0}, {1})};
+	const Nft wildcard = [] {
+		Nft nft{Nft::with_levels(1, 2, {0}, {1})};
+		nft.delta.add(0, DONT_CARE, 1);
+		return nft;
+	}();
+
+	const Alphabet* const no_alphabet{nullptr};
+	for (const char* const algorithm : {"naive", "antichains"}) {
+		const ParameterMap params{{"algorithm", algorithm}};
+		CHECK(!are_equivalent(wildcard, empty, no_alphabet, JumpMode::RepeatSymbol, params));
+		CHECK(!is_included(wildcard, empty, no_alphabet, JumpMode::RepeatSymbol, params));
+		CHECK(is_included(empty, wildcard, no_alphabet, JumpMode::RepeatSymbol, params));
+	}
+	CHECK(!are_equivalent(wildcard, empty));
+	CHECK(!is_included(wildcard, empty));
+	CHECK(is_included(empty, wildcard));
+}
+
 TEST_CASE("mata::nft::revert()") { // {{{
 	Nft aut(9);
 
