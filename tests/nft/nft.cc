@@ -5256,6 +5256,42 @@ TEST_CASE("mata::nft::project_out() handles cycles among input-useless states") 
 	}
 }
 
+TEST_CASE("mata::nft::project_out() keeps a useful path through projected states next to dead cycles") {
+	// The useless cycle is still here, but the useful path must give the result a nonempty word: an expected
+	//  automaton without transitions (the case above) would also accept a result with no transitions at all.
+	const Nft input{[] {
+		Nft nft{Nft::with_levels({3, {0, 1, 2, 0, 0}}, {}, {0}, {0, 4})};
+		nft.delta.add(0, 10, 1); // Useful path 0 -a-> 1 -b-> 2 -c-> 4.
+		nft.delta.add(1, 11, 2);
+		nft.delta.add(2, 12, 4);
+		nft.delta.add(1, EPSILON, 1); // Dead cycles.
+		nft.delta.add(2, EPSILON, 3);
+		nft.delta.add(3, EPSILON, 2);
+		return nft;
+	}()};
+
+	for (const JumpMode jump_mode : {JumpMode::AppendDontCares, JumpMode::RepeatSymbol}) {
+		{ // Projecting the middle levels leaves symbol 10 of the useful path.
+			const Nft actual{project_out(input, OrdVector<Level>{1, 2}, jump_mode)};
+			CHECK(!actual.is_lang_empty());
+			// The useful path's moves plus the epsilon cycles its middle states sit in.
+			Nft expected{Nft::with_levels({1, {0, 0, 0}}, 3, {0}, {0, 1, 2})};
+			expected.delta.add(0, 10, 1);
+			expected.delta.add(1, EPSILON, 2);
+			expected.delta.add(2, EPSILON, 2);
+			CHECK(are_equivalent(actual, expected, jump_mode));
+		}
+		{ // Projecting levels 0 and 2 leaves symbol 11, which is on level 1.
+			const Nft actual{project_out(input, OrdVector<Level>{0, 2}, jump_mode)};
+			CHECK(!actual.is_lang_empty());
+			Nft expected{Nft::with_levels({1, {0, 0}}, 2, {0}, {0, 1})};
+			expected.delta.add(0, 11, 1);
+			expected.delta.add(1, jump_mode == JumpMode::AppendDontCares ? DONT_CARE : EPSILON, 1);
+			CHECK(are_equivalent(actual, expected, jump_mode));
+		}
+	}
+}
+
 TEST_CASE("mata::nft::project_out() closure fixpoint does not use-after-free") {
 	constexpr State A = 0, B = 1, Z = 2;
 	constexpr size_t NUM_LEAVES = 32;

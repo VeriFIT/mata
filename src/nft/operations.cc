@@ -694,8 +694,10 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 		if (levels_to_project.contains(lvl_old)) { lvl_sub++; }
 	}
 
-	// The closure of a projected state: the states reachable from it over transitions all of whose levels are
-	//  projected, expanding only projected states. A state that is not projected is its own closure.
+	// The closure of a projected state: the states useful in the input and reachable from it over transitions all
+	//  of whose levels are projected, expanding only projected states. A state that is not projected is its own
+	//  closure. Useless targets are skipped, so many useful sources cannot rescan one shared dead component; their
+	//  moves disappear with the final trim, which yields the same automaton.
 	const size_t num_of_states_in_delta{nft.delta.num_of_states()};
 	std::vector<std::vector<State>> closure(num_of_states_in_delta);
 	{
@@ -714,7 +716,8 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 				if (!is_projected_out(state)) { continue; }
 				for (const SymbolPost& move : nft.delta[state]) {
 					for (const State target : move.targets) {
-						if (visited_in[target] != mark && is_projected_along_path(state, target)) {
+						if (visited_in[target] != mark && is_original_useful(target) &&
+							is_projected_along_path(state, target)) {
 							visited_in[target] = mark;
 							reached.push_back(target);
 							stack.push_back(target);
