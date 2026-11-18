@@ -177,6 +177,14 @@ Nft mata::nft::algorithms::product(
 					product_state_post.insert(std::move(product_symbol_post));
 				}
 			} else {
+				// The targets coming out of @c product_targets are ids of states the product creates on the fly,
+				//  so they are greater than anything stored yet and the merge appends them in order. Reserve the
+				//  exact combined size first: SmallOrdVector would otherwise keep doubling the capacity on append.
+				if (product_state_post_find_it->targets.back() < product_targets.front()) {
+					product_state_post_find_it->targets.reserve(
+						product_state_post_find_it->targets.size() + product_targets.size()
+					);
+				}
 				product_state_post_find_it->targets.insert(std::span<const State>{product_targets});
 			}
 		}
