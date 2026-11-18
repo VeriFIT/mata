@@ -16,7 +16,7 @@
 #include "mata/utils/generator-support.hh"
 #include "nfa.hh"
 
-#include "mata/utils/lazy-word-generator.hh"
+#include "mata/utils/lazy-generator.hh"
 
 using namespace mata::nfa::builder;
 

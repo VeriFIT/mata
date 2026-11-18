@@ -10,4 +10,10 @@
 // NOLINTNEXTLINE(cppcoreguidelines-macro-to-enum, modernize-macro-to-enum)
 #define MATA_STATE_BITS @MATA_STATE_BITS@
 
+/// 1 when the standard library libmata was built with implements @c std::generator, 0 otherwise. Detected by CMake;
+///  @c mata/utils/generator-support.hh checks that a consumer's standard library agrees, because the layout of the
+///  exported @c mata::utils::LazyGenerator depends on it.
+// NOLINTNEXTLINE(cppcoreguidelines-macro-to-enum, modernize-macro-to-enum)
+#define MATA_HAS_GENERATOR_SUPPORT @MATA_HAS_GENERATOR_SUPPORT@
+
 #endif // MATA_CONFIG_HH

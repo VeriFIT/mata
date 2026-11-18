@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from enum import IntEnum
 from typing import Literal
 
@@ -103,6 +103,64 @@ def noodlify_for_transducer(
     use_homomorphic_heuristic: bool = True,
 ) -> list[list[tuple[mata_nft.Nft, mata_nfa.Nfa, int, mata_nfa.Nfa, int]]]:
     """Create noodles for a transducer applied between `input_automata` and `output_automata`."""
+
+class NoodleOrder(IntEnum):
+    """The order in which the `noodlify_*_lazy()` functions emit the noodles."""
+
+    Forward = 0
+    Reverse = 1
+    SmallestFirst = 2
+    LargestFirst = 3
+    Random = 4
+
+def noodlify_lazy(
+    aut: mata_nfa.Nfa,
+    symbol: Symbol,
+    include_empty: bool = False,
+    order: NoodleOrder = NoodleOrder.Forward,
+    seed: int = 0,
+) -> Iterator[list[mata_nfa.Nfa]]:
+    """Emit the noodles of `noodlify()` one at a time; see `noodlify_lazy()`."""
+
+def noodlify_mult_eps_lazy(
+    aut: mata_nfa.Nfa,
+    epsilons: set[Symbol],
+    include_empty: bool = False,
+    order: NoodleOrder = NoodleOrder.Forward,
+    seed: int = 0,
+) -> Iterator[list[tuple[mata_nfa.Nfa, list[int]]]]:
+    """Emit the noodles of `noodlify_mult_eps()` one at a time; see `noodlify_lazy()`."""
+
+def noodlify_for_equation_lazy(
+    left_side_automata: list[mata_nfa.Nfa],
+    right_side_automaton: mata_nfa.Nfa,
+    include_empty: bool = False,
+    params: dict[str, str] | None = None,
+    order: NoodleOrder = NoodleOrder.Forward,
+    seed: int = 0,
+) -> Iterator[list[mata_nfa.Nfa]]:
+    """Emit the noodles of `noodlify_for_equation()` one at a time; see `noodlify_lazy()`."""
+
+def noodlify_for_equation_sides_lazy(
+    left_side_automata: list[mata_nfa.Nfa],
+    right_side_automata: list[mata_nfa.Nfa],
+    include_empty: bool = False,
+    params: dict[str, str] | None = None,
+    order: NoodleOrder = NoodleOrder.Forward,
+    seed: int = 0,
+) -> Iterator[list[tuple[mata_nfa.Nfa, list[int]]]]:
+    """Emit the noodles of `noodlify_for_equation_sides()` one at a time; see `noodlify_lazy()`."""
+
+def noodlify_for_transducer_lazy(
+    nft: mata_nft.Nft,
+    input_automata: list[mata_nfa.Nfa],
+    output_automata: list[mata_nfa.Nfa],
+    reduce_intersection: bool = True,
+    use_homomorphic_heuristic: bool = True,
+    order: NoodleOrder = NoodleOrder.Forward,
+    seed: int = 0,
+) -> Iterator[list[tuple[mata_nft.Nft, mata_nfa.Nfa, int, mata_nfa.Nfa, int]]]:
+    """Emit the noodles of `noodlify_for_transducer()` one at a time; see `noodlify_lazy()`."""
 
 def process_eps_map(eps_cnt: dict[int, int]) -> list[int]:
     """Process an epsilon count map to a sequence of values (sorted by key, descending)."""
