@@ -112,7 +112,10 @@ Nfa minimize_brzozowski(const Nfa& aut);
  *  skipping the trimming is not an error, it only costs minimality.
  * @throws std::invalid_argument If @p dfa_trimmed has a transition and is not deterministic, or has several
  *  initial states. A transition-free automaton with at most one initial state is returned without refinement.
- * @return Minimized deterministic automaton.
+ * @return Minimized deterministic automaton, refined from the reachable part of @p dfa_trimmed. A transition-free
+ *  automaton without an initial state is returned as it is, with no initial state: such a result is neither
+ *  deterministic nor minimal by @c Nfa::is_deterministic() / @c Nfa::is_minimal(). Callers that need the canonical
+ *  one-state empty-language DFA should use the public @c mata::nfa::minimize() dispatcher instead.
  */
 Nfa minimize_hopcroft(const Nfa& dfa_trimmed);
 

@@ -4716,7 +4716,25 @@ TEST_CASE("mata::nfa::minimize() with the default \"auto\" strategy") {
 		two_initials.delta.add(1, 'a', 2);
 		CHECK(are_equivalent(minimize(two_initials, {{"algorithm", "hopcroft"}}), two_initials));
 
-		CHECK(minimize(Nfa{}, {{"algorithm", "hopcroft"}}).is_lang_empty());
+		const Nfa empty{minimize(Nfa{}, {{"algorithm", "hopcroft"}})};
+		// The canonical empty-language DFA: one initial state, no final states, no transitions.
+		CHECK(empty.is_lang_empty());
+		CHECK(empty.num_of_states() == 1);
+		CHECK(empty.initial.size() == 1);
+		CHECK(empty.initial.contains(0));
+		CHECK(empty.final.empty());
+		CHECK(empty.delta.empty());
+		CHECK(empty.is_minimal());
+
+		// The canonical result also keeps the attached alphabet, so make_complete() still sees the symbols.
+		Nfa letterless{1, {0}, {}};
+		auto alphabet{std::make_shared<OnTheFlyAlphabet>()};
+		alphabet->add_new_symbol("a", 'a');
+		letterless.alphabet = alphabet;
+		const Nfa minimized_letterless{minimize(letterless, {{"algorithm", "hopcroft"}})};
+		CHECK(minimized_letterless.is_lang_empty());
+		REQUIRE(minimized_letterless.alphabet != nullptr);
+		CHECK(minimized_letterless.alphabet->get_alphabet_symbols() == OrdVector<Symbol>{'a'});
 	}
 
 	SECTION("the Hopcroft core rejects a nondeterministic input - issue #734") {

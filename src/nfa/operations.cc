@@ -1315,6 +1315,8 @@ Nfa mata::nfa::algorithms::minimize_auto(const Nfa& aut) {
 		//  empty language instead, so that the result is a usable automaton with a single non-final initial state.
 		Nfa empty_language{1};
 		empty_language.initial.insert(0);
+		// Keep the attached alphabet: make_complete() on the result needs the symbols of the input.
+		empty_language.alphabet = deterministic.alphabet;
 		return empty_language;
 	}
 	return minimize_hopcroft(deterministic);
