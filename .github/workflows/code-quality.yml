@@ -444,6 +444,7 @@ jobs:
       #  runner without anyone remembering this workflow.
       - name: List the checks
         id: list
+        shell: bash
         run: |
           checks="$(
             nix eval --json .#checks.x86_64-linux --apply builtins.attrNames \
@@ -462,8 +463,9 @@ jobs:
         check: ${{ fromJSON(needs.nix-list-checks.outputs.checks) }}
     steps:
       - uses: cachix/install-nix-action@v31
-      # Pull only: pull requests build unreviewed dependency updates, so they never get the write token. `nix-cache.yml`
-      #  pushes after a merge.
+      # Pull only: pull requests build unreviewed dependency updates, so they never get the write token. Merging to
+      #  `devel` does not refresh the cache either: `nix-cache.yml` only runs on `workflow_dispatch`, so a maintainer
+      #  has to dispatch it to push the new `devel` outputs.
       - uses: cachix/cachix-action@v17
         with:
           name: mata
@@ -473,15 +475,20 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Build and test ${{ matrix.check }}
-        run: nix build --no-link --print-build-logs .#checks.x86_64-linux.${{ matrix.check }}
+        # The check name comes from the pull request's flake: pass it as data, not as shell source. The escaped quotes
+        #  make Nix select the whole name as one attribute, so a name containing a dot is not read as a nested path.
+        env:
+          CHECK: ${{ matrix.check }}
+        run: nix build --no-link --print-build-logs ".#checks.x86_64-linux.\"$CHECK\""
   # The only check of uv.lock, which only the development shells are built from.
   nix-devshells:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
       - uses: cachix/install-nix-action@v31
-      # Pull only: pull requests build unreviewed dependency updates, so they never get the write token. `nix-cache.yml`
-      #  pushes after a merge.
+      # Pull only: pull requests build unreviewed dependency updates, so they never get the write token. Merging to
+      #  `devel` does not refresh the cache either: `nix-cache.yml` only runs on `workflow_dispatch`, so a maintainer
+      #  has to dispatch it to push the new `devel` outputs.
       - uses: cachix/cachix-action@v17
         with:
           name: mata
