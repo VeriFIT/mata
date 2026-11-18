@@ -244,7 +244,7 @@ In particular, this includes:<ol class="loweralpha simple">
 <dd><div class="docutils container">
 <em>#include &lt;ord-vector.hh&gt;</em></div>
 <p>Implementation of a set using ordered vector. </p>
-<p>This class implements the interface of a set (the same interface as std::set) using ordered vector as the underlying data structure.</p>
+<p>This class implements the interface of a set (the same interface as std::set) using ordered vector as the underlying data structure. Replacing it with <code class="docutils literal notranslate"><span class="pre">std::flat_set</span></code>, or its merge and search with alternatives, was measured and rejected: see EXP-1 in docs/experiments/.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>Key</strong> – Key type: type of the elements contained in the container. Each element in a set is also its key. </p>

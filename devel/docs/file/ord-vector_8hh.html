@@ -106,7 +106,7 @@ In particular, this includes:<ol class="lowerroman simple">
 <dd><div class="docutils container">
 <em>#include &lt;ord-vector.hh&gt;</em></div>
 <p>Implementation of a set using ordered vector. </p>
-<p>This class implements the interface of a set (the same interface as std::set) using ordered vector as the underlying data structure.</p>
+<p>This class implements the interface of a set (the same interface as std::set) using ordered vector as the underlying data structure. Replacing it with <code class="docutils literal notranslate"><span class="pre">std::flat_set</span></code>, or its merge and search with alternatives, was measured and rejected: see EXP-1 in docs/experiments/.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>Key</strong> – Key type: type of the elements contained in the container. Each element in a set is also its key. </p>
@@ -466,8 +466,8 @@ In particular, this includes:<ol class="lowerroman simple">
 <dd></dd></dl>
 
 <dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9OrdVector13to_vector_mutEv">
-<span id="_CPPv3NK4mata5utils9OrdVector13to_vector_mutEv"></span><span id="_CPPv2NK4mata5utils9OrdVector13to_vector_mutEv"></span><span id="mata::utils::OrdVector::to_vector_mutC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1ad00442fd8f657140213255b2f0075025"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector10VectorTypeE" title="mata::utils::OrdVector::VectorType"><span class="n"><span class="pre">VectorType</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">to_vector_mut</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5utils9OrdVector13to_vector_mutEv" title="Link to this definition">¶</a><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9OrdVector13to_vector_mutEv">
+<span id="_CPPv3N4mata5utils9OrdVector13to_vector_mutEv"></span><span id="_CPPv2N4mata5utils9OrdVector13to_vector_mutEv"></span><span id="mata::utils::OrdVector::to_vector_mut"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1ae1967d58aae4f383562cba1441e41fe7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5utils9OrdVector10VectorTypeE" title="mata::utils::OrdVector::VectorType"><span class="n"><span class="pre">VectorType</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">to_vector_mut</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5utils9OrdVector13to_vector_mutEv" title="Link to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
 <dl class="cpp function">
