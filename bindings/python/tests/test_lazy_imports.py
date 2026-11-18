@@ -8,14 +8,8 @@ OPTIONAL_PACKAGES = ("pandas", "networkx", "tabulate", "graphviz", "IPython")
 
 def run_import_probe(module: str) -> set[str]:
     """Import @module in a fresh interpreter and report which optional packages it loaded."""
-    code = (
-        "import sys;"
-        f"import {module};"
-        f"print(','.join(name for name in {OPTIONAL_PACKAGES!r} if name in sys.modules))"
-    )
-    result = subprocess.run(
-        [sys.executable, "-c", code], capture_output=True, text=True, check=True
-    )
+    code = f"import sys;import {module};print(','.join(name for name in {OPTIONAL_PACKAGES!r} if name in sys.modules))"
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
     return {name for name in result.stdout.strip().split(",") if name}
 
 
