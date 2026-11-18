@@ -181,6 +181,7 @@ jobs:
           os: ubuntu-latest
           python-version: "3.13"
           version: ${{ needs.release.outputs.new-tag }}
+          init: build
       # Also installs the sdist, so an sdist that does not build stops the release before anything is published.
       - name: Build the sdist
         uses: ./.github/workflows/actions/compile-python-tarball

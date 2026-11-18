@@ -19,7 +19,10 @@ test:
 
 # The tests exercise to_dataframe() and to_networkx_graph(), hence the pandas and plotting extras.
 init:
-	pip3 install "./[dev,pandas,plotting]"
+	# pip 25.1+ reads the development dependencies from the shared dependency group in pyproject.toml, so the
+	#  versions are exactly the ones `uv sync` uses, not a second copy.
+	pip3 install --upgrade "pip>=25.1"
+	pip3 install --group bindings/python/pyproject.toml:dev "./[pandas,plotting]"
 
 build-install: build-ext install
 

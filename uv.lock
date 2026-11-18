@@ -927,30 +927,6 @@ name = "libmata"
 source = { editable = "bindings/python" }
 
 [package.optional-dependencies]
-all = [
-    { name = "cmake" },
-    { name = "coverage" },
-    { name = "cython" },
-    { name = "graphviz" },
-    { name = "ipykernel" },
-    { name = "ipython" },
-    { name = "networkx" },
-    { name = "pandas" },
-    { name = "papermill" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "seaborn" },
-    { name = "setuptools" },
-    { name = "tabulate" },
-]
-dev = [
-    { name = "cmake" },
-    { name = "coverage" },
-    { name = "cython" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "setuptools" },
-]
 notebooks = [
     { name = "ipykernel" },
     { name = "papermill" },
@@ -969,6 +945,7 @@ plotting = [
 [package.dev-dependencies]
 dev = [
     { name = "breathe" },
+    { name = "cmake" },
     { name = "coverage" },
     { name = "cython" },
     { name = "graphviz" },

@@ -166,7 +166,7 @@ def get_interactive_mode() -> str:
     """
     if 'ipykernel' in sys.modules:
         return 'notebook'
-    elif 'IPython' in sys.modules:
+    elif 'IPython' in sys.modules and sys.modules['IPython'].get_ipython() is not None:
         return 'terminal'
     else:
         return 'none'
