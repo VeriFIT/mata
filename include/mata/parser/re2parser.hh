@@ -56,6 +56,9 @@ struct Re2Options {
  * @param pattern regex as a string
  * @param options conversion and post-processing options
  * @return Nfa corresponding to pattern
+ * @throw std::invalid_argument on a regex RE2 cannot parse.
+ * @throw std::invalid_argument on a regex RE2 cannot compile within its program memory budget.
+ * @throw std::runtime_error on a regex program containing an instruction the converter does not support.
  */
 nfa::Nfa create_nfa(const std::string& pattern, const Re2Options& options);
 
@@ -73,6 +76,9 @@ void create_nfa(nfa::Nfa* nfa, const std::string& pattern, const Re2Options& opt
  * @param use_reduce whether to reduce the result using simulation reduction
  * @param encoding encoding of the regex, default is Latin1
  * @return Nfa corresponding to pattern
+ * @throw std::invalid_argument on a regex RE2 cannot parse.
+ * @throw std::invalid_argument on a regex RE2 cannot compile within its program memory budget.
+ * @throw std::runtime_error on a regex program containing an instruction the converter does not support.
  */
 nfa::Nfa create_nfa(
 	const std::string& pattern,

@@ -2042,3 +2042,15 @@ TEST_CASE("mata::parser::create_nfa() regex beyond RE2's memory budget") {
 	for (int i = 0; i < 1'000; ++i) { regex += "[a-z]{1000}"; }
 	CHECK_THROWS_WITH(mata::parser::create_nfa(regex), Catch::Matchers::ContainsSubstring("memory budget"));
 }
+
+TEST_CASE("mata::parser::create_nfa() reports bad input instead of killing the caller - issue #729") {
+	SECTION("a syntax error throws") { CHECK_THROWS_AS(mata::parser::create_nfa("(ab"), std::invalid_argument); }
+
+	// `Regexp::CompileToProg()` returns no program when it would exceed two thirds of RE2's `max_mem`.
+	//  That null program used to be dereferenced right away, which killed the whole process.
+	SECTION("a regex beyond the RE2 program memory budget throws") {
+		std::string pattern{};
+		for (int repetition{0}; repetition < 200; ++repetition) { pattern += "(?:ab|cd){1000}"; }
+		CHECK_THROWS_WITH(mata::parser::create_nfa(pattern), Catch::Matchers::ContainsSubstring("memory budget"));
+	}
+}
