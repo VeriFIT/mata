@@ -27,7 +27,7 @@ inline void get_elements(StateSet* element_set, const BoolVector& bool_vec) {
 	element_set->clear();
 	element_set->reserve(bool_vec.count());
 	for (size_t i{0}; i < bool_vec.size(); ++i) {
-		if (bool_vec[i] == 1) { element_set->push_back(static_cast<State>(i)); }
+		if (bool_vec[i] != 0) { element_set->push_back(static_cast<State>(i)); }
 	}
 }
 

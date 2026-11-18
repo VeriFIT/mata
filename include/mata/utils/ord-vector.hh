@@ -106,10 +106,15 @@ template <class Key, class Allocator> class OrdVector {
 	OrdVector(sorted_unique_t /*tag*/, VectorType&& vec) : vec_{std::move(vec)} { MATA_EXPENSIVE_ASSERT(is_sorted()); }
 	/// @note @c std::set is already sorted and free of duplicates, so its elements are copied as they are.
 	explicit OrdVector(const std::set<Key>& set) : vec_{set.begin(), set.end()} {}
+	/// Construct from any input range whose elements convert to @c Key. A forwarding reference keeps ranges with
+	///  non-const @c begin() (e.g. a named @c std::views::filter result) usable; the elements are converted from the
+	///  references the range yields, and a sentinel of a different type than the iterator is supported.
 	template <class T>
-		requires std::ranges::range<T> && std::convertible_to<std::ranges::range_value_t<T>, Key> &&
+		requires std::ranges::input_range<T> && std::convertible_to<std::ranges::range_reference_t<T>, Key> &&
 				 (!std::same_as<std::remove_cvref_t<T>, OrdVector>)
-	explicit OrdVector(const T& set) : vec_(set.begin(), set.end()) {
+	explicit OrdVector(T&& set) {
+		if constexpr (std::ranges::sized_range<T>) { vec_.reserve(std::ranges::size(set)); }
+		for (auto it{std::ranges::begin(set)}, end{std::ranges::end(set)}; it != end; ++it) { vec_.push_back(*it); }
 		utils::sort_and_rmdupl(vec_);
 	}
 	OrdVector(std::initializer_list<Key> list) : vec_(list) { utils::sort_and_rmdupl(vec_); }
@@ -147,7 +152,8 @@ template <class Key, class Allocator> class OrdVector {
 
 	std::pair<iterator, bool> insert(iterator itr, const Key& x) {
 		if ((itr == end() || x < *itr) && (itr == begin() || *(itr - 1) < x)) { return {vec_.insert(itr, x), true}; }
-		if (itr != end() && *itr == x) { return {itr, false}; }
+		// Equivalence under `<` only: a key with relational operators and no `==` has to work here as well.
+		if (itr != end() && !(*itr < x) && !(x < *itr)) { return {itr, false}; }
 		// The hint was wrong: fall back to the binary search.
 		return insert(x);
 	}
@@ -186,7 +192,7 @@ template <class Key, class Allocator> class OrdVector {
 		//  end-to-end gain: see EXP-1 in docs/experiments/.
 		auto pos = std::lower_bound(vec_.begin(), vec_.end(), x);
 		bool inserted{false};
-		if (pos == vec_.end() || *pos != x) {
+		if (pos == vec_.end() || x < *pos) { // lower_bound gives !(*pos < x), so `x < *pos` is the only way to differ.
 			pos = vec_.insert(pos, x);
 			inserted = true;
 		}

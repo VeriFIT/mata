@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <cstdint>
+#include <iterator>
 #include <random>
 #include <ranges>
 #include <set>
@@ -176,6 +178,40 @@ TEST_CASE("mata::utils::SparseSet constructors - issue #769") {
 		const SparseSet<unsigned long> from_filter{evens};
 		CHECK(from_filter == SparseSet<unsigned long>{2, 4});
 	}
+
+	SECTION("a built-in array") {
+		const unsigned long values[]{2, 4};
+		CHECK(SparseSet<unsigned long>{values} == SparseSet<unsigned long>{2, 4});
+	}
+
+	SECTION("a range whose sentinel differs from its iterator") {
+		const std::vector<unsigned long> values{3, 5, 7};
+		const auto counted{std::ranges::subrange(std::counted_iterator(values.begin(), 2), std::default_sentinel)};
+		CHECK(SparseSet<unsigned long>{counted} == SparseSet<unsigned long>{3, 5});
+	}
+
+	SECTION("elements convertible only from a reference") {
+		struct LvalueOnly {
+			unsigned long value;
+			operator unsigned long() const& { return value; } // NOLINT(google-explicit-constructor)
+			operator unsigned long() && = delete;
+		};
+		const std::vector<LvalueOnly> values{{1}, {6}};
+		CHECK(SparseSet<unsigned long>{values} == SparseSet<unsigned long>{1, 6});
+	}
+}
+
+TEST_CASE("mata::utils::SparseSet<uint8_t> with every value - issue #769") {
+	// 256 elements: an index of type uint8_t would wrap from 255 to 0 and never leave the loops.
+	SparseSet<uint8_t> full{};
+	for (unsigned value{0}; value < 256; ++value) { full.insert(static_cast<uint8_t>(value)); }
+	CHECK(full.size() == 256);
+	CHECK(full.max() == 255);
+	full.sort();
+	full.rename([](const uint8_t value) { return value; });
+	full.filter([](const uint8_t value) { return value % 2 == 0; });
+	CHECK(full.size() == 128);
+	CHECK(full.max() == 254);
 }
 
 namespace {

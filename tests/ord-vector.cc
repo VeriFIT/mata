@@ -2,8 +2,12 @@
  */
 
 #include <algorithm>
+#include <compare>
+#include <deque>
+#include <iterator>
 #include <memory>
 #include <random>
+#include <ranges>
 #include <set>
 #include <type_traits>
 #include <unordered_map>
@@ -13,7 +17,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include "mata/nfa/plumbing.hh"
 #include "mata/utils/ord-vector.hh"
+#include "mata/utils/sparse-set.hh"
 #include "mata/utils/utils.hh"
 
 using namespace mata::utils;
@@ -375,6 +381,54 @@ TEST_CASE("mata::utils::OrdVector constructors take only ranges of keys - issue 
 	CHECK(mutable_vec.to_vector() == std::vector<int>{1, 2, 3});
 }
 
+namespace {
+/// Converts to an int only from an lvalue: a range of these is read through its references.
+struct LvalueOnlyConvertible {
+	int value;
+	operator int() const& { return value; } // NOLINT(google-explicit-constructor)
+	operator int() && = delete;
+};
+
+/// A key with relational operators and no `==` (a non-defaulted `<=>` does not provide one).
+struct Rank {
+	int value;
+	std::strong_ordering operator<=>(const Rank& other) const { return value <=> other.value; }
+};
+} // namespace
+
+TEST_CASE("mata::utils::OrdVector range constructor reads what the range yields - issue #769") {
+	SECTION("elements convertible only from a reference") {
+		const std::vector<LvalueOnlyConvertible> values{{3}, {1}, {3}};
+		CHECK(OrdVector<int>(values).to_vector() == std::vector<int>{1, 3});
+	}
+
+	SECTION("a named filter view, whose begin() is non-const") {
+		std::vector<int> values{1, 2, 3, 4};
+		auto evens = values | std::views::filter([](const int v) { return v % 2 == 0; });
+		CHECK(OrdVector<int>(evens).to_vector() == std::vector<int>{2, 4});
+	}
+
+	SECTION("a range whose sentinel differs from its iterator") {
+		const std::vector<int> values{4, 2, 9};
+		const auto counted{std::ranges::subrange(std::counted_iterator(values.begin(), 2), std::default_sentinel)};
+		CHECK(OrdVector<int>(counted).to_vector() == std::vector<int>{2, 4});
+	}
+}
+
+TEST_CASE("mata::utils::OrdVector::insert() works for keys with relational operators only - issue #769") {
+	OrdVector<Rank> vec{mata::utils::sorted_unique, std::vector<Rank>{{1}, {5}}};
+	const auto [appended, appended_new] = vec.insert(vec.end(), Rank{7});
+	CHECK(appended_new);
+	CHECK(appended->value == 7);
+	const auto [present, present_new] = vec.insert(vec.begin() + 1, Rank{5});
+	CHECK(!present_new);
+	CHECK(present->value == 5);
+	const auto [searched, searched_new] = vec.insert(vec.end(), Rank{1}); // Wrong hint: falls back to the search.
+	CHECK(!searched_new);
+	CHECK(searched->value == 1);
+	CHECK(vec.size() == 3);
+}
+
 TEST_CASE("mata::BoolVector::get_elements() returns the indices of the set bits - issue #769") {
 	mata::BoolVector bool_vector{0, 1, 0, 1, 1};
 	std::vector<size_t> elements{7};
@@ -389,6 +443,22 @@ TEST_CASE("mata::BoolVector::get_elements() returns the indices of the set bits 
 	std::vector<size_t> const_elements{};
 	const_bool_vector.get_elements(const_elements);
 	CHECK(const_elements == std::vector<size_t>{1, 3, 4});
+}
+
+TEST_CASE("mata::BoolVector treats every nonzero byte as set - issue #769") {
+	const mata::BoolVector bool_vector{0, 2, 1};
+	CHECK(bool_vector.count() == 2);
+	std::vector<size_t> elements{};
+	CHECK(bool_vector.get_elements(elements) == std::vector<size_t>{1, 2});
+	CHECK(mata::utils::SparseSet<size_t>{bool_vector} == mata::utils::SparseSet<size_t>{1, 2});
+	mata::nfa::StateSet states{};
+	mata::nfa::plumbing::get_elements(&states, bool_vector);
+	CHECK(states == mata::nfa::StateSet{1, 2});
+
+	// An output without reserve() is filled as well.
+	std::deque<size_t> deque{7};
+	bool_vector.get_elements(deque);
+	CHECK(deque == std::deque<size_t>{1, 2});
 }
 
 TEST_CASE("mata::utils::rename() renames every element - issue #769") {
