@@ -46,8 +46,9 @@ A small-buffer `StateSet` was not built: small inline sets already exist where s
 
 ## Method
 
-- **Profile:** `perf record` of a `RelWithDebInfo` build of `devel` over 40 sampled instances per experiment,
-  samples attributed to the source file of the innermost inlined frame ([`tools/shares.sh`](tools/shares.sh)).
+- **Profile:** `perf record` of a `RelWithDebInfo` build of `devel` over up to 40 instances per experiment, drawn by
+  [`tools/profile.py`](tools/profile.py) (seeded, so the sample is fixed), samples attributed to the source file of
+  the innermost inlined frame ([`tools/shares.sh`](tools/shares.sh)).
 - **Microbenchmark:** [`tools/micro.cc`](tools/micro.cc), `OrdVector` vs `std::flat_set` vs the merge and search
   variants on `uint32_t` sets, `g++ 16.2 -O3 -DNDEBUG`, pinned to one core, minimum of 5 timed repeats; the `build`
   rows divide by the number of inserts actually performed.
@@ -95,6 +96,10 @@ every build finished and the `devel` operation time is at least 1 ms (the same p
 
 ## Reproducing
 
+All commands below name this record's directory as `$record`: the absolute path of
+`docs/experiments/1-ordvector-flat-set` in a mata checkout that contains it. The scripts run from there, nothing
+is copied.
+
 End to end, from a checkout of [automata-lib-bench](https://github.com/VeriFIT/automata-lib-bench) with its
 submodules (`benchmarks/nfa-bench` at `1390e4ba0`), inside its `nix develop` shell:
 
@@ -103,24 +108,36 @@ submodules (`benchmarks/nfa-bench` at `1390e4ba0`), inside its `nix develop` she
 2. Build every variant and the baseline: `./scripts/build_version.sh mata <commit> <slug>`, with the slugs `devel`,
    `flatset-merge`, `backmerge`, `append-fastpath`, `branchless-lb`, `delta-pool` and `stateset-pool`. Then
    `cp bin/mata-devel bin/mata-devel-aa` for the A/A control.
-3. From the automata-lib-bench root, the baseline first:
+3. From the automata-lib-bench root (the scripts resolve `./bin`, `./inputs` and `./emp-programs` from the working
+   directory), the baseline first:
 
    ```sh
    builds="devel devel-aa flatset-merge backmerge append-fastpath branchless-lb delta-pool stateset-pool"
-   python3 run.py heavy heavy.jsonl $builds
-   python3 run.py light light.jsonl $builds
-   python3 analyse.py devel heavy.jsonl light.jsonl
+   python3 "$record/tools/run.py" heavy heavy.jsonl $builds
+   python3 "$record/tools/run.py" light light.jsonl $builds
+   python3 "$record/tools/analyse.py" devel heavy.jsonl light.jsonl
    ```
 
-   with [`run.py`](tools/run.py) and [`analyse.py`](tools/analyse.py) from `tools/`. The core numbers in `run.py`
-   (`MODES`) assume 16 cores; the full run took about 2 hours.
+   The core numbers in [`run.py`](tools/run.py) (`MODES`) assume 16 cores; the full run took about 2 hours.
 
-Microbenchmark, from a mata checkout at `53021908`:
-`g++ -std=c++23 -O3 -DNDEBUG -I include tools/micro.cc -o micro && taskset --cpu-list 2 ./micro`.
+Microbenchmark, from a second mata checkout at `53021908` (its headers are the baseline being measured):
 
-Profile: build the baseline with `./scripts/build_version.sh --build-mode RelWithDebInfo mata 53021908 devel-rwdi`,
-record each experiment with `perf record --freq 2000 --output <experiment>.data -- <commands>`, and run
-[`shares.sh`](tools/shares.sh) on the `.data` files (`PERF` selects the `perf` binary).
+```sh
+g++ -std=c++23 -O3 -DNDEBUG -I include "$record/tools/micro.cc" -o micro && taskset --cpu-list 2 ./micro
+```
+
+Profile, from the automata-lib-bench root:
+
+```sh
+./scripts/build_version.sh --build-mode RelWithDebInfo mata 53021908 devel-rwdi
+python3 "$record/tools/profile.py" "$PWD/bin/mata-devel-rwdi" profile
+"$record/tools/shares.sh" profile/*.data
+```
+
+[`profile.py`](tools/profile.py) draws up to 40 lines of each experiment's input from one `random.Random(1)` stream
+in a fixed experiment order, writes the commands to `profile/<experiment>.sh` and records each with
+`perf record --freq 2000 --output profile/<experiment>.data -- bash profile/<experiment>.sh`, every instance under
+`timeout 15`. `PERF` selects the `perf` binary for both scripts.
 
 ## Conclusion
 

@@ -92,7 +92,7 @@ contains, size 65536 (3rd col: branchless)       14.33     56.32     18.53      
 
 ## Profile of `devel`
 
-Share of samples (%) whose innermost (inlined) frame is in the given source file; `perf record` at 2 kHz over 40 sampled instances per experiment, `perf report --sort srcfile` (see [`tools/shares.sh`](tools/shares.sh)).
+Share of samples (%) whose innermost (inlined) frame is in the given source file; `perf record` at 2 kHz over up to 40 instances per experiment, drawn by [`tools/profile.py`](tools/profile.py), then `perf report --sort srcfile` (see [`tools/shares.sh`](tools/shares.sh)).
 
 | experiment      | ord-vector.hh | small-ord-vector.hh | stl_algo.h | stl_algobase.h | vector.tcc | stl_vector.h | synchronized-iterator.hh | sparse-set.hh | hashtable.h |
 | --------------- | ------------- | ------------------- | ---------- | -------------- | ---------- | ------------ | ------------------------ | ------------- | ----------- |
