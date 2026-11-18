@@ -18,6 +18,7 @@
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "mata/alphabet.hh"
@@ -33,6 +34,7 @@
 
 using namespace mata::nfa;
 using Catch::Matchers::ContainsSubstring;
+using Catch::Matchers::MessageMatches;
 using mata::EnumAlphabet;
 using mata::Symbol;
 using mata::nfa::algorithms::ExternalSolverNotFound;
@@ -119,7 +121,10 @@ Nfa nfa_with_three_state_minimum() {
 /// A private temporary directory removed with its contents on destruction.
 class TemporaryDirectory {
   public:
-	explicit TemporaryDirectory(const std::string& name) : path_{create(name)} {}
+	explicit TemporaryDirectory(
+		const std::string& name, const std::filesystem::path& root = std::filesystem::temp_directory_path()
+	)
+		: path_{create(name, root)} {}
 	TemporaryDirectory(const TemporaryDirectory&) = delete;
 	TemporaryDirectory& operator=(const TemporaryDirectory&) = delete;
 	~TemporaryDirectory() {
@@ -132,8 +137,8 @@ class TemporaryDirectory {
   private:
 	std::filesystem::path path_{};
 
-	static std::filesystem::path create(const std::string& name) {
-		std::string directory{(std::filesystem::temp_directory_path() / (name + "-XXXXXX")).string()};
+	static std::filesystem::path create(const std::string& name, const std::filesystem::path& root) {
+		std::string directory{(root / (name + "-XXXXXX")).string()};
 		if (::mkdtemp(directory.data()) == nullptr) {
 			throw std::system_error(errno, std::generic_category(), "cannot create a test directory");
 		}
@@ -141,26 +146,29 @@ class TemporaryDirectory {
 	}
 };
 
+/// Whether a shell script written to a fresh private directory under @p root can be executed. Runs on every call.
+bool probe_executable_scripts(const std::filesystem::path& root) {
+	const TemporaryDirectory directory{"mata exec probe", root};
+	const std::filesystem::path path{directory.path() / "probe"};
+	std::ofstream{path} << "#!/bin/sh\nexit 0\n";
+	std::filesystem::permissions(path, std::filesystem::perms::owner_all);
+	std::string argument{path.string()};
+	std::array<char*, 2> argv{argument.data(), nullptr};
+	std::array<char*, 1> environment{nullptr};
+	pid_t process{};
+	if (::posix_spawn(&process, argv.front(), nullptr, nullptr, argv.data(), environment.data()) != 0) { return false; }
+	int status{0};
+	pid_t waited{-1};
+	while ((waited = ::waitpid(process, &status, 0)) == -1 && errno == EINTR) {}
+	// Without the child's own status (e.g. ECHILD when SIGCHLD is ignored) the probe is inconclusive; report it as
+	//  not working rather than reading an unset status as a successful exit.
+	return waited == process && WIFEXITED(status) && WEXITSTATUS(status) == 0;
+}
+
 /// Whether a shell script written next to the fake solvers can be executed at all: TMPDIR or /tmp is mounted noexec
-///  on hardened systems and in containers started with '--tmpfs /tmp'.
+///  on hardened systems and in containers started with '--tmpfs /tmp'. Probed once per process.
 bool executable_scripts_work() {
-	static const bool works{[] {
-		const TemporaryDirectory directory{"mata exec probe"};
-		const std::filesystem::path path{directory.path() / "probe"};
-		std::ofstream{path} << "#!/bin/sh\nexit 0\n";
-		std::filesystem::permissions(path, std::filesystem::perms::owner_all);
-		std::string argument{path.string()};
-		std::array<char*, 2> argv{argument.data(), nullptr};
-		std::array<char*, 1> environment{nullptr};
-		pid_t process{};
-		bool result{false};
-		if (::posix_spawn(&process, argv.front(), nullptr, nullptr, argv.data(), environment.data()) == 0) {
-			int status{0};
-			while (::waitpid(process, &status, 0) == -1 && errno == EINTR) {}
-			result = WIFEXITED(status) && WEXITSTATUS(status) == 0;
-		}
-		return result;
-	}()};
+	static const bool works{probe_executable_scripts(std::filesystem::temp_directory_path())};
 	return works;
 }
 
@@ -182,8 +190,14 @@ class FakeSolver {
 	FakeSolver(const FakeSolver&) = delete;
 	FakeSolver& operator=(const FakeSolver&) = delete;
 
-	/// The command running the solver, with its path quoted.
-	std::string command() const { return "'" + path_.string() + "'"; }
+	/// The command running the solver, with its path quoted for Mata's command parser (not for a shell): it has no
+	///  escapes, so the path is enclosed in the kind of quote it does not contain, e.g. "/tmp/team's work/solver".
+	std::string command() const {
+		const std::string path{path_.string()};
+		const char quote{path.find('"') == std::string::npos ? '"' : '\''};
+		if (path.find(quote) != std::string::npos) { SKIP("The temporary path contains both kinds of quotes."); }
+		return quote + path + quote;
+	}
 
 	const std::filesystem::path& path() const { return path_; }
 	const std::filesystem::path& directory() const { return directory_.path(); }
@@ -263,15 +277,21 @@ class GroupingLocale {
 ///  ECHILD, as it does with SA_NOCLDWAIT or under a launcher reaping children in a handler.
 class IgnoredChildSignal {
   public:
-	IgnoredChildSignal() : previous_{std::signal(SIGCHLD, SIG_IGN)} {}
+	IgnoredChildSignal() {
+		struct sigaction ignore{};
+		ignore.sa_handler = SIG_IGN;
+		::sigemptyset(&ignore.sa_mask);
+		// Save the whole previous action (flags such as SA_NOCLDWAIT and the mask, not only the handler).
+		if (::sigaction(SIGCHLD, &ignore, &previous_) != 0) {
+			throw std::system_error(errno, std::generic_category(), "cannot ignore SIGCHLD");
+		}
+	}
 	IgnoredChildSignal(const IgnoredChildSignal&) = delete;
 	IgnoredChildSignal& operator=(const IgnoredChildSignal&) = delete;
-	~IgnoredChildSignal() {
-		if (previous_ != SIG_ERR) { std::signal(SIGCHLD, previous_); }
-	}
+	~IgnoredChildSignal() { ::sigaction(SIGCHLD, &previous_, nullptr); }
 
   private:
-	void (*previous_)(int);
+	struct sigaction previous_{};
 };
 #endif
 
@@ -282,17 +302,15 @@ TEST_CASE("mata::nfa::reduce() execution probe does not follow a predictable sym
 	const TemporaryDirectory victim_directory{"mata symlink target"};
 	const std::filesystem::path victim{victim_directory.path() / "victim"};
 	std::ofstream{victim} << "do not overwrite";
-	const std::filesystem::path link{
-		std::filesystem::temp_directory_path() / ("mata exec probe-" + std::to_string(::getpid()))
-	};
-	std::error_code error{};
-	std::filesystem::remove(link, error);
-	std::filesystem::create_symlink(victim, link);
-	(void) executable_scripts_work();
+	// The predictable name lives in a fresh fixture-owned root, so nothing in the shared temporary directory is
+	// removed.
+	const TemporaryDirectory root{"mata probe root"};
+	std::filesystem::create_symlink(victim, root.path() / ("mata exec probe-" + std::to_string(::getpid())));
+	// Uncached: the cached executable_scripts_work() may have probed earlier, before the link existed.
+	(void) probe_executable_scripts(root.path());
 	std::string contents{};
 	std::getline(std::ifstream{victim}, contents);
 	CHECK(contents == "do not overwrite");
-	std::filesystem::remove(link, error);
 }
 
 TEST_CASE("mata::nfa::reduce() with algorithms \"sat\" and \"qbf\" running fake solvers") {
@@ -415,12 +433,29 @@ TEST_CASE("mata::nfa::reduce() with algorithms \"sat\" and \"qbf\" running fake 
 		check_error("echo 's SATISFIABLE'\necho 'v 1000000 0'", "unexpected value '1000000'");
 		check_error("echo 's UNKNOWN'", "did not decide");
 		check_error("kill -9 $$", "terminated by signal 9");
+		// One line longer than the excerpt limit, then a newline: its tail is kept instead of an empty excerpt.
+		check_error("printf 'x%.0s' $(seq 1 1500); printf 'TAIL\\n'", "xTAIL");
 
 		const FakeSolver qbf_without_certificate{"echo 's cnf 1 10 20'\nexit 10"};
 		CHECK_THROWS_WITH(
 			reduce(input, nullptr, {{"algorithm", "qbf"}, {"solver", qbf_without_certificate.command()}}),
 			ContainsSubstring("--qdo")
 		);
+	}
+
+	SECTION("A DepQBF --help probe killed by a signal leaves the command unchanged") {
+		// A wrapper that dies without its configured arguments: the probe runs the executable alone, so it is killed,
+		//  but the run with the full command works and decides the outcome.
+		const FakeSolver wrapper{
+			"case \"$*\" in *--configured*--qdo*) echo 's cnf 0 10 20'; exit 20;; esac\n"
+			"kill -9 $$",
+			"depqbf"
+		};
+		const Nfa nfa{
+			reduce(input, nullptr, {{"algorithm", "qbf"}, {"solver", wrapper.command() + " --configured --qdo"}})
+		};
+		CHECK(nfa.num_of_states() == 4);
+		CHECK(are_equivalent(nfa, input));
 	}
 
 	SECTION("DepQBF is run with --no-dynamic-nenofex only if it supports the option") {
@@ -446,13 +481,18 @@ TEST_CASE("mata::nfa::reduce() with algorithms \"sat\" and \"qbf\" running fake 
 				CHECK(nfa.num_of_states() == 4);
 				CHECK(are_equivalent(nfa, input));
 			}
-			{ // Given by the environment variable.
-				const EnvironmentVariable qbf_solver{"MATA_QBF_SOLVER", "depqbf --qdo"};
+			// The explicit commands below are needed for these cases to pass: PATH holds no solver, so default
+			//  discovery cannot find one if the command were ignored.
+			const TemporaryDirectory no_solvers{"mata no solvers"};
+			const EnvironmentVariable empty_path{"PATH", no_solvers.path().string()};
+			{ // Given by the environment variable, by its full path.
+				const EnvironmentVariable qbf_solver{"MATA_QBF_SOLVER", depqbf->command() + " --qdo"};
 				const Nfa nfa{reduce(input, nullptr, {{"algorithm", "qbf"}})};
 				CHECK(nfa.num_of_states() == 4);
 				CHECK(are_equivalent(nfa, input));
 			}
 			{ // Given by the "solver" parameter, by its full path.
+				const EnvironmentVariable no_qbf_solver{"MATA_QBF_SOLVER", std::nullopt};
 				const Nfa nfa{reduce(input, nullptr, {{"algorithm", "qbf"}, {"solver", depqbf->command() + " --qdo"}})};
 				CHECK(nfa.num_of_states() == 4);
 				CHECK(are_equivalent(nfa, input));
@@ -484,16 +524,23 @@ TEST_CASE("mata::nfa::reduce() with algorithms \"sat\" and \"qbf\" running fake 
 	}
 
 	SECTION("Unknown types of automata are rejected") {
-		// No solver is run: the type is checked first.
-		for (const char* const algorithm : {"sat", "qbf"}) {
-			CHECK_THROWS_WITH(
-				reduce(input, nullptr, {{"algorithm", algorithm}, {"type", "after"}}), ContainsSubstring("unknown type")
+		// No solver is run: the type is checked first. The error is a plain std::runtime_error, not an
+		//  ExternalSolverNotFound, so the bindings do not report it as a missing solver.
+		const auto check_rejected{[&](const ParameterMap& params) {
+			CHECK_THROWS_MATCHES(
+				reduce(input, nullptr, params), std::runtime_error, MessageMatches(ContainsSubstring("unknown type"))
 			);
+			try {
+				(void) reduce(input, nullptr, params);
+			} catch (const ExternalSolverNotFound&) {
+				FAIL("an unknown type was reported as a missing solver");
+			} catch (const std::runtime_error&) {}
+		}};
+		for (const char* const algorithm : {"sat", "qbf"}) {
+			check_rejected({{"algorithm", algorithm}, {"type", "after"}});
 		}
 		// "dfa" is a type of "sat" only; "qbf" always computes an NFA.
-		CHECK_THROWS_WITH(
-			reduce(input, nullptr, {{"algorithm", "qbf"}, {"type", "dfa"}}), ContainsSubstring("unknown type")
-		);
+		check_rejected({{"algorithm", "qbf"}, {"type", "dfa"}});
 	}
 }
 #endif

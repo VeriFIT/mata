@@ -522,8 +522,11 @@ std::string output_excerpt(const std::string& output) {
 	std::string ellipsis{};
 	if (excerpt.size() > max_length) {
 		excerpt.remove_prefix(excerpt.size() - max_length);
-		// Cut whole lines off, so that the excerpt does not start in the middle of a line.
-		if (const size_t line_end{excerpt.find('\n')}; line_end != std::string_view::npos) {
+		// Cut the partial first line off, so that the excerpt does not start in the middle of a line, unless only
+		//  blank text would remain: one overlong line keeps its tail instead of reducing the excerpt to "...".
+		if (const size_t line_end{excerpt.find('\n')};
+			line_end != std::string_view::npos &&
+			excerpt.find_first_not_of(" \t\r\n", line_end + 1) != std::string_view::npos) {
 			excerpt.remove_prefix(line_end + 1);
 		}
 		ellipsis = "...\n";
@@ -591,9 +594,9 @@ SolverAnswer parse_solver_output(
 	if (!satisfiable.has_value()) {
 		throw std::runtime_error(
 			"The solver '" + solver + "' " +
-			(exit_code == unknown_exit_code ? std::string{"did not report a result."}
-											: "exited with code " + std::to_string(exit_code) +
-												  " without reporting a result.") +
+			(exit_code == unknown_exit_code
+				 ? std::string{"did not report a result."}
+				 : "exited with code " + std::to_string(exit_code) + " without reporting a result.") +
 			output_excerpt(output)
 		);
 	}
@@ -697,8 +700,8 @@ std::pair<int, std::string> run_process(std::vector<std::string> arguments, cons
 	if (const int error{::posix_spawn(&process, argv.front(), &actions, nullptr, argv.data(), environment())};
 		error != 0) {
 		throw ExternalSolverNotFound(
-			"Cannot run the solver '" + printable(arguments.front()) + "': " +
-			std::generic_category().message(error) + "."
+			"Cannot run the solver '" + printable(arguments.front()) + "': " + std::generic_category().message(error) +
+			"."
 		);
 	}
 	int status{0};
@@ -734,10 +737,17 @@ void add_depqbf_options(std::vector<std::string>& solver, const std::filesystem:
 		std::find(solver.begin(), solver.end(), "--no-dynamic-nenofex") != solver.end()) {
 		return;
 	}
-	if (run_process({solver.front(), "--help"}, directory / "help.txt").second.find("--no-dynamic-nenofex") !=
-		std::string::npos) {
-		solver.emplace_back("--no-dynamic-nenofex");
+	std::string help{};
+	try {
+		help = run_process({solver.front(), "--help"}, directory / "help.txt").second;
+	} catch (const ExternalSolverNotFound&) { throw; } catch (const std::system_error&) {
+		throw;
+	} catch (const std::runtime_error&) {
+		// The probe was killed by a signal, e.g. a wrapper that needs its configured arguments. Leave the command
+		//  unchanged: the run with the full command decides whether the solver works.
+		return;
 	}
+	if (help.find("--no-dynamic-nenofex") != std::string::npos) { solver.emplace_back("--no-dynamic-nenofex"); }
 }
 
 /// The command running a SAT or QBF solver: @p command, or the value of the environment variable, or the first default

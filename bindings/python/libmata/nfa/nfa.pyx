@@ -86,28 +86,26 @@ cdef list _symbol_posts_list(const CStatePost& state_post):
 
 cdef extern from *:
     """
-    #include <string>
-
     #include "mata/nfa/algorithms.hh"
 
     /* Cython emits __Pyx_CppExn2PyErr() for the declarations using the plain "except +". */
     static void __Pyx_CppExn2PyErr();
 
-    /* Called while a C++ exception is being handled: store its message and report whether it is an
-       ExternalSolverNotFound. Any other exception is translated the way Cython translates it by default. */
-    static bool mata_is_external_solver_not_found(std::string& message) {
+    /* Called while a C++ exception is being handled: return the message of an ExternalSolverNotFound, or nullptr
+       after translating any other exception the way Cython translates it by default. The message is not copied, so
+       nothing here can throw: what() stays valid while the exception is handled, which spans the whole translator. */
+    static const char* mata_external_solver_not_found_message() {
         try {
             throw;
         } catch (const mata::nfa::algorithms::ExternalSolverNotFound& error) {
-            message = error.what();
-            return true;
+            return error.what();
         } catch (...) {
             __Pyx_CppExn2PyErr();
-            return false;
+            return nullptr;
         }
     }
     """
-    bool mata_is_external_solver_not_found(string& message)
+    const char* mata_external_solver_not_found_message()
 
 
 class ExternalSolverNotFound(RuntimeError):
@@ -116,8 +114,8 @@ class ExternalSolverNotFound(RuntimeError):
 
 cdef void translate_mata_exception() except *:
     """Translate the C++ exception being handled into a Python one."""
-    cdef string message
-    if mata_is_external_solver_not_found(message):
+    cdef const char* message = mata_external_solver_not_found_message()
+    if message != NULL:
         raise ExternalSolverNotFound(message.decode("utf-8", "replace"))
 
 cdef class Run:
