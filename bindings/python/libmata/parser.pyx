@@ -31,14 +31,15 @@ def from_regex(regex, encoding='utf-8', bool reduce=True, bool trim=True, bool k
     parser.create_nfa((<mata_nfa.Nfa>result).thisptr.get(), regex.encode(encoding), options)
     return result
 
-def from_mata(src: str | list[str], alph.Alphabet alphabet):
+def from_mata(src: str | list[str], alph.Alphabet alphabet = None):
     """Loads automata from either single file or list or other stream of files.
     
     All automata passed in sources are mintermized together. If you wish to load 
     multiple automata and mintermize them, then you have to pass them as a list.
 
     :param src: list of paths to automata or single path
-    :param alphabet: target alphabet; None reads the symbols as numbers
+    :param alphabet: target alphabet; when omitted, the symbols are read as numbers
+    :raises ValueError: when @p src is an empty list
     :return: single automaton or list of automata
     """
     cdef CAlphabet * c_alphabet = NULL
@@ -62,6 +63,8 @@ def from_mata(src: str | list[str], alph.Alphabet alphabet):
     # load multiple automata: the inputs the fast reader of explicit alphabets reads are loaded right away, those with
     #  a bitvector alphabet go to the bitvector reader, which mintermizes them together, and the others go through the
     #  general reader
+    if not src:
+        raise ValueError("from_mata() needs at least one source")
     automata = []
     for file in src:
         with open(file, 'rb') as handle:

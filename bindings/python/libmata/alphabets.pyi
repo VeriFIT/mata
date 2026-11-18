@@ -147,9 +147,9 @@ class AlphabetLevels:
     def at(self, index: int) -> Alphabet | None:
         """Raw, mode-agnostic slot access by index. Unlike `for_level`, a null entry is returned as `None`."""
     def __iter__(self): ...
-    def push_back(self, alphabet: Alphabet | None) -> None:
+    def push_back(self, alphabet: Alphabet | None = None) -> None:
         """Append `alphabet` as the new last level."""
-    def insert(self, index: int, alphabet: Alphabet | None) -> None:
+    def insert(self, index: int, alphabet: Alphabet | None = None) -> None:
         """Insert `alphabet` before `index`, shifting subsequent levels up."""
     def pop_back(self) -> None:
         """Remove the last level's alphabet."""

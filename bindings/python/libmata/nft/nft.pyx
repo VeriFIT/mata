@@ -326,11 +326,15 @@ cdef class Nft:
         return result
 
     @alphabets.setter
-    def alphabets(self, alph.AlphabetLevels value):
+    def alphabets(self, value):
+        # Untyped: with `allow_none_for_extension_args` off, a typed parameter would reject the `None`
+        #  that clears the alphabets.
         if value is None:
             self.thisptr.get().alphabets = shared_ptr[CAlphabetLevels]()
+        elif isinstance(value, alph.AlphabetLevels):
+            self.thisptr.get().alphabets = (<alph.AlphabetLevels>value).thisptr
         else:
-            self.thisptr.get().alphabets = value.thisptr
+            raise TypeError(f"expected AlphabetLevels or None, got {type(value).__name__}")
 
     @property
     def initial_states(self):

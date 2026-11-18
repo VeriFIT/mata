@@ -115,7 +115,10 @@ class Nft:
     def alphabets(self) -> alph.AlphabetLevels | None:
         """The per-level alphabets of the NFT, or `None` if none is set."""
     @alphabets.setter
-    def alphabets(self, value: alph.AlphabetLevels | None) -> None: ...
+    def alphabets(self, value: alph.AlphabetLevels | None) -> None:
+        """
+        :raises TypeError: when @p value is neither `AlphabetLevels` nor `None`.
+        """
     @property
     def initial_states(self) -> list[State]: ...
     @initial_states.setter

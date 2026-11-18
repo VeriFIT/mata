@@ -39,9 +39,9 @@ cdef extern from "mata/applications/strings.hh" namespace "mata::applications::s
     cdef cset[vector[Symbol]] c_get_shortest_words "mata::applications::strings::get_shortest_words" (CNfa&) except +
     cdef optional[vector[vector[Symbol]]] c_get_words_of_lengths \
         "mata::applications::strings::get_words_of_lengths" (CNft&, const vector[unsigned]&) except +
-    cdef cset[Symbol] c_get_accepted_symbols "mata::applications::strings::get_accepted_symbols" (CNfa&)
+    cdef cset[Symbol] c_get_accepted_symbols "mata::applications::strings::get_accepted_symbols" (CNfa&) except +
     cdef cset[pair[int, int]] c_get_word_lengths "mata::applications::strings::get_word_lengths" (CNfa&) except +
-    cdef bool c_is_lang_eps "mata::applications::strings::is_lang_eps" (CNfa&)
+    cdef bool c_is_lang_eps "mata::applications::strings::is_lang_eps" (CNfa&) except +
 
 cdef extern from "mata/applications/strings.hh" namespace "mata::applications::strings::seg_nfa":
     cdef cppclass CSegmentation "mata::applications::strings::seg_nfa::Segmentation":
@@ -50,7 +50,7 @@ cdef extern from "mata/applications/strings.hh" namespace "mata::applications::s
         ctypedef size_t EpsilonDepth
         ctypedef umap[EpsilonDepth, vector[CTrans]] EpsilonDepthTransitions
 
-        EpsilonDepthTransitions get_epsilon_depths()
+        EpsilonDepthTransitions get_epsilon_depths() except +
         const vector[CNfa]& get_segments() except +
         const vector[CNfa]& get_untrimmed_segments() except +
 

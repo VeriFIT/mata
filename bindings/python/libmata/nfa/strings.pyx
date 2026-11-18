@@ -23,6 +23,10 @@ cdef class Segmentation:
     """Wrapper over Segmentation."""
 
     cdef CSegmentation* thisptr
+    # `CSegmentation` stores `const SegNfa&` and reads it lazily in `get_segments()`. Holding the Python
+    #  `Nfa` alive would not be enough either, because it can still be mutated in between, so the
+    #  segmentation works on its own copy.
+    cdef shared_ptr[CNfa] owned_automaton
 
     def __cinit__(self, mata_nfa.Nfa aut, cset[Symbol] symbols):
         """Compute segmentation.
@@ -30,7 +34,8 @@ cdef class Segmentation:
         :param aut: Segment automaton to compute epsilon depths for.
         :param symbol: Symbol to execute segmentation for.
         """
-        self.thisptr = new CSegmentation(dereference(aut.thisptr), symbols)
+        self.owned_automaton = make_shared[CNfa](dereference(aut.thisptr))
+        self.thisptr = new CSegmentation(dereference(self.owned_automaton), symbols)
 
     def __dealloc__(self):
         del self.thisptr
@@ -192,7 +197,8 @@ def noodlify_for_equation(left_side_automata: list, mata_nfa.Nfa right_side_auto
     """
     cdef umap[string, string] c_params = mata_nfa.encode_params(params or {})
     # When reducing, the C++ side unifies the initial and final states of the left side automata in place; pass it
-    #  copies instead. `lhs_copies` keeps the copies alive while C++ holds their raw pointers.
+    #  copies instead. `lhs_copies` keeps the copies alive while C++ holds their raw pointers. The casts are checked
+    #  (`<Nfa?>`): an unchecked one turned any foreign element of the list, `None` included, into a wild pointer.
     copy_lhs = _unifies_left_side(c_params)
     lhs_copies = []
     cdef vector[CNfa*] c_left_side_automata
@@ -200,9 +206,9 @@ def noodlify_for_equation(left_side_automata: list, mata_nfa.Nfa right_side_auto
         if not isinstance(lhs_aut, mata_nfa.Nfa):
             raise TypeError("left_side_automata must contain only Nfa objects")
         if copy_lhs:
-            lhs_aut = (<mata_nfa.Nfa>lhs_aut).__copy__()
+            lhs_aut = (<mata_nfa.Nfa?>lhs_aut).__copy__()
             lhs_copies.append(lhs_aut)
-        c_left_side_automata.push_back((<mata_nfa.Nfa>lhs_aut).thisptr.get())
+        c_left_side_automata.push_back((<mata_nfa.Nfa?>lhs_aut).thisptr.get())
 
     noodle_segments = []
     wrapped = {}
