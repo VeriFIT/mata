@@ -207,7 +207,9 @@ TEST_CASE("mata::nfa::concatenate() rvalue overloads") {
 				const Nfa expected{algorithms::concatenate_eps(lhs, rhs, epsilon, use_epsilon)};
 				StateRenaming expected_lhs_renaming{};
 				StateRenaming expected_rhs_renaming{};
-				algorithms::concatenate_eps(lhs, rhs, epsilon, use_epsilon, &expected_lhs_renaming, &expected_rhs_renaming);
+				algorithms::concatenate_eps(
+					lhs, rhs, epsilon, use_epsilon, &expected_lhs_renaming, &expected_rhs_renaming
+				);
 
 				Nfa moved_lhs{lhs};
 				CHECK(

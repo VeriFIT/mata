@@ -1407,3 +1407,41 @@ TEST_CASE("mata::nft::concatenate_eps() with custom epsilon on a multi-level NFT
 	CHECK(are_equivalent(ab_concat, concatenate(a, b)));
 	CHECK(!ab_concat.delta.get_used_symbols().contains(custom_epsilon));
 }
+
+TEST_CASE("mata::nft::concatenate_eps() keeps only the levels of the operand states") {
+	// A levels vector may hold an entry past the states of its NFT; it cannot shift the rhs levels.
+	Nft lhs{Nft::with_levels(2)};
+	lhs.initial.insert(0);
+	lhs.final.insert(0);
+	lhs.levels.set({0, 1});
+	Nft rhs{Nft::with_levels(2)};
+	rhs.initial.insert(0);
+	rhs.final.insert(0);
+	const Nft result{algorithms::concatenate_eps(lhs, rhs, 3, false)};
+	CHECK(result.levels[0] == 0);
+	CHECK(result.levels[1] == 0);
+
+	// The same empty-result path must give the original counts' maps without needing the left operand's delta.
+	StateRenaming lhs_map{};
+	StateRenaming rhs_map{};
+	const Nft empty{algorithms::concatenate_eps(lhs, Nft::with_levels(2), 3, false, &lhs_map, &rhs_map)};
+	CHECK(empty.num_of_states() == 0);
+	CHECK(lhs_map == StateRenaming{{0, 0}});
+	CHECK(rhs_map.empty());
+}
+
+TEST_CASE("mata::nft::concatenate_eps() does not read a renaming through its symbol argument") {
+	Nft lhs{Nft::with_levels(1)};
+	lhs.initial.insert(0);
+	lhs.final.insert(0);
+	lhs.delta.add(0, 1, 0);
+	Nft rhs{Nft::with_levels(1)};
+	rhs.initial.insert(0);
+	rhs.final.insert(0);
+	StateRenaming lhs_map{};
+	StateRenaming rhs_map{{0, 3}};
+	// Since Symbol and State are the same type, this is also the value the caller wants removed as the connector.
+	const Symbol epsilon{rhs_map.at(0)};
+	const Nft result{algorithms::concatenate_eps(lhs, rhs, epsilon, false, &lhs_map, &rhs_map)};
+	CHECK(!result.delta.get_used_symbols().contains(epsilon));
+}

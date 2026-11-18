@@ -230,9 +230,14 @@ TEST_CASE("mata::nft::concatenate() rvalue overloads") {
 				Nft consumed_lhs{lhs};
 				StateRenaming expected_lhs_renaming{};
 				StateRenaming expected_rhs_renaming{};
-				algorithms::concatenate_eps(
-					lhs, rhs, epsilon, use_epsilon, &expected_lhs_renaming, &expected_rhs_renaming
-				);
+				// Built from the original operands, not by the same overload as the result: both calls could share a
+				// bug.
+				for (State state{0}; state < lhs.num_of_states(); ++state) {
+					expected_lhs_renaming.emplace(state, state);
+				}
+				for (State state{0}; state < rhs.num_of_states(); ++state) {
+					expected_rhs_renaming.emplace(state, static_cast<State>(lhs.num_of_states()) + state);
+				}
 				// The requested maps are filled also on the empty-result early return of the consuming path.
 				CHECK(
 					algorithms::concatenate_eps(

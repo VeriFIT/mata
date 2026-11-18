@@ -32,7 +32,8 @@ Nft concatenate_eps_consuming(
 	Nft&& lhs,
 	// A forwarding reference only to take a const operand or one to consume, which is used in place.
 	RhsNft&& rhs,
-	const Symbol& epsilon,
+	// By value: `epsilon` may name an entry of a requested renaming map, which is cleared and refilled below.
+	const Symbol epsilon,
 	const bool use_epsilon,
 	StateRenaming* lhs_state_renaming,
 	StateRenaming* rhs_state_renaming
@@ -62,6 +63,8 @@ Nft concatenate_eps_consuming(
 		}
 	};
 
+	// Also on the empty result: the rhs shift must be representable before it is written into a requested map.
+	nfa::check_num_of_states(lhs_states_num + rhs_states_num);
 	if (concatenation_is_empty(lhs, rhs)) {
 		output_renamings();
 		lhs = Nft::with_levels(num_of_levels);
@@ -90,8 +93,11 @@ Nft concatenate_eps_consuming(
 	} else {
 		result.delta.append_shifted(rhs.delta, static_cast<State>(lhs_states_num));
 	}
-	// The result states are the lhs states followed by the shifted rhs states, and so are their levels.
-	result.levels.append(lhs_levels);
+	// The result states are the lhs states followed by the shifted rhs states, and so are their levels. Only the
+	//  first lhs_states_num lhs levels belong to those states: a surplus entry cannot shift the rhs levels.
+	Levels result_lhs_levels{lhs_levels};
+	result_lhs_levels.resize(lhs_states_num);
+	result.levels.append(result_lhs_levels);
 	result.levels.append(rhs.levels);
 	result.add_state(static_cast<State>(result_num_of_states - 1));
 
@@ -117,7 +123,9 @@ Nft concatenate_eps_consuming(
 	}
 
 	// Make result final states.
-	for (const State rhs_final_state : rhs.final) { result.final.insert(static_cast<State>(lhs_states_num) + rhs_final_state); }
+	for (const State rhs_final_state : rhs.final) {
+		result.final.insert(static_cast<State>(lhs_states_num) + rhs_final_state);
+	}
 	if constexpr (consume_rhs) { rhs = Nft::with_levels(rhs_num_of_levels); }
 
 	if (!use_epsilon) { result.remove_epsilon(epsilon); }
@@ -251,6 +259,23 @@ Nft algorithms::concatenate_eps(
 	// Compute concatenation of given automata.
 	// Concatenation will proceed in the order of the passed automata: Result is 'lhs . rhs'.
 	// The consuming path fills the requested renaming maps also for the empty result.
+	if (concatenation_is_empty(lhs, rhs)) {
+		// Do not clone a possibly large lhs only to throw it away: fill the requested maps from the original counts.
+		if (rhs_state_renaming != nullptr) { nfa::check_num_of_states(lhs.num_of_states() + rhs.num_of_states()); }
+		if (lhs_state_renaming != nullptr) {
+			lhs_state_renaming->clear();
+			lhs_state_renaming->reserve(lhs.num_of_states());
+			for (State state{0}; state < lhs.num_of_states(); ++state) { lhs_state_renaming->emplace(state, state); }
+		}
+		if (rhs_state_renaming != nullptr) {
+			rhs_state_renaming->clear();
+			rhs_state_renaming->reserve(rhs.num_of_states());
+			for (State state{0}; state < rhs.num_of_states(); ++state) {
+				rhs_state_renaming->emplace(state, static_cast<State>(lhs.num_of_states()) + state);
+			}
+		}
+		return Nft::with_levels(lhs.levels.num_of_levels);
+	}
 	// The one intentional copy: the parts of lhs that the result is built on. The copy cannot alias rhs.
 	return concatenate_eps_consuming(
 		Nft{lhs.delta, lhs.initial, lhs.final, lhs.levels}, rhs, epsilon, use_epsilon, lhs_state_renaming,
