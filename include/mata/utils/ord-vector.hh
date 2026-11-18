@@ -273,11 +273,7 @@ template <class Key, class Allocator> class OrdVector {
 
 	size_t count(const Key& key) const {
 		MATA_EXPENSIVE_ASSERT(is_sorted());
-		for (auto v : this->vec_) {
-			if (v == key) { return 1; }
-			if (v > key) { return 0; }
-		}
-		return 0;
+		return contains(key) ? 1 : 0;
 	}
 
 	/**
@@ -418,7 +414,7 @@ template <class Key, class Allocator> class OrdVector {
 	}
 
 	const VectorType& to_vector() const { return vec_; }
-	VectorType& to_vector_mut() const { return vec_; }
+	VectorType& to_vector_mut() { return vec_; }
 
 	bool is_subset_of(const OrdVector& bigger) const {
 		return std::includes(bigger.cbegin(), bigger.cend(), this->cbegin(), this->cend());
