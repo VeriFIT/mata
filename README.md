@@ -177,8 +177,10 @@ sudo apt -qq update
 sudo apt -qq install -y graphviz graphviz-dev
 ```
 
-`make init` installs the bindings with the `dev`, `pandas` and `plotting` extras: Cython and setuptools for the in-place
-build, pytest, and the packages the tests import. `pip install libmata` alone installs no dependencies.
+`make init` installs the bindings with the `dev`, `pandas` and `plotting` extras: Cython, setuptools and CMake for the
+in-place build, pytest, and the packages the tests import. `pip install libmata` alone installs no runtime
+dependencies; building it from the sdist when no wheel fits still pulls its build dependencies into an isolated
+environment.
 
 Now, you can install the library.
 

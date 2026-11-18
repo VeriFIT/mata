@@ -244,11 +244,29 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}
+      # Each artifact is downloaded by its exact name, so a missing one (deleted or expired before a deploy-only retry)
+      #  fails this job instead of publishing a partial release. Keep the wheel names in sync with the runner matrix
+      #  of `build-pypi-wheels`.
       - uses: actions/download-artifact@v8
         with:
-          pattern: pypi-*
+          name: pypi-sdist
           path: dist
-          merge-multiple: true
+      - uses: actions/download-artifact@v8
+        with:
+          name: pypi-wheels-ubuntu-latest
+          path: dist
+      - uses: actions/download-artifact@v8
+        with:
+          name: pypi-wheels-ubuntu-24.04-arm
+          path: dist
+      - uses: actions/download-artifact@v8
+        with:
+          name: pypi-wheels-macos-15
+          path: dist
+      - uses: actions/download-artifact@v8
+        with:
+          name: pypi-wheels-macos-15-intel
+          path: dist
       - uses: ./.github/workflows/actions/deploy-pypi
         with:
           dist-dir: dist
