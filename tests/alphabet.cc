@@ -325,9 +325,11 @@ TEST_CASE("mata::Alphabet numeric symbol parsing and translate_word (#758)") {
 
 	SECTION("the numeric parsers accept exactly a whole decimal number that fits a Symbol") {
 		IntAlphabet int_alphabet{};
-		EnumAlphabet enum_alphabet{1, 2, 3, 5};
+		EnumAlphabet enum_alphabet{1, 2, 3, 5, Limits::max_symbol};
 		for (Alphabet* alphabet : {static_cast<Alphabet*>(&int_alphabet), static_cast<Alphabet*>(&enum_alphabet)}) {
 			CHECK(alphabet->translate_symb("5") == 5);
+			// The numeric spelling of EPSILON stays valid; the overflow check must not reject it.
+			CHECK(alphabet->translate_symb(std::to_string(Limits::max_symbol)) == Limits::max_symbol);
 			CHECK_THROWS_AS(alphabet->translate_symb("-1"), std::runtime_error);
 			CHECK_THROWS_AS(alphabet->translate_symb("+5"), std::runtime_error);
 			CHECK_THROWS_AS(alphabet->translate_symb(" 5"), std::runtime_error);
