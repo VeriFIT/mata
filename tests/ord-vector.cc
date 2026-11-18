@@ -18,6 +18,7 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "mata/nfa/plumbing.hh"
+#include "mata/nft/plumbing.hh"
 #include "mata/utils/ord-vector.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/utils/utils.hh"
@@ -454,6 +455,9 @@ TEST_CASE("mata::BoolVector treats every nonzero byte as set - issue #769") {
 	mata::nfa::StateSet states{};
 	mata::nfa::plumbing::get_elements(&states, bool_vector);
 	CHECK(states == mata::nfa::StateSet{1, 2});
+	mata::nfa::StateSet nft_states{};
+	mata::nft::plumbing::get_elements(&nft_states, bool_vector);
+	CHECK(nft_states == mata::nfa::StateSet{1, 2});
 
 	// An output without reserve() is filled as well.
 	std::deque<size_t> deque{7};
@@ -470,6 +474,12 @@ TEST_CASE("mata::utils::rename() renames every element - issue #769") {
 	OrdVector<size_t> ord_vector{0, 1};
 	ord_vector.rename({1, 2});
 	CHECK(ord_vector == OrdVector<size_t>{1, 2});
+
+	// A renaming that reorders and merges elements keeps the vector sorted and unique.
+	OrdVector<size_t> reordered{0, 1, 2};
+	reordered.rename({2, 0, 0});
+	CHECK(reordered.to_vector() == std::vector<size_t>{0, 2});
+	CHECK(OrdVector<size_t>::difference(reordered, OrdVector<size_t>{0}) == OrdVector<size_t>{2});
 }
 
 TEST_CASE("mata::utils::OrdVector::OrdVector(VectorType&&) - issue #847") {

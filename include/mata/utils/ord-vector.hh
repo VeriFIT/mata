@@ -114,7 +114,9 @@ template <class Key, class Allocator> class OrdVector {
 				 (!std::same_as<std::remove_cvref_t<T>, OrdVector>)
 	explicit OrdVector(T&& set) {
 		if constexpr (std::ranges::sized_range<T>) { vec_.reserve(std::ranges::size(set)); }
-		for (auto it{std::ranges::begin(set)}, end{std::ranges::end(set)}; it != end; ++it) { vec_.push_back(*it); }
+		// The sentinel may have a type of its own: one combined declaration would require a common type.
+		const auto end{std::ranges::end(set)};
+		for (auto it{std::ranges::begin(set)}; it != end; ++it) { vec_.push_back(*it); }
 		utils::sort_and_rmdupl(vec_);
 	}
 	OrdVector(std::initializer_list<Key> list) : vec_(list) { utils::sort_and_rmdupl(vec_); }
@@ -421,8 +423,12 @@ template <class Key, class Allocator> class OrdVector {
 		return true;
 	}
 
-	// Renames numbers in the vector according to the renaming, q becomes renaming[q].
-	void rename(const std::vector<Key>& renaming) { utils::rename(vec_, renaming); }
+	// Renames numbers in the vector according to the renaming, q becomes renaming[q]. The renaming may reorder or
+	//  merge elements, so the result is sorted and deduplicated again.
+	void rename(const std::vector<Key>& renaming) {
+		utils::rename(vec_, renaming);
+		utils::sort_and_rmdupl(vec_);
+	}
 
 	static OrdVector difference(const OrdVector& lhs, const OrdVector& rhs) {
 		MATA_EXPENSIVE_ASSERT(lhs.is_sorted());

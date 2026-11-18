@@ -163,7 +163,9 @@ template <typename Number> class SparseSet {
 				 (!std::same_as<std::remove_cvref_t<T>, SparseSet>) &&
 				 (!std::same_as<std::remove_cvref_t<T>, BoolVector>)
 	explicit SparseSet(T&& container) {
-		for (auto it{std::ranges::begin(container)}, end{std::ranges::end(container)}; it != end; ++it) {
+		// The sentinel may have a type of its own: one combined declaration would require a common type.
+		const auto end{std::ranges::end(container)};
+		for (auto it{std::ranges::begin(container)}; it != end; ++it) {
 			const Number element = *it;
 			insert(element);
 		}
