@@ -2,8 +2,12 @@
  */
 
 #include <algorithm>
+#include <compare>
+#include <deque>
+#include <iterator>
 #include <memory>
 #include <random>
+#include <ranges>
 #include <set>
 #include <type_traits>
 #include <unordered_map>
@@ -13,7 +17,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include "mata/nfa/plumbing.hh"
+#include "mata/nft/plumbing.hh"
 #include "mata/utils/ord-vector.hh"
+#include "mata/utils/sparse-set.hh"
 #include "mata/utils/utils.hh"
 
 using namespace mata::utils;
@@ -302,6 +309,219 @@ TEST_CASE("mata::utils::OrdVector::filter() and filter_indexes() take a move-onl
 	OrdVector<int> indexed{10, 20, 30, 40};
 	indexed.filter_indexes([limit = std::make_unique<size_t>(2)](const size_t index) { return index < *limit; });
 	CHECK(indexed == OrdVector<int>{10, 20});
+}
+
+TEST_CASE("mata::utils::OrdVector::insert() with a hint - issue #769") {
+	OrdVector<int> vec{1, 5, 9};
+
+	SECTION("a correct hint inserts at the hinted place") {
+		const auto [it, inserted] = vec.insert(vec.begin() + 2, 7);
+		CHECK(inserted);
+		CHECK(*it == 7);
+		CHECK(vec == OrdVector<int>{1, 5, 7, 9});
+	}
+
+	SECTION("a correct end() hint appends") {
+		const auto [it, inserted] = vec.insert(vec.end(), 10);
+		CHECK(inserted);
+		CHECK(*it == 10);
+		CHECK(vec == OrdVector<int>{1, 5, 9, 10});
+	}
+
+	SECTION("a wrong end() hint falls back to the search and keeps the vector sorted") {
+		const auto [it, inserted] = vec.insert(vec.end(), 3);
+		CHECK(inserted);
+		CHECK(*it == 3);
+		CHECK(vec.to_vector() == std::vector<int>{1, 3, 5, 9});
+	}
+
+	SECTION("a wrong inner hint still inserts") {
+		const auto [it, inserted] = vec.insert(vec.begin(), 7);
+		CHECK(inserted);
+		CHECK(*it == 7);
+		CHECK(vec.to_vector() == std::vector<int>{1, 5, 7, 9});
+	}
+
+	SECTION("a present element is not inserted again, wherever the hint points") {
+		for (const std::ptrdiff_t hint : {0, 1, 2, 3}) {
+			const auto [it, inserted] = vec.insert(vec.begin() + hint, 5);
+			CHECK(!inserted);
+			CHECK(*it == 5);
+			CHECK(vec.to_vector() == std::vector<int>{1, 5, 9});
+		}
+	}
+
+	SECTION("an empty vector") {
+		OrdVector<int> empty{};
+		const auto [it, inserted] = empty.insert(empty.end(), 4);
+		CHECK(inserted);
+		CHECK(*it == 4);
+		CHECK(empty == OrdVector<int>{4});
+	}
+}
+
+TEST_CASE("mata::utils::is_sorted() - issue #769") {
+	CHECK(mata::utils::is_sorted(std::vector<int>{}));
+	CHECK(mata::utils::is_sorted(std::vector<int>{1}));
+	CHECK(mata::utils::is_sorted(std::vector<int>{1, 2, 3}));
+	CHECK(!mata::utils::is_sorted(std::vector<int>{1, 1}));
+	CHECK(!mata::utils::is_sorted(std::vector<int>{3, 2}));
+}
+
+TEST_CASE("mata::utils::OrdVector constructors take only ranges of keys - issue #769") {
+	// A scalar convertible to the key is one key, not a range to iterate.
+	const OrdVector<size_t> from_int(3);
+	CHECK(from_int.to_vector() == std::vector<size_t>{3});
+
+	const std::vector<unsigned> unsorted{5, 1, 5, 3};
+	const OrdVector<size_t> from_range(unsorted);
+	CHECK(from_range.to_vector() == std::vector<size_t>{1, 3, 5});
+
+	OrdVector<int> mutable_vec{2, 1};
+	mutable_vec.to_vector_mut().push_back(3);
+	CHECK(mutable_vec.to_vector() == std::vector<int>{1, 2, 3});
+}
+
+namespace {
+/// Converts to an int only from an lvalue: a range of these is read through its references.
+struct LvalueOnlyConvertible {
+	int value;
+	operator int() const& { return value; } // NOLINT(google-explicit-constructor)
+	operator int() && = delete;
+};
+
+/// A key with relational operators and no `==` (a non-defaulted `<=>` does not provide one).
+struct Rank {
+	int value;
+	std::strong_ordering operator<=>(const Rank& other) const { return value <=> other.value; }
+};
+
+/// An allocator without a default constructor: a container using it has to be given one.
+template <class T> struct TaggedAllocator {
+	using value_type = T;
+	int tag;
+	explicit TaggedAllocator(const int allocator_tag) : tag{allocator_tag} {}
+	template <class U>
+	TaggedAllocator(const TaggedAllocator<U>& other) : tag{other.tag} {} // NOLINT(google-explicit-constructor)
+	T* allocate(const size_t n) { return std::allocator<T>{}.allocate(n); }
+	void deallocate(T* const ptr, const size_t n) { std::allocator<T>{}.deallocate(ptr, n); }
+	friend bool operator==(const TaggedAllocator& lhs, const TaggedAllocator& rhs) { return lhs.tag == rhs.tag; }
+};
+} // namespace
+
+TEST_CASE("mata::utils::OrdVector range constructor reads what the range yields - issue #769") {
+	SECTION("elements convertible only from a reference") {
+		const std::vector<LvalueOnlyConvertible> values{{3}, {1}, {3}};
+		CHECK(OrdVector<int>(values).to_vector() == std::vector<int>{1, 3});
+	}
+
+	SECTION("a named filter view, whose begin() is non-const") {
+		std::vector<int> values{1, 2, 3, 4};
+		auto evens = values | std::views::filter([](const int v) { return v % 2 == 0; });
+		CHECK(OrdVector<int>(evens).to_vector() == std::vector<int>{2, 4});
+	}
+
+	SECTION("a range whose sentinel differs from its iterator") {
+		const std::vector<int> values{4, 2, 9};
+		const auto counted{std::ranges::subrange(std::counted_iterator(values.begin(), 2), std::default_sentinel)};
+		CHECK(OrdVector<int>(counted).to_vector() == std::vector<int>{2, 4});
+	}
+}
+
+TEST_CASE("mata::utils::OrdVector::insert() works for keys with relational operators only - issue #769") {
+	OrdVector<Rank> vec{mata::utils::sorted_unique, std::vector<Rank>{{1}, {5}}};
+	const auto [appended, appended_new] = vec.insert(vec.end(), Rank{7});
+	CHECK(appended_new);
+	CHECK(appended->value == 7);
+	const auto [present, present_new] = vec.insert(vec.begin() + 1, Rank{5});
+	CHECK(!present_new);
+	CHECK(present->value == 5);
+	const auto [searched, searched_new] = vec.insert(vec.end(), Rank{1}); // Wrong hint: falls back to the search.
+	CHECK(!searched_new);
+	CHECK(searched->value == 1);
+	CHECK(vec.size() == 3);
+}
+
+TEST_CASE("mata::utils::OrdVector lookups work for keys with relational operators only - issue #769") {
+	OrdVector<Rank> vec{mata::utils::sorted_unique, std::vector<Rank>{{1}, {5}}};
+	CHECK(!vec.insert(Rank{5}).second);
+	CHECK(vec.insert(Rank{3}).second);
+	CHECK(vec.find(Rank{5}) != vec.end());
+	CHECK(std::as_const(vec).find(Rank{4}) == vec.end());
+	CHECK(vec.contains(Rank{3}));
+	CHECK(vec.count(Rank{1}) == 1);
+	CHECK(vec.count(Rank{2}) == 0);
+	CHECK(vec.erase(Rank{3}) == 1);
+	CHECK(vec.erase(Rank{3}) == 0);
+	CHECK(vec.size() == 2);
+}
+
+TEST_CASE("mata::utils::OrdVector mutable vector and set arguments use their own constructors - issue #769") {
+	SECTION("a mutable vector keeps its allocator") {
+		std::vector<int, TaggedAllocator<int>> values({3, 1, 3}, TaggedAllocator<int>{7});
+		const OrdVector<int, TaggedAllocator<int>> ord_vector{values};
+		CHECK(ord_vector.to_vector().get_allocator().tag == 7);
+		CHECK(ord_vector.to_vector() == std::vector<int, TaggedAllocator<int>>({1, 3}, TaggedAllocator<int>{7}));
+	}
+
+	SECTION("a mutable set of keys with relational operators only") {
+		std::set<Rank> ranks{{4}, {2}};
+		const OrdVector<Rank> ord_vector{ranks};
+		CHECK(ord_vector.size() == 2);
+		CHECK(ord_vector.front().value == 2);
+	}
+}
+
+TEST_CASE("mata::BoolVector::get_elements() returns the indices of the set bits - issue #769") {
+	mata::BoolVector bool_vector{0, 1, 0, 1, 1};
+	std::vector<size_t> elements{7};
+	mata::BoolVector::get_elements(&elements, bool_vector);
+	CHECK(elements == std::vector<size_t>{1, 3, 4});
+
+	std::vector<size_t> member_elements{7};
+	bool_vector.get_elements(member_elements);
+	CHECK(member_elements == std::vector<size_t>{1, 3, 4});
+
+	const mata::BoolVector& const_bool_vector{bool_vector};
+	std::vector<size_t> const_elements{};
+	const_bool_vector.get_elements(const_elements);
+	CHECK(const_elements == std::vector<size_t>{1, 3, 4});
+}
+
+TEST_CASE("mata::BoolVector treats every nonzero byte as set - issue #769") {
+	const mata::BoolVector bool_vector{0, 2, 1};
+	CHECK(bool_vector.count() == 2);
+	std::vector<size_t> elements{};
+	CHECK(bool_vector.get_elements(elements) == std::vector<size_t>{1, 2});
+	CHECK(mata::utils::SparseSet<size_t>{bool_vector} == mata::utils::SparseSet<size_t>{1, 2});
+	mata::nfa::StateSet states{};
+	mata::nfa::plumbing::get_elements(&states, bool_vector);
+	CHECK(states == mata::nfa::StateSet{1, 2});
+	mata::nfa::StateSet nft_states{};
+	mata::nft::plumbing::get_elements(&nft_states, bool_vector);
+	CHECK(nft_states == mata::nfa::StateSet{1, 2});
+
+	// An output without reserve() is filled as well.
+	std::deque<size_t> deque{7};
+	bool_vector.get_elements(deque);
+	CHECK(deque == std::deque<size_t>{1, 2});
+}
+
+TEST_CASE("mata::utils::rename() renames every element - issue #769") {
+	// Every element equals its index: each has to be renamed nonetheless.
+	std::vector<size_t> values{0, 1, 2};
+	mata::utils::rename(values, std::vector<size_t>{2, 0, 1});
+	CHECK(values == std::vector<size_t>{2, 0, 1});
+
+	OrdVector<size_t> ord_vector{0, 1};
+	ord_vector.rename({1, 2});
+	CHECK(ord_vector == OrdVector<size_t>{1, 2});
+
+	// A renaming that reorders and merges elements keeps the vector sorted and unique.
+	OrdVector<size_t> reordered{0, 1, 2};
+	reordered.rename({2, 0, 0});
+	CHECK(reordered.to_vector() == std::vector<size_t>{0, 2});
+	CHECK(OrdVector<size_t>::difference(reordered, OrdVector<size_t>{0}) == OrdVector<size_t>{2});
 }
 
 TEST_CASE("mata::utils::OrdVector::OrdVector(VectorType&&) - issue #847") {

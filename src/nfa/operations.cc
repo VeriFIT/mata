@@ -1930,7 +1930,7 @@ Nfa mata::nfa::product(
 		throw std::runtime_error(std::to_string(__func__) + " received an unknown value of the \"final_condition\"");
 	}
 
-	return algorithms::product(lhs, rhs, std::move(is_product_state_final_func), first_epsilon, prod_map);
+	return algorithms::product(lhs, rhs, is_product_state_final_func, first_epsilon, prod_map);
 }
 
 Nfa mata::nfa::intersection(

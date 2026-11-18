@@ -208,7 +208,8 @@ template <typename Iterator> class SynchronizedExistentialIterator : public Sync
 				// swapped with a position from the end of the vector,
 				// and the vector is shortened.
 				// The same is done with ends.
-				while (position_i_it == end_i_it && i < positions_size) {
+				// Check the bound first: once i == positions_size, the slot at i was popped.
+				while (i < positions_size && position_i_it == end_i_it) {
 					position_i_it = this->positions[positions_size - 1];
 					end_i_it = this->ends[positions_size - 1];
 					// This must be here, because in the next call, position_size is set again with positions.size().

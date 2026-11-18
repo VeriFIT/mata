@@ -1,5 +1,8 @@
 #include <algorithm>
+#include <cstdint>
+#include <iterator>
 #include <random>
+#include <ranges>
 #include <set>
 #include <vector>
 
@@ -115,13 +118,108 @@ TEST_CASE("mata::utils::SparseSet") {
 	}
 }
 
+TEST_CASE("mata::utils::SparseSet equality compares the contents - issue #769") {
+	SparseSet<unsigned long> inserted_in_order{};
+	inserted_in_order.insert(5);
+	inserted_in_order.insert(3);
+
+	SparseSet<unsigned long> inserted_in_other_order{};
+	inserted_in_other_order.insert(3);
+	inserted_in_other_order.insert(5);
+	CHECK(inserted_in_order == inserted_in_other_order);
+
+	SparseSet<unsigned long> with_bigger_domain{};
+	with_bigger_domain.insert(100);
+	with_bigger_domain.erase(100);
+	with_bigger_domain.insert(3);
+	with_bigger_domain.insert(5);
+	CHECK(with_bigger_domain == inserted_in_order);
+
+	inserted_in_other_order.insert(7);
+	CHECK(inserted_in_order != inserted_in_other_order);
+	CHECK(inserted_in_other_order != inserted_in_order);
+
+	// Equal size but different elements: {3,5} vs {3,7}.
+	SparseSet<unsigned long> with_other_element{};
+	with_other_element.insert(3);
+	with_other_element.insert(7);
+	CHECK(inserted_in_order != with_other_element);
+	CHECK(with_other_element != inserted_in_order);
+}
+
+TEST_CASE("mata::utils::SparseSet constructors - issue #769") {
+	SECTION("a non-const SparseSet is copied, not re-inserted") {
+		SparseSet<unsigned long> original{};
+		original.insert(100);
+		original.erase(100);
+		original.insert(4);
+		SparseSet<unsigned long> copy{original};
+		CHECK(copy == original);
+		CHECK(copy.domain_size() == original.domain_size());
+	}
+
+	SECTION("a non-const BoolVector gives the indices of its set bits") {
+		mata::BoolVector bool_vector{0, 1, 0, 1};
+		const SparseSet<unsigned long> from_bool_vector{bool_vector};
+		CHECK(from_bool_vector == SparseSet<unsigned long>{1, 3});
+	}
+
+	SECTION("a const and a temporary container") {
+		const std::vector<unsigned long> values{1, 2, 3};
+		const SparseSet<unsigned long> from_const{values};
+		CHECK(from_const == SparseSet<unsigned long>{1, 2, 3});
+		const SparseSet<unsigned long> from_temporary{std::vector<unsigned long>{4, 6}};
+		CHECK(from_temporary == SparseSet<unsigned long>{4, 6});
+	}
+
+	SECTION("a named filter view still constructs") {
+		std::vector<unsigned long> values{1, 2, 3, 4, 5};
+		auto evens = values | std::views::filter([](const unsigned long v) { return v % 2 == 0; });
+		const SparseSet<unsigned long> from_filter{evens};
+		CHECK(from_filter == SparseSet<unsigned long>{2, 4});
+	}
+
+	SECTION("a built-in array") {
+		const unsigned long values[]{2, 4};
+		CHECK(SparseSet<unsigned long>{values} == SparseSet<unsigned long>{2, 4});
+	}
+
+	SECTION("a range whose sentinel differs from its iterator") {
+		const std::vector<unsigned long> values{3, 5, 7};
+		const auto counted{std::ranges::subrange(std::counted_iterator(values.begin(), 2), std::default_sentinel)};
+		CHECK(SparseSet<unsigned long>{counted} == SparseSet<unsigned long>{3, 5});
+	}
+
+	SECTION("elements convertible only from a reference") {
+		struct LvalueOnly {
+			unsigned long value;
+			operator unsigned long() const& { return value; } // NOLINT(google-explicit-constructor)
+			operator unsigned long() && = delete;
+		};
+		const std::vector<LvalueOnly> values{{1}, {6}};
+		CHECK(SparseSet<unsigned long>{values} == SparseSet<unsigned long>{1, 6});
+	}
+}
+
+TEST_CASE("mata::utils::SparseSet<uint8_t> with every value - issue #769") {
+	// 256 elements: an index of type uint8_t would wrap from 255 to 0 and never leave the loops.
+	SparseSet<uint8_t> full{};
+	for (unsigned value{0}; value < 256; ++value) { full.insert(static_cast<uint8_t>(value)); }
+	CHECK(full.size() == 256);
+	CHECK(full.max() == 255);
+	full.sort();
+	full.rename([](const uint8_t value) { return value; });
+	full.filter([](const uint8_t value) { return value % 2 == 0; });
+	CHECK(full.size() == 128);
+	CHECK(full.max() == 254);
+}
+
 namespace {
 
 /// Draw a value in [0, bound) from the raw generator output, portably across standard libraries.
 size_t draw(std::mt19937& rng, const size_t bound) { return static_cast<size_t>(rng()) % bound; }
 
-/// The elements of @p set in ascending order. Only the contents are compared: @c SparseSet::operator== compares
-///  the internal buffers, insertion history included (#769).
+/// The elements of @p set in ascending order, comparable with @c elements() of a @c std::set.
 std::vector<State> sorted_elements(const SparseSet<State>& set) {
 	std::vector<State> elements{set.begin(), set.end()};
 	std::ranges::sort(elements);

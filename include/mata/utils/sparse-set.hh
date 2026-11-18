@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <concepts>
 #include <iterator>
+#include <ranges>
 #include <type_traits>
 #include <vector>
 
@@ -149,8 +150,25 @@ template <typename Number> class SparseSet {
 		MATA_ASSERT(consistent());
 	}
 
-	template <class T> explicit SparseSet(T& container) {
-		insert(container.begin(), container.end());
+	/// Construct from any range of numbers convertible to @c Number.
+	///
+	/// A forwarding reference keeps ranges whose @c begin()/@c end() are callable
+	/// on a non-const object only (e.g. a named @c std::views::filter result) usable.
+	/// Elements are converted from the references the range yields, built-in arrays work through range access, and
+	/// the sentinel may differ from the iterator type.
+	/// @c SparseSet and @c BoolVector are excluded so that the copy/move and
+	/// bit-index constructors win over this greedy template.
+	template <class T>
+		requires std::ranges::input_range<T> && std::convertible_to<std::ranges::range_reference_t<T>, Number> &&
+				 (!std::same_as<std::remove_cvref_t<T>, SparseSet>) &&
+				 (!std::same_as<std::remove_cvref_t<T>, BoolVector>)
+	explicit SparseSet(T&& container) {
+		// The sentinel may have a type of its own: one combined declaration would require a common type.
+		const auto end{std::ranges::end(container)};
+		for (auto it{std::ranges::begin(container)}; it != end; ++it) {
+			const Number element = *it;
+			insert(element);
+		}
 		MATA_ASSERT(consistent());
 	}
 
@@ -189,14 +207,20 @@ template <typename Number> class SparseSet {
 	}
 	~SparseSet() = default;
 
-	// TODO: How do we want to define equality of sparse sets? The default one is member-wise, but maybe simply
-	//  comparing contained elements should be enough?
-	bool operator==(const SparseSet<Number>&) const = default;
+	/// Compare the contents: the buffers keep stale slots behind @c size_ and the domain size depends on the
+	///  insertion history, so equal sets may differ member-wise.
+	bool operator==(const SparseSet<Number>& other) const {
+		if (size_ != other.size_) { return false; }
+		for (size_t i{0}; i < size_; ++i) {
+			if (!other.contains(dense_[i])) { return false; }
+		}
+		return true;
+	}
 
 	// Things
 
 	// Tests the basic invariant of the sparse set.
-	bool consistent() {
+	bool consistent() const {
 		return domain_size_ >= size_ && (max() < domain_size_ || (size_ == 0 && domain_size_ == 0)) &&
 			   dense_.size() >= domain_size_ && sparse_.size() >= domain_size_;
 	}
@@ -252,7 +276,7 @@ template <typename Number> class SparseSet {
 	}
 
 	template <typename F> void filter(F is_staying) {
-		for (Number i{0}; i < size_; ++i) {
+		for (size_t i{0}; i < size_; ++i) {
 			while (i < size_ && !is_staying(dense_[i])) { erase(dense_[i]); }
 		}
 
@@ -261,17 +285,17 @@ template <typename Number> class SparseSet {
 
 	void sort() {
 		std::sort(dense_.begin(), dense_.begin() + static_cast<long>(size_));
-		for (Number i = 0; i < size_; ++i) { sparse_[dense_[i]] = i; }
+		for (size_t i = 0; i < size_; ++i) { sparse_[dense_[i]] = static_cast<Number>(i); }
 
 		MATA_ASSERT(consistent());
 	}
 
 	template <typename F> void rename(F renaming) {
-		for (Number i = 0; i < size_; ++i) {
+		for (size_t i = 0; i < size_; ++i) {
 			if (dense_[i] != renaming(dense_[i])) {
 				dense_[i] = renaming(dense_[i]);
 				if (dense_[i] >= domain_size_) { reserve(static_cast<size_t>(dense_[i]) + 1); }
-				sparse_[dense_[i]] = i;
+				sparse_[dense_[i]] = static_cast<Number>(i);
 			}
 		}
 
@@ -280,10 +304,11 @@ template <typename Number> class SparseSet {
 
 	/// @brief Maximal Number in set.
 	///
-	/// Expensive operation as it has to compute the maximal Number in linear time.
-	Number max() {
+	/// Expensive operation as it has to compute the maximal Number in linear time. The index is a @c size_t: a full
+	///  @c SparseSet<uint8_t> holds 256 elements, which a @c Number index could never reach.
+	Number max() const {
 		Number max = 0;
-		for (Number i = 0; i < size_; ++i) {
+		for (size_t i = 0; i < size_; ++i) {
 			if (max < dense_[i]) { max = dense_[i]; }
 		}
 		return max;

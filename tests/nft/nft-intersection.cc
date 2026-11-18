@@ -1,11 +1,13 @@
 /* tests-nft-intersection.cc -- Tests for intersection of NFTs
  */
 
+#include <functional>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include "mata/nft/algorithms.hh"
 #include "mata/nft/builder.hh"
 #include "mata/nft/nft.hh"
 
@@ -1051,4 +1053,18 @@ TEST_CASE("mata::nft::intersection() keeps exactly the symbols both state posts 
 		}
 	}
 	CHECK(result.final.contains(prod_map[{3, 3}]));
+}
+
+TEST_CASE("mata::nft::algorithms::product() takes a named final-state predicate - issue #769") {
+	Nft lhs{Nft::with_levels(1, 2, {0}, {1})};
+	lhs.delta.add(0, 'a', 1);
+	Nft rhs{Nft::with_levels(1, 2, {0}, {0, 1})};
+	rhs.delta.add(0, 'a', 1);
+
+	const std::function<bool(State, State)> both_final{[&](const State lhs_state, const State rhs_state) {
+		return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);
+	}};
+	const Nft result{algorithms::product(lhs, rhs, both_final)};
+	CHECK(result.final.size() == 1);
+	CHECK(result.delta.num_of_transitions() == 1);
 }

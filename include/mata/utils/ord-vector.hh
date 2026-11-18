@@ -5,7 +5,9 @@
 #define MATA_ORD_VECTOR_HH_
 
 #include <algorithm>
+#include <concepts>
 #include <iterator>
+#include <ranges>
 #include <span>
 #include <type_traits>
 #include <vector>
@@ -32,13 +34,9 @@ template <class T> bool are_disjoint(const utils::OrdVector<T>& lhs, const utils
 }
 
 template <class Key, class Allocator> bool is_sorted(const std::vector<Key, Allocator>& vec) {
-	for (auto it_vec = vec.cbegin() + 1; it_vec < vec.cend(); ++it_vec) {
-		if (!(*(it_vec - 1) < *it_vec)) {
-			// In case there is an unordered pair (or there is one element twice).
-			return false;
-		}
-	}
-	return true;
+	// Needs only operator<, and an empty vector has no cbegin() + 1 to start from.
+	return std::adjacent_find(vec.cbegin(), vec.cend(), [](const Key& lhs, const Key& rhs) { return !(lhs < rhs); }) ==
+		   vec.cend();
 }
 
 /**
@@ -108,7 +106,23 @@ template <class Key, class Allocator> class OrdVector {
 	OrdVector(sorted_unique_t /*tag*/, VectorType&& vec) : vec_{std::move(vec)} { MATA_EXPENSIVE_ASSERT(is_sorted()); }
 	/// @note @c std::set is already sorted and free of duplicates, so its elements are copied as they are.
 	explicit OrdVector(const std::set<Key>& set) : vec_{set.begin(), set.end()} {}
-	template <class T> explicit OrdVector(const T& set) : vec_(set.begin(), set.end()) { utils::sort_and_rmdupl(vec_); }
+	/// Construct from any input range whose elements convert to @c Key. A forwarding reference keeps ranges with
+	///  non-const @c begin() (e.g. a named @c std::views::filter result) usable; the elements are converted from the
+	///  references the range yields, and a sentinel of a different type than the iterator is supported.
+	/// @c VectorType and @c std::set<Key> are excluded, also as mutable lvalues: their own constructors keep the
+	///  vector's allocator and skip sorting the already sorted set.
+	template <class T>
+		requires std::ranges::input_range<T> && std::convertible_to<std::ranges::range_reference_t<T>, Key> &&
+				 (!std::same_as<std::remove_cvref_t<T>, OrdVector>) &&
+				 (!std::same_as<std::remove_cvref_t<T>, VectorType>) &&
+				 (!std::same_as<std::remove_cvref_t<T>, std::set<Key>>)
+	explicit OrdVector(T&& set) : vec_() {
+		if constexpr (std::ranges::sized_range<T>) { vec_.reserve(std::ranges::size(set)); }
+		// The sentinel may have a type of its own: one combined declaration would require a common type.
+		const auto end{std::ranges::end(set)};
+		for (auto it{std::ranges::begin(set)}; it != end; ++it) { vec_.push_back(*it); }
+		utils::sort_and_rmdupl(vec_);
+	}
 	OrdVector(std::initializer_list<Key> list) : vec_(list) { utils::sort_and_rmdupl(vec_); }
 	OrdVector(const OrdVector& rhs) = default;
 	OrdVector(OrdVector&& other) noexcept : vec_{std::move(other.vec_)} {}
@@ -143,9 +157,11 @@ template <class Key, class Allocator> class OrdVector {
 	}
 
 	std::pair<iterator, bool> insert(iterator itr, const Key& x) {
-		if (empty() || itr == end()) { return {vec_.insert(itr, x), true}; }
-		if (x >= *itr || (itr != begin() && x <= *(itr - 1))) { return {itr, false}; }
-		return {vec_.insert(itr, x), true};
+		if ((itr == end() || x < *itr) && (itr == begin() || *(itr - 1) < x)) { return {vec_.insert(itr, x), true}; }
+		// Equivalence under `<` only: a key with relational operators and no `==` has to work here as well.
+		if (itr != end() && !(*itr < x) && !(x < *itr)) { return {itr, false}; }
+		// The hint was wrong: fall back to the binary search.
+		return insert(x);
 	}
 
 	// EMPLACE_BACK WHICH BREAKS SORTEDNESS,
@@ -182,7 +198,7 @@ template <class Key, class Allocator> class OrdVector {
 		//  end-to-end gain: see EXP-1 in docs/experiments/.
 		auto pos = std::lower_bound(vec_.begin(), vec_.end(), x);
 		bool inserted{false};
-		if (pos == vec_.end() || *pos != x) {
+		if (pos == vec_.end() || x < *pos) { // lower_bound gives !(*pos < x), so `x < *pos` is the only way to differ.
 			pos = vec_.insert(pos, x);
 			inserted = true;
 		}
@@ -204,7 +220,7 @@ template <class Key, class Allocator> class OrdVector {
 
 		auto pos = std::lower_bound(vec_.begin(), vec_.end(), x);
 		bool inserted{false};
-		if (pos == vec_.end() || *pos != x) {
+		if (pos == vec_.end() || x < *pos) { // lower_bound gives !(*pos < x), so `x < *pos` is the only way to differ.
 			pos = vec_.insert(pos, std::move(x));
 			inserted = true;
 		}
@@ -254,11 +270,12 @@ template <class Key, class Allocator> class OrdVector {
 
 	OrdVector intersection(const OrdVector& rhs) const { return intersection(*this, rhs); }
 
+	// Lookups use equivalence under `<`, as insert() does, so a key with relational operators only works as well.
 	const_iterator find(const Key& key) const {
 		MATA_EXPENSIVE_ASSERT(is_sorted());
 
 		auto it = std::lower_bound(vec_.begin(), vec_.end(), key);
-		if (it == vec_.end() || *it != key) { return vec_.end(); }
+		if (it == vec_.end() || key < *it) { return vec_.end(); }
 		return it;
 	}
 
@@ -266,7 +283,7 @@ template <class Key, class Allocator> class OrdVector {
 		MATA_EXPENSIVE_ASSERT(is_sorted());
 
 		auto it = std::lower_bound(vec_.begin(), vec_.end(), key);
-		if (it == vec_.end() || *it != key) { return vec_.end(); }
+		if (it == vec_.end() || key < *it) { return vec_.end(); }
 		return it;
 	}
 
@@ -308,16 +325,11 @@ template <class Key, class Allocator> class OrdVector {
 	 */
 	size_t erase(const Key& k) {
 		MATA_EXPENSIVE_ASSERT(is_sorted());
-		auto found_value_it = std::lower_bound(vec_.begin(), vec_.end(), k);
-		if (found_value_it != vec_.end()) {
-			if (*found_value_it == k) {
-				vec_.erase(found_value_it);
-				MATA_EXPENSIVE_ASSERT(is_sorted());
-				return 1;
-			}
-		}
-
-		return 0;
+		const auto found_value_it = find(k);
+		if (found_value_it == vec_.end()) { return 0; }
+		vec_.erase(found_value_it);
+		MATA_EXPENSIVE_ASSERT(is_sorted());
+		return 1;
 	}
 
 	bool empty() const { return vec_.empty(); }
@@ -411,8 +423,12 @@ template <class Key, class Allocator> class OrdVector {
 		return true;
 	}
 
-	// Renames numbers in the vector according to the renaming, q becomes renaming[q].
-	void rename(const std::vector<Key>& renaming) { utils::rename(vec_, renaming); }
+	// Renames numbers in the vector according to the renaming, q becomes renaming[q]. The renaming may reorder or
+	//  merge elements, so the result is sorted and deduplicated again.
+	void rename(const std::vector<Key>& renaming) {
+		utils::rename(vec_, renaming);
+		utils::sort_and_rmdupl(vec_);
+	}
 
 	static OrdVector difference(const OrdVector& lhs, const OrdVector& rhs) {
 		MATA_EXPENSIVE_ASSERT(lhs.is_sorted());

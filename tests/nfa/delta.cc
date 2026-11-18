@@ -199,11 +199,19 @@ TEST_CASE("mata::nfa::Delta::remove()") {
 
 	SECTION("Simple remove") {
 		nfa.delta.add(0, 1, 0);
-		CHECK_NOTHROW(nfa.delta.remove(3, 5, 6));
-		CHECK_NOTHROW(nfa.delta.remove(0, 1, 0));
+		// Removing a transition that is not there reports false, whichever part of it is missing.
+		CHECK(!nfa.delta.remove(3, 5, 6));
+		CHECK(nfa.delta.remove(0, 1, 0));
 		CHECK(nfa.delta.empty());
 		nfa.delta.add(10, 1, 0);
-		CHECK_THROWS_AS(nfa.delta.remove(3, 5, 6), std::invalid_argument);
+		CHECK(!nfa.delta.remove(3, 5, 6));
+		CHECK(!nfa.delta.remove(10, 5, 0));
+		CHECK(!nfa.delta.remove(10, 0, 0));
+		CHECK(!nfa.delta.remove(10, 1, 7));
+		CHECK(nfa.delta.contains(10, 1, 0));
+		CHECK(nfa.delta.remove(10, 1, 0));
+		CHECK(nfa.delta.empty());
+		CHECK(!nfa.delta.remove(10, 1, 0));
 	}
 }
 

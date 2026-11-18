@@ -1,11 +1,13 @@
 /* tests-nfa-intersection.cc -- Tests for intersection of NFAs
  */
 
+#include <functional>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include "mata/nfa/algorithms.hh"
 #include "mata/nfa/nfa.hh"
 
 using namespace mata::nfa;
@@ -487,4 +489,18 @@ TEST_CASE("mata::nfa::is_intersection_empty()") {
 		CHECK(!is_intersection_empty(lhs, rhs, &witness));
 		CHECK(witness.word == mata::Word{'b', 'c'});
 	}
+}
+
+TEST_CASE("mata::nfa::algorithms::product() takes a named final-state predicate - issue #769") {
+	Nfa lhs{2, {0}, {1}};
+	lhs.delta.add(0, 'a', 1);
+	Nfa rhs{2, {0}, {0, 1}};
+	rhs.delta.add(0, 'a', 1);
+
+	const std::function<bool(State, State)> both_final{[&](const State lhs_state, const State rhs_state) {
+		return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);
+	}};
+	const Nfa result{algorithms::product(lhs, rhs, both_final)};
+	CHECK(result.is_in_lang(Run{{'a'}, {}}));
+	CHECK(!result.is_in_lang(Run{{}, {}}));
 }

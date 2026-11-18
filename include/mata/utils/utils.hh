@@ -67,7 +67,8 @@ template <typename T, typename Predicate> auto filter_indices(const std::vector<
 	return std::views::iota(size_t{0}, vec.size()) | std::views::filter([&](const size_t i) { return pred(vec[i]); });
 }
 
-/// Representation of a bool vector by a vector of uint8_t.
+/// Representation of a bool vector by a vector of uint8_t. Any nonzero byte is a set element, as for @c bool; every
+///  consumer (@c count(), @c get_elements(), @c SparseSet) applies this rule.
 class BoolVector : public std::vector<uint8_t> {
   public:
 	BoolVector(const size_t size, const bool value) : std::vector<uint8_t>(size, value ? 1 : 0) {}
@@ -84,22 +85,25 @@ class BoolVector : public std::vector<uint8_t> {
 	size_t count() const {
 		size_t cnt{0};
 		for (const uint8_t value : *this) {
-			if (value == 1) { ++cnt; }
+			if (value != 0) { ++cnt; }
 		}
 		return cnt;
 	}
 
-	template <typename T> T& get_elements(T& element_set) {
-		element_set.clear();
-		element_set.resize(count());
-		for (size_t i{0}; i < size(); ++i) { element_set.push_back(i); }
+	/// Collect the indices of the set bits into @p element_set, replacing its contents.
+	template <typename T> T& get_elements(T& element_set) const {
+		get_elements(&element_set, *this);
 		return element_set;
 	}
 
+	/// Collect the indices of the set bits of @p bool_vec into @p element_set, replacing its contents. Outputs without
+	///  @c reserve() (e.g. @c std::deque) are filled without reserving.
 	template <typename T> static T* get_elements(T* element_set, const BoolVector& bool_vec) {
 		element_set->clear();
-		element_set->reserve(bool_vec.count());
-		for (size_t i{0}; i < bool_vec.size(); ++i) { element_set->push_back(i); }
+		if constexpr (requires { element_set->reserve(size_t{}); }) { element_set->reserve(bool_vec.count()); }
+		for (size_t i{0}; i < bool_vec.size(); ++i) {
+			if (bool_vec[i] != 0) { element_set->push_back(i); }
+		}
 		return element_set;
 	}
 
@@ -341,9 +345,8 @@ template <class Vector, typename Index> void defragment(Vector& vec, const std::
 
 // In a vector of numbers, rename the numbers according to the renaming: renaming[old_name]=new_name
 template <class Vector, typename Index> void rename(Vector& vec, const std::vector<Index>& renaming) {
-	for (size_t i = 0, size = vec.size(); i < size; ++i) {
-		if (i != vec[i]) { vec[i] = renaming[vec[i]]; }
-	}
+	// Every element is renamed, also one that happens to equal its index.
+	for (size_t i = 0, size = vec.size(); i < size; ++i) { vec[i] = renaming[vec[i]]; }
 }
 
 template <class Vector, typename Fun> void filter_indexes(Vector& vec, Fun is_staying) {
