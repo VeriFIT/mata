@@ -374,7 +374,6 @@ endif ()
 #  `${GIT_DIR}/HEAD` at configure time; only the path of the git binary is resolved here.
 find_package (Git QUIET)
 
-
 ##### SUBDIRECTORIES #####
 add_subdirectory (src)
 add_subdirectory (3rdparty/re2 EXCLUDE_FROM_ALL)

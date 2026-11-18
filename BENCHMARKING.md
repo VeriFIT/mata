@@ -347,10 +347,12 @@ instrument different sets of binaries, and the wider one already includes the be
 added, so it reaches the benchmarks as well: with `-DMATA_ENABLE_COVERAGE=ON
 -DMATA_BENCH_PROFILING=OFF`, the `compile_commands.json` entry of
 `tests-integration/src/unary-operations.cc` carries `--coverage`. Use it whenever the library, the
-unit tests and the benchmarks should all produce `.gcda` data. `make coverage && make test-coverage`
-(which is what the `code-coverage` CI job runs) produces the library coverage report only: its
-gcovr configuration reads `build/src` and `build/tests` and filters sources to `src/` and `include/`,
-so benchmark sources are not measured by that report.
+unit tests and the benchmarks should all produce `.gcda` data. Note that `make test-coverage`
+itself reports _library_ coverage only: `gcovr.cfg` filters the sources to `src/` and `include/`
+and scans just `$(BUILD_DIR)/src` and `$(BUILD_DIR)/tests`, so the benchmark sources under
+`tests-integration/src/` are instrumented but never summarized. A report over the benchmark
+sources would need its own gcovr invocation over `$(BUILD_DIR)/tests-integration`, which the
+Makefile does not provide.
 
 `MATA_BENCH_PROFILING` is the narrow case: gcov data for the benchmark binaries out of a build whose
 `libmata` stays uninstrumented, e.g. to see which benchmark branches a run takes while the library
