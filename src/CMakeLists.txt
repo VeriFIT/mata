@@ -4,13 +4,13 @@
 #  compiling anything. The script below runs as a build step and rewrites `config.cc` only when the
 #  hash really changed, so a new HEAD recompiles one object instead.
 set (MATA_CONFIG_CC "${CMAKE_CURRENT_BINARY_DIR}/config.cc")
-add_custom_target (mata-config-cc
+add_custom_target (
+	mata-config-cc
 	BYPRODUCTS "${MATA_CONFIG_CC}"
-	COMMAND "${CMAKE_COMMAND}"
-		"-DSOURCE_DIR=${PROJECT_SOURCE_DIR}"
-		"-DCONFIG_IN=${CMAKE_CURRENT_SOURCE_DIR}/config.cc.in"
-		"-DCONFIG_OUT=${MATA_CONFIG_CC}"
-		-P "${PROJECT_SOURCE_DIR}/cmake/GetGitSha.cmake"
+	COMMAND
+		"${CMAKE_COMMAND}" "-DGIT_EXECUTABLE=${GIT_EXECUTABLE}" "-DSOURCE_DIR=${PROJECT_SOURCE_DIR}"
+		"-DCONFIG_IN=${CMAKE_CURRENT_SOURCE_DIR}/config.cc.in" "-DCONFIG_OUT=${MATA_CONFIG_CC}" -P
+		"${PROJECT_SOURCE_DIR}/cmake/GetGitSha.cmake"
 	COMMENT "Checking the git revision embedded in libmata"
 	VERBATIM
 )
