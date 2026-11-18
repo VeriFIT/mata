@@ -740,6 +740,22 @@ TEST_CASE("mata::nft::determinize()") {
 		CHECK_FALSE(determinized.is_in_lang_by_levels({Word{'b'}, Word{'a'}}));
 	}
 
+	SECTION("an overlapping DONT_CARE transition may keep its own target state") {
+		// `s -a-> { x, y }` mixes two levels, `s -DONT_CARE-> x` resolves to { x } alone. The two states must not be
+		//  merged: the mixed one carries a pending `a` jump that a DONT_CARE edge may, but need not, share with an
+		//  unrelated macrostate (#736). Determinize keeps DONT_CARE as a literal symbol, so the result has one
+		//  transition per target set and is_deterministic() reports the overlap; the language is preserved.
+		Nft nft{Nft::with_levels(Levels{2, {0, 1, 0}}, 3, {0}, {2})};
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(0, 'a', 2);
+		nft.delta.add(0, DONT_CARE, 1);
+		nft.delta.add(1, 'a', 2);
+		const Nft determinized{determinize(nft)};
+		CHECK(are_equivalent(nft, determinized));
+		CHECK(determinized.num_of_states() == 4);
+		CHECK_FALSE(determinized.is_deterministic());
+	}
+
 	// SECTION("This broke Delta when delta[q] could cause re-allocation of post")
 	// {
 	//     Nft x{};
