@@ -13,32 +13,18 @@
 # Bind the lookup to the repository of SOURCE_DIR. An unbound `rev-parse` would walk up from the
 #  working directory and happily report the hash of an enclosing checkout that has nothing to do with
 #  these sources (a release archive unpacked inside one), and an inherited `GIT_DIR` environment
-#  variable could redirect it anywhere. In a linked worktree or a submodule, `.git` is a file pointing
-#  at the real metadata directory ('gitdir: <path>') instead.
+#  variable could redirect it anywhere. Git accepts the `.git` path itself even when it is a gitfile
+#  (a linked worktree or submodule), so the pointer's length never matters here.
 set (GIT_SHA1 "")
 set (GIT_DIR_ARG "${SOURCE_DIR}/.git")
-if (NOT IS_DIRECTORY "${SOURCE_DIR}/.git")
-	if (EXISTS "${SOURCE_DIR}/.git")
-		file (READ "${SOURCE_DIR}/.git" GIT_FILE LIMIT 512)
-		string (REGEX MATCH "gitdir: *([^\r\n]+)" _ "${GIT_FILE}")
-		if (NOT CMAKE_MATCH_1 STREQUAL "")
-			set (GIT_DIR_ARG "${CMAKE_MATCH_1}")
-			# The pointer can be relative to the directory of the `.git` file (a submodule's
-			#  `../.git/modules/<name>`), so make it absolute before use.
-			cmake_path (ABSOLUTE_PATH GIT_DIR_ARG BASE_DIRECTORY "${SOURCE_DIR}" NORMALIZE)
-		else ()
-			set (GIT_DIR_ARG "")
-		endif ()
-	else ()
-		# No `.git` at all: a release tarball or a Python sdist, never a repository of its own.
-		set (GIT_DIR_ARG "")
-	endif ()
+if (NOT EXISTS "${GIT_DIR_ARG}")
+	# No `.git` at all: a release tarball or a Python sdist, never a repository of its own.
+	set (GIT_DIR_ARG "")
 endif ()
 
 if (GIT_DIR_ARG)
-	# The configured path can point at a git that no longer exists (a Nix store path removed by
-	#  garbage collection), and `find_program()` keeps returning such a path from its cache. Search
-	#  into a fresh variable instead, so a still-installed git on the PATH is found again.
+	# A configured path can point at a git that no longer exists (a Nix store path removed by
+	#  garbage collection). Search into a fresh variable, so a still-installed git on PATH is found.
 	set (GIT_BIN "${GIT_EXECUTABLE}")
 	if (NOT EXISTS "${GIT_BIN}")
 		unset (GIT_BIN)
@@ -46,9 +32,13 @@ if (GIT_DIR_ARG)
 	endif ()
 	if (GIT_BIN)
 		execute_process (
-			# Not quoted: in `cmake -P` script mode a quoted `--git-dir=${…}` reaches git with the
-			#  quote characters as part of the path.
-			COMMAND ${GIT_BIN} --git-dir=${GIT_DIR_ARG} rev-parse HEAD
+			# Drop inherited repository-location variables; `--git-dir` then selects exactly the
+			#  checkout of the sources. `rev-parse --verify` keeps an unborn HEAD on the fallback
+			#  even if a file called HEAD happens to sit in the working directory.
+			COMMAND "${CMAKE_COMMAND}" -E env
+				--unset=GIT_DIR --unset=GIT_WORK_TREE --unset=GIT_COMMON_DIR
+				"${GIT_BIN}" "--git-dir=${GIT_DIR_ARG}" rev-parse --verify HEAD
+			WORKING_DIRECTORY "${SOURCE_DIR}"
 			OUTPUT_VARIABLE GIT_SHA1
 			OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET
 			RESULT_VARIABLE GIT_RESULT
@@ -62,4 +52,5 @@ if (GIT_DIR_ARG)
 		set (GIT_SHA1 "")
 	endif ()
 endif ()
+
 configure_file ("${CONFIG_IN}" "${CONFIG_OUT}" @ONLY)
