@@ -112,7 +112,7 @@ template <class Key, class Allocator> class OrdVector {
 	template <class T>
 		requires std::ranges::input_range<T> && std::convertible_to<std::ranges::range_reference_t<T>, Key> &&
 				 (!std::same_as<std::remove_cvref_t<T>, OrdVector>)
-	explicit OrdVector(T&& set) {
+	explicit OrdVector(T&& set) : vec_() {
 		if constexpr (std::ranges::sized_range<T>) { vec_.reserve(std::ranges::size(set)); }
 		// The sentinel may have a type of its own: one combined declaration would require a common type.
 		const auto end{std::ranges::end(set)};
