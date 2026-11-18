@@ -51,7 +51,7 @@ project_includes = [
     os.path.join(src_dir, "3rdparty", "cudd", "include"),
 ]
 
-extra_compile_args = ["-std=c++23", "-DNO_THROW_DISPATCHER"]
+extra_compile_args = ["-std=c++23"]
 if platform.system() == "Darwin":
     extra_compile_args.append("-mmacosx-version-min=10.15")
 
@@ -172,7 +172,11 @@ def get_version():
 
 
 def _build_mata():
-    """Builds mata library"""
+    """Builds mata library.
+
+    Building from an sdist needs `make` and `cmake` on the machine: `cmake` is declared in
+    `build-system.requires`, `make` cannot come from PyPI. Installing a wheel needs neither.
+    """
     with subprocess.Popen(
         shlex.split(f"make release-lib BUILD_DIR={mata_build_dir}"),
         cwd=src_dir,

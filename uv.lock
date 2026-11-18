@@ -899,9 +899,10 @@ wheels = [
 [[package]]
 name = "libmata"
 source = { editable = "bindings/python" }
-dependencies = [
+
+[package.optional-dependencies]
+all = [
     { name = "coverage" },
-    { name = "cython" },
     { name = "graphviz" },
     { name = "ipykernel" },
     { name = "ipython" },
@@ -913,12 +914,35 @@ dependencies = [
     { name = "seaborn" },
     { name = "tabulate" },
 ]
+dev = [
+    { name = "coverage" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+]
+notebooks = [
+    { name = "ipykernel" },
+    { name = "papermill" },
+    { name = "seaborn" },
+]
+pandas = [
+    { name = "pandas" },
+    { name = "tabulate" },
+]
+plotting = [
+    { name = "graphviz" },
+    { name = "ipython" },
+    { name = "networkx" },
+]
 
 [package.dev-dependencies]
 dev = [
     { name = "breathe" },
+    { name = "coverage" },
+    { name = "cython" },
     { name = "jupytext" },
     { name = "myst-parser" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
     { name = "setuptools" },
     { name = "sphinx" },
 ]
