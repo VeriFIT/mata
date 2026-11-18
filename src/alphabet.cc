@@ -150,8 +150,9 @@ mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_complement(const mata::util
 
 void OnTheFlyAlphabet::add_symbols_from(const StringToSymbolMap& new_symbol_map) {
 	for (const auto& [symbol_name, symbol] : new_symbol_map) {
-		update_next_symbol_value(symbol);
-		try_add_new_symbol(symbol_name, symbol);
+		// Only an accepted mapping advances the counter: a name that was already bound differently leaves both the
+		//  name and the counter as they were, so values below the counter stay available.
+		if (try_add_new_symbol(symbol_name, symbol).second) { update_next_symbol_value(symbol); }
 	}
 }
 

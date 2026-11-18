@@ -377,7 +377,7 @@ class OnTheFlyAlphabet : public Alphabet {
 	}
 
 	template <class InputIt> OnTheFlyAlphabet(InputIt first, InputIt last) {
-		std::for_each(first, last, [this](const auto& name) { add_new_symbol(name, next_symbol_value_); });
+		std::for_each(first, last, [this](const auto& name) { add_new_symbol(name); });
 	}
 	OnTheFlyAlphabet(std::initializer_list<std::pair<std::string, Symbol>> name_symbol_map) : symbol_map_{} {
 		for (auto&& [name, symbol] : name_symbol_map) { add_new_symbol(name, symbol); }

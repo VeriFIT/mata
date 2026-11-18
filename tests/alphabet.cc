@@ -245,7 +245,8 @@ TEST_CASE("mata::OnTheFlyAlphabet next symbol value (#759)") {
 			OnTheFlyAlphabet alphabet{};
 			alphabet.add_new_symbol("top", top);
 			if (top == nft::DONT_CARE) {
-				// The counter reaches DONT_CARE, so no ordinary name may be allocated any more.
+				// An explicit DONT_CARE advances the counter to EPSILON; EPSILON itself never advances it. Either way
+				//  no ordinary name may be allocated any more.
 				CHECK_THROWS_AS(alphabet.translate_symb("new"), std::runtime_error);
 				CHECK_THROWS_AS(alphabet.add_new_symbol("new"), std::runtime_error);
 				CHECK(alphabet.translate_symb("top") == top);
@@ -278,6 +279,25 @@ TEST_CASE("mata::OnTheFlyAlphabet next symbol value (#759)") {
 			// The last name of the top value is gone, so its value is handed out again.
 			CHECK(alphabet.translate_symb("new") == 5);
 		}
+	}
+
+	SECTION("an exhausted symbol space at DONT_CARE itself is reported") {
+		OnTheFlyAlphabet alphabet{};
+		alphabet.add_new_symbol("last", nft::DONT_CARE - 1);
+		CHECK(alphabet.get_next_value() == nft::DONT_CARE);
+		CHECK_THROWS_AS(alphabet.translate_symb("new"), std::runtime_error);
+		CHECK_THROWS_AS(alphabet.add_new_symbol("new"), std::runtime_error);
+		CHECK(alphabet.translate_symb("last") == nft::DONT_CARE - 1);
+		CHECK(alphabet.get_number_of_symbols() == 1);
+	}
+
+	SECTION("a mapping the merge rejects does not advance the counter") {
+		OnTheFlyAlphabet alphabet{};
+		alphabet.add_new_symbol("a", 0);
+		alphabet.add_symbols_from(OnTheFlyAlphabet::StringToSymbolMap{{"a", nft::DONT_CARE - 1}});
+		CHECK(alphabet.translate_symb("a") == 0);
+		CHECK(alphabet.get_next_value() == 1);
+		CHECK(alphabet.translate_symb("b") == 1);
 	}
 
 	SECTION("an explicitly added EPSILON does not wrap the counter") {

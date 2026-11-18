@@ -634,7 +634,14 @@ bool algorithms::is_included_naive(
 	internal::validate_nft_levels(smaller, "is_included_naive");
 	internal::validate_nft_levels(bigger, "is_included_naive");
 	const OrdVector<Symbol> symbols{unwinding_symbols(smaller, bigger, alphabet)};
-	const Nft bigger_cmpl{complement(bigger, symbols)};
+	// EPSILON is excluded from create_alphabet(): it belongs in the complement whenever an operand uses it, or a
+	//  round labeled with it would have no match in the complement.
+	OrdVector<Symbol> complement_symbols{symbols};
+	const auto has_epsilon{[](const Nft& nft) {
+		return std::ranges::any_of(nft.delta, [](const StatePost& post) { return post.find(EPSILON) != post.end(); });
+	}};
+	if (has_epsilon(smaller) || has_epsilon(bigger)) { complement_symbols.insert(EPSILON); }
+	const Nft bigger_cmpl{complement(bigger, complement_symbols)};
 	const Nft nft_isect = intersection(smaller, bigger_cmpl, nullptr, jump_mode);
 
 	return nft_isect.is_lang_empty(cex);

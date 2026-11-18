@@ -1840,6 +1840,27 @@ TEST_CASE("mata::nft comparison keeps wildcard-only languages non-empty") {
 	CHECK(is_included(empty, wildcard));
 }
 
+TEST_CASE("mata::nft naive inclusion keeps EPSILON among its complement symbols") {
+	// The round 5 then EPSILON on two levels: EPSILON never appears in create_alphabet(), so the complement must get
+	//  it explicitly, or the naive inclusion can miss the round entirely.
+	const Nft ear{[&] {
+		Nft nft{Nft::with_levels(2, 3, {0}, {2})};
+		nft.levels.set({0, 1, 0});
+		nft.delta.add(0, 5, 1);
+		nft.delta.add(1, EPSILON, 2);
+		return nft;
+	}()};
+	const Nft empty{Nft::with_levels(2, 3, {0}, {2})};
+	for (const char* const algorithm : {"naive", "antichains"}) {
+		const ParameterMap params{{"algorithm", algorithm}};
+		CHECK(!is_included(ear, empty, nullptr, JumpMode::RepeatSymbol, params));
+		CHECK(is_included(empty, ear, nullptr, JumpMode::RepeatSymbol, params));
+		CHECK(!are_equivalent(ear, empty, nullptr, JumpMode::RepeatSymbol, params));
+	}
+	CHECK(!is_included(ear, empty));
+	CHECK(!are_equivalent(ear, empty));
+}
+
 TEST_CASE("mata::nft::revert()") { // {{{
 	Nft aut(9);
 
