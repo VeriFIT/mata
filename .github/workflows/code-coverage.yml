@@ -24,4 +24,5 @@ jobs:
       - name: Upload coverage to codecov
         uses: codecov/codecov-action@v5
         with:
-          gcov: true
+          # 'make coverage' and 'make test' leave '.gcda' files, which only the CLI's gcov plugin reads.
+          plugins: gcov
