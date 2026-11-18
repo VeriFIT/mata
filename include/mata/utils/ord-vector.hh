@@ -176,47 +176,14 @@ template <class Key, class Allocator> class OrdVector {
 	std::pair<iterator, bool> insert(const Key& x) {
 		MATA_EXPENSIVE_ASSERT(is_sorted());
 
-		// Tomas Fiedor: article about better binary search here https://mhdm.dev/posts/sb_lower_bound/.
+		// An append fast path for keys above the maximum and a branchless lower bound were measured without an
+		//  end-to-end gain: see EXP-1 in docs/experiments/.
 		auto pos = std::lower_bound(vec_.begin(), vec_.end(), x);
 		bool inserted{false};
 		if (pos == vec_.end() || *pos != x) {
 			pos = vec_.insert(pos, x);
 			inserted = true;
 		}
-
-		// TODO: measure, if there is not benefit to this custom version, remove
-		// size_t first = 0;
-		// size_t last = vec_.size();
-
-		// if ((last != 0) && (vec_.back() < x))
-		//{ // for the case which would be prevalent
-		//     // that is, the added thing can is larger than the largest thing and can be just bushed back
-		//     vec_.push_back(x);
-		//     return;
-		// }
-
-		// while (first < last)
-		//{ // while the pointers do not overlap
-		//     size_t middle = first + (last - first) / 2;
-		//     if (vec_[middle] == x)
-		//     { // in case we found x
-		//         return;
-		//     }
-		//     else if (vec_[middle] < x)
-		//     { // in case middle is less than x
-		//         first = middle + 1;
-		//     }
-		//     else
-		//     { // in case middle is greater than x
-		//         last = middle;
-		//     }
-		// }
-
-		// vec_.resize(vec_.size() + 1);
-		// std::copy_backward(vec_.begin() + static_cast<long>(first), vec_.end() - 1, vec_.end());
-
-		//// insert the new element
-		// vec_[first] = x;
 
 		MATA_ASSERT(pos == vec_.begin() || *std::prev(pos) < *pos);
 		MATA_ASSERT(std::next(pos) == vec_.end() || *pos < *std::next(pos));
