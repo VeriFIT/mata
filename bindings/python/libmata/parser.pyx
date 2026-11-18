@@ -39,7 +39,7 @@ def from_mata(src: str | list[str], alph.Alphabet alphabet = None):
 
     :param src: list of paths to automata or single path
     :param alphabet: target alphabet; when omitted, the symbols are read as numbers
-    :raises ValueError: when @p src is an empty list
+    :raises ValueError: when @p src is an empty iterable
     :return: single automaton or list of automata
     """
     cdef CAlphabet * c_alphabet = NULL
@@ -63,6 +63,8 @@ def from_mata(src: str | list[str], alph.Alphabet alphabet = None):
     # load multiple automata: the inputs the fast reader of explicit alphabets reads are loaded right away, those with
     #  a bitvector alphabet go to the bitvector reader, which mintermizes them together, and the others go through the
     #  general reader
+    if src is not None:
+        src = list(src)
     if not src:
         raise ValueError("from_mata() needs at least one source")
     automata = []
