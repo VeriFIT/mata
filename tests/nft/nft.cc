@@ -2898,6 +2898,37 @@ TEST_CASE("mata::nft::Nft::is_in_lang[_prefix][_by_levels]()") {
 		CHECK(not nft.is_in_lang_by_levels({{}, {}, {}}, false, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
 		CHECK(not nft.is_in_lang_prefix_by_levels({{'d'}, {'b'}, {'c'}}, JumpMode::RepeatSymbol, HAS_EPSILON_CYCLES));
 	}
+
+	SECTION("ambiguous symbol-cycle membership") {
+		nft = Nft::with_levels(2);
+		nft.add_state_with_level(0, 0);
+		nft.add_state_with_level(1, 1);
+		nft.add_state_with_level(2, 1);
+		nft.initial.insert(0);
+		nft.final.insert(0);
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(0, 'a', 2);
+		nft.delta.add(1, 'a', 0);
+		nft.delta.add(2, 'a', 0);
+
+		std::vector<Word> rejecting_word(2, Word(8, 'a'));
+		rejecting_word[0].push_back('b');
+		rejecting_word[1].push_back('b');
+		for (const bool match_prefix : {false, true}) {
+			const bool expected{
+				nft.is_in_lang_by_levels(rejecting_word, match_prefix, JumpMode::AppendDontCares, true)
+			};
+			for (const JumpMode mode : {JumpMode::RepeatSymbol, JumpMode::NoJump}) {
+				CHECK(nft.is_in_lang_by_levels(rejecting_word, match_prefix, mode, false) == expected);
+			}
+		}
+		// A DONT_CARE input matches ordinary symbol transitions too, including these two all-'a' branches.
+		for (Word& word : rejecting_word) { word.back() = DONT_CARE; }
+		CHECK(nft.is_in_lang_by_levels(rejecting_word));
+		for (const JumpMode mode : {JumpMode::RepeatSymbol, JumpMode::NoJump}) {
+			CHECK(nft.is_in_lang_by_levels(rejecting_word, false, mode, false));
+		}
+	}
 }
 
 TEST_CASE("mata::nft::Nft::read_word[_by_levels]()") {
