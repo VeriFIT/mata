@@ -258,24 +258,26 @@ std::ostream& mata::IntAlphabet::print(std::ostream& os) const { return os << "I
 
 std::ostream& std::operator<<(std::ostream& os, const mata::Alphabet& alphabet) { return alphabet.print(os); }
 
-Symbol mata::IntAlphabet::translate_symb(const std::string_view symb) {
-	// A plain decimal number of up to 9 digits always fits and reads the same as through the stream below, which
-	//  costs much more.
-	if (!symb.empty() && symb.size() <= 9 && symb.front() >= '0' && symb.front() <= '9') {
-		Symbol symbol{};
-		const char* const end{symb.data() + symb.size()};
-		if (const auto [ptr, error]{std::from_chars(symb.data(), end, symbol)}; error == std::errc{} && ptr == end) {
-			return symbol;
-		}
-	}
-	Symbol symbol;
-	const std::string str{symb};
-	std::istringstream stream{str};
-	stream >> symbol;
-	if (stream.fail() || !stream.eof()) {
-		throw std::runtime_error("Cannot translate string '" + str + "' to symbol.");
+namespace {
+/// Parse the whole of @p text as a decimal Symbol; rejects empty input, signs, white space, trailing characters and
+///  out-of-range values.
+Symbol parse_symbol(const std::string_view text) {
+	Symbol symbol{};
+	const char* const end{text.data() + text.size()};
+	if (const auto [ptr, error]{std::from_chars(text.data(), end, symbol)}; error != std::errc{} || ptr != end) {
+		throw std::runtime_error("Cannot translate string '" + std::string{text} + "' to symbol.");
 	}
 	return symbol;
+}
+} // namespace
+
+Symbol mata::IntAlphabet::translate_symb(const std::string_view symb) { return parse_symbol(symb); }
+
+mata::Word mata::IntAlphabet::translate_word(const mata::WordName& word_name) const {
+	mata::Word word;
+	word.reserve(word_name.size());
+	for (const std::string& str_symbol : word_name) { word.push_back(parse_symbol(str_symbol)); }
+	return word;
 }
 
 std::string mata::EnumAlphabet::reverse_translate_symbol(const Symbol symbol) const {
@@ -286,41 +288,26 @@ std::string mata::EnumAlphabet::reverse_translate_symbol(const Symbol symbol) co
 }
 
 Symbol mata::EnumAlphabet::translate_symb(const std::string_view symb) {
-	Symbol symbol;
-	const std::string str{symb};
-	std::istringstream stream{str};
-	stream >> symbol;
-	if (stream.fail() || !stream.eof()) {
-		throw std::runtime_error("Cannot translate string '" + str + "' to symbol.");
-	}
+	const Symbol symbol{parse_symbol(symb)};
 	if (!symbols_.contains(symbol)) {
-		throw std::runtime_error("Unknown symbol'" + str + "' to be translated to Symbol.");
+		throw std::runtime_error("Unknown symbol'" + std::string{symb} + "' to be translated to Symbol.");
 	}
 
 	return symbol;
 }
 
 mata::Word mata::EnumAlphabet::translate_word(const mata::WordName& word_name) const {
-	const size_t word_size{word_name.size()};
 	mata::Word word;
-	Symbol symbol;
-	std::stringstream stream;
-	word.reserve(word_size);
-	for (const auto& str_symbol : word_name) {
-		stream << str_symbol;
-		stream >> symbol;
+	word.reserve(word_name.size());
+	for (const std::string& str_symbol : word_name) {
+		const Symbol symbol{parse_symbol(str_symbol)};
 		if (!symbols_.contains(symbol)) { throw std::runtime_error("Unknown symbol \'" + str_symbol + "\'"); }
 		word.push_back(symbol);
 	}
 	return word;
 }
 
-void mata::EnumAlphabet::add_new_symbol(const std::string& symbol) {
-	std::istringstream str_stream{symbol};
-	Symbol converted_symbol;
-	str_stream >> converted_symbol;
-	add_new_symbol(converted_symbol);
-}
+void mata::EnumAlphabet::add_new_symbol(const std::string& symbol) { add_new_symbol(parse_symbol(symbol)); }
 
 void mata::EnumAlphabet::add_new_symbol(const Symbol symbol) {
 	symbols_.insert(symbol);
