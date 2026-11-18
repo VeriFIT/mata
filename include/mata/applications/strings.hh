@@ -597,6 +597,13 @@ struct NoodleOrder {
  */
 std::generator<NoodleWithEpsilonsCounter>
 	noodlify_mult_eps_lazy(SegNfa aut, std::set<Symbol> epsilons, bool include_empty = false, NoodleOrder order = {});
+/**
+ * @brief Emit the noodles of noodlify() one at a time.
+ *
+ * Unlike noodlify_mult_eps_lazy(), every noodle has one segment per segment of @p aut, including the segments with
+ *  the language {ε}; otherwise as noodlify_mult_eps_lazy(). The generator owns @p aut.
+ */
+std::generator<Noodle> noodlify_lazy(SegNfa aut, Symbol epsilon, bool include_empty = false, NoodleOrder order = {});
 
 /**
  * @brief Emit the noodles of noodlify_for_equation() for both sides given as sequences of automata one at a time.
@@ -607,6 +614,30 @@ std::generator<NoodleWithEpsilonsCounter>
 std::generator<NoodleWithEpsilonsCounter> noodlify_for_equation_lazy(
 	const std::vector<std::shared_ptr<Nfa>>& lhs_automata,
 	const std::vector<std::shared_ptr<Nfa>>& rhs_automata,
+	bool include_empty = false,
+	const ParameterMap& params = {{"reduce", "false"}},
+	NoodleOrder order = {}
+);
+/**
+ * @brief Emit the noodles of noodlify_for_equation() for a sequence of left side automata and one right side automaton
+ *  one at a time.
+ *
+ * The product of the sides is computed (and the left side automata unified, as noodlify_for_equation() does) in the
+ *  call, the noodles when they are taken from the generator; see noodlify_lazy().
+ */
+std::generator<Noodle> noodlify_for_equation_lazy(
+	const std::vector<std::reference_wrapper<Nfa>>& lhs_automata,
+	const Nfa& rhs_automaton,
+	bool include_empty = false,
+	const ParameterMap& params = {{"reduce", "false"}},
+	NoodleOrder order = {}
+);
+
+/// @copydoc noodlify_for_equation_lazy(const std::vector<std::reference_wrapper<Nfa>>&, const Nfa&, bool, const
+/// ParameterMap&, NoodleOrder)
+std::generator<Noodle> noodlify_for_equation_lazy(
+	const std::vector<Nfa*>& lhs_automata,
+	const Nfa& rhs_automaton,
 	bool include_empty = false,
 	const ParameterMap& params = {{"reduce", "false"}},
 	NoodleOrder order = {}

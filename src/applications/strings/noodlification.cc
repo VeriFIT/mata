@@ -7,7 +7,10 @@
 #include <random>
 #include <ranges>
 #include <set>
+#include <string>
+#include <type_traits>
 #include <unordered_set>
+#include <utility>
 
 #include "mata/applications/strings.hh"
 #include "mata/nfa/algorithms.hh"
@@ -20,17 +23,6 @@
 using namespace mata::applications::strings;
 
 namespace {
-/**
- * Get a number of permutations for computed epsilon depths.
- * @param[in] epsilon_depths Computed list of epsilon transitions for each depth.
- * @return Number of permutations.
- */
-size_t get_num_of_permutations(const std::vector<std::vector<Transition>>& epsilon_depths) {
-	size_t num_of_permutations{1};
-	for (const auto& transitions_at_depth : epsilon_depths) { num_of_permutations *= transitions_at_depth.size(); }
-	return num_of_permutations;
-}
-
 /**
  * @brief Unify (as best as possible) the initial states and the final states of NFAs in @p nfas
  *
@@ -112,81 +104,6 @@ std::optional<seg_nfa::NoodleSegment> make_whole_segment(Nfa&& segment, const bo
 	return seg_nfa::NoodleSegment{.automaton = std::make_shared<const Nfa>(std::move(segment)), .initial = initial};
 }
 } // namespace
-
-std::vector<seg_nfa::Noodle> seg_nfa::noodlify(const SegNfa& aut, const Symbol epsilon, const bool include_empty) {
-	const std::set<Symbol> epsilons({epsilon});
-	// return noodlify_reach(aut, epsilons, include_empty);
-
-	Segmentation segmentation{aut, epsilons};
-	const auto& segments{segmentation.get_untrimmed_segments()};
-
-	if (segments.size() == 1) {
-		if (auto segment{make_whole_segment(trim(segments[0]), include_empty)}) { return {{std::move(*segment)}}; }
-		return {};
-	}
-
-	const auto unused_state{static_cast<State>(aut.num_of_states())}; // get some State not used in aut
-	std::map<std::pair<State, State>, NoodleSegment> segments_one_initial_final;
-	segs_one_initial_final(segments, include_empty, unused_state, segments_one_initial_final);
-
-	const auto& epsilon_depths{segmentation.get_epsilon_transitions_by_depth()};
-
-	// Compute number of all combinations of ε-transitions with one ε-transitions from each depth.
-	const size_t num_of_permutations{get_num_of_permutations(epsilon_depths)};
-	const size_t epsilon_depths_size{epsilon_depths.size()};
-
-	std::vector<Noodle> noodles{};
-	// noodle of epsilon transitions (each from different depth)
-	std::vector<Transition> epsilon_noodle(epsilon_depths_size);
-	// for each combination of ε-transitions, create the automaton.
-	// based on https://stackoverflow.com/questions/48270565/create-all-possible-combinations-of-multiple-vectors
-	for (size_t index{0}; index < num_of_permutations; ++index) {
-		size_t temp{index};
-		for (size_t depth{0}; depth < epsilon_depths_size; ++depth) {
-			const size_t num_of_trans_at_cur_depth = epsilon_depths[depth].size();
-			const size_t computed_index = temp % num_of_trans_at_cur_depth;
-			temp /= num_of_trans_at_cur_depth;
-			epsilon_noodle[depth] = epsilon_depths[depth][computed_index];
-		}
-
-		Noodle noodle;
-
-		// epsilon_noodle[0] for sure exists, as we sorted out the case of only one segment at the beginning
-		if (auto first_segment_iter{
-				segments_one_initial_final.find(std::make_pair(unused_state, epsilon_noodle[0].source))
-			};
-			first_segment_iter != segments_one_initial_final.end()) {
-			noodle.push_back(first_segment_iter->second);
-		} else {
-			continue;
-		}
-
-		bool all_segments_exist = true;
-		for (auto iter = epsilon_noodle.begin(); iter + 1 != epsilon_noodle.end(); ++iter) {
-			const auto next_iter{iter + 1};
-			if (auto segment_iter = segments_one_initial_final.find(std::make_pair(iter->target, next_iter->source));
-				segment_iter != segments_one_initial_final.end()) {
-				noodle.push_back(segment_iter->second);
-			} else {
-				all_segments_exist = false;
-				break;
-			}
-		}
-
-		if (!all_segments_exist) { continue; }
-
-		auto last_segment_iter =
-			segments_one_initial_final.find(std::make_pair(epsilon_noodle.back().target, unused_state));
-		if (last_segment_iter != segments_one_initial_final.end()) {
-			noodle.push_back(last_segment_iter->second);
-		} else {
-			continue;
-		}
-
-		noodles.push_back(noodle);
-	}
-	return noodles;
-}
 
 Nfa seg_nfa::NoodleSegment::to_nfa() const {
 	const utils::SparseSet<State> initial_states{initial};
@@ -305,16 +222,22 @@ using mata::nfa::Limits;
  */
 class NoodleEnumerator {
   public:
+	/// noodlify_mult_eps() leaves out the segments with the language {ε} and counts the ε-transitions of a segment;
+	///  noodlify() keeps one segment per segment of the automaton and no counters.
+	enum class Mode { MultEps, Single };
+
 	NoodleEnumerator(
 		const seg_nfa::SegNfa& aut,
 		const std::set<Symbol>& epsilons,
 		const bool include_empty,
-		const seg_nfa::NoodleOrder order
+		const seg_nfa::NoodleOrder order,
+		const Mode mode
 	)
 		: segmentation_{aut, epsilons},
 		  segments_{segmentation_.get_untrimmed_segments()},
 		  include_empty_{include_empty},
 		  order_{order},
+		  mode_{mode},
 		  rng_{order.seed},
 		  unused_state_{static_cast<State>(aut.num_of_states())} {
 		seg_nfa::VisitedEpsilonsCounterMap def_eps_map;
@@ -322,7 +245,10 @@ class NoodleEnumerator {
 		def_eps_vector_ = seg_nfa::process_eps_map(def_eps_map);
 
 		if (segments_.size() == 1) {
-			single_ = make_whole_segment(trim(segments_[0]), include_empty_);
+			if (auto whole{make_whole_segment(trim(segments_[0]), include_empty_)}) {
+				noodle_.emplace_back(std::move(*whole), def_eps_vector_);
+				single_pending_ = true;
+			}
 			return;
 		}
 
@@ -350,10 +276,26 @@ class NoodleEnumerator {
 
 	/// The next noodle, or std::nullopt if there is none left.
 	std::optional<seg_nfa::NoodleWithEpsilonsCounter> next() {
-		if (segments_.size() == 1) {
-			if (single_done_ || !single_) { return std::nullopt; }
-			single_done_ = true;
-			return seg_nfa::NoodleWithEpsilonsCounter{{*single_, def_eps_vector_}};
+		if (!advance()) { return std::nullopt; }
+		return noodle_;
+	}
+
+	/// The segments of the next noodle, or std::nullopt if there is none left.
+	std::optional<seg_nfa::Noodle> next_segments() {
+		if (!advance()) { return std::nullopt; }
+		seg_nfa::Noodle noodle{};
+		noodle.reserve(noodle_.size());
+		for (const auto& segment : noodle_ | std::views::keys) { noodle.push_back(segment); }
+		return noodle;
+	}
+
+  private:
+	/// Moves the search to the next noodle, which noodle_ holds until the next call; false if there is none left.
+	bool advance() {
+		if (segments_.size() == 1) { return std::exchange(single_pending_, false); }
+		if (at_noodle_) { // The last segment of the previous noodle.
+			pop_segment();
+			at_noodle_ = false;
 		}
 
 		while (!frames_.empty()) {
@@ -370,18 +312,17 @@ class NoodleEnumerator {
 
 			push_segment(seg_id, init, fin);
 			if (seg_id + 1 == segments_.size()) {
-				std::optional<seg_nfa::NoodleWithEpsilonsCounter> noodle{};
-				if (num_of_left_out_ == 0 || seen_.insert(keys_).second) { noodle = noodle_; }
+				if (num_of_left_out_ == 0 || seen_.insert(keys_).second) {
+					at_noodle_ = true;
+					return true;
+				}
 				pop_segment();
-				if (noodle) { return noodle; }
 				continue;
 			}
 			frames_.push_back(make_frame(seg_id + 1, fin));
 		}
-		return std::nullopt;
+		return false;
 	}
-
-  private:
 	using SegmentKey = std::pair<State, State>;
 
 	/// The shared automaton of one final state and the state of every initial state of its segment in it.
@@ -414,13 +355,16 @@ class NoodleEnumerator {
 	const std::vector<Nfa>& segments_;
 	const bool include_empty_;
 	const seg_nfa::NoodleOrder order_;
+	const Mode mode_;
 	std::mt19937_64 rng_;
 	/// A state not in the automaton: the initial state of the pairs of the first segment, the final of the last.
 	const State unused_state_;
 	seg_nfa::VisitedEpsilonsCounterVector def_eps_vector_{};
 
-	std::optional<seg_nfa::NoodleSegment> single_{};
-	bool single_done_{false};
+	/// Whether noodle_ holds the noodle of a single segment not taken yet.
+	bool single_pending_{false};
+	/// Whether noodle_ holds a noodle the search finished.
+	bool at_noodle_{false};
 
 	std::vector<size_t> initial_position_{};
 	/// Parts by their final state; the part of the last segment by unused_state_.
@@ -582,17 +526,19 @@ class NoodleEnumerator {
 
 	void push_segment(const size_t seg_id, const State init, const State fin) {
 		seg_nfa::NoodleSegment seg{segment(seg_id, init, fin)};
-		if (seg.is_epsilon_only()) {
-			kept_.push_back(false);
-			++num_of_left_out_;
-			return;
-		}
 		seg_nfa::VisitedEpsilonsCounterVector counters{};
-		if (seg_id == 0) {
-			counters = def_eps_vector_;
-		} else if (const auto visited{segmentation_.get_visited_eps().find(init)};
-				   visited != segmentation_.get_visited_eps().end()) {
-			counters = seg_nfa::process_eps_map(visited->second);
+		if (mode_ == Mode::MultEps) {
+			if (seg.is_epsilon_only()) {
+				kept_.push_back(false);
+				++num_of_left_out_;
+				return;
+			}
+			if (seg_id == 0) {
+				counters = def_eps_vector_;
+			} else if (const auto visited{segmentation_.get_visited_eps().find(init)};
+					   visited != segmentation_.get_visited_eps().end()) {
+				counters = seg_nfa::process_eps_map(visited->second);
+			}
 		}
 		noodle_.emplace_back(std::move(seg), std::move(counters));
 		keys_.emplace_back(init, fin);
@@ -617,9 +563,26 @@ MATA_GENERATOR_COROUTINE_END
 #endif
 } // namespace
 
+std::vector<seg_nfa::Noodle> seg_nfa::noodlify(const SegNfa& aut, const Symbol epsilon, const bool include_empty) {
+	NoodleEnumerator enumerator{aut, {epsilon}, include_empty, NoodleOrder{}, NoodleEnumerator::Mode::Single};
+	std::vector<Noodle> noodles{};
+	while (auto noodle{enumerator.next_segments()}) { noodles.push_back(std::move(*noodle)); }
+	return noodles;
+}
+
+#if MATA_HAS_GENERATOR_SUPPORT
+MATA_GENERATOR_COROUTINE_BEGIN
+std::generator<seg_nfa::Noodle>
+	seg_nfa::noodlify_lazy(SegNfa aut, const Symbol epsilon, const bool include_empty, const NoodleOrder order) {
+	NoodleEnumerator enumerator{aut, {epsilon}, include_empty, order, NoodleEnumerator::Mode::Single};
+	while (auto noodle{enumerator.next_segments()}) { co_yield std::move(*noodle); }
+}
+MATA_GENERATOR_COROUTINE_END
+#endif
+
 std::vector<seg_nfa::NoodleWithEpsilonsCounter>
 	seg_nfa::noodlify_mult_eps(const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty) {
-	NoodleEnumerator enumerator{aut, epsilons, include_empty, NoodleOrder{}};
+	NoodleEnumerator enumerator{aut, epsilons, include_empty, NoodleOrder{}, NoodleEnumerator::Mode::MultEps};
 	std::vector<NoodleWithEpsilonsCounter> noodles{};
 	while (auto noodle{enumerator.next()}) { noodles.push_back(std::move(*noodle)); }
 	return noodles;
@@ -629,11 +592,73 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter>
 MATA_GENERATOR_COROUTINE_BEGIN
 std::generator<seg_nfa::NoodleWithEpsilonsCounter>
 	seg_nfa::noodlify_mult_eps_lazy(SegNfa aut, std::set<Symbol> epsilons, bool include_empty, NoodleOrder order) {
-	NoodleEnumerator enumerator{aut, epsilons, include_empty, order};
+	NoodleEnumerator enumerator{aut, epsilons, include_empty, order, NoodleEnumerator::Mode::MultEps};
 	while (auto noodle{enumerator.next()}) { co_yield std::move(*noodle); }
 }
 MATA_GENERATOR_COROUTINE_END
 #endif
+
+namespace {
+/// Reduces @p product as the parameter "reduce" of noodlify_for_equation() says.
+void reduce_as_params_say(Nfa& product, const mata::nfa::ParameterMap& params) {
+	if (!mata::utils::haskey(params, "reduce")) { return; }
+	const std::string& reduce_value = params.at("reduce");
+	if (reduce_value == "forward" || reduce_value == "bidirectional") { product = reduce(product); }
+	if (reduce_value == "backward" || reduce_value == "bidirectional") {
+		product = revert(product);
+		product = reduce(product);
+		product = revert(product);
+	}
+}
+
+void unify_left_side(const std::vector<std::reference_wrapper<Nfa>>& lhs_automata, const mata::nfa::ParameterMap&) {
+	for (Nfa& lhs_aut : lhs_automata) {
+		lhs_aut.unify_initial();
+		lhs_aut.unify_final();
+	}
+}
+
+void unify_left_side(const std::vector<Nfa*>& lhs_automata, const mata::nfa::ParameterMap& params) {
+	if (!mata::utils::haskey(params, "reduce")) { return; }
+	const std::string& reduce_value = params.at("reduce");
+	if (reduce_value == "forward" || reduce_value == "backward" || reduce_value == "bidirectional") {
+		for (Nfa* lhs_aut : lhs_automata) {
+			lhs_aut->unify_initial();
+			lhs_aut->unify_final();
+		}
+	}
+}
+
+/// The product of the left side, concatenated over EPSILON, and @p rhs_automaton whose noodles
+///  noodlify_for_equation() computes; std::nullopt if empty. Unifies the left side automata first.
+template <class LhsAutomaton>
+std::optional<Nfa> left_side_product(
+	const std::vector<LhsAutomaton>& lhs_automata, const Nfa& rhs_automaton, const mata::nfa::ParameterMap& params
+) {
+	unify_left_side(lhs_automata, params);
+	if (lhs_automata.empty() || rhs_automaton.is_lang_empty()) { return std::nullopt; }
+
+	const auto automaton = [](const LhsAutomaton& lhs_aut) -> const Nfa& {
+		if constexpr (std::is_pointer_v<LhsAutomaton>) {
+			return *lhs_aut;
+		} else {
+			return lhs_aut.get();
+		}
+	};
+	// Automaton representing the left side concatenated over epsilon transitions.
+	Nfa concatenated_lhs{automaton(lhs_automata.front())};
+	for (auto next_lhs_aut_it{lhs_automata.begin() + 1}; next_lhs_aut_it != lhs_automata.end(); ++next_lhs_aut_it) {
+		concatenated_lhs = concatenate(concatenated_lhs, automaton(*next_lhs_aut_it), true);
+	}
+
+	Nfa product_pres_eps_trans{intersection(concatenated_lhs, rhs_automaton)};
+	product_pres_eps_trans.trim();
+	// After `trim()` every state lies on an accepting path, so the language is empty iff nothing is left.
+	if (product_pres_eps_trans.initial.empty()) { return std::nullopt; }
+	reduce_as_params_say(product_pres_eps_trans, params);
+	return product_pres_eps_trans;
+}
+} // namespace
 
 std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
 	const std::vector<std::reference_wrapper<Nfa>>& lhs_automata,
@@ -641,80 +666,17 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
 	bool include_empty,
 	const ParameterMap& params
 ) {
-	const auto lhs_aut_begin{lhs_automata.begin()};
-	const auto lhs_aut_end{lhs_automata.end()};
-	for (auto lhs_aut_iter{lhs_aut_begin}; lhs_aut_iter != lhs_aut_end; ++lhs_aut_iter) {
-		lhs_aut_iter->get().unify_initial();
-		lhs_aut_iter->get().unify_final();
-	}
-
-	if (lhs_automata.empty() || rhs_automaton.is_lang_empty()) { return {}; }
-
-	// Automaton representing the left side concatenated over epsilon transitions.
-	Nfa concatenated_lhs{*lhs_aut_begin};
-	for (auto next_lhs_aut_it{lhs_aut_begin + 1}; next_lhs_aut_it != lhs_aut_end; ++next_lhs_aut_it) {
-		concatenated_lhs = concatenate(concatenated_lhs, *next_lhs_aut_it, true);
-	}
-
-	Nfa product_pres_eps_trans{intersection(concatenated_lhs, rhs_automaton)};
-	product_pres_eps_trans.trim();
-	// After `trim()` every state lies on an accepting path, so the language is empty iff nothing is left.
-	if (product_pres_eps_trans.initial.empty()) { return {}; }
-	if (utils::haskey(params, "reduce")) {
-		const std::string& reduce_value = params.at("reduce");
-		if (reduce_value == "forward" || reduce_value == "bidirectional") {
-			product_pres_eps_trans = reduce(product_pres_eps_trans);
-		}
-		if (reduce_value == "backward" || reduce_value == "bidirectional") {
-			product_pres_eps_trans = revert(product_pres_eps_trans);
-			product_pres_eps_trans = reduce(product_pres_eps_trans);
-			product_pres_eps_trans = revert(product_pres_eps_trans);
-		}
-	}
-	return noodlify(product_pres_eps_trans, mata::nfa::EPSILON, include_empty);
+	const std::optional<Nfa> product{left_side_product(lhs_automata, rhs_automaton, params)};
+	if (!product) { return {}; }
+	return noodlify(*product, mata::nfa::EPSILON, include_empty);
 }
 
 std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
 	const std::vector<Nfa*>& lhs_automata, const Nfa& rhs_automaton, bool include_empty, const ParameterMap& params
 ) {
-	const auto lhs_aut_begin{lhs_automata.begin()};
-	const auto lhs_aut_end{lhs_automata.end()};
-
-	std::string reduce_value{};
-	if (utils::haskey(params, "reduce")) { reduce_value = params.at("reduce"); }
-
-	if (!reduce_value.empty()) {
-		if (reduce_value == "forward" || reduce_value == "backward" || reduce_value == "bidirectional") {
-			for (auto lhs_aut_iter{lhs_aut_begin}; lhs_aut_iter != lhs_aut_end; ++lhs_aut_iter) {
-				(*lhs_aut_iter)->unify_initial();
-				(*lhs_aut_iter)->unify_final();
-			}
-		}
-	}
-
-	if (lhs_automata.empty() || rhs_automaton.is_lang_empty()) { return {}; }
-
-	// Automaton representing the left side concatenated over epsilon transitions.
-	Nfa concatenated_lhs{*(*lhs_aut_begin)};
-	for (auto next_lhs_aut_it{lhs_aut_begin + 1}; next_lhs_aut_it != lhs_aut_end; ++next_lhs_aut_it) {
-		concatenated_lhs = concatenate(concatenated_lhs, *(*next_lhs_aut_it), true);
-	}
-
-	Nfa product_pres_eps_trans{intersection(concatenated_lhs, rhs_automaton)};
-	product_pres_eps_trans.trim();
-	// After `trim()` every state lies on an accepting path, so the language is empty iff nothing is left.
-	if (product_pres_eps_trans.initial.empty()) { return {}; }
-	if (!reduce_value.empty()) {
-		if (reduce_value == "forward" || reduce_value == "bidirectional") {
-			product_pres_eps_trans = reduce(product_pres_eps_trans);
-		}
-		if (reduce_value == "backward" || reduce_value == "bidirectional") {
-			product_pres_eps_trans = revert(product_pres_eps_trans);
-			product_pres_eps_trans = reduce(product_pres_eps_trans);
-			product_pres_eps_trans = revert(product_pres_eps_trans);
-		}
-	}
-	return noodlify(product_pres_eps_trans, mata::nfa::EPSILON, include_empty);
+	const std::optional<Nfa> product{left_side_product(lhs_automata, rhs_automaton, params)};
+	if (!product) { return {}; }
+	return noodlify(*product, mata::nfa::EPSILON, include_empty);
 }
 
 namespace {
@@ -739,17 +701,7 @@ std::optional<Nfa> equation_product(
 
 	// After `trim()` every state lies on an accepting path, so the language is empty iff nothing is left.
 	if (product_pres_eps_trans.initial.empty()) { return std::nullopt; }
-	if (mata::utils::haskey(params, "reduce")) {
-		const std::string& reduce_value = params.at("reduce");
-		if (reduce_value == "forward" || reduce_value == "bidirectional") {
-			product_pres_eps_trans = reduce(product_pres_eps_trans);
-		}
-		if (reduce_value == "backward" || reduce_value == "bidirectional") {
-			product_pres_eps_trans = revert(product_pres_eps_trans);
-			product_pres_eps_trans = reduce(product_pres_eps_trans);
-			product_pres_eps_trans = revert(product_pres_eps_trans);
-		}
-	}
+	reduce_as_params_say(product_pres_eps_trans, params);
 	return product_pres_eps_trans;
 }
 } // namespace
@@ -779,6 +731,34 @@ std::generator<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equatio
 	return noodlify_mult_eps_lazy(
 		std::move(*product), {mata::nfa::EPSILON, mata::nfa::EPSILON - 1}, include_empty, order
 	);
+}
+MATA_GENERATOR_COROUTINE_END
+#endif
+
+#if MATA_HAS_GENERATOR_SUPPORT
+MATA_GENERATOR_COROUTINE_BEGIN
+std::generator<seg_nfa::Noodle> seg_nfa::noodlify_for_equation_lazy(
+	const std::vector<std::reference_wrapper<Nfa>>& lhs_automata,
+	const Nfa& rhs_automaton,
+	bool include_empty,
+	const ParameterMap& params,
+	NoodleOrder order
+) {
+	std::optional<Nfa> product{left_side_product(lhs_automata, rhs_automaton, params)};
+	if (!product) { return no_noodles<Noodle>(); }
+	return noodlify_lazy(std::move(*product), mata::nfa::EPSILON, include_empty, order);
+}
+
+std::generator<seg_nfa::Noodle> seg_nfa::noodlify_for_equation_lazy(
+	const std::vector<Nfa*>& lhs_automata,
+	const Nfa& rhs_automaton,
+	bool include_empty,
+	const ParameterMap& params,
+	NoodleOrder order
+) {
+	std::optional<Nfa> product{left_side_product(lhs_automata, rhs_automaton, params)};
+	if (!product) { return no_noodles<Noodle>(); }
+	return noodlify_lazy(std::move(*product), mata::nfa::EPSILON, include_empty, order);
 }
 MATA_GENERATOR_COROUTINE_END
 #endif
@@ -998,7 +978,9 @@ class TransducerElements {
 #if MATA_HAS_GENERATOR_SUPPORT
 MATA_GENERATOR_COROUTINE_BEGIN
 std::generator<TransducerNoodle> transducer_noodles(Nfa product, const NoodleOrder order) {
-	NoodleEnumerator noodles{product, {INPUT_DELIMITER, OUTPUT_DELIMITER}, false, order};
+	NoodleEnumerator noodles{
+		product, {INPUT_DELIMITER, OUTPUT_DELIMITER}, false, order, NoodleEnumerator::Mode::MultEps
+	};
 	TransducerElements elements{};
 	while (auto noodle{noodles.next()}) { co_yield elements.make(*noodle); }
 }
@@ -1017,7 +999,9 @@ std::vector<TransducerNoodle> noodlify_for_transducer(
 		transducer_product(nft, input_automata, output_automata, reduce_intersection, use_homomorphic_heuristic)
 	};
 	if (!product) { return {}; }
-	NoodleEnumerator noodles{*product, {INPUT_DELIMITER, OUTPUT_DELIMITER}, false, NoodleOrder{}};
+	NoodleEnumerator noodles{
+		*product, {INPUT_DELIMITER, OUTPUT_DELIMITER}, false, NoodleOrder{}, NoodleEnumerator::Mode::MultEps
+	};
 	TransducerElements elements{};
 	std::vector<TransducerNoodle> result;
 	while (auto noodle{noodles.next()}) { result.push_back(elements.make(*noodle)); }
