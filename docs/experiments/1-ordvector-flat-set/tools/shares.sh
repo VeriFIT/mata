@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Throwaway: share of samples per source file of the leaf (inlined) frame, for files tied to the set containers.
-P=/nix/store/hln3gq5s0pajpqlwcffqadzxglqfhx29-perf-linux-7.3.4/bin/perf
+P=${PERF:-perf}
 for data in "$@"; do
     name=$(basename "$data" .data)
     "$P" report --input "$data" --no-children --sort srcfile --stdio 2>/dev/null |

@@ -20,7 +20,8 @@ Before starting a performance or design change, check here whether it has been t
   directory `N-slug/` with the record in `README.md` and the material next to it.
 - Keep the code that was tried as `git format-patch` output against the recorded base commit, so it stays
   reproducible after the experiment branches are deleted.
-- Commit summaries, scripts and small inputs only. Large raw data stays outside the repository; say where it is.
+- Commit summaries, scripts and small inputs only. Raw measurements are not kept in the repository or referenced from
+  it; instead, the record says how to regenerate them (the Reproducing section).
 - Discussion belongs to an issue or a GitHub Discussion; link it from the front matter.
 - Add the record to the index above.
 
@@ -47,6 +48,10 @@ tags: []
 ## Method
 
 ## Results
+
+## Reproducing
+
+Commands to rebuild the variants and regenerate the raw measurements behind the results.
 
 ## Conclusion
 

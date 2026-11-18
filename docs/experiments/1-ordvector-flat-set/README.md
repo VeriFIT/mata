@@ -51,8 +51,8 @@ A small-buffer `StateSet` was not built: small inline sets already exist where s
   `devel` binary (`devel-aa`) ran as an A/A control. 7,823 instances measured on every build, 188k process runs.
 - **Correctness:** every variant passed the full C++ test suite, and no instance gave a result different from
   `devel`.
-- `nfa-bench` at `1390e4ba0`, since the commit automata-lib-bench pinned was not on origin. The raw measurements
-  (JSONL) are not committed; they stayed in the local automata-lib-bench checkout (`results/data/ordvector-exp/`).
+- `nfa-bench` at `1390e4ba0`, since the commit automata-lib-bench pinned was not on origin.
+- The raw measurements were not kept; [Reproducing](#reproducing) regenerates them.
 
 ## Results
 
@@ -78,6 +78,35 @@ Full tables in [`results.md`](results.md). Total operation time against `devel`:
   elements and slightly slower on 8–64.
 - **Storage:** `stateset-pool` matches `delta-pool` (all-instance geomean 0.971 vs 0.975), so `StateSet` allocations
   cost nothing measurable.
+
+## Reproducing
+
+End to end, from a checkout of [automata-lib-bench](https://github.com/VeriFIT/automata-lib-bench) with its
+submodules (`benchmarks/nfa-bench` at `1390e4ba0`), inside its `nix develop` shell:
+
+1. In `subjects/mata`, create one commit per variant: check out `53021908` and `git am` the variant's patch from
+   [`patches/`](patches/) (`stateset-pool.patch` already contains `delta-pool`).
+2. Build every variant and the baseline: `./scripts/build_version.sh mata <commit> <slug>`, with the slugs `devel`,
+   `flatset-merge`, `backmerge`, `append-fastpath`, `branchless-lb`, `delta-pool` and `stateset-pool`. Then
+   `cp bin/mata-devel bin/mata-devel-aa` for the A/A control.
+3. From the automata-lib-bench root, the baseline first:
+
+   ```sh
+   builds="devel devel-aa flatset-merge backmerge append-fastpath branchless-lb delta-pool stateset-pool"
+   python3 run.py heavy heavy.jsonl $builds
+   python3 run.py light light.jsonl $builds
+   python3 analyse.py devel heavy.jsonl light.jsonl
+   ```
+
+   with [`run.py`](tools/run.py) and [`analyse.py`](tools/analyse.py) from `tools/`. The core numbers in `run.py`
+   (`MODES`) assume 16 cores; the full run took about 2 hours.
+
+Microbenchmark, from a mata checkout at `53021908`:
+`g++ -std=c++23 -O3 -DNDEBUG -I include tools/micro.cc -o micro && taskset --cpu-list 2 ./micro`.
+
+Profile: build the baseline with `./scripts/build_version.sh --build-mode RelWithDebInfo mata 53021908 devel-rwdi`,
+record each experiment with `perf record --freq 2000 --output <experiment>.data -- <commands>`, and run
+[`shares.sh`](tools/shares.sh) on the `.data` files (`PERF` selects the `perf` binary).
 
 ## Conclusion
 

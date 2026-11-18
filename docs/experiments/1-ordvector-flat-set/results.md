@@ -1,6 +1,6 @@
 # EXP-1 results
 
-Raw measurements and full output of the scripts in [`tools/`](tools/) are summarised here; see the [record](README.md) for the setup.
+Summary tables of the measurements, produced by the scripts in [`tools/`](tools/); see the [record](README.md) for the setup and how to reproduce them.
 
 ## End-to-end: TACAS'24 Mata experiments
 
