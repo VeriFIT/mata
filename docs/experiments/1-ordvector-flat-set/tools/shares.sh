@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 # Throwaway: share of samples per source file of the leaf (inlined) frame, for files tied to the set containers.
+set -euo pipefail
 P=${PERF:-perf}
 for data in "$@"; do
     name=$(basename "$data" .data)
-    "$P" report --input "$data" --no-children --sort srcfile --stdio 2>/dev/null |
+    # Report first: a missing perf or an unreadable profile must fail, not print a row of zeros.
+    report=$("$P" report --input "$data" --no-children --sort srcfile --stdio) || {
+        echo "error: perf report failed for $data" >&2
+        exit 1
+    }
+    printf '%s\n' "$report" |
         awk -v n="$name" '
             /^ *[0-9.]+%/ { pct = $1; sub("%", "", pct); file = $2; share[file] += pct }
             END {

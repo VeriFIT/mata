@@ -4,9 +4,9 @@ Summary tables of the measurements, produced by the scripts in [`tools/`](tools/
 
 ## End-to-end: TACAS'24 Mata experiments
 
-Ratios against `devel` (lower is faster); `tot` = ratio of total times, the other number is the geometric mean over instances with `devel` time >= 1 ms. `devel-aa` is a byte copy of the `devel` binary: its spread is the noise floor.
+Ratios against `devel` (lower is faster), over the instances where every build finished every repeat and the `devel` time is at least 1 ms: the geometric mean, and in parentheses (`tot`) the ratio of the total times of that same population. `devel-aa` is a byte copy of the `devel` binary: its spread is the noise floor. Output of [`tools/analyse.py`](tools/analyse.py).
 
-### op: geomean ratio vs devel (instances with devel op >= 1 ms) | total devel s
+### op: ratio vs devel, instances with devel op >= 1 ms: geomean (tot = ratio of totals)
 
 | experiment           | n    | devel total s | devel-aa          | flatset-merge     | backmerge         | append-fastpath   | branchless-lb     | delta-pool        | stateset-pool     |
 | -------------------- | ---- | ------------- | ----------------- | ----------------- | ----------------- | ----------------- | ----------------- | ----------------- | ----------------- |
@@ -26,7 +26,7 @@ Ratios against `devel` (lower is faster); `tot` = ratio of total times, the othe
 | regexps-det-min      | 19   | 17.90         | 1.022 (tot 1.025) | 1.005 (tot 1.015) | 1.005 (tot 0.976) | 0.997 (tot 1.042) | 1.008 (tot 0.976) | 0.998 (tot 0.988) | 1.008 (tot 0.994) |
 | **all**              | 2656 |               | 0.974             | 0.976             | 0.973             | 0.979             | 0.979             | 0.975             | 0.971             |
 
-### overall: geomean ratio vs devel (instances with devel overall >= 1 ms) | total devel s
+### overall: ratio vs devel, instances with devel overall >= 1 ms: geomean (tot = ratio of totals)
 
 | experiment           | n    | devel total s | devel-aa          | flatset-merge     | backmerge         | append-fastpath   | branchless-lb     | delta-pool        | stateset-pool     |
 | -------------------- | ---- | ------------- | ----------------- | ----------------- | ----------------- | ----------------- | ----------------- | ----------------- | ----------------- |
@@ -48,9 +48,17 @@ Ratios against `devel` (lower is faster); `tot` = ratio of total times, the othe
 
 ### failures (exp, build, statuses): instances
 
-### result disagreements with devel
+### result disagreements with the first repeat of devel, over every repeat
 
 none
+
+### instances whose result was compared, per experiment
+
+{'armc-incl': 136, 'b-smt': 384, 'param-inter': 80, 'param-inter-variadic': 32, 'param-union': 80, 'param-union-variadic': 187, 'email-filter': 500, 'lia-explicit': 169, 'lia-symbolic': 169, 'noodler-compl': 438, 'noodler-compl-big': 313, 'noodler-concat': 438, 'noodler-inter': 4872}
+
+### instances whose program prints no result (not compared), per experiment
+
+{'regexps-det-min': 25}
 
 ### skipped after the baseline probe failed (exp, status): instances
 
@@ -58,26 +66,28 @@ none
 
 ## Microbenchmark
 
+[`tools/micro.cc`](tools/micro.cc) against the headers of `53021908`, `g++ 16.2 -std=c++23 -O3 -DNDEBUG`, pinned to one core, minimum of 5 timed repeats. In the `build` rows the time is divided by the number of inserts actually performed.
+
+The `contains, size 65536` row is not stable between runs of the same binary: over seven runs `OrdVector` (`std::lower_bound`) took 14 to 34 ns, `std::flat_set` 49 to 58 ns, and the branchless search 18.4 to 23 ns. The other rows varied by a few percent.
+
 ```text
-# g++ 16.2.0 -std=c++23 -O3 -DNDEBUG, taskset --cpu-list 14, while one perf-record job ran on another core.
-# A later rerun under a load average of 37 (unrelated compilation) kept the same ratios with higher absolute numbers.
 ns/op (min of 5)                             OrdVector flat_set  inplmerge backmerge backshift
-union 4 += 4 (overlap)                           33.10     56.90     63.04     49.04     41.43
-union 16 += 16 (overlap)                         60.55     95.09     99.55    126.63     68.96
-union 64 += 8 (sparse)                          112.82    174.02    191.01    148.16    108.43
-union 256 += 256                               2163.33   2699.63   2704.48   4655.69   2157.54
-union 1024 += 16                               1306.42   1783.83   1893.32   1675.39   1194.93
-union 16 += 1024                               1188.48   1730.18   1746.88   6121.75   2638.40
-union 1000 += subset                            852.50   1326.49   1363.74    540.65    814.59
-build 16 random (3rd col: append fast path)       9.67     10.08     10.73      0.00      0.00
-build 256 random (3rd col: append fast path)     15.50     15.87     16.91      0.00      0.00
-build 4096 random (3rd col: append fast path)   1199.78   1220.61   1268.66      0.00      0.00
-build 256 ascending (3rd col: append fast path)      7.02      7.33      1.79      0.00      0.00
-build 4096 ascending (3rd col: append fast path)     67.97     64.81     11.33      0.00      0.00
-contains, size 8 (3rd col: branchless)            3.89      3.84      4.64      0.00      0.00
-contains, size 64 (3rd col: branchless)           5.95      5.70      6.17      0.00      0.00
-contains, size 1024 (3rd col: branchless)        11.61     10.01      9.52      0.00      0.00
-contains, size 65536 (3rd col: branchless)       42.68     44.13     18.74      0.00      0.00
+union 4 += 4 (overlap)                           33.32     55.82     61.78     47.98     40.35
+union 16 += 16 (overlap)                         56.87     92.91     98.57    110.81     69.31
+union 64 += 8 (sparse)                           95.60    150.33    157.29    137.86    101.43
+union 256 += 256                               2056.71   2693.96   2740.11   4525.16   2025.41
+union 1024 += 16                               1274.68   1794.40   1963.61   1626.72   1337.46
+union 16 += 1024                               1180.19   1515.59   1743.62   5578.67   2612.01
+union 1000 += subset                            785.21   1242.26   1676.49    535.33    812.93
+build 16 random (3rd col: append fast path)      10.13     10.25     10.75      0.00      0.00
+build 256 random (3rd col: append fast path)     15.53     15.99     16.63      0.00      0.00
+build 4096 random (3rd col: append fast path)    141.66    140.91    140.93      0.00      0.00
+build 256 ascending (3rd col: append fast path)      7.05      6.95      1.97      0.00      0.00
+build 4096 ascending (3rd col: append fast path)      9.27      9.46      1.56      0.00      0.00
+contains, size 8 (3rd col: branchless)            3.95      3.90      4.38      0.00      0.00
+contains, size 64 (3rd col: branchless)           5.88      5.99      6.12      0.00      0.00
+contains, size 1024 (3rd col: branchless)         8.98     10.80      9.40      0.00      0.00
+contains, size 65536 (3rd col: branchless)       14.33     56.32     18.53      0.00      0.00
 ```
 
 ## Profile of `devel`

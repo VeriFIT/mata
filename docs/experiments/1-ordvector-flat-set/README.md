@@ -4,7 +4,7 @@ title: Replace OrdVector with std::flat_set, or change its merge, search and sto
 status: rejected
 date: 2026-11-18
 base: 53021908 (devel)
-related: [PR #1067]
+related: ["PR #1067"]
 tags: [containers, performance, allocator]
 ---
 
@@ -29,6 +29,12 @@ Each variant is one patch against `53021908` in [`patches/`](patches/).
 | `delta-pool`      | reference: the existing `MATA_DELTA_ALLOCATOR=pool` made the build default.                               |
 | `stateset-pool`   | `delta-pool` + `StateSet` allocating from the same pool (the storage experiment).                         |
 
+The `flatset-merge` and `backmerge` patches assume that `keys` does not refer to the set's own storage. A span over
+the destination itself (`v.insert(std::span<const Key>{v})`) is undefined in both: `flatset-merge` passes iterators
+into the vector to its own range `insert`, and `backmerge` resizes the vector before reading `keys`. The baseline
+handles it, because `set_union` only reads both inputs into a new buffer. An adopted version would have to copy or
+special-case an aliased span.
+
 `std::flat_set` itself was not dropped in for `OrdVector`: its elements are immutable and its container is reachable
 only through `extract()`/`replace()`, while Mata mutates `SymbolPost`s in place inside a `StatePost`, appends unsorted
 elements and sorts afterwards, and uses `reserve`, `to_vector`, `rename` and `filter_indexes`. It also needs GCC 15 or
@@ -43,20 +49,23 @@ A small-buffer `StateSet` was not built: small inline sets already exist where s
 - **Profile:** `perf record` of a `RelWithDebInfo` build of `devel` over 40 sampled instances per experiment,
   samples attributed to the source file of the innermost inlined frame ([`tools/shares.sh`](tools/shares.sh)).
 - **Microbenchmark:** [`tools/micro.cc`](tools/micro.cc), `OrdVector` vs `std::flat_set` vs the merge and search
-  variants on `uint32_t` sets, `g++ 16.2 -O3 -DNDEBUG`, pinned to one core, minimum of 5.
+  variants on `uint32_t` sets, `g++ 16.2 -O3 -DNDEBUG`, pinned to one core, minimum of 5 timed repeats; the `build`
+  rows divide by the number of inserts actually performed.
 - **End to end:** the TACAS'24 Mata experiments through the automata-lib-bench `mata` interpreter builds
   ([`tools/run.py`](tools/run.py), [`tools/analyse.py`](tools/analyse.py)). All builds ran on each instance in
   shuffled order, 3 times, pinned to one core; the minimum counts. Timeout 30 s, memory limit 7 GB (heavy
   experiments) or 3 GB. Metric: operation time, i.e. `overall - mataparsing - mataminterm`. A byte copy of the
   `devel` binary (`devel-aa`) ran as an A/A control. 7,823 instances measured on every build, 188k process runs.
-- **Correctness:** every variant passed the full C++ test suite, and no instance gave a result different from
-  `devel`.
+- **Correctness:** every variant passed the full C++ test suite. On the 7,798 measured instances whose program prints
+  a `result`, every repeat of every build gave the same result as `devel`. `determinize-minimize` (the 25 measured
+  `regexps-det-min` instances) prints no result, so its answers were not compared.
 - `nfa-bench` at `1390e4ba0`, since the commit automata-lib-bench pinned was not on origin.
 - The raw measurements were not kept; [Reproducing](#reproducing) regenerates them.
 
 ## Results
 
-Full tables in [`results.md`](results.md). Total operation time against `devel`:
+Full tables in [`results.md`](results.md). Ratio of total operation time against `devel`, over the instances where
+every build finished and the `devel` operation time is at least 1 ms (the same population as in `results.md`):
 
 | experiment           | devel s | A/A   | flatset-merge | backmerge | append-fastpath | branchless-lb | delta-pool | stateset-pool |
 | -------------------- | ------- | ----- | ------------- | --------- | --------------- | ------------- | ---------- | ------------- |
@@ -68,16 +77,21 @@ Full tables in [`results.md`](results.md). Total operation time against `devel`:
 | regexps-det-min      | 17.90   | 1.025 | 1.015         | 0.976     | 1.042           | 0.976         | 0.988      | 0.994         |
 | email-filter         | 0.73    | 1.001 | 1.000         | 0.988     | 1.001           | 0.999         | 0.901      | 0.919         |
 
-- **Noise floor:** the identical binary differs by up to ±3% per experiment. All four `OrdVector` variants stay
-  within it everywhere.
+- **Noise:** the A/A column shows how far an identical binary drifts from `devel`: 0.972–1.025 on the experiments
+  above, and down to 0.910 on experiments with under 1 s in total (`noodler-compl`, 0.01 s). The four `OrdVector`
+  variants span 0.945–1.042 on the same experiments. The largest gaps to the A/A control are `flatset-merge` on
+  `param-inter-variadic` (0.945 vs 0.972, 25 instances) and `append-fastpath` on `regexps-det-min` (1.042 vs
+  1.025, 19 instances). Over all 2,656 qualifying instances, the geometric mean is 0.974 for the A/A control and
+  0.973–0.979 for the four variants: none of them separates from the noise.
 - **Profile:** code from `ord-vector.hh` is at most 0.06% of samples in any experiment. The hot set code is
   `SmallOrdVector` (up to 7%) and determinization's own `StateSetTable`.
-- **Microbenchmark** (ns per operation): `std::flat_set` and the `flatset-merge` strategy are 1.25–1.7× slower than
-  `OrdVector`'s `set_union` into a fresh buffer; merging back to front loses up to 5× when a small set takes in a
-  large one. The append fast path is 4–6× faster for ascending keys; the branchless search is 2.3× faster on 65,536
-  elements and slightly slower on 8–64.
-- **Storage:** `stateset-pool` matches `delta-pool` (all-instance geomean 0.971 vs 0.975), so `StateSet` allocations
-  cost nothing measurable.
+- **Microbenchmark** (ns per operation): `std::flat_set` and the `flatset-merge` strategy are 1.3–1.7× slower than
+  `OrdVector`'s `set_union` into a fresh buffer; merging back to front loses up to 4.7× when a small set takes in a
+  large one. The append fast path is 3.6–5.9× faster for ascending keys. The branchless search is not a reliable
+  gain: on 65,536 elements it was stable at 18.4–23 ns, while `std::lower_bound` varied between 14 and 34 ns across
+  runs of the same binary; on 8–64 elements it is slightly slower.
+- **Storage:** `stateset-pool` matches `delta-pool` (geometric mean over the 2,656 qualifying instances 0.971 vs
+  0.975), so `StateSet` allocations cost nothing measurable.
 
 ## Reproducing
 
@@ -115,8 +129,8 @@ cannot express how Mata uses `OrdVector`. None of the alternative algorithms mov
 `OrdVector`'s own operations are not on the hot paths: the hot sets are `SmallOrdVector` and dedicated structures.
 
 Worth revisiting only if a profile shows `ord-vector.hh` (or `std::lower_bound`/`std::set_union` called from it)
-taking a real share of time. If so, the append fast path and the branchless search are the candidates, not
-`std::flat_set`.
+taking a real share of time. If so, the append fast path is the candidate, not `std::flat_set`; the branchless search
+would need a benchmark over several runs first, as its microbenchmark gain did not reproduce reliably.
 
 ## Side findings
 

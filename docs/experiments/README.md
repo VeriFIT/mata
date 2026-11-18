@@ -34,7 +34,7 @@ title: One line
 status: rejected # rejected | inconclusive | superseded | partially adopted (link the PR)
 date: YYYY-MM-DD
 base: <commit> (<branch>)
-related: [] # issues, PRs
+related: [] # quoted issues and PRs, e.g. ["#123", "PR #456"]: an unquoted # starts a YAML comment
 discussion: # optional link
 tags: []
 ---

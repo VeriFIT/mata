@@ -219,33 +219,35 @@ int main() {
 		std::vector<Key> keys(static_cast<size_t>(size));
 		for (size_t k = 0; k < keys.size(); ++k) { keys[k] = static_cast<Key>(k * 3); }
 		if (!ordered) { std::ranges::shuffle(keys, rng); }
-		const size_t iters{std::max<size_t>(1, 2'000'000 / keys.size())};
+		// Whole builds only, timed per insert: about 2M inserts, at least one build.
+		const size_t builds{std::max<size_t>(1, 2'000'000 / keys.size())};
+		const size_t inserts{builds * keys.size()};
 		const double ov{time_ns(
 			[&] {
 				uint64_t acc{0};
-				for (size_t it = 0; it < iters; it += keys.size()) {
+				for (size_t build = 0; build < builds; ++build) {
 					OV set{};
 					for (const Key k : keys) { acc += set.insert(k).second; }
 				}
 				sink = acc;
 			},
-			iters
+			inserts
 		)};
 		const double fs{time_ns(
 			[&] {
 				uint64_t acc{0};
-				for (size_t it = 0; it < iters; it += keys.size()) {
+				for (size_t build = 0; build < builds; ++build) {
 					FS set{};
 					for (const Key k : keys) { acc += set.insert(k).second; }
 				}
 				sink = acc;
 			},
-			iters
+			inserts
 		)};
 		const double fp{time_ns(
 			[&] {
 				uint64_t acc{0};
-				for (size_t it = 0; it < iters; it += keys.size()) {
+				for (size_t build = 0; build < builds; ++build) {
 					std::vector<Key> set{};
 					for (const Key k : keys) {
 						if (set.empty() || set.back() < k) {
@@ -262,7 +264,7 @@ int main() {
 				}
 				sink = acc;
 			},
-			iters
+			inserts
 		)};
 		row(std::string{name} + " (3rd col: append fast path)", ov, fs, fp, 0, 0);
 	}
