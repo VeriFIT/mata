@@ -3,14 +3,15 @@
 import subprocess
 import sys
 
+OPTIONAL_PACKAGES = ("pandas", "networkx", "tabulate", "graphviz", "IPython")
+
 
 def run_import_probe(module: str) -> set[str]:
     """Import @module in a fresh interpreter and report which optional packages it loaded."""
     code = (
         "import sys;"
         f"import {module};"
-        "print(','.join(name for name in ('pandas', 'networkx', 'tabulate', 'graphviz')"
-        " if name in sys.modules))"
+        f"print(','.join(name for name in {OPTIONAL_PACKAGES!r} if name in sys.modules))"
     )
     result = subprocess.run(
         [sys.executable, "-c", code], capture_output=True, text=True, check=True
@@ -24,3 +25,7 @@ def test_importing_nfa_does_not_import_optional_dependencies():
 
 def test_importing_utils_does_not_import_tabulate():
     assert run_import_probe("libmata.utils") == set()
+
+
+def test_importing_plotting_does_not_import_optional_dependencies():
+    assert run_import_probe("libmata.plotting") == set()
