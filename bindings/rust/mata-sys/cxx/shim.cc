@@ -637,8 +637,11 @@ std::unique_ptr<Nfa> minimize_within(const Nfa& nfa, const Minimization algorith
 			// The normalizing path does not determinize a DFA.
 			const auto nondet_params = ParameterMap{{"algorithm", "hopcroft_nondet"}};
 			if (input.is_deterministic()) { return boxed_within(mata::nfa::minimize(input, nondet_params), limits); }
+			// As minimize_hopcroft_nondet(): dead states would otherwise grow reachable subsets past
+			// the limit, which trimming after the determinization can no longer remove.
+			Nfa trimmed{trim(input)};
 			return boxed_within(
-				limited_determinize(input, limits).transform([&](const Nfa& dfa) {
+				limited_determinize(trimmed, limits).transform([&](const Nfa& dfa) {
 					return mata::nfa::minimize(dfa, nondet_params);
 				}),
 				limits

@@ -759,6 +759,33 @@ fn minimize_within_limits_each_determinization() -> Result<(), Error> {
 }
 
 #[test]
+fn minimize_within_trims_before_the_bounded_determinization() -> Result<(), Error> {
+	// The trimmed core recognizes `a`. `a` also leads to a dead chain, so the automaton is
+	// nondeterministic and untrimmed determinization would count {1, 2}, {3}, {4} and {5}.
+	let mut nfa = Nfa::with_states(6);
+	nfa.add_initial(q(0))?;
+	nfa.add_final(q(1))?;
+	nfa.add_transition(q(0), Symbol::from(b'a'), q(1))?;
+	nfa.add_transition(q(0), Symbol::from(b'a'), q(2))?;
+	for state in 2..5 {
+		nfa.add_transition(q(state), Symbol::from(b'b'), q(state + 1))?;
+	}
+
+	let minimal = nfa.minimize_with(Minimization::HopcroftNondet);
+	assert_eq!(minimal.num_states(), 2);
+	let at = |max_states| Limits::new().max_states(max_states);
+	let within = nfa.minimize_within(Minimization::HopcroftNondet, &at(2))?;
+	assert!(within.is_equivalent_to(&minimal));
+	assert_eq!(within.num_states(), minimal.num_states());
+	assert_eq!(
+		nfa.minimize_within(Minimization::HopcroftNondet, &at(1))
+			.err(),
+		Some(LimitExceeded::States { max_states: 1 })
+	);
+	Ok(())
+}
+
+#[test]
 fn complement_within_counts_the_sink_state() -> Result<(), Error> {
 	// The DFA of `ab` has three states; its complement over {a, b, c} adds a sink.
 	let nfa = Nfa::from_regex("ab")?;
