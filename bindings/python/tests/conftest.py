@@ -34,43 +34,34 @@ def runs_without_the_gil():
         pytest.skip("the interpreter has no GIL")
 
     def _runs_without_the_gil(operation, budget_seconds=1.0):
-        """Return True iff this thread runs Python code while `operation` is still running.
+        """Return whether this thread observes the other thread still running `operation`.
 
-        The previous version polled `finished` exactly once after `entered.wait()` returned. That
-        is a single scheduling slot: a fast or short operation can complete before the main thread
-        wakes up again even when the call releases the GIL, which made the test flaky on macOS.
-        Poll in a loop for a bounded budget instead, so any window where the worker still has not
-        finished (because the GIL was released) is counted.
+        Do not poll immediately after `entered.wait()`: the worker has not necessarily reached
+        `operation()` yet, making even `lambda: None` look like it released the GIL. Sleeping here
+        yields the GIL to the worker; this main thread can then advance while `operation()` is in
+        progress only if that call releases the GIL too. The operations under test are deliberately
+        large enough to outlast the initial observation delay on every supported runner.
         """
         entered = threading.Event()
         finished = threading.Event()
-        # Force at least one observation window between "operation started" and "operation perhaps finished"
-        #  so the loop below cannot skip the question entirely on very fast operations.
-        ready = threading.Event()
 
         def run():
             entered.set()
-            ready.wait()
-            operation()
-            finished.set()
+            try:
+                operation()
+            finally:
+                finished.set()
 
         switch_interval = sys.getswitchinterval()
-        # Threads then switch only where one blocks or releases the GIL: the worker holds it from
-        #  `entered.set()` into `operation()`, so the main thread wakes up only if the call lets it.
+        # Prevent ordinary Python instruction preemption from masquerading as a native GIL release.
         sys.setswitchinterval(60)
         try:
-            worker = threading.Thread(target=run, daemon=True)
+            worker = threading.Thread(target=run)
             worker.start()
             entered.wait()
-            # Let the worker start `operation()`; main will run only if/when that call releases the
-            #  GIL. A short sleep forces the scheduler to consider re-waking us before the worker
-            #  has finished, so the polling loop below cannot miss the window.
             time.sleep(0.001)
-            ready.set()
             deadline = time.monotonic() + budget_seconds
             saw_running = False
-            # Each poll iteration where the worker still has not finished means the main thread
-            #  advanced while the operation was running, i.e. the GIL was released.
             while not finished.is_set() and time.monotonic() < deadline:
                 saw_running = True
                 time.sleep(0)
