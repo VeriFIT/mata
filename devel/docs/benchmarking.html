@@ -418,6 +418,50 @@ otherwise hide whether a source change really helped.</p></li>
 </ul>
 </section>
 </section>
+<section id="instrumenting-the-benchmarks-for-gcov">
+<h3>Instrumenting the benchmarks for gcov<a class="headerlink" href="#instrumenting-the-benchmarks-for-gcov" title="Link to this heading">¶</a></h3>
+<p>Two independent switches add <code class="docutils literal notranslate"><span class="pre">--coverage</span></code> (<code class="docutils literal notranslate"><span class="pre">-fprofile-arcs</span> <span class="pre">-ftest-coverage</span></code>) to a build. They
+instrument different sets of binaries, and the wider one already includes the benchmarks:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Values</p></th>
+<th class="head"><p>Instruments</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">MATA_ENABLE_COVERAGE</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ON</span></code>/<code class="docutils literal notranslate"><span class="pre">OFF</span></code> (default <code class="docutils literal notranslate"><span class="pre">OFF</span></code>)</p></td>
+<td><p>Everything built in the directory: <code class="docutils literal notranslate"><span class="pre">libmata</span></code>, the unit tests, the examples and the benchmarks</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">MATA_BENCH_PROFILING</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ON</span></code>/<code class="docutils literal notranslate"><span class="pre">OFF</span></code> (default <code class="docutils literal notranslate"><span class="pre">OFF</span></code>)</p></td>
+<td><p>The benchmark binaries built from <code class="docutils literal notranslate"><span class="pre">./tests-integration/src/</span></code> only</p></td>
+</tr>
+</tbody>
+</table>
+<p><code class="docutils literal notranslate"><span class="pre">MATA_ENABLE_COVERAGE</span></code> appends <code class="docutils literal notranslate"><span class="pre">-g</span> <span class="pre">--coverage</span></code> to <code class="docutils literal notranslate"><span class="pre">CMAKE_CXX_FLAGS</span></code> before any subdirectory is
+added, so it reaches the benchmarks as well: with <code class="docutils literal notranslate"><span class="pre">-DMATA_ENABLE_COVERAGE=ON</span> <span class="pre">-DMATA_BENCH_PROFILING=OFF</span></code>, the <code class="docutils literal notranslate"><span class="pre">compile_commands.json</span></code> entry of
+<code class="docutils literal notranslate"><span class="pre">tests-integration/src/unary-operations.cc</span></code> carries <code class="docutils literal notranslate"><span class="pre">--coverage</span></code>. Use it whenever the library, the
+unit tests and the benchmarks should all produce <code class="docutils literal notranslate"><span class="pre">.gcda</span></code> data. Note that <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">test-coverage</span></code>
+itself reports <em>library</em> coverage only: <code class="docutils literal notranslate"><span class="pre">gcovr.cfg</span></code> filters the sources to <code class="docutils literal notranslate"><span class="pre">src/</span></code> and <code class="docutils literal notranslate"><span class="pre">include/</span></code>
+and scans just <code class="docutils literal notranslate"><span class="pre">$(BUILD_DIR)/src</span></code> and <code class="docutils literal notranslate"><span class="pre">$(BUILD_DIR)/tests</span></code>, so the benchmark sources under
+<code class="docutils literal notranslate"><span class="pre">tests-integration/src/</span></code> are instrumented but never summarized. A report over the benchmark
+sources would need its own gcovr invocation over <code class="docutils literal notranslate"><span class="pre">$(BUILD_DIR)/tests-integration</span></code>, which the
+Makefile does not provide.</p>
+<p><code class="docutils literal notranslate"><span class="pre">MATA_BENCH_PROFILING</span></code> is the narrow case: gcov data for the benchmark binaries out of a build whose
+<code class="docutils literal notranslate"><span class="pre">libmata</span></code> stays uninstrumented, e.g. to see which benchmark branches a run takes while the library
+underneath keeps the code generation of a plain Release build:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>release<span class="w"> </span><span class="nv">MATA_BENCH_PROFILING</span><span class="o">=</span>ON
+</pre></div>
+</div>
+<p>Its default is <code class="docutils literal notranslate"><span class="pre">OFF</span></code> and is deliberately <em>not</em> tied to <code class="docutils literal notranslate"><span class="pre">${MATA_ENABLE_COVERAGE}</span></code>: coverage already
+reaches the benchmark targets through <code class="docutils literal notranslate"><span class="pre">CMAKE_CXX_FLAGS</span></code>, so such a default would only append the
+same <code class="docutils literal notranslate"><span class="pre">--coverage</span></code> flags a second time to every benchmark target without making either switch
+unnecessary. Turn <code class="docutils literal notranslate"><span class="pre">MATA_BENCH_PROFILING</span></code> on only when the rest of the build must stay
+uninstrumented, and turn it off again before measuring: <code class="docutils literal notranslate"><span class="pre">--coverage</span></code> instruments every arc and the
+resulting times are not comparable to a normal Release build.</p>
+</section>
 <section id="profiling">
 <h3>Profiling<a class="headerlink" href="#profiling" title="Link to this heading">¶</a></h3>
 <p>We provide the following profiling infrastructure. The following instructions assume a Linux environment. If you are using macOS, you will have to use a virtual environment or some other profiling tool (e.g., <code class="docutils literal notranslate"><span class="pre">instruments</span></code>).</p>
