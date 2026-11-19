@@ -340,7 +340,8 @@ TEST_CASE("mata::utils::TwoDimensionalMap switches to large mode above MaxMatrix
 TEST_CASE("mata::utils::TwoDimensionalMap sparse rows grow with second keys above 2^32") {
 	// The row budget keeps the storage on SparseRows with uint64_t keys: growth, rehashing and missing keys of the
 	//  64-bit Fibonacci probing path.
-	TwoDimensionalMap<uint64_t, true, 512> map(20, uint64_t{1} << 63);
+	using Map = TwoDimensionalMap<uint64_t, false, 512>;
+	Map map(20, uint64_t{1} << 63);
 	constexpr uint64_t high{(uint64_t{1} << 32) + 7};
 	for (uint64_t second = high; second < high + 64; ++second) { map.insert(0, second, second + 1); }
 	for (uint64_t first = 0; first < 20; ++first) {
@@ -352,7 +353,7 @@ TEST_CASE("mata::utils::TwoDimensionalMap sparse rows grow with second keys abov
 		for (uint64_t second = high; second < high + 64; ++second) {
 			const uint64_t expected{second + (first == 0 ? uint64_t{1} : first + 1)};
 			CHECK(map.get(first, second) == expected);
-			CHECK(map.get(first, second + 1'000) == TwoDimensionalMap<uint64_t, true, 512>::no_value);
+			CHECK(map.get(first, second + 1'000) == Map::no_value);
 		}
 	}
 }

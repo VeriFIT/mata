@@ -295,7 +295,7 @@ template <typename T, bool TrackInverted = true, size_t MaxMatrixBytes = 200'000
 		//  64-bit hash, so growing a row cannot shift by the width of a narrower hash (undefined behavior).
 		constexpr uint64_t multiplier{0x9e'37'79'b9'7f'4a'7c'15ULL};
 		const size_t mask{row.capacity() - 1};
-		size_t index{(static_cast<uint64_t>(key) * multiplier) >> row.shift};
+		size_t index{static_cast<size_t>((static_cast<uint64_t>(key) * multiplier) >> row.shift)};
 		while (row.slots[index].key != key && row.slots[index].key != no_value) { index = (index + 1) & mask; }
 		return index;
 	}
