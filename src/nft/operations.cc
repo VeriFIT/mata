@@ -790,16 +790,17 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 			}
 		}
 		for (const State cls_state : closure_of_src) { // For every state in its epsilon closure.
+			const bool cls_projected{is_projected_out(cls_state)};
 			if (nft.final[cls_state] && can_be_final(src_state)) { result.final.insert(src_state); }
 			for (const SymbolPost& move : nft.delta[cls_state]) {
 				for (const State tgt_state : move.targets) {
 					const bool is_loop_on_target = cls_state == tgt_state;
 					if (is_projected_along_path(cls_state, tgt_state)) { continue; }
-					if (is_projected_out(cls_state) && get_trans_len(cls_state, tgt_state) == 1 && !is_loop_on_target) {
+					if (cls_projected && get_trans_len(cls_state, tgt_state) == 1 && !is_loop_on_target) {
 						continue;
 					}
 
-					if (is_projected_out(cls_state)) {
+					if (cls_projected) {
 						// If there are remaining levels between cls_state and tgt_state
 						// on a transition with a length greater than 1, then these levels must be preserved.
 						moves.emplace_back(jump_mode != JumpMode::AppendDontCares ? move.symbol : DONT_CARE, tgt_state);
