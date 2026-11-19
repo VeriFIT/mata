@@ -2068,6 +2068,12 @@ Nfa mata::nfa::reduce(const Nfa& aut, StateRenaming* state_renaming, const Param
 			aut, haskey(params, "type") ? params.at("type") : "nfa", haskey(params, "solver") ? params.at("solver") : ""
 		);
 	} else if ("qbf" == algorithm) {
+		// The result is constructed anew, its states do not correspond to the states of the original automaton.
+		if (const std::string type{haskey(params, "type") ? params.at("type") : "nfa"}; type != "nfa") {
+			throw std::runtime_error(
+				std::to_string(__func__) + " received an unknown type of automaton for the \"qbf\" algorithm: " + type
+			);
+		}
 		result = algorithms::reduce_qbf(aut, haskey(params, "solver") ? params.at("solver") : "");
 	} else {
 		throw std::runtime_error(

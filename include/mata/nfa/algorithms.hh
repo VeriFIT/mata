@@ -468,8 +468,12 @@ Nfa reduce_sat(const Nfa& nfa, const std::string& type = "nfa", const std::strin
  * @param[in] solver Command running a QBF solver, given as for @c reduce_sat(). The solver is given a QDIMACS file as
  *  its last argument and has to print the result and the values of the outermost existential variables in the QDIMACS
  *  output format ("s cnf 1 ..." or "s cnf 0 ..." and "V" lines). If empty, the value of the environment variable
- *  @c MATA_QBF_SOLVER is used and, if that is not set, the first of @c depqbf and @c caqe found in @c PATH (run with
- *  @c --qdo, and DepQBF also with @c --no-dynamic-nenofex if it supports the option).
+ *  @c MATA_QBF_SOLVER is used and, if that is not set, the first of @c depqbf and @c caqe found in @c PATH, run with
+ *  @c --qdo. A command whose executable is named exactly @c depqbf (whatever its directory) is also run with
+ *  @c --no-dynamic-nenofex when its @c --help lists the option: DepQBF built with Nenofex prints the values of the
+ *  variables only with it, while older versions reject it. The probe runs the executable alone, and a probe killed by
+ *  a signal leaves the command unchanged. A DepQBF reached under another name (e.g. a @c depqbf-6 symlink or a
+ *  wrapper script) is not probed: pass @c --no-dynamic-nenofex in @p solver when that version needs it.
  * @return An NFA equivalent to @p nfa with the minimum number of states.
  * @throws ExternalSolverNotFound If no QBF solver can be found or run.
  * @throws std::runtime_error If the solver fails or its output cannot be understood.

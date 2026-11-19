@@ -84,6 +84,40 @@ cdef list _symbol_posts_list(const CStatePost& state_post):
     return symbol_posts
 
 
+cdef extern from *:
+    """
+    #include "mata/nfa/algorithms.hh"
+
+    /* Cython emits __Pyx_CppExn2PyErr() for the declarations using the plain "except +". */
+    static void __Pyx_CppExn2PyErr();
+
+    /* Called while a C++ exception is being handled: return the message of an ExternalSolverNotFound, or nullptr
+       after translating any other exception the way Cython translates it by default. The message is not copied, so
+       nothing here can throw: what() stays valid while the exception is handled, which spans the whole translator. */
+    static const char* mata_external_solver_not_found_message() {
+        try {
+            throw;
+        } catch (const mata::nfa::algorithms::ExternalSolverNotFound& error) {
+            return error.what();
+        } catch (...) {
+            __Pyx_CppExn2PyErr();
+            return nullptr;
+        }
+    }
+    """
+    const char* mata_external_solver_not_found_message()
+
+
+class ExternalSolverNotFound(RuntimeError):
+    """Raised when no external SAT or QBF solver can be found or run for reduce() with "sat" or "qbf"."""
+
+
+cdef void translate_mata_exception() except *:
+    """Translate the C++ exception being handled into a Python one."""
+    cdef const char* message = mata_external_solver_not_found_message()
+    if message != NULL:
+        raise ExternalSolverNotFound(message.decode("utf-8", "replace"))
+
 cdef class Run:
     """Wrapper over the run in NFA."""
     cdef mata_nfa.CRun *thisptr
@@ -1705,7 +1739,8 @@ def reduce(Nfa aut, params = None):
           variable MATA_SAT_SOLVER or MATA_QBF_SOLVER, then to a solver found in PATH (cadical, kissat,
           cryptominisat5, picosat; depqbf, caqe).
     :return: Reduced automaton.
-    :raises RuntimeError: If the reduction fails, e.g., when no solver is found for "algorithm": "sat" or "qbf".
+    :raises ExternalSolverNotFound: If no solver can be found or run for "algorithm": "sat" or "qbf".
+    :raises RuntimeError: If the reduction fails otherwise.
     """
     params = params or {"algorithm": "simulation"}
     cdef Nfa result = Nfa()

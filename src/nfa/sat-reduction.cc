@@ -21,6 +21,7 @@
 #include <fstream>
 #include <iterator>
 #include <limits>
+#include <locale>
 #include <map>
 #include <memory>
 #include <optional>
@@ -43,6 +44,12 @@
 	#ifdef __APPLE__
 		#include <crt_externs.h>
 	#endif
+#endif
+
+#if defined(MATA_EXTERNAL_SOLVERS_SUPPORTED) && !defined(__APPLE__)
+// glibc declares environ in <unistd.h> only with _GNU_SOURCE, which the compilers predefine on Linux, and the BSDs
+//  do not declare it at all; macOS has no environ in a shared library and uses _NSGetEnviron() instead.
+extern char** environ;
 #endif
 
 #include "mata/nfa/algorithms.hh"
@@ -430,6 +437,52 @@ struct SolverAnswer {
 
 #ifdef MATA_EXTERNAL_SOLVERS_SUPPORTED
 
+/// @p text with every byte that is not part of a valid UTF-8 sequence replaced by U+FFFD. Solver output, solver
+///  commands and paths are arbitrary bytes, while the messages of the exceptions reaching the bindings have to be
+///  valid UTF-8: Cython's translation of C++ exceptions raises UnicodeDecodeError on anything else.
+std::string printable(const std::string_view text) {
+	constexpr std::string_view replacement{"\xEF\xBF\xBD"};
+	const auto sequence_length{[](const unsigned char lead) -> size_t {
+		if (lead < 0x80) { return 1; }
+		if (lead >= 0xC2 && lead <= 0xDF) { return 2; }
+		if (lead >= 0xE0 && lead <= 0xEF) { return 3; }
+		if (lead >= 0xF0 && lead <= 0xF4) { return 4; }
+		return 0; // A continuation byte, an overlong lead, or a byte that cannot occur in UTF-8 at all.
+	}};
+	std::string result{};
+	result.reserve(text.size());
+	for (size_t position{0}; position < text.size();) {
+		const auto lead{static_cast<unsigned char>(text[position])};
+		const size_t length{sequence_length(lead)};
+		// The range of the first continuation byte excludes overlong encodings, surrogates and code points above
+		//  U+10FFFF; the later ones are unrestricted.
+		unsigned char low{0x80};
+		unsigned char high{0xBF};
+		if (lead == 0xE0) {
+			low = 0xA0;
+		} else if (lead == 0xED) {
+			high = 0x9F;
+		} else if (lead == 0xF0) {
+			low = 0x90;
+		} else if (lead == 0xF4) {
+			high = 0x8F;
+		}
+		bool valid{length != 0 && position + length <= text.size()};
+		for (size_t index{1}; valid && index < length; ++index) {
+			const auto byte{static_cast<unsigned char>(text[position + index])};
+			valid = byte >= (index == 1 ? low : 0x80) && byte <= (index == 1 ? high : 0xBF);
+		}
+		if (valid) {
+			result.append(text.substr(position, length));
+			position += length;
+		} else {
+			result.append(replacement);
+			++position;
+		}
+	}
+	return result;
+}
+
 /// Split a solver command into its executable and arguments, separated by whitespace. Single or double quotes enclose
 ///  parts containing whitespace. No other shell syntax is interpreted.
 std::vector<std::string> split_command(const std::string& command) {
@@ -455,7 +508,7 @@ std::vector<std::string> split_command(const std::string& command) {
 		}
 	}
 	if (quote != '\0') {
-		throw ExternalSolverNotFound("The solver command '" + command + "' has an unterminated quote.");
+		throw ExternalSolverNotFound("The solver command '" + printable(command) + "' has an unterminated quote.");
 	}
 	if (argument.has_value()) { arguments.push_back(std::move(*argument)); }
 	return arguments;
@@ -465,11 +518,27 @@ std::vector<std::string> split_command(const std::string& command) {
 std::string output_excerpt(const std::string& output) {
 	constexpr size_t max_length{1'000};
 	if (output.find_first_not_of(" \t\r\n") == std::string::npos) { return " The solver printed nothing."; }
-	const std::string excerpt{output.size() > max_length ? "..." + output.substr(output.size() - max_length) : output};
-	return " The solver printed:\n" + excerpt;
+	std::string_view excerpt{output};
+	std::string ellipsis{};
+	if (excerpt.size() > max_length) {
+		excerpt.remove_prefix(excerpt.size() - max_length);
+		// Cut the partial first line off, so that the excerpt does not start in the middle of a line, unless only
+		//  blank text would remain: one overlong line keeps its tail instead of reducing the excerpt to "...".
+		if (const size_t line_end{excerpt.find('\n')};
+			line_end != std::string_view::npos &&
+			excerpt.find_first_not_of(" \t\r\n", line_end + 1) != std::string_view::npos) {
+			excerpt.remove_prefix(line_end + 1);
+		}
+		ellipsis = "...\n";
+	}
+	return " The solver printed:\n" + ellipsis + printable(excerpt);
 }
 
+/// The exit code reported for a solver whose exit status could not be obtained.
+constexpr int unknown_exit_code{-1};
+
 /// Parse the output of a SAT solver in the SAT competition format, or of a QBF solver in the QDIMACS output format.
+///  @p exit_code is @c unknown_exit_code if the solver's exit status was lost, and @p solver has to be printable.
 SolverAnswer parse_solver_output(
 	const std::string& output,
 	const int exit_code,
@@ -511,7 +580,8 @@ SolverAnswer parse_solver_output(
 				if (parsed != token.size() || literal < -max_variable || literal > max_variable) {
 					throw std::runtime_error(
 						std::format(
-							"The solver '{}' printed an unexpected value '{}'.{}", solver, token, output_excerpt(output)
+							"The solver '{}' printed an unexpected value '{}'.{}", solver, printable(token),
+							output_excerpt(output)
 						)
 					);
 				}
@@ -523,8 +593,11 @@ SolverAnswer parse_solver_output(
 	if (!satisfiable.has_value() && (exit_code == 10 || exit_code == 20)) { satisfiable = exit_code == 10; }
 	if (!satisfiable.has_value()) {
 		throw std::runtime_error(
-			"The solver '" + solver + "' exited with code " + std::to_string(exit_code) +
-			" without reporting a result." + output_excerpt(output)
+			"The solver '" + solver + "' " +
+			(exit_code == unknown_exit_code
+				 ? std::string{"did not report a result."}
+				 : "exited with code " + std::to_string(exit_code) + " without reporting a result.") +
+			output_excerpt(output)
 		);
 	}
 	if (*satisfiable && !has_model) {
@@ -627,24 +700,54 @@ std::pair<int, std::string> run_process(std::vector<std::string> arguments, cons
 	if (const int error{::posix_spawn(&process, argv.front(), &actions, nullptr, argv.data(), environment())};
 		error != 0) {
 		throw ExternalSolverNotFound(
-			"Cannot run the solver '" + arguments.front() + "': " + std::generic_category().message(error) + "."
+			"Cannot run the solver '" + printable(arguments.front()) + "': " + std::generic_category().message(error) +
+			"."
 		);
 	}
 	int status{0};
+	bool reaped{true};
 	while (::waitpid(process, &status, 0) == -1) {
+		if (errno == ECHILD) {
+			// The host ignores SIGCHLD (signal(SIGCHLD, SIG_IGN), SA_NOCLDWAIT) or reaps children in a handler of
+			//  its own: the solver has finished, but its exit status is lost and only its output tells the result.
+			reaped = false;
+			break;
+		}
 		if (errno != EINTR) {
 			throw std::system_error(errno, std::generic_category(), "cannot wait for the solver to finish");
 		}
 	}
 	std::ifstream stream{output_file};
 	std::string output{std::istreambuf_iterator<char>{stream}, std::istreambuf_iterator<char>{}};
+	if (!reaped) { return {unknown_exit_code, std::move(output)}; }
 	if (WIFSIGNALED(status)) {
 		throw std::runtime_error(
-			"The solver '" + arguments.front() + "' was terminated by signal " + std::to_string(WTERMSIG(status)) +
-			"." + output_excerpt(output)
+			"The solver '" + printable(arguments.front()) + "' was terminated by signal " +
+			std::to_string(WTERMSIG(status)) + "." + output_excerpt(output)
 		);
 	}
-	return {WIFEXITED(status) ? WEXITSTATUS(status) : -1, std::move(output)};
+	return {WIFEXITED(status) ? WEXITSTATUS(status) : unknown_exit_code, std::move(output)};
+}
+
+/// Add --no-dynamic-nenofex to @p solver if it runs a DepQBF supporting the option: DepQBF built with Nenofex (e.g.,
+///  version 6 from Homebrew) prints the values of variables only with it, while older versions reject it. The output
+///  of the probing run is written to @p directory.
+void add_depqbf_options(std::vector<std::string>& solver, const std::filesystem::path& directory) {
+	if (std::filesystem::path{solver.front()}.filename() != "depqbf" ||
+		std::find(solver.begin(), solver.end(), "--no-dynamic-nenofex") != solver.end()) {
+		return;
+	}
+	std::string help{};
+	try {
+		help = run_process({solver.front(), "--help"}, directory / "help.txt").second;
+	} catch (const ExternalSolverNotFound&) { throw; } catch (const std::system_error&) {
+		throw;
+	} catch (const std::runtime_error&) {
+		// The probe was killed by a signal, e.g. a wrapper that needs its configured arguments. Leave the command
+		//  unchanged: the run with the full command decides whether the solver works.
+		return;
+	}
+	if (help.find("--no-dynamic-nenofex") != std::string::npos) { solver.emplace_back("--no-dynamic-nenofex"); }
 }
 
 /// The command running a SAT or QBF solver: @p command, or the value of the environment variable, or the first default
@@ -659,11 +762,12 @@ std::vector<std::string>
 		const std::optional<std::filesystem::path> executable{find_executable(arguments.front())};
 		if (!executable.has_value()) {
 			throw ExternalSolverNotFound(
-				"The " + kind + " solver '" + arguments.front() + "' " + origin +
+				"The " + kind + " solver '" + printable(arguments.front()) + "' " + origin +
 				" cannot be found or is not executable."
 			);
 		}
 		arguments.front() = executable->string();
+		if (quantified) { add_depqbf_options(arguments, directory); }
 		return arguments;
 	}};
 	if (!command.empty()) { return resolve(command, "given by the \"solver\" parameter"); }
@@ -682,15 +786,8 @@ std::vector<std::string>
 	std::string names{};
 	for (std::vector<std::string> solver : defaults) {
 		if (const std::optional<std::filesystem::path> executable{find_executable(solver.front())}) {
-			const bool is_depqbf{solver.front() == "depqbf"};
 			solver.front() = executable->string();
-			// DepQBF built with Nenofex (e.g., version 6 from Homebrew) prints the values of variables only with
-			//  --no-dynamic-nenofex, which older versions reject.
-			if (is_depqbf &&
-				run_process({solver.front(), "--help"}, directory / "help.txt").second.find("--no-dynamic-nenofex") !=
-					std::string::npos) {
-				solver.emplace_back("--no-dynamic-nenofex");
-			}
+			add_depqbf_options(solver, directory);
 			return solver;
 		}
 		names += (names.empty() ? "" : ", ") + solver.front();
@@ -715,13 +812,17 @@ class ExternalSolver {
 	SolverAnswer solve(const Formula& formula) {
 		const std::filesystem::path file{directory_.path() / (quantified_ ? "formula.qdimacs" : "formula.cnf")};
 		std::ofstream stream{file};
+		// The global locale may group digits ("p cnf 320 1,294"), which solvers reject.
+		stream.imbue(std::locale::classic());
 		formula.write(stream, quantified_);
 		stream.close();
 		if (!stream) { throw std::runtime_error("Cannot write the formula for the solver to " + file.string() + "."); }
 		std::vector<std::string> arguments{arguments_};
 		arguments.push_back(file.string());
 		const auto [exit_code, output]{run_process(std::move(arguments), directory_.path() / "output.txt")};
-		return parse_solver_output(output, exit_code, quantified_, formula.num_of_variables(), arguments_.front());
+		return parse_solver_output(
+			output, exit_code, quantified_, formula.num_of_variables(), printable(arguments_.front())
+		);
 	}
 
   private:
@@ -788,7 +889,11 @@ Nfa reduce_exactly(const Nfa& nfa, const Mode mode, const std::string& solver_co
 	const auto restore_symbols{[&](const Nfa& aut) {
 		return with_renamed_symbols(aut, [&](const Symbol symbol) { return symbols[symbol]; }, nfa.alphabet);
 	}};
-	if (target.num_of_states() == 0) { return Nfa{0, {}, {}, nfa.alphabet}; } // The empty language.
+	if (target.num_of_states() == 0) {
+		// The empty language: a deterministic automaton needs one state, as is_deterministic() requires an initial
+		//  state, while the minimal NFA has none.
+		return mode == Mode::SatDfa ? Nfa{1, {0}, {}, nfa.alphabet} : Nfa{0, {}, {}, nfa.alphabet};
+	}
 
 	// An automaton found without a solver, minimal once no smaller automaton exists.
 	const Nfa upper_bound{
@@ -812,7 +917,7 @@ Nfa reduce_exactly(const Nfa& nfa, const Mode mode, const std::string& solver_co
 			}
 			std::set<Word>& words{target.is_in_lang(counterexample.word) ? samples.accepted : samples.rejected};
 			if (!words.insert(counterexample.word).second) {
-				throw std::logic_error(
+				throw std::runtime_error(
 					"The automaton found by the solver does not agree with the sample words it was built from."
 				);
 			}
