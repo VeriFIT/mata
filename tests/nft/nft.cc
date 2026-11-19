@@ -1861,11 +1861,14 @@ TEST_CASE("mata::nft naive inclusion keeps EPSILON among its complement symbols"
 	CHECK(!are_equivalent(ear, empty));
 }
 
-TEST_CASE("mata::nft DONT_CARE does not match EPSILON synthesized by make_complete()") {
-	// Adding EPSILON to the complement alphabet makes make_complete() insert an EPSILON move into every state that
-	//  misses it. The wildcard loop of intersection() must not then overlap DONT_CARE against that synthetic EPSILON:
-	//  nft.hh documents DONT_CARE as covering every non-epsilon symbol only. The unreachable EPSILON loop on this
-	//  automaton alone drives the completion; without the fix, naive self-inclusion is false.
+TEST_CASE("mata::nft naive inclusion keeps DONT_CARE distinct from a synthesized EPSILON") {
+	// The bigger transducer carries a DONT_CARE letter and one unreachable EPSILON loop; with EPSILON added to the
+	//  complement alphabet, make_complete() would synthesize an EPSILON move on every state that misses it. The
+	//  intersection's wildcard loop must not then overlap DONT_CARE against that synthetic EPSILON (the contract is
+	//  DONT_CARE = every non-EPSILON symbol). Naive inclusion falls back to antichains here, since its lazy
+	//  unwinding matches DONT_CARE against concrete symbols only. Without that fallthrough the self-inclusion is
+	//  false. `compose_general_reference()` keeps the opposite semantics on purpose: its self-loop padding
+	//  requires DONT_CARE to also match EPSILON, so naive cannot globally forbid the overlap.
 	Nft t = Nft::with_levels(1, 3, {0}, {1});
 	t.delta.add(0, DONT_CARE, 1);
 	t.delta.add(2, EPSILON, 2);

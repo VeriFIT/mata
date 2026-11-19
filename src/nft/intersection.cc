@@ -118,9 +118,6 @@ Nft mata::nft::algorithms::product(
 			}
 		);
 		for (const auto& specific_symbol_post : specific_state_post) {
-			// DONT_CARE matches every non-EPSILON symbol (see `nft.hh`); it must not overlap the EPSILON link that
-			//  Nft::make_complete() adds to a state missing EPSILON in the given alphabet.
-			if (specific_symbol_post.symbol == EPSILON) { continue; }
 			const auto specific_passing = std::count_if(
 				specific_symbol_post.targets.begin(), specific_symbol_post.targets.end(),
 				[&](const State specific_target) {

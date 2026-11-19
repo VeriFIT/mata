@@ -641,6 +641,14 @@ bool algorithms::is_included_naive(
 		return std::ranges::any_of(nft.delta, [](const StatePost& post) { return post.find(EPSILON) != post.end(); });
 	}};
 	if (has_epsilon(smaller) || has_epsilon(bigger)) { complement_symbols.insert(EPSILON); }
+	// If the bigger still holds a DONT_CARE letter and we are about to complete EPSILON, make_complete() would
+	//  insert a synthetic EPSILON move on every state that misses it, and the intersection's wildcard loop would
+	//  then carry it over to the smaller's DONT_CARE. That accepts a round that is not in the smaller. The
+	//  antichain path does not have this problem: its lazy unwinding matches DONT_CARE only against the
+	//  alphabet's concrete symbols, never against EPSILON.
+	if (complement_symbols.contains(EPSILON) && has_dont_care_transition(bigger)) {
+		return is_included_antichains(smaller, bigger, alphabet, cex, jump_mode);
+	}
 	const Nft bigger_cmpl{complement(bigger, complement_symbols)};
 	const Nft nft_isect = intersection(smaller, bigger_cmpl, nullptr, jump_mode);
 
