@@ -1304,7 +1304,7 @@ Nfa mata::nfa::algorithms::minimize_brzozowski(const Nfa& aut) {
 	return determinize(revert(determinize(revert(aut))));
 }
 
-Nfa mata::nfa::algorithms::minimize_auto(const Nfa& aut) {
+Nfa mata::nfa::algorithms::minimize_hopcroft_nondet(const Nfa& aut) {
 	// Brzozowski determinizes twice, so it can blow up exponentially even on an input that already is a trimmed
 	//  DFA; Hopcroft is O(a*n*log(n)) on such an input and supports partial transition functions, so the
 	//  determinization is only needed when the input is not deterministic.
@@ -1326,6 +1326,8 @@ Nfa mata::nfa::algorithms::minimize_auto(const Nfa& aut) {
 	return minimize_hopcroft(deterministic);
 }
 
+Nfa mata::nfa::algorithms::minimize_auto(const Nfa& aut) { return minimize_hopcroft_nondet(aut); }
+
 Nfa mata::nfa::minimize(const Nfa& aut, const ParameterMap& params) {
 	// 'algo' is reassigned in the 'else if' below, which 'misc-const-correctness' does not see.
 	// NOLINTNEXTLINE(misc-const-correctness)
@@ -1343,10 +1345,9 @@ Nfa mata::nfa::minimize(const Nfa& aut, const ParameterMap& params) {
 	} else if ("brzozowski" == str_algo) {
 		algo = algorithms::minimize_brzozowski;
 	} else if ("hopcroft" == str_algo) {
-		// `minimize_hopcroft()` only refines an existing partition, so it needs a deterministic input; on an
-		//  NFA it used to keep one target per symbol post and return a different language. Normalize the
-		//  input first, which is what the "auto" strategy does before it runs the same core.
-		algo = algorithms::minimize_auto;
+		algo = algorithms::minimize_hopcroft;
+	} else if ("hopcroft_nondet" == str_algo) {
+		algo = algorithms::minimize_hopcroft_nondet;
 	} else {
 		throw std::runtime_error(
 			std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + str_algo
@@ -1891,7 +1892,8 @@ Nfa quotient_by_bisimulation(const Nfa& aut, StateRenaming& state_renaming) {
 	throw std::invalid_argument(
 		"mata::nfa::algorithms::minimize_hopcroft() requires a deterministic automaton; the refinement keeps "
 		"one target per symbol post, so a nondeterministic input yields a different language. Call "
-		"minimize() with algorithm=\"auto\", or determinize() and trim() the automaton first."
+		"minimize_hopcroft_nondet(), use minimize() with algorithm=\"auto\" or \"hopcroft_nondet\", or "
+		"determinize() and trim() the automaton first."
 	);
 }
 } // namespace

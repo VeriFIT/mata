@@ -17,17 +17,18 @@ pub enum Determinization {
 	Classical,
 }
 
-/// How [`Nfa::minimize_with`](crate::Nfa::minimize_with) minimizes. Both give the minimal (trimmed) DFA.
+/// How [`Nfa::minimize_with`](crate::Nfa::minimize_with) minimizes. The minimizing strategies give a trimmed DFA.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum Minimization {
 	/// Brzozowski's algorithm: determinize the reversal twice. Works on any automaton, but can blow up
 	/// exponentially even on a DFA.
 	Brzozowski,
-	/// Hopcroft's partition refinement. The automaton is determinized and trimmed first when needed
-	/// (Mata's `"auto"`).
-	#[default]
+	/// Hopcroft's partition refinement on a trimmed DFA, without input normalization.
 	Hopcroft,
+	/// Normalize an arbitrary automaton, then apply Hopcroft's partition refinement.
+	#[default]
+	HopcroftNondet,
 }
 
 /// How [`Nfa::complement_with`](crate::Nfa::complement_with) complements.
@@ -116,6 +117,7 @@ impl From<Minimization> for ffi::Minimization {
 		match algorithm {
 			Minimization::Brzozowski => ffi::Minimization::Brzozowski,
 			Minimization::Hopcroft => ffi::Minimization::Hopcroft,
+			Minimization::HopcroftNondet => ffi::Minimization::HopcroftNondet,
 		}
 	}
 }

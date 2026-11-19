@@ -221,7 +221,7 @@ const ParameterMap RESIDUAL_AFTER{{"algorithm", "residual"}, {"type", "after"}, 
 const ParameterMap RESIDUAL_WITH{{"algorithm", "residual"}, {"type", "with"}, {"direction", "forward"}};
 const ParameterMap CLASSICAL{{"algorithm", "classical"}};
 const ParameterMap BRZOZOWSKI{{"algorithm", "brzozowski"}};
-const ParameterMap HOPCROFT{{"algorithm", "hopcroft"}};
+const ParameterMap HOPCROFT_NONDET{{"algorithm", "hopcroft_nondet"}};
 const ParameterMap NAIVE{{"algorithm", "naive"}};
 const ParameterMap ANTICHAINS{{"algorithm", "antichains"}};
 
@@ -245,11 +245,11 @@ void check_nfa_properties(
 	CHECK(same_language_on(reduce(nfa, nullptr, RESIDUAL_AFTER), nfa, words));
 	CHECK(same_language_on(reduce(nfa, nullptr, RESIDUAL_WITH), nfa, words));
 
-	// Both minimization algorithms accept the raw automaton now: "hopcroft" normalizes its input first
-	//  (#734), so it has to agree with Brzozowski both in language and in state count.
+	// Both algorithms accept the raw automaton: "hopcroft_nondet" normalizes its input first (#734), so it
+	//  has to agree with Brzozowski both in language and in state count.
 	const Nfa brzozowski{minimize(nfa, BRZOZOWSKI)};
 	CHECK(same_language_on(brzozowski, nfa, words));
-	const Nfa hopcroft{minimize(nfa, HOPCROFT)};
+	const Nfa hopcroft{minimize(nfa, HOPCROFT_NONDET)};
 	CHECK(same_language_on(hopcroft, nfa, words));
 	// The language and the state count alone can also be met by an NFA, so require a DFA unconditionally.
 	CHECK(hopcroft.is_deterministic());
@@ -478,7 +478,7 @@ TEST_CASE("mata::nfa differential: the forward simulation is the greatest fixpoi
 	for (unsigned seed{0}; seed < 400; ++seed) { check_simulation(seed); }
 }
 
-// minimize(nfa, "hopcroft") on the raw random NFA is checked above since #734 fixed its input normalization.
+// minimize(nfa, "hopcroft_nondet") on the raw random NFA is checked above since #734 fixed its input normalization.
 
 // A hidden sweep over larger automata and longer words; the tagged-out default run stays fast.
 TEST_CASE("mata::nfa differential: larger sweep", "[.differential-sweep]") {

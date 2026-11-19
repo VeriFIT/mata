@@ -229,7 +229,7 @@ proptest! {
 		assert_language(&classical, |w| m.accepts(w), "determinize classical");
 
 		let brzozowski = nfa.minimize_with(Minimization::Brzozowski);
-		let hopcroft = nfa.minimize_with(Minimization::Hopcroft);
+		let hopcroft = nfa.minimize_with(Minimization::HopcroftNondet);
 		for minimal in [&brzozowski, &hopcroft] {
 			prop_assert!(minimal.is_deterministic());
 			prop_assert!(minimal.is_minimal());
@@ -242,6 +242,14 @@ proptest! {
 		prop_assert_eq!(brzozowski.num_states(), hopcroft.num_states());
 		let mut trimmed_dfa = dfa.clone();
 		trimmed_dfa.trim();
+		if trimmed_dfa.num_states() > 0 {
+			let direct_hopcroft = trimmed_dfa.minimize_with(Minimization::Hopcroft);
+			prop_assert!(direct_hopcroft.is_minimal());
+			assert_language(&direct_hopcroft, |w| m.accepts(w), "direct Hopcroft");
+			prop_assert_eq!(direct_hopcroft.num_states(), hopcroft.num_states());
+			let within = trimmed_dfa.minimize_within(Minimization::Hopcroft, &Limits::new())?;
+			prop_assert_eq!(within.num_states(), direct_hopcroft.num_states());
+		}
 		// The minimal DFA of the empty language is one state; trimming leaves none.
 		prop_assert!(hopcroft.num_states() <= trimmed_dfa.num_states().max(1));
 
@@ -283,7 +291,7 @@ proptest! {
 		// The minimal DFA is unique only up to state renumbering: both algorithms, and a direct
 		// `minimize_within` on a nondeterministic input, may number the same canonical output
 		// differently. Require language equivalence and the same size, not structural identity.
-		for algorithm in [Minimization::Brzozowski, Minimization::Hopcroft] {
+		for algorithm in [Minimization::Brzozowski, Minimization::HopcroftNondet] {
 			let minimal = x.minimize_with(algorithm);
 			let within = x.minimize_within(algorithm, &Limits::new())?;
 			prop_assert!(within.is_equivalent_to(&minimal));
@@ -291,9 +299,9 @@ proptest! {
 			prop_assert!(x.minimize_within(algorithm, &at(minimal.num_states() - 1)).is_err());
 		}
 		// Hopcroft's algorithm determinizes at most once.
-		let hopcroft = x.minimize_with(Minimization::Hopcroft);
+		let hopcroft = x.minimize_with(Minimization::HopcroftNondet);
 		let enough = at(dfa.num_states().max(hopcroft.num_states()));
-		let hopcroft_within = x.minimize_within(Minimization::Hopcroft, &enough)?;
+		let hopcroft_within = x.minimize_within(Minimization::HopcroftNondet, &enough)?;
 		prop_assert!(hopcroft_within.is_equivalent_to(&hopcroft));
 		prop_assert_eq!(hopcroft_within.num_states(), hopcroft.num_states());
 

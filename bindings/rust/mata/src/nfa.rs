@@ -720,8 +720,8 @@ impl Nfa {
 	}
 
 	/// [`Nfa::minimize_with`] within `limits`. The limit applies to each determinization (one for
-	/// [`Minimization::Hopcroft`] unless the automaton is deterministic, two for
-	/// [`Minimization::Brzozowski`]) and to the result.
+	/// [`Minimization::HopcroftNondet`] unless the automaton is deterministic, none for
+	/// [`Minimization::Hopcroft`], two for [`Minimization::Brzozowski`]) and to the result.
 	///
 	/// # Errors
 	///

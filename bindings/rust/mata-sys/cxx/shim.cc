@@ -523,8 +523,9 @@ std::unique_ptr<Nfa> minimize(const Nfa& nfa, const Minimization algorithm) {
 		case Minimization::Brzozowski:
 			return boxed(trimmed_minimal(mata::nfa::minimize(input, {{"algorithm", "brzozowski"}})));
 		case Minimization::Hopcroft:
-			// "auto" determinizes and trims first: Hopcroft's algorithm needs a trimmed DFA.
-			return boxed(mata::nfa::minimize(input, {{"algorithm", "auto"}}));
+			return boxed(mata::nfa::minimize(input, {{"algorithm", "hopcroft"}}));
+		case Minimization::HopcroftNondet:
+			return boxed(mata::nfa::minimize(input, {{"algorithm", "hopcroft_nondet"}}));
 	}
 	throw std::invalid_argument("unknown Minimization");
 }
@@ -630,13 +631,15 @@ std::unique_ptr<Nfa> minimize_within(const Nfa& nfa, const Minimization algorith
 	switch (algorithm) {
 		case Minimization::Brzozowski:
 			return boxed_within(limited_brzozowski(input, limits).transform(trimmed_minimal), limits);
-		case Minimization::Hopcroft: {
-			// minimize_auto(), which does not determinize a DFA.
-			const auto auto_params = ParameterMap{{"algorithm", "auto"}};
-			if (input.is_deterministic()) { return boxed_within(mata::nfa::minimize(input, auto_params), limits); }
+		case Minimization::Hopcroft:
+			return boxed_within(mata::nfa::minimize(input, {{"algorithm", "hopcroft"}}), limits);
+		case Minimization::HopcroftNondet: {
+			// The normalizing path does not determinize a DFA.
+			const auto nondet_params = ParameterMap{{"algorithm", "hopcroft_nondet"}};
+			if (input.is_deterministic()) { return boxed_within(mata::nfa::minimize(input, nondet_params), limits); }
 			return boxed_within(
 				limited_determinize(input, limits).transform([&](const Nfa& dfa) {
-					return mata::nfa::minimize(dfa, auto_params);
+					return mata::nfa::minimize(dfa, nondet_params);
 				}),
 				limits
 			);

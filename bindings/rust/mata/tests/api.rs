@@ -172,11 +172,11 @@ fn determinize_the_largest_symbol() -> Result<(), Error> {
 }
 
 #[test]
-fn hopcroft_works_on_nondeterministic_input() -> Result<(), Error> {
-	// Mata's Hopcroft minimization needs a trimmed DFA.
+fn hopcroft_nondet_works_on_nondeterministic_input() -> Result<(), Error> {
+	// The nondeterministic Hopcroft wrapper normalizes before partition refinement.
 	let nfa = Nfa::from_regex("(a|b)*a(a|b)")?;
 	assert!(!nfa.is_deterministic());
-	let hopcroft = nfa.minimize_with(Minimization::Hopcroft);
+	let hopcroft = nfa.minimize_with(Minimization::HopcroftNondet);
 	assert!(hopcroft.is_deterministic());
 	assert!(hopcroft.is_equivalent_to(&nfa));
 	assert_eq!(hopcroft.num_states(), nfa.minimize().num_states());
@@ -186,7 +186,7 @@ fn hopcroft_works_on_nondeterministic_input() -> Result<(), Error> {
 
 	// The empty language: a single non-final initial state, from both algorithms.
 	let empty = Nfa::with_states(3);
-	for algorithm in [Minimization::Brzozowski, Minimization::Hopcroft] {
+	for algorithm in [Minimization::Brzozowski, Minimization::HopcroftNondet] {
 		let minimal = empty.minimize_with(algorithm);
 		assert_eq!(
 			(minimal.num_states(), minimal.initial_states().len()),

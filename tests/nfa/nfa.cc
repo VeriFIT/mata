@@ -4688,16 +4688,17 @@ TEST_CASE("mata::nfa::minimize() with the default \"auto\" strategy") {
 		CHECK(num_of_nondeterministic > 30);
 	}
 
-	SECTION("\"hopcroft\" normalizes its input - issue #734") {
-		// `minimize_hopcroft()` keeps one target per symbol post, so asking for it by name on a
-		//  nondeterministic input used to return a different language, and on an untrimmed DFA a result that
-		//  was not minimal. Both preconditions were checked only by an assertion, so Release builds were
-		//  silent about it.
+	SECTION("\"hopcroft_nondet\" normalizes its input - issue #734") {
+		// `minimize_hopcroft()` keeps one target per symbol post, so the old dispatcher could return a different
+		//  language on a nondeterministic input, and a nonminimal result on an untrimmed DFA. The explicit lean path
+		//  now rejects the former; the nondeterministic wrapper normalizes both.
 		Nfa nfa{3, {0}, {2}};
 		nfa.delta.add(0, 'a', 1);
 		nfa.delta.add(0, 'a', 2);
 		nfa.delta.add(1, 'b', 2);
-		const Nfa minimized{minimize(nfa, {{"algorithm", "hopcroft"}})};
+		CHECK_THROWS_AS(minimize(nfa, {{"algorithm", "hopcroft"}}), std::invalid_argument);
+		const Nfa minimized{algorithms::minimize_hopcroft_nondet(nfa)};
+		CHECK(are_equivalent(minimized, minimize(nfa, {{"algorithm", "hopcroft_nondet"}})));
 		CHECK(are_equivalent(minimized, nfa));
 		CHECK(minimized.is_in_lang(Word{'a'}));
 		CHECK(minimized.is_in_lang(Word{'a', 'b'}));
@@ -4707,16 +4708,16 @@ TEST_CASE("mata::nfa::minimize() with the default \"auto\" strategy") {
 		untrimmed.delta.add(0, 'a', 1);
 		untrimmed.delta.add(0, 'b', 2);
 		untrimmed.delta.add(2, 'a', 2); // State 2 is useless.
-		const Nfa from_untrimmed{minimize(untrimmed, {{"algorithm", "hopcroft"}})};
+		const Nfa from_untrimmed{minimize(untrimmed, {{"algorithm", "hopcroft_nondet"}})};
 		CHECK(are_equivalent(from_untrimmed, untrimmed));
 		CHECK(from_untrimmed.num_of_states() == minimize(untrimmed, {{"algorithm", "brzozowski"}}).num_of_states());
 
 		Nfa two_initials{3, {0, 1}, {2}};
 		two_initials.delta.add(0, 'a', 2);
 		two_initials.delta.add(1, 'b', 2); // A different word: dropping either initial branch must be caught.
-		CHECK(are_equivalent(minimize(two_initials, {{"algorithm", "hopcroft"}}), two_initials));
+		CHECK(are_equivalent(minimize(two_initials, {{"algorithm", "hopcroft_nondet"}}), two_initials));
 
-		const Nfa empty{minimize(Nfa{}, {{"algorithm", "hopcroft"}})};
+		const Nfa empty{minimize(Nfa{}, {{"algorithm", "hopcroft_nondet"}})};
 		// The canonical empty-language DFA: one initial state, no final states, no transitions.
 		CHECK(empty.is_lang_empty());
 		CHECK(empty.num_of_states() == 1);
@@ -4731,7 +4732,7 @@ TEST_CASE("mata::nfa::minimize() with the default \"auto\" strategy") {
 		auto alphabet{std::make_shared<OnTheFlyAlphabet>()};
 		alphabet->add_new_symbol("a", 'a');
 		letterless.alphabet = alphabet;
-		const Nfa minimized_letterless{minimize(letterless, {{"algorithm", "hopcroft"}})};
+		const Nfa minimized_letterless{minimize(letterless, {{"algorithm", "hopcroft_nondet"}})};
 		CHECK(minimized_letterless.is_lang_empty());
 		REQUIRE(minimized_letterless.alphabet != nullptr);
 		CHECK(minimized_letterless.alphabet->get_alphabet_symbols() == OrdVector<Symbol>{'a'});

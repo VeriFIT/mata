@@ -78,7 +78,7 @@ pub(crate) const HINTS: &[Hint] = &[
 	Hint {
 		operation: "nfa:minimize",
 		name: "algorithm",
-		values: &["hopcroft", "brzozowski"],
+		values: &["hopcroft", "hopcroft_nondet", "brzozowski"],
 	},
 	Hint {
 		operation: "nfa:reduce",
@@ -2110,7 +2110,8 @@ fn dispatch_nfa_transformations(
 			let [value] = take(arguments, name)?;
 			let algorithm = match hint_value(engine, name, "algorithm") {
 				"brzozowski" => Minimization::Brzozowski,
-				_ => Minimization::Hopcroft,
+				"hopcroft" => Minimization::Hopcroft,
+				_ => Minimization::HopcroftNondet,
 			};
 			Ok(Value::Nfa(Rc::new(
 				expect_nfa(&value)?.minimize_with(algorithm),
