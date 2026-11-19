@@ -396,7 +396,7 @@ TEST_CASE("mata::utils::TwoDimensionalMap keeps one hash table per first key") {
 
 		for (uint16_t first = 0; first < first_dim_size; ++first) {
 			for (uint16_t second = 0; second < second_dim_size; ++second) {
-				map.insert(first, second, first * second_dim_size + second);
+				map.insert(first, second, static_cast<uint16_t>(first * second_dim_size + second));
 			}
 		}
 		for (uint16_t first = 0; first < first_dim_size; ++first) {
@@ -408,11 +408,13 @@ TEST_CASE("mata::utils::TwoDimensionalMap keeps one hash table per first key") {
 			}
 		}
 
-		// Overwriting an existing pair moves it to the new value.
-		map.insert(last_value / second_dim_size, second_dim_size - 1, last_value + 1);
-		CHECK(map.get(last_value / second_dim_size, second_dim_size - 1) == last_value + 1);
-		CHECK(map.get_first_inverted(last_value + 1) == last_value / second_dim_size);
-		CHECK(map.get_second_inverted(last_value + 1) == second_dim_size - 1);
+		// Overwriting an existing pair moves it to the new value. uint16_t arithmetic promotes to int,
+		//  so wrap the value back explicitly before passing it to the typed Map::insert().
+		constexpr uint16_t past_last_value{static_cast<uint16_t>(last_value + 1)};
+		map.insert(last_value / second_dim_size, second_dim_size - 1, past_last_value);
+		CHECK(map.get(last_value / second_dim_size, second_dim_size - 1) == past_last_value);
+		CHECK(map.get_first_inverted(past_last_value) == last_value / second_dim_size);
+		CHECK(map.get_second_inverted(past_last_value) == second_dim_size - 1);
 
 		// insert_if_absent() refuses the new value of an existing pair and returns the stored one.
 		CHECK(map.insert_if_absent(3, 4, 1'234) == std::pair(uint16_t{304}, false));
