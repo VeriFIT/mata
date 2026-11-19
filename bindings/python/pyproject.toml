@@ -56,7 +56,8 @@ dev = [
 [build-system]
 # The sources are Cython 3 only (cimports of libcpp.optional, noexcept semantics), and Cython 4 has
 #  not been validated against them yet.
-# cmake would be a build-time tool of `make release-lib`, not of the wheel itself: pip's isolated env
-#  cannot satisfy it, and the Nix sandbox cannot pip-install cmake. Keep it out of build-system.requires.
-requires = ["setuptools", "wheel", "Cython>=3.0,<4"]
+# cmake runs `make release-lib` during the sdist->wheel build. It is required only there, but pip's
+#  build-dependency check looks at build-system.requires, so the Nix build (nix/mata-py.nix) supplies
+#  python3Packages.cmake alongside it.
+requires = ["setuptools", "wheel", "Cython>=3.0,<4", "cmake>=3.23"]
 build-backend = "setuptools.build_meta"
