@@ -1,0 +1,155 @@
+diff --git a/src/nfa/universal.cc b/src/nfa/universal.cc
+index 1e60f120f..fafd53dbc 100644
+--- a/src/nfa/universal.cc
++++ b/src/nfa/universal.cc
+@@ -9,13 +9,18 @@
+ using namespace mata::nfa;
+ using namespace mata::utils;
+ 
+-// TODO: this could be merged with inclusion, or even removed, universality could be implemented using inclusion,
++// TODO: this could be merged with inclusion, or even removed, universality
++// could be implemented using inclusion,
+ //  it is not something needed in practice, so some little overhead is ok
+ 
+-bool mata::nfa::algorithms::is_universal_naive(const Nfa& aut, const Alphabet& alphabet, Run* cex) {
+-	return complement(aut, alphabet).is_lang_empty(cex);
++bool mata::nfa::algorithms::is_universal_naive(const Nfa &aut,
++                                               const Alphabet &alphabet,
++                                               Run *cex) {
++  return complement(aut, alphabet).is_lang_empty(cex);
+ }
+ 
++#if 0 // Retain the dedicated algorithm only to compare it against the
++      // alternative below.
+ bool mata::nfa::algorithms::is_universal_antichains(const Nfa& aut, const Alphabet& alphabet,
+ 													Run* cex) { // {{{
+ 
+@@ -172,55 +177,86 @@ bool mata::nfa::algorithms::is_universal_antichains(const Nfa& aut, const Alphab
+ 
+ 	return true;
+ } // }}}
++#endif
++
++bool mata::nfa::algorithms::is_universal_antichains(const Nfa &aut,
++                                                    const Alphabet &alphabet,
++                                                    Run *cex) {
++  // The language of @p aut is universal iff it includes Σ*, accepted by one
++  // initial and final state looping on
++  //  every letter.
++  Nfa sigma_star{1, {0}, {0}};
++  for (const Symbol symbol : alphabet.get_alphabet_symbols()) {
++    sigma_star.delta.add(0, symbol, 0);
++  }
++  const bool universal{is_included_antichains(sigma_star, aut, &alphabet, cex)};
++  // The run goes through the only state of `sigma_star`, which says nothing
++  // about @p aut.
++  if (cex != nullptr) {
++    cex->path.clear();
++  }
++  return universal;
++}
+ 
+ namespace {
+-/// Does @p nfa have a transition on @c EPSILON? EPSILON is the largest symbol, so one symbol post per state is read.
+-bool contains_epsilon(const Nfa& nfa) {
+-	const size_t num_of_states{nfa.num_of_states()};
+-	for (State state{0}; state < num_of_states; ++state) {
+-		const StatePost& state_post{nfa.delta[state]};
+-		if (Delta::epsilon_symbol_posts(state_post) != state_post.end()) { return true; }
+-	}
+-	return false;
++/// Does @p nfa have a transition on @c EPSILON? EPSILON is the largest symbol,
++/// so one symbol post per state is read.
++bool contains_epsilon(const Nfa &nfa) {
++  const size_t num_of_states{nfa.num_of_states()};
++  for (State state{0}; state < num_of_states; ++state) {
++    const StatePost &state_post{nfa.delta[state]};
++    if (Delta::epsilon_symbol_posts(state_post) != state_post.end()) {
++      return true;
++    }
++  }
++  return false;
+ }
+ } // namespace
+ 
+ // The dispatching method that calls the correct one based on parameters.
+-bool mata::nfa::Nfa::is_universal(const Alphabet& alphabet, Run* cex, const ParameterMap& params) const {
+-	// setting the default algorithm
+-	// 'algo' is reassigned in the 'else if' below, which 'misc-const-correctness' does not see.
+-	// NOLINTNEXTLINE(misc-const-correctness)
+-	decltype(algorithms::is_universal_naive)* algo = algorithms::is_universal_naive;
+-	if (!haskey(params, "algorithm")) {
+-		throw std::runtime_error(
+-			std::to_string(__func__) +
+-			" requires setting the \"algorithm\" key in the \"params\" argument; "
+-			"received: " +
+-			std::to_string(params)
+-		);
+-	}
++bool mata::nfa::Nfa::is_universal(const Alphabet &alphabet, Run *cex,
++                                  const ParameterMap &params) const {
++  // setting the default algorithm
++  // 'algo' is reassigned in the 'else if' below, which 'misc-const-correctness'
++  // does not see. NOLINTNEXTLINE(misc-const-correctness)
++  decltype(algorithms::is_universal_naive) *algo =
++      algorithms::is_universal_naive;
++  if (!haskey(params, "algorithm")) {
++    throw std::runtime_error(
++        std::to_string(__func__) +
++        " requires setting the \"algorithm\" key in the \"params\" argument; "
++        "received: " +
++        std::to_string(params));
++  }
+ 
+-	if (const std::string& str_algo = params.at("algorithm"); "naive" == str_algo) { /* default */
+-	} else if ("antichains" == str_algo) {
+-		algo = algorithms::is_universal_antichains;
+-	} else {
+-		throw std::runtime_error(
+-			std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + str_algo
+-		);
+-	}
+-	// Both algorithms read EPSILON as an ordinary letter, so epsilon has to go before they see the automaton, and it
+-	//  must not stay in the alphabet either (e.g. one built by `create_alphabet()` from an epsilon-NFA).
+-	const auto run{[&](const Alphabet& letters) {
+-		if (contains_epsilon(*this)) { return algo(mata::nfa::remove_epsilon(*this), letters, cex); }
+-		return algo(*this, letters, cex);
+-	}};
+-	if (OrdVector<Symbol> symbols{alphabet.get_alphabet_symbols()}; !symbols.empty() && symbols.back() == EPSILON) {
+-		symbols.pop_back();
+-		return run(EnumAlphabet{std::move(symbols)});
+-	}
+-	return run(alphabet);
++  if (const std::string &str_algo = params.at("algorithm");
++      "naive" == str_algo) { /* default */
++  } else if ("antichains" == str_algo) {
++    algo = algorithms::is_universal_antichains;
++  } else {
++    throw std::runtime_error(
++        std::to_string(__func__) +
++        " received an unknown value of the \"algorithm\" key: " + str_algo);
++  }
++  // Both algorithms read EPSILON as an ordinary letter, so epsilon has to go
++  // before they see the automaton, and it
++  //  must not stay in the alphabet either (e.g. one built by
++  //  `create_alphabet()` from an epsilon-NFA).
++  const auto run{[&](const Alphabet &letters) {
++    if (contains_epsilon(*this)) {
++      return algo(mata::nfa::remove_epsilon(*this), letters, cex);
++    }
++    return algo(*this, letters, cex);
++  }};
++  if (OrdVector<Symbol> symbols{alphabet.get_alphabet_symbols()};
++      !symbols.empty() && symbols.back() == EPSILON) {
++    symbols.pop_back();
++    return run(EnumAlphabet{std::move(symbols)});
++  }
++  return run(alphabet);
+ } // is_universal()
+ 
+-bool mata::nfa::Nfa::is_universal(const Alphabet& alphabet, const ParameterMap& params) const {
+-	return this->is_universal(alphabet, nullptr, params);
++bool mata::nfa::Nfa::is_universal(const Alphabet &alphabet,
++                                  const ParameterMap &params) const {
++  return this->is_universal(alphabet, nullptr, params);
+ }
