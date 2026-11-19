@@ -1,0 +1,5 @@
+Struct mata::utils::TwoDimensionalMap::SparseSlot
+=================================================
+
+.. doxygenstruct:: mata::utils::TwoDimensionalMap::SparseSlot
+   :members:

@@ -1,0 +1,5 @@
+Struct mata::utils::TwoDimensionalMap::SparseRow
+================================================
+
+.. doxygenstruct:: mata::utils::TwoDimensionalMap::SparseRow
+   :members:

@@ -41,13 +41,13 @@
 <dd><p>A two-dimensional map that can be used to store pairs of values and their associated value. </p>
 <p>This class can handle both small and large maps efficiently.</p>
 <p>Values are stored in a matrix of <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1utils.html#classmata_1_1utils_1_1TwoDimensionalMap_1a6907ec998f757f3ce5e1a870508b1281"><span class="std std-ref"><span class="pre">Cell</span></span></a></code> cells (4 Bytes each, unless <code class="docutils literal notranslate"><span class="pre">T</span></code> is smaller). The matrix rows are allocated lazily: a row is allocated and zeroed when the first value is inserted into it, so the memory footprint is proportional to the number of first-dimension keys actually used, not to the size of the first dimension. A cell holds the stored value incremented by one; zero means that no value is stored.</p>
-<p>The largest matrix we are brave enough to allocate is <code class="docutils literal notranslate"><span class="pre">MaxMatrixBytes</span></code> Bytes, 200 MB by default, which is 50 million cells of 4 Bytes. For larger dimensions we do not allocate a matrix, but use a single hash table with open addressing and linear probing (hash_storage_), keyed by the pair of keys packed into 64 bits. The table grows geometrically with the number of stored pairs, independently of the dimensions. The product of the dimensions must therefore fit into 64 bits; with keys of at most 32 bits it always does.</p>
+<p>The largest matrix we are brave enough to allocate is <code class="docutils literal notranslate"><span class="pre">MaxMatrixBytes</span></code> Bytes, 200 MB by default, which is 50 million cells of 4 Bytes. For larger dimensions we do not allocate a matrix, but keep one small hash table (open addressing, linear probing) per used first-dimension key, holding the second-dimension keys paired with it. A product construction looks up many pairs that share a key in a row, which then stay in one small table instead of being scattered over a table of all pairs. The array of these tables is as long as the first dimension; when that array alone would exceed <code class="docutils literal notranslate"><span class="pre">MaxMatrixBytes</span></code>, a single hash table of all pairs is used instead (hash_storage_), keyed by the pair of keys packed into 64 bits. That table grows geometrically with the number of stored pairs, independently of the dimensions. The product of the dimensions must therefore fit into 64 bits; with keys of at most 32 bits it always does.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>T</strong> – Type of the values stored in the map. Must be an unsigned type. </p></li>
 <li><p><strong>TrackInverted</strong> – Whether to track inverted indices for the first and second dimensions. To use this feature correctly, the mapping has to be reversible. </p></li>
-<li><p><strong>MaxMatrixBytes</strong> – Maximum size of the matrix in Bytes before switching to the hash table. </p></li>
+<li><p><strong>MaxMatrixBytes</strong> – Maximum size of the matrix in Bytes before switching to the hash tables. </p></li>
 </ul>
 </dd>
 </dl>
@@ -80,7 +80,7 @@
 </ul>
 </dd>
 <dt class="field-even">Throws<span class="colon">:</span></dt>
-<dd class="field-even"><p><span><span class="cpp-expr sig sig-inline cpp"><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n">std</span></a><span class="p">::</span><span class="n">length_error</span></span></span> – if the hash table is needed and <code class="docutils literal notranslate"><span class="pre">first_dim_size</span></code> * <code class="docutils literal notranslate"><span class="pre">second_dim_size</span></code> does not fit into 64 bits. </p>
+<dd class="field-even"><p><span><span class="cpp-expr sig sig-inline cpp"><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n">std</span></a><span class="p">::</span><span class="n">length_error</span></span></span> – if the single hash table is needed and <code class="docutils literal notranslate"><span class="pre">first_dim_size</span></code> * <code class="docutils literal notranslate"><span class="pre">second_dim_size</span></code> does not fit into 64 bits. </p>
 </dd>
 </dl>
 </dd></dl>
@@ -167,9 +167,45 @@
 
 </div>
 <dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils17TwoDimensionalMap10SparseSlotE">
+<span id="_CPPv3N4mata5utils17TwoDimensionalMap10SparseSlotE"></span><span id="_CPPv2N4mata5utils17TwoDimensionalMap10SparseSlotE"></span><span id="mata::utils::TwoDimensionalMap::SparseSlot"></span><span class="target" id="structmata_1_1utils_1_1TwoDimensionalMap_1_1SparseSlot"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SparseSlot</span></span></span><a class="headerlink" href="#_CPPv4N4mata5utils17TwoDimensionalMap10SparseSlotE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>A slot of a sparse row: a second-dimension key, or <code class="docutils literal notranslate"><span class="pre">no_value</span></code> in an empty slot, and its value. </p>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils17TwoDimensionalMap9SparseRowE">
+<span id="_CPPv3N4mata5utils17TwoDimensionalMap9SparseRowE"></span><span id="_CPPv2N4mata5utils17TwoDimensionalMap9SparseRowE"></span><span id="mata::utils::TwoDimensionalMap::SparseRow"></span><span class="target" id="structmata_1_1utils_1_1TwoDimensionalMap_1_1SparseRow"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SparseRow</span></span></span><a class="headerlink" href="#_CPPv4N4mata5utils17TwoDimensionalMap9SparseRowE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The hash table of the second-dimension keys paired with one first-dimension key. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils17TwoDimensionalMap9SparseRow7CounterE">
+<span id="_CPPv3N4mata5utils17TwoDimensionalMap9SparseRow7CounterE"></span><span id="_CPPv2N4mata5utils17TwoDimensionalMap9SparseRow7CounterE"></span><span class="target" id="structmata_1_1utils_1_1TwoDimensionalMap_1_1SparseRow_1a04052d8ae584fd68cdd15bedd22c1dad"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Counter</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">conditional_t</span></span><span class="p"><span class="pre">&lt;</span></span><span class="p"><span class="pre">(</span></span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><a class="reference internal" href="#_CPPv4I0_b_6size_tEN4mata5utils17TwoDimensionalMapE" title="mata::utils::TwoDimensionalMap::T"><span class="n"><span class="pre">T</span></span></a><span class="p"><span class="pre">)</span></span><span class="w"> </span><span class="o"><span class="pre">&lt;=</span></span><span class="w"> </span><span class="k"><span class="pre">sizeof</span></span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">uint32_t</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="n"><span class="pre">uint64_t</span></span><span class="p"><span class="pre">&gt;</span></span><a class="headerlink" href="#_CPPv4N4mata5utils17TwoDimensionalMap9SparseRow7CounterE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Wide enough to count the keys of a row, which are distinct values of <code class="docutils literal notranslate"><span class="pre">T:</span></code> a row of 32-bit keys then takes two words. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils17TwoDimensionalMap9SparseRow4sizeE">
+<span id="_CPPv3N4mata5utils17TwoDimensionalMap9SparseRow4sizeE"></span><span id="_CPPv2N4mata5utils17TwoDimensionalMap9SparseRow4sizeE"></span><span id="mata::utils::TwoDimensionalMap::SparseRow::size__Counter"></span><span class="target" id="structmata_1_1utils_1_1TwoDimensionalMap_1_1SparseRow_1a8e42644accb867ee688ad4218c1ce9de"></span><a class="reference internal" href="#_CPPv4N4mata5utils17TwoDimensionalMap9SparseRow7CounterE" title="mata::utils::TwoDimensionalMap::SparseRow::Counter"><span class="n"><span class="pre">Counter</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">size</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata5utils17TwoDimensionalMap9SparseRow4sizeE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Number of stored keys. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5utils17TwoDimensionalMap9SparseRow5shiftE">
+<span id="_CPPv3N4mata5utils17TwoDimensionalMap9SparseRow5shiftE"></span><span id="_CPPv2N4mata5utils17TwoDimensionalMap9SparseRow5shiftE"></span><span id="mata::utils::TwoDimensionalMap::SparseRow::shift__Counter"></span><span class="target" id="structmata_1_1utils_1_1TwoDimensionalMap_1_1SparseRow_1adc8f1565c0e43d5d8fef57d268bfc36c"></span><a class="reference internal" href="#_CPPv4N4mata5utils17TwoDimensionalMap9SparseRow7CounterE" title="mata::utils::TwoDimensionalMap::SparseRow::Counter"><span class="n"><span class="pre">Counter</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">shift</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata5utils17TwoDimensionalMap9SparseRow5shiftE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Bits of a 64-bit hash discarded to index the slots: 64 - log2 of the number of slots. Always 64, never <code class="docutils literal notranslate"><a class="reference internal" href="../struct/structmata_1_1utils_1_1TwoDimensionalMap_1_1SparseRow.html#structmata_1_1utils_1_1TwoDimensionalMap_1_1SparseRow_1a04052d8ae584fd68cdd15bedd22c1dad"><span class="std std-ref"><span class="pre">Counter</span></span></a><span class="pre">:</span></code> <a class="reference internal" href="../file/two-dimensional-map_8hh.html#structmata_1_1utils_1_1TwoDimensionalMap_1_1SparseRow_1a260442ef344f843c480ff1f6aefd6db3"><span class="std std-ref">capacity()</span></a> must stay representable even when a row has <code class="docutils literal notranslate"><span class="pre">Counter-many</span></code> keys. </p>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
 <dt class="sig sig-object cpp" id="_CPPv4N4mata5utils17TwoDimensionalMap4SlotE">
 <span id="_CPPv3N4mata5utils17TwoDimensionalMap4SlotE"></span><span id="_CPPv2N4mata5utils17TwoDimensionalMap4SlotE"></span><span id="mata::utils::TwoDimensionalMap::Slot"></span><span class="target" id="structmata_1_1utils_1_1TwoDimensionalMap_1_1Slot"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Slot</span></span></span><a class="headerlink" href="#_CPPv4N4mata5utils17TwoDimensionalMap4SlotE" title="Link to this definition">¶</a><br /></dt>
-<dd><p>A slot of the hash table used for large dimensions: the packed pair of keys and its value. </p>
+<dd><p>A slot of the single hash table used for the largest dimensions: the packed pair of keys and its value. </p>
 </dd></dl>
 
 </dd></dl>
