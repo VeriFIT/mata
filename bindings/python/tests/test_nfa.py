@@ -307,7 +307,15 @@ def test_determinize_algorithm(nfa_two_states_uni):
     pruned.make_initial_state(0)
     pruned.make_final_state(1)
     pruned.make_final_state(2)
-    for source, symbol, target in ((0, 0, 1), (0, 0, 2), (0, 1, 1), (0, 2, 0), (1, 0, 1), (2, 0, 2), (2, 1, 2)):
+    for source, symbol, target in (
+        (0, 0, 1),
+        (0, 0, 2),
+        (0, 1, 1),
+        (0, 2, 0),
+        (1, 0, 1),
+        (2, 0, 2),
+        (2, 1, 2),
+    ):
         pruned.add_transition(source, symbol, target)
     expected_states = {"none": 4, "bisimulation": 4, "simulation": 3, "adaptive": 4}
     for reduction, num_of_states in expected_states.items():
@@ -320,7 +328,8 @@ def test_determinize_algorithm(nfa_two_states_uni):
             _check_subset_map_languages(pruned, dfa, subset_map)
             if algorithm == "four_russians" and reduction != "none":
                 _, expected_map = mata_nfa.determinize_four_russians_with_subset_map(
-                    pruned, reduction=mata_nfa.DeterminizationReduction[reduction.capitalize()]
+                    pruned,
+                    reduction=mata_nfa.DeterminizationReduction[reduction.capitalize()],
                 )
                 assert subset_map == expected_map
 
@@ -1174,6 +1183,10 @@ def _nth_symbol_from_the_end_nfa(n):
     return aut
 
 
+# On macOS the shorter input sometimes completes before the observing thread is scheduled.
+GIL_OBSERVATION_NFA_STATES = 16
+
+
 @pytest.mark.parametrize(
     "operation",
     [
@@ -1197,10 +1210,6 @@ def _nth_symbol_from_the_end_nfa(n):
         "intersection",
     ],
 )
-# On macOS the shorter input sometimes completes before the observing thread is scheduled.
-GIL_OBSERVATION_NFA_STATES = 16
-
-
 def test_heavy_operations_let_other_threads_run(operation, runs_without_the_gil):
     aut = _nth_symbol_from_the_end_nfa(GIL_OBSERVATION_NFA_STATES)
     other = _build_threaded_nfa(num_states=600, num_transitions=2400)
