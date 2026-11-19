@@ -18,6 +18,8 @@ python3Packages.buildPythonPackage (finalAttrs: {
   pname = "libmata";
   version = pep440Version;
   pyproject = true;
+  # The Python distribution `cmake` supplies the cmake Nix binary too; do not let its hook override the wheel build.
+  dontUseCmakeConfigure = true;
 
   pythonImportsCheck = [
     "libmata"
