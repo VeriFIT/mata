@@ -147,7 +147,8 @@ class TemporaryDirectory {
 };
 
 /// Whether a shell script written to a fresh private directory under @p root can be executed. Runs on every call.
-bool probe_executable_scripts(const std::filesystem::path& root) {
+/// Empty when waitpid cannot observe the child's exit status (e.g. ECHILD), not a negative finding.
+std::optional<bool> probe_executable_scripts(const std::filesystem::path& root) {
 	const TemporaryDirectory directory{"mata exec probe", root};
 	const std::filesystem::path path{directory.path() / "probe"};
 	std::ofstream{path} << "#!/bin/sh\nexit 0\n";
@@ -160,16 +161,25 @@ bool probe_executable_scripts(const std::filesystem::path& root) {
 	int status{0};
 	pid_t waited{-1};
 	while ((waited = ::waitpid(process, &status, 0)) == -1 && errno == EINTR) {}
-	// Without the child's own status (e.g. ECHILD when SIGCHLD is ignored) the probe is inconclusive; report it as
-	//  not working rather than reading an unset status as a successful exit.
-	return waited == process && WIFEXITED(status) && WEXITSTATUS(status) == 0;
+	if (waited != process) { return std::nullopt; }
+	return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+}
+
+/// Probe once into @p works, but only cache a definite outcome. A call without a child status leaves it empty and
+///  lets a later call retry after the process-wide child reaping policy has changed.
+bool cached_executable_scripts_work(std::optional<bool>& works) {
+	if (!works.has_value()) {
+		const std::optional<bool> result{probe_executable_scripts(std::filesystem::temp_directory_path())};
+		if (result.has_value()) { works = result; }
+	}
+	return works.value_or(false);
 }
 
 /// Whether a shell script written next to the fake solvers can be executed at all: TMPDIR or /tmp is mounted noexec
-///  on hardened systems and in containers started with '--tmpfs /tmp'. Probed once per process.
+///  on hardened systems and in containers started with '--tmpfs /tmp'. Probed once per process when conclusive.
 bool executable_scripts_work() {
-	static const bool works{probe_executable_scripts(std::filesystem::temp_directory_path())};
-	return works;
+	static std::optional<bool> works{};
+	return cached_executable_scripts_work(works);
 }
 
 /// A shell script standing in for a solver, in a temporary directory (with a space in its name) removed on destruction.
@@ -312,6 +322,19 @@ TEST_CASE("mata::nfa::reduce() execution probe does not follow a predictable sym
 	std::string contents{};
 	std::getline(std::ifstream{victim}, contents);
 	CHECK(contents == "do not overwrite");
+}
+
+TEST_CASE("mata::nfa::reduce() retries an inconclusive execution probe") {
+	if (!probe_executable_scripts(std::filesystem::temp_directory_path()).value_or(false)) {
+		SKIP("temporary directory cannot execute scripts");
+	}
+	std::optional<bool> cached{};
+	{
+		const IgnoredChildSignal ignored{};
+		CHECK(probe_executable_scripts(std::filesystem::temp_directory_path()) == std::nullopt);
+		CHECK_FALSE(cached_executable_scripts_work(cached));
+	}
+	CHECK(cached_executable_scripts_work(cached));
 }
 
 TEST_CASE("mata::nfa::reduce() with algorithms \"sat\" and \"qbf\" running fake solvers") {
