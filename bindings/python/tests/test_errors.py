@@ -126,7 +126,7 @@ def _run(statement):
         prelude = f"import sys\nsys.stdout = open({stdout!r}, 'w')\nsys.stderr = open({stderr!r}, 'w')\n"
         child = os.posix_spawn(
             sys.executable,
-            ["python", "-c", prelude + PRELUDE + statement],
+            [sys.executable, "-c", prelude + PRELUDE + statement],
             os.environ.copy(),
         )
         deadline = time.monotonic() + 120
