@@ -1,4 +1,0 @@
-File lazy-generator.hh
-======================
-
-.. doxygenfile:: lazy-generator.hh

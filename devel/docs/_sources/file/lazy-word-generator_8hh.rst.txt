@@ -1,0 +1,4 @@
+File lazy-word-generator.hh
+===========================
+
+.. doxygenfile:: lazy-word-generator.hh
