@@ -1683,7 +1683,11 @@ def minimize(Nfa lhs, params = None):
       - "algorithm":
         - "auto": Determinize the automaton if it is not deterministic, trim it, and minimize it with Hopcroft.
           An automaton with an empty language is returned as a single non-final initial state. This is the default.
-        - "hopcroft": The Hopcroft minimization algorithm, only works on trimmed (no useless states) DFAs as input.
+        - "hopcroft": Run Hopcroft directly on a trimmed DFA. Raises an error for a nondeterministic input
+          (except a transition-free automaton without initial states); trimming is not checked, but is required
+          for minimality.
+        - "hopcroft_nondet": The same normalization as "auto", followed by the Hopcroft minimization algorithm.
+          Accepts any automaton.
         - "brzozowski": The Brzozowski minimization algorithm. Accepts any automaton, but determinizes twice and
           can blow up exponentially even on an input that already is a trimmed DFA.
     :return: minimized automaton

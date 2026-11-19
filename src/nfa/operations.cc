@@ -1304,21 +1304,29 @@ Nfa mata::nfa::algorithms::minimize_brzozowski(const Nfa& aut) {
 	return determinize(revert(determinize(revert(aut))));
 }
 
-Nfa mata::nfa::algorithms::minimize_auto(const Nfa& aut) {
+Nfa mata::nfa::algorithms::minimize_hopcroft_nondet(const Nfa& aut) {
 	// Brzozowski determinizes twice, so it can blow up exponentially even on an input that already is a trimmed
 	//  DFA; Hopcroft is O(a*n*log(n)) on such an input and supports partial transition functions, so the
 	//  determinization is only needed when the input is not deterministic.
-	Nfa deterministic{aut.is_deterministic() ? aut : determinize(aut)};
+	// Trim a nondeterministic input before the subset construction: states that cannot reach a final state would
+	//  otherwise generate reachable subsets which the trim can never remove again (every reachable subset still holds
+	//  some state reachable from the initial states, and only non-final ones). On a large non-accepting branch the
+	//  determinization can then blow up before any minimization runs. Trimming changes no accepted word.
+	Nfa deterministic{aut.is_deterministic() ? aut : determinize(trim(aut))};
 	deterministic.trim();
 	if (deterministic.num_of_states() == 0) {
 		// Trimming an automaton with an empty language removes every state. Return the canonical automaton of the
 		//  empty language instead, so that the result is a usable automaton with a single non-final initial state.
 		Nfa empty_language{1};
 		empty_language.initial.insert(0);
+		// Keep the attached alphabet: make_complete() on the result needs the symbols of the input.
+		empty_language.alphabet = deterministic.alphabet;
 		return empty_language;
 	}
 	return minimize_hopcroft(deterministic);
 }
+
+Nfa mata::nfa::algorithms::minimize_auto(const Nfa& aut) { return minimize_hopcroft_nondet(aut); }
 
 Nfa mata::nfa::minimize(const Nfa& aut, const ParameterMap& params) {
 	// 'algo' is reassigned in the 'else if' below, which 'misc-const-correctness' does not see.
@@ -1338,6 +1346,8 @@ Nfa mata::nfa::minimize(const Nfa& aut, const ParameterMap& params) {
 		algo = algorithms::minimize_brzozowski;
 	} else if ("hopcroft" == str_algo) {
 		algo = algorithms::minimize_hopcroft;
+	} else if ("hopcroft_nondet" == str_algo) {
+		algo = algorithms::minimize_hopcroft_nondet;
 	} else {
 		throw std::runtime_error(
 			std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + str_algo
@@ -1877,15 +1887,28 @@ Nfa quotient_by_bisimulation(const Nfa& aut, StateRenaming& state_renaming) {
 	}
 	return result;
 }
+
+[[noreturn]] void throw_nondeterministic_hopcroft_input() {
+	throw std::invalid_argument(
+		"mata::nfa::algorithms::minimize_hopcroft() requires a deterministic automaton; the refinement keeps "
+		"one target per symbol post, so a nondeterministic input yields a different language. Call "
+		"minimize_hopcroft_nondet(), use minimize() with algorithm=\"auto\" or \"hopcroft_nondet\", or "
+		"determinize() and trim() the automaton first."
+	);
+}
 } // namespace
 
 Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
 	if (dfa_trimmed.delta.empty()) {
-		// The automaton is trivially minimal.
+		// There is no symbol post to refine, so the language follows from the initial and final states only. A
+		//  transition-free automaton without an initial state is still accepted as the empty language, but
+		//  several initial states are nondeterministic and would be returned unminimized.
+		if (dfa_trimmed.initial.size() > 1) { throw_nondeterministic_hopcroft_input(); }
 		return Nfa{dfa_trimmed};
 	}
-	MATA_ASSERT(dfa_trimmed.is_deterministic());
-	MATA_ASSERT(dfa_trimmed.get_useful_states().count() == dfa_trimmed.num_of_states());
+	if (!dfa_trimmed.is_deterministic()) { throw_nondeterministic_hopcroft_input(); }
+	// Only minimality, not the language, depends on the input being trimmed. Trim the automaton first for a
+	//  minimal result; trimming is deliberately not checked, because it only costs minimality, not the language.
 
 	const RefinablePartition<State> brp{refine_by_hopcroft(dfa_trimmed)};
 

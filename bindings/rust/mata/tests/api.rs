@@ -172,11 +172,11 @@ fn determinize_the_largest_symbol() -> Result<(), Error> {
 }
 
 #[test]
-fn hopcroft_works_on_nondeterministic_input() -> Result<(), Error> {
-	// Mata's Hopcroft minimization needs a trimmed DFA.
+fn hopcroft_nondet_works_on_nondeterministic_input() -> Result<(), Error> {
+	// The nondeterministic Hopcroft wrapper normalizes before partition refinement.
 	let nfa = Nfa::from_regex("(a|b)*a(a|b)")?;
 	assert!(!nfa.is_deterministic());
-	let hopcroft = nfa.minimize_with(Minimization::Hopcroft);
+	let hopcroft = nfa.minimize_with(Minimization::HopcroftNondet);
 	assert!(hopcroft.is_deterministic());
 	assert!(hopcroft.is_equivalent_to(&nfa));
 	assert_eq!(hopcroft.num_states(), nfa.minimize().num_states());
@@ -186,7 +186,7 @@ fn hopcroft_works_on_nondeterministic_input() -> Result<(), Error> {
 
 	// The empty language: a single non-final initial state, from both algorithms.
 	let empty = Nfa::with_states(3);
-	for algorithm in [Minimization::Brzozowski, Minimization::Hopcroft] {
+	for algorithm in [Minimization::Brzozowski, Minimization::HopcroftNondet] {
 		let minimal = empty.minimize_with(algorithm);
 		assert_eq!(
 			(minimal.num_states(), minimal.initial_states().len()),
@@ -755,6 +755,33 @@ fn minimize_within_limits_each_determinization() -> Result<(), Error> {
 	);
 	let brzozowski = nfa.minimize_within(Minimization::Brzozowski, &Limits::new().max_states(16));
 	assert!(brzozowski?.is_identical(&nfa.minimize_with(Minimization::Brzozowski)));
+	Ok(())
+}
+
+#[test]
+fn minimize_within_trims_before_the_bounded_determinization() -> Result<(), Error> {
+	// The trimmed core recognizes `a`. `a` also leads to a dead chain, so the automaton is
+	// nondeterministic and untrimmed determinization would count {1, 2}, {3}, {4} and {5}.
+	let mut nfa = Nfa::with_states(6);
+	nfa.add_initial(q(0))?;
+	nfa.add_final(q(1))?;
+	nfa.add_transition(q(0), Symbol::from(b'a'), q(1))?;
+	nfa.add_transition(q(0), Symbol::from(b'a'), q(2))?;
+	for state in 2..5 {
+		nfa.add_transition(q(state), Symbol::from(b'b'), q(state + 1))?;
+	}
+
+	let minimal = nfa.minimize_with(Minimization::HopcroftNondet);
+	assert_eq!(minimal.num_states(), 2);
+	let at = |max_states| Limits::new().max_states(max_states);
+	let within = nfa.minimize_within(Minimization::HopcroftNondet, &at(2))?;
+	assert!(within.is_equivalent_to(&minimal));
+	assert_eq!(within.num_states(), minimal.num_states());
+	assert_eq!(
+		nfa.minimize_within(Minimization::HopcroftNondet, &at(1))
+			.err(),
+		Some(LimitExceeded::States { max_states: 1 })
+	);
 	Ok(())
 }
 

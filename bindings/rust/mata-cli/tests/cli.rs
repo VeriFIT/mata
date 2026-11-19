@@ -13,6 +13,10 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 const NFA: &str = "@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a q1\n";
 const NFT: &str = "@NFT-explicit\n%Alphabet-auto\n%Initial q0\n%Final q0\n%Levels q0:0 q1:1\n%LevelsNum 2\nq0 a q1\nq1 b q0\n";
 
+/// Two choices after `a`: a nondeterministic automaton, whose direct Hopcroft refinement would drop a branch.
+const NONDETERMINISTIC_NFA: &str =
+	"@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q2\nq0 a q1\nq0 a q2\nq1 a q2\n";
+
 /// A temporary directory that removes itself, so every test owns its fixture files.
 struct Workspace {
 	path: PathBuf,
@@ -753,6 +757,28 @@ fn hints_select_the_algorithm_and_wrong_hints_are_rejected_before_running() {
 	);
 	let direct = mata(["nfa", "included", &a, &a, "--hint", "algorithm=naive"]);
 	assert_eq!((status(&direct), stdout(&direct)), (0, "true\n".to_owned()));
+}
+
+#[test]
+fn minimize_without_a_hint_normalizes_a_nondeterministic_automaton() {
+	let workspace = Workspace::new("minimize-hints");
+	let nfa = workspace.file("nondeterministic.mata", NONDETERMINISTIC_NFA);
+
+	let script = "(declare-input a Nfa)\n\
+	              (print (nfa:in-language? (nfa:minimize a) (word \"a\")))\n\
+	              (print (nfa:in-language? (nfa:minimize a) (word \"a\" \"a\")))\n\
+	              (print (nfa:in-language? (nfa:minimize a) (word \"a\" \"a\" \"a\")))";
+	let output = mata(["script", "run", "--expression", script, &nfa]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "true\ntrue\nfalse\n");
+
+	let direct = mata(["nfa", "minimize", &nfa]);
+	assert_eq!(status(&direct), 0, "{}", stderr(&direct));
+	let transitions = stdout(&direct)
+		.lines()
+		.filter(|line| line.starts_with('q'))
+		.count();
+	assert_eq!(transitions, 2, "{}", stdout(&direct));
 }
 
 #[test]

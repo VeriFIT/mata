@@ -4687,6 +4687,67 @@ TEST_CASE("mata::nfa::minimize() with the default \"auto\" strategy") {
 		}
 		CHECK(num_of_nondeterministic > 30);
 	}
+
+	SECTION("\"hopcroft_nondet\" normalizes its input - issue #734") {
+		// `minimize_hopcroft()` keeps one target per symbol post, so the old dispatcher could return a different
+		//  language on a nondeterministic input, and a nonminimal result on an untrimmed DFA. The explicit lean path
+		//  now rejects the former; the nondeterministic wrapper normalizes both.
+		Nfa nfa{3, {0}, {2}};
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(0, 'a', 2);
+		nfa.delta.add(1, 'b', 2);
+		CHECK_THROWS_AS(minimize(nfa, {{"algorithm", "hopcroft"}}), std::invalid_argument);
+		const Nfa minimized{algorithms::minimize_hopcroft_nondet(nfa)};
+		CHECK(are_equivalent(minimized, minimize(nfa, {{"algorithm", "hopcroft_nondet"}})));
+		CHECK(are_equivalent(minimized, nfa));
+		CHECK(minimized.is_in_lang(Word{'a'}));
+		CHECK(minimized.is_in_lang(Word{'a', 'b'}));
+		CHECK(is_minimal_dfa(minimized));
+
+		Nfa untrimmed{3, {0}, {1}};
+		untrimmed.delta.add(0, 'a', 1);
+		untrimmed.delta.add(0, 'b', 2);
+		untrimmed.delta.add(2, 'a', 2); // State 2 is useless.
+		const Nfa from_untrimmed{minimize(untrimmed, {{"algorithm", "hopcroft_nondet"}})};
+		CHECK(are_equivalent(from_untrimmed, untrimmed));
+		CHECK(from_untrimmed.num_of_states() == minimize(untrimmed, {{"algorithm", "brzozowski"}}).num_of_states());
+
+		Nfa two_initials{3, {0, 1}, {2}};
+		two_initials.delta.add(0, 'a', 2);
+		two_initials.delta.add(1, 'b', 2); // A different word: dropping either initial branch must be caught.
+		CHECK(are_equivalent(minimize(two_initials, {{"algorithm", "hopcroft_nondet"}}), two_initials));
+
+		const Nfa empty{minimize(Nfa{}, {{"algorithm", "hopcroft_nondet"}})};
+		// The canonical empty-language DFA: one initial state, no final states, no transitions.
+		CHECK(empty.is_lang_empty());
+		CHECK(empty.num_of_states() == 1);
+		CHECK(empty.initial.size() == 1);
+		CHECK(empty.initial.contains(0));
+		CHECK(empty.final.empty());
+		CHECK(empty.delta.empty());
+		CHECK(empty.is_minimal());
+
+		// The canonical result also keeps the attached alphabet, so make_complete() still sees the symbols.
+		Nfa letterless{1, {0}, {}};
+		auto alphabet{std::make_shared<OnTheFlyAlphabet>()};
+		alphabet->add_new_symbol("a", 'a');
+		letterless.alphabet = alphabet;
+		const Nfa minimized_letterless{minimize(letterless, {{"algorithm", "hopcroft_nondet"}})};
+		CHECK(minimized_letterless.is_lang_empty());
+		REQUIRE(minimized_letterless.alphabet != nullptr);
+		CHECK(minimized_letterless.alphabet->get_alphabet_symbols() == OrdVector<Symbol>{'a'});
+	}
+
+	SECTION("the Hopcroft core rejects a nondeterministic input - issue #734") {
+		Nfa nfa{3, {0}, {2}};
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(0, 'a', 2);
+		CHECK_THROWS_AS(algorithms::minimize_hopcroft(nfa), std::invalid_argument);
+
+		// Without transitions, the core used to return a copy of the input before checking determinism, so an
+		//  automaton with several initial states was handed back as "minimal" without an error.
+		CHECK_THROWS_AS(algorithms::minimize_hopcroft(Nfa{2, {0, 1}, {0, 1}}), std::invalid_argument);
+	}
 }
 
 TEST_CASE("mata::nfa::Nfa::is_minimal()") {

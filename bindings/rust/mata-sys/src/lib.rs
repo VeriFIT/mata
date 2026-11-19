@@ -62,6 +62,8 @@ pub mod ffi {
 		Brzozowski,
 		/// Partition refinement on a trimmed DFA.
 		Hopcroft,
+		/// Normalize an arbitrary automaton, then apply partition refinement.
+		HopcroftNondet,
 	}
 
 	/// Language-preserving reduction.
@@ -283,8 +285,8 @@ pub mod ffi {
 		) -> Result<UniquePtr<Nfa>>;
 		/// An equivalent DFA, by the subset construction.
 		fn determinize(nfa: &Nfa, algorithm: Determinization) -> Result<UniquePtr<Nfa>>;
-		/// The trimmed minimal DFA (determinizes and trims first for Hopcroft); for the empty language, a
-		/// single non-final initial state.
+		/// The minimized DFA. `Hopcroft` requires a trimmed DFA; the other algorithms normalize first and return a
+		/// single non-final initial state for the empty language.
 		fn minimize(nfa: &Nfa, algorithm: Minimization) -> Result<UniquePtr<Nfa>>;
 		/// `construction` and `direction` matter only for [`Reduction::Residual`].
 		fn reduce(

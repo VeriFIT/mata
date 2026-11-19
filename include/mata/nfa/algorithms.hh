@@ -108,17 +108,35 @@ Nfa minimize_brzozowski(const Nfa& aut);
  *  "Efficient Minimization of DFAs With Partial Transition Functions" by Antti Valmari and Petri Lehtinen.
  *  The algorithm works in O(a*n*log(n)) time and O(m+n+a) space, where: n is the number of states, a is the size
  *  of the alphabet, and m is the number of transitions. [https://dl.acm.org/doi/10.1016/j.ipl.2011.12.004]
- * @param[in] dfa_trimmed Deterministic automaton without useless states. Perform trimming before calling this function.
- * @return Minimized deterministic automaton.
+ * @param[in] dfa_trimmed Deterministic automaton without useless states, with no empty symbol posts. Trim it before
+ *  calling this function and drop empty posts from the delta first: an empty post is not a transition, but the core
+ *  validates and refines posts as stored, so it cannot be accepted. Skipping the trimming is not an error, it only
+ *  costs minimality.
+ * @throws std::invalid_argument If @p dfa_trimmed has a transition and is not deterministic, or has several
+ *  initial states. A transition-free automaton with at most one initial state is returned without refinement.
+ * @return Minimized deterministic automaton, refined from @p dfa_trimmed. A transition-free
+ *  automaton without an initial state is returned as it is, with no initial state: such a result is neither
+ *  deterministic nor minimal by @c Nfa::is_deterministic() / @c Nfa::is_minimal(). Callers that need the canonical
+ *  one-state empty-language DFA should use the public @c mata::nfa::minimize() dispatcher instead.
  */
 Nfa minimize_hopcroft(const Nfa& dfa_trimmed);
 
 /**
+ * Hopcroft minimization of an arbitrary automaton, with input normalization.
+ *
+ * Trims @p aut, determinizes it when necessary, trims the result, and runs @c minimize_hopcroft().
+ * An automaton with an empty language is returned as a single non-final initial state with no transitions.
+ * @param[in] aut Automaton to be minimized.
+ * @return Minimal deterministic automaton.
+ */
+Nfa minimize_hopcroft_nondet(const Nfa& aut);
+
+/**
  * @brief Minimization that picks the algorithm from the shape of the input.
  *
- * Determinizes @p aut when it is not deterministic already, trims it, and runs Hopcroft minimization on the
- *  result. Brzozowski minimization is never picked: it determinizes twice, so it can blow up exponentially even
- *  on an input that is already a trimmed DFA, where Hopcroft is O(a*n*log(n)).
+ * Uses @c minimize_hopcroft_nondet(): determinizes @p aut when it is not deterministic already, trims it, and runs
+ * Hopcroft minimization on the result. Brzozowski minimization is never picked: it determinizes twice, so it can blow
+ * up exponentially even on an input that is already a trimmed DFA, where Hopcroft is O(a*n*log(n)).
  * An automaton with an empty language is returned as a single non-final initial state with no transitions.
  * @param[in] aut Automaton to be minimized.
  * @return Minimal deterministic automaton.
