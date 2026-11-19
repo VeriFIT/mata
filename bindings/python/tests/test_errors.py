@@ -6,8 +6,11 @@ so that a crash becomes one ordinary test failure.
 """
 
 import os
-import subprocess
+import signal
 import sys
+import tempfile
+import time
+from types import SimpleNamespace
 
 import pytest
 
@@ -36,23 +39,35 @@ def seg_aut():  # Two segments joined by symbol 100.
 #: Statements that must raise a Python exception instead of killing the interpreter. Every one of
 #: them used to end in `std::terminate` or a segfault (#730, #729).
 RAISING_CASES = [
-    pytest.param('mn.minimize(aut(), {"algorithm": "moore"})', id="minimize-unknown-algorithm"),
+    pytest.param(
+        'mn.minimize(aut(), {"algorithm": "moore"})', id="minimize-unknown-algorithm"
+    ),
     pytest.param(
         'mn.compute_relation(aut(), {"relation": "simulation"})',
         id="compute-relation-missing-key",
     ),
-    pytest.param('alph.IntAlphabet().translate_symbol("abc")', id="int-alphabet-translate-symbol"),
+    pytest.param(
+        'alph.IntAlphabet().translate_symbol("abc")', id="int-alphabet-translate-symbol"
+    ),
     pytest.param("mn.determinize(None)", id="determinize-none"),
     pytest.param("mn.concatenate(aut(), None)", id="concatenate-none"),
     pytest.param(
         'parser.from_mata("/nonexistent.mata", alph.OnTheFlyAlphabet())',
         id="from-mata-missing-file",
     ),
-    pytest.param("parser.from_mata([], alph.OnTheFlyAlphabet())", id="from-mata-empty-list"),
-    pytest.param("strings.noodlify_for_equation([None], aut())", id="noodlify-for-equation-none"),
-    pytest.param("mn.complement(aut(), alph.Alphabet())", id="complement-base-alphabet"),
+    pytest.param(
+        "parser.from_mata([], alph.OnTheFlyAlphabet())", id="from-mata-empty-list"
+    ),
+    pytest.param(
+        "strings.noodlify_for_equation([None], aut())", id="noodlify-for-equation-none"
+    ),
+    pytest.param(
+        "mn.complement(aut(), alph.Alphabet())", id="complement-base-alphabet"
+    ),
     pytest.param("parser.from_regex('(ab')", id="from-regex-syntax-error"),
-    pytest.param("parser.from_regex('(?:ab|cd){1000}' * 200)", id="from-regex-too-large"),
+    pytest.param(
+        "parser.from_regex('(?:ab|cd){1000}' * 200)", id="from-regex-too-large"
+    ),
 ]
 
 #: Statements that must simply run to completion. They used to read freed memory. Every check raises
@@ -117,13 +132,32 @@ SURVIVING_CASES = [
 
 def _run(statement):
     """Runs @p statement in a child interpreter and returns its result."""
-    return subprocess.run(
-        [sys.executable, "-c", PRELUDE + statement],
-        capture_output=True,
-        text=True,
-        timeout=120,
-        check=False,
-    )
+    with tempfile.TemporaryDirectory(prefix="mata-user-error-") as directory:
+        stdout = os.path.join(directory, "stdout")
+        stderr = os.path.join(directory, "stderr")
+        prelude = f"import sys\nsys.stdout = open({stdout!r}, 'w')\nsys.stderr = open({stderr!r}, 'w')\n"
+        child = os.posix_spawn(
+            sys.executable,
+            ["python", "-c", prelude + PRELUDE + statement],
+            os.environ.copy(),
+        )
+        deadline = time.monotonic() + 120
+        status = 0
+        while True:
+            waited, status = os.waitpid(child, os.WNOHANG)
+            if waited == child:
+                break
+            if time.monotonic() > deadline:
+                os.kill(child, signal.SIGKILL)
+                os.waitpid(child, 0)
+                raise TimeoutError("child interpreter timed out after 120 seconds")
+            time.sleep(0.01)
+        with open(stdout) as output, open(stderr) as error:
+            return SimpleNamespace(
+                returncode=os.waitstatus_to_exitcode(status),
+                stdout=output.read(),
+                stderr=error.read(),
+            )
 
 
 @pytest.mark.parametrize("stmt", RAISING_CASES)
@@ -133,7 +167,9 @@ def test_user_error_raises_instead_of_crashing(stmt):
         f"try:\n    {stmt}\nexcept Exception as e:\n    print(type(e).__name__)\n"
         "else:\n    raise SystemExit('returned normally instead of raising')\n"
     )
-    assert result.returncode == 0, f"interpreter exited with {result.returncode}\n{result.stderr[-2000:]}"
+    assert result.returncode == 0, (
+        f"interpreter exited with {result.returncode}\n{result.stderr[-2000:]}"
+    )
     assert result.stdout.strip(), f"no exception was raised by {stmt!r}"
 
 
@@ -141,5 +177,9 @@ def test_user_error_raises_instead_of_crashing(stmt):
 def test_statement_survives(stmt):
     """@p stmt must run to completion; it used to read freed memory or reject a valid argument."""
     result = _run(stmt)
-    assert result.returncode == 0, f"interpreter died with {result.returncode}\n{result.stderr[-2000:]}"
-    assert result.stdout.strip() == "ok", f"{stmt!r} printed {result.stdout!r} instead of its success marker"
+    assert result.returncode == 0, (
+        f"interpreter died with {result.returncode}\n{result.stderr[-2000:]}"
+    )
+    assert result.stdout.strip() == "ok", (
+        f"{stmt!r} printed {result.stdout!r} instead of its success marker"
+    )
