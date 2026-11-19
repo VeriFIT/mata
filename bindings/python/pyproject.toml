@@ -56,5 +56,7 @@ dev = [
 [build-system]
 # The sources are Cython 3 only (cimports of libcpp.optional, noexcept semantics), and Cython 4 has
 #  not been validated against them yet.
-requires = ["setuptools", "wheel", "Cython>=3.0,<4", "cmake>=3.23"]
+# cmake would be a build-time tool of `make release-lib`, not of the wheel itself: pip's isolated env
+#  cannot satisfy it, and the Nix sandbox cannot pip-install cmake. Keep it out of build-system.requires.
+requires = ["setuptools", "wheel", "Cython>=3.0,<4"]
 build-backend = "setuptools.build_meta"
