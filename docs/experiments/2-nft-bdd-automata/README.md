@@ -3,7 +3,7 @@ id: EXP-2
 title: Use NFT levels as BDDs on automaton transitions
 status: rejected
 date: 2026-11-19
-base: 53021908d58bf60054a1bf2d902944e9cc45a27 (measured devel)
+base: 53021908d58bf600054a1bf2d902944e9cc45a27 (measured devel)
 related: []
 tags: [nft, bdd, symbolic-automata, performance]
 ---

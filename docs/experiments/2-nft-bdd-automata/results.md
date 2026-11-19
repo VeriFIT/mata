@@ -133,7 +133,7 @@ For a direct MONA comparison, run the analysis with `mona-1.4-18` as the baselin
 ## Historical comparison
 
 Baseline: `mata-bdd-old` (`v1.32.45-dev.25`, `f874bae84d6e167d4b0f947eec9e96270f5c725d`); new: `mata-bdd-new`
-(`53021908d58bf60054a1bf2d902944e9cc45a27`). The two cohorts' worker counts are specified in the record.
+(`53021908d58bf600054a1bf2d902944e9cc45a27`). The two cohorts' worker counts are specified in the record.
 
 ## Pairwise operation-time ratios
 
