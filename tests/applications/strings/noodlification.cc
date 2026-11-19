@@ -1512,7 +1512,7 @@ TEST_CASE("mata::nfa::SegNfa::noodlify() changes the first epsilon choice fastes
 	aut.final.insert(11);
 	aut.delta.add(0, 'a', 1);
 	aut.delta.add(0, 'b', 2);
-	for (const State source : {1, 2}) {
+	for (const State source : std::initializer_list<State>{1, 2}) {
 		aut.delta.add(source, EPSILON, 3);
 		aut.delta.add(source, EPSILON, 4);
 	}
@@ -1520,8 +1520,8 @@ TEST_CASE("mata::nfa::SegNfa::noodlify() changes the first epsilon choice fastes
 	aut.delta.add(3, 'v', 6);
 	aut.delta.add(4, 'w', 7);
 	aut.delta.add(4, 'z', 8);
-	for (const State source : {5, 6}) { aut.delta.add(source, EPSILON, 9); }
-	for (const State source : {7, 8}) { aut.delta.add(source, EPSILON, 10); }
+	for (const State source : std::initializer_list<State>{5, 6}) { aut.delta.add(source, EPSILON, 9); }
+	for (const State source : std::initializer_list<State>{7, 8}) { aut.delta.add(source, EPSILON, 10); }
 	aut.delta.add(9, 'p', 11);
 	aut.delta.add(10, 'q', 11);
 
