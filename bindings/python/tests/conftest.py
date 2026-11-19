@@ -5,7 +5,6 @@ import shutil
 import sys
 import tempfile
 import threading
-import time
 
 import libmata.nfa.nfa as mata_nfa
 import pytest
@@ -33,14 +32,12 @@ def runs_without_the_gil():
     if not getattr(sys, "_is_gil_enabled", lambda: True)():
         pytest.skip("the interpreter has no GIL")
 
-    def _runs_without_the_gil(operation, budget_seconds=1.0):
-        """Return whether this thread observes the other thread still running `operation`.
+    def _runs_without_the_gil(operation):
+        """Return whether this thread runs Python code before the other thread finishes `operation`.
 
-        Do not poll immediately after `entered.wait()`: the worker has not necessarily reached
-        `operation()` yet, making even `lambda: None` look like it released the GIL. Sleeping here
-        yields the GIL to the worker; this main thread can then advance while `operation()` is in
-        progress only if that call releases the GIL too. The operations under test are deliberately
-        large enough to outlast the initial observation delay on every supported runner.
+        With a 60 s switch interval, the worker keeps the GIL from `entered.set()` until it blocks, releases the GIL,
+        or exits, so `entered.wait()` returns early only if `operation()` released the GIL. Check `finished` at once:
+        any delay, such as a sleep, lets a short native call finish first and reports a false negative.
         """
         entered = threading.Event()
         finished = threading.Event()
@@ -59,14 +56,9 @@ def runs_without_the_gil():
             worker = threading.Thread(target=run)
             worker.start()
             entered.wait()
-            time.sleep(0.001)
-            deadline = time.monotonic() + budget_seconds
-            saw_running = False
-            while not finished.is_set() and time.monotonic() < deadline:
-                saw_running = True
-                time.sleep(0)
+            ran_during_the_operation = not finished.is_set()
             worker.join()
-            return saw_running
+            return ran_during_the_operation
         finally:
             sys.setswitchinterval(switch_interval)
 
