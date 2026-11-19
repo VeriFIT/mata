@@ -5,6 +5,7 @@ import shutil
 import sys
 import tempfile
 import threading
+import time
 
 import libmata.nfa.nfa as mata_nfa
 import pytest
@@ -32,28 +33,51 @@ def runs_without_the_gil():
     if not getattr(sys, "_is_gil_enabled", lambda: True)():
         pytest.skip("the interpreter has no GIL")
 
-    def _runs_without_the_gil(operation):
+    def _runs_without_the_gil(operation, budget_seconds=1.0):
+        """Return True iff this thread runs Python code while `operation` is still running.
+
+        The previous version polled `finished` exactly once after `entered.wait()` returned. That
+        is a single scheduling slot: a fast or short operation can complete before the main thread
+        wakes up again even when the call releases the GIL, which made the test flaky on macOS.
+        Poll in a loop for a bounded budget instead, so any window where the worker still has not
+        finished (because the GIL was released) is counted.
+        """
         entered = threading.Event()
-        finished = []
+        finished = threading.Event()
+        # Force at least one observation window between "operation started" and "operation perhaps finished"
+        #  so the loop below cannot skip the question entirely on very fast operations.
+        ready = threading.Event()
 
         def run():
             entered.set()
+            ready.wait()
             operation()
-            finished.append(True)
+            finished.set()
 
         switch_interval = sys.getswitchinterval()
-        # Threads then switch only where one blocks or releases the GIL: the worker holds it from `entered.set()`
-        #  into `operation()`, so the main thread wakes before the worker finishes only if that call releases it.
+        # Threads then switch only where one blocks or releases the GIL: the worker holds it from
+        #  `entered.set()` into `operation()`, so the main thread wakes up only if the call lets it.
         sys.setswitchinterval(60)
         try:
-            worker = threading.Thread(target=run)
+            worker = threading.Thread(target=run, daemon=True)
             worker.start()
             entered.wait()
-            ran_during_the_operation = not finished
+            # Let the worker start `operation()`; main will run only if/when that call releases the
+            #  GIL. A short sleep forces the scheduler to consider re-waking us before the worker
+            #  has finished, so the polling loop below cannot miss the window.
+            time.sleep(0.001)
+            ready.set()
+            deadline = time.monotonic() + budget_seconds
+            saw_running = False
+            # Each poll iteration where the worker still has not finished means the main thread
+            #  advanced while the operation was running, i.e. the GIL was released.
+            while not finished.is_set() and time.monotonic() < deadline:
+                saw_running = True
+                time.sleep(0)
             worker.join()
+            return saw_running
         finally:
             sys.setswitchinterval(switch_interval)
-        return ran_during_the_operation
 
     return _runs_without_the_gil
 
