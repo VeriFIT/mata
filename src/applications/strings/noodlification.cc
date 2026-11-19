@@ -207,9 +207,10 @@ using mata::nfa::Limits;
  *
  * A node of the search at depth k is a pair (initial, final) of segment k, its children the pairs of segment k + 1
  *  whose initial state is a target of an ε-transition from its final state. Leaves are noodles. Single-epsilon noodles
- *  use the original global ε-transition odometer in Forward and Reverse, with the first depth changing fastest. Other
- *  orders (seg_nfa::NoodleOrder) run a depth-first search with the children of every node reordered. The search holds
- *  one path, or the odometer's indices, instead of a whole level of partial noodles.
+ *  in Forward and Reverse follow the original global ε-transition odometer, with the first depth changing fastest,
+ *  but skip the choices that cannot complete a noodle. Other orders (seg_nfa::NoodleOrder) run a depth-first search
+ *  with the children of every node reordered. The search holds one path, or the chosen ε-transitions, instead of a
+ *  whole level of partial noodles.
  *
  * The shared automaton of a final state (see seg_nfa::NoodleSegment) is built when the search first reaches the
  *  final state, the final states that an initial state reaches when the search first reaches the initial state.
@@ -269,14 +270,9 @@ class NoodleEnumerator {
 		if (mode_ == Mode::Single && (order_.kind == seg_nfa::NoodleOrder::Kind::Forward ||
 									  order_.kind == seg_nfa::NoodleOrder::Kind::Reverse)) {
 			const auto& depths{segmentation_.get_epsilon_transitions_by_depth()};
-			permutation_positions_.assign(depths.size(), 0);
-			permutation_exhausted_ =
+			choice_cursors_.assign(depths.size(), 0);
+			choices_exhausted_ =
 				std::ranges::any_of(depths, [](const auto& transitions) { return transitions.empty(); });
-			if (order_.kind == seg_nfa::NoodleOrder::Kind::Reverse && !permutation_exhausted_) {
-				for (size_t depth{0}; depth < depths.size(); ++depth) {
-					permutation_positions_[depth] = depths[depth].size() - 1;
-				}
-			}
 		}
 	}
 
@@ -340,53 +336,66 @@ class NoodleEnumerator {
 		return false;
 	}
 
-	/// Single-epsilon Forward and Reverse follow the original global ε-transition odometer, with the first depth
-	///  changing fastest. Only the current indices and noodle are retained, not the partial noodles of every prefix.
+	/// Single-epsilon Forward and Reverse emit the noodles in the order of the original global ε-transition
+	///  odometer, with the first depth changing fastest: by the ε-transition of the last depth first. The ε-transitions
+	///  are chosen from the last depth down, each only if its segment to the choice of the next depth is nonempty.
+	///  Segmentation reaches the source of every ε-transition of depth k from an initial state through ε-transitions
+	///  of the lower depths, so a choice that fits always completes a noodle: the search visits no dead end, and the
+	///  time to the next noodle stays polynomial even when only a few of the combinations form noodles.
 	bool advance_permutation() {
 		const auto& depths{segmentation_.get_epsilon_transitions_by_depth()};
-		while (!permutation_exhausted_) {
-			while (!kept_.empty()) { pop_segment(); }
-			State previous_target{unused_state_};
-			bool complete{true};
-			for (size_t depth{0}; depth < depths.size(); ++depth) {
-				if (depths[depth].empty()) {
-					complete = false;
-					break;
-				}
-				const Transition& transition{depths[depth][permutation_positions_[depth]]};
-				if (!push_segment(depth, previous_target, transition.source)) {
-					complete = false;
-					break;
-				}
-				previous_target = transition.target;
-			}
-			if (complete && push_segment(depths.size(), previous_target, unused_state_) &&
-				(num_of_left_out_ == 0 || seen_.insert(keys_).second)) {
-				permutation_exhausted_ = !advance_permutation_indices(depths);
-				at_noodle_ = true;
-				return true;
-			}
-			permutation_exhausted_ = !advance_permutation_indices(depths);
+		if (choices_exhausted_) { return false; }
+		size_t depth{0};
+		if (choices_started_) {
+			++choice_cursors_[0];
+		} else {
+			choices_started_ = true;
+			depth = depths.size() - 1;
 		}
-		return false;
+		while (true) {
+			if (choice_cursors_[depth] == depths[depth].size()) {
+				if (depth + 1 == depths.size()) {
+					choices_exhausted_ = true;
+					return false;
+				}
+				++depth;
+				++choice_cursors_[depth];
+			} else if (!choice_fits(depths, depth)) {
+				++choice_cursors_[depth];
+			} else if (depth == 0) {
+				break;
+			} else {
+				--depth;
+				choice_cursors_[depth] = 0;
+			}
+		}
+		while (!kept_.empty()) { pop_segment(); }
+		State previous_target{unused_state_};
+		for (size_t seg_id{0}; seg_id < depths.size(); ++seg_id) {
+			const Transition& transition{chosen_transition(depths, seg_id)};
+			push_segment(seg_id, previous_target, transition.source);
+			previous_target = transition.target;
+		}
+		push_segment(depths.size(), previous_target, unused_state_);
+		return true;
 	}
 
-	/// Advance the global ε-transition indices. False when the last permutation has been consumed.
-	bool advance_permutation_indices(const std::vector<std::vector<Transition>>& depths) {
-		for (size_t depth{0}; depth < depths.size(); ++depth) {
-			if (order_.kind == seg_nfa::NoodleOrder::Kind::Reverse) {
-				if (permutation_positions_[depth] != 0) {
-					--permutation_positions_[depth];
-					return true;
-				}
-				permutation_positions_[depth] = depths[depth].size() - 1;
-			} else {
-				++permutation_positions_[depth];
-				if (permutation_positions_[depth] < depths[depth].size()) { return true; }
-				permutation_positions_[depth] = 0;
-			}
-		}
-		return false;
+	/// The ε-transition chosen at @p depth, the choices of Reverse running backwards.
+	const Transition& chosen_transition(const std::vector<std::vector<Transition>>& depths, const size_t depth) const {
+		const size_t cursor{choice_cursors_[depth]};
+		return depths[depth]
+					 [order_.kind == seg_nfa::NoodleOrder::Kind::Reverse ? depths[depth].size() - 1 - cursor : cursor];
+	}
+
+	/// Whether the segments around the ε-transition chosen at @p depth are nonempty, given the deeper choices.
+	bool choice_fits(const std::vector<std::vector<Transition>>& depths, const size_t depth) {
+		if (include_empty_) { return true; }
+		const Transition& transition{chosen_transition(depths, depth)};
+		const State next_source{
+			depth + 1 == depths.size() ? unused_state_ : chosen_transition(depths, depth + 1).source
+		};
+		if (segment(depth + 1, transition.target, next_source).automaton == empty_automaton_) { return false; }
+		return depth != 0 || segment(0, unused_state_, transition.source).automaton != empty_automaton_;
 	}
 
 	using SegmentKey = std::pair<State, State>;
@@ -442,9 +451,11 @@ class NoodleEnumerator {
 	std::vector<bool> is_target_{};
 
 	std::vector<Frame> frames_{};
-	/// Whether the global ε-transition odometer has no further permutations.
-	bool permutation_exhausted_{false};
-	std::vector<size_t> permutation_positions_{};
+	/// The cursor of the ε-transition chosen at each depth.
+	std::vector<size_t> choice_cursors_{};
+	bool choices_started_{false};
+	/// Whether no noodle is left in the single-epsilon Forward and Reverse orders.
+	bool choices_exhausted_{false};
 	/// The noodle on the path of the search, without the left out segments.
 	seg_nfa::NoodleWithEpsilonsCounter noodle_{};
 	/// The pairs of the segments of noodle_.

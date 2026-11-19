@@ -1,6 +1,7 @@
 // TODO: some header
 
 #include <algorithm>
+#include <array>
 #include <functional>
 #include <memory>
 #include <random>
@@ -1548,6 +1549,49 @@ TEST_CASE("mata::nfa::SegNfa::noodlify() changes the first epsilon choice fastes
 	CHECK(words(seg_nfa::noodlify(aut, EPSILON)) == expected);
 #if MATA_HAS_GENERATOR_SUPPORT
 	CHECK(words(take_all(seg_nfa::noodlify_lazy(aut, EPSILON))) == expected);
+#endif
+}
+
+TEST_CASE("mata::nfa::SegNfa::noodlify() enumerates two separate paths over many epsilon boundaries quickly") {
+	// Lane 'a' and lane 'b' each cross every ε-boundary, but never into each other: two noodles out of 2^40
+	//  combinations of the ε-transitions of the depths.
+	constexpr size_t num_of_boundaries{40};
+	const auto entry = [](const size_t segment, const size_t lane) {
+		return static_cast<State>(2 + 4 * segment + 2 * lane);
+	};
+	const std::array<mata::Symbol, 2> symbols{'a', 'b'};
+	Nfa aut{2 + 4 * (num_of_boundaries + 1)};
+	aut.initial.insert(0);
+	aut.final.insert(1);
+	for (size_t lane{0}; lane < symbols.size(); ++lane) {
+		aut.delta.add(0, symbols[lane], entry(0, lane) + 1);
+		for (size_t segment{1}; segment <= num_of_boundaries; ++segment) {
+			aut.delta.add(entry(segment - 1, lane) + 1, EPSILON, entry(segment, lane));
+			aut.delta.add(
+				entry(segment, lane), symbols[lane], segment == num_of_boundaries ? 1 : entry(segment, lane) + 1
+			);
+		}
+	}
+
+	const auto lanes = [&](const std::vector<seg_nfa::Noodle>& noodles) {
+		std::vector<mata::Symbol> result{};
+		for (const seg_nfa::Noodle& noodle : noodles) {
+			REQUIRE(noodle.size() == num_of_boundaries + 1);
+			const mata::Symbol symbol{noodle[0].to_nfa().get_words(2).begin()->front()};
+			for (const seg_nfa::NoodleSegment& segment : noodle) {
+				CHECK(segment.to_nfa().get_words(2) == std::set<mata::Word>{{symbol}});
+			}
+			result.push_back(symbol);
+		}
+		return result;
+	};
+	CHECK(lanes(seg_nfa::noodlify(aut, EPSILON)) == std::vector<mata::Symbol>{'a', 'b'});
+#if MATA_HAS_GENERATOR_SUPPORT
+	CHECK(lanes(take_all(seg_nfa::noodlify_lazy(aut, EPSILON))) == std::vector<mata::Symbol>{'a', 'b'});
+	CHECK(
+		lanes(take_all(seg_nfa::noodlify_lazy(aut, EPSILON, false, {.kind = seg_nfa::NoodleOrder::Kind::Reverse}))) ==
+		std::vector<mata::Symbol>{'b', 'a'}
+	);
 #endif
 }
 
