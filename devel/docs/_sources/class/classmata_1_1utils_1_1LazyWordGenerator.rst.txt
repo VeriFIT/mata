@@ -1,5 +1,0 @@
-Class mata::utils::LazyWordGenerator
-====================================
-
-.. doxygenclass:: mata::utils::LazyWordGenerator
-   :members:
