@@ -189,8 +189,10 @@ Nft product(
  * @param[in] rhs Second automaton to concatenate.
  * @param[in] epsilon Symbol used for the connecting transitions between @p lhs and @p rhs.
  * @param[in] use_epsilon Whether to keep the connecting epsilon transitions in the result.
- * @param[out] lhs_state_renaming Map mapping lhs states to result states.
- * @param[out] rhs_state_renaming Map mapping rhs states to result states.
+ * @param[out] lhs_state_renaming Map mapping lhs states to result states. Filled only when requested; it
+ *  describes the shift of the full concatenation even when the result is empty.
+ * @param[out] rhs_state_renaming Map mapping rhs states to result states. Filled only when requested; it
+ *  describes the shift of the full concatenation even when the result is empty.
  * @return Concatenated automaton.
  */
 Nft concatenate_eps(

@@ -573,6 +573,71 @@ TEST_CASE("mata::nft::concatenate() over epsilon symbol") {
 	}
 }
 
+TEST_CASE("mata::nft::concatenate() fills the state renaming maps") {
+	// A chain 0 --a--> 1 --a--> 2, initial 0, final 2.
+	Nft lhs{Nft::with_levels(1)};
+	lhs.add_state(2);
+	lhs.initial.insert(0);
+	lhs.final.insert(2);
+	lhs.delta.add(0, 'a', 1);
+	lhs.delta.add(1, 'a', 2);
+	// A one-state loop over 'b', initial and final.
+	Nft rhs{Nft::with_levels(1)};
+	rhs.add_state();
+	rhs.initial.insert(0);
+	rhs.final.insert(0);
+	rhs.delta.add(0, 'b', 0);
+
+	const StateRenaming expected_lhs_renaming{{0, 0}, {1, 1}, {2, 2}};
+	const StateRenaming expected_rhs_renaming{{0, 3}};
+
+	SECTION("an ordinary call fills both maps") {
+		StateRenaming lhs_renaming{{7, 7}}; // Stale entries must not survive a requested map.
+		StateRenaming rhs_renaming{{7, 7}};
+		const Nft result{concatenate(lhs, rhs, true, &lhs_renaming, &rhs_renaming)};
+
+		CHECK(lhs_renaming == expected_lhs_renaming);
+		CHECK(rhs_renaming == expected_rhs_renaming);
+		CHECK(result.num_of_states() == 4);
+		CHECK(result.delta.contains(2, EPSILON, 3));
+	}
+
+	SECTION("a requested map is filled even when the result is empty") {
+		// No final state in rhs: the concatenation is empty, yet the maps still describe the full concatenation.
+		Nft no_final_rhs{rhs};
+		no_final_rhs.final.clear();
+
+		StateRenaming lhs_renaming{};
+		StateRenaming rhs_renaming{};
+		const Nft result{concatenate(lhs, no_final_rhs, true, &lhs_renaming, &rhs_renaming)};
+
+		CHECK(result.num_of_states() == 0);
+		CHECK(lhs_renaming == expected_lhs_renaming);
+		CHECK(rhs_renaming == expected_rhs_renaming);
+	}
+
+	SECTION("an operand without states maps only its own states") {
+		StateRenaming lhs_renaming{{7, 7}};
+		StateRenaming rhs_renaming{{7, 7}};
+		const Nft result{concatenate(lhs, Nft::with_levels(1), true, &lhs_renaming, &rhs_renaming)};
+
+		CHECK(result.num_of_states() == 0);
+		CHECK(lhs_renaming == expected_lhs_renaming);
+		CHECK(rhs_renaming.empty());
+	}
+
+	SECTION("nullptr maps are skipped") {
+		CHECK_NOTHROW(concatenate(lhs, rhs, true));
+		CHECK_NOTHROW(concatenate(lhs, rhs, true, nullptr, nullptr));
+		StateRenaming lhs_renaming{};
+		StateRenaming rhs_renaming{};
+		CHECK_NOTHROW(concatenate(lhs, rhs, true, nullptr, &rhs_renaming));
+		CHECK(rhs_renaming == expected_rhs_renaming);
+		CHECK_NOTHROW(concatenate(lhs, rhs, true, &lhs_renaming, nullptr));
+		CHECK(lhs_renaming == expected_lhs_renaming);
+	}
+}
+
 TEST_CASE("mata::nft::(a|b)*") {
 	const Nft aut1{mata::nfa::builder::create_from_regex("a*")};
 	const Nft aut2{mata::nfa::builder::create_from_regex("b*")};
@@ -1341,4 +1406,42 @@ TEST_CASE("mata::nft::concatenate_eps() with custom epsilon on a multi-level NFT
 	CHECK(ab_concat.levels.num_of_levels == 2);
 	CHECK(are_equivalent(ab_concat, concatenate(a, b)));
 	CHECK(!ab_concat.delta.get_used_symbols().contains(custom_epsilon));
+}
+
+TEST_CASE("mata::nft::concatenate_eps() keeps only the levels of the operand states") {
+	// A levels vector may hold an entry past the states of its NFT; it cannot shift the rhs levels.
+	Nft lhs{Nft::with_levels(2)};
+	lhs.initial.insert(0);
+	lhs.final.insert(0);
+	lhs.levels.set({0, 1});
+	Nft rhs{Nft::with_levels(2)};
+	rhs.initial.insert(0);
+	rhs.final.insert(0);
+	const Nft result{algorithms::concatenate_eps(lhs, rhs, 3, false)};
+	CHECK(result.levels[0] == 0);
+	CHECK(result.levels[1] == 0);
+
+	// The same empty-result path must give the original counts' maps without needing the left operand's delta.
+	StateRenaming lhs_map{};
+	StateRenaming rhs_map{};
+	const Nft empty{algorithms::concatenate_eps(lhs, Nft::with_levels(2), 3, false, &lhs_map, &rhs_map)};
+	CHECK(empty.num_of_states() == 0);
+	CHECK(lhs_map == StateRenaming{{0, 0}});
+	CHECK(rhs_map.empty());
+}
+
+TEST_CASE("mata::nft::concatenate_eps() does not read a renaming through its symbol argument") {
+	Nft lhs{Nft::with_levels(1)};
+	lhs.initial.insert(0);
+	lhs.final.insert(0);
+	lhs.delta.add(0, 1, 0);
+	Nft rhs{Nft::with_levels(1)};
+	rhs.initial.insert(0);
+	rhs.final.insert(0);
+	StateRenaming lhs_map{};
+	StateRenaming rhs_map{{0, 3}};
+	// Since Symbol and State are the same type, pass a map entry to exercise the aliased symbol argument.
+	constexpr Symbol epsilon{3};
+	const Nft result{algorithms::concatenate_eps(lhs, rhs, rhs_map.at(0), false, &lhs_map, &rhs_map)};
+	CHECK(!result.delta.get_used_symbols().contains(epsilon));
 }

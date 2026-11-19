@@ -1878,8 +1878,10 @@ inline Nft compose(
  * @param[in] lhs First automaton to concatenate.
  * @param[in] rhs Second automaton to concatenate.
  * @param[in] use_epsilon Whether to concatenate over epsilon symbol.
- * @param[out] lhs_state_renaming Map mapping lhs states to result states.
- * @param[out] rhs_state_renaming Map mapping rhs states to result states.
+ * @param[out] lhs_state_renaming Map mapping lhs states to result states. Filled only when requested; it
+ *  describes the shift of the full concatenation even when the result is empty.
+ * @param[out] rhs_state_renaming Map mapping rhs states to result states. Filled only when requested; it
+ *  describes the shift of the full concatenation even when the result is empty.
  * @return Concatenated automaton.
  */
 // TODO: check how fast is using just concatenate over epsilon and then call remove_epsilon().

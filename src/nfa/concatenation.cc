@@ -28,39 +28,46 @@ Nfa concatenate_eps_consuming(
 	Nfa&& lhs,
 	// A forwarding reference only to take a const operand or one to consume, which is used in place.
 	RhsNfa&& rhs,
-	const Symbol& epsilon,
+	// By value: `epsilon` may name an entry of a requested renaming map, which is cleared and refilled below.
+	const Symbol epsilon,
 	const bool use_epsilon,
 	StateRenaming* lhs_state_renaming,
 	StateRenaming* rhs_state_renaming
 ) {
 	constexpr bool consume_rhs{!std::is_const_v<std::remove_reference_t<RhsNfa>>};
+	const size_t lhs_states_num{lhs.num_of_states()};
+	const size_t rhs_states_num{rhs.num_of_states()};
+
+	// The renamings are arithmetic: lhs states keep their indices, rhs states shift by the number of lhs states.
+	//  Computing the maps costs one entry per state, so they are filled only when the caller asked for them, and
+	//  also on the early return, where they keep describing the (empty) concatenation.
+	auto output_renamings = [&] {
+		if (lhs_state_renaming != nullptr) {
+			lhs_state_renaming->clear();
+			lhs_state_renaming->reserve(lhs_states_num);
+			for (State state{0}; state < lhs_states_num; ++state) { lhs_state_renaming->emplace(state, state); }
+		}
+		if (rhs_state_renaming != nullptr) {
+			rhs_state_renaming->clear();
+			rhs_state_renaming->reserve(rhs_states_num);
+			for (State state{0}; state < rhs_states_num; ++state) {
+				rhs_state_renaming->emplace(state, static_cast<State>(lhs_states_num) + state);
+			}
+		}
+	};
+
+	// The combined state count and rhs shift must be representable before construction, also on the empty return.
+	if (Limits::max_num_of_states - lhs_states_num < rhs_states_num) { throw_state_overflow(); }
 	if (concatenation_is_empty(lhs, rhs)) {
+		output_renamings();
 		lhs = Nfa{};
 		if constexpr (consume_rhs) { rhs = Nfa{}; }
 		return Nfa{};
 	}
 
-	const size_t lhs_states_num{lhs.num_of_states()};
-	const size_t rhs_states_num{rhs.num_of_states()};
 	const size_t result_num_of_states{lhs_states_num + rhs_states_num};
-	check_num_of_states(result_num_of_states);
 
-	StateRenaming lhs_states_renaming{}; // Map mapping lhs states to result states.
-	StateRenaming rhs_states_renaming{}; // Map mapping rhs states to result states.
-
-	// Map lhs states to result states.
-	lhs_states_renaming.reserve(lhs_states_num);
-	State result_state_index{0};
-	for (State lhs_state{0}; lhs_state < lhs_states_num; ++lhs_state) {
-		lhs_states_renaming.insert(std::make_pair(lhs_state, result_state_index));
-		++result_state_index;
-	}
-	// Map rhs states to result states.
-	rhs_states_renaming.reserve(rhs_states_num);
-	for (State rhs_state{0}; rhs_state < rhs_states_num; ++rhs_state) {
-		rhs_states_renaming.insert(std::make_pair(rhs_state, result_state_index));
-		++result_state_index;
-	}
+	output_renamings();
 
 	// The lhs states keep their indices in the result, so its delta and initial states move in as they are.
 	// The final states of lhs do not survive the concatenation, so they are only read here.
@@ -82,18 +89,18 @@ Nfa concatenate_eps_consuming(
 	// Add epsilon transitions connecting lhs and rhs automata.
 	// The epsilon transitions lead from lhs original final states to rhs original initial states.
 	for (const State& lhs_final_state : lhs_final_states) {
-		for (const State& rhs_initial_state : rhs.initial) {
-			result.delta.add(lhs_final_state, epsilon, rhs_states_renaming[rhs_initial_state]);
+		for (const State rhs_initial_state : rhs.initial) {
+			result.delta.add(lhs_final_state, epsilon, static_cast<State>(lhs_states_num) + rhs_initial_state);
 		}
 	}
 
 	// Make result final states.
-	for (const State& rhs_final_state : rhs.final) { result.final.insert(rhs_states_renaming[rhs_final_state]); }
+	for (const State rhs_final_state : rhs.final) {
+		result.final.insert(static_cast<State>(lhs_states_num) + rhs_final_state);
+	}
 	if constexpr (consume_rhs) { rhs = Nfa{}; }
 
 	if (!use_epsilon) { result.remove_epsilon(epsilon); }
-	if (lhs_state_renaming != nullptr) { *lhs_state_renaming = lhs_states_renaming; }
-	if (rhs_state_renaming != nullptr) { *rhs_state_renaming = rhs_states_renaming; }
 	return result;
 }
 
@@ -221,7 +228,25 @@ Nfa algorithms::concatenate_eps(
 ) {
 	// Compute concatenation of given automata.
 	// Concatenation will proceed in the order of the passed automata: Result is 'lhs . rhs'.
-	if (concatenation_is_empty(lhs, rhs)) { return Nfa{}; }
+	// The consuming path fills the requested renaming maps also for the empty result.
+	if (concatenation_is_empty(lhs, rhs)) {
+		// Do not clone a possibly large lhs only to throw it away: fill the requested maps from the original counts.
+		// The combined state count must be representable, as on the consuming path, whichever maps are requested.
+		if (Limits::max_num_of_states - lhs.num_of_states() < rhs.num_of_states()) { throw_state_overflow(); }
+		if (lhs_state_renaming != nullptr) {
+			lhs_state_renaming->clear();
+			lhs_state_renaming->reserve(lhs.num_of_states());
+			for (State state{0}; state < lhs.num_of_states(); ++state) { lhs_state_renaming->emplace(state, state); }
+		}
+		if (rhs_state_renaming != nullptr) {
+			rhs_state_renaming->clear();
+			rhs_state_renaming->reserve(rhs.num_of_states());
+			for (State state{0}; state < rhs.num_of_states(); ++state) {
+				rhs_state_renaming->emplace(state, static_cast<State>(lhs.num_of_states()) + state);
+			}
+		}
+		return Nfa{};
+	}
 	// The one intentional copy: the parts of lhs that the result is built on. The copy cannot alias rhs.
 	return concatenate_eps_consuming(
 		Nfa{lhs.delta, lhs.initial, lhs.final}, rhs, epsilon, use_epsilon, lhs_state_renaming, rhs_state_renaming
