@@ -1197,8 +1197,12 @@ def _nth_symbol_from_the_end_nfa(n):
         "intersection",
     ],
 )
+# On macOS the shorter input sometimes completes before the observing thread is scheduled.
+GIL_OBSERVATION_NFA_STATES = 16
+
+
 def test_heavy_operations_let_other_threads_run(operation, runs_without_the_gil):
-    aut = _nth_symbol_from_the_end_nfa(14)
+    aut = _nth_symbol_from_the_end_nfa(GIL_OBSERVATION_NFA_STATES)
     other = _build_threaded_nfa(num_states=600, num_transitions=2400)
     alphabet = alphabets.OnTheFlyAlphabet()
     alphabet.translate_symbol("a")
