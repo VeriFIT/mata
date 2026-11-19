@@ -1,0 +1,444 @@
+From 6227ebc42398fe79eee4f7bdaf9ee6f8f25adf73 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Wed, 18 Nov 2026 09:37:13 +0100
+Subject: [PATCH 1/5] tools: +feat Compare mata's NFTs as BDD automata with
+ CUDD and MONA
+
+---
+ README.md                         | 48 ++++++++++++++++++++++++++++++-
+ harnesses/automata-program-parser |  2 +-
+ justfile                          | 13 +++++----
+ nix/shells.nix                    |  3 ++
+ scripts/tools/cudd.sh             | 31 ++++++++++++++++++++
+ scripts/tools/mata-bdd.sh         | 27 +++++++++++++++++
+ scripts/tools/mona.sh             | 34 ++++++++++++++++++++++
+ suites/bdd.toml                   | 34 ++++++++++++++++++++++
+ 8 files changed, 184 insertions(+), 8 deletions(-)
+ create mode 100644 scripts/tools/cudd.sh
+ create mode 100644 scripts/tools/mata-bdd.sh
+ create mode 100644 scripts/tools/mona.sh
+ create mode 100644 suites/bdd.toml
+
+diff --git a/README.md b/README.md
+index b1c048b1..555bc3f1 100644
+--- a/README.md
++++ b/README.md
+@@ -160,6 +160,7 @@ and methods.
+ | `trim.toml`     | `trim()` against copy + in-place trim                                  |
+ | `minimize.toml` | variants and several programs on one revision                          |
+ | `reduce.toml`   | `reduce()` of NFAs, of the ranges of NFTs and of NFTs                  |
++| `bdd.toml`      | mata's NFTs as automata with BDDs on transitions against BDD libraries |
+ | `smoke.toml`    | `just smoke-test` and CI                                               |
+ 
+ ### Inputs
+@@ -219,6 +220,9 @@ Java or a .NET library is added exactly like a C++ one. `just tools` lists them:
+ | `automata-net` | `subjects/automata-net`          | emp     | the .NET interpreter of Automata.NET (no determinization, minimization, concatenation) |
+ | `fado`         | `pypi:fado`                      | emp     | `pyinterpret`'s `FadoEngine` on that FAdo release                                      |
+ | `automata-py`  | `pypi:automata-lib`              | emp     | `pyinterpret`'s `AutomataLibEngine` on that automata-lib release                       |
++| `mata-bdd`     | `subjects/mata`                  | emp     | the C++ interpreter on that revision's NFTs used as automata with BDDs on transitions (no concatenation, minimization) |
++| `cudd`         | `tarball:` CUDD releases         | emp     | the C++ interpreter on symbolic NFAs with CUDD BDDs on transitions (no concatenation, minimization) |
++| `mona`         | `tarball:` MONA tags, commits    | emp     | the C++ interpreter on MONA's DFA library (no concatenation)                            |
+ 
+ An operation a library lacks makes the instance fail (ERR) instead of being
+ skipped. The Java and .NET interpreters read explicit alphabets only, so their
+@@ -226,6 +230,8 @@ wrappers mintermize bitvector inputs first (`scripts/massage_arguments.py`,
+ cached under `build/minterm/`). The dev shell provides their toolchains (JDK,
+ Maven, .NET SDK, Boost for libvata); the wrappers embed the store paths, so keep
+ the shell rooted (e.g. with nix-direnv) to keep them from being collected.
++`mata-bdd`, `cudd` and `mona` read bitvector inputs (`@NFA-bits`) only, keeping
++every transition's formula (see _Automata with BDDs on transitions_).
+ 
+ A subject is a git repository (`subjects/<name>`, revisions are tags, branches
+ and commits), `pypi:<package>` (revisions are versions), or `tarball:<url>`
+@@ -294,7 +300,9 @@ the whole process. An operation that computes an answer also prints
+ report cross-checks between the compared builds, whatever their tool. Every
+ interpreter names an operation's time alike (`construction`, `intersection`,
+ `uni`, `compl`, `concat`, `determinize`, `minimize`, `trim`, `emptiness_check`,
+-`inclusion_check`), so a column compares it across tools.
++`inclusion_check`), so a column compares it across tools, and prints the time
++of every operation of the program, all its steps, as `operation`, whose sum
++is the time of the program without the loading of its automata.
+ 
+ ### `.emp` programs
+ 
+@@ -402,6 +410,44 @@ the parsing and the repetitions. A variant that cannot compute an instance
+ (`via=word` of a language of more than one word) exits with status 2, an error
+ of that run.
+ 
++### Automata with BDDs on transitions
++
++`suites/bdd.toml` asks whether mata's NFTs can serve as automata whose
++transitions carry BDDs: it runs the TACAS'24 experiments with bitvector inputs
++(`@NFA-bits`, 6 to 16 variables) on
++
++- `mata-bdd`: an automaton over n variables is an NFT of n levels. Its states
++  are the NFT's states of level 0, and the guard of the transitions from a state
++  to a state is its BDD laid out in the NFT: a node is a state of the level of
++  its variable, reading 0 or 1 to its children; a child skipping variables is
++  reached by a jump, read with `JumpMode::AppendDontCares` (DONT_CARE on the
++  skipped levels), so the NFT is as small as the BDD. The operations are mata's
++  NFT algorithms: `intersection()` and `is_included()` read the jumps and
++  DONT_CAREs themselves, complementation and determinization unwind them into
++  0 and 1 first (timed as `unwind`).
++- `cudd`: symbolic NFAs with explicit states and one CUDD BDD per pair of
++  states, with the textbook algorithms: the product conjoins the guards, the
++  subset construction splits the guards of a macrostate into the regions of its
++  targets, inclusion is the antichain algorithm over that construction. It is
++  the baseline of the report.
++- `mona`: MONA's DFA library. MONA has DFAs only, so an NFA is determinized
++  while it is loaded (projecting out variables that choose among the targets,
++  as MONA quantifies), which its `construction` includes and which blows up
++  where the subset construction does.
++- `mata`: mata's own way, mintermizing the inputs into explicit NFAs.
++
++The three read their inputs with the harness' `utils/bits_load.hh`, not with
++mata, and `mata-bdd` and `mona` lay out the guards of `utils/robdd.hh`, so
++they all start from the same canonical BDDs. Compare `operation`, the
++operations of the program, rather than `runtime`, which also holds the parsing
++(`parsing`, `mataparsing`), the construction of the automata (`construction`,
++and `mataminterm` for `mata`) and the start of the process:
++
++```shell
++scripts/bench.py suites/bdd.toml --fetch-from ../mata --repeat 3
++scripts/bench.py suites/bdd.toml --only lia-symbolic mata-bdd:v1.32.45-dev.57,devel cudd:3.0.0
++```
++
+ ## Reporting
+ 
+ Every run ends with the tables and plots comparing the measured builds; they are
+diff --git a/harnesses/automata-program-parser b/harnesses/automata-program-parser
+index cf992bbb..74c87958 160000
+--- a/harnesses/automata-program-parser
++++ b/harnesses/automata-program-parser
+@@ -1 +1 @@
+-Subproject commit cf992bbbbf30b80654520c02fecaf0c0dd8b4c20
++Subproject commit 74c879589583713aebf417189bf5367b72dd5893
+diff --git a/justfile b/justfile
+index 361d3e72..6345ad2e 100644
+--- a/justfile
++++ b/justfile
+@@ -16,10 +16,11 @@ build: setup-python
+ # Installs what the pipeline needs without Nix, on Debian/Ubuntu or macOS: GCC >= 14
+ # (recent mata), cmake, git, Python >= 3.13 with headers (recent mata bindings), a
+ # `time` command and uv, and on Debian/Ubuntu also the toolchains of the other
+-# libraries (Boost for vata, a JDK and maven for brics and automatalib, the .NET 8
+-# SDK for automata-net where apt has it). Debian 13 has new enough packages;
+-# Ubuntu 24.04's GCC, Python and just are too old. Elsewhere, install these
+-# manually (uv: https://docs.astral.sh/uv/getting-started/installation/).
++# libraries (Boost for vata, a JDK and maven for brics and automatalib, flex and
++# bison for mona's configure, the .NET 8 SDK for automata-net where apt has it).
++# Debian 13 has new enough packages; Ubuntu 24.04's GCC, Python and just are too
++# old. Elsewhere, install these manually
++# (uv: https://docs.astral.sh/uv/getting-started/installation/).
+ bootstrap:
+ 	#!/usr/bin/env bash
+ 	set -euo pipefail
+@@ -32,7 +33,7 @@ bootstrap:
+ 	    sudo apt-get update
+ 	    sudo apt-get install -y build-essential cmake curl git python3 python3-dev time \
+ 	      libboost-dev libboost-filesystem-dev libboost-system-dev libboost-test-dev \
+-	      openjdk-21-jdk-headless maven
++	      openjdk-21-jdk-headless maven flex bison
+ 	    if [ -n "$(apt-cache policy dotnet-sdk-8.0 | grep 'Candidate: [0-9]')" ]; then
+ 	      sudo apt-get install -y dotnet-sdk-8.0
+ 	    else
+@@ -44,7 +45,7 @@ bootstrap:
+ 	      echo "error: Homebrew not found; install it from https://brew.sh first" >&2
+ 	      exit 1
+ 	    fi
+-	    brew install cmake python
++	    brew install cmake python flex bison
+ 	    echo "note: vata, brics, automatalib and automata-net need Boost < 1.89, a JDK with maven and the .NET 8 SDK; install them yourself" >&2
+ 	    ;;
+ 	  *)
+diff --git a/nix/shells.nix b/nix/shells.nix
+index a5f46dda..764841db 100644
+--- a/nix/shells.nix
++++ b/nix/shells.nix
+@@ -65,6 +65,9 @@
+                     jdk21_headless
+                     maven
+                     dotnet-sdk_8
++                    # MONA's configure (scripts/tools/mona.sh) checks for them.
++                    flex
++                    bison
+ 
+                     git
+                     jujutsu
+diff --git a/scripts/tools/cudd.sh b/scripts/tools/cudd.sh
+new file mode 100644
+index 00000000..1ac5dd68
+--- /dev/null
++++ b/scripts/tools/cudd.sh
+@@ -0,0 +1,31 @@
++# cudd: the harness' C++ interpreter on symbolic NFAs whose transitions are
++# labelled by BDDs of CUDD (the textbook algorithms over the guards: product,
++# subset construction splitting the guards, antichain inclusion). Reads
++# '@NFA-bits' inputs only, with the harness' own reader. A revision is a CUDD
++# release, e.g. 3.0.0, from the GitHub mirror of the releases.
++#
++# CUDD is built with its own optimisation flags (-O3) whatever the build mode;
++# the binary links libcudd statically.
++
++subject="tarball:https://github.com/ivmai/cudd/archive/refs/tags/cudd-{rev}.tar.gz"
++runs="emp"
++
++build() {
++    local build="$outdir/cudd-build" prefix="$outdir/prefix"
++    local harness_build="$outdir/harness-build"
++
++    rm -rf "$build" "$prefix"
++    mkdir -p "$build"
++    (cd "$build" && "$worktree/configure" --prefix="$prefix" --disable-shared >/dev/null)
++    make -C "$build" --jobs="$jobs" >/dev/null
++    make -C "$build" install >/dev/null
++
++    echo "======== Building the C++ interpreter ========"
++    cmake -B "$harness_build" -S "$harness" \
++        -DCMAKE_BUILD_TYPE=Release \
++        -DCMAKE_PREFIX_PATH="$prefix" \
++        -DMATA_INTERPRETERS:BOOL=OFF \
++        -DCUDD_INTERPRETER:BOOL=ON
++    cmake --build "$harness_build" --parallel "$jobs" --target cudd-emp-interpreter
++    cp "$harness_build/src/cpp/cudd-emp-interpreter" "$binary"
++}
+diff --git a/scripts/tools/mata-bdd.sh b/scripts/tools/mata-bdd.sh
+new file mode 100644
+index 00000000..1f099210
+--- /dev/null
++++ b/scripts/tools/mata-bdd.sh
+@@ -0,0 +1,27 @@
++# mata-bdd: the harness' C++ interpreter on mata's NFTs used as automata with
++# BDDs on their transitions (one NFT level per variable of the bitvector),
++# linked against libmata of the revision. Reads '@NFA-bits' inputs only, with
++# the harness' own reader: it must not mintermize.
++
++subject=subjects/mata
++runs="emp"
++
++build() {
++    local build="$outdir/mata-build" prefix="$outdir/prefix"
++    local harness_build="$outdir/harness-build"
++
++    cmake -B "$build" -S "$worktree" \
++        -DCMAKE_BUILD_TYPE="$build_mode" \
++        -DCMAKE_INSTALL_PREFIX="$prefix" \
++        -DBUILD_TESTING:BOOL=OFF \
++        -DMATA_BUILD_EXAMPLES:BOOL=OFF
++    cmake --build "$build" --parallel "$jobs" --target libmata
++    cmake --install "$build" >/dev/null
++
++    echo "======== Building the C++ interpreter ========"
++    cmake -B "$harness_build" -S "$harness" \
++        -DCMAKE_BUILD_TYPE=Release \
++        -DCMAKE_PREFIX_PATH="$prefix"
++    cmake --build "$harness_build" --parallel "$jobs" --target mata-bdd-emp-interpreter
++    cp "$harness_build/src/cpp/mata-bdd-emp-interpreter" "$binary"
++}
+diff --git a/scripts/tools/mona.sh b/scripts/tools/mona.sh
+new file mode 100644
+index 00000000..f3211b87
+--- /dev/null
++++ b/scripts/tools/mona.sh
+@@ -0,0 +1,34 @@
++# mona: the harness' C++ interpreter on MONA's DFA library, whose automata have
++# a shared multi-terminal BDD per state. MONA has DFAs only: an NFA is
++# determinized when it is loaded, by projecting out choice variables as MONA
++# quantifies (see interpreter_mona.cc). Reads '@NFA-bits' inputs only, with the
++# harness' own reader. A revision is a tag or a commit of
++# https://github.com/cs-au-dk/MONA, e.g. 1.4-18.
++#
++# Only MONA's libraries (Mem, BDD, DFA) are built, with MONA's own optimisation
++# flags (-O3) whatever the build mode; its configure needs flex and bison all
++# the same. The binary links them statically.
++
++subject="tarball:https://github.com/cs-au-dk/MONA/archive/{rev}.tar.gz"
++runs="emp"
++
++build() {
++    local prefix="$outdir/prefix" harness_build="$outdir/harness-build" dir
++
++    # In the source tree: DFA's makefile finds BDD's headers there only. The
++    # tarball is unpacked afresh for every build.
++    rm -rf "$prefix"
++    (cd "$worktree" && ./configure --prefix="$prefix" --disable-shared >/dev/null)
++    for dir in Mem BDD DFA; do
++        make -C "$worktree/$dir" --jobs="$jobs" install >/dev/null
++    done
++
++    echo "======== Building the C++ interpreter ========"
++    cmake -B "$harness_build" -S "$harness" \
++        -DCMAKE_BUILD_TYPE=Release \
++        -DCMAKE_PREFIX_PATH="$prefix" \
++        -DMATA_INTERPRETERS:BOOL=OFF \
++        -DMONA_INTERPRETER:BOOL=ON
++    cmake --build "$harness_build" --parallel "$jobs" --target mona-emp-interpreter
++    cp "$harness_build/src/cpp/mona-emp-interpreter" "$binary"
++}
+diff --git a/suites/bdd.toml b/suites/bdd.toml
+new file mode 100644
+index 00000000..8d3f0f04
+--- /dev/null
++++ b/suites/bdd.toml
+@@ -0,0 +1,34 @@
++# Automata with BDDs on their transitions: mata's NFTs used as such automata
++# (mata-bdd: one NFT level per variable of the bitvector) against libraries
++# built on BDDs, on the experiments of the TACAS'24 suite whose inputs have
++# bitvector alphabets. cudd (symbolic NFAs over CUDD's BDDs) is the baseline of
++# the report; mona (MONA's DFA library) determinizes every input when loading
++# it; mata is mata's own way, mintermizing the inputs into explicit NFAs.
++# Compare the operations, not the runtime: the 'operation' column sums the
++# operations of the program, without the parsing and the construction of the
++# automata (columns 'parsing'/'mataparsing', 'construction', 'mataminterm').
++#
++#   scripts/bench.py suites/bdd.toml --fetch-from ../mata --repeat 3
++#   scripts/bench.py suites/bdd.toml --only lia-symbolic mata-bdd:v1.32.45-dev.57,devel cudd:3.0.0
++
++include = [
++  { path = "tacas-24.toml", only = [
++    "armc-incl",
++    "b-smt",
++    "email-filter",
++    "lia-symbolic",
++    "param-inter",
++    "param-inter-variadic",
++    "param-union",
++    "param-union-variadic",
++    "param-diff",
++  ] },
++]
++
++[defaults]
++timeout = 60
++# A determinization that blows up (mona's loading, complements) fails the run
++# as a memout rather than taking the machine down.
++memout = 8
++metrics = ["operation", "runtime"]
++builds = ["cudd:3.0.0", "mata-bdd:devel", "mona:1.4-18", "mata:devel"]
+-- 
+2.56.0
+
+
+From 2793702291224b598d156ed0f414b7d11a1dabe5 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Wed, 18 Nov 2026 10:14:35 +0100
+Subject: [PATCH 2/5] docs: +chore Format the tools table
+
+---
+ README.md | 26 +++++++++++++-------------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
+
+diff --git a/README.md b/README.md
+index 555bc3f1..9af6baae 100644
+--- a/README.md
++++ b/README.md
+@@ -209,20 +209,20 @@ function producing `bin/<tool>-<label>`, run as
+ library, that wrapper is its whole interface to the rest of the pipeline, so a
+ Java or a .NET library is added exactly like a C++ one. `just tools` lists them:
+ 
+-| tool           | subject                          | runs    | what it is                                                                             |
+-| -------------- | -------------------------------- | ------- | -------------------------------------------------------------------------------------- |
+-| `mata`         | `subjects/mata`                  | emp, cc | the C++ interpreter linked against that revision's `libmata`                           |
+-| `pymata`       | `subjects/mata`                  | emp     | `pyinterpret`'s `MataEngine` on that revision's Python bindings                        |
+-| `vata`         | `subjects/libvata`               | emp     | the C++ interpreter on libvata (no determinization, minimization, concatenation)       |
+-| `awali`        | `tarball:` awali releases        | emp     | the C++ interpreter on awali's dynamic library                                         |
+-| `brics`        | `subjects/mata-comparison-brics` | emp     | the Java interpreter on brics (no determinization, minimization)                       |
+-| `automatalib`  | `subjects/mata-comparison-brics` | emp     | the Java interpreter on AutomataLib (no minimization, concatenation)                   |
+-| `automata-net` | `subjects/automata-net`          | emp     | the .NET interpreter of Automata.NET (no determinization, minimization, concatenation) |
+-| `fado`         | `pypi:fado`                      | emp     | `pyinterpret`'s `FadoEngine` on that FAdo release                                      |
+-| `automata-py`  | `pypi:automata-lib`              | emp     | `pyinterpret`'s `AutomataLibEngine` on that automata-lib release                       |
++| tool           | subject                          | runs    | what it is                                                                                                             |
++| -------------- | -------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------- |
++| `mata`         | `subjects/mata`                  | emp, cc | the C++ interpreter linked against that revision's `libmata`                                                           |
++| `pymata`       | `subjects/mata`                  | emp     | `pyinterpret`'s `MataEngine` on that revision's Python bindings                                                        |
++| `vata`         | `subjects/libvata`               | emp     | the C++ interpreter on libvata (no determinization, minimization, concatenation)                                       |
++| `awali`        | `tarball:` awali releases        | emp     | the C++ interpreter on awali's dynamic library                                                                         |
++| `brics`        | `subjects/mata-comparison-brics` | emp     | the Java interpreter on brics (no determinization, minimization)                                                       |
++| `automatalib`  | `subjects/mata-comparison-brics` | emp     | the Java interpreter on AutomataLib (no minimization, concatenation)                                                   |
++| `automata-net` | `subjects/automata-net`          | emp     | the .NET interpreter of Automata.NET (no determinization, minimization, concatenation)                                 |
++| `fado`         | `pypi:fado`                      | emp     | `pyinterpret`'s `FadoEngine` on that FAdo release                                                                      |
++| `automata-py`  | `pypi:automata-lib`              | emp     | `pyinterpret`'s `AutomataLibEngine` on that automata-lib release                                                       |
+ | `mata-bdd`     | `subjects/mata`                  | emp     | the C++ interpreter on that revision's NFTs used as automata with BDDs on transitions (no concatenation, minimization) |
+-| `cudd`         | `tarball:` CUDD releases         | emp     | the C++ interpreter on symbolic NFAs with CUDD BDDs on transitions (no concatenation, minimization) |
+-| `mona`         | `tarball:` MONA tags, commits    | emp     | the C++ interpreter on MONA's DFA library (no concatenation)                            |
++| `cudd`         | `tarball:` CUDD releases         | emp     | the C++ interpreter on symbolic NFAs with CUDD BDDs on transitions (no concatenation, minimization)                    |
++| `mona`         | `tarball:` MONA tags, commits    | emp     | the C++ interpreter on MONA's DFA library (no concatenation)                                                           |
+ 
+ An operation a library lacks makes the instance fail (ERR) instead of being
+ skipped. The Java and .NET interpreters read explicit alphabets only, so their
+-- 
+2.56.0
+
+
+From 36b97403e30f1c6335dd92e4b1b90247baf15bee Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Wed, 18 Nov 2026 13:59:25 +0100
+Subject: [PATCH 3/5] harness: +fix Keep varying metric rows aligned with
+ headers
+
+---
+ harnesses/pycobench | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/harnesses/pycobench b/harnesses/pycobench
+index 644801e0..992bf412 160000
+--- a/harnesses/pycobench
++++ b/harnesses/pycobench
+@@ -1 +1 @@
+-Subproject commit 644801e08845215bbd1ee694cd311373c8976c48
++Subproject commit 992bf412a64c7f0ee2a82d145610a4d0e65be238
+-- 
+2.56.0
+
+
+From 3ce126f7becd57542f8196657bcde90308bd8f78 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Wed, 18 Nov 2026 14:34:58 +0100
+Subject: [PATCH 4/5] docs: +docs Note known complement limitations of BDD
+ comparisons
+
+---
+ README.md | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/README.md b/README.md
+index 9af6baae..98750b85 100644
+--- a/README.md
++++ b/README.md
+@@ -448,6 +448,12 @@ scripts/bench.py suites/bdd.toml --fetch-from ../mata --repeat 3
+ scripts/bench.py suites/bdd.toml --only lia-symbolic mata-bdd:v1.32.45-dev.57,devel cudd:3.0.0
+ ```
+ 
++Two pre-existing mata issues can produce complement disagreements:
++`mata::nft::complement` of an automaton with no initial states accepts only
++the empty word instead of the full language, and the shared alphabet used for
++the mintermized `mata` automata need not contain a minterm that no transition
++accepts. Check `disagreements.csv` before comparing their complement answers.
++
+ ## Reporting
+ 
+ Every run ends with the tables and plots comparing the measured builds; they are
+-- 
+2.56.0
+
+
+From de495a25620f6d0c82d0bf38866a2b89333e0911 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Wed, 18 Nov 2026 17:08:13 +0100
+Subject: [PATCH 5/5] harness: +fix Preserve complete metrics in truncated
+ output
+
+---
+ harnesses/pycobench | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/harnesses/pycobench b/harnesses/pycobench
+index 992bf412..ea4f7576 160000
+--- a/harnesses/pycobench
++++ b/harnesses/pycobench
+@@ -1 +1 @@
+-Subproject commit 992bf412a64c7f0ee2a82d145610a4d0e65be238
++Subproject commit ea4f7576dd02e43f78ba4c72477bce98bfa8d800
+-- 
+2.56.0
+
