@@ -2,6 +2,7 @@
 
 import os
 import shutil
+import time
 
 import libmata.nfa.nfa as mata_nfa
 import libmata.nfa.strings as mata_strings
@@ -307,7 +308,15 @@ def test_determinize_algorithm(nfa_two_states_uni):
     pruned.make_initial_state(0)
     pruned.make_final_state(1)
     pruned.make_final_state(2)
-    for source, symbol, target in ((0, 0, 1), (0, 0, 2), (0, 1, 1), (0, 2, 0), (1, 0, 1), (2, 0, 2), (2, 1, 2)):
+    for source, symbol, target in (
+        (0, 0, 1),
+        (0, 0, 2),
+        (0, 1, 1),
+        (0, 2, 0),
+        (1, 0, 1),
+        (2, 0, 2),
+        (2, 1, 2),
+    ):
         pruned.add_transition(source, symbol, target)
     expected_states = {"none": 4, "bisimulation": 4, "simulation": 3, "adaptive": 4}
     for reduction, num_of_states in expected_states.items():
@@ -320,7 +329,8 @@ def test_determinize_algorithm(nfa_two_states_uni):
             _check_subset_map_languages(pruned, dfa, subset_map)
             if algorithm == "four_russians" and reduction != "none":
                 _, expected_map = mata_nfa.determinize_four_russians_with_subset_map(
-                    pruned, reduction=mata_nfa.DeterminizationReduction[reduction.capitalize()]
+                    pruned,
+                    reduction=mata_nfa.DeterminizationReduction[reduction.capitalize()],
                 )
                 assert subset_map == expected_map
 
@@ -1174,6 +1184,10 @@ def _nth_symbol_from_the_end_nfa(n):
     return aut
 
 
+# On macOS the shorter input sometimes completes before the observing thread is scheduled.
+GIL_OBSERVATION_NFA_STATES = 16
+
+
 @pytest.mark.parametrize(
     "operation",
     [
@@ -1198,12 +1212,19 @@ def _nth_symbol_from_the_end_nfa(n):
     ],
 )
 def test_heavy_operations_let_other_threads_run(operation, runs_without_the_gil):
-    aut = _nth_symbol_from_the_end_nfa(14)
+    aut = _nth_symbol_from_the_end_nfa(GIL_OBSERVATION_NFA_STATES)
     other = _build_threaded_nfa(num_states=600, num_transitions=2400)
     alphabet = alphabets.OnTheFlyAlphabet()
     alphabet.translate_symbol("a")
     alphabet.translate_symbol("b")
     assert runs_without_the_gil(lambda: operation(aut, other, alphabet))
+
+
+def test_gil_observation_has_a_negative_control(runs_without_the_gil):
+    """Do not report a GIL release before an operation has had a chance to run at all."""
+    assert not runs_without_the_gil(lambda: None)
+    assert not runs_without_the_gil(lambda: sum(range(100000)))
+    assert runs_without_the_gil(lambda: time.sleep(0.02))
 
 
 def test_simulation_equivalence():

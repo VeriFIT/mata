@@ -12,6 +12,11 @@ inputs:
     description: "Version tag to write to the VERSION file (e.g. v1.2.3)."
     required: false
     default: "v0.0.0-dev.1"
+  install-binding:
+    description: >-
+      Whether to install the binding itself ("true") or only its dependencies ("false"), for jobs that build the binding later anyway.
+    required: false
+    default: "true"
 runs:
   using: "composite"
   steps:
@@ -25,11 +30,21 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
         # cache: "pip"
-    - name: Install Python Dependencies
+    - name: Install the binding and its dependencies
+      if: ${{ inputs.install-binding == 'true' }}
       shell: bash
       run: |
         python3 -m pip install --upgrade pip
         make -C bindings/python init
+    # Building the binding compiles Mata, so a job that builds the binding later itself takes only the dependencies
+    #  the binding declares.
+    - name: Install the dependencies of the binding
+      if: ${{ inputs.install-binding != 'true' }}
+      shell: bash
+      run: |
+        python3 -m pip install --upgrade pip
+        python3 -c 'import tomllib; print("\n".join(tomllib.load(open("bindings/python/pyproject.toml", "rb"))["project"]["dependencies"]))' > "$RUNNER_TEMP/binding-requirements.txt"
+        python3 -m pip install --requirement "$RUNNER_TEMP/binding-requirements.txt"
     - name: Building MacOS dependencies
       if: ${{ inputs.os == 'macos-latest' }}
       shell: bash

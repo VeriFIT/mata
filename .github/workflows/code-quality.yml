@@ -1,6 +1,10 @@
 name: Code Quality
 on:
   pull_request:
+# A new push to a pull request supersedes the run of the previous one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   warnings-base:
     runs-on: ${{ matrix.os }}
@@ -73,7 +77,18 @@ jobs:
       - uses: ./.github/workflows/actions/install-solvers
         with:
           os: ${{ matrix.os }}
-      - uses: ./.github/workflows/actions/compile
+      # CMake uses ccache as the compiler launcher whenever it finds one (see `MATA_USE_CCACHE`). One cache per
+      #  leg: objects compiled by another compiler or on another OS would never hit.
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1
+        with:
+          key: run-tests-cpp-${{ matrix.os }}-${{ matrix.compiler }}
+          max-size: 500M
+      # warnings-new already builds everything on the same legs, so only the tests are built here.
+      - name: Configure
+        run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
+      - name: Build unit tests
+        run: cmake --build build --target tests --parallel 4
       - name: Test the library
         run: make test
   run-tests-python:
@@ -101,6 +116,8 @@ jobs:
         with:
           os: ${{ matrix.os }}
           python-version: ${{ matrix.python-version }}
+          # Both legs build the binding below; the tests import the in-place build.
+          install-binding: "false"
       - name: Write the released version to VERSION file
         shell: bash
         run: |
@@ -539,6 +556,11 @@ jobs:
       - uses: ./.github/workflows/actions/install-solvers
         with:
           os: ubuntu-latest
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1
+        with:
+          key: state-bits-64-ubuntu-latest
+          max-size: 500M
       - name: Configure with 64-bit states
         run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DMATA_STATE_BITS=64
       - name: Build unit tests
@@ -550,6 +572,7 @@ jobs:
         with:
           os: ubuntu-latest
           python-version: "3.13"
+          install-binding: "false"
       - name: Compile the Python bindings from the source
         uses: ./.github/workflows/actions/compile-python-src
       - name: Test the Python bindings
