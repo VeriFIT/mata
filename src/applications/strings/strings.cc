@@ -12,6 +12,7 @@
 #include <span>
 #include <stdexcept>
 #include <unordered_map>
+#include <vector>
 
 using namespace mata::nfa;
 using namespace mata::applications::strings;
@@ -22,91 +23,46 @@ std::set<mata::Word> mata::applications::strings::get_shortest_words(const Nfa& 
 	return ShortestWordsMap{nfa}.get_shortest_words_from(StateSet{nfa.initial});
 }
 
-std::set<mata::Word> ShortestWordsMap::get_shortest_words_from(const StateSet& states) const {
-	std::set<Word> result{};
-
-	if (!shortest_words_map_.empty()) {
-		WordLength shortest_words_length{-1};
-		for (const State state : states) {
-			const auto& current_shortest_words_map{shortest_words_map_.find(state)};
-			if (current_shortest_words_map == shortest_words_map_.end()) { continue; }
-
-			if (const auto& [length, shortest_words]{current_shortest_words_map->second};
-				result.empty() || length < shortest_words_length) {
-				// Find a new set of the shortest words.
-				result = shortest_words;
-				shortest_words_length = length;
-			} else if (length == shortest_words_length) {
-				// Append the shortest words from other state of the same length to the already found set of the
-				// shortest words.
-				result.insert(shortest_words.begin(), shortest_words.end());
-			}
-		}
-	}
-
-	return result;
-}
-
 std::set<mata::Word> ShortestWordsMap::get_shortest_words_from(const State state) const {
 	return get_shortest_words_from(StateSet{state});
 }
 
-void ShortestWordsMap::insert_initial_lengths() {
-	if (const auto initial_states{reversed_automaton_.initial}; !initial_states.empty()) {
-		for (const State state : initial_states) {
-			shortest_words_map_.insert(std::make_pair(state, std::make_pair(0, std::set<Word>{std::vector<Symbol>{}})));
+std::set<mata::Word> ShortestWordsMap::get_shortest_words_from(const StateSet& states) const {
+	State shortest_length{Limits::max_state};
+	StateSet sources{};
+	for (const State state : states) {
+		if (state >= distances_.size()) { continue; }
+		if (distances_[state] < shortest_length) {
+			shortest_length = distances_[state];
+			sources.clear();
 		}
-
-		const auto initial_states_begin{initial_states.begin()};
-		const auto initial_states_end{initial_states.end()};
-		processed_.insert(initial_states_begin, initial_states_end);
-		fifo_queue_.insert(fifo_queue_.end(), initial_states_begin, initial_states_end);
+		if (distances_[state] == shortest_length) { sources.insert(state); }
 	}
-}
+	if (sources.empty() || shortest_length == Limits::max_state) { return {}; }
 
-void ShortestWordsMap::compute() {
-	while (!fifo_queue_.empty()) {
-		const State state{fifo_queue_.front()};
-		fifo_queue_.pop_front();
-		// Compute the shortest words for the current state.
-		compute_for_state(state);
-	}
-}
-
-void ShortestWordsMap::compute_for_state(const State state) {
-	const LengthWordsPair& dst{map_default_shortest_words(state)};
-	const WordLength dst_length_plus_one{dst.first + 1};
-
-	for (const SymbolPost& transition : reversed_automaton_.delta.state_post(state)) {
-		for (const State state_to : transition.targets) {
-			const LengthWordsPair& orig{map_default_shortest_words(state_to)};
-			LengthWordsPair act{orig};
-
-			if ((act.first == -1) || (dst_length_plus_one < act.first)) {
-				// Found new shortest words after appending transition symbols.
-				act.second.clear();
-				update_current_words(act, dst, transition.symbol);
-			} else if (dst_length_plus_one == act.first) {
-				// Append transition symbol to increase length of the shortest words.
-				update_current_words(act, dst, transition.symbol);
-			}
-
-			if (orig.second != act.second) { shortest_words_map_[state_to] = act; }
-
-			if (!processed_.contains(state_to)) {
-				processed_.insert(state_to);
-				fifo_queue_.push_back(state_to);
+	// Keep one expansion per word prefix instead of per accepting path. Following only targets
+	//  one step closer to a final state guarantees that every expanded prefix has a completion.
+	std::unordered_map<Word, StateSet, utils::VectorHash<Symbol>> frontier{{Word{}, sources}};
+	for (State remaining{shortest_length}; remaining > 0; --remaining) {
+		std::unordered_map<Word, StateSet, utils::VectorHash<Symbol>> next_frontier{};
+		for (const auto& [prefix, current_states] : frontier) {
+			for (const State source : current_states) {
+				for (const SymbolPost& post : aut_.delta.state_post(source)) {
+					Word word{prefix};
+					word.push_back(post.symbol);
+					for (const State target : post.targets) {
+						if (distances_[target] != remaining - 1) { continue; }
+						next_frontier[word].insert(target);
+					}
+				}
 			}
 		}
+		frontier = std::move(next_frontier);
 	}
-}
 
-void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, const Symbol symbol) {
-	for (Word word : dst.second) {
-		word.insert(word.begin(), symbol);
-		act.second.insert(word);
-	}
-	act.first = dst.first + 1;
+	std::set<Word> result{};
+	for (const auto& prefix_and_states : frontier) { result.insert(prefix_and_states.first); }
+	return result;
 }
 
 namespace {

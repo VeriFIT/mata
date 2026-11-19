@@ -39,13 +39,10 @@ using Nft = nft::Nft;
 class ShortestWordsMap {
   public:
 	/**
-	 * Maps states in the automaton @p aut to shortest words accepted by languages of the states.
+	 * Prepares shortest words for every state of @p aut.
 	 * @param aut Automaton to compute shortest words for.
 	 */
-	explicit ShortestWordsMap(const Nfa& aut) : reversed_automaton_(revert(aut)) {
-		insert_initial_lengths();
-		compute();
-	}
+	explicit ShortestWordsMap(const Nfa& aut) : aut_{aut}, distances_{aut_.distances_to_final()} {}
 
 	/**
 	 * Gets shortest words for the given @p states.
@@ -62,49 +59,9 @@ class ShortestWordsMap {
 	std::set<Word> get_shortest_words_from(State state) const;
 
   private:
-	using WordLength = int; ///< A length of a word.
-	/// Pair binding the length of all words in the word set and word set with words of the given length.
-	using LengthWordsPair = std::pair<WordLength, std::set<Word>>;
-	/// Map mapping states to the shortest words accepted by the automaton from the mapped state.
-	std::unordered_map<State, LengthWordsPair> shortest_words_map_{};
-	std::set<State> processed_{}; ///< Set of already processed states.
-	std::deque<State> fifo_queue_{}; ///< FIFO queue for states to process.
-	Nfa reversed_automaton_; ///< Reversed input automaton.
-
-	/**
-	 * @brief Inserts initial lengths into the shortest words map.
-	 *
-	 * Inserts initial length of length 0 for final state in the automaton (initial states in the reversed automaton).
-	 */
-	void insert_initial_lengths();
-
-	/**
-	 * Computes shortest words for all states in the automaton.
-	 */
-	void compute();
-
-	/**
-	 * Computes shortest words for the given @p state.
-	 * @param[in] state State to compute shortest words for.
-	 */
-	void compute_for_state(State state);
-
-	/**
-	 * Creates default shortest words mapping for yet unprocessed @p state.
-	 * @param[in] state State to map default shortest words.
-	 * @return Created default shortest words map element for the given @p state.
-	 */
-	LengthWordsPair map_default_shortest_words(const State state) {
-		return shortest_words_map_.emplace(state, std::make_pair(-1, std::set<Word>{})).first->second;
-	}
-
-	/**
-	 * Update words for the current state.
-	 * @param[out] act Current state shortest words and length.
-	 * @param[in] dst Transition target state shortest words and length.
-	 * @param[in] symbol Symbol to update with.
-	 */
-	static void update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, Symbol symbol);
+	Nfa aut_;
+	/// Shortest accepting path length from every state, or @c Limits::max_state if no final state is reachable.
+	std::vector<State> distances_{};
 }; // Class ShortestWordsMap.
 
 /**
