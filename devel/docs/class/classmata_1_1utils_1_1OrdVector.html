@@ -15,7 +15,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Class mata::utils::SmallOrdVector" href="classmata_1_1utils_1_1SmallOrdVector.html" />
-    <link rel="prev" title="Class mata::utils::LazyWordGenerator" href="classmata_1_1utils_1_1LazyWordGenerator.html" />
+    <link rel="prev" title="Class mata::utils::LazyGenerator" href="classmata_1_1utils_1_1LazyGenerator.html" />
    
   <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
   
@@ -66,6 +66,12 @@
 <p class="admonition-title">Note</p>
 <p><code class="docutils literal notranslate"><span class="pre">std::set</span></code> is already sorted and free of duplicates, so its elements are copied as they are. </p>
 </div>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0EN4mata5utils9OrdVector9OrdVectorERR1T">
+<span id="_CPPv3I0EN4mata5utils9OrdVector9OrdVectorERR1T"></span><span id="_CPPv2I0EN4mata5utils9OrdVector9OrdVectorERR1T"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">T</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1OrdVector_1a846e281777eecdcb916d8a1a0ec362f7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="k"><span class="pre">explicit</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">OrdVector</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0EN4mata5utils9OrdVector9OrdVectorERR1T" title="mata::utils::OrdVector::OrdVector::T"><span class="n"><span class="pre">T</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">set</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4I0EN4mata5utils9OrdVector9OrdVectorERR1T" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Construct from any input range whose elements convert to <code class="docutils literal notranslate"><span class="pre">Key</span></code>. A forwarding reference keeps ranges with non-const <code class="docutils literal notranslate"><a class="reference internal" href="../file/ord-vector_8hh.html#classmata_1_1utils_1_1OrdVector_1ad69bd11391be1a1dba5c8202259664f8"><span class="std std-ref"><span class="pre">begin()</span></span></a></code> (e.g. a named <code class="docutils literal notranslate"><span class="pre">std::views::filter</span></code> result) usable; the elements are converted from the references the range yields, and a sentinel of a different type than the iterator is supported. <code class="docutils literal notranslate"><a class="reference internal" href="../file/ord-vector_8hh.html#classmata_1_1utils_1_1OrdVector_1aaaa635684206c124a92d23d9e427c47f"><span class="std std-ref"><span class="pre">VectorType</span></span></a></code> and <code class="docutils literal notranslate"><span class="pre">std::set&lt;Key&gt;</span></code> are excluded, also as mutable lvalues: their own constructors keep the vector’s allocator and skip sorting the already sorted set. </p>
 </dd></dl>
 
 <dl class="cpp function">
@@ -259,7 +265,7 @@
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1parser_1_1MataWriter.html">Class mata::parser::MataWriter</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1parser_1_1NewStates.html">Class mata::parser::NewStates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1parser_1_1StateNameMap.html">Class mata::parser::StateNameMap</a></li>
-<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1LazyWordGenerator.html">Class mata::utils::LazyWordGenerator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1LazyGenerator.html">Class mata::utils::LazyGenerator</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Class mata::utils::OrdVector</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SmallOrdVector.html">Class mata::utils::SmallOrdVector</a></li>
 <li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SparseSet.html">Class mata::utils::SparseSet</a></li>
@@ -287,7 +293,7 @@
 <ul>
   <li><a href="../index.html">Documentation overview</a><ul>
   <li><a href="../classlist.html">Class list</a><ul>
-      <li>Previous: <a href="classmata_1_1utils_1_1LazyWordGenerator.html" title="previous chapter">Class mata::utils::LazyWordGenerator</a></li>
+      <li>Previous: <a href="classmata_1_1utils_1_1LazyGenerator.html" title="previous chapter">Class mata::utils::LazyGenerator</a></li>
       <li>Next: <a href="classmata_1_1utils_1_1SmallOrdVector.html" title="next chapter">Class mata::utils::SmallOrdVector</a></li>
   </ul></li>
   </ul></li>
