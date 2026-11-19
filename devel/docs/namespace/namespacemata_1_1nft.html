@@ -433,8 +433,8 @@ in] Nfts Type <a class="reference internal" href="#classmata_1_1nft_1_1Nft"><spa
 <li><p><strong>lhs</strong> – <strong>[in]</strong> First automaton to concatenate. </p></li>
 <li><p><strong>rhs</strong> – <strong>[in]</strong> Second automaton to concatenate. </p></li>
 <li><p><strong>use_epsilon</strong> – <strong>[in]</strong> Whether to concatenate over epsilon symbol. </p></li>
-<li><p><strong>lhs_state_renaming</strong> – <strong>[out]</strong> Map mapping lhs states to result states. </p></li>
-<li><p><strong>rhs_state_renaming</strong> – <strong>[out]</strong> Map mapping rhs states to result states. </p></li>
+<li><p><strong>lhs_state_renaming</strong> – <strong>[out]</strong> Map mapping lhs states to result states. Filled only when requested; it describes the shift of the full concatenation even when the result is empty. </p></li>
+<li><p><strong>rhs_state_renaming</strong> – <strong>[out]</strong> Map mapping rhs states to result states. Filled only when requested; it describes the shift of the full concatenation even when the result is empty. </p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -3118,8 +3118,8 @@ This overloaded version complements over an already created ordered set of <code
 <li><p><strong>rhs</strong> – <strong>[in]</strong> Second automaton to concatenate. </p></li>
 <li><p><strong>epsilon</strong> – <strong>[in]</strong> <a class="reference internal" href="namespacemata.html#namespacemata_1a50fb6a6d4e205026dc120f9d2feefee4"><span class="std std-ref">Symbol</span></a> used for the connecting transitions between <code class="docutils literal notranslate"><span class="pre">lhs</span></code> and <code class="docutils literal notranslate"><span class="pre">rhs</span></code>. </p></li>
 <li><p><strong>use_epsilon</strong> – <strong>[in]</strong> Whether to keep the connecting epsilon transitions in the result. </p></li>
-<li><p><strong>lhs_state_renaming</strong> – <strong>[out]</strong> Map mapping lhs states to result states. </p></li>
-<li><p><strong>rhs_state_renaming</strong> – <strong>[out]</strong> Map mapping rhs states to result states. </p></li>
+<li><p><strong>lhs_state_renaming</strong> – <strong>[out]</strong> Map mapping lhs states to result states. Filled only when requested; it describes the shift of the full concatenation even when the result is empty. </p></li>
+<li><p><strong>rhs_state_renaming</strong> – <strong>[out]</strong> Map mapping rhs states to result states. Filled only when requested; it describes the shift of the full concatenation even when the result is empty. </p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
