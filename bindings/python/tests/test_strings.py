@@ -415,18 +415,21 @@ def test_lazy_noodles_are_taken_without_the_gil(runs_without_the_gil):
     #  instead: every one advances the same native code, but none of them has an exponential tail.
     left, right = _random_nfa(1, 100), _random_nfa(2, 100)
 
+    # The factories release the GIL themselves; build the iterators first so only advancing them is observed.
+    equation_noodles = [mata_strings.noodlify_for_equation_sides_lazy([left], [right]) for _ in range(40)]
+
     def take_equation_noodles():
-        return [list(mata_strings.noodlify_for_equation_sides_lazy([left], [right])) for _ in range(40)]
+        return [list(noodles) for noodles in equation_noodles]
 
     assert runs_without_the_gil(take_equation_noodles)
     small_left, small_right = _random_nfa(1, 22), _random_nfa(2, 22)
     identity_nft = _two_level_identity()
+    transducer_noodles = [
+        mata_strings.noodlify_for_transducer_lazy(identity_nft, [small_left], [small_right]) for _ in range(40)
+    ]
 
     def take_transducer_noodles():
-        return [
-            list(mata_strings.noodlify_for_transducer_lazy(identity_nft, [small_left], [small_right]))
-            for _ in range(40)
-        ]
+        return [list(noodles) for noodles in transducer_noodles]
 
     assert runs_without_the_gil(take_transducer_noodles)
 
