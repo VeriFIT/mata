@@ -2,7 +2,7 @@
 
 import os
 import shutil
-import time
+import threading
 
 import libmata.nfa.nfa as mata_nfa
 import libmata.nfa.strings as mata_strings
@@ -1224,7 +1224,9 @@ def test_gil_observation_has_a_negative_control(runs_without_the_gil):
     """Do not report a GIL release before an operation has had a chance to run at all."""
     assert not runs_without_the_gil(lambda: None)
     assert not runs_without_the_gil(lambda: sum(range(100000)))
-    assert runs_without_the_gil(lambda: time.sleep(0.02))
+    # Blocks until observed, so no scheduling delay can let it finish first.
+    gate = threading.Event()
+    assert runs_without_the_gil(gate.wait, release=gate.set)
 
 
 def test_simulation_equivalence():
