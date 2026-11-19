@@ -282,22 +282,22 @@ TEST_CASE("mata::utils::TwoDimensionalMap::large_map == true") {
 
 	SECTION("dimensions at and over the 64-bit limit of the packed keys") {
 		using Map = TwoDimensionalMap<uint64_t, false>;
-		// (0, 0) and (2, 0) would both pack to zero modulo 2^64.
-		CHECK_THROWS_AS(Map(3, uint64_t{1} << 63), std::length_error);
+		// (0, 0) and (0, 2) would both pack to zero modulo 2^64.
+		CHECK_THROWS_AS(Map(uint64_t{1} << 63, 3), std::length_error);
 
-		// 3 * second_dim_size == 2^64 - 1: the largest packed key is 2^64 - 2, next to the empty-slot marker.
-		constexpr uint64_t second_dim_size{std::numeric_limits<uint64_t>::max() / 3};
-		Map map(3, second_dim_size);
+		// 3 * first_dim_size == 2^64 - 1: the largest packed key is 2^64 - 2, next to the empty-slot marker.
+		constexpr uint64_t first_dim_size{std::numeric_limits<uint64_t>::max() / 3};
+		Map map(first_dim_size, 3);
 		map.insert(0, 0, 1);
-		map.insert(2, 0, 2);
-		map.insert(2, second_dim_size - 1, 3);
-		map.insert(0, second_dim_size - 1, 4);
+		map.insert(0, 2, 2);
+		map.insert(first_dim_size - 1, 2, 3);
+		map.insert(first_dim_size - 1, 0, 4);
 		CHECK(map.get(0, 0) == 1);
-		CHECK(map.get(2, 0) == 2);
-		CHECK(map.get(2, second_dim_size - 1) == 3);
-		CHECK(map.get(0, second_dim_size - 1) == 4);
-		CHECK(map.get(1, 0) == Map::no_value);
-		CHECK(map.get(1, second_dim_size - 1) == Map::no_value);
+		CHECK(map.get(0, 2) == 2);
+		CHECK(map.get(first_dim_size - 1, 2) == 3);
+		CHECK(map.get(first_dim_size - 1, 0) == 4);
+		CHECK(map.get(0, 1) == Map::no_value);
+		CHECK(map.get(first_dim_size - 1, 1) == Map::no_value);
 	}
 }
 
@@ -334,5 +334,101 @@ TEST_CASE("mata::utils::TwoDimensionalMap switches to large mode above MaxMatrix
 		check_all_pairs(map, 3, 5);
 		map.insert(2, 4, wide_value);
 		CHECK(map.get(2, 4) == wide_value);
+	}
+}
+
+#if UINTPTR_MAX >= UINT64_MAX
+TEST_CASE("mata::utils::TwoDimensionalMap sparse rows grow with second keys above 2^32") {
+	// The row budget keeps the storage on SparseRows with uint64_t keys: growth, rehashing and missing keys of the
+	//  64-bit Fibonacci probing path. Skipped on 32-bit size_t: these dimensions do not fit addressable storage.
+	static_assert(sizeof(size_t) >= sizeof(uint64_t));
+	using Map = TwoDimensionalMap<uint64_t, false, 512>;
+	Map map(20, uint64_t{1} << 63);
+	constexpr uint64_t high{(uint64_t{1} << 32) + 7};
+	for (uint64_t second = high; second < high + 64; ++second) { map.insert(0, second, second + 1); }
+	for (uint64_t first = 0; first < 20; ++first) {
+		for (uint64_t second = high; second < high + 64; ++second) {
+			map.insert_if_absent(first, second, second + first + 1);
+		}
+	}
+	for (uint64_t first = 0; first < 20; ++first) {
+		for (uint64_t second = high; second < high + 64; ++second) {
+			const uint64_t expected{second + (first == 0 ? uint64_t{1} : first + 1)};
+			CHECK(map.get(first, second) == expected);
+			CHECK(map.get(first, second + 1'000) == Map::no_value);
+		}
+	}
+}
+
+TEST_CASE("mata::utils::TwoDimensionalMap sparse rows do not pack their keys") {
+	// Three rows fit the row budget, so the map uses SparseRows even though 3 * 2^63 overflows 64 bits: no packed
+	//  pair of keys exists, and second keys must stay full-width.
+	TwoDimensionalMap<uint64_t, true, 512> map(3, uint64_t{1} << 63);
+	constexpr uint64_t second{(uint64_t{1} << 62) + 13};
+	map.insert(0, second, 7);
+	map.insert(2, second, 8);
+	CHECK(map.get(0, second) == 7);
+	CHECK(map.get(2, second) == 8);
+	CHECK(map.get(1, second) == TwoDimensionalMap<uint64_t, true, 512>::no_value);
+	map.insert_if_absent(0, second, 9);
+	CHECK(map.get(0, second) == 7);
+	CHECK(map.get_first_inverted(7) == 0);
+	CHECK(map.get_second_inverted(7) == second);
+}
+#endif // UINTPTR_MAX >= UINT64_MAX
+
+TEST_CASE("mata::utils::TwoDimensionalMap keeps one hash table per first key") {
+	// A matrix would need 20 * 100 cells, but 20 rows of 16 Bytes fit into 512 Bytes, so the map uses sparse rows.
+	constexpr uint16_t first_dim_size{20};
+	constexpr uint16_t second_dim_size{100};
+	constexpr uint16_t last_value{first_dim_size * second_dim_size - 1};
+	using Map = TwoDimensionalMap<uint16_t, true, 512>;
+
+	SECTION("growth, collisions, missing keys, and the inverted indices") {
+		Map map(first_dim_size, second_dim_size);
+		// Only the even second keys of the first row first, so the row grows repeatedly while other rows do not
+		// exist yet, and the missing keys of both an allocated and an unallocated row can be checked.
+		for (uint16_t second = 0; second < second_dim_size; second += 2) { map.insert(0, second, second); }
+		for (uint16_t second = 0; second < second_dim_size; ++second) {
+			CHECK(map.get(0, second) == (second % 2 == 0 ? second : Map::no_value));
+			CHECK(map.get(1, second) == Map::no_value);
+		}
+
+		for (uint16_t first = 0; first < first_dim_size; ++first) {
+			for (uint16_t second = 0; second < second_dim_size; ++second) {
+				map.insert(first, second, static_cast<uint16_t>(first * second_dim_size + second));
+			}
+		}
+		for (uint16_t first = 0; first < first_dim_size; ++first) {
+			for (uint16_t second = 0; second < second_dim_size; ++second) {
+				const uint16_t value{static_cast<uint16_t>(first * second_dim_size + second)};
+				CHECK(map.get(first, second) == value);
+				CHECK(map.get_first_inverted(value) == first);
+				CHECK(map.get_second_inverted(value) == second);
+			}
+		}
+
+		// Overwriting an existing pair moves it to the new value. uint16_t arithmetic promotes to int,
+		//  so wrap the value back explicitly before passing it to the typed Map::insert().
+		constexpr uint16_t past_last_value{static_cast<uint16_t>(last_value + 1)};
+		map.insert(last_value / second_dim_size, second_dim_size - 1, past_last_value);
+		CHECK(map.get(last_value / second_dim_size, second_dim_size - 1) == past_last_value);
+		CHECK(map.get_first_inverted(past_last_value) == last_value / second_dim_size);
+		CHECK(map.get_second_inverted(past_last_value) == second_dim_size - 1);
+
+		// insert_if_absent() refuses the new value of an existing pair and returns the stored one.
+		CHECK(map.insert_if_absent(3, 4, 1'234) == std::pair(uint16_t{304}, false));
+		CHECK(map.get(3, 4) == 304);
+	}
+
+	SECTION("insert_if_absent() inserts a new pair once") {
+		Map map(first_dim_size, second_dim_size);
+		CHECK(map.insert_if_absent(7, 9, 42) == std::pair(uint16_t{42}, true));
+		CHECK(map.get(7, 9) == 42);
+		CHECK(map.get_first_inverted(42) == 7);
+		CHECK(map.get_second_inverted(42) == 9);
+		CHECK(map.insert_if_absent(7, 9, 1'234) == std::pair(uint16_t{42}, false));
+		CHECK(map.get(7, 9) == 42);
+		CHECK(map.get(7, 8) == Map::no_value);
 	}
 }
