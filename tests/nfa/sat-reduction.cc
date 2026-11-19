@@ -280,15 +280,16 @@ class IgnoredChildSignal {
 	IgnoredChildSignal() {
 		struct sigaction ignore{};
 		ignore.sa_handler = SIG_IGN;
-		::sigemptyset(&ignore.sa_mask);
+		// `sigemptyset` is a macro on macOS: no leading `::` so the preprocessor expands it.
+		sigemptyset(&ignore.sa_mask);
 		// Save the whole previous action (flags such as SA_NOCLDWAIT and the mask, not only the handler).
-		if (::sigaction(SIGCHLD, &ignore, &previous_) != 0) {
+		if (sigaction(SIGCHLD, &ignore, &previous_) != 0) {
 			throw std::system_error(errno, std::generic_category(), "cannot ignore SIGCHLD");
 		}
 	}
 	IgnoredChildSignal(const IgnoredChildSignal&) = delete;
 	IgnoredChildSignal& operator=(const IgnoredChildSignal&) = delete;
-	~IgnoredChildSignal() { ::sigaction(SIGCHLD, &previous_, nullptr); }
+	~IgnoredChildSignal() { sigaction(SIGCHLD, &previous_, nullptr); }
 
   private:
 	struct sigaction previous_{};
