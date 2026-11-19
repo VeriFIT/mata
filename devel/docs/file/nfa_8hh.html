@@ -488,7 +488,8 @@ in] Nfas Type <a class="reference internal" href="../namespace/namespacemata_1_1
 <li><p><strong>params</strong> – <strong>[in]</strong> Optional parameters to control the minimization algorithm:<ul>
 <li><p>”algorithm”:<ul>
 <li><p>”auto” (default): determinize the automaton if it is not deterministic, trim it, and run Hopcroft minimization. An automaton with an empty language is returned as a single non-final initial state.</p></li>
-<li><p>”hopcroft”: Hopcroft minimization; the input must be a trimmed deterministic automaton.</p></li>
+<li><p>”hopcroft”: run <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1nfa_1_1algorithms.html#namespacemata_1_1nfa_1_1algorithms_1acc66615ab17a8cb808a1a4df93bb101b"><span class="std std-ref"><span class="pre">algorithms::minimize_hopcroft()</span></span></a></code> directly on a trimmed deterministic automaton. Throws <code class="docutils literal notranslate"><span class="pre">std::invalid_argument</span></code> for a nondeterministic input (except a transition-free automaton without initial states). Trimming is not checked, but is required to guarantee a minimal result.</p></li>
+<li><p>”hopcroft_nondet”: run <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1nfa_1_1algorithms.html#namespacemata_1_1nfa_1_1algorithms_1a10a22ca3cb508992cf3507ba3c8b4d13"><span class="std std-ref"><span class="pre">algorithms::minimize_hopcroft_nondet()</span></span></a></code>, which performs the same normalization as “auto” before Hopcroft minimization and accepts any automaton.</p></li>
 <li><p>”brzozowski”: revert, determinize, revert, determinize. Accepts any automaton, but determinizes twice and can therefore blow up exponentially, even on an input that already is a trimmed deterministic automaton. </p></li>
 </ul>
 </p></li>
