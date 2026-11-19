@@ -3210,6 +3210,37 @@ TEST_CASE("mata::nft::algorithms::compose_general_direct() - issue #814") {
 		CHECK(direct->is_in_lang_by_levels({{a, a}}));
 	}
 
+	SECTION("a jump is chosen again for a round its earlier fixed jumps cannot cover") {
+		// LHS has four levels, RHS three, synchronized on {1,2,3} against {0,1,2}. The LHS starts on 'a' and can only
+		//  continue on 'x' at the first synchronization level, which the RHS labels 'x','a','a': the 'a' jump cannot
+		//  match that, so the all-bits fallback must let it choose its jumps again.
+		Nft jumps{Nft::with_levels(4)};
+		const State start = jumps.add_state_with_level(0);
+		const State accept = jumps.add_state_with_level(0);
+		const State dead = jumps.add_state_with_level(3);
+		jumps.initial.insert(start);
+		jumps.final.insert(accept);
+		jumps.delta.add(start, 'a', accept);
+		jumps.delta.add(start, 'x', dead);
+		Nft round{Nft::with_levels(3)};
+		const State q0 = round.add_state_with_level(0);
+		const State q1 = round.add_state_with_level(1);
+		const State q2 = round.add_state_with_level(2);
+		const State q3 = round.add_state_with_level(0);
+		round.initial.insert(q0);
+		round.final.insert(q3);
+		round.delta.add(q0, 'x', q1);
+		round.delta.add(q1, 'a', q2);
+		round.delta.add(q2, 'a', q3);
+
+		const std::optional<Nft> direct{algorithms::compose_general_direct(jumps, round, {1, 2, 3}, {0, 1, 2}, false)};
+		REQUIRE(direct.has_value());
+		CHECK(
+			are_equivalent(*direct, algorithms::compose_general_reference(jumps, round, {1, 2, 3}, {0, 1, 2}, false))
+		);
+		CHECK(direct->is_in_lang_by_levels({{'a'}, {'x'}, {'a'}, {'a'}}));
+	}
+
 	SECTION("outside the domain") {
 		// A transition back to the level it starts on.
 		Nft backwards{Nft::with_levels({2, {0, 1, 1}}, 3, {0}, {0})};
@@ -3219,6 +3250,100 @@ TEST_CASE("mata::nft::algorithms::compose_general_direct() - issue #814") {
 		Nft one_level{Nft::with_levels({1, {0}}, 1, {0}, {0})};
 		one_level.delta.add(0, a, 0);
 		CHECK(!algorithms::compose_general_direct(one_level, one_level, {0}, {0}, false).has_value());
+	}
+}
+
+TEST_CASE("mata::nft::algorithms::compose_general_direct() looks ahead to synchronization symbols - issue #816") {
+	// Tracks [A, X, Y] compose with [X, Y]. The first synchronized symbol matches; the second one does not.
+	Nft lhs{Nft::with_levels({3, {0, 1, 2, 0}}, 4, {0}, {3})};
+	lhs.delta.add(0, 'a', 1);
+	lhs.delta.add(1, 'x', 2);
+	lhs.delta.add(2, 'y', 3);
+	Nft rhs{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+	rhs.delta.add(0, 'x', 1);
+	rhs.delta.add(1, 'z', 2);
+	const auto check_reference = [&](const Nft& direct, const bool project_out) {
+		CHECK(are_equivalent(direct, algorithms::compose_general_reference(lhs, rhs, {1, 2}, {0, 1}, project_out)));
+	};
+
+	SECTION("Disjoint symbols on the first synchronization level stop at the initial pair") {
+		rhs.delta.remove(0, 'x', 1);
+		rhs.delta.add(0, 'w', 1);
+		const std::optional<Nft> direct{algorithms::compose_general_direct(lhs, rhs, {1, 2}, {0, 1}, false)};
+		REQUIRE(direct.has_value());
+		check_reference(*direct, false);
+		CHECK(direct->num_of_states() == 1);
+		CHECK(direct->final.empty());
+	}
+
+	SECTION("Disjoint synchronization symbols avoid the product of branch trees") {
+		constexpr size_t NUM_OF_BRANCHES{16};
+		Nft branching_lhs{Nft::with_levels(2)};
+		const State lhs_root{branching_lhs.add_state_with_level(0)};
+		const State lhs_final{branching_lhs.add_state_with_level(0)};
+		for (size_t i{0}; i < NUM_OF_BRANCHES; ++i) {
+			const State middle{branching_lhs.add_state_with_level(1)};
+			branching_lhs.delta.add(lhs_root, static_cast<mata::Symbol>(100 + i), middle);
+			branching_lhs.delta.add(middle, 'a', lhs_final);
+		}
+		branching_lhs.initial.insert(lhs_root);
+		branching_lhs.final.insert(lhs_final);
+		Nft branching_rhs{Nft::with_levels(3)};
+		const State rhs_root{branching_rhs.add_state_with_level(0)};
+		const State rhs_final{branching_rhs.add_state_with_level(0)};
+		for (size_t i{0}; i < NUM_OF_BRANCHES; ++i) {
+			const State first{branching_rhs.add_state_with_level(1)};
+			const State second{branching_rhs.add_state_with_level(2)};
+			branching_rhs.delta.add(rhs_root, static_cast<mata::Symbol>(200 + i), first);
+			branching_rhs.delta.add(first, 'b', second);
+			branching_rhs.delta.add(second, 'z', rhs_final);
+		}
+		branching_rhs.initial.insert(rhs_root);
+		branching_rhs.final.insert(rhs_final);
+		const std::optional<Nft> direct{
+			algorithms::compose_general_direct(branching_lhs, branching_rhs, {1}, {1}, false)
+		};
+		REQUIRE(direct.has_value());
+		CHECK(direct->num_of_states() == 1);
+		CHECK(direct->final.empty());
+		CHECK(are_equivalent(
+			*direct, algorithms::compose_general_reference(branching_lhs, branching_rhs, {1}, {1}, false)
+		));
+	}
+
+	SECTION("Disjoint symbols on a later synchronization level prune the round") {
+		for (const bool project_out : {false, true}) {
+			const std::optional<Nft> direct{algorithms::compose_general_direct(lhs, rhs, {1, 2}, {0, 1}, project_out)};
+			REQUIRE(direct.has_value());
+			check_reference(*direct, project_out);
+			if (!project_out) {
+				// The state keeps the prefix through the matching first synchronization level.
+				CHECK(direct->num_of_states() == 2);
+				CHECK(direct->final.empty());
+			}
+		}
+	}
+
+	SECTION("DONT_CARE on a later synchronization level keeps the matching path") {
+		rhs.delta.remove(1, 'z', 2);
+		rhs.delta.add(1, DONT_CARE, 2);
+		for (const bool project_out : {false, true}) {
+			const std::optional<Nft> direct{algorithms::compose_general_direct(lhs, rhs, {1, 2}, {0, 1}, project_out)};
+			REQUIRE(direct.has_value());
+			check_reference(*direct, project_out);
+			CHECK(direct->is_in_lang_by_levels(
+				project_out ? std::vector<mata::Word>{{'a'}} : std::vector<mata::Word>{{'a'}, {'x'}, {'y'}}
+			));
+		}
+	}
+
+	SECTION("EPSILON synchronization survives disjoint ordinary symbols") {
+		lhs.delta.add(2, EPSILON, 3);
+		rhs.delta.add(1, EPSILON, 2);
+		const std::optional<Nft> direct{algorithms::compose_general_direct(lhs, rhs, {1, 2}, {0, 1}, false)};
+		REQUIRE(direct.has_value());
+		check_reference(*direct, false);
+		CHECK(direct->is_in_lang_by_levels({{'a'}, {'x'}, {EPSILON}}));
 	}
 }
 

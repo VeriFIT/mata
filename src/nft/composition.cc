@@ -84,6 +84,12 @@ inline bool exist_synchronization(SynchronizationType lhs, SynchronizationType r
 		   exist_intersection(rhs, SynchronizationType::OnlyOnSymbol);
 }
 
+/// A conservative synchronization symbol signature, with close symbols spread by a multiplicative hash.
+uint64_t synchronization_symbol_bit(const Symbol symbol) {
+	if (symbol == DONT_CARE) { return ~uint64_t{0}; }
+	return uint64_t{1} << ((static_cast<uint64_t>(symbol) * 0x9E'37'79'B9'7F'4A'7C'15ULL) >> 58);
+}
+
 /**
  * @brief Filter state of the EPSILON-composition filter of Mohri (https://cs.nyu.edu/~mohri/pub/nway.pdf).
  *
@@ -385,12 +391,6 @@ template <typename Operand> class SynchronizationProperties {
 	}
 
   private:
-	/// The signature bit of @p symbol, spread by a multiplicative hash so that close symbols get different bits.
-	static uint64_t symbol_bit(const Symbol symbol) {
-		if (symbol == DONT_CARE) { return ~uint64_t{0}; }
-		return uint64_t{1} << ((static_cast<uint64_t>(symbol) * 0x9E'37'79'B9'7F'4A'7C'15ULL) >> 58);
-	}
-
 	/**
 	 * @brief For each state, sets the type of synchronization that follows.
 	 *
@@ -470,7 +470,9 @@ template <typename Operand> class SynchronizationProperties {
 					sync_types_vec[state] = current_sync_type;
 					uint64_t current_sync_symbols{0};
 					for (const SymbolPost& symbol_post : state_post) {
-						if (symbol_post.symbol != EPSILON) { current_sync_symbols |= symbol_bit(symbol_post.symbol); }
+						if (symbol_post.symbol != EPSILON) {
+							current_sync_symbols |= synchronization_symbol_bit(symbol_post.symbol);
+						}
 					}
 					sync_symbols_vec[state] = current_sync_symbols;
 					continue; // No need to visit its children.
@@ -2433,7 +2435,9 @@ class RoundLookahead {
 		const JumpMode jump_mode,
 		const bool chooses_again
 	)
-		: facts_(num_of_places, ANYTHING) {
+		: facts_(num_of_places, ANYTHING),
+		  // Signatures are written only for real states; cursor entries fall back to ALL_SYMBOLS in sync_symbols_of().
+		  sync_symbols_(nft.num_of_states(), ~uint64_t{0}) {
 		const size_t num_of_levels{nft.levels.num_of_levels};
 		BoolVector is_sync(num_of_levels, false);
 		for (const Level level : sync_levels) { is_sync[level] = true; }
@@ -2451,12 +2455,16 @@ class RoundLookahead {
 		for (size_t level{num_of_levels}; level-- > 0;) {
 			for (const State state : states_by_level[level]) {
 				uint8_t facts{0};
+				uint64_t sync_symbols{0};
 				for (const SymbolPost& symbol_post : nft.delta[state]) {
 					// The symbol the transitions read on the levels they jump over.
 					const Symbol later_symbol{jump_mode == JumpMode::AppendDontCares ? DONT_CARE : symbol_post.symbol};
 					for (const State target : symbol_post.targets) {
 						const size_t end{nft.levels[target] == 0 ? num_of_levels : nft.levels[target]};
-						if (chooses_again && end != level + 1) { facts = ANYTHING; }
+						if (chooses_again && end != level + 1) {
+							facts = ANYTHING;
+							sync_symbols = ALL_SYMBOLS;
+						}
 						const uint8_t target_facts{nft.levels[target] == 0 ? FINISHED : facts_[target]};
 						facts |= target_facts & CAN_FINISH;
 						const bool reads_sync_first{is_sync[level] != 0};
@@ -2467,16 +2475,18 @@ class RoundLookahead {
 						}
 						if (reads_sync_first || reads_sync_later) {
 							if ((target_facts & CAN_FINISH) != 0) {
-								facts |= static_cast<uint8_t>(
-									sync_type_of(reads_sync_first ? symbol_post.symbol : later_symbol)
-								);
+								const Symbol sync_symbol{reads_sync_first ? symbol_post.symbol : later_symbol};
+								facts |= static_cast<uint8_t>(sync_type_of(sync_symbol));
+								if (sync_symbol != EPSILON) { sync_symbols |= synchronization_symbol_bit(sync_symbol); }
 							}
 						} else if (first_sync[end] < num_of_levels) {
 							facts |= target_facts & SYNC_TYPE;
+							sync_symbols |= sync_symbols_of(target);
 						}
 					}
 				}
 				facts_[state] = facts;
+				sync_symbols_[state] = sync_symbols;
 			}
 		}
 	}
@@ -2490,6 +2500,10 @@ class RoundLookahead {
 	/// Whether @p place can finish its round reading EPSILON on each synchronization level left, as it has to while
 	///  the other operand waits.
 	bool can_finish_alone(const State place) const { return (facts_of(place) & CAN_WAIT) != 0; }
+	/// A conservative test for sharing a label on the next synchronization level of a finishable round.
+	bool may_share_a_symbol(const State place, const RoundLookahead& other, const State other_place) const {
+		return (sync_symbols_of(place) & other.sync_symbols_of(other_place)) != 0;
+	}
 
   private:
 	static constexpr uint8_t SYNC_TYPE{static_cast<uint8_t>(SynchronizationType::OnEpsilonAndSymbol)};
@@ -2497,10 +2511,15 @@ class RoundLookahead {
 	static constexpr uint8_t CAN_WAIT{0b0000'1000};
 	static constexpr uint8_t FINISHED{CAN_FINISH | CAN_WAIT};
 	static constexpr uint8_t ANYTHING{SYNC_TYPE | FINISHED};
+	static constexpr uint64_t ALL_SYMBOLS{~uint64_t{0}};
 
 	uint8_t facts_of(const State place) const { return facts_[place]; }
+	uint64_t sync_symbols_of(const State place) const {
+		return place < sync_symbols_.size() ? sync_symbols_[place] : ALL_SYMBOLS;
+	}
 
 	std::vector<uint8_t> facts_;
+	std::vector<uint64_t> sync_symbols_;
 };
 
 /**
@@ -2988,9 +3007,14 @@ class DirectGeneralComposer {
 		switch (mode) {
 			case Mode::Both:
 				if (is_sync_ahead_[position]) {
-					return exist_intersection(
-						lhs_.lookahead().sync_type(lhs_state), rhs_.lookahead().sync_type(rhs_state)
-					);
+					const SynchronizationType lhs_sync_type{lhs_.lookahead().sync_type(lhs_state)};
+					const SynchronizationType rhs_sync_type{rhs_.lookahead().sync_type(rhs_state)};
+					return exist_intersection(lhs_sync_type, rhs_sync_type) &&
+						   (!exist_synchronization(lhs_sync_type, rhs_sync_type) ||
+							// EPSILON has no signature bit, but general composition can synchronize two EPSILON moves.
+							(exist_intersection(lhs_sync_type, SynchronizationType::OnlyOnEpsilon) &&
+							 exist_intersection(rhs_sync_type, SynchronizationType::OnlyOnEpsilon)) ||
+							lhs_.lookahead().may_share_a_symbol(lhs_state, rhs_.lookahead(), rhs_state));
 				}
 				return (is_lhs_done_[position] || lhs_.lookahead().can_finish(lhs_state)) &&
 					   (is_rhs_done_[position] || rhs_.lookahead().can_finish(rhs_state));
