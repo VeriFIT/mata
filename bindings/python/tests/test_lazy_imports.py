@@ -13,14 +13,8 @@ def run_isolated(code: str) -> SimpleNamespace:
     with tempfile.TemporaryDirectory(prefix="mata-lazy-imports-") as directory:
         stdout = os.path.join(directory, "stdout")
         stderr = os.path.join(directory, "stderr")
-        prelude = (
-            "import sys\n"
-            f"sys.stdout = open({stdout!r}, 'w')\n"
-            f"sys.stderr = open({stderr!r}, 'w')\n"
-        )
-        child = os.posix_spawn(
-            sys.executable, ["python", "-c", prelude + code], os.environ.copy()
-        )
+        prelude = f"import sys\nsys.stdout = open({stdout!r}, 'w')\nsys.stderr = open({stderr!r}, 'w')\n"
+        child = os.posix_spawn(sys.executable, ["python", "-c", prelude + code], os.environ.copy())
         _, status = os.waitpid(child, 0)
         with open(stdout) as output, open(stderr) as error:
             return SimpleNamespace(
@@ -67,17 +61,13 @@ def run_with_module_blocked(module: str, statement: str) -> SimpleNamespace:
 
 
 def test_to_dataframe_reports_the_extra_when_pandas_is_missing():
-    result = run_with_module_blocked(
-        "pandas", "import libmata.nfa.nfa as nfa;nfa.Nfa(1).to_dataframe()"
-    )
+    result = run_with_module_blocked("pandas", "import libmata.nfa.nfa as nfa;nfa.Nfa(1).to_dataframe()")
     assert isinstance(result.stderr, str)
     assert "ImportError: Nfa.to_dataframe()" in result.stderr
     assert "pip install libmata[pandas]" in result.stderr
 
 
 def test_to_networkx_graph_reports_the_extra_when_networkx_is_missing():
-    result = run_with_module_blocked(
-        "networkx", "import libmata.nfa.nfa as nfa;nfa.Nfa(1).to_networkx_graph()"
-    )
+    result = run_with_module_blocked("networkx", "import libmata.nfa.nfa as nfa;nfa.Nfa(1).to_networkx_graph()")
     assert "ImportError: Nfa.to_networkx_graph()" in result.stderr
     assert "pip install libmata[plotting]" in result.stderr
