@@ -422,11 +422,11 @@ cdef class AlphabetLevels:
         for i in range(size):
             yield wrap_alphabet(self.thisptr.get().at(i))
 
-    def push_back(self, Alphabet alphabet) -> None:
+    def push_back(self, Alphabet alphabet = None) -> None:
         """Append `alphabet` as the new last level."""
         self.thisptr.get().push_back(alphabet.as_base() if alphabet is not None else shared_ptr[CAlphabet]())
 
-    def insert(self, size_t index, Alphabet alphabet) -> None:
+    def insert(self, size_t index, Alphabet alphabet = None) -> None:
         """Insert `alphabet` before `index`, shifting subsequent levels up."""
         cdef size_t size = self.thisptr.get().size()
         if index > size:

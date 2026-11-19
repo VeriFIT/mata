@@ -199,8 +199,12 @@ cdef class Transition:
         self.thisptr.symbol = trans.symbol
         self.thisptr.target = trans.target
 
-    def __eq__(self, Transition other):
-        return dereference(self.thisptr) == dereference(other.thisptr)
+    def __eq__(self, other):
+        # Untyped: with `allow_none_for_extension_args` off, a typed parameter turns `trans == None`
+        #  and `trans in [None, trans]` into a TypeError instead of False.
+        if not isinstance(other, Transition):
+            return NotImplemented
+        return dereference(self.thisptr) == dereference((<Transition>other).thisptr)
 
     def __hash__(self):
         return hash((self.source, self.symbol, self.target))
@@ -241,19 +245,29 @@ cdef class SymbolPost:
         if self.thisptr != NULL:
             del self.thisptr
 
-    def __lt__(self, SymbolPost other):
-        return dereference(self.thisptr) < dereference(other.thisptr)
+    def __lt__(self, other):
+        if not isinstance(other, SymbolPost):
+            return NotImplemented
+        return dereference(self.thisptr) < dereference((<SymbolPost>other).thisptr)
 
-    def __gt__(self, SymbolPost other):
-        return dereference(self.thisptr) > dereference(other.thisptr)
+    def __gt__(self, other):
+        if not isinstance(other, SymbolPost):
+            return NotImplemented
+        return dereference(self.thisptr) > dereference((<SymbolPost>other).thisptr)
 
-    def __le__(self, SymbolPost other):
-        return dereference(self.thisptr) <= dereference(other.thisptr)
+    def __le__(self, other):
+        if not isinstance(other, SymbolPost):
+            return NotImplemented
+        return dereference(self.thisptr) <= dereference((<SymbolPost>other).thisptr)
 
-    def __ge__(self, SymbolPost other):
-        return dereference(self.thisptr) >= dereference(other.thisptr)
+    def __ge__(self, other):
+        if not isinstance(other, SymbolPost):
+            return NotImplemented
+        return dereference(self.thisptr) >= dereference((<SymbolPost>other).thisptr)
 
-    def __eq__(self, SymbolPost other):
+    def __eq__(self, other):
+        if not isinstance(other, SymbolPost):
+            return NotImplemented
         return self.symbol == other.symbol and self.targets == other.targets
 
     # `SymbolPost` stays unhashable: its `symbol`/`targets` setters make instances mutable.
@@ -1639,6 +1653,8 @@ def complement(Nfa nfa, alph.Alphabet alphabet, params = None):
     :return: The complemented automaton.
     """
     cdef Nfa result = Nfa()
+    # A bare `Alphabet()` is a generic wrapper around a null pointer; dereferencing it segfaulted.
+    alphabet._check_initialized()
     params = params or {'algorithm': 'classical'}
     cdef umap[string, string] c_params = encode_params(params)
     cdef CNfa* c_result = result.thisptr.get()

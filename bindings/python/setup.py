@@ -253,6 +253,14 @@ def run_safely_external_command(cmd: str, check_results=True, quiet=True, timeou
 
 setup(
     version=get_version(),
-    ext_modules=cythonize(extensions, compiler_directives={"language_level": "3"}),
+    ext_modules=cythonize(
+        extensions,
+        # `allow_none_for_extension_args` defaults to True, which lets `def f(Nfa a)` dereference a
+        #  `None` argument and segfault the interpreter. With it off, Cython raises TypeError instead.
+        compiler_directives={
+            "language_level": "3",
+            "allow_none_for_extension_args": False,
+        },
+    ),
     cmdclass={"sdist": sdist, "build_ext": build_ext},
 )
