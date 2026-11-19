@@ -260,10 +260,8 @@ Nft algorithms::concatenate_eps(
 	// The consuming path fills the requested renaming maps also for the empty result.
 	if (concatenation_is_empty(lhs, rhs)) {
 		// Do not clone a possibly large lhs only to throw it away: fill the requested maps from the original counts.
-		if (rhs_state_renaming != nullptr &&
-			nfa::Limits::max_num_of_states - lhs.num_of_states() < rhs.num_of_states()) {
-			nfa::throw_state_overflow();
-		}
+		// The combined state count must be representable, as on the consuming path, whichever maps are requested.
+		if (nfa::Limits::max_num_of_states - lhs.num_of_states() < rhs.num_of_states()) { nfa::throw_state_overflow(); }
 		if (lhs_state_renaming != nullptr) {
 			lhs_state_renaming->clear();
 			lhs_state_renaming->reserve(lhs.num_of_states());
