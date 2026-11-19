@@ -452,6 +452,66 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation()") {
 	}
 }
 
+// The one-sided equation concatenates the left side over EPSILON before the product, one ε between each two parts.
+TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() with more than two left parts") {
+	const auto choice = [](const mata::Symbol first, const mata::Symbol second) {
+		Nfa part{4};
+		part.initial = {0, 1};
+		part.final = {2, 3};
+		part.delta.add(0, first, 2);
+		part.delta.add(1, second, 3);
+		return part;
+	};
+	const auto single_symbol = [](const mata::Symbol symbol) {
+		Nfa part{2};
+		part.initial.insert(0);
+		part.final.insert(1);
+		part.delta.add(0, symbol, 1);
+		return part;
+	};
+	const auto same_noodle = [](const seg_nfa::Noodle& actual, const std::vector<Nfa>& expected) {
+		if (actual.size() != expected.size()) { return false; }
+		for (size_t segment{0}; segment < expected.size(); ++segment) {
+			if (!are_equivalent(actual[segment].to_nfa(), expected[segment])) { return false; }
+		}
+		return true;
+	};
+
+	Nfa right_side{10};
+	right_side.initial = {0, 5};
+	right_side.delta.add(0, 'a', 1);
+	right_side.delta.add(1, 'c', 2);
+	right_side.delta.add(2, 'e', 3);
+	right_side.delta.add(3, 'g', 4);
+	right_side.final.insert(4);
+	right_side.delta.add(5, 'b', 6);
+	right_side.delta.add(6, 'd', 7);
+	right_side.delta.add(7, 'f', 8);
+	right_side.delta.add(8, 'h', 9);
+	right_side.final.insert(9);
+
+	SECTION("keeps the order of the parts and their delimiters") {
+		std::vector<Nfa> left{choice('a', 'b'), choice('c', 'd'), choice('e', 'f'), choice('g', 'h')};
+		const std::vector<std::vector<Nfa>> expected{
+			{single_symbol('a'), single_symbol('c'), single_symbol('e'), single_symbol('g')},
+			{single_symbol('b'), single_symbol('d'), single_symbol('f'), single_symbol('h')}
+		};
+		std::vector<std::reference_wrapper<Nfa>> left_refs(left.begin(), left.end());
+		const std::vector<seg_nfa::Noodle> result{seg_nfa::noodlify_for_equation(left_refs, right_side)};
+		REQUIRE(result.size() == expected.size());
+
+		for (size_t noodle_index{0}; noodle_index < expected.size(); ++noodle_index) {
+			CHECK(same_noodle(result[noodle_index], expected[noodle_index]));
+		}
+	}
+
+	SECTION("returns no noodles for an empty middle part") {
+		std::vector<Nfa> left{choice('a', 'b'), Nfa{2}, choice('e', 'f'), choice('g', 'h')};
+		std::vector<std::reference_wrapper<Nfa>> left_refs(left.begin(), left.end());
+		CHECK(seg_nfa::noodlify_for_equation(left_refs, right_side).empty());
+	}
+}
+
 TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() both sides") {
 	SECTION("Empty input") {
 		CHECK(
