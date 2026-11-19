@@ -78,7 +78,7 @@ pub(crate) const HINTS: &[Hint] = &[
 	Hint {
 		operation: "nfa:minimize",
 		name: "algorithm",
-		values: &["hopcroft", "hopcroft_nondet", "brzozowski"],
+		values: &["hopcroft_nondet", "hopcroft", "brzozowski"],
 	},
 	Hint {
 		operation: "nfa:reduce",
@@ -2054,6 +2054,15 @@ fn dispatch_nfa_inspection(
 	}
 }
 
+/// The `:algorithm` hint of `nfa:minimize`; explicit `hopcroft` is the trimmed-DFA route.
+fn minimization(engine: &Engine, name: &str) -> Minimization {
+	match hint_value(engine, name, "algorithm") {
+		"brzozowski" => Minimization::Brzozowski,
+		"hopcroft" => Minimization::Hopcroft,
+		_ => Minimization::HopcroftNondet,
+	}
+}
+
 /// Serves the operations that build a new `Nfa` from operands: the binary operations and the unary
 /// transformations up to `nfa:make-complete`.
 fn dispatch_nfa_transformations(
@@ -2108,13 +2117,8 @@ fn dispatch_nfa_transformations(
 		}
 		"nfa_minimize" => {
 			let [value] = take(arguments, name)?;
-			let algorithm = match hint_value(engine, name, "algorithm") {
-				"brzozowski" => Minimization::Brzozowski,
-				"hopcroft" => Minimization::Hopcroft,
-				_ => Minimization::HopcroftNondet,
-			};
 			Ok(Value::Nfa(Rc::new(
-				expect_nfa(&value)?.minimize_with(algorithm),
+				expect_nfa(&value)?.minimize_with(minimization(engine, name)),
 			)))
 		}
 		"nfa_reduce" => {

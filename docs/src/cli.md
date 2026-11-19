@@ -457,8 +457,9 @@ language page specifies but this build does not have are listed in the
   {ref}`loading <script-loading>` does. Two automata mintermized together therefore intersect as the
   predicates they came from: the constructed automata read `0` and `1` in the alphabet of the run.
 - The hints are those the bindings expose: `:algorithm` of `nfa:complement` (`"classical"`, `"brzozowski"`),
-  `nfa:minimize` (`"hopcroft"`, `"hopcroft_nondet"`, `"brzozowski"`) and `nfa:reduce` (`"simulation"`, `"residual"`, with `:type` `"after"`
-  or `"with"` and `:direction` `"forward"` or `"backward"`), and `:algorithm` `"antichains"` or `"naive"` of
+  `nfa:minimize` (`"hopcroft_nondet"`, `"hopcroft"` for an already trimmed DFA, `"brzozowski"`) and
+  `nfa:reduce` (`"simulation"`, `"residual"`, with `:type` `"after"` or `"with"` and `:direction` `"forward"`
+  or `"backward"`), and `:algorithm` `"antichains"` or `"naive"` of
   `nfa:included?`, `nfa:equivalent?` and `nfa:universal?`, and `:replace-mode` of
   `strings:create-identity-with-single-symbol-replace`, `strings:replace-reluctant-regex`,
   `strings:replace-reluctant-literal` and `strings:replace-reluctant-single-symbol`, whose `"all"` replaces every
