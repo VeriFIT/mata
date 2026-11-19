@@ -721,7 +721,7 @@
 <dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet14add_new_symbolERKNSt6stringE">
 <span id="_CPPv3N4mata16OnTheFlyAlphabet14add_new_symbolERKNSt6stringE"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet14add_new_symbolERKNSt6stringE"></span><span id="mata::OnTheFlyAlphabet::add_new_symbol__ssCR"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a0882c1b5fd8acdeae986ede9b1094b4d"></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet15InsertionResultE" title="mata::OnTheFlyAlphabet::InsertionResult"><span class="n"><span class="pre">InsertionResult</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_new_symbol</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">string</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">key</span></span><span class="sig-paren">)</span><br /></dt>
 <dd><p>Add new symbol to the alphabet with the value of <code class="docutils literal notranslate"><span class="pre">next_symbol_value</span></code>. </p>
-<p>Throws an exception when the adding fails.</p>
+<p>Throws an exception when the adding fails or when the next symbol value has reached <code class="docutils literal notranslate"><span class="pre">EPSILON</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>key</strong> – <strong>[in]</strong> User-space representation of the symbol. </p>
@@ -782,10 +782,10 @@
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4NK4mata16OnTheFlyAlphabet21get_number_of_symbolsEv">
 <span id="_CPPv3NK4mata16OnTheFlyAlphabet21get_number_of_symbolsEv"></span><span id="_CPPv2NK4mata16OnTheFlyAlphabet21get_number_of_symbolsEv"></span><span id="mata::OnTheFlyAlphabet::get_number_of_symbolsC"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a7e5aa5477d09b05ca1d79339e183e1d1"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_number_of_symbols</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
-<dd><p>Get the number of existing symbols, epsilon symbols excluded. </p>
+<dd><p>Get the number of registered names, including aliases and explicit mappings (also ones with a reserved value). </p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The number of symbols. </p>
+<dd class="field-odd"><p>The number of names in the symbol map. </p>
 </dd>
 </dl>
 </dd></dl>
@@ -811,7 +811,7 @@
 <dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet24update_next_symbol_valueE6Symbol">
 <span id="_CPPv3N4mata16OnTheFlyAlphabet24update_next_symbol_valueE6Symbol"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet24update_next_symbol_valueE6Symbol"></span><span id="mata::OnTheFlyAlphabet::update_next_symbol_value__Symbol"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1aeb27901599fe497fd719a6aa5128a046"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">update_next_symbol_value</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">value</span></span><span class="sig-paren">)</span><br /></dt>
 <dd><p>Update next symbol value when appropriate. </p>
-<p>When the newly inserted value is larger or equal to the current next symbol value, update the next symbol value to a value one larger than the new value. </p>
+<p>When the newly inserted value is larger or equal to the current next symbol value, update the next symbol value to a value one larger than the new value. Values <code class="docutils literal notranslate"><span class="pre">EPSILON</span></code> and above are ignored, so the next symbol value never wraps and never exceeds <code class="docutils literal notranslate"><span class="pre">EPSILON</span></code>. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>value</strong> – The value of the newly added symbol. </p>
@@ -4894,7 +4894,7 @@ Operation is slow, traverses over all symbol posts. </p>
 <dt class="sig sig-object cpp" id="_CPPv4NK4mata3nfa5Delta14add_symbols_toER16OnTheFlyAlphabet">
 <span id="_CPPv3NK4mata3nfa5Delta14add_symbols_toER16OnTheFlyAlphabet"></span><span id="_CPPv2NK4mata3nfa5Delta14add_symbols_toER16OnTheFlyAlphabet"></span><span id="mata::nfa::Delta::add_symbols_to__OnTheFlyAlphabetRC"></span><span class="target" id="classmata_1_1nfa_1_1Delta_1a9856c648f8bff5a21a3cc10c88dd9b3b"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">add_symbols_to</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabetE" title="mata::OnTheFlyAlphabet"><span class="n"><span class="pre">OnTheFlyAlphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">target_alphabet</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
 <dd><p>Expand <code class="docutils literal notranslate"><span class="pre">target_alphabet</span></code> by symbols from this delta. </p>
-<p>The value of the already existing symbols will NOT be overwritten. </p>
+<p>The value of the already existing symbols will NOT be overwritten. <code class="docutils literal notranslate"><span class="pre">EPSILON</span></code> is skipped. </p>
 </dd></dl>
 
 <dl class="cpp function">
@@ -5643,7 +5643,7 @@ Operation is slow, traverses over all symbol posts. </p>
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4NK4mata3nfa3Nfa13fill_alphabetERN4mata16OnTheFlyAlphabetE">
 <span id="_CPPv3NK4mata3nfa3Nfa13fill_alphabetERN4mata16OnTheFlyAlphabetE"></span><span id="_CPPv2NK4mata3nfa3Nfa13fill_alphabetERN4mata16OnTheFlyAlphabetE"></span><span id="mata::nfa::Nfa::fill_alphabet__mata::OnTheFlyAlphabetRC"></span><span class="target" id="classmata_1_1nfa_1_1Nfa_1a44e5c48675465b17e48a15e8b2e5af21"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">fill_alphabet</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabetE" title="mata::OnTheFlyAlphabet"><span class="n"><span class="pre">OnTheFlyAlphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alphabet_to_fill</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
-<dd><p>Fill <code class="docutils literal notranslate"><span class="pre">alphabet_to_fill</span></code> with symbols from <code class="docutils literal notranslate"><span class="pre">nfa</span></code>. </p>
+<dd><p>Fill <code class="docutils literal notranslate"><span class="pre">alphabet_to_fill</span></code> with symbols from <code class="docutils literal notranslate"><span class="pre">nfa</span></code>; <code class="docutils literal notranslate"><span class="pre">EPSILON</span></code> is skipped. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>alphabet_to_fill</strong> – <strong>[out]</strong> <a class="reference internal" href="#classmata_1_1Alphabet"><span class="std std-ref">Alphabet</span></a> to be filled with symbols from <code class="docutils literal notranslate"><span class="pre">nfa</span></code>. </p>
@@ -9623,7 +9623,7 @@ This overloaded version complements over an already created ordered set of <code
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4NK4mata3nft3Nft13fill_alphabetERN4mata16OnTheFlyAlphabetE">
 <span id="_CPPv3NK4mata3nft3Nft13fill_alphabetERN4mata16OnTheFlyAlphabetE"></span><span id="_CPPv2NK4mata3nft3Nft13fill_alphabetERN4mata16OnTheFlyAlphabetE"></span><span id="mata::nft::Nft::fill_alphabet__mata::OnTheFlyAlphabetRC"></span><span class="target" id="classmata_1_1nft_1_1Nft_1a44e5c48675465b17e48a15e8b2e5af21"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">fill_alphabet</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabetE" title="mata::OnTheFlyAlphabet"><span class="n"><span class="pre">OnTheFlyAlphabet</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">alphabet_to_fill</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
-<dd><p>Fill <code class="docutils literal notranslate"><span class="pre">alphabet_to_fill</span></code> with symbols from <code class="docutils literal notranslate"><span class="pre">this</span></code>. </p>
+<dd><p>Fill <code class="docutils literal notranslate"><span class="pre">alphabet_to_fill</span></code> with symbols from <code class="docutils literal notranslate"><span class="pre">this</span></code>; <code class="docutils literal notranslate"><span class="pre">EPSILON</span></code> and <code class="docutils literal notranslate"><span class="pre">DONT_CARE</span></code> are skipped. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>alphabet_to_fill</strong> – <strong>[out]</strong> <a class="reference internal" href="#classmata_1_1Alphabet"><span class="std std-ref">Alphabet</span></a> to be filled with symbols from <code class="docutils literal notranslate"><span class="pre">this</span></code>. </p>
