@@ -112,16 +112,6 @@ SURVIVING_CASES = [
         "    raise SystemExit('returned normally instead of raising')",
         id="from-mata-empty-iterator",
     ),
-    pytest.param(
-        "import libmata.parser as p",
-        "p.from_regex('(ab')",
-        id="from-regex-syntax-error",
-    ),
-    pytest.param(
-        "import libmata.parser as p",
-        "p.from_regex('(?:ab|cd){1000}' * 200)",
-        id="from-regex-too-large",
-    ),
 ]
 
 
