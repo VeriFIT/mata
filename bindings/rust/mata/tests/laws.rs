@@ -280,15 +280,22 @@ proptest! {
 			exceeded(difference.num_states() - 1)
 		);
 
+		// The minimal DFA is unique only up to state renumbering: both algorithms, and a direct
+		// `minimize_within` on a nondeterministic input, may number the same canonical output
+		// differently. Require language equivalence and the same size, not structural identity.
 		for algorithm in [Minimization::Brzozowski, Minimization::Hopcroft] {
 			let minimal = x.minimize_with(algorithm);
-			prop_assert!(x.minimize_within(algorithm, &Limits::new())?.is_identical(&minimal));
+			let within = x.minimize_within(algorithm, &Limits::new())?;
+			prop_assert!(within.is_equivalent_to(&minimal));
+			prop_assert_eq!(within.num_states(), minimal.num_states());
 			prop_assert!(x.minimize_within(algorithm, &at(minimal.num_states() - 1)).is_err());
 		}
 		// Hopcroft's algorithm determinizes at most once.
 		let hopcroft = x.minimize_with(Minimization::Hopcroft);
 		let enough = at(dfa.num_states().max(hopcroft.num_states()));
-		prop_assert!(x.minimize_within(Minimization::Hopcroft, &enough)?.is_identical(&hopcroft));
+		let hopcroft_within = x.minimize_within(Minimization::Hopcroft, &enough)?;
+		prop_assert!(hopcroft_within.is_equivalent_to(&hopcroft));
+		prop_assert_eq!(hopcroft_within.num_states(), hopcroft.num_states());
 
 		for algorithm in [Complementation::Classical, Complementation::Brzozowski] {
 			let complement = x.complement_with(&sigma(), algorithm);
