@@ -3678,6 +3678,23 @@ TEST_CASE("mata::nfa::are_equivalent() counterexample") {
 		}
 	}
 
+	SECTION("a difference found in the second inclusion direction still has a witness") {
+		// lhs: {a} is included in rhs: {a, b}, so the second direction has to search and report "b".
+		Nfa lhs{2, {0}, {1}};
+		Nfa rhs{2, {0}, {1}};
+		lhs.delta.add(0, alph["a"], 1);
+		rhs.delta.add(0, alph["a"], 1);
+		rhs.delta.add(0, alph["b"], 1);
+
+		for (const auto& algo : ALGORITHMS) {
+			params["algorithm"] = algo;
+			Run cex;
+			CHECK(!are_equivalent(lhs, rhs, &alph, params, &cex));
+			CHECK(rhs.is_in_lang(cex));
+			CHECK(!lhs.is_in_lang(cex));
+		}
+	}
+
 	SECTION("alphabet-less overload also fills cex") {
 		Nfa lhs(1), rhs(1);
 		lhs.initial = {0};
