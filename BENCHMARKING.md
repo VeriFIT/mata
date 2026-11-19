@@ -333,6 +333,42 @@ Rules for a PGO result that means anything:
 - Keep a plain Release baseline and compare baseline, IPO, PGO and IPO+PGO; a flag change can
   otherwise hide whether a source change really helped.
 
+## Instrumenting the benchmarks for gcov
+
+Two independent switches add `--coverage` (`-fprofile-arcs -ftest-coverage`) to a build. They
+instrument different sets of binaries, and the wider one already includes the benchmarks:
+
+| Option                 | Values                     | Instruments                                                                                   |
+| ---------------------- | -------------------------- | --------------------------------------------------------------------------------------------- |
+| `MATA_ENABLE_COVERAGE` | `ON`/`OFF` (default `OFF`) | Everything built in the directory: `libmata`, the unit tests, the examples and the benchmarks |
+| `MATA_BENCH_PROFILING` | `ON`/`OFF` (default `OFF`) | The benchmark binaries built from `./tests-integration/src/` only                             |
+
+`MATA_ENABLE_COVERAGE` appends `-g --coverage` to `CMAKE_CXX_FLAGS` before any subdirectory is
+added, so it reaches the benchmarks as well: with `-DMATA_ENABLE_COVERAGE=ON
+-DMATA_BENCH_PROFILING=OFF`, the `compile_commands.json` entry of
+`tests-integration/src/unary-operations.cc` carries `--coverage`. Use it whenever the library, the
+unit tests and the benchmarks should all produce `.gcda` data. Note that `make test-coverage`
+itself reports _library_ coverage only: `gcovr.cfg` filters the sources to `src/` and `include/`
+and scans just `$(BUILD_DIR)/src` and `$(BUILD_DIR)/tests`, so the benchmark sources under
+`tests-integration/src/` are instrumented but never summarized. A report over the benchmark
+sources would need its own gcovr invocation over `$(BUILD_DIR)/tests-integration`, which the
+Makefile does not provide.
+
+`MATA_BENCH_PROFILING` is the narrow case: gcov data for the benchmark binaries out of a build whose
+`libmata` stays uninstrumented, e.g. to see which benchmark branches a run takes while the library
+underneath keeps the code generation of a plain Release build:
+
+```sh
+make release MATA_BENCH_PROFILING=ON
+```
+
+Its default is `OFF` and is deliberately _not_ tied to `${MATA_ENABLE_COVERAGE}`: coverage already
+reaches the benchmark targets through `CMAKE_CXX_FLAGS`, so such a default would only append the
+same `--coverage` flags a second time to every benchmark target without making either switch
+unnecessary. Turn `MATA_BENCH_PROFILING` on only when the rest of the build must stay
+uninstrumented, and turn it off again before measuring: `--coverage` instruments every arc and the
+resulting times are not comparable to a normal Release build.
+
 ## Profiling
 
 We provide the following profiling infrastructure. The following instructions assume a Linux environment. If you are using macOS, you will have to use a virtual environment or some other profiling tool (e.g., `instruments`).
