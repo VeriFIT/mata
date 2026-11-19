@@ -63,10 +63,8 @@ Nft concatenate_eps_consuming(
 		}
 	};
 
-	// The rhs shift must be representable before it is written into a requested map, also on the empty return.
-	if (rhs_state_renaming != nullptr && nfa::Limits::max_num_of_states - lhs_states_num < rhs_states_num) {
-		nfa::throw_state_overflow();
-	}
+	// The combined state count and rhs shift must be representable before construction, also on the empty return.
+	if (nfa::Limits::max_num_of_states - lhs_states_num < rhs_states_num) { nfa::throw_state_overflow(); }
 	if (concatenation_is_empty(lhs, rhs)) {
 		output_renamings();
 		lhs = Nft::with_levels(num_of_levels);
