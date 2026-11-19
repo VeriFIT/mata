@@ -114,7 +114,7 @@ Nfa minimize_brzozowski(const Nfa& aut);
  *  costs minimality.
  * @throws std::invalid_argument If @p dfa_trimmed has a transition and is not deterministic, or has several
  *  initial states. A transition-free automaton with at most one initial state is returned without refinement.
- * @return Minimized deterministic automaton, refined from the reachable part of @p dfa_trimmed. A transition-free
+ * @return Minimized deterministic automaton, refined from @p dfa_trimmed. A transition-free
  *  automaton without an initial state is returned as it is, with no initial state: such a result is neither
  *  deterministic nor minimal by @c Nfa::is_deterministic() / @c Nfa::is_minimal(). Callers that need the canonical
  *  one-state empty-language DFA should use the public @c mata::nfa::minimize() dispatcher instead.
