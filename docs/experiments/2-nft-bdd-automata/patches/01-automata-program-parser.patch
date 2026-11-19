@@ -1,7 +1,7 @@
 From 74c879589583713aebf417189bf5367b72dd5893 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?David=20Chocholat=C3=BD?= <ichocholaty@fit.vut.cz>
 Date: Wed, 18 Nov 2026 09:33:14 +0100
-Subject: [PATCH] cpp,interpreter: +refactor Allow tools to load @NFA-bits
+Subject: [PATCH 1/6] cpp,interpreter: +refactor Allow tools to load @NFA-bits
  without mata, time every operation as 'operation'
 
 ---
@@ -2196,6 +2196,239 @@ index 0000000..b2a1b7d
 +} // namespace bench
 +
 +#endif
+-- 
+2.56.0
+
+
+From 34535b17b548401ad000c68943d91c8053886765 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Thu, 19 Nov 2026 16:34:24 +0100
+Subject: [PATCH 2/6] cpp,robdd: +fix Compare complete unique-table keys
+
+---
+ src/cpp/utils/robdd.hh | 27 +++++++++++++++++++++------
+ 1 file changed, 21 insertions(+), 6 deletions(-)
+
+diff --git a/src/cpp/utils/robdd.hh b/src/cpp/utils/robdd.hh
+index b2a1b7d..1fa5381 100644
+--- a/src/cpp/utils/robdd.hh
++++ b/src/cpp/utils/robdd.hh
+@@ -8,7 +8,9 @@
+ 
+ #include <algorithm>
+ #include <climits>
++#include <cstddef>
+ #include <cstdint>
++#include <functional>
+ #include <unordered_map>
+ #include <utility>
+ #include <vector>
+@@ -37,7 +39,7 @@ public:
+       return low;
+     }
+     const auto [it, inserted]{unique_.try_emplace(
+-        key(var, low, high), static_cast<Node>(nodes_.size()))};
++        UniqueKey{var, low, high}, static_cast<Node>(nodes_.size()))};
+     if (inserted) {
+       nodes_.push_back({var, low, high});
+     }
+@@ -119,10 +121,23 @@ private:
+     Node high;
+   };
+ 
+-  static std::uint64_t key(unsigned var, Node low, Node high) {
+-    // At most 2^21 variables and nodes are far more than any guard needs.
+-    return (std::uint64_t{var} << 42) | (std::uint64_t{low} << 21) | high;
+-  }
++  struct UniqueKey {
++    unsigned var;
++    Node low;
++    Node high;
++
++    bool operator==(const UniqueKey &) const = default;
++  };
++
++  struct UniqueKeyHash {
++    std::size_t operator()(const UniqueKey &key) const noexcept {
++      const std::uint64_t children{(std::uint64_t{key.low} << 32) | key.high};
++      const std::size_t var_hash{std::hash<unsigned>{}(key.var)};
++      return var_hash ^
++             (std::hash<std::uint64_t>{}(children) + std::size_t{0x9e3779b9} +
++              (var_hash << 6) + (var_hash >> 2));
++    }
++  };
+ 
+   Node apply(Node lhs, Node rhs, bool conjunction) {
+     if (conjunction) {
+@@ -167,7 +182,7 @@ private:
+   }
+ 
+   std::vector<Record> nodes_;
+-  std::unordered_map<std::uint64_t, Node> unique_{};
++  std::unordered_map<UniqueKey, Node, UniqueKeyHash> unique_{};
+   std::unordered_map<Node, Node> negations_{};
+   std::unordered_map<std::uint64_t, Node> conjunctions_{};
+   std::unordered_map<std::uint64_t, Node> disjunctions_{};
+-- 
+2.56.0
+
+
+From 3eb16635496de78e0bd59fe6e9d4e9f3425bd550 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Thu, 19 Nov 2026 16:37:55 +0100
+Subject: [PATCH 3/6] cpp,bits: +fix Ignore trailing line comments
+
+---
+ src/cpp/utils/bits_load.hh | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/cpp/utils/bits_load.hh b/src/cpp/utils/bits_load.hh
+index d9f9414..3e7fb0b 100644
+--- a/src/cpp/utils/bits_load.hh
++++ b/src/cpp/utils/bits_load.hh
+@@ -205,7 +205,8 @@ read_automaton(const std::string &file,
+   bool header{false};
+   std::string line{};
+   while (std::getline(input, line)) {
+-    const std::vector<std::string_view> tokens{split(line)};
++    std::vector<std::string_view> tokens{split(line)};
++    tokens.erase(std::find(tokens.begin(), tokens.end(), "#"), tokens.end());
+     if (tokens.empty() || tokens.front().starts_with('#')) {
+       continue;
+     }
+-- 
+2.56.0
+
+
+From c2b4d2445beafc7abce503e3d930f16e004b0a6e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Thu, 19 Nov 2026 16:44:00 +0100
+Subject: [PATCH 4/6] cpp,mona: +fix Keep emptiness checks independent
+
+---
+ src/cpp/interpreter_mona.cc | 31 ++++++++++++++++++++-----------
+ 1 file changed, 20 insertions(+), 11 deletions(-)
+
+diff --git a/src/cpp/interpreter_mona.cc b/src/cpp/interpreter_mona.cc
+index 3df4fcd..4a8c7c0 100644
+--- a/src/cpp/interpreter_mona.cc
++++ b/src/cpp/interpreter_mona.cc
+@@ -20,6 +20,7 @@
+ #include <stdexcept>
+ #include <string>
+ #include <unordered_map>
++#include <unordered_set>
+ #include <vector>
+ 
+ extern "C" {
+@@ -174,27 +175,35 @@ private:
+   }
+ };
+ 
+-std::vector<unsigned> *successors{nullptr};
+-void collect_successor(unsigned state) { successors->push_back(state); }
+-
+ bool is_empty(const Dfa &dfa) {
+   std::vector<char> reached(static_cast<std::size_t>(dfa->ns), 0);
+   std::vector<unsigned> stack{static_cast<unsigned>(dfa->s)};
+   reached[dfa->s] = 1;
+-  std::vector<unsigned> next{};
+-  successors = &next;
++  // MONA's bdd_call_leafs retains marks; visited BDD nodes belong to this check.
++  std::unordered_set<bdd_ptr> visited{};
++  std::vector<bdd_ptr> branches{};
+   while (!stack.empty()) {
+     const unsigned state{stack.back()};
+     stack.pop_back();
+     if (dfa->f[state] == 1) {
+       return false;
+     }
+-    next.clear();
+-    bdd_call_leafs(dfa->bddm, dfa->q[state], collect_successor);
+-    for (const unsigned target : next) {
+-      if (!reached[target]) {
+-        reached[target] = 1;
+-        stack.push_back(target);
++    branches.push_back(dfa->q[state]);
++    while (!branches.empty()) {
++      const bdd_ptr branch{branches.back()};
++      branches.pop_back();
++      if (!visited.insert(branch).second) {
++        continue;
++      }
++      if (bdd_is_leaf(dfa->bddm, branch)) {
++        const unsigned target{bdd_leaf_value(dfa->bddm, branch)};
++        if (!reached[target]) {
++          reached[target] = 1;
++          stack.push_back(target);
++        }
++      } else {
++        branches.push_back(bdd_then(dfa->bddm, branch));
++        branches.push_back(bdd_else(dfa->bddm, branch));
+       }
+     }
+   }
+-- 
+2.56.0
+
+
+From 8fa12c4d27d97c6bb8c2c9e6e5abf05c046145bc Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Thu, 19 Nov 2026 16:52:00 +0100
+Subject: [PATCH 5/6] cpp,mona: +fix Prune unused sparse choice codes
+
+---
+ src/cpp/interpreter_mona.cc | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/src/cpp/interpreter_mona.cc b/src/cpp/interpreter_mona.cc
+index 4a8c7c0..79b1102 100644
+--- a/src/cpp/interpreter_mona.cc
++++ b/src/cpp/interpreter_mona.cc
+@@ -144,10 +144,12 @@ private:
+   bdd_ptr
+   choice(const std::vector<std::pair<unsigned, bench::Robdd::Node>> &targets,
+          unsigned var, std::size_t code, unsigned sink) {
++    // Setting the remaining bits to zero gives the smallest code here.
++    if (code >= targets.size()) {
++      return leaf(sink);
++    }
+     if (var == choices_) {
+-      return code < targets.size()
+-                 ? guard(targets[code].second, targets[code].first, sink)
+-                 : leaf(sink);
++      return guard(targets[code].second, targets[code].first, sink);
+     }
+     const std::size_t bit{std::size_t{1} << (choices_ - 1 - var)};
+     return node(var, choice(targets, var + 1, code, sink),
+-- 
+2.56.0
+
+
+From 74023683df9a30e5a05a439e45d74fccd1019558 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Thu, 19 Nov 2026 18:07:45 +0100
+Subject: [PATCH 6/6] cpp,bits: +fix Handle attached line-comment markers
+
+---
+ src/cpp/utils/bits_load.hh | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/cpp/utils/bits_load.hh b/src/cpp/utils/bits_load.hh
+index 3e7fb0b..9daa042 100644
+--- a/src/cpp/utils/bits_load.hh
++++ b/src/cpp/utils/bits_load.hh
+@@ -206,7 +206,9 @@ read_automaton(const std::string &file,
+   std::string line{};
+   while (std::getline(input, line)) {
+     std::vector<std::string_view> tokens{split(line)};
+-    tokens.erase(std::find(tokens.begin(), tokens.end(), "#"), tokens.end());
++    tokens.erase(std::find_if(tokens.begin(), tokens.end(),
++                              [](const auto token) { return token.starts_with('#'); }),
++                 tokens.end());
+     if (tokens.empty() || tokens.front().starts_with('#')) {
+       continue;
+     }
 -- 
 2.56.0
 

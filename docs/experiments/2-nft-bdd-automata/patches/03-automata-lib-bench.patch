@@ -1,7 +1,7 @@
 From 6227ebc42398fe79eee4f7bdaf9ee6f8f25adf73 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
 Date: Wed, 18 Nov 2026 09:37:13 +0100
-Subject: [PATCH 1/5] tools: +feat Compare mata's NFTs as BDD automata with
+Subject: [PATCH 1/6] tools: +feat Compare mata's NFTs as BDD automata with
  CUDD and MONA
 
 ---
@@ -322,7 +322,7 @@ index 00000000..8d3f0f04
 From 2793702291224b598d156ed0f414b7d11a1dabe5 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
 Date: Wed, 18 Nov 2026 10:14:35 +0100
-Subject: [PATCH 2/5] docs: +chore Format the tools table
+Subject: [PATCH 2/6] docs: +chore Format the tools table
 
 ---
  README.md | 26 +++++++++++++-------------
@@ -373,7 +373,7 @@ index 555bc3f1..9af6baae 100644
 From 36b97403e30f1c6335dd92e4b1b90247baf15bee Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
 Date: Wed, 18 Nov 2026 13:59:25 +0100
-Subject: [PATCH 3/5] harness: +fix Keep varying metric rows aligned with
+Subject: [PATCH 3/6] harness: +fix Keep varying metric rows aligned with
  headers
 
 ---
@@ -394,7 +394,7 @@ index 644801e0..992bf412 160000
 From 3ce126f7becd57542f8196657bcde90308bd8f78 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
 Date: Wed, 18 Nov 2026 14:34:58 +0100
-Subject: [PATCH 4/5] docs: +docs Note known complement limitations of BDD
+Subject: [PATCH 4/6] docs: +docs Note known complement limitations of BDD
  comparisons
 
 ---
@@ -425,7 +425,7 @@ index 9af6baae..98750b85 100644
 From de495a25620f6d0c82d0bf38866a2b89333e0911 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
 Date: Wed, 18 Nov 2026 17:08:13 +0100
-Subject: [PATCH 5/5] harness: +fix Preserve complete metrics in truncated
+Subject: [PATCH 5/6] harness: +fix Preserve complete metrics in truncated
  output
 
 ---
@@ -439,6 +439,35 @@ index 992bf412..ea4f7576 160000
 @@ -1 +1 @@
 -Subproject commit 992bf412a64c7f0ee2a82d145610a4d0e65be238
 +Subproject commit ea4f7576dd02e43f78ba4c72477bce98bfa8d800
+-- 
+2.56.0
+
+
+From 932f7ae24e1a8d050563e8faedbaaf0a9f194aa6 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Thu, 19 Nov 2026 16:42:31 +0100
+Subject: [PATCH 6/6] tools: +docs Clarify shared formulas and BDD
+ representations
+
+---
+ README.md | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/README.md b/README.md
+index 98750b85..ac0947f0 100644
+--- a/README.md
++++ b/README.md
+@@ -231,7 +231,9 @@ cached under `build/minterm/`). The dev shell provides their toolchains (JDK,
+ Maven, .NET SDK, Boost for libvata); the wrappers embed the store paths, so keep
+ the shell rooted (e.g. with nix-direnv) to keep them from being collected.
+ `mata-bdd`, `cudd` and `mona` read bitvector inputs (`@NFA-bits`) only, keeping
+-every transition's formula (see _Automata with BDDs on transitions_).
++every transition's formula (see _Automata with BDDs on transitions_). They
++share the parsed formulas and variable order. Only `mata-bdd` and `mona` use
++the harness's `bench::Robdd`; `cudd` builds its BDDs directly from the formulas.
+ 
+ A subject is a git repository (`subjects/<name>`, revisions are tags, branches
+ and commits), `pypi:<package>` (revisions are versions), or `tarball:<url>`
 -- 
 2.56.0
 

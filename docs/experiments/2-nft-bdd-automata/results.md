@@ -10,40 +10,41 @@ Baseline: `cudd-3.0.0`; the measured NFT-BDD build is `mata-bdd-devel` and expli
 
 ## Pairwise operation-time ratios
 
-Geometric mean of `build / baseline` on instances completed by both. A row with no completed pair has no ratio.
+Geometric mean of `build / baseline` on instances with positive operation times for both. A row with no such timed
+pair has no ratio.
 
-| family               | comparison                  | completed pairs | ratio  |
-| -------------------- | --------------------------- | --------------- | ------ |
-| armc-incl            | mata-bdd-devel / cudd-3.0.0 | 135             | 9.33x  |
-| armc-incl            | mata-devel / cudd-3.0.0     | 136             | 0.94x  |
-| armc-incl            | mona-1.4-18 / cudd-3.0.0    | 126             | 0.86x  |
-| b-smt                | mata-bdd-devel / cudd-3.0.0 | 384             | 8.06x  |
-| b-smt                | mata-devel / cudd-3.0.0     | 384             | 0.48x  |
-| b-smt                | mona-1.4-18 / cudd-3.0.0    | 381             | 0.71x  |
-| email-filter         | mata-bdd-devel / cudd-3.0.0 | 500             | 11.91x |
-| email-filter         | mata-devel / cudd-3.0.0     | 500             | 1.77x  |
-| email-filter         | mona-1.4-18 / cudd-3.0.0    | 460             | 6.73x  |
-| lia-symbolic         | mata-bdd-devel / cudd-3.0.0 | 169             | 1.61x  |
-| lia-symbolic         | mata-devel / cudd-3.0.0     | 169             | 0.21x  |
-| lia-symbolic         | mona-1.4-18 / cudd-3.0.0    | 150             | 0.15x  |
-| param-diff           | mata-bdd-devel / cudd-3.0.0 | 0               | —      |
-| param-diff           | mata-devel / cudd-3.0.0     | 0               | —      |
-| param-diff           | mona-1.4-18 / cudd-3.0.0    | 0               | —      |
-| param-inter          | mata-bdd-devel / cudd-3.0.0 | 80              | 22.09x |
-| param-inter          | mata-devel / cudd-3.0.0     | 80              | 0.32x  |
-| param-inter          | mona-1.4-18 / cudd-3.0.0    | 0               | —      |
-| param-inter-variadic | mata-bdd-devel / cudd-3.0.0 | 28              | 13.44x |
-| param-inter-variadic | mata-devel / cudd-3.0.0     | 32              | 0.69x  |
-| param-inter-variadic | mona-1.4-18 / cudd-3.0.0    | 17              | 1.63x  |
-| param-union          | mata-bdd-devel / cudd-3.0.0 | 80              | 5.95x  |
-| param-union          | mata-devel / cudd-3.0.0     | 80              | 0.37x  |
-| param-union          | mona-1.4-18 / cudd-3.0.0    | 0               | —      |
-| param-union-variadic | mata-bdd-devel / cudd-3.0.0 | 187             | 3.04x  |
-| param-union-variadic | mata-devel / cudd-3.0.0     | 187             | 0.82x  |
-| param-union-variadic | mona-1.4-18 / cudd-3.0.0    | 73              | 4.93x  |
-| **total**            | mata-bdd-devel / cudd-3.0.0 | 1563            | 7.24x  |
-| **total**            | mata-devel / cudd-3.0.0     | 1568            | 0.73x  |
-| **total**            | mona-1.4-18 / cudd-3.0.0    | 1207            | 1.60x  |
+| family               | comparison                  | timed pairs | ratio  |
+| -------------------- | --------------------------- | ----------- | ------ |
+| armc-incl            | mata-bdd-devel / cudd-3.0.0 | 135         | 9.33x  |
+| armc-incl            | mata-devel / cudd-3.0.0     | 136         | 0.94x  |
+| armc-incl            | mona-1.4-18 / cudd-3.0.0    | 126         | 0.86x  |
+| b-smt                | mata-bdd-devel / cudd-3.0.0 | 384         | 8.06x  |
+| b-smt                | mata-devel / cudd-3.0.0     | 384         | 0.48x  |
+| b-smt                | mona-1.4-18 / cudd-3.0.0    | 381         | 0.71x  |
+| email-filter         | mata-bdd-devel / cudd-3.0.0 | 500         | 11.91x |
+| email-filter         | mata-devel / cudd-3.0.0     | 500         | 1.77x  |
+| email-filter         | mona-1.4-18 / cudd-3.0.0    | 460         | 6.73x  |
+| lia-symbolic         | mata-bdd-devel / cudd-3.0.0 | 169         | 1.61x  |
+| lia-symbolic         | mata-devel / cudd-3.0.0     | 169         | 0.21x  |
+| lia-symbolic         | mona-1.4-18 / cudd-3.0.0    | 150         | 0.15x  |
+| param-diff           | mata-bdd-devel / cudd-3.0.0 | 0           | —      |
+| param-diff           | mata-devel / cudd-3.0.0     | 0           | —      |
+| param-diff           | mona-1.4-18 / cudd-3.0.0    | 0           | —      |
+| param-inter          | mata-bdd-devel / cudd-3.0.0 | 80          | 22.09x |
+| param-inter          | mata-devel / cudd-3.0.0     | 80          | 0.32x  |
+| param-inter          | mona-1.4-18 / cudd-3.0.0    | 0           | —      |
+| param-inter-variadic | mata-bdd-devel / cudd-3.0.0 | 28          | 13.44x |
+| param-inter-variadic | mata-devel / cudd-3.0.0     | 32          | 0.69x  |
+| param-inter-variadic | mona-1.4-18 / cudd-3.0.0    | 17          | 1.63x  |
+| param-union          | mata-bdd-devel / cudd-3.0.0 | 80          | 5.95x  |
+| param-union          | mata-devel / cudd-3.0.0     | 80          | 0.37x  |
+| param-union          | mona-1.4-18 / cudd-3.0.0    | 0           | —      |
+| param-union-variadic | mata-bdd-devel / cudd-3.0.0 | 187         | 3.04x  |
+| param-union-variadic | mata-devel / cudd-3.0.0     | 187         | 0.82x  |
+| param-union-variadic | mona-1.4-18 / cudd-3.0.0    | 73          | 4.93x  |
+| **total**            | mata-bdd-devel / cudd-3.0.0 | 1563        | 7.24x  |
+| **total**            | mata-devel / cudd-3.0.0     | 1568        | 0.73x  |
+| **total**            | mona-1.4-18 / cudd-3.0.0    | 1207        | 1.60x  |
 
 ## Completed instances and failures
 
@@ -136,20 +137,21 @@ Baseline: `mata-bdd-old` (`v1.32.45-dev.25`, `f874bae84d6e167d4b0f947eec9e96270f
 
 ## Pairwise operation-time ratios
 
-Geometric mean of `build / baseline` on instances completed by both. A row with no completed pair has no ratio.
+Geometric mean of `build / baseline` on instances with positive operation times for both. A row with no such timed
+pair has no ratio.
 
-| family               | comparison                  | completed pairs | ratio |
-| -------------------- | --------------------------- | --------------- | ----- |
-| armc-incl            | mata-bdd-new / mata-bdd-old | 135             | 0.25x |
-| b-smt                | mata-bdd-new / mata-bdd-old | 384             | 0.52x |
-| email-filter         | mata-bdd-new / mata-bdd-old | 500             | 0.33x |
-| lia-symbolic         | mata-bdd-new / mata-bdd-old | 169             | 0.44x |
-| param-diff           | mata-bdd-new / mata-bdd-old | 0               | —     |
-| param-inter          | mata-bdd-new / mata-bdd-old | 56              | 0.51x |
-| param-inter-variadic | mata-bdd-new / mata-bdd-old | 28              | 0.60x |
-| param-union          | mata-bdd-new / mata-bdd-old | 80              | 0.21x |
-| param-union-variadic | mata-bdd-new / mata-bdd-old | 187             | 0.31x |
-| **total**            | mata-bdd-new / mata-bdd-old | 1539            | 0.37x |
+| family               | comparison                  | timed pairs | ratio |
+| -------------------- | --------------------------- | ----------- | ----- |
+| armc-incl            | mata-bdd-new / mata-bdd-old | 135         | 0.25x |
+| b-smt                | mata-bdd-new / mata-bdd-old | 384         | 0.52x |
+| email-filter         | mata-bdd-new / mata-bdd-old | 500         | 0.33x |
+| lia-symbolic         | mata-bdd-new / mata-bdd-old | 169         | 0.44x |
+| param-diff           | mata-bdd-new / mata-bdd-old | 0           | —     |
+| param-inter          | mata-bdd-new / mata-bdd-old | 56          | 0.51x |
+| param-inter-variadic | mata-bdd-new / mata-bdd-old | 28          | 0.60x |
+| param-union          | mata-bdd-new / mata-bdd-old | 80          | 0.21x |
+| param-union-variadic | mata-bdd-new / mata-bdd-old | 187         | 0.31x |
+| **total**            | mata-bdd-new / mata-bdd-old | 1539        | 0.37x |
 
 ## Completed instances and failures
 

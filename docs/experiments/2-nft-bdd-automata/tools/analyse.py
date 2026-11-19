@@ -120,7 +120,8 @@ def print_table(headers, rows):
 
 print("## Pairwise operation-time ratios\n")
 print(
-    "Geometric mean of `build / baseline` on instances completed by both. A row with no completed pair has no ratio.\n"
+    "Geometric mean of `build / baseline` on instances with positive operation times for both. "
+    "A row with no such timed pair has no ratio.\n"
 )
 rows = []
 for family in families:
@@ -138,7 +139,7 @@ for method in METHODS[1:]:
             f"{math.exp(sum(map(math.log, ratios)) / len(ratios)):.2f}x" if ratios else "—",
         ]
     )
-print_table(["family", "comparison", "completed pairs", "ratio"], rows)
+print_table(["family", "comparison", "timed pairs", "ratio"], rows)
 
 print("\n## Completed instances and failures\n")
 print("Unmeasured rows are pycobench's `MISSING`, not a completed run or a measured failure.\n")

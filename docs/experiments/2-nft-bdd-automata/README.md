@@ -31,8 +31,9 @@ Four implementations, all in [automata-lib-bench](https://github.com/VeriFIT/aut
   targets. That often dominates its whole-process runtime, but is outside `operation`.
 - **`mata`**: the ordinary explicit-NFA representation, parsing and mintermizing the same inputs into Mata.
 
-All symbolic implementations start from the same ROBDDs built by the harness, with the same variable order and one
-binary symbol per BDD edge. The comparison therefore measures representation and automaton operations, not interoperable
+All symbolic implementations start from the same parsed formulas with the same variable order, and encode one binary
+symbol per BDD edge. NFT-BDD and MONA use the harness `bench::Robdd` representation; CUDD builds its BDDs directly from
+those formulas. The comparison therefore measures representation and automaton operations, not interoperable
 Mata parsing. It does not claim that an NFT is a semantically complete replacement for a BDD package.
 
 The code is preserved in [`patches/`](patches/), against the following bases:
@@ -42,6 +43,9 @@ The code is preserved in [`patches/`](patches/), against the following bases:
 | `harnesses/automata-program-parser` | `cf992bbbbf30b80654520c02fecaf0c0dd8b4c20` | `74c879589583713aebf417189bf5367b72dd5893`                              |
 | `harnesses/pycobench`               | `644801e08845215bbd1ee694cd311373c8976c48` | `ea4f7576dd02e43f78ba4c72477bce98bfa8d800`                              |
 | `automata-lib-bench`                | `3ae78a8c8f`                               | `de495a25620f6d0c82d0bf38866a2b89333e0911` (bookmark `bdd-transitions`) |
+
+These are the original experimental tips. Their histories are retained alongside subsequent review fixes; the result
+tables are not remeasured on those fixes.
 
 ## Method
 
@@ -60,7 +64,8 @@ The code is preserved in [`patches/`](patches/), against the following bases:
   preserves operation metrics after truncation. The preserved final harness is what the reproduction commands use.
 - [`tools/analyse.py`](tools/analyse.py) reads one final result matrix per family, or the newest repeats matrix if no
   merged matrix exists. It accounts for extra leading columns when a command has multiple automaton operands.
-- Each ratio is the geometric mean of `build / baseline` **on that pair's shared completed instances**. Aggregate
+- Each ratio is the geometric mean of `build / baseline` **on that pair's shared instances with positive operation
+  times for both builds**. Aggregate
   ratios pool those per-instance ratios; populations can therefore differ between columns. Missing and failed runs
   are not imputed. This is a descriptive capped benchmark, not a statistically controlled A/A experiment.
 
@@ -106,8 +111,18 @@ git submodule update --init --recursive
 git -C harnesses/automata-program-parser am "$record/patches/01-automata-program-parser.patch"
 git -C harnesses/pycobench am "$record/patches/02-pycobench.patch"
 git am "$record/patches/03-automata-lib-bench.patch"
+# Match the superproject's gitlinks to the submodule commits just replayed.
+git add harnesses/automata-program-parser harnesses/pycobench
+git commit --message "bench: Record replayed submodule revisions"
+git status --short
 just setup-python
 ```
+
+`git am` creates new submodule commit IDs when the local committer identity or date differs from the original. The
+follow-up commit records those replayed submodule HEADs in the superproject, so its gitlinks match the actual
+submodules and the final `git status --short` produces no output. These replayed IDs, including the superproject's,
+need not equal the original experiment revisions in the table; the original measurements and the review-fix history
+are preserved in the patch series.
 
 From the automata-lib-bench root, with the Mata source at `../mata`, reproduce the four-library comparison with these
 explicit Mata pins. The shared lock prevents other measurements from competing for workers.
@@ -159,4 +174,4 @@ BDD relations; this experiment did not measure a candidate implementation of tho
   word rather than the full alphabet language. The shared alphabet used for explicit-minterm `mata` can also omit a
   minterm with no originating transition. Check `disagreements.csv` before treating complement results as correct.
 - pycobench's metric-order handling and truncation parser needed fixes, preserved in
-  [`02-pycobench.patch`](patches/02-pycobench.patch); the latter has two passing regression tests.
+  [`02-pycobench.patch`](patches/02-pycobench.patch); the latter has three passing regression tests.
