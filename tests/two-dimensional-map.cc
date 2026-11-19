@@ -337,9 +337,11 @@ TEST_CASE("mata::utils::TwoDimensionalMap switches to large mode above MaxMatrix
 	}
 }
 
+#if UINTPTR_MAX >= UINT64_MAX
 TEST_CASE("mata::utils::TwoDimensionalMap sparse rows grow with second keys above 2^32") {
 	// The row budget keeps the storage on SparseRows with uint64_t keys: growth, rehashing and missing keys of the
-	//  64-bit Fibonacci probing path.
+	//  64-bit Fibonacci probing path. Skipped on 32-bit size_t: these dimensions do not fit addressable storage.
+	static_assert(sizeof(size_t) >= sizeof(uint64_t));
 	using Map = TwoDimensionalMap<uint64_t, false, 512>;
 	Map map(20, uint64_t{1} << 63);
 	constexpr uint64_t high{(uint64_t{1} << 32) + 7};
@@ -373,6 +375,7 @@ TEST_CASE("mata::utils::TwoDimensionalMap sparse rows do not pack their keys") {
 	CHECK(map.get_first_inverted(7) == 0);
 	CHECK(map.get_second_inverted(7) == second);
 }
+#endif // UINTPTR_MAX >= UINT64_MAX
 
 TEST_CASE("mata::utils::TwoDimensionalMap keeps one hash table per first key") {
 	// A matrix would need 20 * 100 cells, but 20 rows of 16 Bytes fit into 512 Bytes, so the map uses sparse rows.
