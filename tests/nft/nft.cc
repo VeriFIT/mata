@@ -1861,6 +1861,34 @@ TEST_CASE("mata::nft naive inclusion keeps EPSILON among its complement symbols"
 	CHECK(!are_equivalent(ear, empty));
 }
 
+TEST_CASE("mata::nft DONT_CARE does not match EPSILON synthesized by make_complete()") {
+	// Adding EPSILON to the complement alphabet makes make_complete() insert an EPSILON move into every state that
+	//  misses it. The wildcard loop of intersection() must not then overlap DONT_CARE against that synthetic EPSILON:
+	//  nft.hh documents DONT_CARE as covering every non-epsilon symbol only. The unreachable EPSILON loop on this
+	//  automaton alone drives the completion; without the fix, naive self-inclusion is false.
+	Nft t = Nft::with_levels(1, 3, {0}, {1});
+	t.delta.add(0, DONT_CARE, 1);
+	t.delta.add(2, EPSILON, 2);
+	CHECK(algorithms::is_included_naive(t, t));
+	CHECK(algorithms::is_included_antichains(t, t));
+	// An explicit EPSILON round still must not match a DONT_CARE wildcard.
+	const Nft eps{Nft::with_levels(1, 3, {0}, {1})};
+	const Nft wc{Nft::with_levels(1, 3, {0}, {1})};
+	const Nft eps_with{[&] {
+		Nft nft{eps};
+		nft.delta.add(0, EPSILON, 1);
+		return nft;
+	}()};
+	const Nft wc_with{[&] {
+		Nft nft{wc};
+		nft.delta.add(0, DONT_CARE, 1);
+		return nft;
+	}()};
+	CHECK(!is_included(eps_with, wc_with));
+	CHECK(is_included(wc_with, wc_with));
+	CHECK(!is_included(eps_with, wc_with, nullptr, JumpMode::RepeatSymbol, {{"algorithm", "naive"}}));
+}
+
 TEST_CASE("mata::nft::revert()") { // {{{
 	Nft aut(9);
 
