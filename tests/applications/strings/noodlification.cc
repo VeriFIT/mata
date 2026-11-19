@@ -1506,6 +1506,51 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation_lazy() emits the noodles of 
 }
 #endif
 
+TEST_CASE("mata::nfa::SegNfa::noodlify() changes the first epsilon choice fastest in Forward order") {
+	Nfa aut{12};
+	aut.initial.insert(0);
+	aut.final.insert(11);
+	aut.delta.add(0, 'a', 1);
+	aut.delta.add(0, 'b', 2);
+	for (const State source : std::initializer_list<State>{1, 2}) {
+		aut.delta.add(source, EPSILON, 3);
+		aut.delta.add(source, EPSILON, 4);
+	}
+	aut.delta.add(3, 'u', 5);
+	aut.delta.add(3, 'v', 6);
+	aut.delta.add(4, 'w', 7);
+	aut.delta.add(4, 'z', 8);
+	for (const State source : std::initializer_list<State>{5, 6}) { aut.delta.add(source, EPSILON, 9); }
+	for (const State source : std::initializer_list<State>{7, 8}) { aut.delta.add(source, EPSILON, 10); }
+	aut.delta.add(9, 'p', 11);
+	aut.delta.add(10, 'q', 11);
+
+	const auto words = [](const std::vector<seg_nfa::Noodle>& noodles) {
+		std::vector<std::vector<mata::Word>> result{};
+		for (const seg_nfa::Noodle& noodle : noodles) {
+			std::vector<mata::Word> noodle_words{};
+			for (const seg_nfa::NoodleSegment& segment : noodle) {
+				const Nfa segment_automaton{segment.to_nfa()};
+				const std::set<mata::Word> segment_words{
+					segment_automaton.get_words(segment_automaton.num_of_states())
+				};
+				REQUIRE(segment_words.size() == 1);
+				noodle_words.push_back(*segment_words.begin());
+			}
+			result.push_back(std::move(noodle_words));
+		}
+		return result;
+	};
+	const std::vector<std::vector<mata::Word>> expected{
+		{{'a'}, {'u'}, {'p'}}, {{'b'}, {'u'}, {'p'}}, {{'a'}, {'v'}, {'p'}}, {{'b'}, {'v'}, {'p'}},
+		{{'a'}, {'w'}, {'q'}}, {{'b'}, {'w'}, {'q'}}, {{'a'}, {'z'}, {'q'}}, {{'b'}, {'z'}, {'q'}},
+	};
+	CHECK(words(seg_nfa::noodlify(aut, EPSILON)) == expected);
+#if MATA_HAS_GENERATOR_SUPPORT
+	CHECK(words(take_all(seg_nfa::noodlify_lazy(aut, EPSILON))) == expected);
+#endif
+}
+
 TEST_CASE("mata::nfa::SegNfa::noodlify() keeps the empty noodles of an automaton with no final state") {
 	// One ε-transition over two segments, no final state: with include_empty, the single noodle keeps its last
 	//  segment empty; without it, there is none.

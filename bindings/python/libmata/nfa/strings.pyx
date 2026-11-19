@@ -6,7 +6,7 @@ cimport libmata.nfa.strings as mata_strings
 cimport libmata.alphabets as alph
 
 from libcpp.map cimport map as cmap
-from libcpp.memory cimport shared_ptr, make_shared
+from libcpp.memory cimport shared_ptr, make_shared, unique_ptr
 from libcpp.optional cimport optional
 from libcpp.pair cimport pair
 from libcpp.string cimport string
@@ -405,10 +405,11 @@ cdef class _LazyNoodles:
 
 
 cdef _LazyNoodles _lazy_noodles(mata_strings.CLazyNoodleGenerator* it):
+    cdef unique_ptr[mata_strings.CLazyNoodleGenerator] owned_it = unique_ptr[mata_strings.CLazyNoodleGenerator](it)
     cdef _LazyNoodles noodles = _LazyNoodles.__new__(_LazyNoodles)
-    noodles.it = it
     noodles.previous = {}
     noodles.busy = False
+    noodles.it = owned_it.release()
     return noodles
 
 
@@ -455,12 +456,15 @@ cdef class _LazyNoodlesWithEpsilonsCounter:
 cdef _LazyNoodlesWithEpsilonsCounter _lazy_noodles_with_epsilons_counter(
     mata_strings.CLazyNoodleWithEpsilonsCounterGenerator* it
 ):
+    cdef unique_ptr[mata_strings.CLazyNoodleWithEpsilonsCounterGenerator] owned_it = unique_ptr[
+        mata_strings.CLazyNoodleWithEpsilonsCounterGenerator
+    ](it)
     cdef _LazyNoodlesWithEpsilonsCounter noodles = _LazyNoodlesWithEpsilonsCounter.__new__(
         _LazyNoodlesWithEpsilonsCounter
     )
-    noodles.it = it
     noodles.previous = {}
     noodles.busy = False
+    noodles.it = owned_it.release()
     return noodles
 
 
@@ -637,8 +641,11 @@ def noodlify_for_transducer_lazy(
         it = mata_strings.c_noodlify_for_transducer_lazy_ptr(
             c_nft, c_input_automata, c_output_automata, c_reduce_intersection, c_use_homomorphic_heuristic, c_order
         )
+    cdef unique_ptr[mata_strings.CLazyTransducerNoodleGenerator] owned_it = unique_ptr[
+        mata_strings.CLazyTransducerNoodleGenerator
+    ](it)
     cdef _LazyTransducerNoodles noodles = _LazyTransducerNoodles.__new__(_LazyTransducerNoodles)
-    noodles.it = it
+    noodles.it = owned_it.release()
     return noodles
 
 
