@@ -1593,7 +1593,7 @@ class Nft : public mata::Automaton {
 	);
 
 	/**
-	 * Fill @p alphabet_to_fill with symbols from @c this.
+	 * Fill @p alphabet_to_fill with symbols from @c this; @c EPSILON and @c DONT_CARE are skipped.
 	 * @param[out] alphabet_to_fill Alphabet to be filled with symbols from @c this.
 	 */
 	void fill_alphabet(mata::OnTheFlyAlphabet& alphabet_to_fill) const;

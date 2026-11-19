@@ -9,7 +9,7 @@
 #include "mata/alphabet.hh"
 #include "mata/nfa/algorithms.hh"
 #include "mata/nfa/nfa.hh"
-#include "mata/nft/types.hh"
+#include "mata/nft/nft.hh"
 
 using namespace mata;
 using namespace mata::nfa::algorithms;
@@ -183,6 +183,140 @@ TEST_CASE("mata::OnTheFlyAlphabet reserved special-symbol names (#794)") {
 	CHECK_THROWS(alphabet.add_symbols_from({std::string{EPSILON_NAME}}));
 	CHECK_THROWS(OnTheFlyAlphabet{{std::string{EPSILON_NAME}, 13}});
 	CHECK(alphabet.get_number_of_symbols() == 0);
+}
+
+TEST_CASE("mata::OnTheFlyAlphabet next symbol value (#759)") {
+	SECTION("the symbol map constructor updates the next symbol value") {
+		OnTheFlyAlphabet alphabet{OnTheFlyAlphabet::StringToSymbolMap{{"a", 0}, {"b", 1}}};
+		CHECK(alphabet.get_next_value() == 2);
+		CHECK(alphabet.translate_symb("a") == 0);
+		CHECK(alphabet.translate_symb("b") == 1);
+		CHECK(alphabet.translate_symb("c") == 2);
+		CHECK(alphabet.get_number_of_symbols() == 3);
+	}
+
+	SECTION("create_alphabet() does not turn EPSILON into a letter") {
+		Nfa aut{2};
+		aut.initial.insert(0);
+		aut.final.insert(1);
+		aut.delta.add(0, 5, 1);
+		aut.delta.add(0, nfa::EPSILON, 1);
+		OnTheFlyAlphabet alphabet{create_alphabet(aut)};
+		CHECK(alphabet.get_alphabet_symbols() == OrdVector<Symbol>{5});
+		CHECK(alphabet.get_number_of_symbols() == 1);
+		CHECK(alphabet.translate_symb("new") == 6);
+	}
+
+	SECTION("Nft::fill_alphabet() does not turn DONT_CARE into a letter") {
+		nft::Nft transducer{nft::Nft::with_levels(2, 3)};
+		transducer.initial.insert(0);
+		transducer.final.insert(2);
+		transducer.delta.add(0, 5, 1);
+		transducer.delta.add(1, nft::DONT_CARE, 2);
+		OnTheFlyAlphabet alphabet{};
+		transducer.fill_alphabet(alphabet);
+		CHECK(alphabet.get_alphabet_symbols() == OrdVector<Symbol>{5});
+		CHECK(alphabet.translate_symb("new") == 6);
+	}
+
+	SECTION("get_number_of_symbols() counts the symbols, not the counter") {
+		OnTheFlyAlphabet alphabet{100};
+		alphabet.add_new_symbol("x");
+		alphabet.add_new_symbol("y");
+		CHECK(alphabet.get_number_of_symbols() == 2);
+		CHECK(alphabet.get_next_value() == 102);
+		CHECK(alphabet.erase("x") == 1);
+		CHECK(alphabet.get_number_of_symbols() == 1);
+	}
+
+	SECTION("an exhausted symbol space is reported instead of handing out EPSILON") {
+		OnTheFlyAlphabet alphabet{};
+		alphabet.add_new_symbol("almost_epsilon", nfa::EPSILON - 1);
+		CHECK(alphabet.get_next_value() == nfa::EPSILON);
+		CHECK_THROWS_AS(alphabet.translate_symb("new"), std::runtime_error);
+		CHECK_THROWS_AS(alphabet.add_new_symbol("new"), std::runtime_error);
+		CHECK(alphabet.translate_symb("almost_epsilon") == nfa::EPSILON - 1);
+		CHECK(alphabet.get_number_of_symbols() == 1);
+	}
+
+	SECTION("an exhausted symbol space is reported instead of handing out DONT_CARE or EPSILON") {
+		// DONT_CARE (EPSILON - 1) and EPSILON are reserved, so an ordinary name must not get either value.
+		for (Symbol top : {Symbol{nft::DONT_CARE}, Symbol{nfa::EPSILON}}) {
+			OnTheFlyAlphabet alphabet{};
+			alphabet.add_new_symbol("top", top);
+			if (top == nft::DONT_CARE) {
+				// An explicit DONT_CARE advances the counter to EPSILON; EPSILON itself never advances it. Either way
+				//  no ordinary name may be allocated any more.
+				CHECK_THROWS_AS(alphabet.translate_symb("new"), std::runtime_error);
+				CHECK_THROWS_AS(alphabet.add_new_symbol("new"), std::runtime_error);
+				CHECK(alphabet.translate_symb("top") == top);
+				CHECK(alphabet.get_number_of_symbols() == 1);
+			} else {
+				// An explicitly bound EPSILON never advances the counter; the low values stay available.
+				CHECK(alphabet.translate_symb("new") == 0);
+			}
+		}
+	}
+
+	SECTION("erasing one of two names of a symbol does not hand its value out again") {
+		for (bool by_symbol : {false, true}) {
+			OnTheFlyAlphabet alphabet{};
+			alphabet.add_new_symbol("a", 5);
+			alphabet.add_new_symbol("b", 5);
+			CHECK(alphabet.get_next_value() == 6);
+			if (by_symbol) {
+				CHECK(alphabet.erase(Symbol{5}) == 1);
+			} else {
+				CHECK(alphabet.erase("a") == 1);
+			}
+			// The value 5 still belongs to the other name, so it must not be reused for a new letter.
+			CHECK(alphabet.get_next_value() == 6);
+			if (by_symbol) {
+				CHECK(alphabet.erase(Symbol{5}) == 1);
+			} else {
+				CHECK(alphabet.erase("b") == 1);
+			}
+			// The last name of the top value is gone, so its value is handed out again.
+			CHECK(alphabet.translate_symb("new") == 5);
+		}
+	}
+
+	SECTION("an exhausted symbol space at DONT_CARE itself is reported") {
+		OnTheFlyAlphabet alphabet{};
+		alphabet.add_new_symbol("last", nft::DONT_CARE - 1);
+		CHECK(alphabet.get_next_value() == nft::DONT_CARE);
+		CHECK_THROWS_AS(alphabet.translate_symb("new"), std::runtime_error);
+		CHECK_THROWS_AS(alphabet.add_new_symbol("new"), std::runtime_error);
+		CHECK(alphabet.translate_symb("last") == nft::DONT_CARE - 1);
+		CHECK(alphabet.get_number_of_symbols() == 1);
+	}
+
+	SECTION("a mapping the merge rejects does not advance the counter") {
+		OnTheFlyAlphabet alphabet{};
+		alphabet.add_new_symbol("a", 0);
+		alphabet.add_symbols_from(OnTheFlyAlphabet::StringToSymbolMap{{"a", nft::DONT_CARE - 1}});
+		CHECK(alphabet.translate_symb("a") == 0);
+		CHECK(alphabet.get_next_value() == 1);
+		CHECK(alphabet.translate_symb("b") == 1);
+	}
+
+	SECTION("an explicitly added EPSILON does not wrap the counter") {
+		OnTheFlyAlphabet alphabet{};
+		alphabet.add_new_symbol("a", 3);
+		alphabet.add_new_symbol("epsilon", nfa::EPSILON);
+		CHECK(alphabet.get_next_value() == 4);
+		CHECK(alphabet.translate_symb("new") == 4);
+	}
+
+	SECTION("erasing EPSILON from a fresh alphabet does not wrap the counter") {
+		OnTheFlyAlphabet alphabet{};
+		alphabet.add_new_symbol("epsilon", nfa::EPSILON);
+		CHECK(alphabet.erase("epsilon") == 1);
+		CHECK(alphabet.get_next_value() == 0);
+		alphabet.add_new_symbol("epsilon", nfa::EPSILON);
+		CHECK(alphabet.erase(nfa::EPSILON) == 1);
+		CHECK(alphabet.get_next_value() == 0);
+	}
 }
 
 TEST_CASE("mata::EnumAlphabet") {

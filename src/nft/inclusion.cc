@@ -25,12 +25,21 @@ using mata::nfa::internal::Node;
 using mata::nfa::internal::ProcessedAntichain;
 using mata::nfa::internal::Step;
 
+bool has_dont_care_transition(const Nft& nft) {
+	return std::ranges::any_of(nft.delta, [](const StatePost& state_post) {
+		return state_post.find(DONT_CARE) != state_post.end();
+	});
+}
+
 /// The replacements of DONT_CARE that the unwinding of @p lhs and @p rhs uses: the symbols of @p alphabet, or the
-///  symbols of both transducers without DONT_CARE (unless DONT_CARE is their only symbol).
+///  concrete symbols of both transducers. Without any concrete symbol, keep DONT_CARE as a marker: every input letter
+///  then behaves alike, and dropping it instead would drop the wildcard links from the comparison.
 OrdVector<Symbol> unwinding_symbols(const Nft& lhs, const Nft& rhs, const mata::Alphabet* const alphabet) {
 	if (alphabet != nullptr) { return alphabet->get_alphabet_symbols(); }
 	OrdVector<Symbol> symbols{create_alphabet(lhs, rhs).get_alphabet_symbols()};
-	if (symbols.contains(DONT_CARE) && symbols.size() > 1) { symbols.erase(DONT_CARE); }
+	if (symbols.empty() && (has_dont_care_transition(lhs) || has_dont_care_transition(rhs))) {
+		symbols.insert(DONT_CARE);
+	}
 	return symbols;
 }
 
@@ -624,12 +633,23 @@ bool algorithms::is_included_naive(
 ) { // {{{
 	internal::validate_nft_levels(smaller, "is_included_naive");
 	internal::validate_nft_levels(bigger, "is_included_naive");
-	Nft bigger_cmpl;
-	if (alphabet == nullptr) {
-		bigger_cmpl = complement(bigger, create_alphabet(smaller, bigger));
-	} else {
-		bigger_cmpl = complement(bigger, *alphabet);
+	const OrdVector<Symbol> symbols{unwinding_symbols(smaller, bigger, alphabet)};
+	// EPSILON is excluded from create_alphabet(): it belongs in the complement whenever an operand uses it, or a
+	//  round labeled with it would have no match in the complement.
+	OrdVector<Symbol> complement_symbols{symbols};
+	const auto has_epsilon{[](const Nft& nft) {
+		return std::ranges::any_of(nft.delta, [](const StatePost& post) { return post.find(EPSILON) != post.end(); });
+	}};
+	if (has_epsilon(smaller) || has_epsilon(bigger)) { complement_symbols.insert(EPSILON); }
+	// If the bigger still holds a DONT_CARE letter and we are about to complete EPSILON, make_complete() would
+	//  insert a synthetic EPSILON move on every state that misses it, and the intersection's wildcard loop would
+	//  then carry it over to the smaller's DONT_CARE. That accepts a round that is not in the smaller. The
+	//  antichain path does not have this problem: its lazy unwinding matches DONT_CARE only against the
+	//  alphabet's concrete symbols, never against EPSILON.
+	if (complement_symbols.contains(EPSILON) && has_dont_care_transition(bigger)) {
+		return is_included_antichains(smaller, bigger, alphabet, cex, jump_mode);
 	}
+	const Nft bigger_cmpl{complement(bigger, complement_symbols)};
 	const Nft nft_isect = intersection(smaller, bigger_cmpl, nullptr, jump_mode);
 
 	return nft_isect.is_lang_empty(cex);

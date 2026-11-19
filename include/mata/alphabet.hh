@@ -383,7 +383,7 @@ class OnTheFlyAlphabet : public Alphabet {
 	}
 
 	template <class InputIt> OnTheFlyAlphabet(InputIt first, InputIt last) {
-		std::for_each(first, last, [this](const auto& name) { add_new_symbol(name, next_symbol_value_); });
+		std::for_each(first, last, [this](const auto& name) { add_new_symbol(name); });
 	}
 	OnTheFlyAlphabet(std::initializer_list<std::pair<std::string, Symbol>> name_symbol_map) : symbol_map_{} {
 		for (auto&& [name, symbol] : name_symbol_map) { add_new_symbol(name, symbol); }
@@ -427,7 +427,7 @@ class OnTheFlyAlphabet : public Alphabet {
 	/**
 	 * @brief Add new symbol to the alphabet with the value of @c next_symbol_value.
 	 *
-	 * Throws an exception when the adding fails.
+	 * Throws an exception when the adding fails or when the next symbol value has reached @c EPSILON.
 	 *
 	 * @param[in] key User-space representation of the symbol.
 	 * @return Result of the insertion as @c InsertionResult.
@@ -471,10 +471,10 @@ class OnTheFlyAlphabet : public Alphabet {
 	Symbol get_next_value() const { return next_symbol_value_; }
 
 	/**
-	 * Get the number of existing symbols, epsilon symbols excluded.
-	 * @return The number of symbols.
+	 * Get the number of registered names, including aliases and explicit mappings (also ones with a reserved value).
+	 * @return The number of names in the symbol map.
 	 */
-	size_t get_number_of_symbols() const { return next_symbol_value_; }
+	size_t get_number_of_symbols() const { return symbol_map_.size(); }
 
 	/**
 	 * Get the symbol map used in the alphabet.
@@ -508,13 +508,16 @@ class OnTheFlyAlphabet : public Alphabet {
 	void unindex_name(StringToSymbolMap::const_iterator name_it);
 	/// Redirect the name pointers of the reverse index copied from another alphabet into our @c symbol_map_.
 	void redirect_copied_index();
+	/// Throw when no value below @c EPSILON is left for a new symbol named @p name.
+	void throw_if_symbol_space_exhausted(std::string_view name) const;
 
   public:
 	/**
 	 * @brief Update next symbol value when appropriate.
 	 *
 	 * When the newly inserted value is larger or equal to the current next symbol value, update the next symbol
-	 *  value to a value one larger than the new value.
+	 *  value to a value one larger than the new value. Values @c EPSILON and above are ignored, so the next symbol
+	 *  value never wraps and never exceeds @c EPSILON.
 	 * @param value The value of the newly added symbol.
 	 */
 	void update_next_symbol_value(Symbol value);

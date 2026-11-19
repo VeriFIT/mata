@@ -859,6 +859,8 @@ void Delta::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
 	const size_t aut_num_of_states{num_of_states()};
 	for (mata::nfa::State state{0}; state < aut_num_of_states; ++state) {
 		for (const SymbolPost& move : state_post(state)) {
+			// EPSILON sorts last and is no letter.
+			if (move.symbol == EPSILON) { break; }
 			target_alphabet.update_next_symbol_value(move.symbol);
 			target_alphabet.try_add_new_symbol(std::to_string(move.symbol), move.symbol);
 		}

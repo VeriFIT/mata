@@ -1818,6 +1818,80 @@ TEST_CASE("mata::nft::are_equivalent") {
 	}
 }
 
+TEST_CASE("mata::nft comparison keeps wildcard-only languages non-empty") {
+	// With no concrete letter, create_alphabet() is empty because DONT_CARE is no letter. The comparison still has to
+	//  read the wildcard as matching the one-symbol words over any concrete letter, not drop its transitions.
+	const Nft empty{Nft::with_levels(1, 2, {0}, {1})};
+	const Nft wildcard = [] {
+		Nft nft{Nft::with_levels(1, 2, {0}, {1})};
+		nft.delta.add(0, DONT_CARE, 1);
+		return nft;
+	}();
+
+	const Alphabet* const no_alphabet{nullptr};
+	for (const char* const algorithm : {"naive", "antichains"}) {
+		const ParameterMap params{{"algorithm", algorithm}};
+		CHECK(!are_equivalent(wildcard, empty, no_alphabet, JumpMode::RepeatSymbol, params));
+		CHECK(!is_included(wildcard, empty, no_alphabet, JumpMode::RepeatSymbol, params));
+		CHECK(is_included(empty, wildcard, no_alphabet, JumpMode::RepeatSymbol, params));
+	}
+	CHECK(!are_equivalent(wildcard, empty));
+	CHECK(!is_included(wildcard, empty));
+	CHECK(is_included(empty, wildcard));
+}
+
+TEST_CASE("mata::nft naive inclusion keeps EPSILON among its complement symbols") {
+	// The round 5 then EPSILON on two levels: EPSILON never appears in create_alphabet(), so the complement must get
+	//  it explicitly, or the naive inclusion can miss the round entirely.
+	const Nft ear{[&] {
+		Nft nft{Nft::with_levels(2, 3, {0}, {2})};
+		nft.levels.set({0, 1, 0});
+		nft.delta.add(0, 5, 1);
+		nft.delta.add(1, EPSILON, 2);
+		return nft;
+	}()};
+	const Nft empty{Nft::with_levels(2, 3, {0}, {2})};
+	for (const char* const algorithm : {"naive", "antichains"}) {
+		const ParameterMap params{{"algorithm", algorithm}};
+		CHECK(!is_included(ear, empty, nullptr, JumpMode::RepeatSymbol, params));
+		CHECK(is_included(empty, ear, nullptr, JumpMode::RepeatSymbol, params));
+		CHECK(!are_equivalent(ear, empty, nullptr, JumpMode::RepeatSymbol, params));
+	}
+	CHECK(!is_included(ear, empty));
+	CHECK(!are_equivalent(ear, empty));
+}
+
+TEST_CASE("mata::nft naive inclusion keeps DONT_CARE distinct from a synthesized EPSILON") {
+	// The bigger transducer carries a DONT_CARE letter and one unreachable EPSILON loop; with EPSILON added to the
+	//  complement alphabet, make_complete() would synthesize an EPSILON move on every state that misses it. The
+	//  intersection's wildcard loop must not then overlap DONT_CARE against that synthetic EPSILON (the contract is
+	//  DONT_CARE = every non-EPSILON symbol). Naive inclusion falls back to antichains here, since its lazy
+	//  unwinding matches DONT_CARE against concrete symbols only. Without that fallthrough the self-inclusion is
+	//  false. `compose_general_reference()` keeps the opposite semantics on purpose: its self-loop padding
+	//  requires DONT_CARE to also match EPSILON, so naive cannot globally forbid the overlap.
+	Nft t = Nft::with_levels(1, 3, {0}, {1});
+	t.delta.add(0, DONT_CARE, 1);
+	t.delta.add(2, EPSILON, 2);
+	CHECK(algorithms::is_included_naive(t, t));
+	CHECK(algorithms::is_included_antichains(t, t));
+	// An explicit EPSILON round still must not match a DONT_CARE wildcard.
+	const Nft eps{Nft::with_levels(1, 3, {0}, {1})};
+	const Nft wc{Nft::with_levels(1, 3, {0}, {1})};
+	const Nft eps_with{[&] {
+		Nft nft{eps};
+		nft.delta.add(0, EPSILON, 1);
+		return nft;
+	}()};
+	const Nft wc_with{[&] {
+		Nft nft{wc};
+		nft.delta.add(0, DONT_CARE, 1);
+		return nft;
+	}()};
+	CHECK(!is_included(eps_with, wc_with));
+	CHECK(is_included(wc_with, wc_with));
+	CHECK(!is_included(eps_with, wc_with, nullptr, JumpMode::RepeatSymbol, {{"algorithm", "naive"}}));
+}
+
 TEST_CASE("mata::nft::revert()") { // {{{
 	Nft aut(9);
 

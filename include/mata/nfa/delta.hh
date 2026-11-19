@@ -943,7 +943,7 @@ class Delta {
 	/**
 	 * @brief Expand @p target_alphabet by symbols from this delta.
 	 *
-	 * The value of the already existing symbols will NOT be overwritten.
+	 * The value of the already existing symbols will NOT be overwritten. @c EPSILON is skipped.
 	 */
 	void add_symbols_to(OnTheFlyAlphabet& target_alphabet) const;
 

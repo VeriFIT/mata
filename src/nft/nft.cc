@@ -1771,6 +1771,8 @@ StateSet Nft::mk_epsilon_closure(const StateSet& source_states, const std::vecto
 void Nft::fill_alphabet(OnTheFlyAlphabet& alphabet_to_fill) const {
 	for (const StatePost& state_post : delta) {
 		for (const SymbolPost& symbol_post : state_post) {
+			// DONT_CARE and EPSILON sort last and are no letters.
+			if (symbol_post.symbol >= DONT_CARE) { break; }
 			alphabet_to_fill.update_next_symbol_value(symbol_post.symbol);
 			alphabet_to_fill.try_add_new_symbol(std::to_string(symbol_post.symbol), symbol_post.symbol);
 		}
