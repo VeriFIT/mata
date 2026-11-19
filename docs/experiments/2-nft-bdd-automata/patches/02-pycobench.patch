@@ -1,0 +1,293 @@
+From 992bf412a64c7f0ee2a82d145610a4d0e65be238 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Wed, 18 Nov 2026 13:56:55 +0100
+Subject: [PATCH 1/3] pyco_proc: +fix Align metrics with their columns when
+ results vary
+
+---
+ src/pyco_proc.py | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/src/pyco_proc.py b/src/pyco_proc.py
+index b09b1e9..cce6045 100755
+--- a/src/pyco_proc.py
++++ b/src/pyco_proc.py
+@@ -216,15 +216,18 @@ def proc_res(fd, args):
+                 f"Warning: in {params} and {eng}: unknown run status '{status}'\n"
+             )
+ 
++    # A metric can first appear in any run (e.g. the return code adds 'result').
++    # Every row and the header must use the same order of the global metrics.
++    metric_order = {eng: sorted(engines_outs[eng]) for eng in engines}
+     list_ptrns = []
+     for bench in results:
+         all_engs = True
+         ls = list(bench)
+         for eng in engines:
+-            out_len = len(engines_outs[eng]) + 1  # +1 = time
++            out_len = len(metric_order[eng]) + 1  # +1 = time
+             if eng in results[bench]:
+                 bench_res = results[bench][eng]
+-                for out in engines_outs[eng]:
++                for out in metric_order[eng]:
+                     if out == "stats" and "output" in bench_res:
+                         bench_res["output"][out] = StatisticsParser.stats_formatter(
+                             bench_res["output"][out], args.stats_format
+@@ -241,7 +244,7 @@ def proc_res(fd, args):
+                     assert "output" in bench_res
+ 
+                     ls.append(bench_res["runtime"])
+-                    for out in engines_outs[eng]:
++                    for out in metric_order[eng]:
+                         if out in bench_res["output"]:
+                             out_data = bench_res["output"][out]
+ 
+@@ -287,7 +290,7 @@ def proc_res(fd, args):
+     header += ["name"]
+     for eng in engines:
+         header += [eng + "-runtime"]
+-        for out in engines_outs[eng]:
++        for out in metric_order[eng]:
+             if out == "stats" and args.stats != StatsDestination.OUTPUT_FILE:
+                 continue
+             header += [eng + "-" + out]
+@@ -364,7 +367,9 @@ def parse_args():
+     parser.add_argument(
+         "--stats",
+         nargs="?",
+-        choices=[destination_option.name.lower() for destination_option in StatsDestination],
++        choices=[
++            destination_option.name.lower() for destination_option in StatsDestination
++        ],
+         const="output_file",
+         default=None,
+         help="Whether to output statistics and where (default: skipping stats, flag without \
+-- 
+2.56.0
+
+
+From ea4f7576dd02e43f78ba4c72477bce98bfa8d800 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Tue, 10 Nov 2026 02:37:33 +0100
+Subject: [PATCH 2/3] pycobench: Preserve complete metrics in truncated output
+
+---
+ src/pycobench.py                |  12 +++-
+ tests/test_output_truncation.py | 123 ++++++++++++++++++++++++++++++++
+ 2 files changed, 133 insertions(+), 2 deletions(-)
+ create mode 100644 tests/test_output_truncation.py
+
+diff --git a/src/pycobench.py b/src/pycobench.py
+index 989e7f8..f2c4b34 100755
+--- a/src/pycobench.py
++++ b/src/pycobench.py
+@@ -196,6 +196,14 @@ def remove_newlines(text):
+     return text.replace("\n", g_newline_sep)
+ 
+ 
++###########################################
++def truncate_output(text):
++    """Keep the tail of complete newline-delimited records."""
++    if len(text) <= OUTPUT_LIMIT:
++        return text
++    return text[-OUTPUT_LIMIT:].partition("\n")[2]
++
++
+ ###########################################
+ def run_subproc(cmd):
+     """run_subproc(cmd) -> dict()
+@@ -372,8 +380,8 @@ def run_subproc_systime(cmd, cpu_affinity, return_codes):
+         print("======= ^^^^^^ =======")
+ 
+     # limit too big outputs
+-    result["stdout"] = result["stdout"][-OUTPUT_LIMIT:]
+-    result["stderr"] = result["stderr"][-OUTPUT_LIMIT:]
++    result["stdout"] = truncate_output(result["stdout"])
++    result["stderr"] = truncate_output(result["stderr"])
+ 
+     measured = extract_measurements(result)
+     status, run_result, explicit = classify_return_code(return_codes, result["retcode"])
+diff --git a/tests/test_output_truncation.py b/tests/test_output_truncation.py
+new file mode 100644
+index 0000000..e200ac4
+--- /dev/null
++++ b/tests/test_output_truncation.py
+@@ -0,0 +1,123 @@
++import csv
++import json
++import subprocess
++import sys
++import tempfile
++import unittest
++from pathlib import Path
++
++from src import pyco_results, pycobench
++
++
++class OutputTruncationTest(unittest.TestCase):
++    maxDiff = None
++
++    def measure(self, outputs):
++        with tempfile.TemporaryDirectory() as directory:
++            directory = Path(directory)
++            config = {}
++            expected_compositions = {}
++            for engine, (stdout, composition) in outputs.items():
++                program = directory / f"program-{engine}.py"
++                program.write_text(f"import sys\nsys.stdout.write({stdout!r})\n")
++                config[engine] = {"cmd": f"{sys.executable} {program}"}
++                expected_compositions[engine] = composition
++            (directory / "config.yaml").write_text(json.dumps(config))
++            headers = []
++            tables = []
++            for repeat in (1, 2):
++                log = directory / f"rep-{repeat}.log"
++                subprocess.run(
++                    [
++                        sys.executable,
++                        str(Path(pycobench.__file__).resolve()),
++                        "--conf",
++                        str(directory / "config.yaml"),
++                        "--jobs",
++                        "2",
++                        "--timeout",
++                        "10",
++                        "--output",
++                        str(log),
++                    ],
++                    input="case.mata\n",
++                    text=True,
++                    capture_output=True,
++                    check=True,
++                    timeout=30,
++                )
++                table_path = directory / f"rep-{repeat}.csv"
++                subprocess.run(
++                    [
++                        sys.executable,
++                        str(
++                            Path(pycobench.__file__).resolve().with_name("pyco_proc.py")
++                        ),
++                        "--csv",
++                        "--params-num",
++                        "1",
++                        "--output",
++                        str(table_path),
++                        str(log),
++                    ],
++                    capture_output=True,
++                    check=True,
++                    timeout=30,
++                )
++                with table_path.open(newline="") as table:
++                    reader = csv.DictReader(table, delimiter=";")
++                    headers.append(reader.fieldnames)
++                    tables.append(next(reader))
++
++            for engine, composition in expected_compositions.items():
++                prefix = f"{engine}-"
++                metrics = {
++                    header[len(prefix) :]
++                    for header in headers[0]
++                    if pyco_results._engine_of(header, expected_compositions) == engine
++                }
++                optional = {engine.rsplit("-", 1)[-1]} & {"trim", "reduce"}
++                self.assertEqual(
++                    metrics - {"runtime", "maxrss"},
++                    {"composition", "states", "result"} | optional,
++                )
++                for row in tables:
++                    self.assertEqual(float(row[prefix + "composition"]), composition)
++                    self.assertEqual(row[prefix + "states"], "72")
++                    self.assertEqual(row[prefix + "result"], "false")
++                    for metric in optional:
++                        self.assertEqual(float(row[prefix + metric]), 1.5)
++            self.assertEqual(headers[0], headers[1])
++
++    def test_truncated_output_starts_with_a_complete_metric(self):
++        repeated = "composition: 2\n"
++        outputs = {}
++        for engine, optional in (
++            ("mata-base.left", []),
++            ("mata-base.left-trim", ["trim: 1.5"]),
++            ("mata-base.left-reduce", ["reduce: 1.5"]),
++        ):
++            fragment = "n: 1.25\n"
++            closing = "\n".join([*optional, "states: 72", "result: false"]) + "\n"
++            count, remainder = divmod(
++                pycobench.OUTPUT_LIMIT - len(fragment) - len(closing), len(repeated)
++            )
++            stdout = (
++                "discarded: 0\n"
++                + "compositio"
++                + fragment
++                + repeated * count
++                + " " * remainder
++                + closing
++            )
++            self.assertGreater(len(stdout), pycobench.OUTPUT_LIMIT)
++            outputs[engine] = (stdout, 2 * count)
++        self.measure(outputs)
++
++    def test_output_below_limit_is_unchanged(self):
++        stdout = "composition: 1.25\nstates: 72\nresult: false\n"
++        self.measure({"mata-base.left": (stdout, 1.25)})
++
++
++if __name__ == "__main__":
++    unittest.main()
+-- 
+2.56.0
+
+
+From 18f6d91ce97f084c7ad48dd466fd885dae7661c7 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Thu, 19 Nov 2026 16:38:56 +0100
+Subject: [PATCH 3/3] pycobench: +fix Preserve metrics at output truncation
+ boundaries
+
+---
+ src/pycobench.py                |  5 ++++-
+ tests/test_output_truncation.py | 10 ++++++++++
+ 2 files changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/src/pycobench.py b/src/pycobench.py
+index f2c4b34..33a5d31 100755
+--- a/src/pycobench.py
++++ b/src/pycobench.py
+@@ -201,7 +201,10 @@ def truncate_output(text):
+     """Keep the tail of complete newline-delimited records."""
+     if len(text) <= OUTPUT_LIMIT:
+         return text
+-    return text[-OUTPUT_LIMIT:].partition("\n")[2]
++    tail = text[-OUTPUT_LIMIT:]
++    if text[-OUTPUT_LIMIT - 1] == "\n":
++        return tail
++    return tail.partition("\n")[2]
+ 
+ 
+ ###########################################
+diff --git a/tests/test_output_truncation.py b/tests/test_output_truncation.py
+index e200ac4..895ed6b 100644
+--- a/tests/test_output_truncation.py
++++ b/tests/test_output_truncation.py
+@@ -114,6 +114,16 @@ class OutputTruncationTest(unittest.TestCase):
+             outputs[engine] = (stdout, 2 * count)
+         self.measure(outputs)
+ 
++    def test_truncated_output_preserves_metric_on_record_boundary(self):
++        tail = "composition: 1.25\nstates: 72\nresult: false\n"
++        padding = "composition: 0\n"
++        count, remainder = divmod(pycobench.OUTPUT_LIMIT - len(tail), len(padding))
++        tail += padding * count + " " * remainder
++        stdout = "discarded: 0\n" + tail
++        self.assertEqual(len(tail), pycobench.OUTPUT_LIMIT)
++        self.assertEqual(stdout[-pycobench.OUTPUT_LIMIT - 1], "\n")
++        self.assertEqual(pycobench.truncate_output(stdout), tail)
++
+     def test_output_below_limit_is_unchanged(self):
+         stdout = "composition: 1.25\nstates: 72\nresult: false\n"
+         self.measure({"mata-base.left": (stdout, 1.25)})
+-- 
+2.56.0
+

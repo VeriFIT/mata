@@ -1,0 +1,2434 @@
+From 74c879589583713aebf417189bf5367b72dd5893 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <ichocholaty@fit.vut.cz>
+Date: Wed, 18 Nov 2026 09:33:14 +0100
+Subject: [PATCH 1/6] cpp,interpreter: +refactor Allow tools to load @NFA-bits
+ without mata, time every operation as 'operation'
+
+---
+ CMakeLists.txt                    |  30 +-
+ src/cpp/CMakeLists.txt            |  36 +-
+ src/cpp/interpreter/interpreter.h | 185 ++++++-----
+ src/cpp/interpreter/parser.h      |   1 +
+ src/cpp/interpreter_awali.cc      |  60 ++--
+ src/cpp/interpreter_cudd.cc       | 525 ++++++++++++++++++++++++++++++
+ src/cpp/interpreter_debug.cc      |   5 +-
+ src/cpp/interpreter_mata.cc       |   9 +-
+ src/cpp/interpreter_mata_bdd.cc   | 205 ++++++++++++
+ src/cpp/interpreter_mona.cc       | 324 ++++++++++++++++++
+ src/cpp/interpreter_vata.cc       |   5 +-
+ src/cpp/utils/bits_load.hh        | 307 +++++++++++++++++
+ src/cpp/utils/mata_load.hh        |  18 +
+ src/cpp/utils/robdd.hh            | 178 ++++++++++
+ 14 files changed, 1740 insertions(+), 148 deletions(-)
+ create mode 100644 src/cpp/interpreter_cudd.cc
+ create mode 100644 src/cpp/interpreter_mata_bdd.cc
+ create mode 100644 src/cpp/interpreter_mona.cc
+ create mode 100644 src/cpp/utils/bits_load.hh
+ create mode 100644 src/cpp/utils/robdd.hh
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 68e9b15..d42d150 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -5,13 +5,19 @@ project (nfa-emp-interpreter)
+ set (CMAKE_CXX_STANDARD 23)
+ set (CMAKE_CXX_STANDARD_REQUIRED ON)
+ 
+-find_library(LIBMATA mata REQUIRED)
+-find_path(MATA_INCLUDE_DIR NAMES mata/nfa/nfa.hh REQUIRED)
+-
+-# Competitors' interpreters are opt-in, so that building mata's needs neither
+-# library. Both are found like libmata (e.g. through CMAKE_PREFIX_PATH).
++# The interpreters on mata (mata, mata-bdd, debug) are built by default. The
++# others are opt-in, each finding its library like libmata (e.g. through
++# CMAKE_PREFIX_PATH); vata and awali read their inputs with libmata too, cudd
++# and mona do not need it.
++option(MATA_INTERPRETERS "Build the interpreters on mata (mata, mata-bdd, debug)" ON)
+ option(VATA_INTERPRETER "Build vata-emp-interpreter (needs libvata and Boost headers)" OFF)
+ option(AWALI_INTERPRETER "Build awali-emp-interpreter (needs awali's libawalidyn)" OFF)
++option(CUDD_INTERPRETER "Build cudd-emp-interpreter (needs CUDD's libcudd)" OFF)
++option(MONA_INTERPRETER "Build mona-emp-interpreter (needs MONA's libmonadfa, libmonabdd and libmonamem)" OFF)
++if (MATA_INTERPRETERS OR VATA_INTERPRETER OR AWALI_INTERPRETER)
++    find_library(LIBMATA mata REQUIRED)
++    find_path(MATA_INCLUDE_DIR NAMES mata/nfa/nfa.hh REQUIRED)
++endif()
+ if (VATA_INTERPRETER)
+     find_library(LIBVATA vata REQUIRED)
+     find_path(VATA_INCLUDE_DIR NAMES vata/explicit_tree_aut.hh REQUIRED)
+@@ -21,9 +27,15 @@ if (AWALI_INTERPRETER)
+     find_library(LIBAWALI awalidyn REQUIRED)
+     find_path(AWALI_INCLUDE_DIR NAMES awali/dyn.hh REQUIRED)
+ endif()
+-
+-# find_library(LIBMONADFA monadfa REQUIRED)
+-# find_library(LIBMONAMEM monamem REQUIRED)
+-# find_library(LIBMONABDD monabdd REQUIRED)
++if (CUDD_INTERPRETER)
++    find_library(LIBCUDD cudd REQUIRED)
++    find_path(CUDD_INCLUDE_DIR NAMES cudd.h REQUIRED)
++endif()
++if (MONA_INTERPRETER)
++    find_library(LIBMONADFA monadfa REQUIRED)
++    find_library(LIBMONABDD monabdd REQUIRED)
++    find_library(LIBMONAMEM monamem REQUIRED)
++    find_path(MONA_INCLUDE_DIR NAMES mona/dfa.h REQUIRED)
++endif()
+ 
+ add_subdirectory(src/cpp)
+diff --git a/src/cpp/CMakeLists.txt b/src/cpp/CMakeLists.txt
+index 14f6a74..cc3bec1 100644
+--- a/src/cpp/CMakeLists.txt
++++ b/src/cpp/CMakeLists.txt
+@@ -1,13 +1,19 @@
+-add_executable(debug-emp-interpreter
+-    interpreter_debug.cc)
+-add_executable(mata-emp-interpreter
+-    interpreter_mata.cc)
++if (MATA_INTERPRETERS)
++    add_executable(debug-emp-interpreter
++        interpreter_debug.cc)
++    add_executable(mata-emp-interpreter
++        interpreter_mata.cc)
++    add_executable(mata-bdd-emp-interpreter
++        interpreter_mata_bdd.cc)
+ 
+-target_include_directories(debug-emp-interpreter PRIVATE ${MATA_INCLUDE_DIR})
+-target_include_directories(mata-emp-interpreter PRIVATE ${MATA_INCLUDE_DIR})
++    target_include_directories(debug-emp-interpreter PRIVATE ${MATA_INCLUDE_DIR})
++    target_include_directories(mata-emp-interpreter PRIVATE ${MATA_INCLUDE_DIR})
++    target_include_directories(mata-bdd-emp-interpreter PRIVATE ${MATA_INCLUDE_DIR})
+ 
+-target_link_libraries(debug-emp-interpreter PUBLIC ${LIBMATA})
+-target_link_libraries(mata-emp-interpreter PUBLIC ${LIBMATA})
++    target_link_libraries(debug-emp-interpreter PUBLIC ${LIBMATA})
++    target_link_libraries(mata-emp-interpreter PUBLIC ${LIBMATA})
++    target_link_libraries(mata-bdd-emp-interpreter PUBLIC ${LIBMATA})
++endif()
+ 
+ if (VATA_INTERPRETER)
+     add_executable(vata-emp-interpreter
+@@ -22,3 +28,17 @@ if (AWALI_INTERPRETER)
+     target_include_directories(awali-emp-interpreter PRIVATE ${MATA_INCLUDE_DIR} ${AWALI_INCLUDE_DIR})
+     target_link_libraries(awali-emp-interpreter PUBLIC ${LIBMATA} ${LIBAWALI})
+ endif()
++
++if (CUDD_INTERPRETER)
++    add_executable(cudd-emp-interpreter
++        interpreter_cudd.cc)
++    target_include_directories(cudd-emp-interpreter PRIVATE ${CUDD_INCLUDE_DIR})
++    target_link_libraries(cudd-emp-interpreter PUBLIC ${LIBCUDD})
++endif()
++
++if (MONA_INTERPRETER)
++    add_executable(mona-emp-interpreter
++        interpreter_mona.cc)
++    target_include_directories(mona-emp-interpreter PRIVATE ${MONA_INCLUDE_DIR})
++    target_link_libraries(mona-emp-interpreter PUBLIC ${LIBMONADFA} ${LIBMONABDD} ${LIBMONAMEM})
++endif()
+diff --git a/src/cpp/interpreter/interpreter.h b/src/cpp/interpreter/interpreter.h
+index e464641..55bcc9c 100644
+--- a/src/cpp/interpreter/interpreter.h
++++ b/src/cpp/interpreter/interpreter.h
+@@ -1,7 +1,7 @@
+-
+ #ifndef _INTERPRETER_H_
+ #define _INTERPRETER_H_
+ 
++#include <cassert>
+ #include <chrono>
+ #include <exception>
+ #include <filesystem>
+@@ -17,18 +17,17 @@
+ #include <unordered_map>
+ #include <vector>
+ 
+-#include <mata/nfa/nfa.hh>
+-
+-#include "../utils/mata_load.hh"
++#include "../utils/bench.hh"
+ #include "parser.h"
+ 
+ template <typename NFA> struct Instance {
+-  std::function<NFA(const mata::nfa::Nfa &, const std::string &filename)>
+-      mata_to_nfa;
++  /// Reads the input automata, one per file, all at once (bitvector inputs
++  /// may need one alphabet); the tool times its parsing and construction.
++  std::function<std::vector<NFA>(const std::vector<std::string> &files)> load;
+   std::function<NFA(const NFA &, const NFA &)> intersection;
+-  std::function<NFA(const std::vector<NFA>)> inter_all;
++  std::function<NFA(const std::vector<NFA> &)> inter_all;
+   std::function<NFA(const NFA &, const NFA &)> uni;
+-  std::function<NFA(const std::vector<NFA>)> uni_all;
++  std::function<NFA(const std::vector<NFA> &)> uni_all;
+   std::function<NFA(const NFA &)> complement;
+   std::function<NFA(const NFA &, const NFA &)> concat;
+   std::function<bool(const NFA &)> is_empty;
+@@ -41,16 +40,13 @@ template <typename NFA> struct Instance {
+ };
+ 
+ template <typename NFA> struct Interpreter {
+-
+   int param_cnt = 0;
+   Instance<NFA> instance{};
+   std::vector<SSA_Call> program{};
+   std::map<std::string, NFA> aut_table{};
+   std::vector<std::string> arguments;
+   std::vector<std::string> load_all_auts{};
+-  std::vector<mata::nfa::Nfa> inter_auts{};
+-  std::shared_ptr<mata::OnTheFlyAlphabet> alphabet =
+-      std::make_shared<mata::OnTheFlyAlphabet>();
++  std::vector<NFA> loaded{};
+ 
+   Interpreter(const Instance<NFA> &inst, const std::vector<std::string> &args)
+       : instance(inst), param_cnt(0), program(), aut_table(), arguments(args) {}
+@@ -68,50 +64,24 @@ public:
+       }
+     }
+ 
+-    // load and minterminize all input automata
+-    prepare_mata_automata();
++    // Every input automaton is read before the program runs.
++    this->loaded = this->instance.load(this->arguments);
++    if (this->loaded.size() != this->arguments.size()) {
++      throw std::runtime_error(
++          "loaded " + std::to_string(this->loaded.size()) + " automata from " +
++          std::to_string(this->arguments.size()) + " files");
++    }
+ 
+     for (size_t i = 0; i < this->program.size(); i++) {
+-      switch (this->program[i].operation) {
+-      case LOAD_CMD:
++      const OPERATION op{this->program[i].operation};
++      if (op == LOAD_CMD) {
+         load_nfa(this->program[i].result.value(), this->param_cnt++);
+-        break;
+-      case LOAD_ALL: // all automata are already loaded
++      } else if (op == LOAD_ALL) {
+         load_all();
+-        break;
+-      case INTERSECTION:
+-        intersection(this->program[i].result.value(), this->program[i].params);
+-        break;
+-      case INTERALL:
+-        inter_all(this->program[i].result.value());
+-        break;
+-      case UNION:
+-        uni(this->program[i].result.value(), this->program[i].params);
+-        break;
+-      case UNIALL:
+-        uni_all(this->program[i].result.value());
+-        break;
+-      case COMPLEMENT:
+-        complement(this->program[i].result.value(), this->program[i].params);
+-        break;
+-      case CONCAT:
+-        concat(this->program[i].result.value(), this->program[i].params);
+-        break;
+-      case EMPTINESS_CHECK:
+-        is_empty(this->program[i].params[0]);
+-        break;
+-      case DETERMINIZE:
+-        determinize(this->program[i].result.value(), this->program[i].params);
+-        break;
+-      case MINIMIZE:
+-        minimize(this->program[i].result.value(), this->program[i].params);
+-        break;
+-      case INCLUSION_CHECK:
+-        is_included(this->program[i].params[0], this->program[i].params[1]);
+-        break;
+-      case WORDS_OF_LENGTHS:
+-        words_of_lengths(this->program[i].params);
+-        break;
++      } else {
++        // The time of every operation of the program, summed over the run: the
++        // work of the library, whatever the tool names its steps.
++        bench::measure("operation", [&] { run_operation(this->program[i]); });
+       }
+     }
+   }
+@@ -120,7 +90,7 @@ public:
+     switch (op) {
+     case LOAD_CMD:
+     case LOAD_ALL:
+-      return static_cast<bool>(this->instance.mata_to_nfa);
++      return static_cast<bool>(this->instance.load);
+     case INTERSECTION:
+       return static_cast<bool>(this->instance.intersection);
+     case INTERALL:
+@@ -158,73 +128,102 @@ public:
+   }
+ 
+ private:
+-  void prepare_mata_automata() {
+-    this->inter_auts = bench::load_nfas(this->arguments, this->alphabet);
++  void run_operation(const SSA_Call &call) {
++    switch (call.operation) {
++    case INTERSECTION:
++      intersection(call.result.value(), call.params);
++      break;
++    case INTERALL:
++      inter_all(call.result.value());
++      break;
++    case UNION:
++      uni(call.result.value(), call.params);
++      break;
++    case UNIALL:
++      uni_all(call.result.value());
++      break;
++    case COMPLEMENT:
++      complement(call.result.value(), call.params);
++      break;
++    case CONCAT:
++      concat(call.result.value(), call.params);
++      break;
++    case EMPTINESS_CHECK:
++      is_empty(call.params[0]);
++      break;
++    case DETERMINIZE:
++      determinize(call.result.value(), call.params);
++      break;
++    case MINIMIZE:
++      minimize(call.result.value(), call.params);
++      break;
++    case INCLUSION_CHECK:
++      is_included(call.params[0], call.params[1]);
++      break;
++    case WORDS_OF_LENGTHS:
++      words_of_lengths(call.params);
++      break;
++    default:
++      throw std::runtime_error("operation '" + op_name(call.operation) +
++                               "' cannot be run");
++    }
+   }
+ 
+   void load_nfa(const std::string &name, int index) {
+-    this->aut_table[name] = this->instance.mata_to_nfa(this->inter_auts[index],
+-                                                       this->arguments[index]);
++    this->aut_table[name] = this->loaded.at(index);
+   }
+ 
+   void load_all() {
+-    for (size_t i = 0; i < this->inter_auts.size(); i++) {
++    for (size_t i = 0; i < this->loaded.size(); i++) {
+       std::string name = "_aut{}" + std::to_string(i);
+-      this->aut_table[name] =
+-          this->instance.mata_to_nfa(this->inter_auts[i], this->arguments[i]);
++      this->aut_table[name] = this->loaded[i];
+       this->load_all_auts.push_back(name);
+     }
+   }
+ 
++  // 'load_automata' binds every input, so the operations on all of them take
++  // the loaded automata themselves.
+   void inter_all(const std::string &res) {
+-    std::vector<NFA> nfas{};
+-    for (const std::string &name : this->load_all_auts) {
+-      nfas.emplace_back(this->aut_table[name]);
++    this->aut_table[res] = this->instance.inter_all(this->loaded);
++  }
++
++  // Folds @p op over the operands from the left; the first pair is applied to
++  // the bound automata themselves, so no operand is copied.
++  template <typename Op>
++  NFA fold(const std::vector<std::string> &params, const Op &op) {
++    assert(params.size() > 0);
++    if (params.size() == 1) {
++      return this->aut_table.at(params[0]);
++    }
++    NFA tmp = op(this->aut_table.at(params[0]), this->aut_table.at(params[1]));
++    for (size_t i = 2; i < params.size(); i++) {
++      tmp = op(tmp, this->aut_table.at(params[i]));
+     }
+-    this->aut_table[res] = this->instance.inter_all(nfas);
++    return tmp;
+   }
+ 
+   void intersection(const std::string &res,
+                     const std::vector<std::string> &params) {
+-    assert(params.size() > 0);
+-    NFA tmp = this->aut_table.at(params[0]);
+-    for (size_t i = 1; i < params.size(); i++) {
+-      tmp = this->instance.intersection(tmp, this->aut_table.at(params[i]));
+-    }
+-    this->aut_table[res] = tmp;
++    this->aut_table[res] = fold(params, this->instance.intersection);
+   }
+ 
+   void uni(const std::string &res, const std::vector<std::string> &params) {
+-    assert(params.size() > 0);
+-    NFA tmp = this->aut_table.at(params[0]);
+-    for (size_t i = 1; i < params.size(); i++) {
+-      tmp = this->instance.uni(tmp, this->aut_table.at(params[i]));
+-    }
+-    this->aut_table[res] = tmp;
++    this->aut_table[res] = fold(params, this->instance.uni);
+   }
+ 
+   void uni_all(const std::string &res) {
+-    std::vector<NFA> nfas{};
+-    for (const std::string &name : this->load_all_auts) {
+-      nfas.emplace_back(this->aut_table[name]);
+-    }
+-    this->aut_table[res] = this->instance.uni_all(nfas);
++    this->aut_table[res] = this->instance.uni_all(this->loaded);
+   }
+ 
+   void concat(const std::string &res, const std::vector<std::string> &params) {
+-    assert(params.size() > 0);
+-    NFA tmp = this->aut_table.at(params[0]);
+-    for (size_t i = 1; i < params.size(); i++) {
+-      tmp = this->instance.concat(tmp, this->aut_table.at(params[i]));
+-    }
+-    this->aut_table[res] = tmp;
++    this->aut_table[res] = fold(params, this->instance.concat);
+   }
+ 
+   void complement(const std::string &res,
+                   const std::vector<std::string> &params) {
+     assert(params.size() == 1);
+-    NFA tmp = this->aut_table.at(params[0]);
+-    this->aut_table[res] = this->instance.complement(tmp);
++    this->aut_table[res] =
++        this->instance.complement(this->aut_table.at(params[0]));
+   }
+ 
+   void is_included(const std::string &a1, const std::string &a2) {
+@@ -238,14 +237,14 @@ private:
+   void determinize(const std::string &res,
+                    const std::vector<std::string> &params) {
+     assert(params.size() == 1);
+-    NFA tmp = this->aut_table.at(params[0]);
+-    this->aut_table[res] = this->instance.determinize(tmp);
++    this->aut_table[res] =
++        this->instance.determinize(this->aut_table.at(params[0]));
+   }
+   void minimize(const std::string &res,
+                 const std::vector<std::string> &params) {
+     assert(params.size() == 1);
+-    NFA tmp = this->aut_table.at(params[0]);
+-    this->aut_table[res] = this->instance.minimize(tmp);
++    this->aut_table[res] =
++        this->instance.minimize(this->aut_table.at(params[0]));
+   }
+ 
+   // The literal arguments are the lengths, one per tape, in tape order.
+diff --git a/src/cpp/interpreter/parser.h b/src/cpp/interpreter/parser.h
+index ae1e257..bd9a4f0 100644
+--- a/src/cpp/interpreter/parser.h
++++ b/src/cpp/interpreter/parser.h
+@@ -8,6 +8,7 @@
+ #include <fstream>
+ #include <iostream>
+ #include <map>
++#include <optional>
+ #include <sstream>
+ #include <stdexcept>
+ #include <string>
+diff --git a/src/cpp/interpreter_awali.cc b/src/cpp/interpreter_awali.cc
+index 3b711a0..3fb1a5b 100644
+--- a/src/cpp/interpreter_awali.cc
++++ b/src/cpp/interpreter_awali.cc
+@@ -18,6 +18,7 @@
+ #include "interpreter/interpreter.h"
+ #include "interpreter/parser.h"
+ #include "utils/bench.hh"
++#include "utils/mata_load.hh"
+ 
+ using namespace awali::dyn;
+ using namespace awali;
+@@ -44,36 +45,37 @@ int main(int argc, char **argv) {
+   }
+ 
+   Instance<automaton_t> awaliInst;
+-  awaliInst.mata_to_nfa = [](const mata::nfa::Nfa &t,
+-                             const std::string &filename) -> automaton_t {
+-    std::map<mata::nfa::State, state_t> state_map{};
+-    std::string awali_alphabet;
+-    for (mata::Symbol s : t.alphabet->get_alphabet_symbols()) {
+-      if (s > 255) {
+-        throw std::out_of_range("awali symbol out of range");
+-      }
+-      awali_alphabet.push_back(s);
+-    }
+-    automaton_t awali_aut = automaton_t::from(awali_alphabet);
++  awaliInst.load = bench::load_through_mata(
++      [](const mata::nfa::Nfa &t, const std::string &filename) -> automaton_t {
++        std::map<mata::nfa::State, state_t> state_map{};
++        std::string awali_alphabet;
++        for (mata::Symbol s : t.alphabet->get_alphabet_symbols()) {
++          if (s > 255) {
++            throw std::out_of_range("awali symbol out of range");
++          }
++          awali_alphabet.push_back(s);
++        }
++        automaton_t awali_aut = automaton_t::from(awali_alphabet);
+ 
+-    bench::measure("construction", [&] {
+-      for (mata::nfa::State s = 0; s < t.num_of_states(); ++s) {
+-        state_t new_state = awali_aut->add_state();
+-        state_map[s] = new_state;
+-      }
+-      for (const auto &tran : t.delta.transitions()) {
+-        awali_aut->add_transition(state_map.at(tran.source),
+-                                  state_map.at(tran.target), char(tran.symbol));
+-      }
+-      for (mata::nfa::State s : t.final) {
+-        awali_aut->set_final(state_map.at(s));
+-      }
+-      for (mata::nfa::State s : t.initial) {
+-        awali_aut->set_initial(state_map.at(s));
+-      }
+-    });
+-    return awali_aut;
+-  };
++        bench::measure("construction", [&] {
++          for (mata::nfa::State s = 0; s < t.num_of_states(); ++s) {
++            state_t new_state = awali_aut->add_state();
++            state_map[s] = new_state;
++          }
++          for (const auto &tran : t.delta.transitions()) {
++            awali_aut->add_transition(state_map.at(tran.source),
++                                      state_map.at(tran.target),
++                                      char(tran.symbol));
++          }
++          for (mata::nfa::State s : t.final) {
++            awali_aut->set_final(state_map.at(s));
++          }
++          for (mata::nfa::State s : t.initial) {
++            awali_aut->set_initial(state_map.at(s));
++          }
++        });
++        return awali_aut;
++      });
+   awaliInst.intersection = [](const automaton_t &a1,
+                               const automaton_t &a2) -> automaton_t {
+     automaton_t res =
+diff --git a/src/cpp/interpreter_cudd.cc b/src/cpp/interpreter_cudd.cc
+new file mode 100644
+index 0000000..0615dbb
+--- /dev/null
++++ b/src/cpp/interpreter_cudd.cc
+@@ -0,0 +1,525 @@
++// The interpreter on symbolic NFAs whose transitions are labelled by CUDD BDDs.
++//
++// An automaton over bitvectors keeps explicit states and, from each state, one
++// BDD guard per target: the set of bitvectors it moves on. The operations are
++// the textbook ones over the guards: the product conjoins them, the subset
++// construction splits the guards of a macrostate into the regions of its
++// targets (complement completes it to the region no guard covers), and
++// inclusion is the antichain algorithm over the product of the smaller
++// automaton with the subset construction of the bigger one.
++#include <algorithm>
++#include <cstdint>
++#include <exception>
++#include <fstream>
++#include <iostream>
++#include <map>
++#include <stdexcept>
++#include <string>
++#include <unordered_map>
++#include <utility>
++#include <vector>
++
++#include <cudd.h>
++
++#include "interpreter/interpreter.h"
++#include "interpreter/parser.h"
++#include "utils/bench.hh"
++#include "utils/bits_load.hh"
++
++namespace {
++
++DdManager *manager{nullptr};
++
++/// A referenced BDD of the manager.
++class Bdd {
++public:
++  Bdd() = default;
++  /// Takes a result of CUDD, which is not referenced yet.
++  explicit Bdd(DdNode *node) : node_{node} {
++    if (node_ == nullptr) {
++      throw std::runtime_error("CUDD ran out of memory");
++    }
++    Cudd_Ref(node_);
++  }
++  Bdd(const Bdd &other) : node_{other.node_} {
++    if (node_ != nullptr) {
++      Cudd_Ref(node_);
++    }
++  }
++  Bdd(Bdd &&other) noexcept : node_{std::exchange(other.node_, nullptr)} {}
++  Bdd &operator=(Bdd other) noexcept {
++    std::swap(node_, other.node_);
++    return *this;
++  }
++  ~Bdd() {
++    if (node_ != nullptr) {
++      Cudd_RecursiveDeref(manager, node_);
++    }
++  }
++
++  static Bdd one() { return Bdd{Cudd_ReadOne(manager)}; }
++  static Bdd zero() { return Bdd{Cudd_ReadLogicZero(manager)}; }
++  static Bdd var(unsigned index) {
++    return Bdd{Cudd_bddIthVar(manager, static_cast<int>(index))};
++  }
++
++  Bdd operator&(const Bdd &rhs) const {
++    return Bdd{Cudd_bddAnd(manager, node_, rhs.node_)};
++  }
++  Bdd operator|(const Bdd &rhs) const {
++    return Bdd{Cudd_bddOr(manager, node_, rhs.node_)};
++  }
++  Bdd operator!() const { return Bdd{Cudd_Not(node_)}; }
++  bool is_zero() const { return node_ == Cudd_ReadLogicZero(manager); }
++
++private:
++  DdNode *node_{nullptr};
++};
++
++using State = unsigned;
++using StateSet = std::vector<State>; // sorted
++
++struct SymNfa {
++  /// From each state, its targets in increasing order with satisfiable guards.
++  std::vector<std::vector<std::pair<State, Bdd>>> post{};
++  std::vector<State> initial{};
++  std::vector<char> final{};
++
++  State add_state(bool is_final = false) {
++    post.emplace_back();
++    final.push_back(is_final ? 1 : 0);
++    return static_cast<State>(post.size() - 1);
++  }
++  size_t num_of_states() const { return post.size(); }
++};
++
++Bdd formula_bdd(const bench::bits::Automaton &aut, unsigned formula) {
++  const bench::bits::Formula &node{aut.formulas[formula]};
++  switch (node.kind) {
++  case bench::bits::Formula::Kind::True:
++    return Bdd::one();
++  case bench::bits::Formula::Kind::False:
++    return Bdd::zero();
++  case bench::bits::Formula::Kind::Var:
++    return Bdd::var(node.var);
++  case bench::bits::Formula::Kind::Not:
++    return !formula_bdd(aut, node.lhs);
++  case bench::bits::Formula::Kind::And:
++    return formula_bdd(aut, node.lhs) & formula_bdd(aut, node.rhs);
++  case bench::bits::Formula::Kind::Or:
++    return formula_bdd(aut, node.lhs) | formula_bdd(aut, node.rhs);
++  }
++  throw std::logic_error("unknown formula kind");
++}
++
++SymNfa to_sym_nfa(const bench::bits::Automaton &aut) {
++  SymNfa nfa{};
++  for (unsigned state{0}; state < aut.num_of_states; ++state) {
++    nfa.add_state();
++  }
++  nfa.initial = aut.initial;
++  for (const unsigned state : aut.final) {
++    nfa.final[state] = 1;
++  }
++  std::vector<std::map<State, Bdd>> guards(aut.num_of_states);
++  for (const bench::bits::Transition &trans : aut.transitions) {
++    const Bdd formula{formula_bdd(aut, trans.formula)};
++    const auto [it, inserted]{
++        guards[trans.source].try_emplace(trans.target, formula)};
++    if (!inserted) {
++      it->second = it->second | formula;
++    }
++  }
++  for (State state{0}; state < aut.num_of_states; ++state) {
++    for (auto &[target, guard] : guards[state]) {
++      if (!guard.is_zero()) {
++        nfa.post[state].emplace_back(target, std::move(guard));
++      }
++    }
++  }
++  std::ranges::sort(nfa.initial);
++  nfa.initial.erase(std::ranges::unique(nfa.initial).begin(),
++                    nfa.initial.end());
++  return nfa;
++}
++
++/// The states reachable from @p from by @p succ.
++template <typename Successors>
++std::vector<char> reach(size_t num_of_states, const std::vector<State> &from,
++                        const Successors &succ) {
++  std::vector<char> reached(num_of_states, 0);
++  std::vector<State> stack{};
++  for (const State state : from) {
++    if (!reached[state]) {
++      reached[state] = 1;
++      stack.push_back(state);
++    }
++  }
++  while (!stack.empty()) {
++    const State state{stack.back()};
++    stack.pop_back();
++    succ(state, [&](State next) {
++      if (!reached[next]) {
++        reached[next] = 1;
++        stack.push_back(next);
++      }
++    });
++  }
++  return reached;
++}
++
++/// Keeps the states reachable from an initial state and reaching a final one.
++SymNfa trim(const SymNfa &nfa) {
++  const size_t n{nfa.num_of_states()};
++  const std::vector<char> forward{
++      reach(n, nfa.initial, [&](State state, const auto &visit) {
++        for (const auto &[target, guard] : nfa.post[state]) {
++          visit(target);
++        }
++      })};
++  std::vector<std::vector<State>> pre(n);
++  std::vector<State> finals{};
++  for (State state{0}; state < n; ++state) {
++    for (const auto &[target, guard] : nfa.post[state]) {
++      pre[target].push_back(state);
++    }
++    if (nfa.final[state]) {
++      finals.push_back(state);
++    }
++  }
++  const std::vector<char> backward{
++      reach(n, finals, [&](State state, const auto &visit) {
++        for (const State source : pre[state]) {
++          visit(source);
++        }
++      })};
++  std::vector<State> renaming(n, UINT32_MAX);
++  SymNfa result{};
++  for (State state{0}; state < n; ++state) {
++    if (forward[state] && backward[state]) {
++      renaming[state] = result.add_state(nfa.final[state]);
++    }
++  }
++  for (State state{0}; state < n; ++state) {
++    if (renaming[state] == UINT32_MAX) {
++      continue;
++    }
++    for (const auto &[target, guard] : nfa.post[state]) {
++      if (renaming[target] != UINT32_MAX) {
++        result.post[renaming[state]].emplace_back(renaming[target], guard);
++      }
++    }
++  }
++  for (const State state : nfa.initial) {
++    if (renaming[state] != UINT32_MAX) {
++      result.initial.push_back(renaming[state]);
++    }
++  }
++  return result;
++}
++
++SymNfa intersection(const SymNfa &lhs, const SymNfa &rhs) {
++  SymNfa result{};
++  std::unordered_map<std::uint64_t, State> pairs{};
++  std::vector<std::pair<State, State>> worklist{};
++  const auto product = [&](State l, State r) {
++    const auto [it,
++                inserted]{pairs.try_emplace((std::uint64_t{l} << 32) | r, 0)};
++    if (inserted) {
++      it->second = result.add_state(lhs.final[l] && rhs.final[r]);
++      worklist.emplace_back(l, r);
++    }
++    return it->second;
++  };
++  for (const State l : lhs.initial) {
++    for (const State r : rhs.initial) {
++      result.initial.push_back(product(l, r));
++    }
++  }
++  while (!worklist.empty()) {
++    const auto [l, r]{worklist.back()};
++    worklist.pop_back();
++    const State source{pairs.at((std::uint64_t{l} << 32) | r)};
++    for (const auto &[l_target, l_guard] : lhs.post[l]) {
++      for (const auto &[r_target, r_guard] : rhs.post[r]) {
++        Bdd guard{l_guard & r_guard};
++        if (!guard.is_zero()) {
++          const State target{product(l_target, r_target)};
++          result.post[source].emplace_back(target, std::move(guard));
++        }
++      }
++    }
++  }
++  for (auto &post : result.post) {
++    std::ranges::sort(post, {}, &std::pair<State, Bdd>::first);
++  }
++  return result;
++}
++
++SymNfa union_nondet(const SymNfa &lhs, const SymNfa &rhs) {
++  SymNfa result{lhs};
++  const auto offset{static_cast<State>(lhs.num_of_states())};
++  for (State state{0}; state < rhs.num_of_states(); ++state) {
++    const State copy{result.add_state(rhs.final[state])};
++    for (const auto &[target, guard] : rhs.post[state]) {
++      result.post[copy].emplace_back(target + offset, guard);
++    }
++  }
++  for (const State state : rhs.initial) {
++    result.initial.push_back(state + offset);
++  }
++  return result;
++}
++
++/// The moves of a macrostate: for each target, the union of the guards to it.
++std::vector<std::pair<State, Bdd>> moves_of(const SymNfa &nfa,
++                                            const StateSet &states) {
++  std::map<State, Bdd> moves{};
++  for (const State state : states) {
++    for (const auto &[target, guard] : nfa.post[state]) {
++      const auto [it, inserted]{moves.try_emplace(target, guard)};
++      if (!inserted) {
++        it->second = it->second | guard;
++      }
++    }
++  }
++  return {std::make_move_iterator(moves.begin()),
++          std::make_move_iterator(moves.end())};
++}
++
++/// Splits @p domain into the regions moving to the same set of targets of
++/// @p moves; the regions are disjoint and non-empty, their target sets are
++/// sorted and pairwise distinct.
++std::vector<std::pair<Bdd, StateSet>>
++split(Bdd domain, const std::vector<std::pair<State, Bdd>> &moves) {
++  std::vector<std::pair<Bdd, StateSet>> regions{};
++  regions.emplace_back(std::move(domain), StateSet{});
++  std::vector<std::pair<Bdd, StateSet>> refined{};
++  for (const auto &[target, guard] : moves) {
++    refined.clear();
++    for (auto &[region, targets] : regions) {
++      Bdd inside{region & guard};
++      if (inside.is_zero()) {
++        refined.emplace_back(std::move(region), std::move(targets));
++        continue;
++      }
++      Bdd outside{region & !guard};
++      if (!outside.is_zero()) {
++        refined.emplace_back(std::move(outside), targets);
++      }
++      targets.push_back(target);
++      refined.emplace_back(std::move(inside), std::move(targets));
++    }
++    std::swap(regions, refined);
++  }
++  return regions;
++}
++
++/// The subset construction; with @p complete, also the sink, the empty
++/// macrostate, of the bitvectors no move reads.
++SymNfa determinize(const SymNfa &nfa, bool complete) {
++  SymNfa result{};
++  std::map<StateSet, State> macrostates{};
++  std::vector<const StateSet *> worklist{};
++  const auto macrostate = [&](StateSet states) {
++    const auto [it, inserted]{macrostates.try_emplace(std::move(states), 0)};
++    if (inserted) {
++      it->second = result.add_state(std::ranges::any_of(
++          it->first, [&](State state) { return nfa.final[state] != 0; }));
++      worklist.push_back(&it->first);
++    }
++    return it->second;
++  };
++  result.initial.push_back(macrostate(nfa.initial));
++  while (!worklist.empty()) {
++    const StateSet &states{*worklist.back()};
++    worklist.pop_back();
++    const State source{macrostates.at(states)};
++    const std::vector<std::pair<State, Bdd>> moves{moves_of(nfa, states)};
++    for (auto &[region, targets] : split(Bdd::one(), moves)) {
++      if (!targets.empty() || complete) {
++        const State target{macrostate(std::move(targets))};
++        result.post[source].emplace_back(target, std::move(region));
++      }
++    }
++  }
++  for (auto &post : result.post) {
++    std::ranges::sort(post, {}, &std::pair<State, Bdd>::first);
++  }
++  return result;
++}
++
++bool is_empty(const SymNfa &nfa) {
++  const std::vector<char> reached{reach(
++      nfa.num_of_states(), nfa.initial, [&](State state, const auto &visit) {
++        for (const auto &[target, guard] : nfa.post[state]) {
++          visit(target);
++        }
++      })};
++  for (State state{0}; state < nfa.num_of_states(); ++state) {
++    if (reached[state] && nfa.final[state]) {
++      return false;
++    }
++  }
++  return true;
++}
++
++/// Antichain inclusion: explores the pairs of a state of @p smaller and a
++/// macrostate of @p bigger, keeping per state only the minimal macrostates.
++bool is_included(const SymNfa &smaller, const SymNfa &bigger) {
++  std::map<StateSet, unsigned> ids{};
++  std::vector<const StateSet *> sets{};
++  std::vector<char> accepting{};
++  std::vector<std::vector<std::pair<State, Bdd>>> moves{};
++  const auto intern = [&](StateSet states) {
++    const auto [it, inserted]{
++        ids.try_emplace(std::move(states), static_cast<unsigned>(sets.size()))};
++    if (inserted) {
++      sets.push_back(&it->first);
++      accepting.push_back(std::ranges::any_of(
++          it->first, [&](State state) { return bigger.final[state] != 0; }));
++      moves.push_back(moves_of(bigger, it->first));
++    }
++    return it->second;
++  };
++  std::vector<std::vector<unsigned>> antichain(smaller.num_of_states());
++  std::vector<std::pair<State, unsigned>> worklist{};
++  // Adds the pair unless a pair with a subset of its macrostate is known;
++  // false when the pair is a counterexample.
++  const auto visit = [&](State state, unsigned id) {
++    if (smaller.final[state] && !accepting[id]) {
++      return false;
++    }
++    std::vector<unsigned> &known{antichain[state]};
++    for (const unsigned other : known) {
++      if (std::ranges::includes(*sets[id], *sets[other])) {
++        return true;
++      }
++    }
++    std::erase_if(known, [&](unsigned other) {
++      return std::ranges::includes(*sets[other], *sets[id]);
++    });
++    known.push_back(id);
++    worklist.emplace_back(state, id);
++    return true;
++  };
++  const unsigned initial{intern(bigger.initial)};
++  for (const State state : smaller.initial) {
++    if (!visit(state, initial)) {
++      return false;
++    }
++  }
++  while (!worklist.empty()) {
++    const auto [state, id]{worklist.back()};
++    worklist.pop_back();
++    if (!std::ranges::contains(antichain[state], id)) {
++      continue; // Subsumed since it was added.
++    }
++    for (const auto &[target, guard] : smaller.post[state]) {
++      for (auto &[region, targets] : split(guard, moves[id])) {
++        if (!visit(target, intern(std::move(targets)))) {
++          return false;
++        }
++      }
++    }
++  }
++  return true;
++}
++
++} // namespace
++
++int main(int argc, char **argv) {
++  if (argc < 2) {
++    std::cerr
++        << "error: Program expects at least one argument, try '--help' for help"
++        << std::endl;
++    return -1;
++  }
++  if (std::string(argv[1]) == "-h" || std::string(argv[1]) == "--help") {
++    std::cout << "arguments: input.emp [aut.mata]*" << std::endl;
++    return 0;
++  }
++  const std::string program{argv[1]};
++  const std::vector<std::string> automata(argv + 2, argv + argc);
++
++  // Dynamic variable reordering is off by default: the variables keep the
++  // order of the inputs, as in the other interpreters.
++  manager = Cudd_Init(0, 0, CUDD_UNIQUE_SLOTS, CUDD_CACHE_SLOTS, 0);
++
++  Instance<SymNfa> inst;
++  inst.load = [](const std::vector<std::string> &files) {
++    const bench::bits::Inputs inputs{bench::bits::load(files)};
++    return bench::measure("construction", [&] {
++      std::vector<SymNfa> nfas{};
++      for (const bench::bits::Automaton &aut : inputs.automata) {
++        nfas.push_back(to_sym_nfa(aut));
++      }
++      return nfas;
++    });
++  };
++  const auto intersect = [](const SymNfa &lhs, const SymNfa &rhs) {
++    const SymNfa product{
++        bench::measure("intersection", [&] { return intersection(lhs, rhs); })};
++    return bench::measure("trim", [&] { return trim(product); });
++  };
++  const auto unite = [](const SymNfa &lhs, const SymNfa &rhs) {
++    const SymNfa united{
++        bench::measure("uni", [&] { return union_nondet(lhs, rhs); })};
++    return bench::measure("trim", [&] { return trim(united); });
++  };
++  inst.intersection = intersect;
++  inst.inter_all = [intersect](const std::vector<SymNfa> &nfas) {
++    SymNfa result{nfas.at(0)};
++    for (size_t i{1}; i < nfas.size(); ++i) {
++      result = intersect(result, nfas[i]);
++    }
++    return result;
++  };
++  inst.uni = unite;
++  inst.uni_all = [unite](const std::vector<SymNfa> &nfas) {
++    SymNfa result{nfas.at(0)};
++    for (size_t i{1}; i < nfas.size(); ++i) {
++      result = unite(result, nfas[i]);
++    }
++    return result;
++  };
++  inst.complement = [](const SymNfa &nfa) {
++    SymNfa result{bench::measure("compl", [&] {
++      SymNfa dfa{determinize(nfa, true)};
++      for (char &is_final : dfa.final) {
++        is_final = !is_final;
++      }
++      return dfa;
++    })};
++    return bench::measure("trim", [&] { return trim(result); });
++  };
++  inst.determinize = [](const SymNfa &nfa) {
++    return bench::measure("determinize",
++                          [&] { return determinize(nfa, false); });
++  };
++  inst.is_empty = [](const SymNfa &nfa) {
++    const bool empty{
++        bench::measure("emptiness_check", [&] { return is_empty(nfa); })};
++    bench::report("result", empty);
++    return empty;
++  };
++  inst.is_included = [](const SymNfa &smaller, const SymNfa &bigger) {
++    const bool included{bench::measure(
++        "inclusion_check", [&] { return is_included(smaller, bigger); })};
++    bench::report("result", included);
++    return included;
++  };
++
++  std::ifstream input(program);
++  if (!input.is_open()) {
++    std::cerr << "error: could not open file " << program << std::endl;
++    return -1;
++  }
++  try {
++    Interpreter<SymNfa> interpret(inst, automata);
++    bench::measure("overall", [&] { interpret.run_program(input); });
++  } catch (const std::exception &exc) {
++    std::cerr << "error: " << exc.what();
++    return -1;
++  }
++}
+diff --git a/src/cpp/interpreter_debug.cc b/src/cpp/interpreter_debug.cc
+index b4fed73..2aaad08 100644
+--- a/src/cpp/interpreter_debug.cc
++++ b/src/cpp/interpreter_debug.cc
+@@ -16,6 +16,7 @@
+ 
+ #include "interpreter/parser.h"
+ #include "interpreter/interpreter.h"
++#include "utils/mata_load.hh"
+ 
+ 
+ 
+@@ -37,10 +38,10 @@ int main(int argc, char** argv) {
+     }
+ 
+     Instance<std::string> dbgInst;
+-    dbgInst.mata_to_nfa = [](const mata::nfa::Nfa& t, const std::string& filename) -> std::string {
++    dbgInst.load = bench::load_through_mata([](const mata::nfa::Nfa& t, const std::string& filename) -> std::string {
+         std::cout << "load(aut)" << std::endl;
+         return "aut";
+-    };
++    });
+     dbgInst.intersection = [](const std::string& a1, const std::string& a2) -> std::string {
+         std::string res = "intersection (" + a1 + ", " + a2 + ")";
+         std::cout << res << std::endl;
+diff --git a/src/cpp/interpreter_mata.cc b/src/cpp/interpreter_mata.cc
+index e46fb53..44557a6 100644
+--- a/src/cpp/interpreter_mata.cc
++++ b/src/cpp/interpreter_mata.cc
+@@ -20,6 +20,7 @@
+ #include "interpreter/parser.h"
+ #include "utils/bench.hh"
+ #include "utils/common.h"
++#include "utils/mata_load.hh"
+ 
+ #define SIM_THRESHOLD 1000
+ 
+@@ -39,16 +40,14 @@ int main(int argc, char **argv) {
+     return 0;
+   }
+ 
+-  // pool of alphabets
+-  std::vector<mata::OnTheFlyAlphabet> alphabets{};
+   std::cout << std::boolalpha;
+   // input parameters
+   Params params = parse_input_args(argc, argv);
+ 
+   Instance<mata::nfa::Nfa> mataInst;
+-  mataInst.mata_to_nfa =
+-      [&alphabets](const mata::nfa::Nfa &t,
+-                   const std::string &filename) -> mata::nfa::Nfa { return t; };
++  mataInst.load = [](const std::vector<std::string> &files) {
++    return bench::load_nfas(files);
++  };
+   mataInst.intersection =
+       [&params](const mata::nfa::Nfa &a1,
+                 const mata::nfa::Nfa &a2) -> mata::nfa::Nfa {
+diff --git a/src/cpp/interpreter_mata_bdd.cc b/src/cpp/interpreter_mata_bdd.cc
+new file mode 100644
+index 0000000..e7c2b7e
+--- /dev/null
++++ b/src/cpp/interpreter_mata_bdd.cc
+@@ -0,0 +1,205 @@
++// The interpreter on mata's NFTs used as automata with BDDs on transitions.
++//
++// An automaton over bitvectors of n variables is an NFT of n levels: its states
++// are the states of level 0, and the transitions from a state to a state are
++// the BDD of their guard, its nodes the states of the levels of their
++// variables, reading 0 or 1. A node whose child skips variables jumps over
++// their levels with JumpMode::AppendDontCares, which reads DONT_CARE there, as
++// a guard that does not depend on its first variables starts with a DONT_CARE
++// jump. Every operation runs on this NFT with mata's NFT algorithms:
++// intersection and inclusion read DONT_CAREs and jumps themselves; complement
++// and determinization unwind them into 0 and 1 first (as 'unwind').
++#include <exception>
++#include <fstream>
++#include <iostream>
++#include <string>
++#include <unordered_map>
++#include <vector>
++
++#include <mata/alphabet.hh>
++#include <mata/nft/nft.hh>
++
++#include "interpreter/interpreter.h"
++#include "interpreter/parser.h"
++#include "utils/bench.hh"
++#include "utils/bits_load.hh"
++#include "utils/robdd.hh"
++
++namespace {
++
++using mata::Symbol;
++using mata::nft::JumpMode;
++using mata::nft::Level;
++using mata::nft::Nft;
++using mata::nft::State;
++
++constexpr JumpMode JUMP_MODE{JumpMode::AppendDontCares};
++const mata::utils::OrdVector<Symbol> BITS{0, 1};
++
++/// The NFT of @p aut, whose guards are decided by @p num_of_levels variables.
++Nft to_nft(bench::Robdd &bdd, const bench::bits::Automaton &aut,
++           size_t num_of_levels) {
++  Nft nft{Nft::with_levels(num_of_levels)};
++  for (unsigned state{0}; state < aut.num_of_states; ++state) {
++    nft.add_state_with_level(0);
++  }
++  for (const unsigned state : aut.initial) {
++    nft.initial.insert(state);
++  }
++  for (const unsigned state : aut.final) {
++    nft.final.insert(state);
++  }
++
++  // The state of a BDD node towards a target is shared by the guards to it.
++  std::unordered_map<std::uint64_t, State> node_states{};
++  struct Builder {
++    bench::Robdd &bdd;
++    Nft &nft;
++    std::unordered_map<std::uint64_t, State> &node_states;
++
++    State state_of(bench::Robdd::Node node, State target) {
++      if (node == bench::Robdd::ONE) {
++        return target;
++      }
++      const auto [it, inserted]{node_states.try_emplace(
++          (std::uint64_t{node} << 32) | target, State{0})};
++      if (!inserted) {
++        return it->second;
++      }
++      const State state{
++          nft.add_state_with_level(static_cast<Level>(bdd.var(node)))};
++      it->second = state;
++      add_children(state, node, target);
++      return state;
++    }
++
++    /// The transitions of @p source reading the variable of @p node.
++    void add_children(State source, bench::Robdd::Node node, State target) {
++      if (const bench::Robdd::Node low{bdd.low(node)};
++          low != bench::Robdd::ZERO) {
++        nft.delta.add(source, 0, state_of(low, target));
++      }
++      if (const bench::Robdd::Node high{bdd.high(node)};
++          high != bench::Robdd::ZERO) {
++        nft.delta.add(source, 1, state_of(high, target));
++      }
++    }
++  } builder{bdd, nft, node_states};
++
++  for (const bench::Robdd::Guard &guard : bdd.guards(aut)) {
++    if (guard.guard != bench::Robdd::ONE && bdd.var(guard.guard) == 0) {
++      builder.add_children(guard.source, guard.guard, guard.target);
++    } else {
++      nft.delta.add(guard.source, mata::nft::DONT_CARE,
++                    builder.state_of(guard.guard, guard.target));
++    }
++  }
++  return nft;
++}
++
++/// The NFT of @p nft without jumps and DONT_CAREs, reading 0 or 1 on every
++/// level, which complementation and determinization need.
++Nft unwind(const Nft &nft) {
++  return bench::measure("unwind",
++                        [&] { return nft.unwind_jumps(BITS, JUMP_MODE); });
++}
++
++} // namespace
++
++int main(int argc, char **argv) {
++  if (argc < 2) {
++    std::cerr
++        << "error: Program expects at least one argument, try '--help' for help"
++        << std::endl;
++    return -1;
++  }
++  if (std::string(argv[1]) == "-h" || std::string(argv[1]) == "--help") {
++    std::cout << "arguments: input.emp [aut.mata]*" << std::endl;
++    return 0;
++  }
++  const std::string program{argv[1]};
++  const std::vector<std::string> automata(argv + 2, argv + argc);
++
++  Instance<Nft> inst;
++  inst.load = [](const std::vector<std::string> &files) {
++    const bench::bits::Inputs inputs{bench::bits::load(files)};
++    return bench::measure("construction", [&] {
++      bench::Robdd bdd{};
++      const size_t num_of_levels{std::max<size_t>(inputs.variables.size(), 1)};
++      std::vector<Nft> nfts{};
++      for (const bench::bits::Automaton &aut : inputs.automata) {
++        nfts.push_back(to_nft(bdd, aut, num_of_levels));
++      }
++      return nfts;
++    });
++  };
++  const auto intersect = [](const Nft &lhs, const Nft &rhs) {
++    Nft result{bench::measure("intersection", [&] {
++      return mata::nft::intersection(lhs, rhs, nullptr, JUMP_MODE);
++    })};
++    bench::measure("trim", [&] { result.trim(); });
++    return result;
++  };
++  const auto unite = [](const Nft &lhs, const Nft &rhs) {
++    Nft result{bench::measure(
++        "uni", [&] { return mata::nft::union_nondet(lhs, rhs); })};
++    bench::measure("trim", [&] { result.trim(); });
++    return result;
++  };
++  inst.intersection = intersect;
++  inst.inter_all = [intersect](const std::vector<Nft> &nfts) {
++    Nft result{nfts.at(0)};
++    for (size_t i{1}; i < nfts.size(); ++i) {
++      result = intersect(result, nfts[i]);
++    }
++    return result;
++  };
++  inst.uni = unite;
++  inst.uni_all = [unite](const std::vector<Nft> &nfts) {
++    Nft result{nfts.at(0)};
++    for (size_t i{1}; i < nfts.size(); ++i) {
++      result = unite(result, nfts[i]);
++    }
++    return result;
++  };
++  inst.complement = [](const Nft &nft) {
++    const Nft unwound{unwind(nft)};
++    Nft result{bench::measure("compl", [&] {
++      return mata::nft::complement(unwound, BITS, {{"algorithm", "classical"}});
++    })};
++    bench::measure("trim", [&] { result.trim(); });
++    return result;
++  };
++  inst.determinize = [](const Nft &nft) {
++    const Nft unwound{unwind(nft)};
++    return bench::measure("determinize",
++                          [&] { return mata::nft::determinize(unwound); });
++  };
++  inst.is_empty = [](const Nft &nft) {
++    const bool empty{
++        bench::measure("emptiness_check", [&] { return nft.is_lang_empty(); })};
++    bench::report("result", empty);
++    return empty;
++  };
++  inst.is_included = [](const Nft &smaller, const Nft &bigger) {
++    const mata::EnumAlphabet alphabet{BITS};
++    const bool included{bench::measure("inclusion_check", [&] {
++      return mata::nft::is_included(smaller, bigger, &alphabet, JUMP_MODE);
++    })};
++    bench::report("result", included);
++    return included;
++  };
++
++  std::ifstream input(program);
++  if (!input.is_open()) {
++    std::cerr << "error: could not open file " << program << std::endl;
++    return -1;
++  }
++  try {
++    Interpreter<Nft> interpret(inst, automata);
++    bench::measure("overall", [&] { interpret.run_program(input); });
++  } catch (const std::exception &exc) {
++    std::cerr << "error: " << exc.what();
++    return -1;
++  }
++}
+diff --git a/src/cpp/interpreter_mona.cc b/src/cpp/interpreter_mona.cc
+new file mode 100644
+index 0000000..3df4fcd
+--- /dev/null
++++ b/src/cpp/interpreter_mona.cc
+@@ -0,0 +1,324 @@
++// The interpreter on MONA's DFA library: deterministic automata whose states
++// each have one shared multi-terminal BDD over the bitvector, mapping it to the
++// target.
++//
++// MONA has no nondeterministic automata. An NFA is loaded the way MONA
++// quantifies existentially: each state gets choice variables, above the
++// bitvector's, numbering its targets, so that the automaton is deterministic
++// over the bitvector and the choices; projecting the choices out
++// (dfaProject, then dfaMinimize, as MONA does) is the subset construction. This
++// determinization is part of the construction, as every operation of MONA
++// works on DFAs: the product (then dfaMinimize) for intersection, union and
++// inclusion, and swapping the accepting states for complement.
++#include <algorithm>
++#include <cstdint>
++#include <exception>
++#include <fstream>
++#include <iostream>
++#include <map>
++#include <memory>
++#include <stdexcept>
++#include <string>
++#include <unordered_map>
++#include <vector>
++
++extern "C" {
++#include <mona/bdd.h>
++#include <mona/dfa.h>
++#include <mona/mem.h>
++}
++
++#include "interpreter/interpreter.h"
++#include "interpreter/parser.h"
++#include "utils/bench.hh"
++#include "utils/bits_load.hh"
++#include "utils/robdd.hh"
++
++namespace {
++
++using Dfa = std::shared_ptr<DFA>;
++
++Dfa own(DFA *dfa) { return Dfa{dfa, dfaFree}; }
++
++Dfa minimize(const Dfa &dfa) {
++  return own(
++      bench::measure("minimize", [&] { return dfaMinimize(dfa.get()); }));
++}
++
++/// Builds the DFA of an NFA: the choice variables of a state's targets are the
++/// indices 0, ..., choices - 1, the bitvector's variables follow.
++class Loader {
++public:
++  Loader(bench::Robdd &bdd, unsigned choices) : bdd_{bdd}, choices_{choices} {}
++
++  Dfa load(const bench::bits::Automaton &aut) {
++    // The guards of every state, by target; the initial states are merged into
++    // a fresh one unless there is exactly one.
++    std::vector<std::map<unsigned, bench::Robdd::Node>> moves(
++        aut.num_of_states);
++    for (const bench::Robdd::Guard &guard : bdd_.guards(aut)) {
++      moves[guard.source].emplace(guard.target, guard.guard);
++    }
++    std::vector<char> accepting(aut.num_of_states, 0);
++    for (const unsigned state : aut.final) {
++      accepting[state] = 1;
++    }
++    std::vector<unsigned> initial{aut.initial};
++    std::ranges::sort(initial);
++    initial.erase(std::ranges::unique(initial).begin(), initial.end());
++    unsigned start{0};
++    if (initial.size() == 1) {
++      start = initial.front();
++    } else {
++      start = static_cast<unsigned>(moves.size());
++      std::map<unsigned, bench::Robdd::Node> merged{};
++      char merged_accepting{0};
++      for (const unsigned state : initial) {
++        for (const auto &[target, guard] : moves[state]) {
++          const auto [it, inserted]{merged.emplace(target, guard)};
++          if (!inserted) {
++            it->second = bdd_.disjoin(it->second, guard);
++          }
++        }
++        merged_accepting |= accepting[state];
++      }
++      moves.push_back(std::move(merged));
++      accepting.push_back(merged_accepting);
++    }
++    // An empty set of initial states starts in the sink.
++    const auto sink{static_cast<unsigned>(moves.size())};
++    if (initial.empty()) {
++      start = sink;
++    }
++    const auto num_of_states{sink + 1};
++
++    DFA *dfa{dfaMake(static_cast<int>(num_of_states))};
++    dfa->s = static_cast<int>(start);
++    bddm_ = dfa->bddm;
++    leaves_.clear();
++    nodes_.clear();
++    for (unsigned state{0}; state < sink; ++state) {
++      dfa->f[state] = accepting[state] ? 1 : -1;
++      const std::vector<std::pair<unsigned, bench::Robdd::Node>> targets(
++          moves[state].begin(), moves[state].end());
++      dfa->q[state] = choice(targets, 0, 0, sink);
++    }
++    dfa->f[sink] = -1;
++    dfa->q[sink] = leaf(sink);
++
++    Dfa result{own(dfa)};
++    // The choices of a target are the variables 0, ..., choices_ - 1.
++    for (unsigned var{0}; var < choices_; ++var) {
++      result = own(bench::measure(
++          "determinize", [&] { return dfaProject(result.get(), var); }));
++      result = minimize(result);
++    }
++    if (choices_ == 0) {
++      result = minimize(result);
++    }
++    return result;
++  }
++
++private:
++  bench::Robdd &bdd_;
++  unsigned choices_;
++  bdd_manager *bddm_{nullptr};
++  std::unordered_map<unsigned, bdd_ptr> leaves_{};
++  std::unordered_map<std::uint64_t, bdd_ptr> nodes_{};
++
++  bdd_ptr leaf(unsigned state) {
++    const auto [it, inserted]{leaves_.try_emplace(state, 0)};
++    if (inserted) {
++      it->second = bdd_find_leaf_sequential(bddm_, state);
++    }
++    return it->second;
++  }
++
++  bdd_ptr node(unsigned index, bdd_ptr low, bdd_ptr high) {
++    return low == high ? low
++                       : bdd_find_node_sequential(bddm_, low, high, index);
++  }
++
++  /// The choice variables from @p var down, @p code their bits above.
++  bdd_ptr
++  choice(const std::vector<std::pair<unsigned, bench::Robdd::Node>> &targets,
++         unsigned var, std::size_t code, unsigned sink) {
++    if (var == choices_) {
++      return code < targets.size()
++                 ? guard(targets[code].second, targets[code].first, sink)
++                 : leaf(sink);
++    }
++    const std::size_t bit{std::size_t{1} << (choices_ - 1 - var)};
++    return node(var, choice(targets, var + 1, code, sink),
++                choice(targets, var + 1, code | bit, sink));
++  }
++
++  /// The guard @p node leading to @p target, and to the sink elsewhere.
++  bdd_ptr guard(bench::Robdd::Node node_of_guard, unsigned target,
++                unsigned sink) {
++    if (node_of_guard == bench::Robdd::ONE) {
++      return leaf(target);
++    }
++    if (node_of_guard == bench::Robdd::ZERO) {
++      return leaf(sink);
++    }
++    const std::uint64_t key{(std::uint64_t{node_of_guard} << 32) | target};
++    if (const auto it{nodes_.find(key)}; it != nodes_.end()) {
++      return it->second;
++    }
++    const bdd_ptr low{guard(bdd_.low(node_of_guard), target, sink)};
++    const bdd_ptr high{guard(bdd_.high(node_of_guard), target, sink)};
++    const bdd_ptr result{node(choices_ + bdd_.var(node_of_guard), low, high)};
++    nodes_.emplace(key, result);
++    return result;
++  }
++};
++
++std::vector<unsigned> *successors{nullptr};
++void collect_successor(unsigned state) { successors->push_back(state); }
++
++bool is_empty(const Dfa &dfa) {
++  std::vector<char> reached(static_cast<std::size_t>(dfa->ns), 0);
++  std::vector<unsigned> stack{static_cast<unsigned>(dfa->s)};
++  reached[dfa->s] = 1;
++  std::vector<unsigned> next{};
++  successors = &next;
++  while (!stack.empty()) {
++    const unsigned state{stack.back()};
++    stack.pop_back();
++    if (dfa->f[state] == 1) {
++      return false;
++    }
++    next.clear();
++    bdd_call_leafs(dfa->bddm, dfa->q[state], collect_successor);
++    for (const unsigned target : next) {
++      if (!reached[target]) {
++        reached[target] = 1;
++        stack.push_back(target);
++      }
++    }
++  }
++  return true;
++}
++
++Dfa product(const Dfa &lhs, const Dfa &rhs, int mode, const char *name) {
++  const Dfa result{own(bench::measure(name, [&] {
++    return dfaProduct(lhs.get(), rhs.get(), static_cast<dfaProductType>(mode));
++  }))};
++  return minimize(result);
++}
++
++/// dfaProduct's mode: bit 2 * lhs + rhs of the statuses is the result's.
++constexpr int LHS_AND_NOT_RHS{4};
++
++} // namespace
++
++int main(int argc, char **argv) {
++  if (argc < 2) {
++    std::cerr
++        << "error: Program expects at least one argument, try '--help' for help"
++        << std::endl;
++    return -1;
++  }
++  if (std::string(argv[1]) == "-h" || std::string(argv[1]) == "--help") {
++    std::cout << "arguments: input.emp [aut.mata]*" << std::endl;
++    return 0;
++  }
++  const std::string program{argv[1]};
++  const std::vector<std::string> automata(argv + 2, argv + argc);
++
++  bdd_init();
++
++  Instance<Dfa> inst;
++  inst.load = [](const std::vector<std::string> &files) {
++    const bench::bits::Inputs inputs{bench::bits::load(files)};
++    return bench::measure("construction", [&] {
++      bench::Robdd bdd{};
++      // One number of choices for all, enough for the most targets of a state,
++      // so that a variable of the bitvector has one index in every automaton.
++      std::size_t most_targets{1};
++      for (const bench::bits::Automaton &aut : inputs.automata) {
++        std::vector<std::size_t> degrees(aut.num_of_states + 1, 0);
++        for (const bench::Robdd::Guard &guard : bdd.guards(aut)) {
++          ++degrees[guard.source];
++        }
++        // A fresh initial state takes the targets of every initial one.
++        for (const unsigned state : aut.initial) {
++          degrees.back() += degrees[state];
++        }
++        most_targets = std::max(most_targets, std::ranges::max(degrees));
++      }
++      unsigned choices{0};
++      while ((std::size_t{1} << choices) < most_targets) {
++        ++choices;
++      }
++      Loader loader{bdd, choices};
++      std::vector<Dfa> dfas{};
++      for (const bench::bits::Automaton &aut : inputs.automata) {
++        dfas.push_back(loader.load(aut));
++      }
++      return dfas;
++    });
++  };
++  const auto intersect = [](const Dfa &lhs, const Dfa &rhs) {
++    return product(lhs, rhs, dfaAND, "intersection");
++  };
++  const auto unite = [](const Dfa &lhs, const Dfa &rhs) {
++    return product(lhs, rhs, dfaOR, "uni");
++  };
++  inst.intersection = intersect;
++  inst.inter_all = [intersect](const std::vector<Dfa> &dfas) {
++    Dfa result{dfas.at(0)};
++    for (std::size_t i{1}; i < dfas.size(); ++i) {
++      result = intersect(result, dfas[i]);
++    }
++    return result;
++  };
++  inst.uni = unite;
++  inst.uni_all = [unite](const std::vector<Dfa> &dfas) {
++    Dfa result{dfas.at(0)};
++    for (std::size_t i{1}; i < dfas.size(); ++i) {
++      result = unite(result, dfas[i]);
++    }
++    return result;
++  };
++  inst.complement = [](const Dfa &dfa) {
++    return own(bench::measure("compl", [&] {
++      DFA *result{dfaCopy(dfa.get())};
++      dfaNegation(result);
++      return result;
++    }));
++  };
++  // Every automaton of MONA is deterministic.
++  inst.determinize = [](const Dfa &dfa) { return dfa; };
++  inst.minimize = [](const Dfa &dfa) { return minimize(dfa); };
++  inst.is_empty = [](const Dfa &dfa) {
++    const bool empty{
++        bench::measure("emptiness_check", [&] { return is_empty(dfa); })};
++    bench::report("result", empty);
++    return empty;
++  };
++  inst.is_included = [](const Dfa &smaller, const Dfa &bigger) {
++    const bool included{bench::measure("inclusion_check", [&] {
++      const Dfa difference{
++          own(dfaProduct(smaller.get(), bigger.get(),
++                         static_cast<dfaProductType>(LHS_AND_NOT_RHS)))};
++      return is_empty(difference);
++    })};
++    bench::report("result", included);
++    return included;
++  };
++
++  std::ifstream input(program);
++  if (!input.is_open()) {
++    std::cerr << "error: could not open file " << program << std::endl;
++    return -1;
++  }
++  try {
++    Interpreter<Dfa> interpret(inst, automata);
++    bench::measure("overall", [&] { interpret.run_program(input); });
++  } catch (const std::exception &exc) {
++    std::cerr << "error: " << exc.what();
++    return -1;
++  }
++}
+diff --git a/src/cpp/interpreter_vata.cc b/src/cpp/interpreter_vata.cc
+index 9c99a20..e0723ce 100644
+--- a/src/cpp/interpreter_vata.cc
++++ b/src/cpp/interpreter_vata.cc
+@@ -19,6 +19,7 @@
+ #include "interpreter/parser.h"
+ #include "interpreter/interpreter.h"
+ #include "utils/bench.hh"
++#include "utils/mata_load.hh"
+ 
+ VATA::ExplicitTreeAut mata_to_vata(const mata::nfa::Nfa &nfa, const std::string &header, VATA::Parsing::TimbukParser &parser) {
+     std::stringstream ss;
+@@ -63,7 +64,7 @@ int main(int argc, char** argv) {
+     }
+ 
+     Instance<VATA::ExplicitTreeAut> vataInst;
+-    vataInst.mata_to_nfa = [](const mata::nfa::Nfa& t, const std::string& filename) -> VATA::ExplicitTreeAut {
++    vataInst.load = bench::load_through_mata([](const mata::nfa::Nfa& t, const std::string& filename) -> VATA::ExplicitTreeAut {
+         VATA::Parsing::TimbukParser parser;
+         std::stringstream ss;
+         ss << "Ops";
+@@ -74,7 +75,7 @@ int main(int argc, char** argv) {
+         
+         VATA::ExplicitTreeAut aut = bench::measure("construction", [&] { return mata_to_vata(t, ss.str(), parser); });
+         return aut;
+-    };
++    });
+     vataInst.intersection = [](const VATA::ExplicitTreeAut& a1, const VATA::ExplicitTreeAut& a2) -> VATA::ExplicitTreeAut {
+         VATA::ExplicitTreeAut aut = bench::measure("intersection", [&] { return VATA::ExplicitTreeAut::Intersection(a1, a2); });
+         bench::measure("trim", [&] { aut = aut.RemoveUselessStates(); });
+diff --git a/src/cpp/utils/bits_load.hh b/src/cpp/utils/bits_load.hh
+new file mode 100644
+index 0000000..d9f9414
+--- /dev/null
++++ b/src/cpp/utils/bits_load.hh
+@@ -0,0 +1,307 @@
++// Reading of '.mata' NFAs over bitvector alphabets ('@NFA-bits') with the
++// formula of every transition kept, for the interpreters whose automata carry
++// BDDs on their transitions and so must not mintermize. It does not use mata,
++// so that every such library reads its inputs alike.
++//
++// A transition line is '<source> <formula> <target>', a formula is built from
++// variables, '\true', '\false', '!', '&', '|' and parentheses ('!' binds
++// tightest, '|' loosest), '%Initial' and '%Final' list states.
++#ifndef BITS_LOAD_HH
++#define BITS_LOAD_HH
++
++#include <algorithm>
++#include <cctype>
++#include <cstddef>
++#include <cstdint>
++#include <fstream>
++#include <map>
++#include <sstream>
++#include <stdexcept>
++#include <string>
++#include <string_view>
++#include <unordered_map>
++#include <utility>
++#include <vector>
++
++#include "bench.hh"
++
++namespace bench::bits {
++
++/// A node of a Boolean formula over the variables of the bitvector.
++struct Formula {
++  enum class Kind : std::uint8_t { True, False, Var, Not, And, Or };
++  Kind kind{Kind::True};
++  /// Var: the index of the variable in Inputs::variables.
++  unsigned var{0};
++  /// Not: lhs; And and Or: lhs and rhs; indices into Automaton::formulas.
++  unsigned lhs{0};
++  unsigned rhs{0};
++};
++
++struct Transition {
++  unsigned source;
++  /// The root of the formula in Automaton::formulas.
++  unsigned formula;
++  unsigned target;
++};
++
++/// An NFA whose states are 0, ..., num_of_states - 1.
++struct Automaton {
++  unsigned num_of_states{0};
++  std::vector<unsigned> initial{};
++  std::vector<unsigned> final{};
++  std::vector<Transition> transitions{};
++  std::vector<Formula> formulas{};
++};
++
++/// The automata of one instance, over one set of variables.
++struct Inputs {
++  std::vector<Automaton> automata{};
++  /// The variables in the order a BDD decides them, from its root: the
++  /// variables named by a common prefix and a number (a15, ..., a0) go from
++  /// the highest number down, as the formulas list them.
++  std::vector<std::string> variables{};
++};
++
++namespace detail {
++
++class FormulaParser {
++public:
++  FormulaParser(std::string_view text, std::vector<Formula> &pool,
++                std::map<std::string, unsigned, std::less<>> &variables)
++      : text_{text}, pool_{pool}, variables_{variables} {}
++
++  unsigned parse() {
++    const unsigned root{disjunction()};
++    skip_spaces();
++    if (pos_ != text_.size()) {
++      fail("unexpected '" + std::string{text_.substr(pos_)} + "'");
++    }
++    return root;
++  }
++
++private:
++  std::string_view text_;
++  std::size_t pos_{0};
++  std::vector<Formula> &pool_;
++  std::map<std::string, unsigned, std::less<>> &variables_;
++
++  [[noreturn]] void fail(const std::string &what) const {
++    throw std::runtime_error("formula '" + std::string{text_} + "': " + what);
++  }
++
++  void skip_spaces() {
++    while (pos_ < text_.size() &&
++           std::isspace(static_cast<unsigned char>(text_[pos_]))) {
++      ++pos_;
++    }
++  }
++
++  bool accept(char c) {
++    skip_spaces();
++    if (pos_ < text_.size() && text_[pos_] == c) {
++      ++pos_;
++      return true;
++    }
++    return false;
++  }
++
++  unsigned add(Formula formula) {
++    pool_.push_back(formula);
++    return static_cast<unsigned>(pool_.size() - 1);
++  }
++
++  unsigned disjunction() {
++    unsigned lhs{conjunction()};
++    while (accept('|')) {
++      lhs = add({Formula::Kind::Or, 0, lhs, conjunction()});
++    }
++    return lhs;
++  }
++
++  unsigned conjunction() {
++    unsigned lhs{negation()};
++    while (accept('&')) {
++      lhs = add({Formula::Kind::And, 0, lhs, negation()});
++    }
++    return lhs;
++  }
++
++  unsigned negation() {
++    if (accept('!')) {
++      return add({Formula::Kind::Not, 0, negation(), 0});
++    }
++    if (accept('(')) {
++      const unsigned inner{disjunction()};
++      if (!accept(')')) {
++        fail("missing ')'");
++      }
++      return inner;
++    }
++    skip_spaces();
++    const std::size_t start{pos_};
++    if (pos_ < text_.size() && text_[pos_] == '\\') {
++      ++pos_;
++    }
++    while (pos_ < text_.size() &&
++           (std::isalnum(static_cast<unsigned char>(text_[pos_])) ||
++            text_[pos_] == '_')) {
++      ++pos_;
++    }
++    const std::string_view name{text_.substr(start, pos_ - start)};
++    if (name == "\\true") {
++      return add({Formula::Kind::True});
++    }
++    if (name == "\\false") {
++      return add({Formula::Kind::False});
++    }
++    if (name.empty() || name.front() == '\\') {
++      fail("expected a variable at offset " + std::to_string(start));
++    }
++    auto it{variables_.find(name)};
++    if (it == variables_.end()) {
++      it = variables_.emplace(std::string{name}, variables_.size()).first;
++    }
++    return add({Formula::Kind::Var, it->second});
++  }
++};
++
++inline std::vector<std::string_view> split(std::string_view line) {
++  std::vector<std::string_view> tokens{};
++  std::size_t pos{0};
++  while (pos < line.size()) {
++    while (pos < line.size() &&
++           std::isspace(static_cast<unsigned char>(line[pos]))) {
++      ++pos;
++    }
++    const std::size_t start{pos};
++    while (pos < line.size() &&
++           !std::isspace(static_cast<unsigned char>(line[pos]))) {
++      ++pos;
++    }
++    if (pos > start) {
++      tokens.push_back(line.substr(start, pos - start));
++    }
++  }
++  return tokens;
++}
++
++/// Reads @p file, numbering the variables of its formulas in @p variables in
++/// the order they appear in; the caller renumbers them.
++inline Automaton
++read_automaton(const std::string &file,
++               std::map<std::string, unsigned, std::less<>> &variables) {
++  std::ifstream input{file};
++  if (!input) {
++    throw std::runtime_error("could not open file: " + file);
++  }
++  Automaton aut{};
++  std::unordered_map<std::string, unsigned> states{};
++  const auto state = [&](std::string_view name) {
++    const auto [it, inserted]{states.emplace(name, aut.num_of_states)};
++    aut.num_of_states += inserted ? 1 : 0;
++    return it->second;
++  };
++  bool header{false};
++  std::string line{};
++  while (std::getline(input, line)) {
++    const std::vector<std::string_view> tokens{split(line)};
++    if (tokens.empty() || tokens.front().starts_with('#')) {
++      continue;
++    }
++    if (tokens.front().starts_with('@')) {
++      if (header || tokens.front() != "@NFA-bits") {
++        throw std::runtime_error(file +
++                                 ": expected one '@NFA-bits' section, got '" +
++                                 std::string{tokens.front()} + "'");
++      }
++      header = true;
++    } else if (!header) {
++      throw std::runtime_error(file + ": no '@NFA-bits' section header");
++    } else if (tokens.front() == "%Initial" || tokens.front() == "%Final") {
++      std::vector<unsigned> &states_of{
++          tokens.front() == "%Initial" ? aut.initial : aut.final};
++      for (std::size_t i{1}; i < tokens.size(); ++i) {
++        states_of.push_back(state(tokens[i]));
++      }
++    } else if (tokens.front().starts_with('%')) {
++      continue; // Namings and alphabet keys: states and variables are read
++                // alike.
++    } else if (tokens.size() < 3) {
++      throw std::runtime_error(file + ": not a transition: '" + line + "'");
++    } else {
++      const std::size_t begin{
++          static_cast<std::size_t>(tokens[1].data() - line.data())};
++      const std::size_t end{
++          static_cast<std::size_t>(tokens.back().data() - line.data())};
++      const unsigned formula{
++          FormulaParser{std::string_view{line}.substr(begin, end - begin),
++                        aut.formulas, variables}
++              .parse()};
++      aut.transitions.push_back(
++          {state(tokens.front()), formula, state(tokens.back())});
++    }
++  }
++  if (!header) {
++    throw std::runtime_error(file + ": no '@NFA-bits' section");
++  }
++  return aut;
++}
++
++/// The order of Inputs::variables: by the prefix of the name, then by the
++/// number that ends it from the highest down, then by the name.
++inline bool variable_before(const std::string &lhs, const std::string &rhs) {
++  const auto split_number = [](const std::string &name) {
++    std::size_t digits{name.size()};
++    while (digits > 0 &&
++           std::isdigit(static_cast<unsigned char>(name[digits - 1]))) {
++      --digits;
++    }
++    const std::string_view number{std::string_view{name}.substr(digits)};
++    return std::pair{std::string_view{name}.substr(0, digits), number};
++  };
++  const auto [lhs_prefix, lhs_number]{split_number(lhs)};
++  const auto [rhs_prefix, rhs_number]{split_number(rhs)};
++  if (lhs_prefix != rhs_prefix) {
++    return lhs_prefix < rhs_prefix;
++  }
++  if (lhs_number.size() != rhs_number.size()) {
++    return lhs_number.size() > rhs_number.size();
++  }
++  return lhs_number > rhs_number;
++}
++
++} // namespace detail
++
++/// Reads @p files, the automata of one instance. Times 'parsing'.
++inline Inputs load(const std::vector<std::string> &files) {
++  return measure("parsing", [&] {
++    Inputs inputs{};
++    std::map<std::string, unsigned, std::less<>> variables{};
++    for (const std::string &file : files) {
++      inputs.automata.push_back(detail::read_automaton(file, variables));
++    }
++    std::vector<std::string> names(variables.size());
++    for (const auto &[name, index] : variables) {
++      names[index] = name;
++    }
++    inputs.variables = names;
++    std::ranges::sort(inputs.variables, detail::variable_before);
++    std::vector<unsigned> renaming(names.size());
++    for (unsigned order{0}; order < inputs.variables.size(); ++order) {
++      renaming[variables.at(inputs.variables[order])] = order;
++    }
++    for (Automaton &aut : inputs.automata) {
++      for (Formula &formula : aut.formulas) {
++        if (formula.kind == Formula::Kind::Var) {
++          formula.var = renaming[formula.var];
++        }
++      }
++    }
++    return inputs;
++  });
++}
++
++} // namespace bench::bits
++
++#endif
+diff --git a/src/cpp/utils/mata_load.hh b/src/cpp/utils/mata_load.hh
+index ecb8136..bc86b22 100644
+--- a/src/cpp/utils/mata_load.hh
++++ b/src/cpp/utils/mata_load.hh
+@@ -8,6 +8,7 @@
+ #include <memory>
+ #include <stdexcept>
+ #include <string>
++#include <type_traits>
+ #include <vector>
+ 
+ #include <mata/nfa/builder.hh>
+@@ -86,6 +87,23 @@ inline std::vector<mata::nfa::Nfa> load_nfas(int argc, char **argv, int first =
+   return load_nfas(std::vector<std::string>(argv + first, argv + argc));
+ }
+ 
++/// The Instance::load of an interpreter reading its inputs through mata:
++/// @p convert turns each loaded NFA, given with its file, into the automaton
++/// of the interpreter's library.
++template <typename Convert> auto load_through_mata(Convert convert) {
++  using Automaton = std::invoke_result_t<Convert &, const mata::nfa::Nfa &,
++                                         const std::string &>;
++  return [convert](const std::vector<std::string> &files) {
++    const std::vector<mata::nfa::Nfa> nfas{load_nfas(files)};
++    std::vector<Automaton> result{};
++    result.reserve(nfas.size());
++    for (size_t i = 0; i < nfas.size(); ++i) {
++      result.push_back(convert(nfas[i], files[i]));
++    }
++    return result;
++  };
++}
++
+ } // namespace bench
+ 
+ #endif
+diff --git a/src/cpp/utils/robdd.hh b/src/cpp/utils/robdd.hh
+new file mode 100644
+index 0000000..b2a1b7d
+--- /dev/null
++++ b/src/cpp/utils/robdd.hh
+@@ -0,0 +1,178 @@
++// A small reduced ordered BDD package, enough to turn the formulas of
++// bits_load.hh into the guards of transitions: the BDD whose structure an
++// interpreter copies into a library that keeps BDDs in a form of its own
++// (mata's NFTs, MONA's DFAs), so that every such library starts from the same
++// canonical guards.
++#ifndef ROBDD_HH
++#define ROBDD_HH
++
++#include <algorithm>
++#include <climits>
++#include <cstdint>
++#include <unordered_map>
++#include <utility>
++#include <vector>
++
++#include "bits_load.hh"
++
++namespace bench {
++
++class Robdd {
++public:
++  using Node = std::uint32_t;
++  // Not TRUE and FALSE, which MONA's bdd.h defines as macros.
++  static constexpr Node ZERO{0};
++  static constexpr Node ONE{1};
++  /// The variable of the terminals, below every variable.
++  static constexpr unsigned TERMINAL{UINT_MAX};
++
++  Robdd() : nodes_{{TERMINAL, ZERO, ZERO}, {TERMINAL, ONE, ONE}} {}
++
++  unsigned var(Node node) const { return nodes_[node].var; }
++  Node low(Node node) const { return nodes_[node].low; }
++  Node high(Node node) const { return nodes_[node].high; }
++
++  Node make(unsigned var, Node low, Node high) {
++    if (low == high) {
++      return low;
++    }
++    const auto [it, inserted]{unique_.try_emplace(
++        key(var, low, high), static_cast<Node>(nodes_.size()))};
++    if (inserted) {
++      nodes_.push_back({var, low, high});
++    }
++    return it->second;
++  }
++
++  Node negate(Node node) {
++    if (node <= ONE) {
++      return node ^ ONE;
++    }
++    if (const auto it{negations_.find(node)}; it != negations_.end()) {
++      return it->second;
++    }
++    const Record rec{nodes_[node]};
++    const Node result{make(rec.var, negate(rec.low), negate(rec.high))};
++    negations_.emplace(node, result);
++    return result;
++  }
++
++  Node conjoin(Node lhs, Node rhs) { return apply(lhs, rhs, true); }
++  Node disjoin(Node lhs, Node rhs) { return apply(lhs, rhs, false); }
++
++  /// The BDD of the formula rooted at @p formula of @p aut.
++  Node of(const bits::Automaton &aut, unsigned formula) {
++    const bits::Formula &node{aut.formulas[formula]};
++    switch (node.kind) {
++    case bits::Formula::Kind::True:
++      return ONE;
++    case bits::Formula::Kind::False:
++      return ZERO;
++    case bits::Formula::Kind::Var:
++      return make(node.var, ZERO, ONE);
++    case bits::Formula::Kind::Not:
++      return negate(of(aut, node.lhs));
++    case bits::Formula::Kind::And:
++      return conjoin(of(aut, node.lhs), of(aut, node.rhs));
++    case bits::Formula::Kind::Or:
++      return disjoin(of(aut, node.lhs), of(aut, node.rhs));
++    }
++    return ZERO;
++  }
++
++  /// A guard: the disjunction of the formulas of the transitions from
++  /// @c source to @c target.
++  struct Guard {
++    unsigned source;
++    unsigned target;
++    Node guard;
++  };
++
++  /// The satisfiable guards of @p aut, sorted by source and target.
++  std::vector<Guard> guards(const bits::Automaton &aut) {
++    std::unordered_map<std::uint64_t, Node> by_pair{};
++    for (const bits::Transition &trans : aut.transitions) {
++      const Node formula{of(aut, trans.formula)};
++      const auto [it, inserted]{by_pair.try_emplace(
++          (std::uint64_t{trans.source} << 32) | trans.target, formula)};
++      if (!inserted) {
++        it->second = disjoin(it->second, formula);
++      }
++    }
++    std::vector<Guard> result{};
++    for (const auto &[pair, guard] : by_pair) {
++      if (guard != ZERO) {
++        result.push_back({static_cast<unsigned>(pair >> 32),
++                          static_cast<unsigned>(pair), guard});
++      }
++    }
++    std::ranges::sort(result, {}, [](const Guard &guard) {
++      return std::pair{guard.source, guard.target};
++    });
++    return result;
++  }
++
++private:
++  struct Record {
++    unsigned var;
++    Node low;
++    Node high;
++  };
++
++  static std::uint64_t key(unsigned var, Node low, Node high) {
++    // At most 2^21 variables and nodes are far more than any guard needs.
++    return (std::uint64_t{var} << 42) | (std::uint64_t{low} << 21) | high;
++  }
++
++  Node apply(Node lhs, Node rhs, bool conjunction) {
++    if (conjunction) {
++      if (lhs == ZERO || rhs == ZERO) {
++        return ZERO;
++      }
++      if (lhs == ONE) {
++        return rhs;
++      }
++      if (rhs == ONE || lhs == rhs) {
++        return lhs;
++      }
++    } else {
++      if (lhs == ONE || rhs == ONE) {
++        return ONE;
++      }
++      if (lhs == ZERO) {
++        return rhs;
++      }
++      if (rhs == ZERO || lhs == rhs) {
++        return lhs;
++      }
++    }
++    if (lhs > rhs) {
++      std::swap(lhs, rhs);
++    }
++    auto &cache{conjunction ? conjunctions_ : disjunctions_};
++    const std::uint64_t pair{(std::uint64_t{lhs} << 32) | rhs};
++    if (const auto it{cache.find(pair)}; it != cache.end()) {
++      return it->second;
++    }
++    const Record l{nodes_[lhs]};
++    const Record r{nodes_[rhs]};
++    const unsigned top{std::min(l.var, r.var)};
++    const Node low{apply(l.var == top ? l.low : lhs, r.var == top ? r.low : rhs,
++                         conjunction)};
++    const Node high{apply(l.var == top ? l.high : lhs,
++                          r.var == top ? r.high : rhs, conjunction)};
++    const Node result{make(top, low, high)};
++    cache.emplace(pair, result);
++    return result;
++  }
++
++  std::vector<Record> nodes_;
++  std::unordered_map<std::uint64_t, Node> unique_{};
++  std::unordered_map<Node, Node> negations_{};
++  std::unordered_map<std::uint64_t, Node> conjunctions_{};
++  std::unordered_map<std::uint64_t, Node> disjunctions_{};
++};
++
++} // namespace bench
++
++#endif
+-- 
+2.56.0
+
+
+From 34535b17b548401ad000c68943d91c8053886765 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Thu, 19 Nov 2026 16:34:24 +0100
+Subject: [PATCH 2/6] cpp,robdd: +fix Compare complete unique-table keys
+
+---
+ src/cpp/utils/robdd.hh | 27 +++++++++++++++++++++------
+ 1 file changed, 21 insertions(+), 6 deletions(-)
+
+diff --git a/src/cpp/utils/robdd.hh b/src/cpp/utils/robdd.hh
+index b2a1b7d..1fa5381 100644
+--- a/src/cpp/utils/robdd.hh
++++ b/src/cpp/utils/robdd.hh
+@@ -8,7 +8,9 @@
+ 
+ #include <algorithm>
+ #include <climits>
++#include <cstddef>
+ #include <cstdint>
++#include <functional>
+ #include <unordered_map>
+ #include <utility>
+ #include <vector>
+@@ -37,7 +39,7 @@ public:
+       return low;
+     }
+     const auto [it, inserted]{unique_.try_emplace(
+-        key(var, low, high), static_cast<Node>(nodes_.size()))};
++        UniqueKey{var, low, high}, static_cast<Node>(nodes_.size()))};
+     if (inserted) {
+       nodes_.push_back({var, low, high});
+     }
+@@ -119,10 +121,23 @@ private:
+     Node high;
+   };
+ 
+-  static std::uint64_t key(unsigned var, Node low, Node high) {
+-    // At most 2^21 variables and nodes are far more than any guard needs.
+-    return (std::uint64_t{var} << 42) | (std::uint64_t{low} << 21) | high;
+-  }
++  struct UniqueKey {
++    unsigned var;
++    Node low;
++    Node high;
++
++    bool operator==(const UniqueKey &) const = default;
++  };
++
++  struct UniqueKeyHash {
++    std::size_t operator()(const UniqueKey &key) const noexcept {
++      const std::uint64_t children{(std::uint64_t{key.low} << 32) | key.high};
++      const std::size_t var_hash{std::hash<unsigned>{}(key.var)};
++      return var_hash ^
++             (std::hash<std::uint64_t>{}(children) + std::size_t{0x9e3779b9} +
++              (var_hash << 6) + (var_hash >> 2));
++    }
++  };
+ 
+   Node apply(Node lhs, Node rhs, bool conjunction) {
+     if (conjunction) {
+@@ -167,7 +182,7 @@ private:
+   }
+ 
+   std::vector<Record> nodes_;
+-  std::unordered_map<std::uint64_t, Node> unique_{};
++  std::unordered_map<UniqueKey, Node, UniqueKeyHash> unique_{};
+   std::unordered_map<Node, Node> negations_{};
+   std::unordered_map<std::uint64_t, Node> conjunctions_{};
+   std::unordered_map<std::uint64_t, Node> disjunctions_{};
+-- 
+2.56.0
+
+
+From 3eb16635496de78e0bd59fe6e9d4e9f3425bd550 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Thu, 19 Nov 2026 16:37:55 +0100
+Subject: [PATCH 3/6] cpp,bits: +fix Ignore trailing line comments
+
+---
+ src/cpp/utils/bits_load.hh | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/cpp/utils/bits_load.hh b/src/cpp/utils/bits_load.hh
+index d9f9414..3e7fb0b 100644
+--- a/src/cpp/utils/bits_load.hh
++++ b/src/cpp/utils/bits_load.hh
+@@ -205,7 +205,8 @@ read_automaton(const std::string &file,
+   bool header{false};
+   std::string line{};
+   while (std::getline(input, line)) {
+-    const std::vector<std::string_view> tokens{split(line)};
++    std::vector<std::string_view> tokens{split(line)};
++    tokens.erase(std::find(tokens.begin(), tokens.end(), "#"), tokens.end());
+     if (tokens.empty() || tokens.front().starts_with('#')) {
+       continue;
+     }
+-- 
+2.56.0
+
+
+From c2b4d2445beafc7abce503e3d930f16e004b0a6e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Thu, 19 Nov 2026 16:44:00 +0100
+Subject: [PATCH 4/6] cpp,mona: +fix Keep emptiness checks independent
+
+---
+ src/cpp/interpreter_mona.cc | 31 ++++++++++++++++++++-----------
+ 1 file changed, 20 insertions(+), 11 deletions(-)
+
+diff --git a/src/cpp/interpreter_mona.cc b/src/cpp/interpreter_mona.cc
+index 3df4fcd..4a8c7c0 100644
+--- a/src/cpp/interpreter_mona.cc
++++ b/src/cpp/interpreter_mona.cc
+@@ -20,6 +20,7 @@
+ #include <stdexcept>
+ #include <string>
+ #include <unordered_map>
++#include <unordered_set>
+ #include <vector>
+ 
+ extern "C" {
+@@ -174,27 +175,35 @@ private:
+   }
+ };
+ 
+-std::vector<unsigned> *successors{nullptr};
+-void collect_successor(unsigned state) { successors->push_back(state); }
+-
+ bool is_empty(const Dfa &dfa) {
+   std::vector<char> reached(static_cast<std::size_t>(dfa->ns), 0);
+   std::vector<unsigned> stack{static_cast<unsigned>(dfa->s)};
+   reached[dfa->s] = 1;
+-  std::vector<unsigned> next{};
+-  successors = &next;
++  // MONA's bdd_call_leafs retains marks; visited BDD nodes belong to this check.
++  std::unordered_set<bdd_ptr> visited{};
++  std::vector<bdd_ptr> branches{};
+   while (!stack.empty()) {
+     const unsigned state{stack.back()};
+     stack.pop_back();
+     if (dfa->f[state] == 1) {
+       return false;
+     }
+-    next.clear();
+-    bdd_call_leafs(dfa->bddm, dfa->q[state], collect_successor);
+-    for (const unsigned target : next) {
+-      if (!reached[target]) {
+-        reached[target] = 1;
+-        stack.push_back(target);
++    branches.push_back(dfa->q[state]);
++    while (!branches.empty()) {
++      const bdd_ptr branch{branches.back()};
++      branches.pop_back();
++      if (!visited.insert(branch).second) {
++        continue;
++      }
++      if (bdd_is_leaf(dfa->bddm, branch)) {
++        const unsigned target{bdd_leaf_value(dfa->bddm, branch)};
++        if (!reached[target]) {
++          reached[target] = 1;
++          stack.push_back(target);
++        }
++      } else {
++        branches.push_back(bdd_then(dfa->bddm, branch));
++        branches.push_back(bdd_else(dfa->bddm, branch));
+       }
+     }
+   }
+-- 
+2.56.0
+
+
+From 8fa12c4d27d97c6bb8c2c9e6e5abf05c046145bc Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Thu, 19 Nov 2026 16:52:00 +0100
+Subject: [PATCH 5/6] cpp,mona: +fix Prune unused sparse choice codes
+
+---
+ src/cpp/interpreter_mona.cc | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/src/cpp/interpreter_mona.cc b/src/cpp/interpreter_mona.cc
+index 4a8c7c0..79b1102 100644
+--- a/src/cpp/interpreter_mona.cc
++++ b/src/cpp/interpreter_mona.cc
+@@ -144,10 +144,12 @@ private:
+   bdd_ptr
+   choice(const std::vector<std::pair<unsigned, bench::Robdd::Node>> &targets,
+          unsigned var, std::size_t code, unsigned sink) {
++    // Setting the remaining bits to zero gives the smallest code here.
++    if (code >= targets.size()) {
++      return leaf(sink);
++    }
+     if (var == choices_) {
+-      return code < targets.size()
+-                 ? guard(targets[code].second, targets[code].first, sink)
+-                 : leaf(sink);
++      return guard(targets[code].second, targets[code].first, sink);
+     }
+     const std::size_t bit{std::size_t{1} << (choices_ - 1 - var)};
+     return node(var, choice(targets, var + 1, code, sink),
+-- 
+2.56.0
+
+
+From 74023683df9a30e5a05a439e45d74fccd1019558 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Thu, 19 Nov 2026 18:07:45 +0100
+Subject: [PATCH 6/6] cpp,bits: +fix Handle attached line-comment markers
+
+---
+ src/cpp/utils/bits_load.hh | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/cpp/utils/bits_load.hh b/src/cpp/utils/bits_load.hh
+index 3e7fb0b..9daa042 100644
+--- a/src/cpp/utils/bits_load.hh
++++ b/src/cpp/utils/bits_load.hh
+@@ -206,7 +206,9 @@ read_automaton(const std::string &file,
+   std::string line{};
+   while (std::getline(input, line)) {
+     std::vector<std::string_view> tokens{split(line)};
+-    tokens.erase(std::find(tokens.begin(), tokens.end(), "#"), tokens.end());
++    tokens.erase(std::find_if(tokens.begin(), tokens.end(),
++                              [](const auto token) { return token.starts_with('#'); }),
++                 tokens.end());
+     if (tokens.empty() || tokens.front().starts_with('#')) {
+       continue;
+     }
+-- 
+2.56.0
+
