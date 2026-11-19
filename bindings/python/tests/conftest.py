@@ -32,12 +32,13 @@ def runs_without_the_gil():
     if not getattr(sys, "_is_gil_enabled", lambda: True)():
         pytest.skip("the interpreter has no GIL")
 
-    def _runs_without_the_gil(operation):
+    def _runs_without_the_gil(operation, release=lambda: None):
         """Return whether this thread runs Python code before the other thread finishes `operation`.
 
         With a 60 s switch interval, the worker keeps the GIL from `entered.set()` until it blocks, releases the GIL,
         or exits, so `entered.wait()` returns early only if `operation()` released the GIL. Check `finished` at once:
         any delay, such as a sleep, lets a short native call finish first and reports a false negative.
+        `release()` runs after the check, before joining, to unblock an `operation` that waits for it.
         """
         entered = threading.Event()
         finished = threading.Event()
@@ -56,7 +57,10 @@ def runs_without_the_gil():
             worker = threading.Thread(target=run)
             worker.start()
             entered.wait()
-            ran_during_the_operation = not finished.is_set()
+            try:
+                ran_during_the_operation = not finished.is_set()
+            finally:
+                release()
             worker.join()
             return ran_during_the_operation
         finally:
