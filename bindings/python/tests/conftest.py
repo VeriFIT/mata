@@ -44,9 +44,13 @@ def runs_without_the_gil():
         """
         entered = threading.Event()
         finished = threading.Event()
+        # Force at least one observation window between "operation started" and "operation perhaps finished"
+        #  so the loop below cannot skip the question entirely on very fast operations.
+        ready = threading.Event()
 
         def run():
             entered.set()
+            ready.wait()
             operation()
             finished.set()
 
@@ -58,13 +62,17 @@ def runs_without_the_gil():
             worker = threading.Thread(target=run, daemon=True)
             worker.start()
             entered.wait()
+            # Let the worker start `operation()`; main will run only if/when that call releases the
+            #  GIL. A short sleep forces the scheduler to consider re-waking us before the worker
+            #  has finished, so the polling loop below cannot miss the window.
+            time.sleep(0.001)
+            ready.set()
             deadline = time.monotonic() + budget_seconds
             saw_running = False
             # Each poll iteration where the worker still has not finished means the main thread
             #  advanced while the operation was running, i.e. the GIL was released.
             while not finished.is_set() and time.monotonic() < deadline:
                 saw_running = True
-                # time.sleep(0) yields to the scheduler without busy-spinning.
                 time.sleep(0)
             worker.join()
             return saw_running
