@@ -206,11 +206,10 @@ using mata::nfa::Limits;
  * Depth-first search for the noodles of a segment automaton, one noodle per call of next().
  *
  * A node of the search at depth k is a pair (initial, final) of segment k, its children the pairs of segment k + 1
- *  whose initial state is a target of an ε-transition from its final state. Leaves are noodles. In the forward order,
- *  the children are ordered by the ε-transitions and then by the final states of the segment, so the forward order of
- *  the leaves is the order in which the breadth-first search that preceded this one completed them; the other orders
- *  (seg_nfa::NoodleOrder) reorder the children of every node. The stack of the search holds one path instead of a
- *  whole level of partial noodles.
+ *  whose initial state is a target of an ε-transition from its final state. Leaves are noodles. Single-epsilon noodles
+ *  use the original global ε-transition odometer in Forward and Reverse, with the first depth changing fastest. Other
+ *  orders (seg_nfa::NoodleOrder) run a depth-first search with the children of every node reordered. The search holds
+ *  one path, or the odometer's indices, instead of a whole level of partial noodles.
  *
  * The shared automaton of a final state (see seg_nfa::NoodleSegment) is built when the search first reaches the
  *  final state, the final states that an initial state reaches when the search first reaches the initial state.
@@ -267,6 +266,18 @@ class NoodleEnumerator {
 		}
 		order_children(first);
 		frames_.push_back(std::move(first));
+		if (mode_ == Mode::Single && (order_.kind == seg_nfa::NoodleOrder::Kind::Forward ||
+									  order_.kind == seg_nfa::NoodleOrder::Kind::Reverse)) {
+			const auto& depths{segmentation_.get_epsilon_transitions_by_depth()};
+			permutation_positions_.assign(depths.size(), 0);
+			permutation_exhausted_ =
+				std::ranges::any_of(depths, [](const auto& transitions) { return transitions.empty(); });
+			if (order_.kind == seg_nfa::NoodleOrder::Kind::Reverse && !permutation_exhausted_) {
+				for (size_t depth{0}; depth < depths.size(); ++depth) {
+					permutation_positions_[depth] = depths[depth].size() - 1;
+				}
+			}
+		}
 	}
 
 	NoodleEnumerator(const NoodleEnumerator&) = delete;
@@ -294,6 +305,10 @@ class NoodleEnumerator {
 	/// Moves the search to the next noodle, which noodle_ holds until the next call; false if there is none left.
 	bool advance() {
 		if (segments_.size() == 1) { return std::exchange(single_pending_, false); }
+		if (mode_ == Mode::Single && (order_.kind == seg_nfa::NoodleOrder::Kind::Forward ||
+									  order_.kind == seg_nfa::NoodleOrder::Kind::Reverse)) {
+			return advance_permutation();
+		}
 		if (at_noodle_) { // The last segment of the previous noodle.
 			pop_segment();
 			at_noodle_ = false;
@@ -324,6 +339,56 @@ class NoodleEnumerator {
 		}
 		return false;
 	}
+
+	/// Single-epsilon Forward and Reverse follow the original global ε-transition odometer, with the first depth
+	///  changing fastest. Only the current indices and noodle are retained, not the partial noodles of every prefix.
+	bool advance_permutation() {
+		const auto& depths{segmentation_.get_epsilon_transitions_by_depth()};
+		while (!permutation_exhausted_) {
+			while (!kept_.empty()) { pop_segment(); }
+			State previous_target{unused_state_};
+			bool complete{true};
+			for (size_t depth{0}; depth < depths.size(); ++depth) {
+				if (depths[depth].empty()) {
+					complete = false;
+					break;
+				}
+				const Transition& transition{depths[depth][permutation_positions_[depth]]};
+				if (!push_segment(depth, previous_target, transition.source)) {
+					complete = false;
+					break;
+				}
+				previous_target = transition.target;
+			}
+			if (complete && push_segment(depths.size(), previous_target, unused_state_) &&
+				(num_of_left_out_ == 0 || seen_.insert(keys_).second)) {
+				permutation_exhausted_ = !advance_permutation_indices(depths);
+				at_noodle_ = true;
+				return true;
+			}
+			permutation_exhausted_ = !advance_permutation_indices(depths);
+		}
+		return false;
+	}
+
+	/// Advance the global ε-transition indices. False when the last permutation has been consumed.
+	bool advance_permutation_indices(const std::vector<std::vector<Transition>>& depths) {
+		for (size_t depth{0}; depth < depths.size(); ++depth) {
+			if (order_.kind == seg_nfa::NoodleOrder::Kind::Reverse) {
+				if (permutation_positions_[depth] != 0) {
+					--permutation_positions_[depth];
+					return true;
+				}
+				permutation_positions_[depth] = depths[depth].size() - 1;
+			} else {
+				++permutation_positions_[depth];
+				if (permutation_positions_[depth] < depths[depth].size()) { return true; }
+				permutation_positions_[depth] = 0;
+			}
+		}
+		return false;
+	}
+
 	using SegmentKey = std::pair<State, State>;
 
 	/// The shared automaton of one final state and the state of every initial state of its segment in it.
@@ -377,6 +442,9 @@ class NoodleEnumerator {
 	std::vector<bool> is_target_{};
 
 	std::vector<Frame> frames_{};
+	/// Whether the global ε-transition odometer has no further permutations.
+	bool permutation_exhausted_{false};
+	std::vector<size_t> permutation_positions_{};
 	/// The noodle on the path of the search, without the left out segments.
 	seg_nfa::NoodleWithEpsilonsCounter noodle_{};
 	/// The pairs of the segments of noodle_.
@@ -529,14 +597,15 @@ class NoodleEnumerator {
 		return {.automaton = empty_automaton_, .initial = 0};
 	}
 
-	void push_segment(const size_t seg_id, const State init, const State fin) {
+	bool push_segment(const size_t seg_id, const State init, const State fin) {
 		seg_nfa::NoodleSegment seg{segment(seg_id, init, fin)};
+		if (!include_empty_ && seg.automaton == empty_automaton_) { return false; }
 		seg_nfa::VisitedEpsilonsCounterVector counters{};
 		if (mode_ == Mode::MultEps) {
 			if (seg.is_epsilon_only()) {
 				kept_.push_back(false);
 				++num_of_left_out_;
-				return;
+				return true;
 			}
 			if (seg_id == 0) {
 				counters = def_eps_vector_;
@@ -548,6 +617,7 @@ class NoodleEnumerator {
 		noodle_.emplace_back(std::move(seg), std::move(counters));
 		keys_.emplace_back(init, fin);
 		kept_.push_back(true);
+		return true;
 	}
 
 	void pop_segment() {
