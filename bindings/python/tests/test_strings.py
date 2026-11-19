@@ -120,13 +120,18 @@ def test_noodles_share_the_wrapped_segments():
     nfa.add_transition(3, 3, 4)
 
     noodles = mata_strings.noodlify(nfa, 200)
-    mult_eps_noodles = [[segment for segment, _ in noodle] for noodle in mata_strings.noodlify_mult_eps(nfa, {200})]
+    mult_eps_noodles = [
+        [segment for segment, _ in noodle]
+        for noodle in mata_strings.noodlify_mult_eps(nfa, {200})
+    ]
     for result in (noodles, mult_eps_noodles):
         assert len(result) == 2
         # Both noodles take the first segment up to state 1: one wrapped copy serves both.
         assert result[0][0] is result[1][0]
         assert result[0][0].is_in_lang([1])
-        assert {(noodle[1].is_in_lang([2]), noodle[1].is_in_lang([3])) for noodle in result} == {
+        assert {
+            (noodle[1].is_in_lang([2]), noodle[1].is_in_lang([3])) for noodle in result
+        } == {
             (True, False),
             (False, True),
         }
@@ -156,7 +161,9 @@ def test_noodlify_for_equation_rejects_non_nfa_left_sides(noodlify, params):
     right = mata_nfa.Nfa(1)
     right.make_initial_state(0)
     right.make_final_state(0)
-    with pytest.raises(TypeError, match="left_side_automata must contain only Nfa objects"):
+    with pytest.raises(
+        TypeError, match="left_side_automata must contain only Nfa objects"
+    ):
         noodlify([None], right, params=params)
 
 
@@ -193,9 +200,15 @@ def _snapshot(value):
             value.num_of_states(),
             sorted(value.initial_states),
             sorted(value.final_states),
-            sorted((t.source, t.symbol, t.target) for t in value.get_trans_as_sequence()),
+            sorted(
+                (t.source, t.symbol, t.target) for t in value.get_trans_as_sequence()
+            ),
         )
-        return description + (list(value.levels),) if isinstance(value, mata_nft.Nft) else description
+        return (
+            description + (list(value.levels),)
+            if isinstance(value, mata_nft.Nft)
+            else description
+        )
     if isinstance(value, (list, tuple)):
         return [_snapshot(item) for item in value]
     return value
@@ -250,9 +263,18 @@ def test_noodlify_variants_threaded_match_single_threaded_results():
 
     expected_noodles = _snapshot(mata_strings.noodlify(aut, 200))
     expected_mult_eps = _snapshot(mata_strings.noodlify_mult_eps(aut, {200}))
-    expected_sides = _snapshot(mata_strings.noodlify_for_equation_sides([left], [right]))
-    expected_transducer = _snapshot(mata_strings.noodlify_for_transducer(identity_nft, [left], [right]))
-    assert expected_noodles and expected_mult_eps and expected_sides and expected_transducer
+    expected_sides = _snapshot(
+        mata_strings.noodlify_for_equation_sides([left], [right])
+    )
+    expected_transducer = _snapshot(
+        mata_strings.noodlify_for_transducer(identity_nft, [left], [right])
+    )
+    assert (
+        expected_noodles
+        and expected_mult_eps
+        and expected_sides
+        and expected_transducer
+    )
 
     barrier = threading.Barrier(3)
 
@@ -262,11 +284,15 @@ def test_noodlify_variants_threaded_match_single_threaded_results():
             _snapshot(mata_strings.noodlify(aut, 200)),
             _snapshot(mata_strings.noodlify_mult_eps(aut, {200})),
             _snapshot(mata_strings.noodlify_for_equation_sides([left], [right])),
-            _snapshot(mata_strings.noodlify_for_transducer(identity_nft, [left], [right])),
+            _snapshot(
+                mata_strings.noodlify_for_transducer(identity_nft, [left], [right])
+            ),
         )
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-        results = [future.result() for future in [executor.submit(run) for _ in range(3)]]
+        results = [
+            future.result() for future in [executor.submit(run) for _ in range(3)]
+        ]
     for result in results:
         assert result == (
             expected_noodles,
@@ -282,7 +308,9 @@ def _random_nfa(seed, num_states):
     rng = random.Random(seed)
     aut = mata_nfa.Nfa(num_states)
     for _ in range(4 * num_states):
-        aut.add_transition(rng.randrange(num_states), rng.randrange(2), rng.randrange(num_states))
+        aut.add_transition(
+            rng.randrange(num_states), rng.randrange(2), rng.randrange(num_states)
+        )
     aut.make_initial_state(0)
     aut.make_final_state(num_states - 1)
     return aut
@@ -290,7 +318,9 @@ def _random_nfa(seed, num_states):
 
 def test_noodlify_for_equation_sides_lets_other_threads_run(runs_without_the_gil):
     left, right = _random_nfa(1, 100), _random_nfa(2, 100)
-    assert runs_without_the_gil(lambda: mata_strings.noodlify_for_equation_sides([left], [right]))
+    assert runs_without_the_gil(
+        lambda: mata_strings.noodlify_for_equation_sides([left], [right])
+    )
 
 
 def test_noodlify_for_transducer_lets_other_threads_run(runs_without_the_gil):
@@ -299,7 +329,9 @@ def test_noodlify_for_transducer_lets_other_threads_run(runs_without_the_gil):
     identity_nft.make_final_state(0)
     identity_nft.insert_identity(0, [0, 1], mata_nft.JumpMode.NoJump)
     left, right = _random_nfa(1, 22), _random_nfa(2, 22)
-    assert runs_without_the_gil(lambda: mata_strings.noodlify_for_transducer(identity_nft, [left], [right]))
+    assert runs_without_the_gil(
+        lambda: mata_strings.noodlify_for_transducer(identity_nft, [left], [right])
+    )
 
 
 needs_generator_support = pytest.mark.skipif(
@@ -325,15 +357,21 @@ def _eager_and_lazy_noodlifications():
     return [
         (
             lambda: mata_strings.noodlify(aut, 200),
-            lambda order, seed: mata_strings.noodlify_lazy(aut, 200, order=order, seed=seed),
+            lambda order, seed: mata_strings.noodlify_lazy(
+                aut, 200, order=order, seed=seed
+            ),
         ),
         (
             lambda: mata_strings.noodlify_mult_eps(aut, {200}),
-            lambda order, seed: mata_strings.noodlify_mult_eps_lazy(aut, {200}, order=order, seed=seed),
+            lambda order, seed: mata_strings.noodlify_mult_eps_lazy(
+                aut, {200}, order=order, seed=seed
+            ),
         ),
         (
             # Fresh left sides: the noodlification unifies their initial and final states in place.
-            lambda: mata_strings.noodlify_for_equation([_random_nfa(4, 6), _random_nfa(5, 6)], _random_nfa(6, 9)),
+            lambda: mata_strings.noodlify_for_equation(
+                [_random_nfa(4, 6), _random_nfa(5, 6)], _random_nfa(6, 9)
+            ),
             lambda order, seed: mata_strings.noodlify_for_equation_lazy(
                 [_random_nfa(4, 6), _random_nfa(5, 6)],
                 _random_nfa(6, 9),
@@ -375,7 +413,9 @@ def test_lazy_noodlifications_emit_the_noodles_of_the_eager_ones():
         expected = _snapshot(eager())
         assert len(expected) > 1
         assert _snapshot(list(lazy(mata_strings.NoodleOrder.Forward, 0))) == expected
-        assert _snapshot(list(lazy(mata_strings.NoodleOrder.Reverse, 0))) == expected[::-1]
+        assert (
+            _snapshot(list(lazy(mata_strings.NoodleOrder.Reverse, 0))) == expected[::-1]
+        )
         for order in (
             mata_strings.NoodleOrder.SmallestFirst,
             mata_strings.NoodleOrder.LargestFirst,
@@ -401,7 +441,8 @@ def test_consecutive_lazy_noodles_share_the_wrapped_segments():
 
     noodles = list(mata_strings.noodlify_lazy(nfa, 200))
     mult_eps_noodles = [
-        [segment for segment, _ in noodle] for noodle in mata_strings.noodlify_mult_eps_lazy(nfa, {200})
+        [segment for segment, _ in noodle]
+        for noodle in mata_strings.noodlify_mult_eps_lazy(nfa, {200})
     ]
     for result in (noodles, mult_eps_noodles):
         assert len(result) == 2
@@ -411,13 +452,31 @@ def test_consecutive_lazy_noodles_share_the_wrapped_segments():
 
 @needs_generator_support
 def test_lazy_noodles_are_taken_without_the_gil(runs_without_the_gil):
+    # A single call of any of these small examples can beat the observer. Generate many fresh, finite searches
+    #  instead: every one advances the same native code, but none of them has an exponential tail.
     left, right = _random_nfa(1, 100), _random_nfa(2, 100)
-    noodles = mata_strings.noodlify_for_equation_sides_lazy([left], [right])
-    assert runs_without_the_gil(lambda: list(noodles))
+
+    def take_equation_noodles():
+        return [
+            list(mata_strings.noodlify_for_equation_sides_lazy([left], [right]))
+            for _ in range(40)
+        ]
+
+    assert runs_without_the_gil(take_equation_noodles)
     small_left, small_right = _random_nfa(1, 22), _random_nfa(2, 22)
     identity_nft = _two_level_identity()
-    transducer_noodles = mata_strings.noodlify_for_transducer_lazy(identity_nft, [small_left], [small_right])
-    assert runs_without_the_gil(lambda: list(transducer_noodles))
+
+    def take_transducer_noodles():
+        return [
+            list(
+                mata_strings.noodlify_for_transducer_lazy(
+                    identity_nft, [small_left], [small_right]
+                )
+            )
+            for _ in range(40)
+        ]
+
+    assert runs_without_the_gil(take_transducer_noodles)
 
 
 @pytest.mark.skipif(
@@ -519,24 +578,34 @@ def test_create_identity():
 def test_create_identity_with_single_symbol_replace():
     alphabet = alphabets.EnumAlphabet({ord("a"), ord("b"), ord("c")})
 
-    replaced_symbol = mata_strings.create_identity_with_single_symbol_replace(alphabet, ord("a"), ord("b"))
+    replaced_symbol = mata_strings.create_identity_with_single_symbol_replace(
+        alphabet, ord("a"), ord("b")
+    )
     assert replaced_symbol.is_in_lang([ord("a"), ord("b")])
     assert replaced_symbol.is_in_lang([ord("b"), ord("b")])
 
-    replaced_word = mata_strings.create_identity_with_single_symbol_replace(alphabet, ord("a"), [ord("b"), ord("c")])
+    replaced_word = mata_strings.create_identity_with_single_symbol_replace(
+        alphabet, ord("a"), [ord("b"), ord("c")]
+    )
     assert isinstance(replaced_word, mata_nft.Nft)
 
 
 def test_replace_reluctant_literal_and_single_symbol():
     alphabet = alphabets.EnumAlphabet({ord("a"), ord("b"), ord("x"), ord("z")})
 
-    literal_nft = mata_strings.replace_reluctant_literal([ord("a"), ord("b")], [ord("x")], alphabet)
+    literal_nft = mata_strings.replace_reluctant_literal(
+        [ord("a"), ord("b")], [ord("x")], alphabet
+    )
     assert literal_nft.apply([ord("a"), ord("b")]).is_in_lang([ord("x")])
 
-    symbol_nft = mata_strings.replace_reluctant_single_symbol(ord("a"), ord("z"), alphabet)
+    symbol_nft = mata_strings.replace_reluctant_single_symbol(
+        ord("a"), ord("z"), alphabet
+    )
     assert symbol_nft.apply([ord("a")]).is_in_lang([ord("z")])
 
-    symbol_word_nft = mata_strings.replace_reluctant_single_symbol(ord("a"), [ord("z"), ord("z")], alphabet)
+    symbol_word_nft = mata_strings.replace_reluctant_single_symbol(
+        ord("a"), [ord("z"), ord("z")], alphabet
+    )
     assert isinstance(symbol_word_nft, mata_nft.Nft)
 
 
