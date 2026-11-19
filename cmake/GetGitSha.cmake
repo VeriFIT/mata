@@ -35,9 +35,8 @@ if (GIT_DIR_ARG)
 			# Drop inherited repository-location variables; `--git-dir` then selects exactly the
 			#  checkout of the sources. `rev-parse --verify` keeps an unborn HEAD on the fallback
 			#  even if a file called HEAD happens to sit in the working directory.
-			COMMAND "${CMAKE_COMMAND}" -E env
-				--unset=GIT_DIR --unset=GIT_WORK_TREE --unset=GIT_COMMON_DIR
-				"${GIT_BIN}" "--git-dir=${GIT_DIR_ARG}" rev-parse --verify HEAD
+			COMMAND "${CMAKE_COMMAND}" -E env --unset=GIT_DIR --unset=GIT_WORK_TREE --unset=GIT_COMMON_DIR "${GIT_BIN}"
+					"--git-dir=${GIT_DIR_ARG}" rev-parse --verify HEAD
 			WORKING_DIRECTORY "${SOURCE_DIR}"
 			OUTPUT_VARIABLE GIT_SHA1
 			OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET
