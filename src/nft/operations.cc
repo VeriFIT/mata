@@ -680,6 +680,12 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 		// return Nft(1, {0}, {0}, Levels{ 0 }, nullptr);
 	}
 
+	// Only states that are useful in the input can survive projection and the final trim.
+	const BoolVector original_useful_states{nft.get_useful_states()};
+	const auto is_original_useful = [&](const State state) {
+		return state < original_useful_states.size() && original_useful_states[state];
+	};
+
 	// Calculates the smallest level 0 < k < levels.num_of_levels that starts a consecutive ascending sequence
 	//  of levels k, k+1, k+2, ..., levels.num_of_levels-1 in the ordered-vector levels_to_project.
 	// If there is no such sequence, then k == levels.num_of_levels.
@@ -705,15 +711,17 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 		if (levels_to_project.contains(lvl_old)) { lvl_sub++; }
 	}
 
-	// The closure of a projected state: the states reachable from it over transitions all of whose levels are
-	//  projected, expanding only projected states. A state that is not projected is its own closure.
+	// The closure of a projected state: the states useful in the input and reachable from it over transitions all
+	//  of whose levels are projected, expanding only projected states. A state that is not projected is its own
+	//  closure. Useless targets are skipped, so many useful sources cannot rescan one shared dead component; their
+	//  moves disappear with the final trim, which yields the same automaton.
 	const size_t num_of_states_in_delta{nft.delta.num_of_states()};
 	std::vector<std::vector<State>> closure(num_of_states_in_delta);
 	{
 		std::vector<size_t> visited_in(num_of_states_in_delta, 0);
 		std::vector<State> stack{};
 		for (State source{0}; source < num_of_states_in_delta; ++source) {
-			if (!is_projected_out(source)) { continue; }
+			if (!is_original_useful(source) || !is_projected_out(source)) { continue; }
 			std::vector<State>& reached{closure[source]};
 			const size_t mark{static_cast<size_t>(source) + 1};
 			visited_in[source] = mark;
@@ -725,7 +733,8 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 				if (!is_projected_out(state)) { continue; }
 				for (const SymbolPost& move : nft.delta[state]) {
 					for (const State target : move.targets) {
-						if (visited_in[target] != mark && is_projected_along_path(state, target)) {
+						if (visited_in[target] != mark && is_original_useful(target) &&
+							is_projected_along_path(state, target)) {
 							visited_in[target] = mark;
 							reached.push_back(target);
 							stack.push_back(target);
@@ -742,6 +751,10 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 	std::vector<std::pair<Symbol, State>> moves{};
 	const bool projected_moves_are_discarded{seq_start_idx == 1};
 	for (State src_state{0}; src_state < num_of_states_in_delta; src_state++) { // For every state.
+		if (!is_original_useful(src_state)) {
+			result.delta.emplace_back();
+			continue;
+		}
 		const Level src_level{nft.levels[src_state]};
 		if (!is_projected_out(src_state) && std::ranges::none_of(nft.delta[src_state], [&](const SymbolPost& move) {
 				return std::ranges::any_of(move.targets, [&](const State target) {
