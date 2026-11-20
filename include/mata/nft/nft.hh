@@ -1997,8 +1997,13 @@ Nft minimize(const Nft& aut, const ParameterMap& params = {{"algorithm", "brzozo
  * @brief Determinize automaton.
  *
  * @param[in] nft Automaton to determinize.
- * @param[out] subset_map Map that maps sets of states of input automaton to states of determinized automaton.
- * @return Determinized automaton.
+ * @param[out] subset_map Map that maps sets of states of input automaton to states of determinized automaton. Only
+ *  sets whose states all lie on the same level are reported: a transition into several levels is split into a state
+ *  for the nearest level and a pending jump for the rest, and such a state stands for the pair (target set, symbol),
+ *  not for a set alone.
+ * @return Determinized automaton. DONT_CARE is kept as a literal symbol, not expanded: when a DONT_CARE transition
+ *  and a concrete-symbol transition overlap but their target sets differ, the result keeps one transition per target
+ *  set and @c is_deterministic() reports false for it, although the language is preserved.
  */
 Nft determinize(const Nft& nft, std::unordered_map<StateSet, State>* subset_map = nullptr);
 

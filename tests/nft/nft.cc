@@ -679,6 +679,83 @@ TEST_CASE("mata::nft::determinize()") {
 		CHECK_SHARED();
 	}
 
+	SECTION("state with a pending jump is not reused by an unrelated macrostate - issue #736") {
+		// Relation { (ua, ua), (ua, uc), (vb, vc) }, over states 0 I, 1 m, 2 A, 3 m', 4 B, 5 x, 6 y, 7 z.
+		// `A -a-> y` jumps from level 0 over level 1, so the targets of `A -a-> { x, y }` lie on two levels: the
+		// state built for { x } parks `a -> { y }` as a pending jump. `B -b-> { x }` must not reuse that state and
+		// inherit the jump, which would accept (vb, va).
+		const auto make = [](const Symbol u, const Symbol v) {
+			Nft nft{Nft::with_levels(Levels{2, {0, 1, 0, 1, 0, 1, 0, 0}}, 8, {0}, {6, 7})};
+			nft.delta.add(0, u, 1);
+			nft.delta.add(1, u, 2);
+			nft.delta.add(0, v, 3);
+			nft.delta.add(3, v, 4);
+			nft.delta.add(2, 'a', 5);
+			nft.delta.add(2, 'a', 6);
+			nft.delta.add(4, 'b', 5);
+			nft.delta.add(5, 'c', 7);
+			return nft;
+		};
+		// The worklist is a stack, so the symbol order decides whether { x } is first reached as a plain set.
+		for (const auto& [u, v] : std::vector<std::pair<Symbol, Symbol>>{{'q', 'p'}, {'p', 'q'}}) {
+			const Nft original{make(u, v)};
+			const Nft determinized{determinize(original)};
+			CHECK(are_equivalent(original, determinized));
+			CHECK(original.is_in_lang_by_levels({Word{v, 'b'}, Word{v, 'c'}}));
+			CHECK(determinized.is_in_lang_by_levels({Word{v, 'b'}, Word{v, 'c'}}));
+			CHECK_FALSE(original.is_in_lang_by_levels({Word{v, 'b'}, Word{v, 'a'}}));
+			CHECK_FALSE(determinized.is_in_lang_by_levels({Word{v, 'b'}, Word{v, 'a'}}));
+			// Naive inclusion complements `original` through `determinize()`, so it answered `true` here.
+			Nft single{Nft::with_levels(Levels{2, {0, 1, 0, 1, 0}}, 5, {0}, {4})}; // { (vb, va) }
+			single.delta.add(0, v, 1);
+			single.delta.add(1, v, 2);
+			single.delta.add(2, 'b', 3);
+			single.delta.add(3, 'a', 4);
+			CHECK_FALSE(is_included(single, original, nullptr, JumpMode::RepeatSymbol, {{"algorithm", "naive"}}));
+			CHECK_FALSE(is_included(single, original, nullptr, JumpMode::RepeatSymbol, {{"algorithm", "antichains"}}));
+		}
+	}
+
+	SECTION("two symbols with the same mixed target set each inherit their own pending jump - issue #736") {
+		// `A -a-> { x, y }` and `A -b-> { x, y }` resolve to the same set { x } on the nearest level, but they carry
+		// different pending jumps (`a -> { y }` and `b -> { y }`). The state built for { x } therefore stands for the
+		// pair (target set, symbol): sharing it between the two symbols would keep the jump of one of them only and
+		// lose the word (bb, bb) from the language.
+		Nft nft{Nft::with_levels(Levels{2, {0, 1, 0}}, 3, {0}, {2})};
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(0, 'a', 2);
+		nft.delta.add(0, 'b', 1);
+		nft.delta.add(0, 'b', 2);
+		const Nft determinized{determinize(nft)};
+		CHECK(are_equivalent(nft, determinized));
+		// The jump `0 -a-> 2` repeats its symbol on both levels, so only the words with one symbol on both levels
+		//  are in the language. Each has to come out of `determinize()` with its own pending jump.
+		CHECK(nft.is_in_lang_by_levels({Word{'a'}, Word{'a'}}));
+		CHECK(determinized.is_in_lang_by_levels({Word{'a'}, Word{'a'}}));
+		CHECK(nft.is_in_lang_by_levels({Word{'b'}, Word{'b'}}));
+		CHECK(determinized.is_in_lang_by_levels({Word{'b'}, Word{'b'}}));
+		CHECK_FALSE(nft.is_in_lang_by_levels({Word{'a'}, Word{'b'}}));
+		CHECK_FALSE(determinized.is_in_lang_by_levels({Word{'a'}, Word{'b'}}));
+		CHECK_FALSE(nft.is_in_lang_by_levels({Word{'b'}, Word{'a'}}));
+		CHECK_FALSE(determinized.is_in_lang_by_levels({Word{'b'}, Word{'a'}}));
+	}
+
+	SECTION("an overlapping DONT_CARE transition may keep its own target state") {
+		// `s -a-> { x, y }` mixes two levels, `s -DONT_CARE-> x` resolves to { x } alone. The two states must not be
+		//  merged: the mixed one carries a pending `a` jump that a DONT_CARE edge may, but need not, share with an
+		//  unrelated macrostate (#736). Determinize keeps DONT_CARE as a literal symbol, so the result has one
+		//  transition per target set and is_deterministic() reports the overlap; the language is preserved.
+		Nft nft{Nft::with_levels(Levels{2, {0, 1, 0}}, 3, {0}, {2})};
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(0, 'a', 2);
+		nft.delta.add(0, DONT_CARE, 1);
+		nft.delta.add(1, 'a', 2);
+		const Nft determinized{determinize(nft)};
+		CHECK(are_equivalent(nft, determinized));
+		CHECK(determinized.num_of_states() == 4);
+		CHECK_FALSE(determinized.is_deterministic());
+	}
+
 	// SECTION("This broke Delta when delta[q] could cause re-allocation of post")
 	// {
 	//     Nft x{};

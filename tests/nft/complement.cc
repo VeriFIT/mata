@@ -132,4 +132,41 @@ TEST_CASE("mata::nft::complement()") {
 		nft_complemented = complement(nft, *alphabet);
 		CHECK_SHARED();
 	}
+
+	SECTION("word rejected only because of a pending jump inherited in determinize() - issue #736") {
+		// Relation { (qa, qa), (qa, qc), (pb, pc) }: `2 -a-> 6` jumps over level 1, so the targets of `2 -a-> { 5, 6 }`
+		// lie on two levels. The state built for { 5 } parks the jump; reusing it for `4 -b-> { 5 }` made the
+		// determinized automaton accept (pb, pa), and the complement reject it.
+		Nft relation{Nft::with_levels(Levels{2, {0, 1, 0, 1, 0, 1, 0, 0}}, 8, {0}, {6, 7})};
+		relation.delta.add(0, 'q', 1);
+		relation.delta.add(1, 'q', 2);
+		relation.delta.add(0, 'p', 3);
+		relation.delta.add(3, 'p', 4);
+		relation.delta.add(2, 'a', 5);
+		relation.delta.add(2, 'a', 6);
+		relation.delta.add(4, 'b', 5);
+		relation.delta.add(5, 'c', 7);
+
+		const std::vector<Word> pb_pa{Word{'p', 'b'}, Word{'p', 'a'}};
+		REQUIRE_FALSE(relation.is_in_lang_by_levels(pb_pa));
+		const Nft complemented{complement(relation, EnumAlphabet{'a', 'b', 'c', 'p', 'q'})};
+		CHECK(complemented.is_in_lang_by_levels(pb_pa));
+		CHECK_FALSE(complemented.is_in_lang_by_levels({Word{'p', 'b'}, Word{'p', 'c'}}));
+	}
+
+	SECTION("two symbols with the same mixed target set in the complement - issue #736") {
+		// `0 -a-> { 1, 2 }` and `0 -b-> { 1, 2 }` reach one mixed set: { 1 } is resolved now and the jump to 2 pending.
+		//  Each pending jump must stay with its symbol; keying the mixed state by the set alone would keep one of them
+		//  and the complement would accept (aa) or (bb) by mistake.
+		Nft nft{Nft::with_levels(Levels{2, {0, 1, 0}}, 3, {0}, {2})};
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(0, 'a', 2);
+		nft.delta.add(0, 'b', 1);
+		nft.delta.add(0, 'b', 2);
+		const Nft complemented{complement(nft, EnumAlphabet{'a', 'b'})};
+		CHECK_FALSE(complemented.is_in_lang_by_levels({Word{'a'}, Word{'a'}}));
+		CHECK_FALSE(complemented.is_in_lang_by_levels({Word{'b'}, Word{'b'}}));
+		CHECK(complemented.is_in_lang_by_levels({Word{'a'}, Word{'b'}}));
+		CHECK(complemented.is_in_lang_by_levels({Word{'b'}, Word{'a'}}));
+	}
 }
