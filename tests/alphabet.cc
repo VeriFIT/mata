@@ -1,5 +1,9 @@
 // TODO: Some header.
 
+#include <array>
+#include <random>
+#include <ranges>
+#include <set>
 #include <sstream>
 #include <unordered_set>
 
@@ -160,6 +164,78 @@ TEST_CASE("mata::OnTheFlyAlphabet::reverse_translate_symbol()") {
 		CHECK_THROWS(alphabet.reverse_translate_symbol(1'000));
 		expected.erase(1'000);
 		CHECK(alphabet.get_alphabet_symbols() == expected);
+	}
+}
+
+TEST_CASE("mata::OnTheFlyAlphabet::get_alphabet_symbols_ref() follows every change (#754)") {
+	// Recomputed from the symbol map, independently of the alphabet's own bookkeeping.
+	const auto symbols_of_map{[](const OnTheFlyAlphabet& alphabet) {
+		std::set<Symbol> symbols{};
+		for (const Symbol symbol : alphabet.get_symbol_map() | std::views::values) { symbols.insert(symbol); }
+		return OrdVector<Symbol>{symbols};
+	}};
+	// Small values land in the dense reverse index; the large ones start in the sparse one, and 100 and 150 move to
+	//  the dense one once there are enough names.
+	static constexpr std::array<Symbol, 15> VALUES{0,  1,  2,	3,	 5,		8,		 13,		  40,
+												   63, 64, 100, 150, 5'000, 100'000, nfa::EPSILON};
+	for (unsigned seed{0}; seed < 100; ++seed) {
+		std::mt19937 rng{seed};
+		const auto draw{[&rng](const size_t bound) { return static_cast<size_t>(rng()) % bound; }};
+		const auto name{[&draw] { return "n" + std::to_string(draw(64)); }};
+		const auto value{[&draw] { return VALUES[draw(VALUES.size())]; }};
+		std::array<OnTheFlyAlphabet, 2> alphabets{OnTheFlyAlphabet{}, OnTheFlyAlphabet{}};
+		for (size_t step{0}; step < 300; ++step) {
+			OnTheFlyAlphabet& alphabet{alphabets[draw(2)]};
+			OnTheFlyAlphabet& other{&alphabet == alphabets.data() ? alphabets[1] : alphabets[0]};
+			const OnTheFlyAlphabet::StringToSymbolMap& map{alphabet.get_symbol_map()};
+			// @p first advanced by a number drawn below @p bound.
+			const auto advance{[&draw](const auto first, const size_t bound) {
+				return std::next(first, static_cast<std::ptrdiff_t>(draw(bound)));
+			}};
+			const size_t operation{draw(40)};
+			INFO("seed " << seed << ", step " << step << ", operation " << operation);
+			if (operation == 0) {
+				alphabet.clear();
+			} else if (operation == 1) {
+				alphabet = other;
+			} else if (operation == 2) {
+				alphabet = OnTheFlyAlphabet{other};
+			} else if (operation == 3) {
+				std::swap(alphabets[0], alphabets[1]); // Move construction and move assignment.
+			} else if (operation == 4) {
+				const auto first{advance(map.begin(), map.size() + 1)};
+				alphabet.erase(first, advance(first, static_cast<size_t>(std::distance(first, map.end())) + 1));
+			} else if (operation < 9) {
+				const bool present{!map.empty() && draw(2) == 0};
+				alphabet.erase(present ? advance(map.begin(), map.size())->second : value());
+			} else if (operation < 13) {
+				alphabet.erase(name());
+			} else if (operation < 17) {
+				if (!map.empty()) { alphabet.erase(advance(map.begin(), map.size())); }
+			} else if (operation < 22) {
+				alphabet.translate_symb(name());
+			} else if (operation < 26) {
+				if (const std::string added{name()}; !map.contains(added)) { alphabet.add_new_symbol(added); }
+			} else if (operation < 30) {
+				if (const std::string added{name()}; !map.contains(added)) { alphabet.add_new_symbol(added, value()); }
+			} else if (operation < 34) {
+				alphabet.try_add_new_symbol(name(), value());
+			} else if (operation < 37) {
+				alphabet.add_symbols_from(OnTheFlyAlphabet::StringToSymbolMap{{name(), value()}, {name(), value()}});
+			} else {
+				std::vector<std::string> added{name(), name()};
+				std::erase_if(added, [&map](const std::string& added_name) { return map.contains(added_name); });
+				if (added.size() == 2 && added[0] == added[1]) { added.pop_back(); }
+				alphabet.add_symbols_from(added);
+			}
+			for (const OnTheFlyAlphabet& checked : alphabets) {
+				const OrdVector<Symbol> expected{symbols_of_map(checked)};
+				REQUIRE(checked.get_alphabet_symbols_ref() == expected);
+				REQUIRE(checked.get_alphabet_symbols() == expected);
+				const OrdVector<Symbol> removed{value(), value()};
+				REQUIRE(checked.get_complement(removed) == expected.difference(removed));
+			}
+		}
 	}
 }
 

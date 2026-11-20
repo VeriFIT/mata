@@ -55,6 +55,7 @@ OnTheFlyAlphabet& OnTheFlyAlphabet::operator=(const OnTheFlyAlphabet& rhs) {
 		num_of_dense_symbols_ = rhs.num_of_dense_symbols_;
 		next_symbol_value_ = rhs.next_symbol_value_;
 		redirect_copied_index();
+		sorted_symbols_.invalidate();
 	}
 	return *this;
 }
@@ -103,6 +104,7 @@ void OnTheFlyAlphabet::index_name(const StringToSymbolMap::const_iterator name_i
 	if (names.num_of_names++ == 0) {
 		names.name = &name_it->first;
 		if (dense) { ++num_of_dense_symbols_; }
+		sorted_symbols_.invalidate();
 	}
 }
 
@@ -110,6 +112,7 @@ void OnTheFlyAlphabet::unindex_name(const StringToSymbolMap::const_iterator name
 	const Symbol symbol{name_it->second};
 	SymbolNames& names{indexed_names(symbol)};
 	if (--names.num_of_names == 0) {
+		sorted_symbols_.invalidate();
 		if (symbol < dense_names_.size()) {
 			names.name = nullptr;
 			--num_of_dense_symbols_;
@@ -128,7 +131,7 @@ void OnTheFlyAlphabet::unindex_name(const StringToSymbolMap::const_iterator name
 	}
 }
 
-mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_alphabet_symbols() const {
+mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::collect_symbols() const {
 	utils::OrdVector<Symbol> symbols{};
 	symbols.reserve(num_of_dense_symbols_ + sparse_names_.size());
 	// Erased symbols leave their slots behind; stop at the last named one.
@@ -142,10 +145,24 @@ mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_alphabet_symbols() const {
 	std::ranges::sort(sparse_symbols);
 	for (const Symbol symbol : sparse_symbols) { symbols.push_back(symbol); }
 	return symbols;
-} // OnTheFlyAlphabet::get_alphabet_symbols.
+} // OnTheFlyAlphabet::collect_symbols.
+
+const mata::utils::OrdVector<Symbol>& OnTheFlyAlphabet::get_alphabet_symbols_ref() const {
+	// Double-checked: once built, the symbols are only read, so concurrent readers lock only while one builds them.
+	if (!sorted_symbols_.valid.load(std::memory_order_acquire)) {
+		const std::lock_guard lock{sorted_symbols_.mutex};
+		if (!sorted_symbols_.valid.load(std::memory_order_relaxed)) {
+			sorted_symbols_.symbols = collect_symbols();
+			sorted_symbols_.valid.store(true, std::memory_order_release);
+		}
+	}
+	return sorted_symbols_.symbols;
+}
+
+mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_alphabet_symbols() const { return get_alphabet_symbols_ref(); }
 
 mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_complement(const mata::utils::OrdVector<Symbol>& symbols) const {
-	return get_alphabet_symbols().difference(symbols);
+	return get_alphabet_symbols_ref().difference(symbols);
 }
 
 void OnTheFlyAlphabet::add_symbols_from(const StringToSymbolMap& new_symbol_map) {
