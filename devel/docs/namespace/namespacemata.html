@@ -7852,11 +7852,11 @@ This overloaded version complements over an already created ordered set of <code
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>nft</strong> – <strong>[in]</strong> <a class="reference internal" href="#classmata_1_1Automaton"><span class="std std-ref">Automaton</span></a> to determinize. </p></li>
-<li><p><strong>subset_map</strong> – <strong>[out]</strong> Map that maps sets of states of input automaton to states of determinized automaton. </p></li>
+<li><p><strong>subset_map</strong> – <strong>[out]</strong> Map that maps sets of states of input automaton to states of determinized automaton. Only sets whose states all lie on the same level are reported: a transition into several levels is split into a state for the nearest level and a pending jump for the rest, and such a state stands for the pair (target set, symbol), not for a set alone. </p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Determinized automaton. </p>
+<dd class="field-even"><p>Determinized automaton. DONT_CARE is kept as a literal symbol, not expanded: when a DONT_CARE transition and a concrete-symbol transition overlap but their target sets differ, the result keeps one transition per target set and <code class="docutils literal notranslate"><span class="pre">is_deterministic()</span></code> reports false for it, although the language is preserved. </p>
 </dd>
 </dl>
 </dd></dl>
