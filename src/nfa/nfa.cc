@@ -395,7 +395,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClo
 	return delta.post_adopt_buffer(states, symbol, epsilon_closure_opt, {EPSILON}, workspace);
 }
 
-Nfa& Nfa::unify_initial(const bool force_new_state) {
+Nfa& Nfa::unify_initial(const bool force_new_state) & {
 	if (!force_new_state && (initial.empty() || initial.size() == 1)) { return *this; }
 
 	const bool unified_state_is_final{initial.intersects_with(final)};
@@ -423,7 +423,7 @@ Nfa& Nfa::unify_initial(const bool force_new_state) {
 	return *this;
 }
 
-Nfa& Nfa::unify_final(const bool force_new_state) {
+Nfa& Nfa::unify_final(const bool force_new_state) & {
 	if (!force_new_state && (final.empty() || final.size() == 1)) { return *this; }
 
 	const bool unified_state_is_initial{final.intersects_with(initial)};
@@ -499,7 +499,7 @@ State Nfa::insert_word(const State source, const Word& word, const State target)
 
 State Nfa::insert_word(const State source, const Word& word) { return insert_word(source, word, add_state()); }
 
-Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, const std::optional<State> sink_state) {
+Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, const std::optional<State> sink_state) & {
 	const State sink{sink_state.value_or(num_of_states())};
 	if (initial.empty()) { // The automaton has no reachable states (accepting an empty language).
 		// Insert a single initial sink state.
@@ -510,7 +510,7 @@ Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, const std::
 	return *this;
 }
 
-Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& nfa) {
+Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& nfa) & {
 	if (this == &nfa) { return *this; }
 	if (final.empty() || initial.empty()) {
 		*this = nfa;
@@ -541,7 +541,7 @@ Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& nfa) {
 	return *this;
 }
 
-Nfa& Nfa::unite_nondet_with(Nfa&& nfa) {
+Nfa& Nfa::unite_nondet_with(Nfa&& nfa) & {
 	if (this == &nfa) {
 		// Self-union: one controlled snapshot of the operand; `this` keeps its own content.
 		// NOLINTNEXTLINE(performance-unnecessary-copy-initialization)

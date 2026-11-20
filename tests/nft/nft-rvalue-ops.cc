@@ -2,6 +2,7 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
+#include <type_traits>
 
 #include "mata/nft/algorithms.hh"
 #include "mata/nft/nft.hh"
@@ -341,4 +342,79 @@ TEST_CASE("mata::nft::concatenate() rvalue overloads") {
 		CHECK(is_consumed(operand));
 		CHECK(member_lhs.is_in_lang_by_levels({mata::Word{'a', 'a', 'a'}, mata::Word{'b', 'b', 'b'}}));
 	}
+}
+
+TEST_CASE("mata::nft::Nft ref-qualified in-place operations") {
+	SECTION("lvalue operations return the same transducer by reference") {
+		Nft trimmed{tangled_nft()};
+		CHECK(&trimmed.trim() == &trimmed);
+		CHECK(&trimmed.unify_initial() == &trimmed);
+		CHECK(&trimmed.unify_final() == &trimmed);
+
+		Nft concatenated{chain_nft(2)};
+		CHECK(&concatenated.concatenate(chain_nft(1)) == &concatenated);
+		CHECK(&concatenated.unite_nondet_with(chain_nft(1)) == &concatenated);
+	}
+
+	SECTION("trim() on an rvalue moves an Nft with its levels") {
+		Nft expected{tangled_nft()};
+		expected.trim();
+		Nft source{tangled_nft()};
+		const Nft trimmed{std::move(source).trim()};
+		CHECK(trimmed.is_identical(expected));
+		CHECK(trimmed.levels == expected.levels);
+		CHECK(source.num_of_states() == 0);
+		CHECK(source.delta.empty());
+	}
+
+	SECTION("unify_initial() and unify_final() on an rvalue preserve the Nft") {
+		Nft expected{tangled_nft()};
+		expected.unify_initial();
+		expected.unify_final();
+		Nft source{tangled_nft()};
+		const Nft unified{std::move(source).unify_initial().unify_final()};
+		CHECK(unified.is_identical(expected));
+		CHECK(unified.levels == expected.levels);
+		CHECK(source.num_of_states() == 0);
+		CHECK(source.delta.empty());
+	}
+
+	SECTION("concatenate() and unite_nondet_with() on an rvalue preserve the Nft") {
+		for (const auto& [lhs, rhs] : operands()) {
+			Nft concatenated_expected{lhs};
+			concatenated_expected.concatenate(rhs);
+			const Nft concatenated{Nft{lhs}.concatenate(rhs)};
+			CHECK(concatenated.is_identical(concatenated_expected));
+			CHECK(concatenated.levels == concatenated_expected.levels);
+
+			Nft united_expected{lhs};
+			united_expected.unite_nondet_with(rhs);
+			const Nft united{Nft{lhs}.unite_nondet_with(rhs)};
+			CHECK(united.is_identical(united_expected));
+			CHECK(united.levels == united_expected.levels);
+		}
+
+		Nft source{chain_nft(2)};
+		const Nft united{std::move(source).unite_nondet_with(chain_nft(1))};
+		CHECK(united.is_identical(union_nondet(chain_nft(2), chain_nft(1))));
+		CHECK(source.num_of_states() == 0);
+		CHECK(source.delta.empty());
+	}
+}
+
+TEST_CASE("mata::nft::Nft ref-qualified in-place operations are selected by value category") {
+	static_assert(std::is_same_v<decltype(std::declval<Nft&>().trim()), Nft&>);
+	static_assert(std::is_same_v<decltype(std::declval<Nft&&>().trim()), Nft>);
+	static_assert(std::is_same_v<decltype(std::declval<Nft&>().unify_initial()), Nft&>);
+	static_assert(std::is_same_v<decltype(std::declval<Nft&&>().unify_initial()), Nft>);
+	static_assert(std::is_same_v<decltype(std::declval<Nft&>().unify_final()), Nft&>);
+	static_assert(std::is_same_v<decltype(std::declval<Nft&&>().unify_final()), Nft>);
+	static_assert(std::is_same_v<decltype(std::declval<Nft&>().concatenate(std::declval<const Nft&>())), Nft&>);
+	static_assert(std::is_same_v<decltype(std::declval<Nft&&>().concatenate(std::declval<const Nft&>())), Nft>);
+	static_assert(std::is_same_v<decltype(std::declval<Nft&>().concatenate(std::declval<Nft&&>())), Nft&>);
+	static_assert(std::is_same_v<decltype(std::declval<Nft&&>().concatenate(std::declval<Nft&&>())), Nft>);
+	static_assert(std::is_same_v<decltype(std::declval<Nft&>().unite_nondet_with(std::declval<const Nft&>())), Nft&>);
+	static_assert(std::is_same_v<decltype(std::declval<Nft&&>().unite_nondet_with(std::declval<const Nft&>())), Nft>);
+	static_assert(std::is_same_v<decltype(std::declval<Nft&>().unite_nondet_with(std::declval<Nft&&>())), Nft&>);
+	static_assert(std::is_same_v<decltype(std::declval<Nft&&>().unite_nondet_with(std::declval<Nft&&>())), Nft>);
 }

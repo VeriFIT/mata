@@ -2,6 +2,7 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
+#include <type_traits>
 
 #include "mata/nfa/algorithms.hh"
 #include "mata/nfa/nfa.hh"
@@ -428,4 +429,152 @@ TEST_CASE("mata::nfa::Delta::append_shifted()") {
 		CHECK_THROWS_AS(lhs.append_shifted(rhs, Limits::max_state), std::overflow_error);
 		CHECK_THROWS_AS(lhs.append_shifted(Delta{rhs}, Limits::max_state), std::overflow_error);
 	}
+}
+
+TEST_CASE("mata::nfa::Nfa ref-qualified in-place operations") {
+	const std::vector<std::pair<Nfa, Nfa>> operands{
+		{chain_nfa(3), chain_nfa(2)},	{tangled_nfa(), chain_nfa(4)}, {chain_nfa(4), tangled_nfa()},
+		{tangled_nfa(), tangled_nfa()}, {Nfa{}, chain_nfa(3)},		   {chain_nfa(3), Nfa{}},
+	};
+
+	SECTION("lvalue operations return the same automaton by reference") {
+		Nfa trimmed{tangled_nfa()};
+		CHECK(&trimmed.trim() == &trimmed);
+		CHECK(&trimmed.unify_initial() == &trimmed);
+		CHECK(&trimmed.unify_final() == &trimmed);
+		CHECK(&trimmed.swap_final_nonfinal() == &trimmed);
+
+		Nfa concatenated{chain_nfa(3)};
+		CHECK(&concatenated.concatenate(chain_nfa(2)) == &concatenated);
+		CHECK(&concatenated.unite_nondet_with(chain_nfa(2)) == &concatenated);
+
+		Nfa complemented{chain_nfa(3)};
+		const mata::utils::OrdVector<Symbol> symbols{'a'};
+		CHECK(&complemented.complement_deterministic(symbols) == &complemented);
+	}
+
+	SECTION("trim() on an rvalue moves the result out instead of copying it") {
+		Nfa untrimmed{tangled_nfa()};
+		untrimmed.initial.insert(1);
+		Nfa expected{untrimmed};
+		expected.trim();
+
+		const Nfa trimmed{std::move(untrimmed).trim()};
+		CHECK(trimmed.is_identical(expected));
+		CHECK(trimmed.delta.num_of_transitions() == expected.delta.num_of_transitions());
+	}
+
+	SECTION("unify_initial() and unify_final() on an rvalue agree with the lvalue path") {
+		Nfa expected{tangled_nfa()};
+		expected.unify_initial();
+		expected.unify_final();
+
+		Nfa source{tangled_nfa()};
+		const Nfa chained{std::move(source).unify_initial().unify_final()};
+		CHECK(chained.is_identical(expected));
+		CHECK(source.num_of_states() == 0);
+		CHECK(source.delta.empty());
+	}
+
+	SECTION("concatenate() and unite_nondet_with() on an rvalue agree with the lvalue path") {
+		for (const auto& [lhs, rhs] : operands) {
+			Nfa expected{lhs};
+			expected.concatenate(rhs);
+			CHECK(Nfa{lhs}.concatenate(rhs).is_identical(expected));
+
+			Nfa united_expected{lhs};
+			united_expected.unite_nondet_with(rhs);
+			CHECK(Nfa{lhs}.unite_nondet_with(rhs).is_identical(united_expected));
+		}
+
+		Nfa source{chain_nfa(3)};
+		const Nfa united{std::move(source).unite_nondet_with(chain_nfa(2))};
+		CHECK(source.num_of_states() == 0);
+		CHECK(source.delta.empty());
+		CHECK(united.is_identical(union_nondet(chain_nfa(3), chain_nfa(2))));
+	}
+
+	SECTION("complement_deterministic() on an rvalue agrees with the lvalue path") {
+		const mata::utils::OrdVector<Symbol> symbols{'a', 'b', 'c'};
+		Nfa expected{chain_nfa(3)};
+		expected.complement_deterministic(symbols);
+
+		Nfa source{chain_nfa(3)};
+		const Nfa complemented{std::move(source).complement_deterministic(symbols)};
+		CHECK(complemented.is_identical(expected));
+		CHECK(source.num_of_states() == 0);
+		CHECK(source.delta.empty());
+	}
+
+	SECTION("swap_final_nonfinal() on an rvalue returns the swapped automaton") {
+		Nfa expected{chain_nfa(3)};
+		expected.swap_final_nonfinal();
+
+		Nfa source{chain_nfa(3)};
+		const Nfa swapped{std::move(source).swap_final_nonfinal()};
+		CHECK(swapped.is_identical(expected));
+		CHECK(source.num_of_states() == 0);
+		CHECK(source.delta.empty());
+	}
+
+	SECTION("trim() on an rvalue reports the same state renaming") {
+		StateRenaming expected_renaming{};
+		Nfa expected{tangled_nfa()};
+		expected.trim(&expected_renaming);
+
+		StateRenaming renaming{};
+		const Nfa trimmed{Nfa{tangled_nfa()}.trim(&renaming)};
+		CHECK(trimmed.is_identical(expected));
+		CHECK(renaming == expected_renaming);
+	}
+
+	SECTION("the source automaton is left empty by an in-place operation on an rvalue") {
+		Nfa source{tangled_nfa()};
+		const Nfa trimmed{std::move(source).trim()};
+		// NOLINTNEXTLINE(bugprone-use-after-move): the moved-from state is exactly what is asserted here.
+		CHECK(source.num_of_states() == 0);
+		CHECK(source.initial.empty());
+		CHECK(source.final.empty());
+		CHECK(source.delta.empty());
+		CHECK(trimmed.is_identical(Nfa{tangled_nfa()}.trim()));
+
+		Nfa concat_source{chain_nfa(3)};
+		Nfa operand{chain_nfa(2)};
+		const Nfa concatenated{std::move(concat_source).concatenate(std::move(operand))};
+		// NOLINTNEXTLINE(bugprone-use-after-move): the moved-from state is exactly what is asserted here.
+		CHECK(concat_source.delta.empty());
+		// NOLINTNEXTLINE(bugprone-use-after-move): the moved-from state is exactly what is asserted here.
+		CHECK(operand.delta.empty());
+		CHECK(concatenated.is_identical(concatenate(chain_nfa(3), chain_nfa(2))));
+	}
+}
+
+TEST_CASE("mata::nfa::Nfa ref-qualified in-place operations are selected by value category") {
+	// An lvalue keeps returning a reference to itself, an rvalue returns a new automaton by value.
+	static_assert(std::is_same_v<decltype(std::declval<Nfa&>().trim()), Nfa&>);
+	static_assert(std::is_same_v<decltype(std::declval<Nfa&&>().trim()), Nfa>);
+	static_assert(std::is_same_v<decltype(std::declval<Nfa&>().unify_initial()), Nfa&>);
+	static_assert(std::is_same_v<decltype(std::declval<Nfa&&>().unify_initial()), Nfa>);
+	static_assert(std::is_same_v<decltype(std::declval<Nfa&>().unify_final()), Nfa&>);
+	static_assert(std::is_same_v<decltype(std::declval<Nfa&&>().unify_final()), Nfa>);
+	static_assert(std::is_same_v<decltype(std::declval<Nfa&>().swap_final_nonfinal()), Nfa&>);
+	static_assert(std::is_same_v<decltype(std::declval<Nfa&&>().swap_final_nonfinal()), Nfa>);
+	static_assert(std::is_same_v<decltype(std::declval<Nfa&>().concatenate(std::declval<const Nfa&>())), Nfa&>);
+	static_assert(std::is_same_v<decltype(std::declval<Nfa&&>().concatenate(std::declval<const Nfa&>())), Nfa>);
+	static_assert(std::is_same_v<decltype(std::declval<Nfa&>().concatenate(std::declval<Nfa&&>())), Nfa&>);
+	static_assert(std::is_same_v<decltype(std::declval<Nfa&&>().concatenate(std::declval<Nfa&&>())), Nfa>);
+	static_assert(std::is_same_v<decltype(std::declval<Nfa&>().unite_nondet_with(std::declval<const Nfa&>())), Nfa&>);
+	static_assert(std::is_same_v<decltype(std::declval<Nfa&&>().unite_nondet_with(std::declval<const Nfa&>())), Nfa>);
+	static_assert(std::is_same_v<decltype(std::declval<Nfa&>().unite_nondet_with(std::declval<Nfa&&>())), Nfa&>);
+	static_assert(std::is_same_v<decltype(std::declval<Nfa&&>().unite_nondet_with(std::declval<Nfa&&>())), Nfa>);
+	static_assert(std::is_same_v<
+				  decltype(std::declval<Nfa&>()
+							   .complement_deterministic(std::declval<const mata::utils::OrdVector<Symbol>&>())),
+				  Nfa&>);
+	static_assert(std::is_same_v<
+				  decltype(std::declval<Nfa&&>()
+							   .complement_deterministic(std::declval<const mata::utils::OrdVector<Symbol>&>())),
+				  Nfa>);
+	static_assert(std::is_same_v<decltype(Nfa{}.concatenate(Nfa{})), Nfa>);
+	static_assert(!std::is_reference_v<decltype(Nfa{}.concatenate(Nfa{}))>);
 }

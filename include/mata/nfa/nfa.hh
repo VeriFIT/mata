@@ -224,7 +224,19 @@ class Nfa : public Automaton {
 	 * @param[in] force_new_state Whether to force creating a new state even when initial states are already unified.
 	 * @return @c this after unification.
 	 */
-	Nfa& unify_initial(bool force_new_state = false);
+	Nfa& unify_initial(bool force_new_state = false) &;
+	/**
+	 * @brief Unify initial states in place on an rvalue and return the unified automaton by value.
+	 *
+	 * Unlike the lvalue overload, the result is moved out of @c this, so initializing or returning it does not
+	 *  copy the automaton.
+	 * @param[in] force_new_state Whether to force creating a new state even when initial states are already unified.
+	 * @return @c this after unification, as a value.
+	 */
+	Nfa unify_initial(bool force_new_state = false) && {
+		unify_initial(force_new_state);
+		return std::move(*this);
+	}
 
 	/**
 	 * @brief Unify final states into a single new final state.
@@ -232,14 +244,35 @@ class Nfa : public Automaton {
 	 * @param[in] force_new_state Whether to force creating a new state even when final states are already unified.
 	 * @return @c this after unification.
 	 */
-	Nfa& unify_final(bool force_new_state = false);
+	Nfa& unify_final(bool force_new_state = false) &;
+	/**
+	 * @brief Unify final states in place on an rvalue and return the unified automaton by value.
+	 *
+	 * Unlike the lvalue overload, the result is moved out of @c this, so initializing or returning it does not
+	 *  copy the automaton.
+	 * @param[in] force_new_state Whether to force creating a new state even when final states are already unified.
+	 * @return @c this after unification, as a value.
+	 */
+	Nfa unify_final(bool force_new_state = false) && {
+		unify_final(force_new_state);
+		return std::move(*this);
+	}
 
 	/**
 	 * Swap final and non-final states in-place.
+	 * @return @c this with swapped final states.
 	 */
-	Nfa& swap_final_nonfinal() {
+	Nfa& swap_final_nonfinal() & {
 		final.complement(num_of_states());
 		return *this;
+	}
+	/**
+	 * Swap final and non-final states in place on an rvalue and return the automaton by value.
+	 * @return @c this with swapped final states, as a value.
+	 */
+	Nfa swap_final_nonfinal() && {
+		swap_final_nonfinal();
+		return std::move(*this);
 	}
 
 	/**
@@ -263,7 +296,19 @@ class Nfa : public Automaton {
 	 * @param[out] state_renaming Mapping of trimmed states to new states.
 	 * @return @c this after trimming.
 	 */
-	Nfa& trim(StateRenaming* state_renaming = nullptr) { return Automaton::trim(state_renaming); }
+	Nfa& trim(StateRenaming* state_renaming = nullptr) & { return Automaton::trim(state_renaming); }
+	/**
+	 * @brief Trim an rvalue automaton in place and return the trimmed automaton by value.
+	 *
+	 * Unlike the lvalue overload, the result is moved out of @c this, so `Nfa t{f().trim()}` or `return f().trim()`
+	 *  does not copy the automaton.
+	 * @param[out] state_renaming Mapping of trimmed states to new states.
+	 * @return @c this after trimming, as a value.
+	 */
+	Nfa trim(StateRenaming* state_renaming = nullptr) && {
+		trim(state_renaming);
+		return std::move(*this);
+	}
 
 	/**
 	 * @brief Decodes automaton from UTF-8 encoding. Method removes unreachable states from delta.
@@ -298,23 +343,50 @@ class Nfa : public Automaton {
 
 	/**
 	 * @brief In-place concatenation.
+	 * @return @c this after concatenation.
 	 */
-	Nfa& concatenate(const Nfa& aut);
+	Nfa& concatenate(const Nfa& aut) &;
+	/**
+	 * @brief In-place concatenation on an rvalue, returning the concatenated automaton by value.
+	 * @return @c this after concatenation, as a value.
+	 */
+	Nfa concatenate(const Nfa& aut) && {
+		concatenate(aut);
+		return std::move(*this);
+	}
 	/**
 	 * @brief In-place concatenation, consuming @p aut.
 	 *
 	 * The state posts of @p aut are moved into @c this. If @c this and @p aut are aliased,
 	 * a controlled snapshot is taken and the operation falls back to the lvalue path.
 	 * @p aut is left valid but empty after the operation.
+	 * @return @c this after concatenation.
 	 */
-	Nfa& concatenate(Nfa&& aut);
+	Nfa& concatenate(Nfa&& aut) &;
+	/**
+	 * @brief In-place concatenation on an rvalue, consuming @p aut and returning the result by value.
+	 * @return @c this after concatenation, as a value.
+	 */
+	Nfa concatenate(Nfa&& aut) && {
+		concatenate(std::move(aut));
+		return std::move(*this);
+	}
 
 	/**
 	 * @brief In-place nondeterministic union of @c this with @p nfa.
 	 *
 	 * Does not add epsilon transitions, just unites initial and final states.
+	 * @return @c this after uniting with @p nfa.
 	 */
-	Nfa& unite_nondet_with(const Nfa& nfa);
+	Nfa& unite_nondet_with(const Nfa& nfa) &;
+	/**
+	 * @brief In-place nondeterministic union on an rvalue, returning the result by value.
+	 * @return @c this after uniting with @p nfa, as a value.
+	 */
+	Nfa unite_nondet_with(const Nfa& nfa) && {
+		unite_nondet_with(nfa);
+		return std::move(*this);
+	}
 	/**
 	 * @brief In-place nondeterministic union of @c this with @p nfa, consuming @p nfa.
 	 *
@@ -323,8 +395,17 @@ class Nfa : public Automaton {
 	 * If @c this and @p nfa are aliased (which should not normally happen with rvalues),
 	 * a controlled snapshot is taken and the operation falls back to the lvalue path.
 	 * @p nfa is left valid but empty after the operation.
+	 * @return @c this after uniting with @p nfa.
 	 */
-	Nfa& unite_nondet_with(Nfa&& nfa);
+	Nfa& unite_nondet_with(Nfa&& nfa) &;
+	/**
+	 * @brief In-place nondeterministic union on an rvalue, consuming @p nfa and returning the result by value.
+	 * @return @c this after uniting with @p nfa, as a value.
+	 */
+	Nfa unite_nondet_with(Nfa&& nfa) && {
+		unite_nondet_with(std::move(nfa));
+		return std::move(*this);
+	}
 
 	/**
 	 * Unify transitions to create a directed graph with at most a single transition between two states.
@@ -890,7 +971,23 @@ class Nfa : public Automaton {
 	 */
 	Nfa& complement_deterministic(
 		const mata::utils::OrdVector<Symbol>& symbols, std::optional<State> sink_state = std::nullopt
-	);
+	) &;
+	/**
+	 * Complement a deterministic rvalue automaton in place and return the result by value.
+	 *
+	 * Unlike the lvalue overload, the result is moved out of @c this, so initializing or returning it does not
+	 *  copy the automaton.
+	 * @param[in] symbols Symbols needed to make the automaton complete.
+	 * @param[in] sink_state State to be used as a sink state. Adds a new sink state when not specified.
+	 * @return DFA complemented in-place, as a value.
+	 * @pre @c this is a deterministic automaton.
+	 */
+	Nfa complement_deterministic(
+		const mata::utils::OrdVector<Symbol>& symbols, std::optional<State> sink_state = std::nullopt
+	) && {
+		complement_deterministic(symbols, sink_state);
+		return std::move(*this);
+	}
 }; // class Nfa.
 
 // Allow variadic number of arguments of the same type.
