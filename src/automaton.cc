@@ -338,7 +338,16 @@ void Automaton::tarjan_scc_discover(
 	const TarjanDiscoverCallback& callback,
 	const std::optional<std::reference_wrapper<const SparseSet<State>>> initial_states
 ) const {
-	auto scc_callback = [&callback](const std::span<const State> scc, const std::span<const State> remaining_stack) {
+	// A copy of a std::function copies its target, so a stateful callback would mutate the copy instead of the
+	//  caller's object. Wrap with lambdas that forward to the originals, and keep the old skips of empty functions.
+	auto state_discover = [&callback](const State state) {
+		if (!callback.state_discover) { return false; }
+		return callback.state_discover(state);
+	};
+	auto succ_state_discover = [&callback](const State from, const State to) {
+		if (callback.succ_state_discover) { callback.succ_state_discover(from, to); }
+	};
+	auto scc_discover = [&callback](const std::span<const State> scc, const std::span<const State> remaining_stack) {
 		if (!callback.scc_discover) { return false; }
 		// Keep the std::vector-based public interface and its pop order (top of the Tarjan stack first). Internal
 		//  callers take the spans directly and avoid these copies.
@@ -346,8 +355,12 @@ void Automaton::tarjan_scc_discover(
 		const std::vector<State> stack_vector{remaining_stack.begin(), remaining_stack.end()};
 		return callback.scc_discover(scc_vector, stack_vector);
 	};
+	auto scc_state_discover = [&callback](const State state) {
+		if (callback.scc_state_discover) { callback.scc_state_discover(state); }
+	};
 	const mata::nfa::internal::TarjanCallbacks callbacks{
-		callback.state_discover, callback.succ_state_discover, std::move(scc_callback), callback.scc_state_discover
+		std::move(state_discover), std::move(succ_state_discover), std::move(scc_discover),
+		std::move(scc_state_discover)
 	};
 	mata::nfa::internal::tarjan_scc_discover(
 		this->delta, this->num_of_states(), initial_states.value_or(this->initial), callbacks

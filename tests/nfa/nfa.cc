@@ -7891,6 +7891,19 @@ TEST_CASE("mata::Automaton::tarjan_scc_discover keeps components and callback be
 		std::ranges::sort(components);
 		CHECK(components == std::vector<std::vector<State>>{{2, 3}, {4}});
 	}
+	SECTION("a stateful callback keeps its state across traversals") {
+		// The wrapper used to copy the std::functions, so the counter reset on every traversal.
+		unsigned discovered{0};
+		Automaton::TarjanDiscoverCallback stateful{};
+		stateful.state_discover = [&discovered](const State) {
+			++discovered;
+			return discovered == 2 || discovered == 4;
+		};
+		aut.tarjan_scc_discover(stateful);
+		CHECK(discovered == 2); // Stopped at the second state.
+		aut.tarjan_scc_discover(stateful);
+		CHECK(discovered == 4); // Continued counting, not restarted from the copy.
+	}
 }
 
 TEST_CASE("mata::nfa::Nfa::print_to_dot() prints the edges of a state in ascending target order (#749)") {
