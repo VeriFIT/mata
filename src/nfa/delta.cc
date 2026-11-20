@@ -408,94 +408,6 @@ size_t Delta::num_of_transitions() const {
 
 bool Delta::empty() const { return num_of_transitions() == 0; }
 
-Delta::Transitions::const_iterator::const_iterator(const Delta& delta) : delta_{&delta} {
-	const size_t post_size = delta_->num_of_states();
-	for (State i = 0; i < post_size; ++i) {
-		if (!(*delta_)[i].empty()) {
-			current_state_ = i;
-			state_post_it_ = (*delta_)[i].begin();
-			symbol_post_it_ = state_post_it_->targets.begin();
-			transition_.source = current_state_;
-			transition_.symbol = state_post_it_->symbol;
-			transition_.target = *symbol_post_it_;
-			return;
-		}
-	}
-
-	// No transition found, delta contains only empty state posts.
-	is_end_ = true;
-}
-
-Delta::Transitions::const_iterator::const_iterator(const Delta& delta, const State current_state)
-	: delta_{&delta},
-	  current_state_{current_state} {
-	const size_t post_size = delta_->num_of_states();
-	for (State source{current_state_}; source < post_size; ++source) {
-		if (const StatePost& state_post{delta_->state_post(source)}; !state_post.empty()) {
-			current_state_ = source;
-			state_post_it_ = state_post.begin();
-			symbol_post_it_ = state_post_it_->targets.begin();
-			transition_.source = current_state_;
-			transition_.symbol = state_post_it_->symbol;
-			transition_.target = *symbol_post_it_;
-			return;
-		}
-	}
-
-	// No transition found, delta from the current state contains only empty state posts.
-	is_end_ = true;
-}
-
-Delta::Transitions::const_iterator& Delta::Transitions::const_iterator::operator++() {
-	MATA_ASSERT(delta_->begin() != delta_->end());
-
-	symbol_post_it_ = std::next(symbol_post_it_);
-	if (symbol_post_it_ != state_post_it_->targets.end()) {
-		transition_.target = *symbol_post_it_;
-		return *this;
-	}
-
-	++state_post_it_;
-	if (state_post_it_ != (*delta_)[current_state_].cend()) {
-		symbol_post_it_ = state_post_it_->targets.begin();
-		transition_.symbol = state_post_it_->symbol;
-		transition_.target = *symbol_post_it_;
-		return *this;
-	}
-
-	const size_t state_posts_size{delta_->num_of_states()};
-	do { // Skip empty posts.
-		++current_state_;
-	} while (current_state_ < state_posts_size && (*delta_)[current_state_].empty());
-	if (current_state_ >= state_posts_size) {
-		is_end_ = true;
-		return *this;
-	}
-
-	const StatePost& state_post{(*delta_)[current_state_]};
-	state_post_it_ = state_post.begin();
-	symbol_post_it_ = state_post_it_->targets.begin();
-
-	transition_.source = current_state_;
-	transition_.symbol = state_post_it_->symbol;
-	transition_.target = *symbol_post_it_;
-
-	return *this;
-}
-
-Delta::Transitions::const_iterator Delta::Transitions::const_iterator::operator++(int) {
-	const Delta::Transitions::const_iterator tmp{*this};
-	++(*this);
-	return tmp;
-}
-
-bool Delta::Transitions::const_iterator::operator==(const Delta::Transitions::const_iterator& other) const {
-	if (is_end_ && other.is_end_) { return true; }
-	if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) { return false; }
-	return current_state_ == other.current_state_ && state_post_it_ == other.state_post_it_ &&
-		   symbol_post_it_ == other.symbol_post_it_;
-}
-
 std::vector<StatePost> Delta::renumber_targets(const std::function<State(State)>& target_renumberer) const {
 	std::vector<StatePost> copied_state_posts;
 	copied_state_posts.reserve(num_of_states());
@@ -744,88 +656,10 @@ StatePost::const_iterator StatePost::first_epsilon_it(const Symbol first_epsilon
 	return end_it;
 }
 
-StatePost::Moves::const_iterator::const_iterator(
-	const StatePost::const_iterator symbol_post_it, const StatePost::const_iterator symbol_post_end
-)
-	: symbol_post_it_{symbol_post_it},
-	  symbol_post_end_{symbol_post_end} {
-	if (symbol_post_it_ == symbol_post_end_) {
-		is_end_ = true;
-		return;
-	}
-
-	move_.symbol = symbol_post_it_->symbol;
-	target_it_ = symbol_post_it_->targets.cbegin();
-	move_.target = *target_it_;
-}
-
-StatePost::Moves::const_iterator::const_iterator(const StatePost& state_post)
-	: symbol_post_it_{state_post.begin()},
-	  symbol_post_end_{state_post.end()} {
-	if (symbol_post_it_ == symbol_post_end_) {
-		is_end_ = true;
-		return;
-	}
-
-	move_.symbol = symbol_post_it_->symbol;
-	target_it_ = symbol_post_it_->targets.cbegin();
-	move_.target = *target_it_;
-}
-
-StatePost::Moves::const_iterator& StatePost::Moves::const_iterator::operator++() {
-	target_it_ = std::next(target_it_);
-	if (target_it_ != symbol_post_it_->targets.end()) {
-		move_.target = *target_it_;
-		return *this;
-	}
-
-	// Iterate over to the next symbol post, which can be either an end iterator, or symbol post whose
-	//  symbol <= symbol_post_end_.
-	++symbol_post_it_;
-	if (symbol_post_it_ == symbol_post_end_) {
-		is_end_ = true;
-		return *this;
-	}
-	// The current symbol post is valid (not equal symbol_post_end_).
-	move_.symbol = symbol_post_it_->symbol;
-	target_it_ = symbol_post_it_->targets.begin();
-	move_.target = *target_it_;
-	return *this;
-}
-
-StatePost::Moves::const_iterator StatePost::Moves::const_iterator::operator++(int) {
-	const StatePost::Moves::const_iterator tmp{*this};
-	++(*this);
-	return tmp;
-}
-
-bool StatePost::Moves::const_iterator::operator==(const StatePost::Moves::const_iterator& other) const {
-	if (is_end_ && other.is_end_) { return true; }
-	if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) { return false; }
-	return symbol_post_it_ == other.symbol_post_it_ && target_it_ == other.target_it_ &&
-		   symbol_post_end_ == other.symbol_post_end_;
-}
-
 size_t StatePost::num_of_moves() const {
 	size_t counter{0};
 	for (const SymbolPost& symbol_post : *this) { counter += symbol_post.num_of_targets(); }
 	return counter;
-}
-
-StatePost::Moves& StatePost::Moves::operator=(StatePost::Moves&& other) noexcept {
-	if (&other != this) {
-		symbol_post_it_ = other.symbol_post_it_;
-		symbol_post_end_ = other.symbol_post_end_;
-	}
-	return *this;
-}
-
-StatePost::Moves& StatePost::Moves::operator=(const Moves& other) noexcept {
-	if (&other != this) {
-		symbol_post_it_ = other.symbol_post_it_;
-		symbol_post_end_ = other.symbol_post_end_;
-	}
-	return *this;
 }
 
 StatePost::Moves
@@ -842,18 +676,7 @@ StatePost::Moves StatePost::moves_symbols(const Symbol last_symbol) const {
 	return {cbegin(), first_epsilon_it(last_symbol + 1)};
 }
 
-StatePost::Moves::const_iterator StatePost::Moves::begin() const { return {symbol_post_it_, symbol_post_end_}; }
-
-StatePost::Moves::const_iterator StatePost::Moves::end() { return const_iterator{}; }
-
 Delta::Transitions Delta::transitions() const { return Transitions{this}; }
-
-Delta::Transitions::const_iterator Delta::Transitions::begin() const { return const_iterator{*delta_}; }
-Delta::Transitions::const_iterator Delta::Transitions::end() { return const_iterator{}; }
-
-StatePost::Moves::Moves(const StatePost::const_iterator symbol_post_it, const StatePost::const_iterator symbol_post_end)
-	: symbol_post_it_{symbol_post_it},
-	  symbol_post_end_{symbol_post_end} {}
 
 void Delta::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
 	const size_t aut_num_of_states{num_of_states()};

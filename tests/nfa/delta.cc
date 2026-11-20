@@ -13,8 +13,10 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <concepts>
 #include <functional>
 #include <random>
+#include <ranges>
 #include <set>
 #include <thread>
 #include <vector>
@@ -1444,4 +1446,33 @@ TEST_CASE("mata::nfa::Delta concurrent const queries of a dirty count") {
 		CHECK(!s.empty);
 		CHECK(s.count_of_copy == 4);
 	}
+}
+
+static_assert(std::forward_iterator<StatePost::Moves::const_iterator>);
+static_assert(std::forward_iterator<Delta::Transitions::const_iterator>);
+static_assert(std::ranges::input_range<StatePost::Moves>);
+static_assert(std::ranges::input_range<Delta::Transitions>);
+
+TEST_CASE("mata::nfa::Delta iterators compose with ranges") {
+	StatePost source{};
+	source.push_back(SymbolPost{'a', {1, 2}});
+	source.push_back(SymbolPost{'b', {3, 4}});
+	const StatePost::Moves moves{source.moves()};
+	// A const Moves object must be copyable. This used to attempt Moves(Moves&) instead.
+	const StatePost::Moves moves_copy{moves};
+	const std::vector<Move> odd_targets{moves_copy.begin(), moves_copy.end()};
+	CHECK(odd_targets == std::vector<Move>{{'a', 1}, {'a', 2}, {'b', 3}, {'b', 4}});
+	CHECK(std::ranges::distance(moves) == std::ranges::distance(moves_copy));
+
+	auto filtered{std::views::filter(moves, [](const Move& move) { return move.target % 2 != 0; })};
+	CHECK(std::vector<Move>{filtered.begin(), filtered.end()} == std::vector<Move>{{'a', 1}, {'b', 3}});
+
+	Delta delta{};
+	delta.add(0, 'a', 2);
+	delta.add(2, 'b', 0);
+	CHECK(std::ranges::distance(delta.transitions()) == 2);
+	auto filtered_transitions{std::views::filter(delta.transitions(), [](const Transition& transition) {
+		return transition.source == transition.target;
+	})};
+	CHECK(std::vector<Transition>{filtered_transitions.begin(), filtered_transitions.end()}.empty());
 }

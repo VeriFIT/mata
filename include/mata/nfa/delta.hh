@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstddef>
 #include <iterator>
 #include <span>
 #include <utility>
@@ -264,11 +265,13 @@ class StatePost : utils::OrdVector<SymbolPost, utils::DeltaAllocator<SymbolPost>
 		 * @param[in] symbol_post_end End iterator over symbol posts (which functions as an sentinel; is not iterated
 		 * over).
 		 */
-		Moves(StatePost::const_iterator symbol_post_it, StatePost::const_iterator symbol_post_end);
+		Moves(const StatePost::const_iterator symbol_post_it, const StatePost::const_iterator symbol_post_end)
+			: symbol_post_it_{symbol_post_it},
+			  symbol_post_end_{symbol_post_end} {}
 		Moves(Moves&&) = default;
-		Moves(Moves&) = default;
-		Moves& operator=(Moves&& other) noexcept;
-		Moves& operator=(const Moves& other) noexcept;
+		Moves(const Moves&) = default;
+		Moves& operator=(Moves&& other) noexcept = default;
+		Moves& operator=(const Moves& other) noexcept = default;
 
 		~Moves() = default;
 
@@ -406,24 +409,39 @@ class StatePost::Moves::const_iterator {
 	StatePost::const_iterator symbol_post_it_{};
 	SmallStateSet::const_iterator target_it_{};
 	StatePost::const_iterator symbol_post_end_{};
-	bool is_end_{false};
 	/// Internal allocated instance of @c Move which is set for the move currently iterated over and returned as
 	///  a reference with @c operator*().
 	Move move_{};
 
+	bool at_end() const { return symbol_post_it_ == symbol_post_end_; }
+
   public:
 	using iterator_category = std::forward_iterator_tag;
 	using value_type = Move;
-	using difference_type = size_t;
+	using difference_type = std::ptrdiff_t;
 	using pointer = Move*;
 	using reference = Move&;
 
 	/// Construct end iterator.
-	const_iterator() : is_end_{true} {}
+	const_iterator() = default;
 	/// Const all moves iterator.
-	const_iterator(const StatePost& state_post);
+	explicit const_iterator(const StatePost& state_post)
+		: symbol_post_it_{state_post.begin()},
+		  symbol_post_end_{state_post.end()} {
+		if (at_end()) { return; }
+		move_.symbol = symbol_post_it_->symbol;
+		target_it_ = symbol_post_it_->targets.cbegin();
+		move_.target = *target_it_;
+	}
 	/// Construct iterator from @p symbol_post_it (including) to @p symbol_post_end (excluding).
-	const_iterator(StatePost::const_iterator symbol_post_it, StatePost::const_iterator symbol_post_end);
+	const_iterator(const StatePost::const_iterator symbol_post_it, const StatePost::const_iterator symbol_post_end)
+		: symbol_post_it_{symbol_post_it},
+		  symbol_post_end_{symbol_post_end} {
+		if (at_end()) { return; }
+		move_.symbol = symbol_post_it_->symbol;
+		target_it_ = symbol_post_it_->targets.cbegin();
+		move_.target = *target_it_;
+	}
 	const_iterator(const const_iterator& other) noexcept = default;
 	const_iterator(const_iterator&&) = default;
 
@@ -431,17 +449,43 @@ class StatePost::Moves::const_iterator {
 	const Move* operator->() const { return &move_; }
 
 	// Prefix increment
-	const_iterator& operator++();
+	const_iterator& operator++() {
+		target_it_ = std::next(target_it_);
+		if (target_it_ != symbol_post_it_->targets.end()) {
+			move_.target = *target_it_;
+			return *this;
+		}
+		++symbol_post_it_;
+		if (at_end()) { return *this; }
+		move_.symbol = symbol_post_it_->symbol;
+		target_it_ = symbol_post_it_->targets.begin();
+		move_.target = *target_it_;
+		return *this;
+	}
 	// Postfix increment
-	const_iterator operator++(int);
+	const_iterator operator++(int) {
+		const const_iterator tmp{*this};
+		++(*this);
+		return tmp;
+	}
 
 	const_iterator& operator=(const const_iterator& other) noexcept = default;
 	const_iterator& operator=(const_iterator&&) = default;
 
 	~const_iterator() = default;
 
-	bool operator==(const const_iterator& other) const;
+	bool operator==(const const_iterator& other) const {
+		// A default-constructed end equals the end of any range, even if the actual end iterators do not match.
+		const bool this_at_end{at_end()}, other_at_end{other.at_end()};
+		if (this_at_end || other_at_end) { return this_at_end && other_at_end; }
+		return symbol_post_it_ == other.symbol_post_it_ && target_it_ == other.target_it_ &&
+			   symbol_post_end_ == other.symbol_post_end_;
+	}
 }; // class const_iterator.
+
+inline StatePost::Moves::const_iterator StatePost::Moves::begin() const { return {symbol_post_it_, symbol_post_end_}; }
+
+inline StatePost::Moves::const_iterator StatePost::Moves::end() { return {}; }
 
 /**
  * @brief Specialization of utils::SynchronizedExistentialIterator for iterating over SymbolPosts.
@@ -1195,20 +1239,50 @@ class Delta::Transitions::const_iterator {
 	const Delta* delta_ = nullptr;
 	State current_state_{};
 	StatePost::const_iterator state_post_it_{};
+	StatePost::const_iterator state_post_end_{};
 	SmallStateSet::const_iterator symbol_post_it_{};
-	bool is_end_{false};
 	Transition transition_{};
 
   public:
 	using iterator_category = std::forward_iterator_tag;
 	using value_type = Transition;
-	using difference_type = size_t;
+	using difference_type = std::ptrdiff_t;
 	using pointer = Transition*;
 	using reference = Transition&;
 
-	const_iterator() : is_end_{true} {}
-	explicit const_iterator(const Delta& delta);
-	const_iterator(const Delta& delta, State current_state);
+	const_iterator() = default;
+	explicit const_iterator(const Delta& delta) : delta_{&delta} {
+		const size_t post_size{delta_->num_of_states()};
+		for (State i = 0; i < post_size; ++i) {
+			if (!(*delta_)[i].empty()) {
+				current_state_ = i;
+				state_post_it_ = (*delta_)[i].begin();
+				state_post_end_ = (*delta_)[i].cend();
+				symbol_post_it_ = state_post_it_->targets.begin();
+				transition_.source = current_state_;
+				transition_.symbol = state_post_it_->symbol;
+				transition_.target = *symbol_post_it_;
+				return;
+			}
+		}
+		delta_ = nullptr;
+	}
+	const_iterator(const Delta& delta, State current_state) : delta_{&delta}, current_state_{current_state} {
+		const size_t post_size{delta_->num_of_states()};
+		for (State source{current_state_}; source < post_size; ++source) {
+			if (const StatePost& state_post{delta_->state_post(source)}; !state_post.empty()) {
+				current_state_ = source;
+				state_post_it_ = state_post.begin();
+				state_post_end_ = state_post.cend();
+				symbol_post_it_ = state_post_it_->targets.begin();
+				transition_.source = current_state_;
+				transition_.symbol = state_post_it_->symbol;
+				transition_.target = *symbol_post_it_;
+				return;
+			}
+		}
+		delta_ = nullptr;
+	}
 
 	const_iterator(const const_iterator& other) noexcept = default;
 	const_iterator(const_iterator&&) = default;
@@ -1217,17 +1291,60 @@ class Delta::Transitions::const_iterator {
 	const Transition* operator->() const { return &transition_; }
 
 	// Prefix increment
-	const_iterator& operator++();
+	const_iterator& operator++() {
+		MATA_ASSERT(delta_->begin() != delta_->end());
+
+		symbol_post_it_ = std::next(symbol_post_it_);
+		if (symbol_post_it_ != state_post_it_->targets.end()) {
+			transition_.target = *symbol_post_it_;
+			return *this;
+		}
+
+		++state_post_it_;
+		if (state_post_it_ != state_post_end_) {
+			symbol_post_it_ = state_post_it_->targets.begin();
+			transition_.symbol = state_post_it_->symbol;
+			transition_.target = *symbol_post_it_;
+			return *this;
+		}
+
+		const size_t state_posts_size{delta_->num_of_states()};
+		do { ++current_state_; } while (current_state_ < state_posts_size && (*delta_)[current_state_].empty());
+		if (current_state_ >= state_posts_size) {
+			delta_ = nullptr;
+			return *this;
+		}
+		const StatePost& state_post{(*delta_)[current_state_]};
+		state_post_it_ = state_post.begin();
+		state_post_end_ = state_post.cend();
+		symbol_post_it_ = state_post_it_->targets.begin();
+		transition_.source = current_state_;
+		transition_.symbol = state_post_it_->symbol;
+		transition_.target = *symbol_post_it_;
+		return *this;
+	}
 	// Postfix increment
-	const_iterator operator++(int);
+	const_iterator operator++(int) {
+		const const_iterator tmp{*this};
+		++(*this);
+		return tmp;
+	}
 
 	const_iterator& operator=(const const_iterator& other) noexcept = default;
 	const_iterator& operator=(const_iterator&&) = default;
 
 	~const_iterator() = default;
 
-	bool operator==(const const_iterator& other) const;
-}; // class Delta::Transitions::const_iterator.
+	bool operator==(const const_iterator& other) const {
+		if (delta_ == nullptr || other.delta_ == nullptr) { return delta_ == other.delta_; }
+		return current_state_ == other.current_state_ && state_post_it_ == other.state_post_it_ &&
+			   symbol_post_it_ == other.symbol_post_it_;
+	}
+}; // class const_iterator.
+
+inline Delta::Transitions::const_iterator Delta::Transitions::begin() const { return const_iterator{*delta_}; }
+
+inline Delta::Transitions::const_iterator Delta::Transitions::end() { return {}; }
 
 } // namespace mata::nfa.
 
