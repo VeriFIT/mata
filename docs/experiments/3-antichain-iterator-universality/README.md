@@ -9,8 +9,6 @@ discussion: https://github.com/VeriFIT/mata/issues/752
 tags: ["performance", "antichains", "iterators"]
 ---
 
-# EXP-3: Adaptive existential iterator merging, and universality through inclusion
-
 ## Question
 
 `#752` asks whether (c) an adaptive `SynchronizedExistentialIterator`, choosing heap merge instead of a scan, and (d)
