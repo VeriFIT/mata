@@ -202,7 +202,7 @@ class StatePost : utils::OrdVector<SymbolPost, utils::DeltaAllocator<SymbolPost>
 		});
 	}
 	using super::empty, super::size;
-	using super::insert;
+	using super::insert, super::emplace;
 	using super::reserve;
 	using super::to_vector;
 	// dangerous, breaks the sortedness invariant
@@ -1022,9 +1022,7 @@ class Delta {
 	bool grow_for_states(States... states) {
 		if constexpr (sizeof...(states) > 0) {
 			if (const State max_state{std::max({static_cast<State>(states)...})}; max_state >= num_of_states()) {
-				const size_t new_size{num_of_states_for(max_state)};
-				reserve_on_insert(state_posts_, max_state);
-				state_posts_.resize(new_size);
+				state_posts_.resize(num_of_states_for(max_state));
 				return true;
 			}
 		}

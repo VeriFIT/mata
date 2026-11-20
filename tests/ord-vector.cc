@@ -360,6 +360,23 @@ TEST_CASE("mata::utils::OrdVector::insert() with a hint - issue #769") {
 	}
 }
 
+TEST_CASE("mata::utils::OrdVector::insert() and emplace() paths - issue #179") {
+	OrdVector<std::vector<int>> vec{};
+	std::vector<int> two{2, 2};
+	const auto [appended, appended_new] = vec.insert(std::move(two));
+	CHECK(appended_new);
+	CHECK(*appended == std::vector<int>{2, 2});
+	CHECK(two.empty()); // Moved from, not copied.
+	CHECK(vec.emplace(3, 3).second); // Append.
+	CHECK(vec.emplace(1, 1).second); // Front.
+	const auto [middle, middle_new] = vec.emplace(std::initializer_list<int>{2, 5});
+	CHECK(middle_new);
+	CHECK(*middle == std::vector<int>{2, 5});
+	std::vector<int> duplicate{3, 3, 3};
+	CHECK(!vec.insert(std::move(duplicate)).second);
+	CHECK(vec.to_vector() == std::vector<std::vector<int>>{{1}, {2, 2}, {2, 5}, {3, 3, 3}});
+}
+
 TEST_CASE("mata::utils::is_sorted() - issue #769") {
 	CHECK(mata::utils::is_sorted(std::vector<int>{}));
 	CHECK(mata::utils::is_sorted(std::vector<int>{1}));

@@ -215,7 +215,7 @@ void Delta::add(const State source, Symbol symbol, const State target) {
 
 	StatePost& state_transitions{state_posts_[source]};
 	if (state_transitions.empty() || state_transitions.back().symbol < symbol) {
-		state_transitions.insert(SymbolPost{symbol, target});
+		state_transitions.emplace_back(symbol, target);
 		note_added(1);
 		return;
 	}
@@ -225,7 +225,7 @@ void Delta::add(const State source, Symbol symbol, const State target) {
 		if (symbol_transitions->insert(target)) { note_added(1); }
 	} else {
 		// Add transition to a new Move struct with symbol yet unused on transitions from state_from.
-		state_transitions.insert(SymbolPost{symbol, target});
+		state_transitions.emplace(symbol, target);
 		note_added(1);
 	}
 }
@@ -240,7 +240,7 @@ void Delta::add(const State source, const Symbol symbol, const std::span<const S
 
 	StatePost& state_transitions{state_posts_[source]};
 	if (state_transitions.empty() || state_transitions.back().symbol < symbol) {
-		state_transitions.insert({symbol, targets});
+		state_transitions.emplace_back(symbol, targets);
 		note_added(num_of_targets);
 		return;
 	}
@@ -249,7 +249,7 @@ void Delta::add(const State source, const Symbol symbol, const std::span<const S
 		note_added(symbol_transitions->insert(targets));
 	} else {
 		// Add transition to a new Move struct with symbol yet unused on transitions from state_from.
-		state_transitions.insert(SymbolPost{symbol, targets});
+		state_transitions.emplace(symbol, targets);
 		note_added(num_of_targets);
 	}
 }
@@ -262,7 +262,7 @@ void Delta::add(const State source, SymbolPost&& symbol_post) {
 	StatePost& state_post{state_posts_[source]};
 	const size_t num_of_targets{symbol_post.targets.size()};
 	if (state_post.empty() || state_post.back().symbol < symbol_post.symbol) {
-		state_post.insert(std::move(symbol_post));
+		state_post.emplace_back(std::move(symbol_post));
 		note_added(num_of_targets);
 		return;
 	}
@@ -641,11 +641,7 @@ Delta Delta::reverted(const size_t num_of_states) const {
 }
 
 StatePost& Delta::mutable_state_post(const State source) {
-	if (source >= state_posts_.size()) {
-		const size_t new_size{num_of_states_for(source)};
-		utils::reserve_on_insert(state_posts_, source);
-		state_posts_.resize(new_size);
-	}
+	if (source >= state_posts_.size()) { state_posts_.resize(num_of_states_for(source)); }
 
 	++mutation_epoch_;
 	mark_count_dirty(); // Raw edits invalidate the count
