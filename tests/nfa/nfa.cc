@@ -7725,3 +7725,22 @@ TEST_CASE("mata::nfa::get_useful_states() with brute-force oracle") {
 		CHECK(trimmed.num_of_states() == 10);
 	}
 }
+
+TEST_CASE("mata::nfa::Nfa::print_to_dot() prints the edges of a state in ascending target order (#749)") {
+	// Reproduces https://github.com/VeriFIT/mata/issues/749: hoisting the map grouping the symbols by target out of
+	//  the per-source loop (in #915) kept its bucket count across sources, so the edges of a state printed in an
+	//  order that depended on the states printed before it (state 1 printed 1 -> 14, 1 -> 2, 1 -> 1 here).
+	Nfa nfa{15};
+	for (State target{1}; target <= 14; ++target) { nfa.delta.add(0, 0, target); }
+	for (const State target : {1u, 2u, 14u}) { nfa.delta.add(1, 0, target); }
+
+	std::vector<std::string> edges_of_one;
+	std::istringstream dot_lines{nfa.print_to_dot()};
+	for (std::string line; std::getline(dot_lines, line);) {
+		if (line.starts_with("1 -> ")) { edges_of_one.push_back(line); }
+	}
+	CHECK(
+		edges_of_one ==
+		std::vector<std::string>{"1 -> 1 [label=\"0\"];", "1 -> 2 [label=\"0\"];", "1 -> 14 [label=\"0\"];"}
+	);
+}
