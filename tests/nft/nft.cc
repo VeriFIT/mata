@@ -5342,6 +5342,28 @@ TEST_CASE("mata::nft::project_out() preserves a sole empty retained post when pr
 	}
 }
 
+TEST_CASE("mata::nft::project_out() handles a linear path across projected levels") {
+	const Nft input{[] {
+		Nft nft{Nft::with_levels({3, {0, 1, 2, 0}}, 4, {0}, {3})};
+		nft.delta.add(0, EPSILON, 1);
+		nft.delta.add(1, EPSILON, 2);
+		nft.delta.add(2, 'a', 3);
+		return nft;
+	}()};
+	const Nft expected{[] {
+		Nft nft{Nft::with_levels({1, {0, 0}}, 2, {0}, {1})};
+		nft.delta.add(0, EPSILON, 1);
+		return nft;
+	}()};
+
+	for (const JumpMode jump_mode : {JumpMode::AppendDontCares, JumpMode::RepeatSymbol}) {
+		for (const auto& levels_to_project : {OrdVector<Level>{1, 2}, OrdVector<Level>{0, 2}}) {
+			const Nft actual{project_out(input, levels_to_project, jump_mode)};
+			CHECK(are_equivalent(actual, expected, jump_mode));
+		}
+	}
+}
+
 TEST_CASE("mata::nft::project_out() handles cycles among input-useless states") {
 	const Nft input{[] {
 		Nft nft{Nft::with_levels({3, {0, 1, 2, 0}}, {}, {0}, {0, 3})};
