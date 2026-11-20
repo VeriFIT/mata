@@ -76,13 +76,13 @@ Nft concatenate_eps_consuming(
 
 	output_renamings();
 
-	// The lhs states keep their indices in the result, so its delta and initial states move in as they are.
-	// The final states and levels of lhs are only read here.
-	const utils::SparseSet<State> lhs_final_states{std::move(lhs.final)};
-	const Levels lhs_levels{std::move(lhs.levels)};
+	// The lhs states keep their indices in the result, so its delta, initial states and levels move in as they are.
+	// The final states of lhs are only read here.
+	utils::SparseSet<State> lhs_final_states{std::move(lhs.final)};
 	Nft result{Nft::with_levels(num_of_levels)}; // Concatenated automaton.
 	result.delta = std::move(lhs.delta);
 	result.initial = std::move(lhs.initial);
+	result.levels = std::move(lhs.levels);
 	lhs = Nft::with_levels(num_of_levels);
 
 	// Append the rhs transitions, shifted by the number of lhs states, before any state beyond lhs is allocated.
@@ -93,10 +93,16 @@ Nft concatenate_eps_consuming(
 		result.delta.append_shifted(rhs.delta, static_cast<State>(lhs_states_num));
 	}
 	// The result states are the lhs states followed by the shifted rhs states, and so are their levels. Only the
-	//  first lhs_states_num lhs levels belong to those states: a surplus entry cannot shift the rhs levels.
-	Levels result_lhs_levels{lhs_levels};
-	result_lhs_levels.resize(lhs_states_num);
-	result.levels.append(result_lhs_levels);
+	//  first lhs_states_num lhs levels belong to those states: a surplus entry cannot shift the rhs levels. Moving
+	//  instead of copying the lhs levels, and growing them geometrically (`Levels::append()` reserves exactly), keeps
+	//  a left fold of concatenations linear.
+	result.levels.resize(lhs_states_num);
+	if (const size_t num_of_result_levels{
+			result_num_of_states + lhs_final_states.size() * (std::max(num_of_levels, size_t{1}) - 1)
+		};
+		result.levels.capacity() < num_of_result_levels) {
+		result.levels.reserve(std::max(num_of_result_levels, 2 * result.levels.capacity()));
+	}
 	result.levels.append(rhs.levels);
 	result.add_state(static_cast<State>(result_num_of_states - 1));
 
@@ -121,7 +127,9 @@ Nft concatenate_eps_consuming(
 		result.delta.add(source, epsilon, std::span<const State>{shifted_rhs_initials});
 	}
 
-	// Make result final states.
+	// Make result final states, reusing the storage of the lhs final states, which spans the lhs states already.
+	result.final = std::move(lhs_final_states);
+	result.final.clear();
 	for (const State rhs_final_state : rhs.final) {
 		result.final.insert(static_cast<State>(lhs_states_num) + rhs_final_state);
 	}

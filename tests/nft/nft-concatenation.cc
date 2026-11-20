@@ -1,9 +1,11 @@
 /* tests-nft-concatenation.cc -- Tests for concatenation of NFAs
  */
 
+#include <random>
 #include <stdexcept>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
@@ -1444,4 +1446,90 @@ TEST_CASE("mata::nft::concatenate_eps() does not read a renaming through its sym
 	constexpr Symbol epsilon{3};
 	const Nft result{algorithms::concatenate_eps(lhs, rhs, rhs_map.at(0), false, &lhs_map, &rhs_map)};
 	CHECK(!result.delta.get_used_symbols().contains(epsilon));
+}
+
+TEST_CASE("mata::nft::concatenate_eps() folds multi-level NFTs keeping their levels and connector order") {
+	static constexpr size_t num_of_levels{3};
+	static constexpr Symbol epsilon{100};
+	// A random NFT whose initial and final states are at level 0 and whose transitions read one symbol per level.
+	const auto random_part = [](std::mt19937& rng) {
+		Nft part{Nft::with_levels(num_of_levels)};
+		const State num_of_base_states{2 + static_cast<State>(rng() % 5)};
+		for (State state{0}; state < num_of_base_states; ++state) { part.add_state_with_level(state, 0); }
+		for (size_t i{0}; i < 2 * num_of_base_states; ++i) {
+			part.add_transition_by_levels(
+				static_cast<State>(rng() % num_of_base_states),
+				{static_cast<Symbol>(rng() % 2), static_cast<Symbol>(rng() % 2), static_cast<Symbol>(rng() % 2)},
+				static_cast<State>(rng() % num_of_base_states)
+			);
+		}
+		for (State state{0}; state < num_of_base_states; ++state) {
+			if (rng() % 2 == 0) { part.initial.insert(state); }
+			if (rng() % 2 == 0) { part.final.insert(state); }
+		}
+		part.initial.insert(static_cast<State>(rng() % num_of_base_states));
+		part.final.insert(static_cast<State>(rng() % num_of_base_states));
+		return part;
+	};
+	// The concatenation of @p lhs and @p rhs built state by state: the lhs states, the rhs states shifted behind them,
+	//  then per lhs final state, in the iteration order of the lhs final states, a chain of ε-transitions through one
+	//  new state per inner level to every rhs initial state.
+	const auto reference_concatenation = [](const Nft& lhs, const Nft& rhs) {
+		const auto offset{static_cast<State>(lhs.num_of_states())};
+		Nft result{Nft::with_levels(num_of_levels)};
+		for (State state{0}; state < offset; ++state) { result.add_state_with_level(state, lhs.levels[state]); }
+		for (State state{0}; state < rhs.num_of_states(); ++state) {
+			result.add_state_with_level(offset + state, rhs.levels[state]);
+		}
+		for (const Transition& transition : lhs.delta.transitions()) {
+			result.delta.add(transition.source, transition.symbol, transition.target);
+		}
+		for (const Transition& transition : rhs.delta.transitions()) {
+			result.delta.add(offset + transition.source, transition.symbol, offset + transition.target);
+		}
+		result.initial = lhs.initial;
+		for (const State lhs_final : lhs.final) {
+			State source{lhs_final};
+			for (Level level{1}; level < num_of_levels; ++level) {
+				const State inner{result.add_state_with_level(level)};
+				result.delta.add(source, epsilon, inner);
+				source = inner;
+			}
+			for (const State rhs_initial : rhs.initial) { result.delta.add(source, epsilon, offset + rhs_initial); }
+		}
+		for (const State rhs_final : rhs.final) { result.final.insert(offset + rhs_final); }
+		return result;
+	};
+	const auto check_identical = [](const Nft& actual, const Nft& expected) {
+		REQUIRE(actual.num_of_states() == expected.num_of_states());
+		for (State state{0}; state < expected.num_of_states(); ++state) {
+			CAPTURE(state);
+			CHECK(actual.levels[state] == expected.levels[state]);
+		}
+		CHECK(actual.delta == expected.delta);
+		CHECK(actual.initial == expected.initial);
+		// The order of the final states decides the numbering of the connector states of the next concatenation.
+		CHECK(
+			std::vector<State>(actual.final.begin(), actual.final.end()) ==
+			std::vector<State>(expected.final.begin(), expected.final.end())
+		);
+	};
+
+	for (unsigned seed{0}; seed < 50; ++seed) {
+		CAPTURE(seed);
+		std::mt19937 rng{seed};
+		std::vector<Nft> parts;
+		for (size_t i{0}; i < 2 + seed % 5; ++i) { parts.push_back(random_part(rng)); }
+
+		Nft expected{parts.front()};
+		Nft consumed{parts.front()};
+		Nft borrowed{parts.front()};
+		for (size_t i{1}; i < parts.size(); ++i) {
+			expected = reference_concatenation(expected, parts[i]);
+			consumed = algorithms::concatenate_eps(std::move(consumed), Nft{parts[i]}, epsilon, true);
+			borrowed = algorithms::concatenate_eps(std::move(borrowed), parts[i], epsilon, true);
+			check_identical(consumed, expected);
+			check_identical(borrowed, expected);
+		}
+	}
 }
