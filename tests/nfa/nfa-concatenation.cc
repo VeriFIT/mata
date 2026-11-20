@@ -1243,3 +1243,65 @@ TEST_CASE("mata::nfa::concatenate_eps() removes operand transitions over the con
 	CHECK(xy_concat.is_in_lang({1, 2}));
 	CHECK(!xy_concat.is_in_lang({1, custom_epsilon, 2}));
 }
+
+TEST_CASE("mata::nfa::concatenate_eps() builds one epsilon connector post per lhs final") {
+	Nfa lhs{};
+	lhs.add_state(4);
+	lhs.initial.insert(0);
+	lhs.final = {1, 3};
+	lhs.delta.add(0, 'a', 1);
+	lhs.delta.add(0, 'a', 3);
+	// Merge into an existing epsilon post, not just append to an empty one.
+	lhs.delta.add(3, EPSILON, 2);
+	// A symbol below a custom epsilon keeps the result post ordered by symbols otherwise.
+	lhs.delta.add(1, 'b', 0);
+
+	Nfa rhs{};
+	rhs.add_state(3);
+	rhs.initial = {0, 2};
+	rhs.final.insert(1);
+	rhs.delta.add(0, 'c', 1);
+	rhs.delta.add(2, 'd', 1);
+	rhs.delta.add(2, 'c', 0);
+
+	const State lhs_states_num{static_cast<State>(lhs.num_of_states())};
+	auto expected = [&](const Symbol epsilon) {
+		Nfa reference{lhs.delta, lhs.initial, lhs.final};
+		reference.delta.append_shifted(rhs.delta, lhs_states_num);
+		reference.add_state(static_cast<State>(lhs.num_of_states() + rhs.num_of_states() - 1));
+		for (const State lhs_final_state : lhs.final) {
+			for (const State rhs_initial_state : rhs.initial) {
+				reference.delta.add(lhs_final_state, epsilon, lhs_states_num + rhs_initial_state);
+			}
+		}
+		reference.final.clear();
+		for (const State rhs_final_state : rhs.final) { reference.final.insert(lhs_states_num + rhs_final_state); }
+		return reference;
+	};
+
+	SECTION("default epsilon") {
+		const Nfa result{algorithms::concatenate_eps(lhs, rhs, EPSILON, true)};
+		const Nfa reference{expected(EPSILON)};
+		CHECK(result.delta == reference.delta);
+		CHECK(result.initial == reference.initial);
+		CHECK(result.final == reference.final);
+	}
+
+	SECTION("custom epsilon above the operand symbols") {
+		const Symbol custom_epsilon{42};
+		const Nfa result{algorithms::concatenate_eps(lhs, rhs, custom_epsilon, true)};
+		const Nfa reference{expected(custom_epsilon)};
+		CHECK(result.delta == reference.delta);
+		CHECK(result.initial == reference.initial);
+		CHECK(result.final == reference.final);
+	}
+
+	SECTION("custom epsilon below other posts") {
+		const Symbol custom_epsilon{3};
+		const Nfa result{algorithms::concatenate_eps(lhs, rhs, custom_epsilon, true)};
+		const Nfa reference{expected(custom_epsilon)};
+		CHECK(result.delta == reference.delta);
+		CHECK(result.initial == reference.initial);
+		CHECK(result.final == reference.final);
+	}
+}
