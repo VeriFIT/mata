@@ -2,8 +2,11 @@
  * @brief Concatenation of NFAs.
  */
 
+#include <algorithm>
+#include <span>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "mata/nfa/algorithms.hh"
 #include "mata/nfa/builder.hh"
@@ -17,6 +20,41 @@ namespace {
 bool concatenation_is_empty(const Nfa& lhs, const Nfa& rhs) {
 	return lhs.num_of_states() == 0 || rhs.num_of_states() == 0 || lhs.initial.empty() || lhs.final.empty() ||
 		   rhs.initial.empty() || rhs.final.empty();
+}
+
+/// Whether @p delta has a transition over @p epsilon.
+///  When it does, @c removing_epsilon() would propagate that transition into an epsilon closure and the direct
+///  construction below cannot replace it.
+bool delta_has_epsilon_post(const Delta& delta, const Symbol epsilon) {
+	return std::ranges::any_of(delta, [&epsilon](const StatePost& post) { return post.find(epsilon) != post.end(); });
+}
+
+/// Match the empty-post filtering and trailing-state handling of @c Nfa::remove_epsilon().
+void drop_unused_trailing_state_posts(Delta& delta) {
+	const size_t num_of_states{delta.num_of_states()};
+	for (State state{0}; state < num_of_states; ++state) {
+		StatePost& post{delta.mutable_state_post(state)};
+		if (std::ranges::any_of(post, &SymbolPost::empty)) {
+			post.filter([](const SymbolPost& symbol_post) { return !symbol_post.empty(); });
+		}
+	}
+	if (num_of_states == 0 || !delta[static_cast<State>(num_of_states - 1)].empty()) { return; }
+
+	size_t used{0};
+	for (State state{0}; state < num_of_states; ++state) {
+		const StatePost& post{delta[state]};
+		if (post.empty()) { continue; }
+		used = std::max(used, static_cast<size_t>(state) + 1);
+		for (const SymbolPost& symbol_post : post) {
+			used = std::max(used, static_cast<size_t>(symbol_post.targets.back()) + 1);
+		}
+	}
+	if (used >= num_of_states) { return; }
+
+	Delta shrunk{};
+	shrunk.reserve(used);
+	for (State state{0}; state < used; ++state) { shrunk.emplace_back(std::move(delta.mutable_state_post(state))); }
+	delta = std::move(shrunk);
 }
 
 /**
@@ -86,12 +124,49 @@ Nfa concatenate_eps_consuming(
 	}
 	result.add_state(static_cast<State>(result_num_of_states - 1));
 
-	// Add epsilon transitions connecting lhs and rhs automata.
-	// The epsilon transitions lead from lhs original final states to rhs original initial states.
-	for (const State& lhs_final_state : lhs_final_states) {
-		for (const State rhs_initial_state : rhs.initial) {
-			result.delta.add(lhs_final_state, epsilon, static_cast<State>(lhs_states_num) + rhs_initial_state);
+	// The epsilon transitions lead from lhs original finals to shifted rhs initials.
+	std::vector<State> shifted_rhs_initials{};
+	shifted_rhs_initials.reserve(rhs.initial.size());
+	for (const State rhs_initial_state : rhs.initial) {
+		shifted_rhs_initials.push_back(static_cast<State>(lhs_states_num) + rhs_initial_state);
+	}
+	std::ranges::sort(shifted_rhs_initials);
+
+	if (!use_epsilon) {
+		// When neither operand has an existing transition over the connecting epsilon, concatenate without ever
+		//  materialising the epsilon connector and feeding it to global epsilon removal. Otherwise the old global
+		//  removal path keeps its epsilon-closure contract, including the removal of the operands' own transitions
+		//  over that symbol.
+		if (!delta_has_epsilon_post(result.delta, epsilon)) {
+			// Shifted rhs initials are strictly past lhs originals: no target post aliasing during merging.
+			bool add_lhs_finals{false};
+			for (const State rhs_initial_state : rhs.initial) {
+				if (rhs.final.contains(rhs_initial_state)) {
+					add_lhs_finals = true;
+					break;
+				}
+			}
+			for (const State lhs_final_state : lhs_final_states) {
+				for (const State shifted_rhs_initial : shifted_rhs_initials) {
+					const StatePost& initial_post{result.delta[shifted_rhs_initial]};
+					for (const SymbolPost& symbol_post : initial_post) {
+						// One set union per symbol per pair rather than one add per target.
+						result.delta.add(lhs_final_state, SymbolPost{symbol_post});
+					}
+				}
+				if (add_lhs_finals) { result.final.insert(lhs_final_state); }
+			}
+			for (const State rhs_final_state : rhs.final) {
+				result.final.insert(static_cast<State>(lhs_states_num) + rhs_final_state);
+			}
+			if constexpr (consume_rhs) { rhs = Nfa{}; }
+			drop_unused_trailing_state_posts(result.delta);
+			return result;
 		}
+	}
+
+	for (const State lhs_final_state : lhs_final_states) {
+		result.delta.add(lhs_final_state, epsilon, std::span<const State>{shifted_rhs_initials});
 	}
 
 	// Make result final states.
