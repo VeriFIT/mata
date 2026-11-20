@@ -6,7 +6,7 @@ import pandas
 import networkx as nx
 
 from cpython.array cimport array, clone as array_clone
-from libc.stdint cimport int64_t, uint8_t
+from libc.stdint cimport int64_t, uint8_t, uint64_t
 from libcpp cimport bool
 from libcpp.optional cimport make_optional
 from libcpp.list cimport list as clist
@@ -118,6 +118,15 @@ cdef void translate_mata_exception() except *:
     if message != NULL:
         raise ExternalSolverNotFound(message.decode("utf-8", "replace"))
 
+
+cdef inline void _check_delta_not_mutated(CDelta* c_delta, uint64_t epoch) except *:
+    """Raise if `c_delta` changed since `epoch` was read: iterators and posts pointing into it are dangling then."""
+    if c_delta.mutation_epoch() != epoch:
+        raise RuntimeError(
+            "The automaton was modified during iteration; its transitions iterator is no longer valid."
+        )
+
+
 cdef class Run:
     """Wrapper over the run in NFA."""
     cdef mata_nfa.CRun *thisptr
@@ -183,15 +192,10 @@ cdef class Transition:
         :param Symbol s: symbol
         :param State target: target state
         """
-        self.thisptr = new mata_nfa.CTrans(source, s, target)
+        self.thisptr = CTrans(source, s, target)
 
-    def __dealloc__(self):
-        """Destructor"""
-        if self.thisptr != NULL:
-            del self.thisptr
-
-    cdef copy_from(self, CTrans trans):
-        """Copies the internals of trans into the wrapped pointer
+    cdef copy_from(self, const CTrans& trans):
+        """Copies the internals of trans into this transition
 
         :param CTrans trans: copied transition
         """
@@ -204,7 +208,7 @@ cdef class Transition:
         #  and `trans in [None, trans]` into a TypeError instead of False.
         if not isinstance(other, Transition):
             return NotImplemented
-        return dereference(self.thisptr) == dereference((<Transition>other).thisptr)
+        return self.thisptr == (<Transition>other).thisptr
 
     def __hash__(self):
         return hash((self.source, self.symbol, self.target))
@@ -311,7 +315,7 @@ cdef class Delta:
         """
         cdef StateSet targets
         if isinstance(source, Transition):
-            self.automaton_ptr.get().delta.add(dereference((<Transition>source).thisptr))
+            self.automaton_ptr.get().delta.add((<Transition>source).thisptr)
             return
         if isinstance(symbol, str):
             alphabet = alphabet or store().get('alphabet')
@@ -408,7 +412,7 @@ cdef class Delta:
         :param target: Target state of the transition to remove.
         """
         if isinstance(source, Transition):
-            self.automaton_ptr.get().delta.remove(dereference((<Transition>source).thisptr))
+            self.automaton_ptr.get().delta.remove((<Transition>source).thisptr)
             return
         self.automaton_ptr.get().delta.remove(<State>source, <Symbol>symbol, <State>target)
 
@@ -422,7 +426,7 @@ cdef class Delta:
         :return: True if Delta contains the transition, False otherwise.
         """
         if isinstance(source, Transition):
-            return self.automaton_ptr.get().delta.contains(dereference((<Transition>source).thisptr))
+            return self.automaton_ptr.get().delta.contains((<Transition>source).thisptr)
         return self.automaton_ptr.get().delta.contains(<State>source, <Symbol>symbol, <State>target)
 
     def __contains__(self, item) -> bool:
@@ -481,36 +485,53 @@ cdef class Delta:
     def transitions(self):
         """Iterate over all transitions in Delta.
 
+        The transitions are read live: modifying the automaton while the generator runs invalidates the iterator,
+        and the next advance raises `RuntimeError`.
+
         :return: Generator of `Transition` instances.
         """
-        cdef CTransitions c_transitions = self.automaton_ptr.get().delta.transitions()
+        cdef CDelta* c_delta = &self.automaton_ptr.get().delta
+        cdef uint64_t epoch = c_delta.mutation_epoch()
+        cdef CTransitions c_transitions = c_delta.transitions()
         cdef CTransitions.const_iterator iterator = c_transitions.begin()
-        while iterator != c_transitions.end():
-            trans = Transition()
+        cdef CTransitions.const_iterator end = c_transitions.end()
+        while iterator != end:
+            trans = Transition.__new__(Transition)
             (<Transition>trans).copy_from(dereference(iterator))
             preinc(iterator)
             yield trans
+            _check_delta_not_mutated(c_delta, epoch)
 
     def __iter__(self):
         return self.transitions()
     def iter_transitions_from(self, State source):
         """Iterate over transitions from a source state, reading the state post by reference (streaming form).
-        
-        For a list, use get_transitions_from().
-        
+
+        For a list, use get_transitions_from(). The automaton is read live: modifying it while the generator runs
+        invalidates the iterator, and the next advance raises `RuntimeError`.
+
         :param State source: Source state to iterate transitions from.
         :return: Generator of Transition instances.
         """
-        cdef const CStatePost* c_state_post = &self.automaton_ptr.get().delta[source]
+        cdef CDelta* c_delta = &self.automaton_ptr.get().delta
+        cdef uint64_t epoch = c_delta.mutation_epoch()
+        cdef const CStatePost* c_state_post = &c_delta[0][source]
         cdef CStatePost.const_iterator c_state_post_it = c_state_post.cbegin()
-        cdef CSymbolPost c_symbol_post
+        cdef const CSymbolPost* c_symbol_post
         cdef const State* c_symbol_post_it
+        cdef const State* c_symbol_post_end
+        cdef Symbol symbol
+        cdef State target
         while c_state_post_it != c_state_post.cend():
-            c_symbol_post = dereference(c_state_post_it)
+            c_symbol_post = &dereference(c_state_post_it)
+            symbol = c_symbol_post.symbol
             c_symbol_post_it = c_symbol_post.cbegin()
-            while c_symbol_post_it != c_symbol_post.cend():
-                yield Transition(source, c_symbol_post.symbol, dereference(c_symbol_post_it))
+            c_symbol_post_end = c_symbol_post.cend()
+            while c_symbol_post_it != c_symbol_post_end:
+                target = dereference(c_symbol_post_it)
                 preinc(c_symbol_post_it)
+                yield Transition(source, symbol, target)
+                _check_delta_not_mutated(c_delta, epoch)
             preinc(c_state_post_it)
 
     def get_transitions_from(self, State source) -> list[Transition]:
@@ -593,6 +614,10 @@ cdef class Nfa:
     """Wrapper over NFA
 
     Note: In order to add more properties to Nfa, see `nfa.pxd`, where there is forward declaration
+
+    Concurrency: the long-running operations release the GIL, but the C++ library does not synchronize anything.
+    The automaton and its alphabet may be read from several threads at once, but must not be modified meanwhile
+    (translating a symbol through an `OnTheFlyAlphabet` modifies the alphabet).
     """
 
     def __cinit__(self, state_number = 0, alph.Alphabet alphabet = None, label=None):
@@ -792,7 +817,7 @@ cdef class Nfa:
 
         :param Transition tr: added transition
         """
-        self.thisptr.get().delta.add(dereference(tr.thisptr))
+        self.thisptr.get().delta.add(tr.thisptr)
 
     def add_transition(self, State source, symbol, State target, alph.Alphabet alphabet = None):
         """Constructs transition and adds it to automaton
@@ -815,7 +840,7 @@ cdef class Nfa:
 
         :param Transition tr: Transition to be removed.
         """
-        self.thisptr.get().delta.remove(dereference(tr.thisptr))
+        self.thisptr.get().delta.remove(tr.thisptr)
 
     def remove_trans_raw(self, State source, Symbol symbol, State target):
         """Constructs transition and removes it from the automaton.
@@ -855,19 +880,23 @@ cdef class Nfa:
 
     def iterate(self):
         """Iterate over all transitions (streaming form).
-        
-        This is a generator; for a list, use get_trans_as_sequence().
+
+        This is a generator; for a list, use get_trans_as_sequence(). The transitions are read live: modifying the
+        automaton while the generator runs invalidates the iterator, and the next advance raises `RuntimeError`.
 
         :return: Generator of transitions
         """
-        cdef CTransitions transitions = self.thisptr.get().delta.transitions()
+        cdef CDelta* c_delta = &self.thisptr.get().delta
+        cdef uint64_t epoch = c_delta.mutation_epoch()
+        cdef CTransitions transitions = c_delta.transitions()
         cdef CTransitions.const_iterator iterator = transitions.begin()
-        while iterator != transitions.end():
-            trans = Transition()
-            lhs = dereference(iterator)
-            trans.copy_from(lhs)
+        cdef CTransitions.const_iterator end = transitions.end()
+        while iterator != end:
+            trans = Transition.__new__(Transition)
+            (<Transition>trans).copy_from(dereference(iterator))
             preinc(iterator)
             yield trans
+            _check_delta_not_mutated(c_delta, epoch)
 
     def get_transitions_from_state(self, State state):
         """Returns list of SymbolPost for the given state
@@ -889,32 +918,54 @@ cdef class Nfa:
         return trans
     def iter_transitions_from(self, State source):
         """Iterate over transitions from a source state, reading the state post by reference.
-        
-        This is a streaming/generator form; for a list, use get_trans_from_state_as_sequence().
-        
+
+        This is a streaming/generator form; for a list, use get_trans_from_state_as_sequence(). The automaton is
+        read live: modifying it while the generator runs invalidates the iterator, and the next advance raises
+        `RuntimeError`.
+
         :param State source: Source state to iterate transitions from.
         :return: Generator of Transition instances.
         """
-        cdef const CStatePost* c_state_post = &self.thisptr.get().delta[source]
+        cdef CDelta* c_delta = &self.thisptr.get().delta
+        cdef uint64_t epoch = c_delta.mutation_epoch()
+        cdef const CStatePost* c_state_post = &c_delta[0][source]
         cdef CStatePost.const_iterator c_state_post_it = c_state_post.cbegin()
-        cdef CSymbolPost c_symbol_post
+        cdef const CSymbolPost* c_symbol_post
         cdef const State* c_symbol_post_it
+        cdef const State* c_symbol_post_end
+        cdef Symbol symbol
+        cdef State target
         while c_state_post_it != c_state_post.cend():
-            c_symbol_post = dereference(c_state_post_it)
+            c_symbol_post = &dereference(c_state_post_it)
+            symbol = c_symbol_post.symbol
             c_symbol_post_it = c_symbol_post.cbegin()
-            while c_symbol_post_it != c_symbol_post.cend():
-                yield Transition(source, c_symbol_post.symbol, dereference(c_symbol_post_it))
+            c_symbol_post_end = c_symbol_post.cend()
+            while c_symbol_post_it != c_symbol_post_end:
+                target = dereference(c_symbol_post_it)
                 preinc(c_symbol_post_it)
+                yield Transition(source, symbol, target)
+                _check_delta_not_mutated(c_delta, epoch)
             preinc(c_state_post_it)
 
     def get_trans_as_sequence(self):
         """Get automaton transitions as a sequence.
-        
-        This materializes iterate() into a list. For streaming, use iterate().
+
+        The list is filled in one C++ pass, without materialising the generator. For streaming, use iterate().
 
         :return: List of automaton transitions.
         """
-        return list(self.iterate())
+        cdef CDelta* c_delta = &self.thisptr.get().delta
+        cdef CTransitions transitions = c_delta.transitions()
+        cdef CTransitions.const_iterator iterator = transitions.begin()
+        cdef CTransitions.const_iterator end = transitions.end()
+        cdef Transition trans
+        result = []
+        while iterator != end:
+            trans = Transition.__new__(Transition)
+            trans.copy_from(dereference(iterator))
+            result.append(trans)
+            preinc(iterator)
+        return result
 
     def get_trans_from_state_as_sequence(self, State source) -> list[Transition]:
         """Get automaton transitions from source as a sequence.
@@ -1184,11 +1235,12 @@ cdef class Nfa:
         """
         # Accumulate symbols per (source, target) pair.
         edge_symbols = {}
-        for trans in self.iterate():
-            key = (trans.source, trans.target)
+        sources, symbols, targets = self.transitions_as_arrays()
+        for source, symbol, target in zip(sources, symbols, targets):
+            key = (source, target)
             if key not in edge_symbols:
                 edge_symbols[key] = []
-            edge_symbols[key].append(trans.symbol)
+            edge_symbols[key].append(symbol)
 
         G = nx.DiGraph()
         # Add edges with sorted symbols list, and scalar symbol for single-symbol edges.

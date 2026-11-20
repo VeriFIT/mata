@@ -1,6 +1,7 @@
 """Basic tests for utility package and sanity checks"""
 
 import libmata.nfa.nfa as mata_nfa
+import pytest
 
 __author__ = "Tomas Fiedor"
 
@@ -206,8 +207,6 @@ def test_delta_equality():
 
 
 """Tests for bulk transition import (issue #796)."""
-
-import pytest
 
 
 def test_add_transitions_columnar_basic():
@@ -444,13 +443,107 @@ def test_lifetime_delta_survives_nfa_deletion_bulk_add():
     assert delta.contains(1, ord("b"), 2)
 
 
-def test_lifetime_transition_owns_heap():
-    """Test that a Transition owns its own heap object."""
-    trans = mata_nfa.Transition(0, ord("a"), 1)
-    assert trans.source == 0
-    assert trans.symbol == ord("a")
-    assert trans.target == 1
-    # Transition is independent of any automaton
+def test_lifetime_transition_survives_nfa_deletion():
+    """A Transition keeps its own value, even after every automaton is gone."""
+    import gc
+
+    nfa = mata_nfa.Nfa(3)
+    nfa.add_transition(0, ord("a"), 1)
+    trans = next(nfa.iterate())
+    del nfa
+    gc.collect()
+
+    assert trans == mata_nfa.Transition(0, ord("a"), 1)
+    assert (trans.source, trans.symbol, trans.target) == (0, ord("a"), 1)
+    assert str(trans) == f"0-[{ord('a')}]\u21921"
+
+
+def _nfa_with_three_transitions():
+    nfa = mata_nfa.Nfa(5)
+    nfa.add_transition(0, ord("a"), 1)
+    nfa.add_transition(0, ord("b"), 2)
+    nfa.add_transition(1, ord("a"), 2)
+    return nfa
+
+
+def _transitions_automaton(generator):
+    nfa = _nfa_with_three_transitions()
+    if generator == "iterate":
+        it = nfa.iterate()
+        expected = [(0, ord("a"), 1), (0, ord("b"), 2), (1, ord("a"), 2)]
+    elif generator == "delta":
+        it = iter(nfa.delta)
+        expected = [(0, ord("a"), 1), (0, ord("b"), 2), (1, ord("a"), 2)]
+    elif generator == "iter_transitions_from":
+        it = nfa.iter_transitions_from(0)
+        expected = [(0, ord("a"), 1), (0, ord("b"), 2)]
+    else:
+        it = nfa.delta.iter_transitions_from(0)
+        expected = [(0, ord("a"), 1), (0, ord("b"), 2)]
+    return nfa, it, expected
+
+
+@pytest.mark.parametrize("mutation", ["add", "remove", "delta_add"])
+@pytest.mark.parametrize("generator", ["iterate", "delta"])
+def test_all_transitions_generators_raise_on_mutation(generator, mutation):
+    """A generator notices that its automaton changed instead of walking dangling iterators."""
+    nfa, it, _ = _transitions_automaton(generator)
+    next(it)
+
+    if mutation == "add":
+        nfa.add_transition(2, ord("c"), 3)
+    elif mutation == "remove":
+        nfa.remove_trans_raw(1, ord("a"), 2)
+    else:
+        nfa.delta.add(mata_nfa.Transition(2, ord("c"), 3))
+
+    with pytest.raises(RuntimeError, match="modified during iteration"):
+        next(it)
+
+
+@pytest.mark.parametrize("mutation", ["add", "remove"])
+@pytest.mark.parametrize("generator", ["iter_transitions_from", "delta_from"])
+def test_iter_transitions_from_raises_on_mutation(generator, mutation):
+    nfa, it, _ = _transitions_automaton(generator)
+    next(it)
+
+    if mutation == "add":
+        nfa.add_transition(2, ord("c"), 3)
+    else:
+        nfa.remove_trans_raw(0, ord("a"), 1)
+
+    with pytest.raises(RuntimeError, match="modified during iteration"):
+        next(it)
+
+
+@pytest.mark.parametrize("generator", ["iterate", "delta", "iter_transitions_from", "delta_from"])
+def test_undisturbed_iteration_returns_all_transitions(generator):
+    """The mutation check never fires when the automaton is left alone."""
+    nfa, it, expected = _transitions_automaton(generator)
+    trans = list(it)
+    assert [(t.source, t.symbol, t.target) for t in trans] == expected
+    assert list(it) == []
+    assert nfa.get_num_of_transitions() == 3
+
+
+@pytest.mark.parametrize("generator", ["iterate", "delta", "iter_transitions_from", "delta_from"])
+def test_mutation_before_the_first_advance_is_seen(generator):
+    """The generator reads the automaton live from its first advance, not from its creation."""
+    nfa, it, _ = _transitions_automaton(generator)
+    nfa.add_transition(0, ord("c"), 3)
+
+    result = list(it)
+    assert (0, ord("c"), 3) in {(t.source, t.symbol, t.target) for t in result}
+    assert nfa.get_num_of_transitions() == 4
+
+
+def test_get_trans_as_sequence_matches_iteration():
+    nfa = _nfa_with_three_transitions()
+    streamed = list(nfa.iterate())
+    sequence = nfa.get_trans_as_sequence()
+    assert isinstance(sequence, list)
+    assert sequence == streamed
+    assert [(t.source, t.symbol, t.target) for t in sequence] == [(0, ord("a"), 1), (0, ord("b"), 2), (1, ord("a"), 2)]
 
 
 def test_bulk_equals_per_transition():

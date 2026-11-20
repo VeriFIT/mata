@@ -8,7 +8,7 @@ from libcpp.memory cimport shared_ptr
 from libcpp.string cimport string
 from libcpp.list cimport list as clist
 from libcpp.pair cimport pair
-from libc.stdint cimport uint8_t
+from libc.stdint cimport uint8_t, uint64_t
 
 from libmata.utils cimport CSparseSet, COrdVector, CBoolVector, CBinaryRelation, CPairHash
 from libmata.alphabets cimport CAlphabet, CConstAlphabet, CLazyWordGenerator, Symbol
@@ -98,6 +98,8 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         CStatePost.const_iterator epsilon_symbol_posts(CStatePost& post, Symbol epsilon)
         void add(vector[CTrans]&) except +
         COrdVector[Symbol] get_used_symbols()
+        # Bumped by every mutation of the transition relation; generators use it to detect invalidated iterators.
+        uint64_t mutation_epoch()
 
 
     cdef cppclass CRun "mata::nfa::Run":
@@ -271,7 +273,7 @@ cdef class Nfa:
     - Nfa owns the automaton via shared_ptr[CNfa]; the C++ object lives as long as any Python or C++ reference exists.
     - Delta views obtained from Nfa.delta hold an aliasing shared_ptr to the same automaton, keeping it alive.
     - Iteration generators (iterate(), iter_transitions_from()) hold self alive, so the automaton outlives them.
-    - Transition/SymbolPost/Run objects own a raw heap object individually (not shared).
+    - Transition holds its value inline; SymbolPost/Run own a raw heap object individually (not shared).
     """
     # TODO: Shared pointers bring atomic-count overhead; measure in a loop (create/drop views, call methods) to decide if real.
     cdef shared_ptr[CNfa] thisptr
@@ -279,11 +281,12 @@ cdef class Nfa:
 
 cdef class Transition:
     """Wrapper over a transition: (source, symbol, target).
-    
-    Ownership: owns a raw heap object (not shared with the automaton).
+
+    Ownership: the value is stored inline, so a Transition is independent of any automaton and needs no heap
+    allocation of its own.
     """
-    cdef CTrans* thisptr
-    cdef copy_from(self, CTrans trans)
+    cdef CTrans thisptr
+    cdef copy_from(self, const CTrans& trans)
 
 cdef class Delta:
     """View over the transition relation (Delta) of an automaton.
