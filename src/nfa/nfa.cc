@@ -10,6 +10,8 @@
 #include <queue>
 #include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "mata/alphabet.hh"
 #include "mata/nfa/nfa.hh"
@@ -188,14 +190,14 @@ void Nfa::print_to_dot(
 		return std::to_string(symbol);
 	};
 
-	auto vec_of_symbols_to_string = [&](const OrdVector<Symbol>& symbols) {
+	auto vec_of_symbols_to_string = [&](const std::vector<Symbol>& symbols) {
 		std::string result;
 		for (const Symbol& symbol : symbols) { result += translate_symbol(symbol) + ","; }
 		result.pop_back(); // Remove last comma
 		return result;
 	};
 
-	auto vec_of_symbols_to_string_with_intervals = [&](const OrdVector<Symbol>& symbols) {
+	auto vec_of_symbols_to_string_with_intervals = [&](const std::vector<Symbol>& symbols) {
 		std::string result;
 
 		const auto intervals{[&]() {
@@ -240,18 +242,27 @@ void Nfa::print_to_dot(
 
 	// Print transitions
 	const size_t delta_size = delta.num_of_states();
-	std::unordered_map<State, OrdVector<Symbol>> tgt_symbols_map;
+	// (target, symbol) moves of the current source, sorted so that its edges print in ascending target order whatever
+	// was printed before; a reused hash map instead iterates in bucket order. Both buffers are reused across sources.
+	std::vector<std::pair<State, Symbol>> target_symbols{};
+	std::vector<Symbol> symbols{};
 	for (State source = 0; source != delta_size; ++source) {
-		// Reused across sources to keep the hash table allocated.
-		tgt_symbols_map.clear();
+		target_symbols.clear();
 		for (const SymbolPost& move : delta[source]) {
 			is_state_drawn[source] = true;
 			for (const State target : move.targets) {
 				is_state_drawn[target] = true;
-				tgt_symbols_map[target].insert(move.symbol);
+				target_symbols.emplace_back(target, move.symbol);
 			}
 		}
-		for (const auto& [target, symbols] : tgt_symbols_map) {
+		std::sort(target_symbols.begin(), target_symbols.end());
+		for (auto move_it{target_symbols.begin()}; move_it != target_symbols.end();) {
+			// One edge per target, over the sorted symbols leading to it.
+			const State target{move_it->first};
+			symbols.clear();
+			for (; move_it != target_symbols.end() && move_it->first == target; ++move_it) {
+				if (symbols.empty() || symbols.back() != move_it->second) { symbols.push_back(move_it->second); }
+			}
 			if (max_label_length == 0) {
 				output << source << " -> " << target << ";\n";
 				continue;
