@@ -1,0 +1,409 @@
+diff --git a/src/nfa/edge-components.hh b/src/nfa/edge-components.hh
+new file mode 100644
+index 0000000000..7e48cebc16
+--- /dev/null
++++ b/src/nfa/edge-components.hh
+@@ -0,0 +1,132 @@
++/** @file
++ * @brief Strongly connected components over the transitions selected by a predicate, shared by the NFA epsilon
++ *  removal and the NFT projection; not installed.
++ */
++
++#ifndef MATA_SRC_NFA_EDGE_COMPONENTS_HH_
++#define MATA_SRC_NFA_EDGE_COMPONENTS_HH_
++
++#include <algorithm>
++#include <cstddef>
++#include <cstdint>
++#include <limits>
++#include <span>
++#include <vector>
++
++#include "mata/nfa/delta.hh"
++#include "mata/nfa/types.hh"
++
++namespace mata::nfa::internal {
++
++/**
++ * @brief Strongly connected components of the graph whose edges are the transitions selected by the caller, found by
++ *  an iterative Tarjan's algorithm from the roots the caller visits.
++ *
++ * A component is numbered when Tarjan's algorithm finishes it, so every component reachable from a component has a
++ *  smaller number, and a closure over the selected edges can be composed bottom-up in number order. The edges are
++ *  walked as given: no order of the states (such as the NFT levels, which wrap around through level 0) is assumed.
++ */
++class EdgeComponents {
++  public:
++	/// Component of a state that is not in one.
++	static constexpr uint32_t NO_COMPONENT = std::numeric_limits<uint32_t>::max();
++
++	/// Components over the states 0, ..., @p num_of_states - 1.
++	explicit EdgeComponents(const size_t num_of_states)
++		: component_of_(num_of_states, NO_COMPONENT), index_(num_of_states, UNVISITED), low_(num_of_states, 0) {}
++
++	/**
++	 * @brief Finds the components of the states reachable from @p root that are not in a component yet.
++	 *
++	 * The edges out of a state @c s are the targets @c t of the symbol posts @c selected_posts(s) with
++	 *  @c is_edge(s, t). @c is_edge must reject every target outside the states.
++	 *
++	 * @param selected_posts Callable @c (State) -> std::span<const SymbolPost>.
++	 * @param is_edge Callable @c (State source, State target) -> bool.
++	 */
++	template <class SelectedPosts, class IsEdge>
++	void visit(const State root, SelectedPosts&& selected_posts, IsEdge&& is_edge) {
++		if (index_[root] != UNVISITED) { return; }
++		enter(root, selected_posts(root));
++
++		while (!frames_.empty()) {
++			Frame& frame = frames_.back();
++			if (frame.post < frame.posts.size()) {
++				const auto& targets = frame.posts[frame.post].targets;
++				if (frame.target == targets.size()) {
++					++frame.post;
++					frame.target = 0;
++					continue;
++				}
++				const State target = targets[frame.target];
++				++frame.target;
++				if (!is_edge(frame.state, target)) { continue; }
++				if (index_[target] == UNVISITED) {
++					enter(target, selected_posts(target));
++				} else if (component_of_[target] == NO_COMPONENT) {
++					low_[frame.state] = std::min(low_[frame.state], index_[target]);
++				}
++				continue;
++			}
++
++			const State state = frame.state;
++			frames_.pop_back();
++
++			if (!frames_.empty()) { low_[frames_.back().state] = std::min(low_[frames_.back().state], low_[state]); }
++			if (low_[state] != index_[state]) { continue; }
++
++			const auto component = static_cast<uint32_t>(ends_.size());
++			State member;
++			do {
++				member = stack_.back();
++				stack_.pop_back();
++				component_of_[member] = component;
++				members_.push_back(member);
++			} while (member != state);
++			ends_.push_back(members_.size());
++		}
++	}
++
++	/// Number of components found so far.
++	size_t size() const { return ends_.size(); }
++
++	/// Component of @p state, or @c NO_COMPONENT if no visit has reached it.
++	uint32_t component_of(const State state) const { return component_of_[state]; }
++
++	/// The states of @p component.
++	std::span<const State> members_of(const size_t component) const {
++		const size_t begin = component == 0 ? 0 : ends_[component - 1];
++		return {members_.data() + begin, ends_[component] - begin};
++	}
++
++  private:
++	static constexpr uint32_t UNVISITED = std::numeric_limits<uint32_t>::max();
++
++	struct Frame {
++		State state;
++		std::span<const SymbolPost> posts;
++		size_t post;
++		size_t target;
++	};
++
++	std::vector<State> members_{}; ///< States grouped by component.
++	std::vector<size_t> ends_{}; ///< End of each component in @c members_.
++	std::vector<uint32_t> component_of_;
++	std::vector<uint32_t> index_;
++	std::vector<uint32_t> low_;
++	std::vector<State> stack_{};
++	std::vector<Frame> frames_{};
++	uint32_t next_index_{0};
++
++	void enter(const State state, const std::span<const SymbolPost> posts) {
++		index_[state] = next_index_;
++		low_[state] = next_index_;
++		++next_index_;
++		stack_.push_back(state);
++		frames_.push_back({.state = state, .posts = posts, .post = 0, .target = 0});
++	}
++};
++
++} // namespace mata::nfa::internal
++
++#endif // MATA_SRC_NFA_EDGE_COMPONENTS_HH_
+diff --git a/src/nfa/operations.cc b/src/nfa/operations.cc
+index 310ba40f7d..2116878def 100644
+--- a/src/nfa/operations.cc
++++ b/src/nfa/operations.cc
+@@ -27,6 +27,8 @@
+ #include <mata/simlib/explicit_lts.hh>
+ #include <mata/utils/assert.hh>
+ 
++#include "edge-components.hh"
++
+ using namespace mata::utils;
+ using namespace mata::nfa;
+ using mata::Symbol;
+@@ -618,28 +620,16 @@ bool mata::nfa::Nfa::make_complete(const OrdVector<Symbol>& symbols, const std::
+ 
+ namespace {
+ 
++using internal::EdgeComponents;
++
+ /// Marks a state that is not in an epsilon component.
+-constexpr uint32_t NO_COMPONENT = std::numeric_limits<uint32_t>::max();
++constexpr uint32_t NO_COMPONENT = EdgeComponents::NO_COMPONENT;
+ 
+ using PostRange = std::ranges::subrange<StatePost::const_iterator>;
+ 
+-/// SCC of the epsilon graph with Tarjan's algorithm.
+-struct EpsilonComponents {
+-	std::vector<State> members{}; ///< States grouped by component.
+-	std::vector<size_t> ends{}; ///< End of each component in @c members.
+-	std::vector<uint32_t> component_of{}; ///< Component of each state with an epsilon post, else @c NO_COMPONENT.
+-
+-	size_t size() const { return ends.size(); }
+-	std::span<const State> members_of(const size_t component) const {
+-		const size_t begin = component == 0 ? 0 : ends[component - 1];
+-		return {members.data() + begin, ends[component] - begin};
+-	}
+-};
+-
+-/// Iterative Tarjan's algorithm over the states with an epsilon post.
++/// SCC of the epsilon graph, over the states with an epsilon post.
+ /// Targets without one are left out as they are singleton components that need no work.
+-EpsilonComponents find_epsilon_components(const Delta& delta, const Symbol epsilon) {
+-	constexpr uint32_t unvisited = std::numeric_limits<uint32_t>::max();
++EdgeComponents find_epsilon_components(const Delta& delta, const Symbol epsilon) {
+ 	const size_t num_of_states = delta.num_of_states();
+ 	std::vector<const SymbolPost*> epsilon_posts(num_of_states, nullptr);
+ 
+@@ -650,65 +640,16 @@ EdgeComponents find_epsilon_components(const Delta& delta, const Symbol epsilon)
+ 		}
+ 	}
+ 
+-	EpsilonComponents components;
+-	components.component_of.assign(num_of_states, NO_COMPONENT);
+-	std::vector<uint32_t> index(num_of_states, unvisited);
+-	std::vector<uint32_t> low(num_of_states, 0);
+-	std::vector<State> stack;
+-
+-	struct Frame {
+-		State state;
+-		size_t next_target;
++	const auto selected_posts = [&](const State state) {
++		return std::span<const SymbolPost>{epsilon_posts[state], 1};
+ 	};
+-
+-	std::vector<Frame> frames;
+-	uint32_t next_index = 0;
+-	const auto visit = [&](const State state) {
+-		index[state] = next_index;
+-		low[state] = next_index;
+-		++next_index;
+-		stack.push_back(state);
+-		frames.push_back({.state = state, .next_target = 0});
++	const auto is_edge = [&](const State, const State target) {
++		return target < num_of_states && epsilon_posts[target] != nullptr;
+ 	};
+ 
++	EdgeComponents components{num_of_states};
+ 	for (State root = 0; root < num_of_states; ++root) {
+-		if (epsilon_posts[root] == nullptr || index[root] != unvisited) { continue; }
+-		visit(root);
+-
+-		while (!frames.empty()) {
+-			Frame& frame = frames.back();
+-			const SmallStateSet& targets = epsilon_posts[frame.state]->targets;
+-
+-			if (frame.next_target < targets.size()) {
+-				const State target = targets[frame.next_target];
+-				++frame.next_target;
+-				if (target >= num_of_states || epsilon_posts[target] == nullptr) { continue; }
+-				if (index[target] == unvisited) {
+-					visit(target);
+-				} else if (components.component_of[target] == NO_COMPONENT) {
+-					low[frame.state] = std::min(low[frame.state], index[target]);
+-				}
+-				continue;
+-			}
+-
+-			const State state = frame.state;
+-			frames.pop_back();
+-
+-			if (!frames.empty()) { low[frames.back().state] = std::min(low[frames.back().state], low[state]); }
+-			if (low[state] != index[state]) { continue; }
+-
+-			const auto component = static_cast<uint32_t>(components.size());
+-			State member;
+-
+-			do {
+-				member = stack.back();
+-				stack.pop_back();
+-				components.component_of[member] = component;
+-				components.members.push_back(member);
+-			} while (member != state);
+-
+-			components.ends.push_back(components.members.size());
+-		}
++		if (epsilon_posts[root] != nullptr) { components.visit(root, selected_posts, is_edge); }
+ 	}
+ 	return components;
+ }
+@@ -815,10 +756,11 @@ void append_nonempty(const PostRange range, StatePost& result) {
+  * closure post is merged once. @p source may be @p result, so a post is read before it is written.
+  */
+ void write_epsilon_closures(const Delta& source, Delta& result, SparseSet<State>& final, const Symbol epsilon) {
+-	const EpsilonComponents components = find_epsilon_components(source, epsilon);
++	const size_t num_of_states = source.num_of_states();
++	const EdgeComponents components = find_epsilon_components(source, epsilon);
+ 
+ 	mata::BoolVector is_final(components.size(), false);
+-	std::vector<uint32_t> merged_into(source.num_of_states(), NO_COMPONENT);
++	std::vector<uint32_t> merged_into(num_of_states, NO_COMPONENT);
+ 	std::vector<PostRange> ranges;
+ 
+ 	PostUnion post_union;
+@@ -837,13 +779,13 @@ void write_epsilon_closures(const Delta& source, Delta& result, SparseSet<State>
+ 			ranges.emplace_back(std::next(epsilon_it), post.end());
+ 
+ 			for (const State target : epsilon_it->targets) {
+-				if (target >= components.component_of.size()) {
++				if (target >= num_of_states) {
+ 					// The target has no allocated post, but its finality is part of the closure.
+ 					closure_is_final = closure_is_final || final.contains(target);
+ 					continue;
+ 				}
+ 
+-				const uint32_t target_component = components.component_of[target];
++				const uint32_t target_component = components.component_of(target);
+ 				if (target_component == marker) { continue; }
+ 				// A component is marked by its first member, which already holds the closure post.
+ 				const bool in_component = target_component != NO_COMPONENT;
+@@ -872,8 +814,8 @@ void write_epsilon_closures(const Delta& source, Delta& result, SparseSet<State>
+ 	}
+ 
+ 	// Final states are added in increasing order.
+-	for (State state = 0; state < components.component_of.size(); ++state) {
+-		if (const uint32_t component = components.component_of[state];
++	for (State state = 0; state < num_of_states; ++state) {
++		if (const uint32_t component = components.component_of(state);
+ 			component != NO_COMPONENT && is_final[component] != 0) {
+ 			final.insert(state);
+ 		}
+diff --git a/src/nft/operations.cc b/src/nft/operations.cc
+index 5c525462ad..4eaf043110 100644
+--- a/src/nft/operations.cc
++++ b/src/nft/operations.cc
+@@ -24,6 +24,8 @@
+ #include "mata/utils/assert.hh"
+ #include "mata/utils/sparse-set.hh"
+ 
++#include "../nfa/edge-components.hh"
++
+ using namespace mata::utils;
+ using namespace mata::nft;
+ using namespace mata::nfa;
+@@ -713,44 +715,68 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
+ 
+ 	// The closure of a projected state: the states useful in the input and reachable from it over transitions all
+ 	//  of whose levels are projected, expanding only projected states. A state that is not projected is its own
+-	//  closure. Closures are computed lazily for the output-reachable sources only, into one flat buffer.
++	//  closure. The projected states of a closure form strongly connected components, whose closures are composed
++	//  bottom-up, lazily for the output-reachable sources only, into one flat buffer.
+ 	const size_t num_of_states_in_delta{nft.delta.num_of_states()};
+ 	constexpr size_t NO_INDEX{std::numeric_limits<size_t>::max()};
+-	std::vector<size_t> closure_begin(num_of_states_in_delta, NO_INDEX);
+-	std::vector<size_t> closure_end(num_of_states_in_delta, NO_INDEX);
++	const auto closure_posts = [&](const State state) {
++		const StatePost& post{nft.delta[state]};
++		return std::span<const SymbolPost>{post.begin(), post.end()};
++	};
++	const auto is_closure_move = [&](const State source, const State target) {
++		return target < num_of_states_in_delta && is_original_useful(target) &&
++			   is_projected_along_path(source, target);
++	};
++	const auto is_component_edge = [&](const State source, const State target) {
++		return is_closure_move(source, target) && is_projected_out(target);
++	};
++	nfa::internal::EdgeComponents closure_components{num_of_states_in_delta};
+ 	std::vector<State> closure_states{};
+-	std::vector<size_t> visited_in(num_of_states_in_delta, 0);
+-	std::vector<State> closure_stack{};
+-	size_t closure_mark{0};
++	// The closure of component c is closure_states[closure_ends[c - 1], closure_ends[c]).
++	std::vector<size_t> closure_ends{};
++	std::vector<size_t> state_mark(num_of_states_in_delta, 0);
++	std::vector<size_t> component_mark{};
++	const auto closure_begin = [&](const size_t component) {
++		return component == 0 ? size_t{0} : closure_ends[component - 1];
++	};
+ 	auto ensure_closure = [&](const State source) -> std::span<const State> {
+-		if (closure_begin[source] != NO_INDEX) {
+-			return std::span<const State>{
+-				closure_states.data() + closure_begin[source], closure_end[source] - closure_begin[source]
+-			};
+-		}
+-		closure_begin[source] = closure_states.size();
+-		const size_t mark{++closure_mark};
+-		visited_in[source] = mark;
+-		closure_states.push_back(source);
+-		closure_stack.push_back(source);
+-		while (!closure_stack.empty()) {
+-			const State state{closure_stack.back()};
+-			closure_stack.pop_back();
+-			if (!is_projected_out(state)) { continue; }
+-			for (const SymbolPost& move : nft.delta[state]) {
+-				for (const State target : move.targets) {
+-					if (visited_in[target] != mark && is_original_useful(target) &&
+-						is_projected_along_path(state, target)) {
+-						visited_in[target] = mark;
+-						closure_states.push_back(target);
+-						closure_stack.push_back(target);
++		closure_components.visit(source, closure_posts, is_component_edge);
++		for (size_t component{closure_ends.size()}; component < closure_components.size(); ++component) {
++			const size_t mark{component + 1};
++			component_mark.push_back(mark);
++			const std::span<const State> members{closure_components.members_of(component)};
++			for (const State member : members) {
++				state_mark[member] = mark;
++				closure_states.push_back(member);
++			}
++			for (const State member : members) {
++				for (const SymbolPost& move : nft.delta[member]) {
++					for (const State target : move.targets) {
++						if (!is_closure_move(member, target) || state_mark[target] == mark) { continue; }
++						if (!is_projected_out(target)) {
++							state_mark[target] = mark;
++							closure_states.push_back(target);
++							continue;
++						}
++						// Successor components are finished first, so their closures are complete.
++						const uint32_t successor{closure_components.component_of(target)};
++						if (component_mark[successor] == mark) { continue; }
++						component_mark[successor] = mark;
++						for (size_t index{closure_begin(successor)}; index < closure_ends[successor]; ++index) {
++							const State state{closure_states[index]};
++							if (state_mark[state] != mark) {
++								state_mark[state] = mark;
++								closure_states.push_back(state);
++							}
++						}
+ 					}
+ 				}
+ 			}
++			closure_ends.push_back(closure_states.size());
+ 		}
+-		closure_end[source] = closure_states.size();
++		const size_t component{closure_components.component_of(source)};
+ 		return std::span<const State>{
+-			closure_states.data() + closure_begin[source], closure_end[source] - closure_begin[source]
++			closure_states.data() + closure_begin(component), closure_ends[component] - closure_begin(component)
+ 		};
+ 	};
+ 
