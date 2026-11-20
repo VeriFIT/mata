@@ -1779,13 +1779,13 @@ StateSet Nft::mk_epsilon_closure(const StateSet& source_states, const std::vecto
 }
 
 void Nft::fill_alphabet(OnTheFlyAlphabet& alphabet_to_fill) const {
-	for (const StatePost& state_post : delta) {
-		for (const SymbolPost& symbol_post : state_post) {
-			// DONT_CARE and EPSILON sort last and are no letters.
-			if (symbol_post.symbol >= DONT_CARE) { break; }
-			alphabet_to_fill.update_next_symbol_value(symbol_post.symbol);
-			alphabet_to_fill.try_add_new_symbol(std::to_string(symbol_post.symbol), symbol_post.symbol);
-		}
+	// Distinct symbols only: a symbol used by n posts would otherwise be converted and hashed n times. DONT_CARE
+	//  and EPSILON sort last and are no letters.
+	const OrdVector<Symbol> used_symbols{delta.get_used_symbols()};
+	for (const Symbol symbol : used_symbols) {
+		if (symbol >= DONT_CARE) { break; }
+		alphabet_to_fill.update_next_symbol_value(symbol);
+		alphabet_to_fill.try_add_new_symbol(std::to_string(symbol), symbol);
 	}
 }
 

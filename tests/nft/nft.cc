@@ -270,6 +270,15 @@ TEST_CASE("mata::nft::create_alphabet()") {
 	// create_alphabet(a, b, 4); // Will not compile: '4' is not of the required type.
 }
 
+TEST_CASE("mata::nft::create_alphabet() skips EPSILON and DONT_CARE over many posts") { // {{{
+	Nft a{Nft::with_levels(2)};
+	for (mata::nft::State s{0}; s < 8; ++s) { a.delta.add(s, 'x', s + 1); }
+	a.delta.add(8, EPSILON, 9);
+	a.delta.add(9, DONT_CARE, 10);
+	const auto alphabet{create_alphabet(a)};
+	CHECK(alphabet.get_alphabet_symbols() == mata::utils::OrdVector<Symbol>{'x'});
+} // }}}
+
 TEST_CASE("mata::nft::Nft::delta.add()/delta.contains()") { // {{{
 	Nft a(3);
 

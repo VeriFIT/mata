@@ -856,14 +856,13 @@ StatePost::Moves::Moves(const StatePost::const_iterator symbol_post_it, const St
 	  symbol_post_end_{symbol_post_end} {}
 
 void Delta::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
-	const size_t aut_num_of_states{num_of_states()};
-	for (mata::nfa::State state{0}; state < aut_num_of_states; ++state) {
-		for (const SymbolPost& move : state_post(state)) {
-			// EPSILON sorts last and is no letter.
-			if (move.symbol == EPSILON) { break; }
-			target_alphabet.update_next_symbol_value(move.symbol);
-			target_alphabet.try_add_new_symbol(std::to_string(move.symbol), move.symbol);
-		}
+	// Distinct symbols only: a symbol used by n posts would otherwise be converted and hashed n times.
+	const OrdVector<Symbol> used_symbols{get_used_symbols()};
+	for (const Symbol symbol : used_symbols) {
+		// EPSILON sorts last and is no letter.
+		if (symbol == EPSILON) { break; }
+		target_alphabet.update_next_symbol_value(symbol);
+		target_alphabet.try_add_new_symbol(std::to_string(symbol), symbol);
 	}
 }
 
@@ -928,24 +927,15 @@ OrdVector<Symbol> Delta::get_used_symbols() const {
 // Other versions, maybe an interesting experiment with speed of data structures.
 // Returns symbols appearing in Delta, pushes back to vector and then sorts
 mata::utils::OrdVector<Symbol> Delta::get_used_symbols_vec() const {
-#ifdef _STATIC_STRUCTURES_
-	static std::vector<Symbol> symbols{};
-	symbols.clear();
-#else
+	// Per-call storage: a shared static buffer would race under concurrent const queries.
 	std::vector<Symbol> symbols{};
-#endif
 	for (const StatePost& state_post : state_posts_) {
 		for (const SymbolPost& symbol_post : state_post) {
 			utils::reserve_on_insert(symbols);
 			symbols.push_back(symbol_post.symbol);
 		}
 	}
-#ifdef _STATIC_STRUCTURES_
-	// The buffer is reused across calls, so its contents have to be copied out.
-	return utils::OrdVector<Symbol>{symbols};
-#else
 	return utils::OrdVector<Symbol>{std::move(symbols)};
-#endif
 }
 
 // returns symbols appearing in Delta, inserts to a std::set
@@ -964,13 +954,7 @@ std::set<Symbol> Delta::get_used_symbols_set() const {
 // returns symbols appearing in Delta, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
 mata::utils::SparseSet<Symbol> Delta::get_used_symbols_sps() const {
-#ifdef _STATIC_STRUCTURES_
-	// static seems to speed things up a little
-	static utils::SparseSet<Symbol> symbols(64);
-	symbols.clear();
-#else
 	utils::SparseSet<Symbol> symbols(64);
-#endif
 	// symbols.dont_track_elements();
 	for (const StatePost& state_post : state_posts_) {
 		for (const SymbolPost& symbol_post : state_post) { symbols.insert(symbol_post.symbol); }
@@ -982,13 +966,7 @@ mata::utils::SparseSet<Symbol> Delta::get_used_symbols_sps() const {
 // returns symbols appearing in Delta, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
 std::vector<bool> Delta::get_used_symbols_bv() const {
-#ifdef _STATIC_STRUCTURES_
-	// static seems to speed things up a little
-	static std::vector<bool> symbols(64, false);
-	symbols.clear();
-#else
 	std::vector<bool> symbols(64, false);
-#endif
 	// symbols.dont_track_elements();
 	for (const StatePost& state_post : state_posts_) {
 		for (const SymbolPost& symbol_post : state_post) {
@@ -1000,13 +978,7 @@ std::vector<bool> Delta::get_used_symbols_bv() const {
 }
 
 mata::BoolVector Delta::get_used_symbols_chv() const {
-#ifdef _STATIC_STRUCTURES_
-	// static seems to speed things up a little
-	static BoolVector symbols(64, false);
-	symbols.clear();
-#else
 	BoolVector symbols(64, false);
-#endif
 	// symbols.dont_track_elements();
 	for (const StatePost& state_post : state_posts_) {
 		for (const SymbolPost& symbol_post : state_post) {
