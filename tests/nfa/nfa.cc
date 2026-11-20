@@ -3678,6 +3678,23 @@ TEST_CASE("mata::nfa::are_equivalent() counterexample") {
 		}
 	}
 
+	SECTION("a difference found in the second inclusion direction still has a witness") {
+		// lhs: {a} is included in rhs: {a, b}, so the second direction has to search and report "b".
+		Nfa lhs{2, {0}, {1}};
+		Nfa rhs{2, {0}, {1}};
+		lhs.delta.add(0, alph["a"], 1);
+		rhs.delta.add(0, alph["a"], 1);
+		rhs.delta.add(0, alph["b"], 1);
+
+		for (const auto& algo : ALGORITHMS) {
+			params["algorithm"] = algo;
+			Run cex;
+			CHECK(!are_equivalent(lhs, rhs, &alph, params, &cex));
+			CHECK(rhs.is_in_lang(cex));
+			CHECK(!lhs.is_in_lang(cex));
+		}
+	}
+
 	SECTION("alphabet-less overload also fills cex") {
 		Nfa lhs(1), rhs(1);
 		lhs.initial = {0};
@@ -7544,6 +7561,85 @@ TEST_CASE("mata::Automaton::distances_to_final matches the reverted BFS - #740")
 		// The slow oracle: revert the automaton completely and BFS over it, as distances_to_final() used to be
 		//  implemented.
 		CHECK(nfa.distances_to_final() == revert(nfa).distances_from_initial());
+	}
+} // }}}
+
+TEST_CASE("mata::Automaton::distances_to_final and get_terminating_states on edge cases - #740") { // {{{
+	SECTION("no final states") {
+		Nfa nfa{3};
+		nfa.delta.add(0, 0, 1);
+		nfa.delta.add(1, 1, 2);
+		nfa.initial = {0};
+		CHECK(
+			nfa.distances_to_final() ==
+			std::vector<State>{Limits::max_state, Limits::max_state, Limits::max_state, Limits::max_state}
+		);
+		CHECK(nfa.get_terminating_states() == StateSet{});
+	}
+
+	SECTION("several final states and a self-loop") {
+		Nfa nfa{4};
+		nfa.delta.add(0, 0, 1);
+		nfa.delta.add(0, 1, 2);
+		nfa.delta.add(1, 0, 3);
+		nfa.delta.add(2, 0, 2); // self-loop that cannot reach a final
+		nfa.final = {1, 3};
+		nfa.initial = {0};
+		CHECK(nfa.distances_to_final() == std::vector<State>{1, 0, Limits::max_state, 0, Limits::max_state});
+		CHECK(nfa.get_terminating_states() == StateSet{0, 1, 3});
+	}
+
+	SECTION("num_of_states() comes from initial/final rather than delta") {
+		Nfa nfa{};
+		nfa.initial = {2};
+		nfa.final = {5};
+		CHECK(nfa.num_of_states() == 6);
+		// Only the final state itself is terminating; distances keep one extra sentinel slot.
+		CHECK(nfa.get_terminating_states() == StateSet{5});
+		CHECK(
+			nfa.distances_to_final() == std::vector<State>{
+											Limits::max_state, Limits::max_state, Limits::max_state, Limits::max_state,
+											Limits::max_state, 0, Limits::max_state
+										}
+		);
+	}
+
+	SECTION("unreachable final state is still a distance-0 target") {
+		Nfa nfa{3};
+		nfa.initial = {0};
+		nfa.final = {2};
+		nfa.delta.add(0, 0, 1);
+		CHECK(nfa.get_terminating_states() == StateSet{2});
+		CHECK(
+			nfa.distances_to_final() == std::vector<State>{Limits::max_state, Limits::max_state, 0, Limits::max_state}
+		);
+	}
+} // }}}
+
+TEST_CASE("mata::Automaton::get_terminating_states matches the reverted reachability - #740") { // {{{
+	std::mt19937 gen{741};
+	for (size_t iteration{0}; iteration < 60; ++iteration) {
+		const size_t num_states{std::uniform_int_distribution<size_t>(0, 35)(gen)};
+		Nfa nfa{num_states};
+		if (num_states == 0) {
+			CHECK(nfa.get_terminating_states() == StateSet{});
+			continue;
+		}
+		const auto max_state{static_cast<State>(num_states - 1)};
+		for (State state{0}; state < num_states; ++state) {
+			const size_t out_degree{std::uniform_int_distribution<size_t>(0, 4)(gen)};
+			for (size_t i{0}; i < out_degree; ++i) {
+				nfa.delta.add(
+					state, std::uniform_int_distribution<mata::Symbol>(0, 3)(gen),
+					std::uniform_int_distribution<mata::nfa::State>(0, max_state)(gen)
+				);
+			}
+			if (std::uniform_int_distribution<int>(0, 2)(gen) == 0) { nfa.final.insert(state); }
+		}
+		// The slow oracle: revert the automaton and compute forward reachability, as get_terminating_states() used
+		//  to be implemented. The returned set orders states in ascending order, unlike SparseSet insertion order.
+		const StateSet oracle{revert(nfa).get_reachable_states()};
+		CHECK(nfa.get_terminating_states() == oracle);
 	}
 } // }}}
 
