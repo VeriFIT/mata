@@ -229,6 +229,17 @@ TEST_CASE("mata::nfa::seg_nfa::segs_one_initial_final() keeps the language of re
 				CHECK(segment_nfa.initial.size() == (expected_nfa.num_of_states() > 0 ? 1 : 0));
 				CHECK(are_equivalent(segment_nfa, expected_nfa));
 				CHECK(segment.is_epsilon_only() == (expected_nfa.num_of_states() > 0 && is_lang_eps(expected_nfa)));
+				// Equal sizes too. For a pair of an inner or the last segment, its part P (the states reachable from
+				//  init) is closed under successors, so its simulation is the shared one restricted to P, and a class
+				//  has the same maximal successor classes from any of its states: the part of the shared quotient
+				//  reachable from the class of init is isomorphic to the part of the reference reachable from its
+				//  initial state. reduce() alone does not trim that part. The first segment unifies the initial states
+				//  of the reference itself.
+				Nfa trimmed_expected{expected_nfa};
+				if (key.first == unused_state) { trimmed_expected.unify_initial(); }
+				trimmed_expected.trim();
+				CHECK(segment_nfa.num_of_states() == trimmed_expected.num_of_states());
+				CHECK(segment_nfa.delta.num_of_transitions() == trimmed_expected.delta.num_of_transitions());
 			}
 
 			// One automaton per final state of the first and the inner segments, one for the last segment and one
