@@ -212,7 +212,7 @@
 <dl class="cpp enumerator">
 <dt class="sig sig-object cpp" id="_CPPv4N4mata3nft24CompositionNormalization4FullE">
 <span id="_CPPv3N4mata3nft24CompositionNormalization4FullE"></span><span id="_CPPv2N4mata3nft24CompositionNormalization4FullE"></span><span class="target" id="namespacemata_1_1nft_1aeecc568362baae739ae9eb23b32650e4abbd47109890259c0127154db1af26c75"></span><span class="k"><span class="pre">enumerator</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Full</span></span></span><br /></dt>
-<dd><p><code class="docutils literal notranslate"><span class="pre">GeneratedOnly</span></code>, then the generic <code class="docutils literal notranslate"><a class="reference internal" href="#namespacemata_1_1nft_1a78c6446331a7ba2ade97480ac089ff30"><span class="std std-ref"><span class="pre">remove_epsilon()</span></span></a></code> (with <code class="docutils literal notranslate"><a class="reference internal" href="#namespacemata_1_1nft_1a4a010f2382b9dad51fc143c081d2829bafd576995aea5af8c5fa9e675ac8f1c7b"><span class="std std-ref"><span class="pre">JumpMode::NoJump</span></span></a></code> only, as it reads every transition as one level long), <code class="docutils literal notranslate"><a class="reference internal" href="#classmata_1_1nft_1_1Nft_1ad62dba04420e1bd3e0c7b010cc4e4d0c"><span class="std std-ref"><span class="pre">Nft::trim()</span></span></a></code> and simulation-based <code class="docutils literal notranslate"><a class="reference internal" href="#namespacemata_1_1nft_1a1e0a7c53b3ba99003ba9c4487dffde4b"><span class="std std-ref"><span class="pre">reduce()</span></span></a></code>. Far more expensive than the composition itself; only for callers who want the smallest result. </p>
+<dd><p><code class="docutils literal notranslate"><span class="pre">GeneratedOnly</span></code>, then the generic <code class="docutils literal notranslate"><a class="reference internal" href="#namespacemata_1_1nft_1a78c6446331a7ba2ade97480ac089ff30"><span class="std std-ref"><span class="pre">remove_epsilon()</span></span></a></code> (with <code class="docutils literal notranslate"><a class="reference internal" href="#namespacemata_1_1nft_1a4a010f2382b9dad51fc143c081d2829bafd576995aea5af8c5fa9e675ac8f1c7b"><span class="std std-ref"><span class="pre">JumpMode::NoJump</span></span></a></code> only, as it reads every transition as one level long), <code class="docutils literal notranslate"><a class="reference internal" href="#classmata_1_1nft_1_1Nft_1a3f67a0e0fa4b7d045c66c0a0ddf77cf4"><span class="std std-ref"><span class="pre">Nft::trim()</span></span></a></code> and simulation-based <code class="docutils literal notranslate"><a class="reference internal" href="#namespacemata_1_1nft_1a1e0a7c53b3ba99003ba9c4487dffde4b"><span class="std std-ref"><span class="pre">reduce()</span></span></a></code>. Far more expensive than the composition itself; only for callers who want the smallest result. </p>
 </dd></dl>
 
 <dl class="cpp enumerator">
@@ -1333,8 +1333,8 @@ This overloaded version complements over an already created ordered set of <code
 </dd></dl>
 
 <dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft3Nft13unify_initialEb">
-<span id="_CPPv3N4mata3nft3Nft13unify_initialEb"></span><span id="_CPPv2N4mata3nft3Nft13unify_initialEb"></span><span id="mata::nft::Nft::unify_initial__b"></span><span class="target" id="classmata_1_1nft_1_1Nft_1a8096c27d6ec44aef33320f3f80246d2b"></span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">unify_initial</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">force_new_state</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NR4mata3nft3Nft13unify_initialEb">
+<span id="_CPPv3NR4mata3nft3Nft13unify_initialEb"></span><span id="_CPPv2NR4mata3nft3Nft13unify_initialEb"></span><span id="mata::nft::Nft::unify_initial__bR"></span><span class="target" id="classmata_1_1nft_1_1Nft_1a88e15f03e7a553650787afbdb1658b76"></span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">unify_initial</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">force_new_state</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><br /></dt>
 <dd><p>Unify initial states into a single new initial state. </p>
 <p>The new state is created at level 0, which is where the initial states of a well-formed NFT live. </p>
 <dl class="field-list simple">
@@ -1348,8 +1348,23 @@ This overloaded version complements over an already created ordered set of <code
 </dd></dl>
 
 <dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft3Nft11unify_finalEb">
-<span id="_CPPv3N4mata3nft3Nft11unify_finalEb"></span><span id="_CPPv2N4mata3nft3Nft11unify_finalEb"></span><span id="mata::nft::Nft::unify_final__b"></span><span class="target" id="classmata_1_1nft_1_1Nft_1ade0da1237ec289a550251fde4dba37cb"></span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">unify_final</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">force_new_state</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NO4mata3nft3Nft13unify_initialEb">
+<span id="_CPPv3NO4mata3nft3Nft13unify_initialEb"></span><span id="_CPPv2NO4mata3nft3Nft13unify_initialEb"></span><span id="mata::nft::Nft::unify_initial__bO"></span><span class="target" id="classmata_1_1nft_1_1Nft_1aafca1734dbbb4ab0c2a05da1872e185b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">unify_initial</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">force_new_state</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">&amp;&amp;</span></span><br /></dt>
+<dd><p>Unify initial states in place on an rvalue and return the unified transducer by value. </p>
+<p>The result is moved out of <code class="docutils literal notranslate"><span class="pre">this</span></code>, so initializing or returning it does not copy the transducer. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>force_new_state</strong> – <strong>[in]</strong> Whether to force creating a new state even when initial states are already unified. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">this</span></code> after unification, as a value. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NR4mata3nft3Nft11unify_finalEb">
+<span id="_CPPv3NR4mata3nft3Nft11unify_finalEb"></span><span id="_CPPv2NR4mata3nft3Nft11unify_finalEb"></span><span id="mata::nft::Nft::unify_final__bR"></span><span class="target" id="classmata_1_1nft_1_1Nft_1ae433e426c3a699e63d3b9497128370b9"></span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">unify_final</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">force_new_state</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><br /></dt>
 <dd><p>Unify final states into a single new final state. </p>
 <p>The new state is created at level 0, which is where the final states of a well-formed NFT live. </p>
 <dl class="field-list simple">
@@ -1358,6 +1373,21 @@ This overloaded version complements over an already created ordered set of <code
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">this</span></code> after unification. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NO4mata3nft3Nft11unify_finalEb">
+<span id="_CPPv3NO4mata3nft3Nft11unify_finalEb"></span><span id="_CPPv2NO4mata3nft3Nft11unify_finalEb"></span><span id="mata::nft::Nft::unify_final__bO"></span><span class="target" id="classmata_1_1nft_1_1Nft_1a78899dd4031aec4c80e98b9f05ae7e2f"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">unify_final</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">force_new_state</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">false</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">&amp;&amp;</span></span><br /></dt>
+<dd><p>Unify final states in place on an rvalue and return the unified transducer by value. </p>
+<p>The result is moved out of <code class="docutils literal notranslate"><span class="pre">this</span></code>, so initializing or returning it does not copy the transducer. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>force_new_state</strong> – <strong>[in]</strong> Whether to force creating a new state even when final states are already unified. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">this</span></code> after unification, as a value. </p>
 </dd>
 </dl>
 </dd></dl>
@@ -1458,8 +1488,8 @@ This overloaded version complements over an already created ordered set of <code
 </dd></dl>
 
 <dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft3Nft4trimEP13StateRenaming">
-<span id="_CPPv3N4mata3nft3Nft4trimEP13StateRenaming"></span><span id="_CPPv2N4mata3nft3Nft4trimEP13StateRenaming"></span><span id="mata::nft::Nft::trim__StateRenamingP"></span><span class="target" id="classmata_1_1nft_1_1Nft_1ad62dba04420e1bd3e0c7b010cc4e4d0c"></span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">trim</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft13StateRenamingE" title="mata::nft::StateRenaming"><span class="n"><span class="pre">StateRenaming</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">state_renaming</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span><span class="sig-paren">)</span><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NR4mata3nft3Nft4trimEP13StateRenaming">
+<span id="_CPPv3NR4mata3nft3Nft4trimEP13StateRenaming"></span><span id="_CPPv2NR4mata3nft3Nft4trimEP13StateRenaming"></span><span id="mata::nft::Nft::trim__StateRenamingPR"></span><span class="target" id="classmata_1_1nft_1_1Nft_1a3f67a0e0fa4b7d045c66c0a0ddf77cf4"></span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">trim</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft13StateRenamingE" title="mata::nft::StateRenaming"><span class="n"><span class="pre">StateRenaming</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">state_renaming</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><br /></dt>
 <dd><p>Remove inaccessible (unreachable) and not co-accessible (non-terminating) states in-place. </p>
 <p>Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is the starting point of a path ending in a final state).</p>
 <dl class="field-list simple">
@@ -1468,6 +1498,21 @@ This overloaded version complements over an already created ordered set of <code
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">this</span></code> after trimming. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NO4mata3nft3Nft4trimEP13StateRenaming">
+<span id="_CPPv3NO4mata3nft3Nft4trimEP13StateRenaming"></span><span id="_CPPv2NO4mata3nft3Nft4trimEP13StateRenaming"></span><span id="mata::nft::Nft::trim__StateRenamingPO"></span><span class="target" id="classmata_1_1nft_1_1Nft_1a790c3de0029148c1b805de2bc776bc0d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">trim</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="namespacemata.html#_CPPv4N4mata3nft13StateRenamingE" title="mata::nft::StateRenaming"><span class="n"><span class="pre">StateRenaming</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">state_renaming</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">&amp;&amp;</span></span><br /></dt>
+<dd><p>Trim an rvalue transducer in place and return the trimmed transducer by value. </p>
+<p>Unlike the lvalue overload, the result is moved out of <code class="docutils literal notranslate"><span class="pre">this</span></code>, so <code class="docutils literal notranslate"><a class="reference internal" href="#classmata_1_1nft_1_1Nft"><span class="std std-ref"><span class="pre">Nft</span></span></a> <span class="pre">t{f().</span><a class="reference internal" href="#classmata_1_1nft_1_1Nft_1a3f67a0e0fa4b7d045c66c0a0ddf77cf4"><span class="std std-ref"><span class="pre">trim()</span></span></a><span class="pre">}</span></code> or <code class="docutils literal notranslate"><span class="pre">return</span> <span class="pre">f().</span><a class="reference internal" href="#classmata_1_1nft_1_1Nft_1a3f67a0e0fa4b7d045c66c0a0ddf77cf4"><span class="std std-ref"><span class="pre">trim()</span></span></a></code> does not copy the transducer. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>state_renaming</strong> – <strong>[out]</strong> Mapping of trimmed states to new states. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">this</span></code> after trimming, as a value. </p>
 </dd>
 </dl>
 </dd></dl>
@@ -1484,21 +1529,53 @@ This overloaded version complements over an already created ordered set of <code
 </dd></dl>
 
 <dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft3Nft11concatenateERK3Nft">
-<span id="_CPPv3N4mata3nft3Nft11concatenateERK3Nft"></span><span id="_CPPv2N4mata3nft3Nft11concatenateERK3Nft"></span><span id="mata::nft::Nft::concatenate__NftCR"></span><span class="target" id="classmata_1_1nft_1_1Nft_1aea96699097f93e749361023fc9465fdd"></span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">concatenate</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span><span class="sig-paren">)</span><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NR4mata3nft3Nft11concatenateERK3Nft">
+<span id="_CPPv3NR4mata3nft3Nft11concatenateERK3Nft"></span><span id="_CPPv2NR4mata3nft3Nft11concatenateERK3Nft"></span><span id="mata::nft::Nft::concatenate__NftCRR"></span><span class="target" id="classmata_1_1nft_1_1Nft_1aa81fbc3184af90494c2e21a3ff04e1f1"></span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">concatenate</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><br /></dt>
 <dd><p>In-place concatenation. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">this</span></code> after concatenation. </p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft3Nft11concatenateERR3Nft">
-<span id="_CPPv3N4mata3nft3Nft11concatenateERR3Nft"></span><span id="_CPPv2N4mata3nft3Nft11concatenateERR3Nft"></span><span id="mata::nft::Nft::concatenate__NftRR"></span><span class="target" id="classmata_1_1nft_1_1Nft_1aec9520efde55bf082f17e2e2252b5e34"></span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">concatenate</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span><span class="sig-paren">)</span><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NO4mata3nft3Nft11concatenateERK3Nft">
+<span id="_CPPv3NO4mata3nft3Nft11concatenateERK3Nft"></span><span id="_CPPv2NO4mata3nft3Nft11concatenateERK3Nft"></span><span id="mata::nft::Nft::concatenate__NftCRO"></span><span class="target" id="classmata_1_1nft_1_1Nft_1a584cff100531e3f222111316b8c9fb15"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">concatenate</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">&amp;&amp;</span></span><br /></dt>
+<dd><p>In-place concatenation on an rvalue, returning the concatenated transducer by value. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">this</span></code> after concatenation, as a value. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NR4mata3nft3Nft11concatenateERR3Nft">
+<span id="_CPPv3NR4mata3nft3Nft11concatenateERR3Nft"></span><span id="_CPPv2NR4mata3nft3Nft11concatenateERR3Nft"></span><span id="mata::nft::Nft::concatenate__NftRRR"></span><span class="target" id="classmata_1_1nft_1_1Nft_1a598c4c25a579fb4f46ba8410f53821b0"></span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">concatenate</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><br /></dt>
 <dd><p>In-place concatenation, consuming <code class="docutils literal notranslate"><span class="pre">aut</span></code>. </p>
 <p>The state posts of <code class="docutils literal notranslate"><span class="pre">aut</span></code> are moved into <code class="docutils literal notranslate"><span class="pre">this</span></code>. If <code class="docutils literal notranslate"><span class="pre">this</span></code> and <code class="docutils literal notranslate"><span class="pre">aut</span></code> are aliased, a controlled snapshot is taken and the operation falls back to the lvalue path. <code class="docutils literal notranslate"><span class="pre">aut</span></code> is left valid but empty after the operation, with its number of levels. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">this</span></code> after concatenation. </p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft3Nft17unite_nondet_withERK3Nft">
-<span id="_CPPv3N4mata3nft3Nft17unite_nondet_withERK3Nft"></span><span id="_CPPv2N4mata3nft3Nft17unite_nondet_withERK3Nft"></span><span id="mata::nft::Nft::unite_nondet_with__NftCR"></span><span class="target" id="classmata_1_1nft_1_1Nft_1a69bb5d44a8a58056ae422a9f6c31a19a"></span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">unite_nondet_with</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">nft</span></span><span class="sig-paren">)</span><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NO4mata3nft3Nft11concatenateERR3Nft">
+<span id="_CPPv3NO4mata3nft3Nft11concatenateERR3Nft"></span><span id="_CPPv2NO4mata3nft3Nft11concatenateERR3Nft"></span><span id="mata::nft::Nft::concatenate__NftRRO"></span><span class="target" id="classmata_1_1nft_1_1Nft_1ab71e98aea6e87b3cc779fbb214a5612b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">concatenate</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">&amp;&amp;</span></span><br /></dt>
+<dd><p>In-place concatenation on an rvalue, consuming <code class="docutils literal notranslate"><span class="pre">aut</span></code> and returning the result by value. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">this</span></code> after concatenation, as a value. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NR4mata3nft3Nft17unite_nondet_withERK3Nft">
+<span id="_CPPv3NR4mata3nft3Nft17unite_nondet_withERK3Nft"></span><span id="_CPPv2NR4mata3nft3Nft17unite_nondet_withERK3Nft"></span><span id="mata::nft::Nft::unite_nondet_with__NftCRR"></span><span class="target" id="classmata_1_1nft_1_1Nft_1a62b0da6d426830b76f34e1072cf63953"></span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">unite_nondet_with</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">nft</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><br /></dt>
 <dd><p>In-place nondeterministic union of <code class="docutils literal notranslate"><span class="pre">this</span></code> with <code class="docutils literal notranslate"><span class="pre">nft</span></code>. </p>
 <p>Does not add epsilon transitions, just unites initial and final states.</p>
 <dl class="field-list simple">
@@ -1512,8 +1589,19 @@ This overloaded version complements over an already created ordered set of <code
 </dd></dl>
 
 <dl class="cpp function">
-<dt class="sig sig-object cpp" id="_CPPv4N4mata3nft3Nft17unite_nondet_withERR3Nft">
-<span id="_CPPv3N4mata3nft3Nft17unite_nondet_withERR3Nft"></span><span id="_CPPv2N4mata3nft3Nft17unite_nondet_withERR3Nft"></span><span id="mata::nft::Nft::unite_nondet_with__NftRR"></span><span class="target" id="classmata_1_1nft_1_1Nft_1a2f0f54d6775ecfabf421f67dc2ffca97"></span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">unite_nondet_with</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">nft</span></span><span class="sig-paren">)</span><br /></dt>
+<dt class="sig sig-object cpp" id="_CPPv4NO4mata3nft3Nft17unite_nondet_withERK3Nft">
+<span id="_CPPv3NO4mata3nft3Nft17unite_nondet_withERK3Nft"></span><span id="_CPPv2NO4mata3nft3Nft17unite_nondet_withERK3Nft"></span><span id="mata::nft::Nft::unite_nondet_with__NftCRO"></span><span class="target" id="classmata_1_1nft_1_1Nft_1a257933f7a35ebce00517ae334c79edf9"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">unite_nondet_with</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">nft</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">&amp;&amp;</span></span><br /></dt>
+<dd><p>In-place nondeterministic union on an rvalue, returning the result by value. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">this</span></code> after uniting with <code class="docutils literal notranslate"><span class="pre">nft</span></code>, as a value. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NR4mata3nft3Nft17unite_nondet_withERR3Nft">
+<span id="_CPPv3NR4mata3nft3Nft17unite_nondet_withERR3Nft"></span><span id="_CPPv2NR4mata3nft3Nft17unite_nondet_withERR3Nft"></span><span id="mata::nft::Nft::unite_nondet_with__NftRRR"></span><span class="target" id="classmata_1_1nft_1_1Nft_1ad1c94a7b9ed1fcdfbfb7676de35a3677"></span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">unite_nondet_with</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">nft</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><br /></dt>
 <dd><p>In-place nondeterministic union of <code class="docutils literal notranslate"><span class="pre">this</span></code> with <code class="docutils literal notranslate"><span class="pre">nft</span></code>, consuming <code class="docutils literal notranslate"><span class="pre">nft</span></code>. </p>
 <p>Does not add epsilon transitions, just unites initial and final states. The state posts of <code class="docutils literal notranslate"><span class="pre">nft</span></code> are moved into <code class="docutils literal notranslate"><span class="pre">this</span></code>, so no deep copy of the operand occurs. If <code class="docutils literal notranslate"><span class="pre">this</span></code> and <code class="docutils literal notranslate"><span class="pre">nft</span></code> are aliased, a controlled snapshot is taken and the operation falls back to the lvalue path. <code class="docutils literal notranslate"><span class="pre">nft</span></code> is left valid but empty after the operation, with its number of levels.</p>
 <dl class="field-list simple">
@@ -1522,6 +1610,17 @@ This overloaded version complements over an already created ordered set of <code
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">this</span></code> after uniting with <code class="docutils literal notranslate"><span class="pre">nft</span></code>. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NO4mata3nft3Nft17unite_nondet_withERR3Nft">
+<span id="_CPPv3NO4mata3nft3Nft17unite_nondet_withERR3Nft"></span><span id="_CPPv2NO4mata3nft3Nft17unite_nondet_withERR3Nft"></span><span id="mata::nft::Nft::unite_nondet_with__NftRRO"></span><span class="target" id="classmata_1_1nft_1_1Nft_1a2b189f5f89a7eb801f61f39f33dbd741"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">unite_nondet_with</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../class/classmata_1_1nft_1_1Nft.html#_CPPv4N4mata3nft3NftE" title="mata::nft::Nft"><span class="n"><span class="pre">Nft</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">nft</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">&amp;&amp;</span></span><br /></dt>
+<dd><p>In-place nondeterministic union on an rvalue, consuming <code class="docutils literal notranslate"><span class="pre">nft</span></code> and returning the result by value. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">this</span></code> after uniting with <code class="docutils literal notranslate"><span class="pre">nft</span></code>, as a value. </p>
 </dd>
 </dl>
 </dd></dl>
