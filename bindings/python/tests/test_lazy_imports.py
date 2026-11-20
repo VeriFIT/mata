@@ -14,7 +14,7 @@ def run_isolated(code: str) -> SimpleNamespace:
         stdout = os.path.join(directory, "stdout")
         stderr = os.path.join(directory, "stderr")
         prelude = f"import sys\nsys.stdout = open({stdout!r}, 'w')\nsys.stderr = open({stderr!r}, 'w')\n"
-        child = os.posix_spawn(sys.executable, ["python", "-c", prelude + code], os.environ.copy())
+        child = os.posix_spawn(sys.executable, [sys.executable, "-c", prelude + code], os.environ.copy())
         _, status = os.waitpid(child, 0)
         with open(stdout) as output, open(stderr) as error:
             return SimpleNamespace(
