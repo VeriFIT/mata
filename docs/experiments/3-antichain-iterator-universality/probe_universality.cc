@@ -55,6 +55,7 @@ int main(int argc, char* argv[]) {
 	const bool check{std::string{argv[2]} == "1"};
 	std::cout << std::fixed << std::setprecision(4);
 	if (mode == "random") {
+		if (argc != 5) { return 1; }
 		const size_t count{std::stoul(argv[3])};
 		std::mt19937 rng{static_cast<unsigned>(std::stoul(argv[4]))};
 		for (size_t i{0}; i < count; ++i) {
@@ -68,6 +69,10 @@ int main(int argc, char* argv[]) {
 		return 0;
 	}
 	std::ifstream list{argv[3]};
+	if (!list) {
+		std::cerr << "Cannot open input list: " << argv[3] << "\n";
+		return 2;
+	}
 	for (std::string path; std::getline(list, path);) {
 		if (path.empty()) { continue; }
 		Nfa aut;

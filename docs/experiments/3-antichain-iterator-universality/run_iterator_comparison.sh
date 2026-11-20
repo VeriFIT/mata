@@ -1,21 +1,37 @@
-#!/bin/sh
-set -eu
-for r in 1 2 3; do
-  echo "ROUND $r"
-  for f in $(cat /tmp/p752/univ-sample.list); do
-    b=$(taskset --cpu-list 3 ./probe_c_base det "$f" 2>/dev/null | tail -n 1)
-    c=$(taskset --cpu-list 3 ./probe_c_c det "$f" 2>/dev/null | tail -n 1)
+#!/usr/bin/env bash
+set -euo pipefail
+
+data_dir=${1:-/tmp/p752}
+univ_samples=$(cat "$data_dir/univ-sample.list") || { echo "Cannot read $data_dir/univ-sample.list" >&2; exit 1; }
+incl_samples=$(cat "$data_dir/incl-sample.list") || { echo "Cannot read $data_dir/incl-sample.list" >&2; exit 1; }
+
+run_probe() {
+  local output
+  output=$(taskset --cpu-list 3 "$@") || {
+    local status=$?
+    echo "Probe failed with status $status: $*" >&2
+    return "$status"
+  }
+  tail -n 1 <<<"$output"
+}
+
+for round in 1 2 3; do
+  echo "ROUND $round"
+  for f in $univ_samples; do
+    b=$(run_probe ./probe_c_base det "$f")
+    c=$(run_probe ./probe_c_c det "$f")
     echo "det;$f;$b;$c"
   done
-  for p in $(cat /tmp/p752/incl-sample.list); do
-    l="$p-lhs.mata"; r="$p-rhs.mata"
-    b=$(taskset --cpu-list 3 ./probe_c_base incl "$l" "$r" 2>/dev/null | tail -n 1)
-    c=$(taskset --cpu-list 3 ./probe_c_c incl "$l" "$r" 2>/dev/null | tail -n 1)
+  for p in $incl_samples; do
+    lhs="$p-lhs.mata"
+    rhs="$p-rhs.mata"
+    b=$(run_probe ./probe_c_base incl "$lhs" "$rhs")
+    c=$(run_probe ./probe_c_c incl "$lhs" "$rhs")
     echo "incl;$p;$b;$c"
   done
-  for f in $(cat /tmp/p752/univ-sample.list); do
-    b=$(taskset --cpu-list 3 ./probe_c_base univ "$f" 2>/dev/null | tail -n 1)
-    c=$(taskset --cpu-list 3 ./probe_c_c univ "$f" 2>/dev/null | tail -n 1)
+  for f in $univ_samples; do
+    b=$(run_probe ./probe_c_base univ "$f")
+    c=$(run_probe ./probe_c_c univ "$f")
     echo "univ;$f;$b;$c"
   done
 done

@@ -39,9 +39,11 @@ int main(int argc, char* argv[]) {
 	const std::string mode{argv[1]};
 	std::cout << std::fixed << std::setprecision(4);
 	if (mode == "micro") {
+		if (argc != 6) { return 1; }
 		const size_t k{std::stoul(argv[2])};
 		const size_t alphabet_size{std::stoul(argv[3])};
 		const size_t per_state{std::stoul(argv[4])};
+		if (per_state > alphabet_size) { return 1; }
 		std::mt19937 rng{static_cast<unsigned>(std::stoul(argv[5]))};
 		Delta delta{};
 		std::vector<Symbol> symbols(alphabet_size);
@@ -70,6 +72,7 @@ int main(int argc, char* argv[]) {
 		return sink == 0 ? 1 : 0;
 	}
 	if (mode == "incl") {
+		if (argc != 4) { return 1; }
 		std::vector<Nfa> auts;
 		mata::OnTheFlyAlphabet alphabet;
 		if (!load({argv[2], argv[3]}, auts, alphabet)) { return 2; }

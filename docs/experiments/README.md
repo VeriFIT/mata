@@ -8,11 +8,14 @@ Before starting a performance or design change, check here whether it has been t
 
 ## Index
 
-| id                                                   | title                                                                             | status   |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------- | -------- |
-| [EXP-1](1-ordvector-flat-set/README.md)              | Replace `OrdVector` with `std::flat_set`, or change its merge, search and storage | rejected |
-| [EXP-2](2-nft-bdd-automata/README.md)                | Use NFT levels as BDDs on automaton transitions                                   | rejected |
-| [EXP-3](3-antichain-iterator-universality/README.md) | Adaptive existential iterator merging, and universality through inclusion         | rejected |
+| id                                      | title                                               | status   |
+| --------------------------------------- | --------------------------------------------------- | -------- |
+| [EXP-1](1-ordvector-flat-set/README.md) | Replace `OrdVector` with `std::flat_set`            | rejected |
+| [EXP-1](1-ordvector-flat-set/README.md) | Change `OrdVector` merge, search, and storage       | rejected |
+| [EXP-2](2-nft-bdd-automata/README.md)   | Use NFT levels as BDDs on automaton transitions     | rejected |
+| [EXP-3][exp-3]                          | Adaptive merging and universality through inclusion | rejected |
+
+[exp-3]: 3-antichain-iterator-universality/README.md
 
 ## Adding a record
 
