@@ -119,18 +119,22 @@ def plot_using_graphviz(
     for state in aut.initial_states:
         dot.edge(f"q{state}", f"{state}", **edge_configuration)
     edges = {}
-    for trans in aut.iterate():
-        key = f"{trans.source},{trans.target}"
-        if key not in edges.keys():
+    sources, symbols, targets = aut.transitions_as_arrays()
+    # Rules are given a Transition; only build one when a rule may read it.
+    has_edge_rules = bool(edge_highlight)
+    for source, symbol, target in zip(sources, symbols, targets):
+        key = f"{source},{target}"
+        if key not in edges:
             edges[key] = []
-        symbol = "{}".format(
-            alphabet.reverse_translate_symbol(trans.symbol) if alphabet else trans.symbol
+        symbol_name = "{}".format(
+            alphabet.reverse_translate_symbol(symbol) if alphabet else symbol
         )
         edges[key].append((
-            f"{trans.source}", f"{trans.target}", symbol,
+            f"{source}", f"{target}", symbol_name,
             get_configuration_for(
-                edge_configuration, edge_highlight, aut, trans
-            )
+                edge_configuration, edge_highlight, aut,
+                mata_nfa.Transition(source, symbol, target)
+            ) if has_edge_rules else edge_configuration,
         ))
     for edge in edges.values():
         source = edge[0][0]

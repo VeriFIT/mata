@@ -435,7 +435,7 @@ cdef class Nft:
         return mata_nfa.wrap_delta(static_pointer_cast[CAutomaton, CNft](self.thisptr))
 
     def add_transition_object(self, Transition tr):
-        self.thisptr.get().delta.add(dereference((<mata_nfa.Transition>tr).thisptr))
+        self.thisptr.get().delta.add((<mata_nfa.Transition>tr).thisptr)
 
     def add_transition(self, State source, symbols, target = None):
         """Add a single NFT transition creating new inner states for all tapes.
@@ -468,7 +468,7 @@ cdef class Nft:
         self.thisptr.get().add_transition_with_same_level_targets(source, symbol, c_targets, _c_jump_mode(jump_mode))
 
     def remove_trans(self, Transition tr):
-        self.thisptr.get().delta.remove(dereference((<mata_nfa.Transition>tr).thisptr))
+        self.thisptr.get().delta.remove((<mata_nfa.Transition>tr).thisptr)
 
     def remove_trans_raw(self, State source, Symbol symbol, State target):
         self.thisptr.get().delta.remove(source, symbol, target)
