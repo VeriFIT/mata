@@ -658,6 +658,48 @@ TEST_CASE("mata::nfa::SynchronizedExistentialSymbolPostIterator::unify_targets")
 		CHECK(result == expected);
 	}
 
+	SECTION("k == 2: disjoint target sets merge in order") {
+		Nfa aut{};
+		aut.add_state(8);
+		aut.delta.add(0, 'a', 0);
+		aut.delta.add(0, 'a', 2);
+		aut.delta.add(0, 'a', 7);
+		aut.delta.add(1, 'a', 1);
+		aut.delta.add(1, 'a', 3);
+		aut.delta.add(1, 'a', 6);
+
+		SynchronizedExistentialSymbolPostIterator sync_it;
+		sync_it.push_back(aut.delta.state_post(0).cbegin(), aut.delta.state_post(0).cend());
+		sync_it.push_back(aut.delta.state_post(1).cbegin(), aut.delta.state_post(1).cend());
+
+		REQUIRE(sync_it.synchronize_with('a'));
+		CHECK(sync_it.unify_targets() == StateSet{0, 1, 2, 3, 6, 7});
+	}
+
+	SECTION("k >= 3: targets next to the highest state") {
+		constexpr State num_of_states{1'024};
+		Nfa aut{};
+		aut.add_state(num_of_states - 1);
+		REQUIRE(aut.num_of_states() == num_of_states);
+		aut.delta.add(0, 'a', num_of_states - 4);
+		aut.delta.add(0, 'a', num_of_states - 1);
+		aut.delta.add(1, 'a', num_of_states - 3);
+		aut.delta.add(1, 'a', num_of_states - 2);
+		aut.delta.add(2, 'a', num_of_states - 2);
+		aut.delta.add(2, 'a', num_of_states - 1);
+
+		SynchronizedExistentialSymbolPostIterator sync_it;
+		sync_it.push_back(aut.delta.state_post(0).cbegin(), aut.delta.state_post(0).cend());
+		sync_it.push_back(aut.delta.state_post(1).cbegin(), aut.delta.state_post(1).cend());
+		sync_it.push_back(aut.delta.state_post(2).cbegin(), aut.delta.state_post(2).cend());
+
+		REQUIRE(sync_it.synchronize_with('a'));
+		CHECK(
+			sync_it.unify_targets() ==
+			StateSet{num_of_states - 4, num_of_states - 3, num_of_states - 2, num_of_states - 1}
+		);
+	}
+
 	SECTION("k >= 3: gathering, sorting, unique with duplicates") {
 		Nfa aut{};
 		aut.add_state(6);
