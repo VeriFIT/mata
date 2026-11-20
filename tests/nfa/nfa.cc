@@ -7725,3 +7725,61 @@ TEST_CASE("mata::nfa::get_useful_states() with brute-force oracle") {
 		CHECK(trimmed.num_of_states() == 10);
 	}
 }
+
+TEST_CASE("mata::Automaton::tarjan_scc_discover keeps components and callback behavior - #224") {
+	Automaton aut{};
+	aut.initial.insert(0);
+	aut.delta.add(0, 'a', 1);
+	aut.delta.add(1, 'a', 0);
+	aut.delta.add(1, 'a', 2);
+	aut.delta.add(2, 'b', 3);
+	aut.delta.add(3, 'b', 2);
+	aut.delta.add(3, 'c', 4);
+
+	std::vector<std::vector<State>> components{};
+	std::set<State> all_states{};
+	size_t edge_callbacks{0};
+	Automaton::TarjanDiscoverCallback callbacks{};
+	callbacks.state_discover = [&all_states](const State state) {
+		all_states.insert(state);
+		return false;
+	};
+	callbacks.succ_state_discover = [&edge_callbacks](const State from, const State to) {
+		REQUIRE(from <= 3);
+		REQUIRE(to <= 4);
+		++edge_callbacks;
+	};
+	callbacks.scc_state_discover = [&all_states](const State state) { all_states.insert(state); };
+	callbacks.scc_discover = [&components](const std::vector<State>& scc, const std::vector<State>& remaining_stack) {
+		(void) remaining_stack;
+		components.push_back(scc);
+		return false;
+	};
+	aut.tarjan_scc_discover(callbacks);
+
+	for (std::vector<State>& component : components) { std::ranges::sort(component); }
+	std::ranges::sort(components);
+	CHECK(components == std::vector<std::vector<State>>{{0, 1}, {2, 3}, {4}});
+	CHECK(all_states == std::set<State>{0, 1, 2, 3, 4});
+	CHECK(edge_callbacks == 6); // Every reachable transition, once.
+
+	SECTION("state discovery can stop before any SCC is emitted") {
+		components.clear();
+		callbacks.state_discover = [](const State) { return true; };
+		aut.tarjan_scc_discover(callbacks);
+		CHECK(components.empty());
+	}
+
+	SECTION("an initial-state subset changes the starting point, not the callback contract") {
+		components.clear();
+		callbacks.state_discover = [&all_states](const State state) {
+			all_states.insert(state);
+			return false;
+		};
+		const SparseSet<State> starting_states{{2}};
+		aut.tarjan_scc_discover(callbacks, starting_states);
+		for (std::vector<State>& component : components) { std::ranges::sort(component); }
+		std::ranges::sort(components);
+		CHECK(components == std::vector<std::vector<State>>{{2, 3}, {4}});
+	}
+}
