@@ -8,6 +8,7 @@
 #include <deque>
 #include <format>
 #include <functional>
+#include <iterator>
 #include <optional>
 #include <queue>
 #include <ranges>
@@ -400,19 +401,19 @@ template <typename Operand> class SynchronizationProperties {
 	 */
 	void get_synchronization_types() {
 		const size_t num_of_states = nft.num_of_states();
+		// To perform the computation, which is a post-order traversal, we do not use recursion but a stack for better
+		//  performance, shared by all roots: each traversal empties it. To determine if a parent state has already been
+		//  visited, we use the helper value SynchronizationType::UnderComputation.
+		std::vector<State> stack{};
 		for (State root = 0; root < num_of_states; ++root) {
 			if (nft.levels[root] != 0) {
 				continue; // Skip states not on the zero level.
 			}
 
-			// To perform the computation, which is a post-order traversal, we do not
-			// use recursion but a stack for better performance. To determine if a parent state
-			// has already been visited, we use the helper value SynchronizationType::UnderComputation.
-			std::stack<State> stack;
-			stack.push(root);
+			stack.push_back(root);
 			while (!stack.empty()) {
-				const State state = stack.top();
-				stack.pop();
+				const State state = stack.back();
+				stack.pop_back();
 				const Level state_level = nft.levels[state];
 				const StatePost& state_post = nft.delta[state];
 				SynchronizationType current_sync_type = sync_types_vec[state];
@@ -480,7 +481,7 @@ template <typename Operand> class SynchronizationProperties {
 
 				// We need to visit its children.
 				sync_types_vec[state] = SynchronizationType::UnderComputation; // Mark this state as under computation.
-				stack.push(state); // Push it back to the stack to compute it later.
+				stack.push_back(state); // Push it back to the stack to compute it later.
 				for (const SymbolPost& symbol_post : state_post) {
 					for (const State target : symbol_post.targets) {
 						// Skip fast EPSILON transitions.
@@ -493,7 +494,7 @@ template <typename Operand> class SynchronizationProperties {
 						if (sync_types_vec[target] != SynchronizationType::Undefined) {
 							current_sync_type |= sync_types_vec[target];
 						} else {
-							stack.push(target); // Push the target state onto the stack to visit it.
+							stack.push_back(target); // Push the target state onto the stack to visit it.
 						}
 					}
 				}
@@ -1097,20 +1098,78 @@ std::shared_ptr<mata::AlphabetLevels> compose_alphabets(
 }
 
 namespace {
+/// Whether @p nft has EPSILON transitions only between zero-level states, the fast EPSILON transitions, and every other
+///  transition goes to the next level of its round: the transitions @c JumpMode::NoJump reads. Calls
+///  @p on_violation(source, symbol, target) on the first transition that breaks this, and returns false then.
+template <typename OnViolation> bool has_no_jump_shape(const Nft& nft, OnViolation&& on_violation) {
+	const size_t num_of_levels{nft.levels.num_of_levels};
+	for (State source{0}; source < nft.num_of_states(); ++source) {
+		const Level source_level{nft.levels[source]};
+		const auto next_level{static_cast<Level>((source_level + 1) % num_of_levels)};
+		for (const SymbolPost& symbol_post : nft.delta[source]) {
+			for (const State target : symbol_post.targets) {
+				const Level target_level{nft.levels[target]};
+				if (target_level != next_level &&
+					!(symbol_post.symbol == EPSILON && source_level == 0 && target_level == 0)) {
+					on_violation(source, symbol_post.symbol, target);
+					return false;
+				}
+			}
+		}
+	}
+	return true;
+}
+
+/// @throws std::invalid_argument Naming @p caller and the transition when @p nft (the @p side operand) has a
+///  transition @c JumpMode::NoJump does not read; see @c has_no_jump_shape().
+void check_no_jump_shape(const std::string_view caller, const std::string_view side, const Nft& nft) {
+	has_no_jump_shape(nft, [&](const State source, const Symbol symbol, const State target) {
+		throw std::invalid_argument(
+			std::format(
+				"{}: the {} transition {} -{}-> {} goes from level {} to level {}, which JumpMode::NoJump does not "
+				"read: a transition goes to the next level, or is an EPSILON transition from level 0 to level 0.",
+				caller, side, source, symbol, target, nft.levels[source], nft.levels[target]
+			)
+		);
+	});
+}
+
 /**
  * Whether the fast composition, which reads @p nft with @c JumpMode::NoJump, composes it as the general composition
- *  does under any jump mode: @p nft has no jump transitions, so the jump mode does not matter, and neither EPSILON nor
- *  DONT_CARE, which the two compositions place and match differently (#763).
+ *  does under @p jump_mode, up to the placement of EPSILON: @p nft has no jump transitions, so the jump mode does not
+ *  matter, no DONT_CARE, which the two compositions match differently (#763), and EPSILON only on fast EPSILON
+ *  transitions, which both read as a whole round of EPSILON. A one-level @p nft has no fast EPSILON transitions, and
+ *  @c JumpMode::AppendDontCares reads one as EPSILON followed by DONT_CARE.
  */
-bool reads_jump_mode_alike(const Nft& nft) {
-	static_assert(EPSILON > DONT_CARE, "EPSILON and DONT_CARE are expected to sort last in a state post");
+bool reads_jump_mode_alike(const Nft& nft, const JumpMode jump_mode) {
+	const bool allows_fast_epsilon{nft.levels.num_of_levels > 1 && jump_mode != JumpMode::AppendDontCares};
+	static_assert(DONT_CARE + 1 == EPSILON, "DONT_CARE and EPSILON are expected to sort last in a state post");
 	for (State state{0}; state < nft.num_of_states(); ++state) {
 		const StatePost& state_post{nft.delta[state]};
-		if (!state_post.empty() && state_post.back().symbol >= DONT_CARE) { return false; }
+		for (auto it{state_post.end()}; it != state_post.begin() && std::prev(it)->symbol >= DONT_CARE; --it) {
+			if (std::prev(it)->symbol == DONT_CARE || !allows_fast_epsilon) { return false; }
+		}
 	}
-	return !nft.contains_jump_transitions();
+	// The EPSILON transitions left are fast ones exactly when they keep to the shape JumpMode::NoJump reads.
+	return has_no_jump_shape(nft, [](State, Symbol, State) {});
 }
 } // namespace
+
+namespace algorithms {
+namespace {
+Nft compose_fast_checked(
+	std::string_view caller,
+	const Nft& lhs,
+	const Nft& rhs,
+	Level lhs_sync_level,
+	Level rhs_sync_level,
+	bool project_out_sync_levels,
+	JumpMode jump_mode,
+	CompositionNormalization normalization,
+	bool check_operands
+);
+} // namespace
+} // namespace algorithms
 
 // Dispatch function for composition modes.
 Nft compose(
@@ -1134,14 +1193,18 @@ Nft compose(
 					"FastNoJump composition mode only supports a single synchronization level per NFT."
 				);
 			}
-			return algorithms::compose_fast_no_jump(
-				lhs, rhs, lhs_sync_levels.front(), rhs_sync_levels.front(), project_out_sync_levels, normalization
+			return algorithms::compose_fast_checked(
+				"compose", lhs, rhs, lhs_sync_levels.front(), rhs_sync_levels.front(), project_out_sync_levels,
+				JumpMode::NoJump, normalization, true
 			);
 		case CompositionMode::Auto:
+			// Operands that read alike under jump_mode keep to the no-jump shape and are not checked again.
 			if (lhs_sync_levels.size() == 1 &&
-				(jump_mode == JumpMode::NoJump || (reads_jump_mode_alike(lhs) && reads_jump_mode_alike(rhs)))) {
-				return algorithms::compose_fast_no_jump(
-					lhs, rhs, lhs_sync_levels.front(), rhs_sync_levels.front(), project_out_sync_levels, normalization
+				(jump_mode == JumpMode::NoJump ||
+				 (reads_jump_mode_alike(lhs, jump_mode) && reads_jump_mode_alike(rhs, jump_mode)))) {
+				return algorithms::compose_fast_checked(
+					"compose", lhs, rhs, lhs_sync_levels.front(), rhs_sync_levels.front(), project_out_sync_levels,
+					JumpMode::NoJump, normalization, jump_mode == JumpMode::NoJump
 				);
 			}
 			[[fallthrough]];
@@ -1336,6 +1399,11 @@ std::optional<Nft> compose_fast_with(
 		return new_state;
 	};
 
+	// Reused by every synchronization, which keeps their buffers. Neither use nests: synchronize() is not reached from
+	//  its own iteration, and combine_targets() not from its own.
+	mata::utils::SynchronizedUniversalIterator<StatePost::const_iterator> sync_iterator(2);
+	mata::utils::SynchronizedExistentialIterator<StatePost::const_iterator> moving_sync_iterator{};
+
 	/**
 	 * @brief Perform the synchronization of the LHS and RHS at the given state pair.
 	 *
@@ -1388,9 +1456,7 @@ std::optional<Nft> compose_fast_with(
 				is_remaining_transition_in_lhs ? rhs_sync_targets : lhs_sync_targets;
 			const Operand& moving_nft = is_remaining_transition_in_lhs ? lhs : rhs;
 
-			mata::utils::SynchronizedExistentialIterator<StatePost::const_iterator> moving_sync_iterator(
-				moving_sync_targets.size()
-			);
+			moving_sync_iterator.reset(moving_sync_targets.size());
 			for (const State moving_sync_target : moving_sync_targets) {
 				mata::utils::push_back(moving_sync_iterator, moving_nft.delta[moving_sync_target]);
 			}
@@ -1437,7 +1503,7 @@ std::optional<Nft> compose_fast_with(
 		};
 
 		// The body of the synchronization.
-		mata::utils::SynchronizedUniversalIterator<StatePost::const_iterator> sync_iterator(2);
+		sync_iterator.reset();
 		mata::utils::push_back(sync_iterator, lhs.delta[lhs_state]);
 		mata::utils::push_back(sync_iterator, rhs.delta[rhs_state]);
 		while (sync_iterator.advance()) {
@@ -2188,7 +2254,9 @@ Nft compose_fast_trimmed(
 	return revert(trimmed(*backward));
 }
 
-/// The body of @c compose_fast() and @c compose_fast_no_jump(), which name themselves @p caller in their errors.
+/// The body of @c compose_fast(), @c compose_fast_no_jump() and the fast path of @c compose(), which name themselves
+///  @p caller in their errors. Under @c JumpMode::NoJump, @p check_operands checks the no-jump shape of the operands;
+///  only a caller that has checked it already leaves it unset.
 Nft compose_fast_checked(
 	const std::string_view caller,
 	const Nft& lhs,
@@ -2197,7 +2265,8 @@ Nft compose_fast_checked(
 	const Level rhs_sync_level,
 	const bool project_out_sync_levels,
 	const JumpMode jump_mode,
-	const CompositionNormalization normalization
+	const CompositionNormalization normalization,
+	const bool check_operands
 ) {
 	check_sync_level_in_range(caller, "lhs", lhs, lhs_sync_level);
 	check_sync_level_in_range(caller, "rhs", rhs, rhs_sync_level);
@@ -2217,32 +2286,10 @@ Nft compose_fast_checked(
 	};
 	Nft result{};
 	if (jump_mode == JumpMode::NoJump) {
-		MATA_ASSERT(
-			std::all_of(
-				lhs.delta.transitions().begin(), lhs.delta.transitions().end(),
-				[&](const Transition& transition) {
-					return static_cast<Level>((lhs.levels[transition.source] + 1) % lhs.levels.num_of_levels) ==
-							   lhs.levels[transition.target] ||
-						   (lhs.levels[transition.source] == 0 && lhs.levels[transition.target] == 0 &&
-							transition.symbol == EPSILON);
-				}
-			),
-			"There are only explicit synchronization transitions of length 1 with exception for fast EPSILON "
-			"transitions"
-		);
-		MATA_ASSERT(
-			std::all_of(
-				rhs.delta.transitions().begin(), rhs.delta.transitions().end(),
-				[&](const Transition& transition) {
-					return static_cast<Level>((rhs.levels[transition.source] + 1) % rhs.levels.num_of_levels) ==
-							   rhs.levels[transition.target] ||
-						   (rhs.levels[transition.source] == 0 && rhs.levels[transition.target] == 0 &&
-							transition.symbol == EPSILON);
-				}
-			),
-			"There are only explicit synchronization transitions of length 1 with exception for fast EPSILON "
-			"transitions"
-		);
+		if (check_operands) {
+			check_no_jump_shape(caller, "lhs", lhs);
+			check_no_jump_shape(caller, "rhs", rhs);
+		}
 		result = compose_plain();
 	} else {
 		const CursorOperand lhs_operand{lhs, jump_mode};
@@ -2277,7 +2324,8 @@ Nft algorithms::compose_fast(
 	const CompositionNormalization normalization
 ) {
 	return compose_fast_checked(
-		"compose_fast", lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, jump_mode, normalization
+		"compose_fast", lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, jump_mode, normalization,
+		true
 	);
 }
 
@@ -2291,7 +2339,7 @@ Nft algorithms::compose_fast_no_jump(
 ) {
 	return compose_fast_checked(
 		"compose_fast_no_jump", lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, JumpMode::NoJump,
-		normalization
+		normalization, true
 	);
 }
 

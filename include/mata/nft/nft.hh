@@ -1843,9 +1843,12 @@ Nft intersection(
  * of @c DONT_CARE.
  * @param[in] composition_mode Mode of composition to use. Default is Auto, which takes FastNoJump for one
  *                             synchronization level per NFT when @p jump_mode is NoJump, or when neither NFT has a
- *                             jump transition, EPSILON or DONT_CARE (the jump mode then does not matter), and General
- *                             otherwise. General mode supports all NFTs, while FastNoJump mode is optimized for NFTs
- *                             without jump transitions and with only one synchronization level.
+ *                             jump transition or DONT_CARE and both have EPSILON only on transitions from level 0 to
+ *                             level 0 of NFTs with more than one level, outside @c JumpMode::AppendDontCares (the jump
+ *                             mode then does not matter, and the result is the relation of General up to the
+ *                             placement of EPSILON), and General otherwise. General mode supports all NFTs, while
+ *                             FastNoJump mode is optimized for NFTs without jump transitions and with only one
+ *                             synchronization level.
  * @param[in] normalization How to normalize the result after the construction; see @c CompositionNormalization.
  *
  * @pre The synchronization level vectors are non-empty, of equal size and strictly increasing, every level is below
@@ -1854,8 +1857,10 @@ Nft intersection(
  *
  * @return A new NFT after the composition.
  * @throws std::invalid_argument When the request violates the precondition above, when @p composition_mode is
- *  @c FastNoJump and @p jump_mode is not @c NoJump, or when @c FastNoJump is asked for more than one
- *  synchronization level.
+ *  @c FastNoJump and @p jump_mode is not @c NoJump, when @c FastNoJump is asked for more than one synchronization
+ *  level, or when the fast composition is to read an NFT with @p jump_mode @c NoJump (@p composition_mode
+ *  @c FastNoJump, or @c Auto with one synchronization level) and the NFT has a transition to another level than the
+ *  next one of its round that is no EPSILON transition from level 0 to level 0.
  */
 Nft compose(
 	const Nft& lhs,
@@ -1916,12 +1921,16 @@ std::shared_ptr<mata::AlphabetLevels> compose_alphabets(
  * of @c DONT_CARE.
  * @param[in] composition_mode Mode of composition to use. Default is Auto, which takes FastNoJump for one
  *                             synchronization level per NFT when @p jump_mode is NoJump, or when neither NFT has a
- *                             jump transition, EPSILON or DONT_CARE (the jump mode then does not matter), and General
- *                             otherwise. General mode supports all NFTs, while FastNoJump mode is optimized for NFTs
- *                             without jump transitions and with only one synchronization level.
+ *                             jump transition or DONT_CARE and both have EPSILON only on transitions from level 0 to
+ *                             level 0 of NFTs with more than one level, outside @c JumpMode::AppendDontCares (the jump
+ *                             mode then does not matter, and the result is the relation of General up to the
+ *                             placement of EPSILON), and General otherwise. General mode supports all NFTs, while
+ *                             FastNoJump mode is optimized for NFTs without jump transitions and with only one
+ *                             synchronization level.
  * @param[in] normalization How to normalize the result after the construction; see @c CompositionNormalization.
  *
  * @return A new NFT after the composition.
+ * @throws std::invalid_argument On the invalid requests of the overload with synchronization level vectors.
  */
 inline Nft compose(
 	const Nft& lhs,
