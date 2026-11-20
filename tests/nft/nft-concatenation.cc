@@ -1079,9 +1079,43 @@ TEST_CASE("mata::nft::concatenate() inplace") {
 		lhs.delta.add(0, 115, 0);
 		lhs.delta.add(0, 116, 0);
 
+		const Nft copy{lhs};
+		Nft expected{copy};
+		expected.concatenate(copy);
+
 		size_t lhs_size = lhs.num_of_states();
 		Nft result = lhs.concatenate(lhs);
 		CHECK(result.num_of_states() == lhs_size * 2);
+		CHECK(result.is_identical(expected));
+		CHECK(are_equivalent(result, concatenate(copy, copy)));
+	}
+
+	SECTION("the same transducer with several initial and final states, some past the delta and the levels") {
+		Nft aut{Nft::with_levels(2)};
+		aut.add_state_with_level(0);
+		aut.add_state_with_level(1);
+		aut.add_state_with_level(0);
+		aut.add_state_with_level(1);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		aut.delta.add(2, 'c', 3);
+		aut.delta.add(3, 'd', 0);
+		aut.initial.insert({0, 5});
+		aut.final.insert({2, 5});
+		const Nft copy{aut};
+		Nft expected{copy};
+		expected.concatenate(copy);
+		REQUIRE(expected.num_of_states() == 12);
+		CHECK(expected.levels == Levels{2, {0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0}});
+
+		Nft result{aut};
+		result.concatenate(result);
+		CHECK(result.is_identical(expected));
+		CHECK(are_equivalent(result, concatenate(copy, copy)));
+
+		Nft consumed{aut};
+		consumed.concatenate(std::move(consumed));
+		CHECK(consumed.is_identical(expected));
 	}
 }
 
