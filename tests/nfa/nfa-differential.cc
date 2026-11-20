@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "mata/alphabet.hh"
+#include "mata/applications/strings.hh"
 #include "mata/nfa/algorithms.hh"
 #include "mata/nfa/builder.hh"
 #include "mata/nfa/nfa.hh"
@@ -167,6 +168,21 @@ bool reference_accepts(const Nfa& nfa, const Word& word, const Symbol epsilon = 
 	return false;
 }
 
+/// The shortest nonempty-or-empty words accepted from exactly @p initial states, derived only by the reference
+///  acceptor. @p words must include every word up to the number of states minus one.
+std::set<Word> reference_shortest_words(Nfa nfa, const StateSet& initial, const std::vector<Word>& words) {
+	nfa.initial.clear();
+	for (const State state : initial) { nfa.initial.insert(state); }
+	std::set<Word> result{};
+	for (const Word& word : words) {
+		if (!word.empty() && !result.empty() && word.size() > result.begin()->size()) { break; }
+		if (!reference_accepts(nfa, word)) { continue; }
+		if (!result.empty() && word.size() < result.begin()->size()) { result.clear(); }
+		result.insert(word);
+	}
+	return result;
+}
+
 /// Do the two automata accept the same words among @p words, as judged by the reference acceptor?
 bool same_language_on(const Nfa& lhs, const Nfa& rhs, const std::vector<Word>& words, const Symbol epsilon = EPSILON) {
 	for (const Word& word : words) {
@@ -212,6 +228,33 @@ std::shared_ptr<EnumAlphabet> alphabet_of(const size_t num_of_symbols) {
 	auto alphabet{std::make_shared<EnumAlphabet>()};
 	for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) { alphabet->add_new_symbol(std::to_string(symbol)); }
 	return alphabet;
+}
+
+void check_shortest_words(const unsigned seed) {
+	std::mt19937 rng{seed};
+	const size_t num_of_states{2 + seed % 5};
+	const size_t num_of_symbols{1 + seed % 3};
+	const Nfa nfa{random_nfa(rng, num_of_states, num_of_symbols, alphabet_of(num_of_symbols))};
+	const std::vector<Word> words{all_words(num_of_symbols, num_of_states - 1)};
+	const mata::applications::strings::ShortestWordsMap shortest_words{nfa};
+	INFO(describe(seed, nfa));
+	CHECK(
+		mata::applications::strings::get_shortest_words(nfa) ==
+		reference_shortest_words(nfa, StateSet{nfa.initial}, words)
+	);
+
+	StateSet all_states{};
+	for (State state{0}; state < num_of_states; ++state) {
+		all_states.insert(state);
+		CHECK(shortest_words.get_shortest_words_from(state) == reference_shortest_words(nfa, {state}, words));
+		for (State other_state{state + 1}; other_state < num_of_states; ++other_state) {
+			CHECK(
+				shortest_words.get_shortest_words_from({state, other_state}) ==
+				reference_shortest_words(nfa, {state, other_state}, words)
+			);
+		}
+	}
+	CHECK(shortest_words.get_shortest_words_from(all_states) == reference_shortest_words(nfa, all_states, words));
 }
 
 constexpr size_t MAX_WORD_LENGTH{5};
@@ -463,6 +506,10 @@ TEST_CASE("mata::nfa differential: the algorithms agree with the reference accep
 	for (unsigned seed{0}; seed < 200; ++seed) {
 		check_nfa_properties(seed, 2 + seed % 5, 1 + seed % 3, MAX_WORD_LENGTH);
 	}
+}
+
+TEST_CASE("mata::nfa differential: shortest words agree with the reference acceptor", "[differential]") {
+	for (unsigned seed{0}; seed < 200; ++seed) { check_shortest_words(seed); }
 }
 
 TEST_CASE("mata::nfa differential: epsilon removal keeps the language", "[differential]") {

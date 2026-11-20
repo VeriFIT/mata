@@ -160,6 +160,47 @@ TEST_CASE("mata::nfa::get_shortest_words()") {
 	}
 }
 
+TEST_CASE("mata::nfa::ShortestWordsMap") {
+	Nfa aut('q' + 1);
+	FILL_WITH_AUT_B(aut);
+	aut.delta.add(3, 'b', 2);
+	const ShortestWordsMap shortest_words{aut};
+
+	SECTION("All shortest words from each queried state") {
+		CHECK(shortest_words.get_shortest_words_from(4) == std::set<Word>{Word{'b', 'a'}, Word{'a', 'a'}});
+		CHECK(shortest_words.get_shortest_words_from(8) == std::set<Word>{Word{'b', 'b', 'a'}, Word{'b', 'a', 'a'}});
+		CHECK(shortest_words.get_shortest_words_from(3) == std::set<Word>{Word{'b'}});
+		CHECK(shortest_words.get_shortest_words_from(6) == std::set<Word>{Word{'a'}});
+		CHECK(shortest_words.get_shortest_words_from({3, 6}) == std::set<Word>{Word{'b'}, Word{'a'}});
+	}
+
+	SECTION("Only the minimum length across the queried states is returned") {
+		CHECK(shortest_words.get_shortest_words_from({4, 6}) == std::set<Word>{Word{'a'}});
+		CHECK(shortest_words.get_shortest_words_from({2, 4, 6}) == std::set<Word>{Word{}});
+	}
+
+	SECTION("States without an accepting path and states outside of the automaton") {
+		CHECK(shortest_words.get_shortest_words_from(1).empty());
+		CHECK(shortest_words.get_shortest_words_from(StateSet{}).empty());
+		CHECK(shortest_words.get_shortest_words_from(static_cast<State>(aut.num_of_states())).empty());
+		CHECK(
+			shortest_words.get_shortest_words_from(StateSet{4, static_cast<State>(aut.num_of_states())}) ==
+			std::set<Word>{Word{'b', 'a'}, Word{'a', 'a'}}
+		);
+	}
+
+	SECTION("Epsilon is a symbol in the shortest word") {
+		Nfa epsilon_aut{};
+		epsilon_aut.initial.insert(0);
+		epsilon_aut.final.insert(2);
+		epsilon_aut.delta.add(0, EPSILON, 1);
+		epsilon_aut.delta.add(1, 'a', 2);
+		epsilon_aut.delta.add(0, 'a', 0);
+		const ShortestWordsMap epsilon_shortest_words{epsilon_aut};
+		CHECK(epsilon_shortest_words.get_shortest_words_from(0) == std::set<Word>{Word{EPSILON, 'a'}});
+	}
+}
+
 TEST_CASE("mata::nfa::get_shortest_words() for profiling", "[.profiling][shortest_words]") {
 	Nfa aut('q' + 1);
 	FILL_WITH_AUT_B(aut);

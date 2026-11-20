@@ -215,7 +215,7 @@ void Delta::add(const State source, Symbol symbol, const State target) {
 
 	StatePost& state_transitions{state_posts_[source]};
 	if (state_transitions.empty() || state_transitions.back().symbol < symbol) {
-		state_transitions.insert(SymbolPost{symbol, target});
+		state_transitions.emplace_back(symbol, target);
 		note_added(1);
 		return;
 	}
@@ -225,7 +225,7 @@ void Delta::add(const State source, Symbol symbol, const State target) {
 		if (symbol_transitions->insert(target)) { note_added(1); }
 	} else {
 		// Add transition to a new Move struct with symbol yet unused on transitions from state_from.
-		state_transitions.insert(SymbolPost{symbol, target});
+		state_transitions.emplace(symbol, target);
 		note_added(1);
 	}
 }
@@ -240,7 +240,7 @@ void Delta::add(const State source, const Symbol symbol, const std::span<const S
 
 	StatePost& state_transitions{state_posts_[source]};
 	if (state_transitions.empty() || state_transitions.back().symbol < symbol) {
-		state_transitions.insert({symbol, targets});
+		state_transitions.emplace_back(symbol, targets);
 		note_added(num_of_targets);
 		return;
 	}
@@ -249,7 +249,7 @@ void Delta::add(const State source, const Symbol symbol, const std::span<const S
 		note_added(symbol_transitions->insert(targets));
 	} else {
 		// Add transition to a new Move struct with symbol yet unused on transitions from state_from.
-		state_transitions.insert(SymbolPost{symbol, targets});
+		state_transitions.emplace(symbol, targets);
 		note_added(num_of_targets);
 	}
 }
@@ -262,7 +262,7 @@ void Delta::add(const State source, SymbolPost&& symbol_post) {
 	StatePost& state_post{state_posts_[source]};
 	const size_t num_of_targets{symbol_post.targets.size()};
 	if (state_post.empty() || state_post.back().symbol < symbol_post.symbol) {
-		state_post.insert(std::move(symbol_post));
+		state_post.emplace_back(std::move(symbol_post));
 		note_added(num_of_targets);
 		return;
 	}
@@ -553,11 +553,7 @@ Delta Delta::reverted(const size_t num_of_states) const {
 }
 
 StatePost& Delta::mutable_state_post(const State source) {
-	if (source >= state_posts_.size()) {
-		const size_t new_size{num_of_states_for(source)};
-		utils::reserve_on_insert(state_posts_, source);
-		state_posts_.resize(new_size);
-	}
+	if (source >= state_posts_.size()) { state_posts_.resize(num_of_states_for(source)); }
 
 	++mutation_epoch_;
 	mark_count_dirty(); // Raw edits invalidate the count
@@ -679,14 +675,13 @@ StatePost::Moves StatePost::moves_symbols(const Symbol last_symbol) const {
 Delta::Transitions Delta::transitions() const { return Transitions{this}; }
 
 void Delta::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
-	const size_t aut_num_of_states{num_of_states()};
-	for (mata::nfa::State state{0}; state < aut_num_of_states; ++state) {
-		for (const SymbolPost& move : state_post(state)) {
-			// EPSILON sorts last and is no letter.
-			if (move.symbol == EPSILON) { break; }
-			target_alphabet.update_next_symbol_value(move.symbol);
-			target_alphabet.try_add_new_symbol(std::to_string(move.symbol), move.symbol);
-		}
+	// Distinct symbols only: a symbol used by n posts would otherwise be converted and hashed n times.
+	const OrdVector<Symbol> used_symbols{get_used_symbols()};
+	for (const Symbol symbol : used_symbols) {
+		// EPSILON sorts last and is no letter.
+		if (symbol == EPSILON) { break; }
+		target_alphabet.update_next_symbol_value(symbol);
+		target_alphabet.try_add_new_symbol(std::to_string(symbol), symbol);
 	}
 }
 
@@ -751,24 +746,15 @@ OrdVector<Symbol> Delta::get_used_symbols() const {
 // Other versions, maybe an interesting experiment with speed of data structures.
 // Returns symbols appearing in Delta, pushes back to vector and then sorts
 mata::utils::OrdVector<Symbol> Delta::get_used_symbols_vec() const {
-#ifdef _STATIC_STRUCTURES_
-	static std::vector<Symbol> symbols{};
-	symbols.clear();
-#else
+	// Per-call storage: a shared static buffer would race under concurrent const queries.
 	std::vector<Symbol> symbols{};
-#endif
 	for (const StatePost& state_post : state_posts_) {
 		for (const SymbolPost& symbol_post : state_post) {
 			utils::reserve_on_insert(symbols);
 			symbols.push_back(symbol_post.symbol);
 		}
 	}
-#ifdef _STATIC_STRUCTURES_
-	// The buffer is reused across calls, so its contents have to be copied out.
-	return utils::OrdVector<Symbol>{symbols};
-#else
 	return utils::OrdVector<Symbol>{std::move(symbols)};
-#endif
 }
 
 // returns symbols appearing in Delta, inserts to a std::set
@@ -787,13 +773,7 @@ std::set<Symbol> Delta::get_used_symbols_set() const {
 // returns symbols appearing in Delta, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
 mata::utils::SparseSet<Symbol> Delta::get_used_symbols_sps() const {
-#ifdef _STATIC_STRUCTURES_
-	// static seems to speed things up a little
-	static utils::SparseSet<Symbol> symbols(64);
-	symbols.clear();
-#else
 	utils::SparseSet<Symbol> symbols(64);
-#endif
 	// symbols.dont_track_elements();
 	for (const StatePost& state_post : state_posts_) {
 		for (const SymbolPost& symbol_post : state_post) { symbols.insert(symbol_post.symbol); }
@@ -805,13 +785,7 @@ mata::utils::SparseSet<Symbol> Delta::get_used_symbols_sps() const {
 // returns symbols appearing in Delta, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
 std::vector<bool> Delta::get_used_symbols_bv() const {
-#ifdef _STATIC_STRUCTURES_
-	// static seems to speed things up a little
-	static std::vector<bool> symbols(64, false);
-	symbols.clear();
-#else
 	std::vector<bool> symbols(64, false);
-#endif
 	// symbols.dont_track_elements();
 	for (const StatePost& state_post : state_posts_) {
 		for (const SymbolPost& symbol_post : state_post) {
@@ -823,13 +797,7 @@ std::vector<bool> Delta::get_used_symbols_bv() const {
 }
 
 mata::BoolVector Delta::get_used_symbols_chv() const {
-#ifdef _STATIC_STRUCTURES_
-	// static seems to speed things up a little
-	static BoolVector symbols(64, false);
-	symbols.clear();
-#else
 	BoolVector symbols(64, false);
-#endif
 	// symbols.dont_track_elements();
 	for (const StatePost& state_post : state_posts_) {
 		for (const SymbolPost& symbol_post : state_post) {

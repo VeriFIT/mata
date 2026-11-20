@@ -18,6 +18,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include "../mata-writer.hh"
 #include "mata/alphabet.hh"
@@ -138,7 +139,7 @@ bool Levels::can_follow_for_states(const State source, const State target) const
 
 size_t Nft::num_of_states_with_level(const Level level) const { return levels.count(level); }
 
-Nft& Nft::trim(StateRenaming* state_renaming) {
+Nft& Nft::trim(StateRenaming* state_renaming) & {
 #ifdef _STATIC_STRUCTURES_
 	BoolVector useful_states{get_useful_states()};
 	useful_states.clear();
@@ -224,14 +225,14 @@ void Nft::print_to_dot(
 		return std::to_string(symbol);
 	};
 
-	auto vec_of_symbols_to_string = [&](const OrdVector<Symbol>& symbols, const Level level) {
+	auto vec_of_symbols_to_string = [&](const std::vector<Symbol>& symbols, const Level level) {
 		std::string result;
 		for (const Symbol& symbol : symbols) { result += translate_symbol(symbol, level) + ","; }
 		result.pop_back(); // Remove last comma
 		return result;
 	};
 
-	auto vec_of_symbols_to_string_with_intervals = [&](const OrdVector<Symbol>& symbols, const Level level) {
+	auto vec_of_symbols_to_string_with_intervals = [&](const std::vector<Symbol>& symbols, const Level level) {
 		std::string result;
 
 		const auto intervals{[&]() {
@@ -276,18 +277,27 @@ void Nft::print_to_dot(
 
 	// Print transitions
 	const size_t delta_size = delta.num_of_states();
-	// Reused across sources to keep the hash table allocated.
-	std::unordered_map<State, OrdVector<Symbol>> tgt_symbols_map;
+	// (target, symbol) moves of the current source, sorted so that its edges print in ascending target order whatever
+	// was printed before; a reused hash map instead iterates in bucket order. Both buffers are reused across sources.
+	std::vector<std::pair<State, Symbol>> target_symbols{};
+	std::vector<Symbol> symbols{};
 	for (State source = 0; source != delta_size; ++source) {
-		tgt_symbols_map.clear();
+		target_symbols.clear();
 		for (const SymbolPost& move : delta[source]) {
 			is_state_drawn[source] = true;
 			for (const State target : move.targets) {
 				is_state_drawn[target] = true;
-				tgt_symbols_map[target].insert(move.symbol);
+				target_symbols.emplace_back(target, move.symbol);
 			}
 		}
-		for (const auto& [target, symbols] : tgt_symbols_map) {
+		std::sort(target_symbols.begin(), target_symbols.end());
+		for (auto move_it{target_symbols.begin()}; move_it != target_symbols.end();) {
+			// One edge per target, over the sorted symbols leading to it.
+			const State target{move_it->first};
+			symbols.clear();
+			for (; move_it != target_symbols.end() && move_it->first == target; ++move_it) {
+				if (symbols.empty() || symbols.back() != move_it->second) { symbols.push_back(move_it->second); }
+			}
 			if (max_label_length == 0) {
 				output << source << " -> " << target << ";\n";
 				continue;
@@ -1621,7 +1631,7 @@ void Nft::clear() {
 	levels.clear();
 }
 
-Nft& Nft::unify_initial(const bool force_new_state) {
+Nft& Nft::unify_initial(const bool force_new_state) & {
 	if (!force_new_state && (initial.empty() || initial.size() == 1)) { return *this; }
 
 	const bool unified_state_is_final{initial.intersects_with(final)};
@@ -1650,7 +1660,7 @@ Nft& Nft::unify_initial(const bool force_new_state) {
 	return *this;
 }
 
-Nft& Nft::unify_final(const bool force_new_state) {
+Nft& Nft::unify_final(const bool force_new_state) & {
 	if (!force_new_state && (final.empty() || final.size() == 1)) { return *this; }
 
 	const bool unified_state_is_initial{final.intersects_with(initial)};
@@ -1769,13 +1779,13 @@ StateSet Nft::mk_epsilon_closure(const StateSet& source_states, const std::vecto
 }
 
 void Nft::fill_alphabet(OnTheFlyAlphabet& alphabet_to_fill) const {
-	for (const StatePost& state_post : delta) {
-		for (const SymbolPost& symbol_post : state_post) {
-			// DONT_CARE and EPSILON sort last and are no letters.
-			if (symbol_post.symbol >= DONT_CARE) { break; }
-			alphabet_to_fill.update_next_symbol_value(symbol_post.symbol);
-			alphabet_to_fill.try_add_new_symbol(std::to_string(symbol_post.symbol), symbol_post.symbol);
-		}
+	// Distinct symbols only: a symbol used by n posts would otherwise be converted and hashed n times. DONT_CARE
+	//  and EPSILON sort last and are no letters.
+	const OrdVector<Symbol> used_symbols{delta.get_used_symbols()};
+	for (const Symbol symbol : used_symbols) {
+		if (symbol >= DONT_CARE) { break; }
+		alphabet_to_fill.update_next_symbol_value(symbol);
+		alphabet_to_fill.try_add_new_symbol(std::to_string(symbol), symbol);
 	}
 }
 

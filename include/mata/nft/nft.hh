@@ -619,7 +619,18 @@ class Nft : public mata::Automaton {
 	 * @param[in] force_new_state Whether to force creating a new state even when initial states are already unified.
 	 * @return @c this after unification.
 	 */
-	Nft& unify_initial(bool force_new_state = false);
+	Nft& unify_initial(bool force_new_state = false) &;
+	/**
+	 * @brief Unify initial states in place on an rvalue and return the unified transducer by value.
+	 *
+	 * The result is moved out of @c this, so initializing or returning it does not copy the transducer.
+	 * @param[in] force_new_state Whether to force creating a new state even when initial states are already unified.
+	 * @return @c this after unification, as a value.
+	 */
+	Nft unify_initial(bool force_new_state = false) && {
+		unify_initial(force_new_state);
+		return std::move(*this);
+	}
 
 	/**
 	 * @brief Unify final states into a single new final state.
@@ -628,7 +639,18 @@ class Nft : public mata::Automaton {
 	 * @param[in] force_new_state Whether to force creating a new state even when final states are already unified.
 	 * @return @c this after unification.
 	 */
-	Nft& unify_final(bool force_new_state = false);
+	Nft& unify_final(bool force_new_state = false) &;
+	/**
+	 * @brief Unify final states in place on an rvalue and return the unified transducer by value.
+	 *
+	 * The result is moved out of @c this, so initializing or returning it does not copy the transducer.
+	 * @param[in] force_new_state Whether to force creating a new state even when final states are already unified.
+	 * @return @c this after unification, as a value.
+	 */
+	Nft unify_final(bool force_new_state = false) && {
+		unify_final(force_new_state);
+		return std::move(*this);
+	}
 
 	/**
 	 * Check whether the relation of the NFT is empty.
@@ -722,7 +744,19 @@ class Nft : public mata::Automaton {
 	 * @param[out] state_renaming Mapping of trimmed states to new states.
 	 * @return @c this after trimming.
 	 */
-	Nft& trim(StateRenaming* state_renaming = nullptr);
+	Nft& trim(StateRenaming* state_renaming = nullptr) &;
+	/**
+	 * @brief Trim an rvalue transducer in place and return the trimmed transducer by value.
+	 *
+	 * Unlike the lvalue overload, the result is moved out of @c this, so `Nft t{f().trim()}` or `return f().trim()`
+	 *  does not copy the transducer.
+	 * @param[out] state_renaming Mapping of trimmed states to new states.
+	 * @return @c this after trimming, as a value.
+	 */
+	Nft trim(StateRenaming* state_renaming = nullptr) && {
+		trim(state_renaming);
+		return std::move(*this);
+	}
 
 	/**
 	 * Remove simple epsilon transitions from the automaton.
@@ -733,16 +767,34 @@ class Nft : public mata::Automaton {
 
 	/**
 	 * @brief In-place concatenation.
+	 * @return @c this after concatenation.
 	 */
-	Nft& concatenate(const Nft& aut);
+	Nft& concatenate(const Nft& aut) &;
+	/**
+	 * @brief In-place concatenation on an rvalue, returning the concatenated transducer by value.
+	 * @return @c this after concatenation, as a value.
+	 */
+	Nft concatenate(const Nft& aut) && {
+		concatenate(aut);
+		return std::move(*this);
+	}
 	/**
 	 * @brief In-place concatenation, consuming @p aut.
 	 *
 	 * The state posts of @p aut are moved into @c this. If @c this and @p aut are aliased,
 	 * a controlled snapshot is taken and the operation falls back to the lvalue path.
 	 * @p aut is left valid but empty after the operation, with its number of levels.
+	 * @return @c this after concatenation.
 	 */
-	Nft& concatenate(Nft&& aut);
+	Nft& concatenate(Nft&& aut) &;
+	/**
+	 * @brief In-place concatenation on an rvalue, consuming @p aut and returning the result by value.
+	 * @return @c this after concatenation, as a value.
+	 */
+	Nft concatenate(Nft&& aut) && {
+		concatenate(std::move(aut));
+		return std::move(*this);
+	}
 
 	/**
 	 * @brief In-place nondeterministic union of @c this with @p nft.
@@ -752,7 +804,15 @@ class Nft : public mata::Automaton {
 	 * @param[in] nft The NFT to unite with @c this.
 	 * @return @c this after uniting with @p nft.
 	 */
-	Nft& unite_nondet_with(const Nft& nft);
+	Nft& unite_nondet_with(const Nft& nft) &;
+	/**
+	 * @brief In-place nondeterministic union on an rvalue, returning the result by value.
+	 * @return @c this after uniting with @p nft, as a value.
+	 */
+	Nft unite_nondet_with(const Nft& nft) && {
+		unite_nondet_with(nft);
+		return std::move(*this);
+	}
 	/**
 	 * @brief In-place nondeterministic union of @c this with @p nft, consuming @p nft.
 	 *
@@ -764,7 +824,15 @@ class Nft : public mata::Automaton {
 	 * @param[in] nft The NFT to unite with @c this.
 	 * @return @c this after uniting with @p nft.
 	 */
-	Nft& unite_nondet_with(Nft&& nft);
+	Nft& unite_nondet_with(Nft&& nft) &;
+	/**
+	 * @brief In-place nondeterministic union on an rvalue, consuming @p nft and returning the result by value.
+	 * @return @c this after uniting with @p nft, as a value.
+	 */
+	Nft unite_nondet_with(Nft&& nft) && {
+		unite_nondet_with(std::move(nft));
+		return std::move(*this);
+	}
 
 	/**
 	 * @brief Get NFT where transitions of @c this are replaced with transitions over one symbol @p abstract_symbol
@@ -1997,8 +2065,13 @@ Nft minimize(const Nft& aut, const ParameterMap& params = {{"algorithm", "brzozo
  * @brief Determinize automaton.
  *
  * @param[in] nft Automaton to determinize.
- * @param[out] subset_map Map that maps sets of states of input automaton to states of determinized automaton.
- * @return Determinized automaton.
+ * @param[out] subset_map Map that maps sets of states of input automaton to states of determinized automaton. Only
+ *  sets whose states all lie on the same level are reported: a transition into several levels is split into a state
+ *  for the nearest level and a pending jump for the rest, and such a state stands for the pair (target set, symbol),
+ *  not for a set alone.
+ * @return Determinized automaton. DONT_CARE is kept as a literal symbol, not expanded: when a DONT_CARE transition
+ *  and a concrete-symbol transition overlap but their target sets differ, the result keeps one transition per target
+ *  set and @c is_deterministic() reports false for it, although the language is preserved.
  */
 Nft determinize(const Nft& nft, std::unordered_map<StateSet, State>* subset_map = nullptr);
 

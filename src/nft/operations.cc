@@ -650,7 +650,7 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 	for (const Level level : levels_to_project) { is_level_projected[level] = true; }
 
 	// Checks if a given state is being projected out based on the levels_to_project vector.
-	auto is_projected_out = [&](const State state) { return is_level_projected[nft.levels[state]]; };
+	auto is_projected_out = [&](const State state) -> bool { return is_level_projected[nft.levels[state]] != 0; };
 
 	// The first unprojected level at or after each level answers range queries in constant time.
 	std::vector<Level> next_unprojected(nft.levels.num_of_levels + 1, static_cast<Level>(nft.levels.num_of_levels));
@@ -713,48 +713,76 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 
 	// The closure of a projected state: the states useful in the input and reachable from it over transitions all
 	//  of whose levels are projected, expanding only projected states. A state that is not projected is its own
-	//  closure. Useless targets are skipped, so many useful sources cannot rescan one shared dead component; their
-	//  moves disappear with the final trim, which yields the same automaton.
+	//  closure. Closures are computed lazily for the output-reachable sources only, into one flat buffer.
 	const size_t num_of_states_in_delta{nft.delta.num_of_states()};
-	std::vector<std::vector<State>> closure(num_of_states_in_delta);
-	{
-		std::vector<size_t> visited_in(num_of_states_in_delta, 0);
-		std::vector<State> stack{};
-		for (State source{0}; source < num_of_states_in_delta; ++source) {
-			if (!is_original_useful(source) || !is_projected_out(source)) { continue; }
-			std::vector<State>& reached{closure[source]};
-			const size_t mark{static_cast<size_t>(source) + 1};
-			visited_in[source] = mark;
-			reached.push_back(source);
-			stack.push_back(source);
-			while (!stack.empty()) {
-				const State state{stack.back()};
-				stack.pop_back();
-				if (!is_projected_out(state)) { continue; }
-				for (const SymbolPost& move : nft.delta[state]) {
-					for (const State target : move.targets) {
-						if (visited_in[target] != mark && is_original_useful(target) &&
-							is_projected_along_path(state, target)) {
-							visited_in[target] = mark;
-							reached.push_back(target);
-							stack.push_back(target);
-						}
+	constexpr size_t NO_INDEX{std::numeric_limits<size_t>::max()};
+	std::vector<size_t> closure_begin(num_of_states_in_delta, NO_INDEX);
+	std::vector<size_t> closure_end(num_of_states_in_delta, NO_INDEX);
+	std::vector<State> closure_states{};
+	std::vector<size_t> visited_in(num_of_states_in_delta, 0);
+	std::vector<State> closure_stack{};
+	size_t closure_mark{0};
+	auto ensure_closure = [&](const State source) -> std::span<const State> {
+		if (closure_begin[source] != NO_INDEX) {
+			return std::span<const State>{
+				closure_states.data() + closure_begin[source], closure_end[source] - closure_begin[source]
+			};
+		}
+		closure_begin[source] = closure_states.size();
+		const size_t mark{++closure_mark};
+		visited_in[source] = mark;
+		closure_states.push_back(source);
+		closure_stack.push_back(source);
+		while (!closure_stack.empty()) {
+			const State state{closure_stack.back()};
+			closure_stack.pop_back();
+			if (!is_projected_out(state)) { continue; }
+			for (const SymbolPost& move : nft.delta[state]) {
+				for (const State target : move.targets) {
+					if (visited_in[target] != mark && is_original_useful(target) &&
+						is_projected_along_path(state, target)) {
+						visited_in[target] = mark;
+						closure_states.push_back(target);
+						closure_stack.push_back(target);
 					}
 				}
 			}
 		}
-	}
+		closure_end[source] = closure_states.size();
+		return std::span<const State>{
+			closure_states.data() + closure_begin[source], closure_end[source] - closure_begin[source]
+		};
+	};
 
-	// Construct the automaton with projected levels. The moves of each state are collected, sorted and deduplicated,
-	//  then appended to its post in order.
-	Nft result{Nft::with_levels(nft.levels, Delta{}, nft.initial, nft.final, nft.alphabets)};
-	std::vector<std::pair<Symbol, State>> moves{};
+	// Plan and build only the states reachable in the output. Their moves are collected, sorted and deduplicated
+	//  before construction, so that it visits exactly these states in ascending old-state order.
+	const size_t num_of_old_states{nft.num_of_states()};
+	std::vector<State> copied_from(num_of_old_states, Limits::max_state);
+	std::vector<size_t> moves_begin(num_of_old_states, NO_INDEX);
+	std::vector<size_t> moves_end(num_of_old_states, NO_INDEX);
+	std::vector<std::pair<Symbol, State>> stored_moves{};
+	BoolVector source_final(num_of_old_states, false);
+	BoolVector reachable(num_of_old_states, false);
+	std::vector<State> worklist{};
+	auto mark_reachable = [&](const State state) {
+		if (state < num_of_old_states && is_original_useful(state) && !reachable[state]) {
+			reachable[state] = true;
+			worklist.push_back(state);
+		}
+	};
+	for (const State initial_state : nft.initial) { mark_reachable(initial_state); }
+
 	const bool projected_moves_are_discarded{seq_start_idx == 1};
-	for (State src_state{0}; src_state < num_of_states_in_delta; src_state++) { // For every state.
-		if (!is_original_useful(src_state)) {
-			result.delta.emplace_back();
+	for (size_t worklist_idx{0}; worklist_idx < worklist.size(); ++worklist_idx) {
+		const State src_state{worklist[worklist_idx]};
+		source_final[src_state] = nft.final[src_state];
+
+		if (src_state >= num_of_states_in_delta) {
+			moves_begin[src_state] = stored_moves.size();
+			moves_end[src_state] = stored_moves.size();
 			continue;
 		}
+
 		const Level src_level{nft.levels[src_state]};
 		if (!is_projected_out(src_state) && std::ranges::none_of(nft.delta[src_state], [&](const SymbolPost& move) {
 				return std::ranges::any_of(move.targets, [&](const State target) {
@@ -762,13 +790,15 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 				});
 			})) {
 			// Its closure is itself, and a state that is not projected keeps every move to a later level or level 0.
-			result.delta.emplace_back(nft.delta[src_state]);
+			copied_from[src_state] = src_state;
+			for (const SymbolPost& move : nft.delta[src_state]) {
+				for (const State target : move.targets) { mark_reachable(target); }
+			}
 			continue;
 		}
-		moves.clear();
+
 		const std::span<const State> closure_of_src{
-			closure[src_state].empty() ? std::span<const State>{&src_state, 1}
-									   : std::span<const State>{closure[src_state]}
+			is_projected_out(src_state) ? ensure_closure(src_state) : std::span<const State>{&src_state, 1}
 		};
 		if (projected_moves_are_discarded && is_projected_out(src_state)) {
 			// Projected states contribute no moves when every nonzero level is projected.
@@ -783,47 +813,104 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 			if (retained_states == 1) {
 				// Its post is sorted and deduplicated, so rebuilding it is unnecessary.
 				for (const State cls_state : closure_of_src) {
-					if (nft.final[cls_state] && can_be_final(src_state)) { result.final.insert(src_state); }
+					if (nft.final[cls_state] && can_be_final(src_state)) { source_final[src_state] = true; }
 				}
-				result.delta.emplace_back(nft.delta[retained_state]);
+				copied_from[src_state] = retained_state;
+				for (const SymbolPost& move : nft.delta[retained_state]) {
+					for (const State target : move.targets) { mark_reachable(target); }
+				}
 				continue;
 			}
 		}
+
+		const size_t moves_start{stored_moves.size()};
 		for (const State cls_state : closure_of_src) { // For every state in its epsilon closure.
-			if (nft.final[cls_state] && can_be_final(src_state)) { result.final.insert(src_state); }
+			const bool cls_projected{is_projected_out(cls_state)};
+			if (nft.final[cls_state] && can_be_final(src_state)) { source_final[src_state] = true; }
 			for (const SymbolPost& move : nft.delta[cls_state]) {
 				for (const State tgt_state : move.targets) {
 					const bool is_loop_on_target = cls_state == tgt_state;
 					if (is_projected_along_path(cls_state, tgt_state)) { continue; }
-					if (is_projected_out(cls_state) && get_trans_len(cls_state, tgt_state) == 1 && !is_loop_on_target) {
-						continue;
-					}
+					if (cls_projected && get_trans_len(cls_state, tgt_state) == 1 && !is_loop_on_target) { continue; }
 
-					if (is_projected_out(cls_state)) {
+					if (cls_projected) {
 						// If there are remaining levels between cls_state and tgt_state
 						// on a transition with a length greater than 1, then these levels must be preserved.
-						moves.emplace_back(jump_mode != JumpMode::AppendDontCares ? move.symbol : DONT_CARE, tgt_state);
+						stored_moves.emplace_back(
+							jump_mode != JumpMode::AppendDontCares ? move.symbol : DONT_CARE, tgt_state
+						);
 					} else {
-						moves.emplace_back(move.symbol, tgt_state);
+						stored_moves.emplace_back(move.symbol, tgt_state);
 					}
 				}
 			}
 		}
-		std::ranges::sort(moves);
-		const auto [duplicates_begin, duplicates_end]{std::ranges::unique(moves)};
-		moves.erase(duplicates_begin, duplicates_end);
-		StatePost& state_post{result.delta.emplace_back()};
-		for (const auto& [symbol, target] : moves) {
-			if (state_post.empty() || state_post.back().symbol != symbol) { state_post.emplace_back(symbol); }
-			state_post.back().push_back(target);
+		const auto moves_start_it{stored_moves.begin() + static_cast<std::ptrdiff_t>(moves_start)};
+		std::ranges::sort(moves_start_it, stored_moves.end());
+		const auto [duplicates_begin, duplicates_end]{std::ranges::unique(moves_start_it, stored_moves.end())};
+		stored_moves.erase(duplicates_begin, duplicates_end);
+		moves_begin[src_state] = moves_start;
+		moves_end[src_state] = stored_moves.size();
+		for (size_t move_idx{moves_start}; move_idx < stored_moves.size(); ++move_idx) {
+			mark_reachable(stored_moves[move_idx].second);
 		}
 	}
-	// TODO(nft): Sometimes, unreachable states are left in the automaton.
-	// These states typically contain projected levels with a self-loop.
+
+	// Number the output states densely in ascending old-state order, which keeps every post and target list sorted.
+	std::vector<State> old_to_new(num_of_old_states, Limits::max_state);
+	size_t num_of_new_states{0};
+	for (State state{0}; state < num_of_old_states; ++state) {
+		if (reachable[state]) { old_to_new[state] = static_cast<State>(num_of_new_states++); }
+	}
+
+	Levels result_levels{nft.levels.num_of_levels, num_of_new_states};
+	SparseSet<State> result_initial{};
+	SparseSet<State> result_final{};
+	for (State state{0}; state < num_of_old_states; ++state) {
+		if (!reachable[state]) { continue; }
+		const State new_state{old_to_new[state]};
+		result_levels[new_state] = new_levels[nft.levels[state]];
+		if (nft.initial.contains(state)) { result_initial.insert(new_state); }
+		if (source_final[state]) { result_final.insert(new_state); }
+	}
+
+	DeltaBuilder delta_builder{num_of_new_states};
+	for (State src_state{0}; src_state < num_of_old_states; ++src_state) {
+		if (!reachable[src_state]) { continue; }
+		delta_builder.begin_state(old_to_new[src_state]);
+		if (copied_from[src_state] != Limits::max_state) {
+			const State copied_state{copied_from[src_state]};
+			for (const SymbolPost& move : nft.delta[copied_state]) {
+				delta_builder.begin_symbol(move.symbol);
+				for (const State target : move.targets) {
+					const State new_target{old_to_new[target]};
+					if (new_target != Limits::max_state) { delta_builder.push_sorted_target(new_target); }
+				}
+				delta_builder.finish_symbol();
+			}
+		} else {
+			const size_t moves_stop{moves_end[src_state]};
+			for (size_t move_idx{moves_begin[src_state]}; move_idx < moves_stop;) {
+				const Symbol symbol{stored_moves[move_idx].first};
+				delta_builder.begin_symbol(symbol);
+				while (move_idx < moves_stop && stored_moves[move_idx].first == symbol) {
+					const State new_target{old_to_new[stored_moves[move_idx].second]};
+					if (new_target != Limits::max_state) { delta_builder.push_sorted_target(new_target); }
+					++move_idx;
+				}
+				delta_builder.finish_symbol();
+			}
+		}
+		delta_builder.finish_state();
+	}
+
+	Nft result{Nft::with_levels(
+		std::move(result_levels), delta_builder.finish(), std::move(result_initial), std::move(result_final),
+		nft.alphabets
+	)};
+	// The construction keeps the output-reachable states, of which the trim still drops the non-co-reachable ones.
 	result.trim();
 
-	// Repare levels
-	for (State s{0}; s < result.levels.size(); s++) { result.levels[s] = new_levels[result.levels[s]]; }
 	result.levels.num_of_levels = static_cast<Level>(result.levels.num_of_levels - levels_to_project.size());
 
 	// Repare per-level alphabets: drop the entries of the projected-out levels, keeping the rest indexed by their
@@ -1685,7 +1772,7 @@ void Nft::assert_num_of_levels_match_(const Nft& nft) const {
 	(void) nft; // Suppress unused parameter warning in release builds.
 }
 
-Nft& Nft::unite_nondet_with(const Nft& nft) {
+Nft& Nft::unite_nondet_with(const Nft& nft) & {
 	assert_num_of_levels_match_(nft);
 	if (this == &nft) { return *this; }
 	if (final.empty() || initial.empty()) {
@@ -1723,7 +1810,7 @@ Nft& Nft::unite_nondet_with(const Nft& nft) {
 	return *this;
 }
 
-Nft& Nft::unite_nondet_with(Nft&& nft) {
+Nft& Nft::unite_nondet_with(Nft&& nft) & {
 	assert_num_of_levels_match_(nft);
 	if (this == &nft) {
 		// Self-union: one controlled snapshot of the operand; `this` keeps its own content.
@@ -1849,6 +1936,11 @@ Nft nft::determinize(const Nft& nft, std::unordered_map<StateSet, State>* subset
 	// A map of jumps from a `result` source state to a set of targets in the `nft` that is yet to be added to the
 	//  `result`.
 	std::unordered_map<State, StatePost> wip_jumps{};
+	// States whose targets lie on several levels: only the targets on the nearest level are resolved now, the rest
+	//  stay in `wip_jumps` and repeat the current symbol. Such a state therefore stands for the whole target set
+	//  together with the symbol that reached it, and must not be reused for an unrelated macrostate with the same
+	//  resolved part, which would inherit the pending jump. `*subset_map` holds only single-level sets.
+	std::map<std::pair<StateSet, Symbol>, State> mixed_map{};
 	while (!worklist.empty()) {
 		auto [source_res, sources] = std::move(worklist.back());
 		worklist.pop_back();
@@ -1871,24 +1963,32 @@ Nft nft::determinize(const Nft& nft, std::unordered_map<StateSet, State>* subset
 			const std::vector<Iterator>& moves = synchronized_iterator.get_current();
 			const Symbol current_symbol{(*moves.begin())->symbol};
 			StateSet targets{synchronized_iterator.unify_targets()};
-			const auto existing_targets_it = subset_map->find(targets);
-			const bool target_res_exists{existing_targets_it != subset_map->end()};
+			// The created target has the minimal level between all the original targets.
+			const Level next_level{*nft.levels.get_minimal_next_level_of(targets)};
+			const bool is_mixed{next_level != 0 && std::ranges::any_of(targets, [&](const State state) {
+									return nft.levels[state] != next_level;
+								})};
 
-			State target_res;
+			State target_res{Limits::max_state};
 			// Targets that need further processing because they were not reached yet at this step.
 			StateSet targets_partial{};
 			StateSet targets_resolved{};
-			Level next_level;
-			if (target_res_exists) {
-				target_res = existing_targets_it->second;
-				next_level = result.levels[target_res];
-			} else {
-				// Create target of the minimal level between all the original targets.
-				next_level = *nft.levels.get_minimal_next_level_of(targets);
-				if (next_level != 0) {
+			bool target_res_exists;
+			if (is_mixed) {
+				const auto existing_targets_it{mixed_map.find({targets, current_symbol})};
+				target_res_exists = existing_targets_it != mixed_map.end();
+				if (target_res_exists) {
+					target_res = existing_targets_it->second;
+				} else {
 					for (const State state : targets) {
 						(nft.levels[state] == next_level ? targets_resolved : targets_partial).push_back(state);
 					}
+				}
+			} else {
+				const auto existing_targets_it{subset_map->find(targets)};
+				target_res_exists = existing_targets_it != subset_map->end();
+				if (target_res_exists) {
+					target_res = existing_targets_it->second;
 				} else {
 					targets_resolved = std::move(targets);
 				}
@@ -1899,10 +1999,12 @@ Nft nft::determinize(const Nft& nft, std::unordered_map<StateSet, State>* subset
 				inserted) {
 				if (!target_res_exists) {
 					target_res = result.add_state_with_level(next_level);
-					(*subset_map)[mata::utils::OrdVector<State>(targets_resolved)] = target_res;
-					if (!targets_partial.empty()) {
+					if (is_mixed) {
+						mixed_map.emplace(std::pair{std::move(targets), current_symbol}, target_res);
 						// Some targets were not resolved at this step, so we need to store them for further processing.
 						wip_jumps.emplace(target_res, StatePost{{current_symbol, targets_partial}});
+					} else {
+						subset_map->emplace(targets_resolved, target_res);
 					}
 					worklist.emplace_back(target_res, targets_resolved);
 					if (next_level == 0) {

@@ -10,6 +10,8 @@
 #include <queue>
 #include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "mata/alphabet.hh"
 #include "mata/nfa/nfa.hh"
@@ -184,14 +186,14 @@ void Nfa::print_to_dot(
 		return std::to_string(symbol);
 	};
 
-	auto vec_of_symbols_to_string = [&](const OrdVector<Symbol>& symbols) {
+	auto vec_of_symbols_to_string = [&](const std::vector<Symbol>& symbols) {
 		std::string result;
 		for (const Symbol& symbol : symbols) { result += translate_symbol(symbol) + ","; }
 		result.pop_back(); // Remove last comma
 		return result;
 	};
 
-	auto vec_of_symbols_to_string_with_intervals = [&](const OrdVector<Symbol>& symbols) {
+	auto vec_of_symbols_to_string_with_intervals = [&](const std::vector<Symbol>& symbols) {
 		std::string result;
 
 		const auto intervals{[&]() {
@@ -236,18 +238,27 @@ void Nfa::print_to_dot(
 
 	// Print transitions
 	const size_t delta_size = delta.num_of_states();
-	std::unordered_map<State, OrdVector<Symbol>> tgt_symbols_map;
+	// (target, symbol) moves of the current source, sorted so that its edges print in ascending target order whatever
+	// was printed before; a reused hash map instead iterates in bucket order. Both buffers are reused across sources.
+	std::vector<std::pair<State, Symbol>> target_symbols{};
+	std::vector<Symbol> symbols{};
 	for (State source = 0; source != delta_size; ++source) {
-		// Reused across sources to keep the hash table allocated.
-		tgt_symbols_map.clear();
+		target_symbols.clear();
 		for (const SymbolPost& move : delta[source]) {
 			is_state_drawn[source] = true;
 			for (const State target : move.targets) {
 				is_state_drawn[target] = true;
-				tgt_symbols_map[target].insert(move.symbol);
+				target_symbols.emplace_back(target, move.symbol);
 			}
 		}
-		for (const auto& [target, symbols] : tgt_symbols_map) {
+		std::sort(target_symbols.begin(), target_symbols.end());
+		for (auto move_it{target_symbols.begin()}; move_it != target_symbols.end();) {
+			// One edge per target, over the sorted symbols leading to it.
+			const State target{move_it->first};
+			symbols.clear();
+			for (; move_it != target_symbols.end() && move_it->first == target; ++move_it) {
+				if (symbols.empty() || symbols.back() != move_it->second) { symbols.push_back(move_it->second); }
+			}
 			if (max_label_length == 0) {
 				output << source << " -> " << target << ";\n";
 				continue;
@@ -380,7 +391,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClo
 	return delta.post_adopt_buffer(states, symbol, epsilon_closure_opt, {EPSILON}, workspace);
 }
 
-Nfa& Nfa::unify_initial(const bool force_new_state) {
+Nfa& Nfa::unify_initial(const bool force_new_state) & {
 	if (!force_new_state && (initial.empty() || initial.size() == 1)) { return *this; }
 
 	const bool unified_state_is_final{initial.intersects_with(final)};
@@ -408,7 +419,7 @@ Nfa& Nfa::unify_initial(const bool force_new_state) {
 	return *this;
 }
 
-Nfa& Nfa::unify_final(const bool force_new_state) {
+Nfa& Nfa::unify_final(const bool force_new_state) & {
 	if (!force_new_state && (final.empty() || final.size() == 1)) { return *this; }
 
 	const bool unified_state_is_initial{final.intersects_with(initial)};
@@ -484,7 +495,7 @@ State Nfa::insert_word(const State source, const Word& word, const State target)
 
 State Nfa::insert_word(const State source, const Word& word) { return insert_word(source, word, add_state()); }
 
-Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, const std::optional<State> sink_state) {
+Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, const std::optional<State> sink_state) & {
 	const State sink{sink_state.value_or(num_of_states())};
 	if (initial.empty()) { // The automaton has no reachable states (accepting an empty language).
 		// Insert a single initial sink state.
@@ -495,7 +506,7 @@ Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, const std::
 	return *this;
 }
 
-Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& nfa) {
+Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& nfa) & {
 	if (this == &nfa) { return *this; }
 	if (final.empty() || initial.empty()) {
 		*this = nfa;
@@ -526,7 +537,7 @@ Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& nfa) {
 	return *this;
 }
 
-Nfa& Nfa::unite_nondet_with(Nfa&& nfa) {
+Nfa& Nfa::unite_nondet_with(Nfa&& nfa) & {
 	if (this == &nfa) {
 		// Self-union: one controlled snapshot of the operand; `this` keeps its own content.
 		// NOLINTNEXTLINE(performance-unnecessary-copy-initialization)

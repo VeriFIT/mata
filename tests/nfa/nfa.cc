@@ -83,6 +83,19 @@ TEST_CASE("mata::nfa::create_alphabet()") {
 	// create_alphabet(a, b, 4); // Will not compile: '4' is not of the required type.
 }
 
+TEST_CASE("mata::nfa::create_alphabet() handles a symbol used by many posts") { // {{{
+	// Regression guard for the fill_alphabet() path through Delta::get_used_symbols(): the alphabet must be built
+	//  from the distinct symbols over all posts, not one entry per symbol post.
+	Nfa a{16};
+	for (mata::nfa::State s{0}; s < 15; ++s) {
+		a.delta.add(s, 'a', (s + 1) % 15);
+		a.delta.add(s, 'b', (s + 1) % 15);
+	}
+	a.delta.add(15, EPSILON, 0);
+	const auto alphabet{create_alphabet(a)};
+	CHECK(alphabet.get_alphabet_symbols() == mata::utils::OrdVector<Symbol>{'b', 'a'});
+} // }}}
+
 TEST_CASE("mata::nfa::Nfa::delta.add()/delta.contains()") { // {{{
 	Nfa a(3);
 
@@ -3675,6 +3688,23 @@ TEST_CASE("mata::nfa::are_equivalent() counterexample") {
 			Run cex;
 			CHECK(!are_equivalent(lhs, rhs, &alph, params, &cex));
 			CHECK(lhs.is_in_lang(cex) != rhs.is_in_lang(cex));
+		}
+	}
+
+	SECTION("a difference found in the second inclusion direction still has a witness") {
+		// lhs: {a} is included in rhs: {a, b}, so the second direction has to search and report "b".
+		Nfa lhs{2, {0}, {1}};
+		Nfa rhs{2, {0}, {1}};
+		lhs.delta.add(0, alph["a"], 1);
+		rhs.delta.add(0, alph["a"], 1);
+		rhs.delta.add(0, alph["b"], 1);
+
+		for (const auto& algo : ALGORITHMS) {
+			params["algorithm"] = algo;
+			Run cex;
+			CHECK(!are_equivalent(lhs, rhs, &alph, params, &cex));
+			CHECK(rhs.is_in_lang(cex));
+			CHECK(!lhs.is_in_lang(cex));
 		}
 	}
 
@@ -7547,6 +7577,85 @@ TEST_CASE("mata::Automaton::distances_to_final matches the reverted BFS - #740")
 	}
 } // }}}
 
+TEST_CASE("mata::Automaton::distances_to_final and get_terminating_states on edge cases - #740") { // {{{
+	SECTION("no final states") {
+		Nfa nfa{3};
+		nfa.delta.add(0, 0, 1);
+		nfa.delta.add(1, 1, 2);
+		nfa.initial = {0};
+		CHECK(
+			nfa.distances_to_final() ==
+			std::vector<State>{Limits::max_state, Limits::max_state, Limits::max_state, Limits::max_state}
+		);
+		CHECK(nfa.get_terminating_states() == StateSet{});
+	}
+
+	SECTION("several final states and a self-loop") {
+		Nfa nfa{4};
+		nfa.delta.add(0, 0, 1);
+		nfa.delta.add(0, 1, 2);
+		nfa.delta.add(1, 0, 3);
+		nfa.delta.add(2, 0, 2); // self-loop that cannot reach a final
+		nfa.final = {1, 3};
+		nfa.initial = {0};
+		CHECK(nfa.distances_to_final() == std::vector<State>{1, 0, Limits::max_state, 0, Limits::max_state});
+		CHECK(nfa.get_terminating_states() == StateSet{0, 1, 3});
+	}
+
+	SECTION("num_of_states() comes from initial/final rather than delta") {
+		Nfa nfa{};
+		nfa.initial = {2};
+		nfa.final = {5};
+		CHECK(nfa.num_of_states() == 6);
+		// Only the final state itself is terminating; distances keep one extra sentinel slot.
+		CHECK(nfa.get_terminating_states() == StateSet{5});
+		CHECK(
+			nfa.distances_to_final() == std::vector<State>{
+											Limits::max_state, Limits::max_state, Limits::max_state, Limits::max_state,
+											Limits::max_state, 0, Limits::max_state
+										}
+		);
+	}
+
+	SECTION("unreachable final state is still a distance-0 target") {
+		Nfa nfa{3};
+		nfa.initial = {0};
+		nfa.final = {2};
+		nfa.delta.add(0, 0, 1);
+		CHECK(nfa.get_terminating_states() == StateSet{2});
+		CHECK(
+			nfa.distances_to_final() == std::vector<State>{Limits::max_state, Limits::max_state, 0, Limits::max_state}
+		);
+	}
+} // }}}
+
+TEST_CASE("mata::Automaton::get_terminating_states matches the reverted reachability - #740") { // {{{
+	std::mt19937 gen{741};
+	for (size_t iteration{0}; iteration < 60; ++iteration) {
+		const size_t num_states{std::uniform_int_distribution<size_t>(0, 35)(gen)};
+		Nfa nfa{num_states};
+		if (num_states == 0) {
+			CHECK(nfa.get_terminating_states() == StateSet{});
+			continue;
+		}
+		const auto max_state{static_cast<State>(num_states - 1)};
+		for (State state{0}; state < num_states; ++state) {
+			const size_t out_degree{std::uniform_int_distribution<size_t>(0, 4)(gen)};
+			for (size_t i{0}; i < out_degree; ++i) {
+				nfa.delta.add(
+					state, std::uniform_int_distribution<mata::Symbol>(0, 3)(gen),
+					std::uniform_int_distribution<mata::nfa::State>(0, max_state)(gen)
+				);
+			}
+			if (std::uniform_int_distribution<int>(0, 2)(gen) == 0) { nfa.final.insert(state); }
+		}
+		// The slow oracle: revert the automaton and compute forward reachability, as get_terminating_states() used
+		//  to be implemented. The returned set orders states in ascending order, unlike SparseSet insertion order.
+		const StateSet oracle{revert(nfa).get_reachable_states()};
+		CHECK(nfa.get_terminating_states() == oracle);
+	}
+} // }}}
+
 TEST_CASE("mata::nfa::get_useful_states() with brute-force oracle") {
 	// Brute-force oracle: simple independent forward and backward reachability
 	auto oracle_useful_states = [](const Nfa& aut) -> mata::BoolVector {
@@ -7782,4 +7891,23 @@ TEST_CASE("mata::Automaton::tarjan_scc_discover keeps components and callback be
 		std::ranges::sort(components);
 		CHECK(components == std::vector<std::vector<State>>{{2, 3}, {4}});
 	}
+}
+
+TEST_CASE("mata::nfa::Nfa::print_to_dot() prints the edges of a state in ascending target order (#749)") {
+	// Reproduces https://github.com/VeriFIT/mata/issues/749: hoisting the map grouping the symbols by target out of
+	//  the per-source loop (in #915) kept its bucket count across sources, so the edges of a state printed in an
+	//  order that depended on the states printed before it (state 1 printed 1 -> 14, 1 -> 2, 1 -> 1 here).
+	Nfa nfa{15};
+	for (State target{1}; target <= 14; ++target) { nfa.delta.add(0, 0, target); }
+	for (const State target : {1u, 2u, 14u}) { nfa.delta.add(1, 0, target); }
+
+	std::vector<std::string> edges_of_one;
+	std::istringstream dot_lines{nfa.print_to_dot()};
+	for (std::string line; std::getline(dot_lines, line);) {
+		if (line.starts_with("1 -> ")) { edges_of_one.push_back(line); }
+	}
+	CHECK(
+		edges_of_one ==
+		std::vector<std::string>{"1 -> 1 [label=\"0\"];", "1 -> 2 [label=\"0\"];", "1 -> 14 [label=\"0\"];"}
+	);
 }

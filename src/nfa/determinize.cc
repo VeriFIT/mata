@@ -1675,7 +1675,9 @@ Nfa determinize_classical_with(
 					if (aut.final.contains(target_orig)) { result.final.insert(target_res); }
 					worklist.push_back(target_orig);
 				}
-				result.delta.mutable_state_post(state_res).insert(SymbolPost(symbol_post.symbol, target_res));
+				StatePost& state_post{result.delta.mutable_state_post(state_res)};
+				MATA_ASSERT(state_post.empty() || state_post.back().symbol < symbol_post.symbol);
+				state_post.emplace_back(symbol_post.symbol, target_res);
 				if (target_is_new && macrostate_discover.has_value() &&
 					!(*macrostate_discover)(result, target_res, StateSet{target_orig})) {
 					return result;
@@ -1737,7 +1739,9 @@ Nfa determinize_classical_with(
 				worklist.emplace_back(target_it->second, &target_it->first);
 			}
 			const State target_res{target_it->second};
-			result.delta.mutable_state_post(state_res).insert(SymbolPost(current_symbol, target_res));
+			StatePost& state_post{result.delta.mutable_state_post(state_res)};
+			MATA_ASSERT(state_post.empty() || state_post.back().symbol < current_symbol);
+			state_post.emplace_back(current_symbol, target_res);
 			if (inserted && macrostate_discover.has_value() &&
 				!(*macrostate_discover)(result, target_res, target_it->first)) {
 				return result;

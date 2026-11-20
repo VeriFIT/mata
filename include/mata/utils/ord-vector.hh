@@ -231,6 +231,11 @@ template <class Key, class Allocator> class OrdVector {
 		return {pos, inserted};
 	}
 
+	/// Construct a key from @p args and insert it, moving it into place.
+	template <typename... Args> std::pair<iterator, bool> emplace(Args&&... args) {
+		return insert(Key(std::forward<Args>(args)...));
+	}
+
 	/// Insert the sorted, duplicate-free @p keys, such as another @c OrdVector or a @c SmallOrdVector.
 	bool insert(const std::span<const Key> keys) {
 		MATA_EXPENSIVE_ASSERT(is_sorted());

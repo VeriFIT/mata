@@ -360,6 +360,39 @@ TEST_CASE("mata::utils::OrdVector::insert() with a hint - issue #769") {
 	}
 }
 
+TEST_CASE("mata::utils::OrdVector::insert() moves and emplace() accepts move-only keys - issue #179") {
+	SECTION("insert() moves its argument") {
+		OrdVector<std::vector<int>> vec{};
+		std::vector<int> two{2, 2};
+		const auto [appended, appended_new] = vec.insert(std::move(two));
+		CHECK(appended_new);
+		CHECK(*appended == std::vector<int>{2, 2});
+		CHECK(two.empty());
+	}
+
+	SECTION("emplace() constructs move-only keys at the front, middle, and end") {
+		struct MoveOnlyInt {
+			int value;
+			explicit MoveOnlyInt(const int value) : value{value} {}
+			MoveOnlyInt(const MoveOnlyInt&) = delete;
+			MoveOnlyInt& operator=(const MoveOnlyInt&) = delete;
+			MoveOnlyInt(MoveOnlyInt&&) = default;
+			MoveOnlyInt& operator=(MoveOnlyInt&&) = default;
+			auto operator<=>(const MoveOnlyInt&) const = default;
+		};
+
+		OrdVector<MoveOnlyInt> vec{};
+		CHECK(vec.emplace(3).second);
+		CHECK(vec.emplace(1).second);
+		CHECK(vec.emplace(2).second);
+		CHECK(!vec.emplace(3).second);
+		REQUIRE(vec.size() == 3);
+		CHECK(vec.to_vector()[0].value == 1);
+		CHECK(vec.to_vector()[1].value == 2);
+		CHECK(vec.to_vector()[2].value == 3);
+	}
+}
+
 TEST_CASE("mata::utils::is_sorted() - issue #769") {
 	CHECK(mata::utils::is_sorted(std::vector<int>{}));
 	CHECK(mata::utils::is_sorted(std::vector<int>{1}));

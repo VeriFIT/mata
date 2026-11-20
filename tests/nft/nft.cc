@@ -270,6 +270,15 @@ TEST_CASE("mata::nft::create_alphabet()") {
 	// create_alphabet(a, b, 4); // Will not compile: '4' is not of the required type.
 }
 
+TEST_CASE("mata::nft::create_alphabet() skips EPSILON and DONT_CARE over many posts") { // {{{
+	Nft a{Nft::with_levels(2)};
+	for (mata::nft::State s{0}; s < 8; ++s) { a.delta.add(s, 'x', s + 1); }
+	a.delta.add(8, EPSILON, 9);
+	a.delta.add(9, DONT_CARE, 10);
+	const auto alphabet{create_alphabet(a)};
+	CHECK(alphabet.get_alphabet_symbols() == mata::utils::OrdVector<Symbol>{'x'});
+} // }}}
+
 TEST_CASE("mata::nft::Nft::delta.add()/delta.contains()") { // {{{
 	Nft a(3);
 
@@ -677,6 +686,83 @@ TEST_CASE("mata::nft::determinize()") {
 		nft.delta.add(11, 'g', 9);
 		result = determinize(nft, &subset_map);
 		CHECK_SHARED();
+	}
+
+	SECTION("state with a pending jump is not reused by an unrelated macrostate - issue #736") {
+		// Relation { (ua, ua), (ua, uc), (vb, vc) }, over states 0 I, 1 m, 2 A, 3 m', 4 B, 5 x, 6 y, 7 z.
+		// `A -a-> y` jumps from level 0 over level 1, so the targets of `A -a-> { x, y }` lie on two levels: the
+		// state built for { x } parks `a -> { y }` as a pending jump. `B -b-> { x }` must not reuse that state and
+		// inherit the jump, which would accept (vb, va).
+		const auto make = [](const Symbol u, const Symbol v) {
+			Nft nft{Nft::with_levels(Levels{2, {0, 1, 0, 1, 0, 1, 0, 0}}, 8, {0}, {6, 7})};
+			nft.delta.add(0, u, 1);
+			nft.delta.add(1, u, 2);
+			nft.delta.add(0, v, 3);
+			nft.delta.add(3, v, 4);
+			nft.delta.add(2, 'a', 5);
+			nft.delta.add(2, 'a', 6);
+			nft.delta.add(4, 'b', 5);
+			nft.delta.add(5, 'c', 7);
+			return nft;
+		};
+		// The worklist is a stack, so the symbol order decides whether { x } is first reached as a plain set.
+		for (const auto& [u, v] : std::vector<std::pair<Symbol, Symbol>>{{'q', 'p'}, {'p', 'q'}}) {
+			const Nft original{make(u, v)};
+			const Nft determinized{determinize(original)};
+			CHECK(are_equivalent(original, determinized));
+			CHECK(original.is_in_lang_by_levels({Word{v, 'b'}, Word{v, 'c'}}));
+			CHECK(determinized.is_in_lang_by_levels({Word{v, 'b'}, Word{v, 'c'}}));
+			CHECK_FALSE(original.is_in_lang_by_levels({Word{v, 'b'}, Word{v, 'a'}}));
+			CHECK_FALSE(determinized.is_in_lang_by_levels({Word{v, 'b'}, Word{v, 'a'}}));
+			// Naive inclusion complements `original` through `determinize()`, so it answered `true` here.
+			Nft single{Nft::with_levels(Levels{2, {0, 1, 0, 1, 0}}, 5, {0}, {4})}; // { (vb, va) }
+			single.delta.add(0, v, 1);
+			single.delta.add(1, v, 2);
+			single.delta.add(2, 'b', 3);
+			single.delta.add(3, 'a', 4);
+			CHECK_FALSE(is_included(single, original, nullptr, JumpMode::RepeatSymbol, {{"algorithm", "naive"}}));
+			CHECK_FALSE(is_included(single, original, nullptr, JumpMode::RepeatSymbol, {{"algorithm", "antichains"}}));
+		}
+	}
+
+	SECTION("two symbols with the same mixed target set each inherit their own pending jump - issue #736") {
+		// `A -a-> { x, y }` and `A -b-> { x, y }` resolve to the same set { x } on the nearest level, but they carry
+		// different pending jumps (`a -> { y }` and `b -> { y }`). The state built for { x } therefore stands for the
+		// pair (target set, symbol): sharing it between the two symbols would keep the jump of one of them only and
+		// lose the word (bb, bb) from the language.
+		Nft nft{Nft::with_levels(Levels{2, {0, 1, 0}}, 3, {0}, {2})};
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(0, 'a', 2);
+		nft.delta.add(0, 'b', 1);
+		nft.delta.add(0, 'b', 2);
+		const Nft determinized{determinize(nft)};
+		CHECK(are_equivalent(nft, determinized));
+		// The jump `0 -a-> 2` repeats its symbol on both levels, so only the words with one symbol on both levels
+		//  are in the language. Each has to come out of `determinize()` with its own pending jump.
+		CHECK(nft.is_in_lang_by_levels({Word{'a'}, Word{'a'}}));
+		CHECK(determinized.is_in_lang_by_levels({Word{'a'}, Word{'a'}}));
+		CHECK(nft.is_in_lang_by_levels({Word{'b'}, Word{'b'}}));
+		CHECK(determinized.is_in_lang_by_levels({Word{'b'}, Word{'b'}}));
+		CHECK_FALSE(nft.is_in_lang_by_levels({Word{'a'}, Word{'b'}}));
+		CHECK_FALSE(determinized.is_in_lang_by_levels({Word{'a'}, Word{'b'}}));
+		CHECK_FALSE(nft.is_in_lang_by_levels({Word{'b'}, Word{'a'}}));
+		CHECK_FALSE(determinized.is_in_lang_by_levels({Word{'b'}, Word{'a'}}));
+	}
+
+	SECTION("an overlapping DONT_CARE transition may keep its own target state") {
+		// `s -a-> { x, y }` mixes two levels, `s -DONT_CARE-> x` resolves to { x } alone. The two states must not be
+		//  merged: the mixed one carries a pending `a` jump that a DONT_CARE edge may, but need not, share with an
+		//  unrelated macrostate (#736). Determinize keeps DONT_CARE as a literal symbol, so the result has one
+		//  transition per target set and is_deterministic() reports the overlap; the language is preserved.
+		Nft nft{Nft::with_levels(Levels{2, {0, 1, 0}}, 3, {0}, {2})};
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(0, 'a', 2);
+		nft.delta.add(0, DONT_CARE, 1);
+		nft.delta.add(1, 'a', 2);
+		const Nft determinized{determinize(nft)};
+		CHECK(are_equivalent(nft, determinized));
+		CHECK(determinized.num_of_states() == 4);
+		CHECK_FALSE(determinized.is_deterministic());
 	}
 
 	// SECTION("This broke Delta when delta[q] could cause re-allocation of post")
@@ -5342,6 +5428,28 @@ TEST_CASE("mata::nft::project_out() preserves a sole empty retained post when pr
 	}
 }
 
+TEST_CASE("mata::nft::project_out() handles a linear path across projected levels") {
+	const Nft input{[] {
+		Nft nft{Nft::with_levels({3, {0, 1, 2, 0}}, 4, {0}, {3})};
+		nft.delta.add(0, EPSILON, 1);
+		nft.delta.add(1, EPSILON, 2);
+		nft.delta.add(2, 'a', 3);
+		return nft;
+	}()};
+	const Nft expected{[] {
+		Nft nft{Nft::with_levels({1, {0, 0}}, 2, {0}, {1})};
+		nft.delta.add(0, EPSILON, 1);
+		return nft;
+	}()};
+
+	for (const JumpMode jump_mode : {JumpMode::AppendDontCares, JumpMode::RepeatSymbol}) {
+		for (const auto& levels_to_project : {OrdVector<Level>{1, 2}, OrdVector<Level>{0, 2}}) {
+			const Nft actual{project_out(input, levels_to_project, jump_mode)};
+			CHECK(are_equivalent(actual, expected, jump_mode));
+		}
+	}
+}
+
 TEST_CASE("mata::nft::project_out() handles cycles among input-useless states") {
 	const Nft input{[] {
 		Nft nft{Nft::with_levels({3, {0, 1, 2, 0}}, {}, {0}, {0, 3})};
@@ -5781,6 +5889,25 @@ TEST_CASE("mata::nft::Nft::print_to_dot() handles DONT_CARE with a real alphabet
 	CHECK_NOTHROW(dot = nft.print_to_dot(false, false, -1, &alphabet));
 	CHECK_THAT(dot, Catch::Matchers::ContainsSubstring("<dntcr>"));
 	CHECK_THAT(dot, Catch::Matchers::ContainsSubstring("<eps>"));
+}
+
+TEST_CASE("mata::nft::Nft::print_to_dot() prints the edges of a state in ascending target order (#749)") {
+	// Reproduces https://github.com/VeriFIT/mata/issues/749: hoisting the map grouping the symbols by target out of
+	//  the per-source loop (in #915) kept its bucket count across sources, so the edges of a state printed in an
+	//  order that depended on the states printed before it (state 1 printed 1 -> 14, 1 -> 2, 1 -> 1 here).
+	Nft nft{15};
+	for (State target{1}; target <= 14; ++target) { nft.delta.add(0, 0, target); }
+	for (const State target : {1u, 2u, 14u}) { nft.delta.add(1, 0, target); }
+
+	std::vector<std::string> edges_of_one;
+	std::istringstream dot_lines{nft.print_to_dot()};
+	for (std::string line; std::getline(dot_lines, line);) {
+		if (line.starts_with("1 -> ")) { edges_of_one.push_back(line); }
+	}
+	CHECK(
+		edges_of_one ==
+		std::vector<std::string>{"1 -> 1 [label=\"0\"];", "1 -> 2 [label=\"0\"];", "1 -> 14 [label=\"0\"];"}
+	);
 }
 
 TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {

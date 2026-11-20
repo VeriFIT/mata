@@ -2124,14 +2124,7 @@ std::ostream& std::operator<<(std::ostream& os, const Nfa& nfa) {
 }
 
 void mata::nfa::Nfa::fill_alphabet(OnTheFlyAlphabet& alphabet_to_fill) const {
-	for (const StatePost& state_post : this->delta) {
-		for (const SymbolPost& symbol_post : state_post) {
-			// EPSILON sorts last and is no letter.
-			if (symbol_post.symbol == EPSILON) { break; }
-			alphabet_to_fill.update_next_symbol_value(symbol_post.symbol);
-			alphabet_to_fill.try_add_new_symbol(std::to_string(symbol_post.symbol), symbol_post.symbol);
-		}
-	}
+	this->delta.add_symbols_to(alphabet_to_fill);
 }
 
 std::shared_ptr<const mata::Alphabet> mata::nfa::Nfa::resolve_alphabet(const Alphabet* const alphabet) const {

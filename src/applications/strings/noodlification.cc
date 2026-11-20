@@ -45,12 +45,74 @@ void unify_initial_and_final_states(
 	}
 }
 
-Nfa concatenate_with(const std::vector<std::shared_ptr<Nfa>>& nfas, const mata::Symbol delimiter) {
-	Nfa concatenation{*nfas[0]};
-	for (size_t i = 1; i < nfas.size(); ++i) {
-		concatenation = mata::nfa::algorithms::concatenate_eps(concatenation, *nfas[i], delimiter, true);
+/// Whether @p aut contributes no states, initial states, or final states to a concatenation.
+bool is_empty_concatenation_operand(const Nfa& aut) {
+	return aut.num_of_states() == 0 || aut.initial.empty() || aut.final.empty();
+}
+
+/**
+ * @brief Concatenate @p parts over @p delimiter in one pass, instead of left-folding copies of the accumulator.
+ *
+ * Equivalent to the left fold of @c mata::nfa::algorithms::concatenate_eps with @c use_epsilon set to true: the
+ *  parts keep their order, state numbering, and the arcs between every pair of neighbouring parts. A single part is
+ *  copied as is; multiple parts produce a fresh automaton with default alphabet and attributes, as the fold does.
+ */
+Nfa concatenate_eps_nary(const std::vector<const Nfa*>& parts, const mata::Symbol delimiter) {
+	MATA_ASSERT(!parts.empty());
+	if (parts.size() == 1) { return Nfa{*parts.front()}; }
+
+	// Mirror the overflow and empty-result checks of the first fold step and of every following step.
+	size_t num_of_states{parts.front()->num_of_states()};
+	for (size_t part_index{1}; part_index < parts.size(); ++part_index) {
+		const size_t next_num_of_states{parts[part_index]->num_of_states()};
+		if (mata::nfa::Limits::max_num_of_states - num_of_states < next_num_of_states) {
+			mata::nfa::throw_state_overflow();
+		}
+		num_of_states += next_num_of_states;
+		if (is_empty_concatenation_operand(*parts[part_index - 1]) ||
+			is_empty_concatenation_operand(*parts[part_index])) {
+			return Nfa{};
+		}
 	}
-	return concatenation;
+
+	Nfa result{};
+	result.delta.reserve(num_of_states);
+	State offset{0};
+	for (const Nfa* part : parts) {
+		result.delta.append_shifted(part->delta, offset);
+		offset = static_cast<State>(offset + part->num_of_states());
+	}
+	// States used only by the initial or final sets of a part have no state post yet.
+	result.delta.allocate(num_of_states);
+	result.initial = parts.front()->initial;
+
+	const Nfa& last_part{*parts.back()};
+	const State last_offset{static_cast<State>(num_of_states - last_part.num_of_states())};
+	for (const State final_state : last_part.final) {
+		result.final.insert(static_cast<State>(last_offset + final_state));
+	}
+
+	State lhs_offset{0};
+	for (size_t part_index{1}; part_index < parts.size(); ++part_index) {
+		const Nfa& lhs{*parts[part_index - 1]};
+		const State rhs_offset{static_cast<State>(lhs_offset + lhs.num_of_states())};
+		for (const State lhs_final : lhs.final) {
+			for (const State rhs_initial : parts[part_index]->initial) {
+				result.delta.add(
+					static_cast<State>(lhs_offset + lhs_final), delimiter, static_cast<State>(rhs_offset + rhs_initial)
+				);
+			}
+		}
+		lhs_offset = rhs_offset;
+	}
+	return result;
+}
+
+Nfa concatenate_with(const std::vector<std::shared_ptr<Nfa>>& nfas, const mata::Symbol delimiter) {
+	std::vector<const Nfa*> parts{};
+	parts.reserve(nfas.size());
+	for (const std::shared_ptr<Nfa>& nfa : nfas) { parts.push_back(nfa.get()); }
+	return concatenate_eps_nary(parts, delimiter);
 }
 
 /**
@@ -732,10 +794,10 @@ std::optional<Nfa> left_side_product(
 		}
 	};
 	// Automaton representing the left side concatenated over epsilon transitions.
-	Nfa concatenated_lhs{automaton(lhs_automata.front())};
-	for (auto next_lhs_aut_it{lhs_automata.begin() + 1}; next_lhs_aut_it != lhs_automata.end(); ++next_lhs_aut_it) {
-		concatenated_lhs = concatenate(concatenated_lhs, automaton(*next_lhs_aut_it), true);
-	}
+	std::vector<const Nfa*> nfa_parts{};
+	nfa_parts.reserve(lhs_automata.size());
+	for (const LhsAutomaton& lhs_aut : lhs_automata) { nfa_parts.push_back(&automaton(lhs_aut)); }
+	Nfa concatenated_lhs{concatenate_eps_nary(nfa_parts, mata::nfa::EPSILON)};
 
 	Nfa product_pres_eps_trans{intersection(concatenated_lhs, rhs_automaton)};
 	product_pres_eps_trans.trim();
@@ -915,9 +977,11 @@ std::optional<Nfa> transducer_product(
 			mata::nft::compose(mata::nft::Nft(*input_automata[0]), *nft, 0, 0, false, mata::nft::JumpMode::NoJump)
 		};
 		for (size_t i = 1; i < input_automata.size(); ++i) {
-			const Nft composition =
+			Nft composition =
 				mata::nft::compose(mata::nft::Nft(*input_automata[i]), *nft, 0, 0, false, mata::nft::JumpMode::NoJump);
-			concatenation = mata::nft::algorithms::concatenate_eps(concatenation, composition, INPUT_DELIMITER, true);
+			concatenation = mata::nft::algorithms::concatenate_eps(
+				std::move(concatenation), std::move(composition), INPUT_DELIMITER, true
+			);
 		}
 		intersection = std::move(concatenation);
 	} else {

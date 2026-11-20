@@ -1,0 +1,107 @@
+From 484f7448364d9b0c3c15aefa840c6ec50325a294 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Thu, 19 Nov 2026 22:06:31 +0100
+Subject: [PATCH] exp: adaptive existential iterator (heap merge)
+
+---
+ include/mata/utils/synchronized-iterator.hh | 68 +++++++++++++++++++++
+ 1 file changed, 68 insertions(+)
+
+diff --git a/include/mata/utils/synchronized-iterator.hh b/include/mata/utils/synchronized-iterator.hh
+index 8e007731f..2b70538b2 100644
+--- a/include/mata/utils/synchronized-iterator.hh
++++ b/include/mata/utils/synchronized-iterator.hh
+@@ -5,7 +5,10 @@
+ #ifndef MATA_SYNCHRONIZED_ITERATOR_HH
+ #define MATA_SYNCHRONIZED_ITERATOR_HH
+ 
++#include <algorithm>
++#include <bit>
+ #include <cstddef>
++#include <iterator>
+ #include <vector>
+ 
+ #include "assert.hh"
+@@ -194,6 +197,9 @@ template <typename Iterator> class SynchronizedExistentialIterator : public Sync
+ 	 * new next_minimum must be updated too.
+ 	 */
+ 	bool advance() {
++		if (!mode_decided_) { decide_mode(); }
++		if (use_heap_) { return advance_heap(); }
++
+ 		// The next_minimum becomes the current current_minimum.
+ 		auto current_minimum = this->next_minimum;
+ 
+@@ -274,7 +280,69 @@ template <typename Iterator> class SynchronizedExistentialIterator : public Sync
+ 		SynchronizedIterator<Iterator>::reset(size);
+ 		if (size > 0) { this->currently_synchronized.reserve(size); }
+ 		this->currently_synchronized.clear();
++		mode_decided_ = false;
++		use_heap_ = false;
++		heap_.clear();
++	}
++
++  private:
++	/// The positions with entries left, as a min-heap ordered by the entry they point to; used in the heap mode only.
++	std::vector<size_t> heap_{};
++	bool mode_decided_{false};
++	bool use_heap_{false};
++
++	/// A scan of all k positions per advance costs k * s over the s distinct values, a heap merge M log k over the M
++	///  entries. The heap is taken only when the estimate of the scan is much larger.
++	void decide_mode() {
++		mode_decided_ = true;
++		const size_t k{this->positions.size()};
++		if (k < MIN_HEAP_POSITIONS) { return; }
++		size_t num_of_entries{0};
++		for (size_t i{0}; i < k; ++i) {
++			num_of_entries += static_cast<size_t>(std::distance(this->positions[i], this->ends[i]));
++		}
++		size_t distinct_estimate{num_of_entries};
++		if constexpr (requires(Iterator it) { it->symbol; }) {
++			auto min_value{this->positions[0]->symbol};
++			auto max_value{std::prev(this->ends[0])->symbol};
++			for (size_t i{1}; i < k; ++i) {
++				min_value = std::min(min_value, this->positions[i]->symbol);
++				max_value = std::max(max_value, std::prev(this->ends[i])->symbol);
++			}
++			distinct_estimate = std::min(distinct_estimate, static_cast<size_t>(max_value - min_value) + 1);
++		}
++		const size_t log_k{static_cast<size_t>(std::bit_width(k))};
++		if (k * distinct_estimate <= HEAP_FACTOR * num_of_entries * log_k) { return; }
++		use_heap_ = true;
++		heap_.resize(k);
++		for (size_t i{0}; i < k; ++i) { heap_[i] = i; }
++		std::ranges::make_heap(heap_, heap_greater());
++	}
++
++	auto heap_greater() const {
++		return [this](const size_t lhs, const size_t rhs) { return *this->positions[rhs] < *this->positions[lhs]; };
+ 	}
++
++	bool advance_heap() {
++		currently_synchronized.clear();
++		if (heap_.empty()) { return false; }
++		const auto greater{heap_greater()};
++		const Iterator current_minimum{this->positions[heap_.front()]};
++		while (!heap_.empty() && *this->positions[heap_.front()] == *current_minimum) {
++			std::ranges::pop_heap(heap_, greater);
++			const size_t i{heap_.back()};
++			currently_synchronized.push_back(this->positions[i]);
++			if (++this->positions[i] == this->ends[i]) {
++				heap_.pop_back();
++			} else {
++				std::ranges::push_heap(heap_, greater);
++			}
++		}
++		return true;
++	}
++
++	static constexpr size_t MIN_HEAP_POSITIONS{16};
++	static constexpr size_t HEAP_FACTOR{4};
+ };
+ 
+ /**
+-- 
+2.56.0
+

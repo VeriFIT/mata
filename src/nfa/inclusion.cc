@@ -50,15 +50,14 @@ bool mata::nfa::algorithms::is_included_naive(
 } // is_included_naive }}}
 
 /// language inclusion check using Antichains
-// TODO, what about to construct the separator from this?
-bool mata::nfa::algorithms::is_included_antichains(
+namespace mata::nfa::algorithms {
+static bool is_included_antichains(
 	const Nfa& smaller,
 	const Nfa& bigger,
-	[[maybe_unused]] const Alphabet* const
-		alphabet, // Parameter exists so signature matches AlgoType used by set_algorithm
+	const std::vector<State>& distances_smaller,
+	const std::vector<State>& distances_bigger,
 	Run* cex
 ) { // {{{
-	(void) alphabet;
 	if (cex != nullptr) {
 		// The counterexample is built by appending; a reused Run would otherwise grow a word its automaton rejects.
 		cex->word.clear();
@@ -74,9 +73,6 @@ bool mata::nfa::algorithms::is_included_antichains(
 	std::vector<Step> steps{}; // Indexed like @c nodes; empty unless @p cex is requested.
 	std::vector<size_t> worklist{}; // Indices of the nodes to be processed.
 	ProcessedType processed(smaller.num_of_states()); // Allocate to the number of states of the smaller nfa.
-
-	const std::vector<State> distances_smaller = smaller.distances_to_final();
-	const std::vector<State> distances_bigger = bigger.distances_to_final();
 
 	// A state of either automaton that cannot reach a final state contributes no word. Such states of the smaller
 	//  automaton are not explored, and such states of the bigger one are dropped from the macrostates, which only
@@ -202,6 +198,21 @@ bool mata::nfa::algorithms::is_included_antichains(
 	return true;
 } // }}}
 
+} // namespace mata::nfa::algorithms
+
+bool mata::nfa::algorithms::is_included_antichains(
+	const Nfa& smaller,
+	const Nfa& bigger,
+	[[maybe_unused]] const Alphabet* const
+		alphabet, // Parameter exists so signature matches AlgoType used by set_algorithm
+	Run* cex
+) {
+	(void) alphabet;
+	const std::vector<State> distances_smaller{smaller.distances_to_final()};
+	const std::vector<State> distances_bigger{bigger.distances_to_final()};
+	return is_included_antichains(smaller, bigger, distances_smaller, distances_bigger, cex);
+}
+
 namespace {
 using AlgoType = decltype(algorithms::is_included_naive)*;
 
@@ -209,6 +220,15 @@ bool compute_equivalence(
 	const Nfa& lhs, const Nfa& rhs, const mata::Alphabet* const alphabet, const AlgoType& algo, Run* const cex
 ) {
 	// alphabet should not be needed as input parameter
+	if (algo == static_cast<AlgoType>(&algorithms::is_included_antichains)) {
+		// Both directions need the distances of both automata; compute them once.
+		const std::vector<State> distances_lhs{lhs.distances_to_final()};
+		const std::vector<State> distances_rhs{rhs.distances_to_final()};
+		if (algorithms::is_included_antichains(lhs, rhs, distances_lhs, distances_rhs, cex)) {
+			if (algorithms::is_included_antichains(rhs, lhs, distances_rhs, distances_lhs, cex)) { return true; }
+		}
+		return false;
+	}
 	if (algo(lhs, rhs, alphabet, cex)) {
 		if (algo(rhs, lhs, alphabet, cex)) { return true; }
 	}

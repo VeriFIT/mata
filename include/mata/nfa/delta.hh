@@ -203,7 +203,7 @@ class StatePost : utils::OrdVector<SymbolPost, utils::DeltaAllocator<SymbolPost>
 		});
 	}
 	using super::empty, super::size;
-	using super::insert;
+	using super::insert, super::emplace;
 	using super::reserve;
 	using super::to_vector;
 	// dangerous, breaks the sortedness invariant
@@ -409,18 +409,20 @@ class StatePost::Moves::const_iterator {
 	StatePost::const_iterator symbol_post_it_{};
 	SmallStateSet::const_iterator target_it_{};
 	StatePost::const_iterator symbol_post_end_{};
-	/// Internal allocated instance of @c Move which is set for the move currently iterated over and returned as
-	///  a reference with @c operator*().
+	/// Internal cached instance of @c Move for the move currently iterated over. Dereferencing returns it by
+	///  value: a reference into the iterator would dangle once a copy of the iterator is destroyed, which
+	///  forward iterators have to keep valid.
 	Move move_{};
 
 	bool at_end() const { return symbol_post_it_ == symbol_post_end_; }
 
   public:
 	using iterator_category = std::forward_iterator_tag;
+	using iterator_concept = std::forward_iterator_tag;
 	using value_type = Move;
 	using difference_type = std::ptrdiff_t;
 	using pointer = Move*;
-	using reference = Move&;
+	using reference = Move;
 
 	/// Construct end iterator.
 	const_iterator() = default;
@@ -445,7 +447,7 @@ class StatePost::Moves::const_iterator {
 	const_iterator(const const_iterator& other) noexcept = default;
 	const_iterator(const_iterator&&) = default;
 
-	const Move& operator*() const { return move_; }
+	Move operator*() const { return move_; }
 	const Move* operator->() const { return &move_; }
 
 	// Prefix increment
@@ -1066,9 +1068,7 @@ class Delta {
 	bool grow_for_states(States... states) {
 		if constexpr (sizeof...(states) > 0) {
 			if (const State max_state{std::max({static_cast<State>(states)...})}; max_state >= num_of_states()) {
-				const size_t new_size{num_of_states_for(max_state)};
-				reserve_on_insert(state_posts_, max_state);
-				state_posts_.resize(new_size);
+				state_posts_.resize(num_of_states_for(max_state));
 				return true;
 			}
 		}
@@ -1241,14 +1241,18 @@ class Delta::Transitions::const_iterator {
 	StatePost::const_iterator state_post_it_{};
 	StatePost::const_iterator state_post_end_{};
 	SmallStateSet::const_iterator symbol_post_it_{};
+	/// Internal cached instance of @c Transition for the transition currently iterated over. Dereferencing returns
+	///  it by value: a reference into the iterator would dangle once a copy of the iterator is destroyed, which
+	///  forward iterators have to keep valid.
 	Transition transition_{};
 
   public:
 	using iterator_category = std::forward_iterator_tag;
+	using iterator_concept = std::forward_iterator_tag;
 	using value_type = Transition;
 	using difference_type = std::ptrdiff_t;
 	using pointer = Transition*;
-	using reference = Transition&;
+	using reference = Transition;
 
 	const_iterator() = default;
 	explicit const_iterator(const Delta& delta) : delta_{&delta} {
@@ -1287,20 +1291,19 @@ class Delta::Transitions::const_iterator {
 	const_iterator(const const_iterator& other) noexcept = default;
 	const_iterator(const_iterator&&) = default;
 
-	const Transition& operator*() const { return transition_; }
+	Transition operator*() const { return transition_; }
 	const Transition* operator->() const { return &transition_; }
 
 	// Prefix increment
 	const_iterator& operator++() {
 		MATA_ASSERT(delta_->begin() != delta_->end());
-
 		symbol_post_it_ = std::next(symbol_post_it_);
 		if (symbol_post_it_ != state_post_it_->targets.end()) {
 			transition_.target = *symbol_post_it_;
 			return *this;
 		}
-
 		++state_post_it_;
+
 		if (state_post_it_ != state_post_end_) {
 			symbol_post_it_ = state_post_it_->targets.begin();
 			transition_.symbol = state_post_it_->symbol;

@@ -10,7 +10,7 @@ using namespace mata::applications::strings;
 void seg_nfa::Segmentation::process_state_depth_pair(
 	const StateDepthTuple& state_depth_pair, std::deque<StateDepthTuple>& worklist
 ) {
-	for (auto outgoing_post{automaton_.delta[state_depth_pair.state]};
+	for (const StatePost& outgoing_post{automaton_.delta[state_depth_pair.state]};
 		 const SymbolPost& outgoing_move : outgoing_post) {
 		if (this->epsilons_.contains(outgoing_move.symbol)) {
 			handle_epsilon_transitions(state_depth_pair, outgoing_move, worklist);
@@ -34,13 +34,16 @@ void seg_nfa::Segmentation::handle_epsilon_transitions(
 	MATA_ASSERT(span.depth == depth);
 	MATA_ASSERT(span.end == depth_transitions.size());
 
-	std::map<Symbol, unsigned> visited_eps_aux(state_depth_pair.eps);
-	visited_eps_aux[move.symbol]++;
+	// One pool entry per ε-head is shared by all its targets, replacing the per-target map copies.
+	std::vector<unsigned> visited_eps_aux{epsilon_counts_[state_depth_pair.eps_index]};
+	++visited_eps_aux[epsilon_ranks_.at(move.symbol)];
+	epsilon_counts_.push_back(std::move(visited_eps_aux));
+	const size_t eps_index{epsilon_counts_.size() - 1};
 
 	for (const State target_state : move.targets) {
 		depth_transitions.emplace_back(state_depth_pair.state, move.symbol, target_state);
-		worklist.push_back({.state = target_state, .depth = depth + 1, .eps = visited_eps_aux});
-		this->visited_eps_[target_state] = visited_eps_aux;
+		worklist.push_back({.state = target_state, .depth = depth + 1, .eps_index = eps_index});
+		last_eps_count_index_[target_state] = eps_index;
 	}
 	span.end = depth_transitions.size();
 }
@@ -49,18 +52,18 @@ void seg_nfa::Segmentation::add_transitions_to_worklist(
 	const StateDepthTuple& state_depth_pair, const SymbolPost& move, std::deque<StateDepthTuple>& worklist
 ) {
 	for (const State target_state : move.targets) {
-		worklist.push_back({.state = target_state, .depth = state_depth_pair.depth, .eps = state_depth_pair.eps});
-		this->visited_eps_[target_state] = state_depth_pair.eps;
+		worklist.push_back(
+			{.state = target_state, .depth = state_depth_pair.depth, .eps_index = state_depth_pair.eps_index}
+		);
+		last_eps_count_index_[target_state] = state_depth_pair.eps_index;
 	}
 }
 
 std::deque<seg_nfa::Segmentation::StateDepthTuple> seg_nfa::Segmentation::initialize_worklist() const {
 	std::deque<StateDepthTuple> worklist{};
-	std::map<Symbol, unsigned> def_eps_map{};
-	for (const Symbol& e : this->epsilons_) { def_eps_map[e] = 0; }
 
 	for (const State state : automaton_.initial) {
-		worklist.push_back(StateDepthTuple{.state = state, .depth = 0, .eps = def_eps_map});
+		worklist.push_back(StateDepthTuple{.state = state, .depth = 0, .eps_index = 0});
 	}
 	return worklist;
 }
@@ -157,6 +160,12 @@ const std::vector<Nfa>& seg_nfa::Segmentation::get_untrimmed_segments() {
 }
 
 void seg_nfa::Segmentation::compute_epsilon_depths() {
+	epsilon_ranks_.clear();
+	size_t rank{0};
+	for (const Symbol epsilon : epsilons_) { epsilon_ranks_.emplace(epsilon, rank++); }
+	epsilon_counts_.clear();
+	epsilon_counts_.emplace_back(epsilons_.size(), 0); // Seed of the initial states.
+	last_eps_count_index_.assign(automaton_.num_of_states(), no_eps_count);
 	epsilon_transitions_of_state_.resize(automaton_.num_of_states());
 	std::unordered_map<State, bool> visited{initialize_visited_map()};
 	std::deque<StateDepthTuple> worklist{initialize_worklist()};
@@ -169,6 +178,16 @@ void seg_nfa::Segmentation::compute_epsilon_depths() {
 			visited[state_depth_pair.state] = true;
 			process_state_depth_pair(state_depth_pair, worklist);
 		}
+	}
+
+	// Materialize the public map once, keeping the last-write-wins value of each target.
+	for (State state{0}; state < last_eps_count_index_.size(); ++state) {
+		const size_t eps_index{last_eps_count_index_[state]};
+		if (eps_index == no_eps_count) { continue; }
+		VisitedEpsilonsCounterMap eps_map{};
+		rank = 0;
+		for (const Symbol epsilon : epsilons_) { eps_map.emplace(epsilon, epsilon_counts_[eps_index][rank++]); }
+		visited_eps_[state] = std::move(eps_map);
 	}
 }
 

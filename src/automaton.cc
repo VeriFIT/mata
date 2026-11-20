@@ -100,7 +100,8 @@ BoolVector reachable_states(
  */
 struct PredecessorIndex {
 	/// Start of the predecessor slice of each state; one element longer than the number of indexed states.
-	std::vector<State> offsets{};
+	///  The values count edges, which can exceed what a @c State holds, so this has to be @c size_t.
+	std::vector<size_t> offsets{};
 	/// Sources of all indexed transitions, grouped by their target state.
 	std::vector<State> sources{};
 };
@@ -134,7 +135,7 @@ PredecessorIndex
 	for (State state{0}; state < num_of_states; ++state) { index.offsets[state + 1] += index.offsets[state]; }
 
 	index.sources.resize(index.offsets.back());
-	std::vector<State> fill_cursors{index.offsets.begin(), index.offsets.end() - 1};
+	std::vector<size_t> fill_cursors{index.offsets.begin(), index.offsets.end() - 1};
 	for (State source{0}; source < num_of_delta_states; ++source) {
 		if (!source_filter[source]) { continue; }
 		delta.for_each_successor(source, [&](const State target) { index.sources[fill_cursors[target]++] = source; });
@@ -199,7 +200,39 @@ StateSet Automaton::get_reachable_states(const std::function<bool(State)>& filte
 	return reachable_states;
 }
 
-StateSet Automaton::get_terminating_states() const { return reverted().get_reachable_states(); }
+StateSet Automaton::get_terminating_states() const {
+	// States that can reach a final state, by a backward BFS over predecessors. Building the reverted automaton first
+	//  costs one sorted insert per transition, while the traversal only needs the predecessor lists.
+	const size_t num_of_states{this->num_of_states()};
+	const BoolVector all_sources(num_of_states, true);
+	const PredecessorIndex pred_index{build_predecessor_index(this->delta, num_of_states, all_sources)};
+
+	BoolVector terminating(num_of_states, false);
+	std::vector<State> worklist{};
+	for (const State state : final) {
+		if (state < num_of_states && !terminating[state]) {
+			terminating[state] = true;
+			worklist.push_back(state);
+		}
+	}
+	while (!worklist.empty()) {
+		const State state{worklist.back()};
+		worklist.pop_back();
+		for (size_t i{pred_index.offsets[state]}; i < pred_index.offsets[state + 1]; ++i) {
+			const State predecessor{pred_index.sources[i]};
+			if (!terminating[predecessor]) {
+				terminating[predecessor] = true;
+				worklist.push_back(predecessor);
+			}
+		}
+	}
+
+	StateSet result{};
+	for (State state{0}; state < num_of_states; ++state) {
+		if (terminating[state]) { result.insert(state); }
+	}
+	return result;
+}
 
 std::vector<State> Automaton::distances_from_initial() const {
 	std::vector<State> distances(num_of_states() + 1, nfa::Limits::max_state);
@@ -352,9 +385,9 @@ BoolVector Automaton::get_useful_states(
 		worklist.pop_back();
 
 		// Iterate over predecessors of state.
-		const State pred_start{pred_index.offsets[state]};
-		const State pred_end{pred_index.offsets[state + 1]};
-		for (State pred_idx{pred_start}; pred_idx < pred_end; ++pred_idx) {
+		const size_t pred_start{pred_index.offsets[state]};
+		const size_t pred_end{pred_index.offsets[state + 1]};
+		for (size_t pred_idx{pred_start}; pred_idx < pred_end; ++pred_idx) {
 			const State pred_state{pred_index.sources[pred_idx]};
 			if (!useful[pred_state]) {
 				useful[pred_state] = true;
