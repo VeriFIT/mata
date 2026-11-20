@@ -301,23 +301,34 @@ class Segmentation {
 	void split_aut_into_segments();
 
 	/**
-	 * Initialize map of visited states.
-	 * @return Map of visited states.
+	 * Breadth-first queue of state and depth pairs; each state is queued at most once.
+	 *
+	 * The first time a state is queued is the time it is processed: a FIFO queue pops the first copy of a state before
+	 *  any later one, so skipping the later copies at push keeps the order and the depths of the processed states.
 	 */
-	std::unordered_map<State, bool> initialize_visited_map() const;
+	struct Worklist {
+		std::deque<StateDepthTuple> queue{};
+		BoolVector queued{};
+
+		void push(const StateDepthTuple& state_depth_pair) {
+			if (queued[state_depth_pair.state]) { return; }
+			queued[state_depth_pair.state] = true;
+			queue.push_back(state_depth_pair);
+		}
+	};
 
 	/**
 	 * Initialize worklist of states with depths to process.
-	 * @return Queue of state and its depth pairs.
+	 * @return Worklist with the initial states at depth 0.
 	 */
-	std::deque<StateDepthTuple> initialize_worklist() const;
+	Worklist initialize_worklist() const;
 
 	/**
 	 * Process pair of state and its depth.
 	 * @param[in] state_depth_pair Current state depth pair.
 	 * @param[out] worklist Worklist of state and depth pairs to process.
 	 */
-	void process_state_depth_pair(const StateDepthTuple& state_depth_pair, std::deque<StateDepthTuple>& worklist);
+	void process_state_depth_pair(const StateDepthTuple& state_depth_pair, Worklist& worklist);
 
 	/**
 	 * Add states with non-epsilon transitions to the @p worklist.
@@ -326,7 +337,7 @@ class Segmentation {
 	 * @param worklist[out] Worklist of state and depth pairs to process.
 	 */
 	void add_transitions_to_worklist(
-		const StateDepthTuple& state_depth_pair, const SymbolPost& move, std::deque<StateDepthTuple>& worklist
+		const StateDepthTuple& state_depth_pair, const SymbolPost& move, Worklist& worklist
 	);
 
 	/**
@@ -335,9 +346,8 @@ class Segmentation {
 	 * @param[in] move Move from current state.
 	 * @param[out] worklist Worklist of state and depth pairs to process.
 	 */
-	void handle_epsilon_transitions(
-		const StateDepthTuple& state_depth_pair, const SymbolPost& move, std::deque<StateDepthTuple>& worklist
-	);
+	void
+		handle_epsilon_transitions(const StateDepthTuple& state_depth_pair, const SymbolPost& move, Worklist& worklist);
 }; // Class Segmentation.
 
 /**

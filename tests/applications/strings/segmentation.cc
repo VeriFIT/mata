@@ -1,10 +1,14 @@
 /* tests-nfa-segmentation.cc -- Tests for segmentation of NFAs
  */
 
+#include <deque>
+#include <map>
 #include <optional>
 #include <random>
 #include <type_traits>
 #include <unordered_set>
+#include <utility>
+#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
@@ -482,6 +486,76 @@ TEST_CASE("mata::nfa::Segmentation segments match copying the whole automaton pe
 			const Nfa aut{builder::create_random_nfa_tabakov_vardi(12, 3, 1.2, 0.3, seed)};
 			check_segments_match_reference(aut, {0});
 			check_segments_match_reference(aut, {0, 1});
+		}
+	}
+}
+
+namespace {
+/// The ε-transitions by depth and the visited ε-counts of a breadth-first search that queues every target and skips
+///  the states already expanded only when it pops them; each push overwrites the counts of its target.
+std::pair<std::vector<std::vector<Transition>>, seg_nfa::VisitedEpsMap>
+	reference_epsilon_depths(const Nfa& aut, const std::set<Symbol>& epsilons) {
+	struct Item {
+		State state;
+		size_t depth;
+		std::map<Symbol, unsigned> counts;
+	};
+	std::map<Symbol, unsigned> zero_counts;
+	for (const Symbol epsilon : epsilons) { zero_counts[epsilon] = 0; }
+	std::vector<std::vector<Transition>> by_depth;
+	seg_nfa::VisitedEpsMap visited_eps;
+	std::vector<bool> expanded(aut.num_of_states(), false);
+	std::deque<Item> worklist;
+	for (const State state : aut.initial) { worklist.push_back({state, 0, zero_counts}); }
+	while (!worklist.empty()) {
+		const Item item{worklist.front()};
+		worklist.pop_front();
+		if (expanded[item.state]) { continue; }
+		expanded[item.state] = true;
+		for (const SymbolPost& symbol_post : aut.delta[item.state]) {
+			const bool is_epsilon{epsilons.contains(symbol_post.symbol)};
+			std::map<Symbol, unsigned> counts{item.counts};
+			if (is_epsilon) {
+				++counts[symbol_post.symbol];
+				if (by_depth.size() <= item.depth) { by_depth.resize(item.depth + 1); }
+			}
+			for (const State target : symbol_post.targets) {
+				if (is_epsilon) { by_depth[item.depth].emplace_back(item.state, symbol_post.symbol, target); }
+				worklist.push_back({target, is_epsilon ? item.depth + 1 : item.depth, counts});
+				visited_eps[target] = counts;
+			}
+		}
+	}
+	return {by_depth, visited_eps};
+}
+
+void check_epsilon_depths_match_reference(const Nfa& aut, const std::set<Symbol>& epsilons) {
+	const auto [by_depth, visited_eps]{reference_epsilon_depths(aut, epsilons)};
+	const seg_nfa::Segmentation segmentation{aut, epsilons};
+	CHECK(segmentation.get_epsilon_transitions_by_depth() == by_depth);
+	CHECK(segmentation.get_visited_eps() == visited_eps);
+}
+} // namespace
+
+TEST_CASE("mata::nfa::Segmentation ε-depths and visited ε-counts match a search expanding states at pop") {
+	SECTION("Random segment automata") {
+		const std::vector<Symbol> epsilons{'x', 'y'};
+		for (unsigned seed{0}; seed < 200; ++seed) {
+			CAPTURE(seed);
+			check_epsilon_depths_match_reference(
+				random_untrimmed_segment_automaton(seed, 1 + seed % 6, epsilons), {epsilons.begin(), epsilons.end()}
+			);
+		}
+	}
+
+	SECTION("Random automata that are not segment automata") {
+		// States reached at several depths and by several ε-symbols, so later pushes overwrite earlier counts.
+		for (unsigned seed{0}; seed < 200; ++seed) {
+			CAPTURE(seed);
+			Nfa aut{builder::create_random_nfa_tabakov_vardi(12, 3, 1.2, 0.3, seed)};
+			aut.initial.insert(static_cast<State>(seed % 12));
+			check_epsilon_depths_match_reference(aut, {0});
+			check_epsilon_depths_match_reference(aut, {0, 1});
 		}
 	}
 }
