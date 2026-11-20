@@ -339,26 +339,36 @@ template <typename E> class Post : utils::OrdVector<E> {
 		}
 	}
 
-	/// Iterator over moves represented as @c Move instances. @see mata::posts::PostMoves.
+	/**
+	 * Iterator over moves represented as @c Move instances.
+	 *
+	 * The @c moves*() overloads exist only at @c key_arity 1, since a @c Move holds a single key.
+	 *  Above that, use @c for_each_move().
+	 */
 	using Moves = PostMoves<Post>;
 
 	/**
 	 * Iterator over all moves (over all labels) in @c Post represented as @c Move instances.
 	 */
-	Moves moves() const { return {*this, this->cbegin(), this->cend()}; }
+	Moves moves() const requires(key_arity == 1)
+	{
+		return {*this, this->cbegin(), this->cend()};
+	}
 	/**
 	 * Iterator over specified moves in @c Post represented as @c Move instances.
 	 *
 	 * @param[in] symbol_post_it First iterator over symbol posts to iterate over.
 	 * @param[in] symbol_post_end End iterator over symbol posts (which functions as an sentinel, is not iterated over).
 	 */
-	Moves moves(const post_iterator symbol_post_it, const post_iterator symbol_post_end) const {
+	Moves moves(const post_iterator symbol_post_it, const post_iterator symbol_post_end) const requires(key_arity == 1)
+	{
 		return {*this, symbol_post_it, symbol_post_end};
 	}
 	/**
 	 * Iterator over epsilon moves in @c Post represented as @c Move instances.
 	 */
-	Moves moves_epsilons(const Key first_epsilon = Reserved::min_epsilon) const {
+	Moves moves_epsilons(const Key first_epsilon = Reserved::min_epsilon) const requires(key_arity == 1)
+	{
 		return {*this, first_epsilon_it(first_epsilon), cend()};
 	}
 	/**
@@ -368,7 +378,8 @@ template <typename E> class Post : utils::OrdVector<E> {
 	 *  then have to run past the end of the ordinary keys. Asking for the whole ordinary range is
 	 *  what the default is for.
 	 */
-	Moves moves_symbols(const Key last_symbol = Reserved::max_ordinary) const {
+	Moves moves_symbols(const Key last_symbol = Reserved::max_ordinary) const requires(key_arity == 1)
+	{
 		if (last_symbol > Reserved::max_ordinary) {
 			throw std::runtime_error("Using a reserved key as a last symbol to iterate over.");
 		}

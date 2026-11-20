@@ -1,5 +1,5 @@
 /** @file
- * @brief The moves out of a post: each key paired with one target it leads to.
+ * @brief The moves of a post with @c key_arity 1, as @c Move instances.
  */
 
 #ifndef MATA_CORE_MOVES_HH
@@ -11,10 +11,9 @@
 namespace mata::posts {
 
 /**
- * @brief One step out of a post: a key together with one target it leads to.
+ * @brief A move is a (key, target) pair, as yielded by @c PostMoves.
  *
- * What iterating @c mata::Post::moves() yields. Templated only so that it follows the post it
- *  comes from; it holds no logic of its own.
+ * Templated only so that it follows the post it comes from.
  */
 template <typename K, typename T> class Move {
   public:
@@ -27,25 +26,21 @@ template <typename K, typename T> class Move {
 /**
  * @brief The moves of a post as @c Move instances: every (symbol, target) pair, or a range of them.
  *
- * What @c mata::posts::Post::moves() returns, named there @c Post::Moves. Visits the targets of each
- *  entry directly, so it is for a post whose entries hold targets: @c key_arity 1.
+ * Available only at @c key_arity 1, since a @c Move holds a single key. Above that, use @c for_each_move().
  *
- * @tparam P The post visited. Asked for @c Key, @c Target, @c Nested, @c const_iterator, and the
- *  entries' @c symbol and @c targets.
+ * @tparam P The post visited.
  */
 template <typename P> class PostMoves {
-	/// The iterator over the post's entries, which this visits.
-	using post_iterator = typename P::const_iterator;
+	using post_iterator = typename P::const_iterator; 
 
   public:
-	using MoveType = Move<typename P::Key, typename P::Target>; ///< One (key, target) pair, shaped by the post.
+	using MoveType = Move<typename P::Key, typename P::Target>; 
 
 	/**
 	 * Iterator over moves.
 	 *
-	 * @note Defined inside @c PostMoves rather than out of line. As a nested class of a template,
-	 *  each out-of-line member definition would need two layers of qualification; inline is the
-	 *  same code and far harder to get wrong.
+	 * @note Defined here rather than out of line. As a nested class of a template,
+	 *  each out-of-line member definition would need two layers of qualification.
 	 */
 	class const_iterator {
 	  private:
@@ -54,8 +49,6 @@ template <typename P> class PostMoves {
 		typename P::Nested::const_iterator target_it_{};
 		post_iterator symbol_post_end_{};
 		bool is_end_{false};
-		/// Internal allocated instance of @c Move which is set for the move currently iterated over and returned
-		///  as a reference with @c operator*().
 		MoveType move_{};
 
 	  public:
@@ -68,7 +61,7 @@ template <typename P> class PostMoves {
 		/// Construct end iterator.
 		const_iterator() : is_end_{true} {}
 
-		/// Const all moves iterator.
+		/// @brief Construct iterator over all moves of @p state_post.
 		explicit const_iterator(const P& state_post)
 			: state_post_{&state_post},
 			  symbol_post_it_{state_post.begin()},
@@ -82,10 +75,14 @@ template <typename P> class PostMoves {
 			move_.target = *target_it_;
 		}
 
-		/// Construct iterator from @p symbol_post_it (including) to @p symbol_post_end (excluding).
-		const_iterator(
-			const P& state_post, const post_iterator symbol_post_it, const post_iterator symbol_post_end
-		)
+		/**
+		 * @brief Construct iterator from @p symbol_post_it (including) to @p symbol_post_end (excluding).
+		 * 
+		 * @param state_post State post to iterate over.
+		 * @param symbol_post_it First iterator over symbol posts to iterate over.
+		 * @param symbol_post_end End iterator over symbol posts.
+		 */
+		const_iterator(const P& state_post, const post_iterator symbol_post_it, const post_iterator symbol_post_end)
 			: state_post_{&state_post},
 			  symbol_post_it_{symbol_post_it},
 			  symbol_post_end_{symbol_post_end} {
@@ -111,21 +108,19 @@ template <typename P> class PostMoves {
 				return *this;
 			}
 
-			// Iterate over to the next symbol post, which can be either an end iterator, or symbol post whose
-			//  symbol <= symbol_post_end_.
+			// Iterate over to the next symbol post, check for end.
 			++symbol_post_it_;
 			if (symbol_post_it_ == symbol_post_end_) {
 				is_end_ = true;
 				return *this;
 			}
-			// The current symbol post is valid (not equal symbol_post_end_).
+			// The current symbol post is valid.
 			move_.symbol = symbol_post_it_->symbol;
 			target_it_ = symbol_post_it_->targets.begin();
 			move_.target = *target_it_;
 			return *this;
 		}
 
-		// Postfix increment
 		const_iterator operator++(int) {
 			const const_iterator tmp{*this};
 			++(*this);
@@ -149,13 +144,11 @@ template <typename P> class PostMoves {
 	PostMoves() = default;
 
 	/**
-	 * @brief construct moves iterating over a range @p symbol_post_it (including) to @p symbol_post_end
-	 * (excluding).
+	 * @brief Construct moves iterating over a range @p symbol_post_it (including) to @p symbol_post_end (excluding).
 	 *
 	 * @param[in] state_post State post to iterate over.
 	 * @param[in] symbol_post_it First iterator over symbol posts to iterate over.
-	 * @param[in] symbol_post_end End iterator over symbol posts (which functions as an sentinel; is not iterated
-	 * over).
+	 * @param[in] symbol_post_end End iterator over symbol posts.
 	 */
 	PostMoves(const P& state_post, const post_iterator symbol_post_it, const post_iterator symbol_post_end)
 		: state_post_{&state_post},
@@ -188,9 +181,7 @@ template <typename P> class PostMoves {
   private:
 	const P* state_post_{nullptr};
 	post_iterator symbol_post_it_{}; ///< Current symbol post iterator to iterate over.
-	/// End symbol post iterator which is no longer iterated over (one after the last symbol post iterated over or
-	///  end()).
-	post_iterator symbol_post_end_{};
+	post_iterator symbol_post_end_{}; ///< End symbol post iterator.
 }; // class mata::posts::PostMoves.
 
 } // namespace mata::posts.
