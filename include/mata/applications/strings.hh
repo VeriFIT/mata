@@ -5,6 +5,7 @@
 #ifndef MATA_STRING_SOLVING_HH_
 #define MATA_STRING_SOLVING_HH_
 
+#include <limits>
 #include <mutex>
 #include <span>
 
@@ -272,13 +273,21 @@ class Segmentation {
 	std::vector<SegNfa> segments_raw_{}; ///< Raw segments for @p automaton.
 	VisitedEpsMap visited_eps_{}; /// number of visited eps for each state
 
+	/// One epsilon-counter vector per ε-head, indexed by @c epsilon_ranks_; every target of the head shares it.
+	std::vector<std::vector<unsigned>> epsilon_counts_{};
+	std::map<Symbol, size_t>
+		epsilon_ranks_{}; ///< Position of each symbol of @c epsilons_ in an epsilon-counter vector.
+	/// Index into @c epsilon_counts_ last written to each state, or @c no_eps_count when the state was never a target.
+	std::vector<size_t> last_eps_count_index_{};
+	static constexpr size_t no_eps_count{std::numeric_limits<size_t>::max()};
+
 	/**
 	 * Pair of state and its depth.
 	 */
 	struct StateDepthTuple {
 		State state; ///< State with a depth.
 		EpsilonDepth depth; ///< Depth of a state.
-		VisitedEpsilonsCounterMap eps; /// visited epsilons and their numbers
+		size_t eps_index{}; ///< Index of the visited-epsilon counters in @c epsilon_counts_.
 	};
 
 	/**

@@ -142,6 +142,68 @@ TEST_CASE("mata::nfa::Segmentation::get_epsilon_transitions()") {
 	);
 }
 
+// The public map keeps the counters of the last incoming write, so several routes to one state overwrite it.
+TEST_CASE("mata::nfa::Segmentation::get_visited_eps()") {
+	constexpr Symbol epsilon{'e'};
+	constexpr Symbol epsilon2{'f'};
+	const auto counters = [epsilon, epsilon2](const unsigned epsilon_count, const unsigned epsilon2_count)
+		-> seg_nfa::VisitedEpsilonsCounterMap { return {{epsilon, epsilon_count}, {epsilon2, epsilon2_count}}; };
+
+	SECTION("increments each epsilon symbol along a chain") {
+		Nfa aut{8};
+		aut.initial.insert(0);
+		aut.final.insert(7);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, epsilon, 2);
+		aut.delta.add(2, 'b', 3);
+		aut.delta.add(3, epsilon2, 4);
+		aut.delta.add(4, 'c', 5);
+		aut.delta.add(5, epsilon, 6);
+		aut.delta.add(6, epsilon2, 7);
+
+		const seg_nfa::Segmentation segmentation{aut, {epsilon, epsilon2}};
+		CHECK(
+			segmentation.get_visited_eps() == seg_nfa::VisitedEpsMap{
+												  {1, counters(0, 0)},
+												  {2, counters(1, 0)},
+												  {3, counters(1, 0)},
+												  {4, counters(1, 1)},
+												  {5, counters(1, 1)},
+												  {6, counters(2, 1)},
+												  {7, counters(2, 2)}
+											  }
+		);
+	}
+
+	SECTION("keeps the last write for a state reached by several routes") {
+		Nfa aut{6};
+		aut.initial.insert(0);
+		aut.final.insert(5);
+		aut.delta.add(0, epsilon, 1);
+		aut.delta.add(0, epsilon2, 2);
+		aut.delta.add(1, epsilon2, 5);
+		aut.delta.add(2, 'a', 3);
+		aut.delta.add(3, epsilon2, 5);
+
+		const seg_nfa::Segmentation segmentation{aut, {epsilon, epsilon2}};
+		CHECK(
+			segmentation.get_visited_eps() ==
+			seg_nfa::VisitedEpsMap{{1, counters(1, 0)}, {2, counters(0, 1)}, {3, counters(0, 1)}, {5, counters(0, 2)}}
+		);
+	}
+
+	SECTION("omits initial states that no transition enters") {
+		Nfa aut{4};
+		aut.initial = {0, 1};
+		aut.final = {2, 3};
+		aut.delta.add(0, epsilon, 2);
+		aut.delta.add(1, epsilon2, 3);
+
+		const seg_nfa::Segmentation segmentation{aut, {epsilon, epsilon2}};
+		CHECK(segmentation.get_visited_eps() == seg_nfa::VisitedEpsMap{{2, counters(1, 0)}, {3, counters(0, 1)}});
+	}
+}
+
 TEST_CASE("mata::nfa::Segmentation copies and moves") {
 	static_assert(std::is_copy_constructible_v<seg_nfa::Segmentation>);
 	static_assert(std::is_move_constructible_v<seg_nfa::Segmentation>);
