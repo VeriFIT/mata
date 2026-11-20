@@ -429,13 +429,15 @@ std::vector<NoodleWithEpsilonsCounter>
  *  representing the intersection. That can be achieved by computing a product of both sides. First, the left side
  *  has to be concatenated over an epsilon transitions into a single automaton to compute the intersection on, though.
  *
- * @param[in] lhs_automata Sequence of segment automata for left side of an equation to noodlify.
+ * @param[in,out] lhs_automata Sequence of segment automata for left side of an equation to noodlify. Their initial and
+ *  final states are unified in place (unify_initial(), unify_final()).
  * @param[in] rhs_automaton Segment automaton for right side of an equation to noodlify.
  * @param[in] include_empty Whether to also include empty noodles.
  * @param[in] params Additional parameters for the noodlification:
  *     - "reduce": "false", "forward", "backward", "bidirectional"; Execute forward, backward or bidirectional
  * simulation minimization before noodlification.
  * @return A list of all (non-empty) noodles.
+ * @note Modifies @p lhs_automata, see above; @p rhs_automaton is left as it is.
  */
 std::vector<Noodle> noodlify_for_equation(
 	const std::vector<std::reference_wrapper<Nfa>>& lhs_automata,
@@ -456,13 +458,19 @@ std::vector<Noodle> noodlify_for_equation(
  *  representing the intersection. That can be achieved by computing a product of both sides. First, the left side
  *  has to be concatenated over an epsilon transitions into a single automaton to compute the intersection on, though.
  *
- * @param[in] lhs_automata Sequence of pointers to segment automata for left side of an equation to noodlify.
+ * @param[in,out] lhs_automata Sequence of pointers to segment automata for left side of an equation to noodlify. Their
+ *  initial and final states are unified in place (unify_initial(), unify_final()), but only when "reduce" is set to
+ *  "forward", "backward" or "bidirectional".
  * @param[in] rhs_automaton Segment automaton for right side of an equation to noodlify.
  * @param[in] include_empty Whether to also include empty noodles.
  * @param[in] params Additional parameters for the noodlification:
  *     - "reduce": "false", "forward", "backward", "bidirectional"; Execute forward, backward or bidirectional
  * simulation minimization before noodlification.
  * @return A list of all (non-empty) noodles.
+ * @note Unlike the std::reference_wrapper overload, which always unifies the left side automata, this overload unifies
+ *  them only when reducing. Under the default "reduce": "false" the product may then have more initial and final
+ *  states, so the noodles (and their number) can differ from those of the std::reference_wrapper overload on the
+ *  same automata. @p rhs_automaton is left as it is.
  */
 std::vector<Noodle> noodlify_for_equation(
 	const std::vector<Nfa*>& lhs_automata,
@@ -474,13 +482,15 @@ std::vector<Noodle> noodlify_for_equation(
 /**
  * @brief Create noodles for left and right side of equation (both sides are given as a sequence of automata).
  *
- * @param[in] lhs_automata Sequence of pointers to segment automata for left side of an equation to noodlify.
- * @param[in] rhs_automaton Sequence of pointers to segment automata for right side of an equation to noodlify.
+ * @param[in,out] lhs_automata Sequence of pointers to segment automata for left side of an equation to noodlify.
+ * @param[in,out] rhs_automata Sequence of pointers to segment automata for right side of an equation to noodlify.
  * @param[in] include_empty Whether to also include empty noodles.
  * @param[in] params Additional parameters for the noodlification:
  *     - "reduce": "false", "forward", "backward", "bidirectional"; Execute forward, backward or bidirectional
  * simulation minimization before noodlification.
  * @return A list of all (non-empty) noodles together with the positions reached from the beginning of left/right side.
+ * @note Modifies the automata of both sides: their initial and final states are unified in place (unify_initial(),
+ *  unify_final()), each automaton once even if it occurs several times.
  */
 std::vector<NoodleWithEpsilonsCounter> noodlify_for_equation(
 	const std::vector<std::shared_ptr<Nfa>>& lhs_automata,
@@ -512,6 +522,20 @@ struct TransducerNoodleElement {
 
 using TransducerNoodle = std::vector<TransducerNoodleElement>;
 
+/**
+ * @brief Create noodles for transducer @p nft with the concatenation of @p input_automata on its input track and the
+ *  concatenation of @p output_automata on its output track.
+ *
+ * @param[in] nft Transducer relating the input and the output track.
+ * @param[in,out] input_automata Automata of the input track.
+ * @param[in,out] output_automata Automata of the output track.
+ * @param[in] reduce_intersection Whether to reduce the composition before noodlification.
+ * @param[in] use_homomorphic_heuristic Whether to compose each input automaton with @p nft separately when @p nft is
+ *  homomorphic.
+ * @return A list of all (non-empty) noodles.
+ * @note Modifies @p input_automata and @p output_automata: their initial and final states are unified in place
+ *  (unify_initial(), unify_final()), each automaton once even if it occurs several times.
+ */
 std::vector<TransducerNoodle> noodlify_for_transducer(
 	const std::shared_ptr<Nft>& nft,
 	const std::vector<std::shared_ptr<Nfa>>& input_automata,
@@ -604,8 +628,16 @@ std::generator<Noodle> noodlify_for_equation_lazy(
 	NoodleOrder order = {}
 );
 
-/// @copydoc noodlify_for_equation_lazy(const std::vector<std::reference_wrapper<Nfa>>&, const Nfa&, bool, const
-/// ParameterMap&, NoodleOrder)
+/**
+ * @brief Emit the noodles of noodlify_for_equation() for a sequence of pointers to left side automata and one right
+ *  side automaton one at a time.
+ *
+ * The product of the sides is computed in the call, the noodles when they are taken from the generator; see
+ *  noodlify_lazy().
+ * @note As noodlify_for_equation() with std::vector<Nfa*>, it unifies the initial and final states of the left side
+ *  automata in place only when "reduce" is set to "forward", "backward" or "bidirectional", so under the default its
+ *  noodles can differ from those of the std::reference_wrapper overload.
+ */
 std::generator<Noodle> noodlify_for_equation_lazy(
 	const std::vector<Nfa*>& lhs_automata,
 	const Nfa& rhs_automaton,
