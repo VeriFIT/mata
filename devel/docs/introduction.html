@@ -169,7 +169,8 @@ system. We recommend using the virtual environemnt (<code class="docutils litera
 </pre></div>
 </div>
 <p>Besides the dependencies of the bindings, <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">sync</span></code> installs the <code class="docutils literal notranslate"><span class="pre">dev</span></code> dependency group: the tools to build the bindings
-in place, to sync the notebooks, and to render the documentation.</p>
+in place, the packages the tests and the notebooks import, and the tools to sync the notebooks and to render the
+documentation.</p>
 <p>Or using <code class="docutils literal notranslate"><span class="pre">pip</span></code>:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>pip
 make<span class="w"> </span>-C<span class="w"> </span>bindings/python<span class="w"> </span>init
@@ -178,6 +179,10 @@ sudo<span class="w"> </span>apt<span class="w"> </span>-qq<span class="w"> </spa
 sudo<span class="w"> </span>apt<span class="w"> </span>-qq<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>graphviz<span class="w"> </span>graphviz-dev
 </pre></div>
 </div>
+<p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">init</span></code> installs the bindings with the <code class="docutils literal notranslate"><span class="pre">dev</span></code>, <code class="docutils literal notranslate"><span class="pre">pandas</span></code> and <code class="docutils literal notranslate"><span class="pre">plotting</span></code> extras: Cython, setuptools and CMake for the
+in-place build, pytest, and the packages the tests import. <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">libmata</span></code> alone installs no runtime
+dependencies; building it from the sdist when no wheel fits still pulls its build dependencies into an isolated
+environment.</p>
 <p>Now, you can install the library.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>make<span class="w"> </span>-C<span class="w"> </span>bindings/python<span class="w"> </span>install
 </pre></div>
