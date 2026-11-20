@@ -319,7 +319,11 @@
 </li>
       <li><a href="file/strings_8hh.html#_CPPv4N4mata12applications7strings7seg_nfa12Segmentation20eps_depth_trans_map_E">mata::applications::strings::seg_nfa::Segmentation::eps_depth_trans_map_ (C++ member)</a>
 </li>
+      <li><a href="file/strings_8hh.html#_CPPv4N4mata12applications7strings7seg_nfa12Segmentation15epsilon_counts_E">mata::applications::strings::seg_nfa::Segmentation::epsilon_counts_ (C++ member)</a>
+</li>
       <li><a href="file/strings_8hh.html#_CPPv4N4mata12applications7strings7seg_nfa12Segmentation26epsilon_depth_transitions_E">mata::applications::strings::seg_nfa::Segmentation::epsilon_depth_transitions_ (C++ member)</a>
+</li>
+      <li><a href="file/strings_8hh.html#_CPPv4N4mata12applications7strings7seg_nfa12Segmentation14epsilon_ranks_E">mata::applications::strings::seg_nfa::Segmentation::epsilon_ranks_ (C++ member)</a>
 </li>
       <li><a href="file/strings_8hh.html#_CPPv4N4mata12applications7strings7seg_nfa12Segmentation29epsilon_transitions_by_depth_E">mata::applications::strings::seg_nfa::Segmentation::epsilon_transitions_by_depth_ (C++ member)</a>
 </li>
@@ -361,6 +365,8 @@
 </li>
       <li><a href="file/strings_8hh.html#_CPPv4NK4mata12applications7strings7seg_nfa12Segmentation19initialize_worklistEv">mata::applications::strings::seg_nfa::Segmentation::initialize_worklist (C++ function)</a>
 </li>
+      <li><a href="file/strings_8hh.html#_CPPv4N4mata12applications7strings7seg_nfa12Segmentation21last_eps_count_index_E">mata::applications::strings::seg_nfa::Segmentation::last_eps_count_index_ (C++ member)</a>
+</li>
       <li><a href="class/classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1LazyView.html#_CPPv4I0EN4mata12applications7strings7seg_nfa12Segmentation8LazyViewE">mata::applications::strings::seg_nfa::Segmentation::LazyView (C++ class)</a>, <a href="file/strings_8hh.html#_CPPv4I0EN4mata12applications7strings7seg_nfa12Segmentation8LazyViewE">[1]</a>
 </li>
       <li><a href="file/strings_8hh.html#_CPPv4N4mata12applications7strings7seg_nfa12Segmentation8LazyView6built_E">mata::applications::strings::seg_nfa::Segmentation::LazyView::built_ (C++ member)</a>
@@ -374,6 +380,8 @@
       <li><a href="file/strings_8hh.html#_CPPv4N4mata12applications7strings7seg_nfa12Segmentation8LazyView6value_E">mata::applications::strings::seg_nfa::Segmentation::LazyView::value_ (C++ member)</a>
 </li>
       <li><a href="file/strings_8hh.html#_CPPv4N4mata12applications7strings7seg_nfa12Segmentation8LazyViewD0Ev">mata::applications::strings::seg_nfa::Segmentation::LazyView::~LazyView (C++ function)</a>
+</li>
+      <li><a href="file/strings_8hh.html#_CPPv4N4mata12applications7strings7seg_nfa12Segmentation12no_eps_countE">mata::applications::strings::seg_nfa::Segmentation::no_eps_count (C++ member)</a>
 </li>
       <li><a href="file/strings_8hh.html#_CPPv4N4mata12applications7strings7seg_nfa12Segmentation24process_state_depth_pairERK15StateDepthTupleRNSt5dequeI15StateDepthTupleEE">mata::applications::strings::seg_nfa::Segmentation::process_state_depth_pair (C++ function)</a>
 </li>
@@ -389,7 +397,7 @@
 </li>
       <li><a href="file/strings_8hh.html#_CPPv4N4mata12applications7strings7seg_nfa12Segmentation15StateDepthTuple5depthE">mata::applications::strings::seg_nfa::Segmentation::StateDepthTuple::depth (C++ member)</a>, <a href="struct/structmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1StateDepthTuple.html#_CPPv4N4mata12applications7strings7seg_nfa12Segmentation15StateDepthTuple5depthE">[1]</a>
 </li>
-      <li><a href="file/strings_8hh.html#_CPPv4N4mata12applications7strings7seg_nfa12Segmentation15StateDepthTuple3epsE">mata::applications::strings::seg_nfa::Segmentation::StateDepthTuple::eps (C++ member)</a>
+      <li><a href="file/strings_8hh.html#_CPPv4N4mata12applications7strings7seg_nfa12Segmentation15StateDepthTuple9eps_indexE">mata::applications::strings::seg_nfa::Segmentation::StateDepthTuple::eps_index (C++ member)</a>, <a href="struct/structmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1StateDepthTuple.html#_CPPv4N4mata12applications7strings7seg_nfa12Segmentation15StateDepthTuple9eps_indexE">[1]</a>
 </li>
       <li><a href="file/strings_8hh.html#_CPPv4N4mata12applications7strings7seg_nfa12Segmentation15StateDepthTuple5stateE">mata::applications::strings::seg_nfa::Segmentation::StateDepthTuple::state (C++ member)</a>, <a href="struct/structmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1StateDepthTuple.html#_CPPv4N4mata12applications7strings7seg_nfa12Segmentation15StateDepthTuple5stateE">[1]</a>
 </li>
@@ -1481,12 +1489,12 @@
 </li>
       <li><a href="namespace/namespacemata.html#_CPPv4N4mata3nfa8plumbing6reduceEP3NfaRK3NfaP13StateRenamingRK12ParameterMap">mata::nfa::plumbing::reduce (C++ function)</a>, <a href="namespace/namespacemata_1_1nfa.html#_CPPv4N4mata3nfa8plumbing6reduceEP3NfaRK3NfaP13StateRenamingRK12ParameterMap">[1]</a>, <a href="namespace/namespacemata_1_1nfa_1_1plumbing.html#_CPPv4N4mata3nfa8plumbing6reduceEP3NfaRK3NfaP13StateRenamingRK12ParameterMap">[2]</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="namespace/namespacemata.html#_CPPv4N4mata3nfa8plumbing21reduce_residual_afterEP3NfaRK3Nfa">mata::nfa::plumbing::reduce_residual_after (C++ function)</a>, <a href="namespace/namespacemata_1_1nfa.html#_CPPv4N4mata3nfa8plumbing21reduce_residual_afterEP3NfaRK3Nfa">[1]</a>, <a href="namespace/namespacemata_1_1nfa_1_1plumbing.html#_CPPv4N4mata3nfa8plumbing21reduce_residual_afterEP3NfaRK3Nfa">[2]</a>
 </li>
       <li><a href="namespace/namespacemata.html#_CPPv4N4mata3nfa8plumbing20reduce_residual_withEP3NfaRK3Nfa">mata::nfa::plumbing::reduce_residual_with (C++ function)</a>, <a href="namespace/namespacemata_1_1nfa.html#_CPPv4N4mata3nfa8plumbing20reduce_residual_withEP3NfaRK3Nfa">[1]</a>, <a href="namespace/namespacemata_1_1nfa_1_1plumbing.html#_CPPv4N4mata3nfa8plumbing20reduce_residual_withEP3NfaRK3Nfa">[2]</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="namespace/namespacemata.html#_CPPv4N4mata3nfa8plumbing14remove_epsilonEP3NfaRK3NfaK6Symbol">mata::nfa::plumbing::remove_epsilon (C++ function)</a>, <a href="namespace/namespacemata_1_1nfa.html#_CPPv4N4mata3nfa8plumbing14remove_epsilonEP3NfaRK3NfaK6Symbol">[1]</a>, <a href="namespace/namespacemata_1_1nfa_1_1plumbing.html#_CPPv4N4mata3nfa8plumbing14remove_epsilonEP3NfaRK3NfaK6Symbol">[2]</a>
 </li>
       <li><a href="namespace/namespacemata.html#_CPPv4N4mata3nfa8plumbing6revertEP3NfaRK3Nfa">mata::nfa::plumbing::revert (C++ function)</a>, <a href="namespace/namespacemata_1_1nfa.html#_CPPv4N4mata3nfa8plumbing6revertEP3NfaRK3Nfa">[1]</a>, <a href="namespace/namespacemata_1_1nfa_1_1plumbing.html#_CPPv4N4mata3nfa8plumbing6revertEP3NfaRK3Nfa">[2]</a>
