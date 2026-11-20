@@ -230,6 +230,25 @@ std::shared_ptr<EnumAlphabet> alphabet_of(const size_t num_of_symbols) {
 	return alphabet;
 }
 
+/// The reversal of @p nfa built one reversed transition at a time, over the same state domain.
+Nfa reference_revert(const Nfa& nfa) {
+	Nfa reverted{nfa.num_of_states()};
+	reverted.initial = nfa.final;
+	reverted.final = nfa.initial;
+	for (const Transition& transition : nfa.delta.transitions()) {
+		reverted.delta.add(transition.target, transition.symbol, transition.source);
+	}
+	return reverted;
+}
+
+/// revert() builds the per-transition reversal, keeps the state domain, and reverting twice is the identity.
+void check_revert(const Nfa& nfa) {
+	const Nfa reverted{revert(nfa)};
+	CHECK(reverted.is_identical(reference_revert(nfa)));
+	CHECK(reverted.num_of_states() == nfa.num_of_states());
+	CHECK(revert(reverted).is_identical(nfa));
+}
+
 void check_shortest_words(const unsigned seed) {
 	std::mt19937 rng{seed};
 	const size_t num_of_states{2 + seed % 5};
@@ -302,12 +321,7 @@ void check_nfa_properties(
 	Nfa deterministic{determinize(nfa)};
 	deterministic.trim();
 
-	// The three revert variants build the same transition relation, and reverting twice gives
-	//  the original delta back.
-	const Nfa reverted{revert(nfa)};
-	CHECK(reverted.delta == fragile_revert(nfa).delta);
-	CHECK(reverted.delta == somewhat_simple_revert(nfa).delta);
-	CHECK(revert(reverted).delta == nfa.delta);
+	check_revert(nfa);
 
 	// Intersection accepts exactly the words both operands accept.
 	std::mt19937 other_rng{seed + 1'000};
@@ -706,7 +720,7 @@ TEST_CASE("mata::nfa differential: antichain inclusion on dense automata with mo
 	}
 }
 
-TEST_CASE("mata::nfa differential: the revert variants agree with epsilon transitions", "[differential]") {
+TEST_CASE("mata::nfa differential: revert with epsilon transitions", "[differential]") {
 	for (unsigned seed{0}; seed < 200; ++seed) {
 		std::mt19937 rng{seed};
 		const size_t num_of_states{2 + seed % 5};
@@ -716,22 +730,12 @@ TEST_CASE("mata::nfa differential: the revert variants agree with epsilon transi
 		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) { alphabet->add_new_symbol(std::to_string(symbol)); }
 		const Nfa nfa{random_nfa(rng, num_of_states, num_of_symbols, alphabet, EPSILON)};
 		INFO(describe(seed, nfa));
-
-		// Epsilon is the largest symbol, so the symbol-indexed fragile_revert has to keep it out of its
-		//  arrays while the counting sort of revert() does not see any difference.
-		const Nfa reverted{revert(nfa)};
-		CHECK(reverted.delta == simple_revert(nfa).delta);
-		CHECK(reverted.delta == fragile_revert(nfa).delta);
-		CHECK(reverted.delta == somewhat_simple_revert(nfa).delta);
-		CHECK(reverted.initial == simple_revert(nfa).initial);
-		CHECK(reverted.final == simple_revert(nfa).final);
-		CHECK(revert(reverted).delta == nfa.delta);
+		check_revert(nfa);
 	}
 }
 
 TEST_CASE("mata::nfa differential: revert with symbols near EPSILON", "[differential]") {
-	// fragile_revert is excluded on purpose: it allocates two vectors per symbol value up to the largest
-	//  one (EPSILON-1 here), which is exactly the flaw #751 removes from revert().
+	// The largest symbols cost revert() nothing extra: it allocates no symbol-indexed array.
 	for (unsigned seed{0}; seed < 200; ++seed) {
 		std::mt19937 rng{seed};
 		const size_t num_of_states{2 + seed % 4};
@@ -749,12 +753,7 @@ TEST_CASE("mata::nfa differential: revert with symbols near EPSILON", "[differen
 		}
 		INFO(describe(seed, nfa));
 
-		const Nfa reverted{revert(nfa)};
-		CHECK(reverted.delta == simple_revert(nfa).delta);
-		CHECK(reverted.delta == somewhat_simple_revert(nfa).delta);
-		CHECK(reverted.initial == simple_revert(nfa).initial);
-		CHECK(reverted.final == simple_revert(nfa).final);
-		CHECK(revert(reverted).delta == nfa.delta);
+		check_revert(nfa);
 	}
 }
 
