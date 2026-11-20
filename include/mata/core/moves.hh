@@ -31,7 +31,9 @@ template <typename K, typename T> class Move {
  * @tparam P The post visited.
  */
 template <typename P> class PostMoves {
-	using post_iterator = typename P::const_iterator; 
+	static_assert(P::key_arity == 1, "a Move holds one key: iterate a deeper post with for_each_move()");
+
+	using post_iterator = typename P::const_iterator;
 
   public:
 	using MoveType = Move<typename P::Key, typename P::Target>; 

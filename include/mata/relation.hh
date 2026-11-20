@@ -229,6 +229,7 @@ static_assert(
 namespace mata {
 /// Instantiated once, in `src/relation.cc`. Without these, every translation unit including this
 ///  header instantiates the whole post stack and the automaton on top of it.
+extern template class posts::detail::PostEntryCore<Symbol, StateSet, ReservedKeys<Symbol>>;
 extern template class posts::PostEntry<Symbol, StateSet>;
 extern template class posts::Post<SymbolPost>;
 extern template class posts::PostMoves<StatePost>;

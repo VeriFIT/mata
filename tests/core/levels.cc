@@ -24,6 +24,8 @@
 #include <cstddef>
 #include <stdexcept>
 #include <tuple>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "mata/core/automaton.hh"
@@ -134,6 +136,65 @@ static_assert(Mixed2::Reserved<0>::min_epsilon == EPSILON && Mixed2::Reserved<1>
 /// @name Naming one level
 ///@{
 static_assert(D1::key_arity == 1 && D2::key_arity == 2 && D3::key_arity == 3);
+
+/// @name Entry fields
+///@{
+/// @c symbol and @c targets are reachable only where the nested type is the target set; above
+///  that an entry is read through @c key() and @c nested().
+template <typename E>
+concept HasEntryFields = requires(E e) {
+	e.symbol;
+	e.targets;
+};
+static_assert(HasEntryFields<D1::Entry>);
+static_assert(!HasEntryFields<D2::Entry> && !HasEntryFields<D3::Entry>);
+/// The innermost entry of a deeper chain holds the target set, so its fields are public again.
+static_assert(HasEntryFields<D2::Entry::Nested::Entry>);
+/// The split is free: no extra storage, and moves stay @c noexcept so @c std::vector relocates by move.
+static_assert(sizeof(D1::Entry) == sizeof(posts::detail::PostEntryCore<Symbol, StateSet, ReservedKeys<Symbol>>));
+static_assert(std::is_nothrow_move_constructible_v<D1::Entry> && std::is_nothrow_move_assignable_v<D1::Entry>);
+static_assert(std::is_nothrow_move_constructible_v<D2::Entry> && std::is_nothrow_move_assignable_v<D2::Entry>);
+/// Structured bindings follow the fields: tuple-like where they are public, and nowhere else.
+template <typename E>
+concept Decomposable = requires { std::tuple_size<E>::value; };
+static_assert(Decomposable<D1::Entry> && Decomposable<D2::Entry::Nested::Entry>);
+static_assert(!Decomposable<D2::Entry> && !Decomposable<D3::Entry>);
+static_assert(std::same_as<std::tuple_element_t<0, D1::Entry>, Symbol>);
+static_assert(std::same_as<std::tuple_element_t<1, D1::Entry>, StateSet>);
+/// The members that treat the nested type as the target set follow the fields: there at arity 1,
+///  absent above it rather than quietly answering about the nested post.
+template <typename E>
+concept HasTargetSetMembers = requires(E e, const E ce, typename E::Target t) {
+	ce.count(t);
+	ce.num_of_targets();
+	e.insert(t);
+	e.insert(ce.nested());
+	e.push_back(t);
+	e.emplace_back(t);
+	e.erase(t);
+	ce.find(t);
+	e.find(t);
+	ce.for_each_target([](typename E::Target) {});
+	ce.has_target(t);
+	ce.target_span();
+	E{typename E::Key{}, t};
+};
+static_assert(HasTargetSetMembers<D1::Entry> && HasTargetSetMembers<D2::Entry::Nested::Entry>);
+static_assert(!HasTargetSetMembers<D2::Entry> && !HasTargetSetMembers<D3::Entry>);
+/// What stays at every arity.
+template <typename E>
+concept HasEntryProtocol = requires(E e, const E ce) {
+	ce.key();
+	ce.nested();
+	e.nested();
+	ce.empty();
+	e.begin();
+	ce.cbegin();
+	E{typename E::Key{}};
+	E{typename E::Key{}, typename E::Nested{}};
+};
+static_assert(HasEntryProtocol<D1::Entry> && HasEntryProtocol<D2::Entry> && HasEntryProtocol<D3::Entry>);
+///@}
 
 /// @c PostAt<0> is the whole chain and @c PostAt<key_arity> is the innermost post. Walking down from
 ///  a relation has to agree with walking down from its post, or the two spellings mean different
@@ -479,5 +540,46 @@ TEST_CASE("mata::posts::DeltaBase::get_successors — the target set, at any ari
 		CHECK(&delta.get_successors(0, 1) == &delta.state_post(0).find(1)->targets);
 		CHECK(delta.get_successors(0, 1) == StateSet{5, 6});
 		CHECK(delta.get_successors(0, 2).empty()); // The static empty set, not a dangling reference.
+	}
+}
+
+TEST_CASE("mata::posts::PostEntry — structured bindings at arity 1") {
+	D1::Entry entry{1, StateSet{5, 6}};
+
+	SECTION("a const binding reads the fields in place") {
+		const auto& [symbol, targets] = entry;
+		CHECK(symbol == 1);
+		CHECK(&targets == &entry.targets);
+	}
+
+	SECTION("a mutable binding writes through") {
+		auto& [symbol, targets] = entry;
+		symbol = 2;
+		targets.insert(7);
+		CHECK(entry.symbol == 2);
+		CHECK(entry.targets == StateSet{5, 6, 7});
+	}
+
+	SECTION("a binding by value copies, leaving the entry alone") {
+		auto [symbol, targets] = entry;
+		targets.insert(7);
+		CHECK(symbol == 1);
+		CHECK(entry.targets == StateSet{5, 6});
+	}
+
+	SECTION("a forwarding binding of an rvalue moves") {
+		auto&& [symbol, targets] = std::move(entry);
+		StateSet moved{std::move(targets)};
+		CHECK(symbol == 1);
+		CHECK(moved == StateSet{5, 6});
+	}
+
+	SECTION("over a post, as range-for") {
+		D1 delta{};
+		delta.add(0, 1, 5);
+		delta.add(0, 2, 6);
+		std::vector<std::pair<Symbol, StateSet>> seen{};
+		for (const auto& [symbol, targets] : delta.state_post(0)) { seen.emplace_back(symbol, targets); }
+		CHECK(seen == std::vector<std::pair<Symbol, StateSet>>{{1, StateSet{5}}, {2, StateSet{6}}});
 	}
 }

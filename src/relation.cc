@@ -26,6 +26,7 @@
 using namespace mata::utils;
 using namespace mata;
 
+template class mata::posts::detail::PostEntryCore<mata::Symbol, mata::StateSet, mata::ReservedKeys<mata::Symbol>>;
 template class mata::posts::PostEntry<mata::Symbol, mata::StateSet>;
 template class mata::posts::Post<mata::SymbolPost>;
 template class mata::posts::PostMoves<mata::StatePost>;
