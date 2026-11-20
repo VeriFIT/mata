@@ -68,8 +68,7 @@
 #ifndef MATA_NFA_HH_
 #define MATA_NFA_HH_
 
-// Static data structures, such as search stack, in algorithms. Might have some effect on some algorithms (like
-//  fragile_revert).
+// Static data structures, such as search stack, in algorithms. Might have some effect on some algorithms (like trim).
 // #define _STATIC_STRUCTURES_
 
 #include <cassert>
@@ -1559,25 +1558,16 @@ bool are_equivalent(
 	const Nfa& lhs, const Nfa& rhs, const ParameterMap& params = {{"algorithm", "antichains"}}, Run* cex = nullptr
 );
 
-/// Reverting the automaton by a counting sort (see @c Delta::reverted()): much faster than the three
-///  insertion-based variants below, which are kept for benchmarking.
+/// Reverting the automaton by a counting sort (see @c Delta::reverted()).
 Nfa revert(const Nfa& aut);
 
-/// This revert algorithm is fragile, uses low level accesses to Nfa and static data structures, and is potentially
-///  dangerous when there are used symbols with large numbers (allocates an array indexed by symbols).
-/// It is asymptotically faster, however.
-/// For somewhat dense automata, the performance is the same or a little bit slower than simple_revert otherwise.
-/// Not affected by pre-reserving vectors.
+/// @deprecated Kept for source compatibility; forwards to @c revert(). Call @c revert() instead.
 Nfa fragile_revert(const Nfa& aut);
 
-/// Reverting the automaton by a simple algorithm, which does a lot of random access addition to Post and Move.
-/// Much affected by pre-reserving vectors.
+/// @deprecated Kept for source compatibility; forwards to @c revert(). Call @c revert() instead.
 Nfa simple_revert(const Nfa& aut);
 
-/// Reverting the automaton by a modification of the simple algorithm.
-/// It replaces random access addition to SymbolPost by push_back and sorting later, so far seems the slowest of all,
-///  except on dense automata, where it is almost as slow as simple_revert.
-/// Candidate for removal.
+/// @deprecated Kept for source compatibility; forwards to @c revert(). Call @c revert() instead.
 Nfa somewhat_simple_revert(const Nfa& aut);
 
 /// Removing epsilon transitions

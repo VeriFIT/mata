@@ -15,34 +15,16 @@ using namespace mata::parser;
 // Profiling revert and trim
 /////////////////////////////
 
-TEST_CASE("mata::nft::fragile_revert() speed, simple ", "[.profiling]") {
-	Nft B;
-	FILL_WITH_AUT_D(B);
-	for (int i = 0; i < 300'000; i++) { B = fragile_revert(B); }
-}
-
-TEST_CASE("mata::nft::simple_revert() speed, simple ", "[.profiling]") {
+TEST_CASE("mata::nft::revert() speed, simple ", "[.profiling]") {
 	Nft B;
 	FILL_WITH_AUT_B(B);
-	for (int i = 0; i < 300'000; i++) { B = simple_revert(B); }
+	for (int i = 0; i < 300'000; i++) { B = revert(B); }
 }
 
-TEST_CASE("mata::nft::simple_revert() speed, harder", "[.profiling]") {
+TEST_CASE("mata::nft::revert() speed, harder", "[.profiling]") {
 	// this gives an interesting test case if the parser is not trimming and reducing
 	Nft B{mata::parser::create_nfa("((.*){10})*", false, EPSILON, false)};
-	for (int i = 0; i < 200; i++) { B = simple_revert(B); }
-}
-
-TEST_CASE("mata::nft::fragile_revert() speed, harder", "[.profiling]") {
-	// this gives an interesting test case if the parser is not trimming and reducing
-	Nft B{mata::parser::create_nfa("((.*){10})*", false, EPSILON, false)};
-	for (int i = 0; i < 200; i++) { B = fragile_revert(B); }
-}
-
-TEST_CASE("mata::nft::somewhat_simple_revert() speed, harder", "[.profiling]") {
-	// this gives an interesting test case if the parser is not trimming and reducing
-	Nft B{mata::parser::create_nfa("((.*){10})*", false, EPSILON, false)};
-	for (int i = 0; i < 200; i++) { B = somewhat_simple_revert(B); }
+	for (int i = 0; i < 200; i++) { B = revert(B); }
 }
 
 TEST_CASE("mata::nft::trim_inplace() speed, simple", "[.profiling]") {
