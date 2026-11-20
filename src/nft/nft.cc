@@ -138,7 +138,7 @@ bool Levels::can_follow_for_states(const State source, const State target) const
 
 size_t Nft::num_of_states_with_level(const Level level) const { return levels.count(level); }
 
-Nft& Nft::trim(StateRenaming* state_renaming) {
+Nft& Nft::trim(StateRenaming* state_renaming) & {
 #ifdef _STATIC_STRUCTURES_
 	BoolVector useful_states{get_useful_states()};
 	useful_states.clear();
@@ -1621,7 +1621,7 @@ void Nft::clear() {
 	levels.clear();
 }
 
-Nft& Nft::unify_initial(const bool force_new_state) {
+Nft& Nft::unify_initial(const bool force_new_state) & {
 	if (!force_new_state && (initial.empty() || initial.size() == 1)) { return *this; }
 
 	const bool unified_state_is_final{initial.intersects_with(final)};
@@ -1650,7 +1650,7 @@ Nft& Nft::unify_initial(const bool force_new_state) {
 	return *this;
 }
 
-Nft& Nft::unify_final(const bool force_new_state) {
+Nft& Nft::unify_final(const bool force_new_state) & {
 	if (!force_new_state && (final.empty() || final.size() == 1)) { return *this; }
 
 	const bool unified_state_is_initial{final.intersects_with(initial)};

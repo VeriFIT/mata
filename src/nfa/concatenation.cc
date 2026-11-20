@@ -136,7 +136,7 @@ Nfa concatenate(
 	);
 }
 
-Nfa& Nfa::concatenate(const Nfa& aut) {
+Nfa& Nfa::concatenate(const Nfa& aut) & {
 	const size_t n = this->num_of_states();
 	const size_t aut_n = aut.num_of_states();
 	check_num_of_states(n + aut_n);
@@ -172,7 +172,7 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
 	return *this;
 }
 
-Nfa& Nfa::concatenate(Nfa&& aut) {
+Nfa& Nfa::concatenate(Nfa&& aut) & {
 	if (this == &aut) {
 		// Self-concatenation: one controlled snapshot of the operand; `this` keeps its own content.
 		// NOLINTNEXTLINE(performance-unnecessary-copy-initialization)

@@ -1685,7 +1685,7 @@ void Nft::assert_num_of_levels_match_(const Nft& nft) const {
 	(void) nft; // Suppress unused parameter warning in release builds.
 }
 
-Nft& Nft::unite_nondet_with(const Nft& nft) {
+Nft& Nft::unite_nondet_with(const Nft& nft) & {
 	assert_num_of_levels_match_(nft);
 	if (this == &nft) { return *this; }
 	if (final.empty() || initial.empty()) {
@@ -1723,7 +1723,7 @@ Nft& Nft::unite_nondet_with(const Nft& nft) {
 	return *this;
 }
 
-Nft& Nft::unite_nondet_with(Nft&& nft) {
+Nft& Nft::unite_nondet_with(Nft&& nft) & {
 	assert_num_of_levels_match_(nft);
 	if (this == &nft) {
 		// Self-union: one controlled snapshot of the operand; `this` keeps its own content.

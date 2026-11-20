@@ -163,7 +163,7 @@ Nft concatenate(
 	);
 }
 
-Nft& Nft::concatenate(const Nft& aut) {
+Nft& Nft::concatenate(const Nft& aut) & {
 	MATA_ASSERT(levels.num_of_levels == aut.levels.num_of_levels);
 	const size_t n = this->num_of_states();
 	const size_t aut_n = aut.num_of_states();
@@ -201,7 +201,7 @@ Nft& Nft::concatenate(const Nft& aut) {
 	return *this;
 }
 
-Nft& Nft::concatenate(Nft&& aut) {
+Nft& Nft::concatenate(Nft&& aut) & {
 	MATA_ASSERT(levels.num_of_levels == aut.levels.num_of_levels);
 	if (this == &aut) {
 		// Self-concatenation: one controlled snapshot of the operand; `this` keeps its own content.
