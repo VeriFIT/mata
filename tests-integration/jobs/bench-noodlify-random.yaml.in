@@ -1,0 +1,9 @@
+# Noodlification of the random 3+2 string equation of issue #207, one seed per input row:
+# `inputs/bench-noodlify-random.input`. See `src/bench-noodlify.cc`.
+defaults:
+  return_codes:
+    0: finished
+    "*": error
+
+b-noodlify-random:
+    cmd: @CMAKE_CURRENT_BINARY_DIR@/bench-noodlify $1
