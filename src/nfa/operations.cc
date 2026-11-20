@@ -2802,7 +2802,7 @@ Nfa quotient_by(
 		if (representative[quot_proj[q]] ==
 			q) { // we process only transitions starting from the representative state, this is enough for simulation
 			const StatePost& q_post{aut.delta.state_post(q)};
-			// Sized exactly: insert() would reserve 32 symbol posts for every state, most of them unused.
+			// Sized exactly: every symbol post of q gives one symbol post of its class.
 			StatePost& q_class_post{result.delta.mutable_state_post(q_class_state)};
 			q_class_post.reserve(q_post.size());
 			for (const auto& q_trans : q_post) {
@@ -2831,6 +2831,7 @@ Nfa quotient_by(
 				}
 
 				// q_trans.symbol is larger than the symbols added so far, as the state post of q is ordered.
+				MATA_ASSERT(q_class_post.empty() || q_class_post.back().symbol < q_trans.symbol);
 				q_class_post.push_back(SymbolPost(q_trans.symbol, representatives_class_states));
 			}
 
