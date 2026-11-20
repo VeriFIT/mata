@@ -2,8 +2,11 @@
  * @brief Concatenation of NFAs.
  */
 
+#include <algorithm>
+#include <span>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "mata/nfa/algorithms.hh"
 #include "mata/nfa/builder.hh"
@@ -88,10 +91,14 @@ Nfa concatenate_eps_consuming(
 
 	// Add epsilon transitions connecting lhs and rhs automata.
 	// The epsilon transitions lead from lhs original final states to rhs original initial states.
-	for (const State& lhs_final_state : lhs_final_states) {
-		for (const State rhs_initial_state : rhs.initial) {
-			result.delta.add(lhs_final_state, epsilon, static_cast<State>(lhs_states_num) + rhs_initial_state);
-		}
+	std::vector<State> shifted_rhs_initials{};
+	shifted_rhs_initials.reserve(rhs.initial.size());
+	for (const State rhs_initial_state : rhs.initial) {
+		shifted_rhs_initials.push_back(static_cast<State>(lhs_states_num) + rhs_initial_state);
+	}
+	std::ranges::sort(shifted_rhs_initials);
+	for (const State lhs_final_state : lhs_final_states) {
+		result.delta.add(lhs_final_state, epsilon, std::span<const State>{shifted_rhs_initials});
 	}
 
 	// Make result final states.
