@@ -18,6 +18,8 @@ python3Packages.buildPythonPackage (finalAttrs: {
   pname = "libmata";
   version = pep440Version;
   pyproject = true;
+  # The Python distribution `cmake` supplies the cmake Nix binary too; do not let its hook override the wheel build.
+  dontUseCmakeConfigure = true;
 
   pythonImportsCheck = [
     "libmata"
@@ -30,8 +32,11 @@ python3Packages.buildPythonPackage (finalAttrs: {
   src = mata.src;
   sourceRoot = "source/bindings/python";
 
+  # `python -m build --no-isolation` checks build-system.requires in the current python env; the Nix package
+  #  that backs cmake mirrors what pip would install in an isolated build env.
   nativeBuildInputs = with python3Packages; [
     cython
+    cmake
     setuptools
     ruff
   ];

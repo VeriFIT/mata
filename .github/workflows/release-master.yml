@@ -164,20 +164,111 @@ jobs:
     with:
       ref: ${{ github.event.pull_request.merge_commit_sha }}
       version: master
-  deploy-pypi:
+  build-pypi-sdist:
     needs: release
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.13"]
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.merge_commit_sha }}
+      - uses: ./.github/workflows/actions/setup
+        with:
+          os: ubuntu-latest
+      - name: Set up Python and its dependencies
+        uses: ./.github/workflows/actions/setup-python
+        with:
+          os: ubuntu-latest
+          python-version: "3.13"
+          version: ${{ needs.release.outputs.new-tag }}
+          init: build
+      # Also installs the sdist, so an sdist that does not build stops the release before anything is published.
+      - name: Build the sdist
+        uses: ./.github/workflows/actions/compile-python-tarball
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pypi-sdist
+          path: bindings/python/dist/*.tar.gz
+          if-no-files-found: error
+  # cibuildwheel builds only for the platform it runs on, so every OS/architecture pair gets its own native runner.
+  #  The wheels are built from the sdist of this release, the same sources a `pip install` without a wheel builds.
+  build-pypi-wheels:
+    needs: build-pypi-sdist
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        # macOS 15 is the oldest macOS release with both an arm64 and an x86_64 runner; see the deployment target below.
+        runner: [ubuntu-latest, ubuntu-24.04-arm, macos-15, macos-15-intel]
+    steps:
+      # Only for the local setup action: the wheels build from the sdist artifact.
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+      - uses: actions/download-artifact@v8
+        with:
+          name: pypi-sdist
+          path: sdist
+      # Builds against Homebrew's LLVM like every other macOS job; the setup action keys its macOS steps on this label.
+      - if: runner.os == 'macOS'
+        uses: ./.github/workflows/actions/setup
+        with:
+          os: macos-latest
+      # delocate bundles Homebrew's libc++, which is built for the runner's macOS, into the wheel, so the wheel cannot
+      #  claim an older macOS than the runner's.
+      - name: Target the macOS release of the runner
+        if: runner.os == 'macOS'
+        run: echo "MACOSX_DEPLOYMENT_TARGET=$(sw_vers -productVersion | cut -d. -f1).0" >> "$GITHUB_ENV"
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Build the wheels
+        run: |
+          python3 -m pip install "cibuildwheel>=3.1,<4"
+          python3 -m cibuildwheel --output-dir wheelhouse sdist/*.tar.gz
+        env:
+          CIBW_BUILD: "cp313-* cp314-*"
+          # The musllinux (Alpine) images are not validated; the manylinux images all carry yum.
+          CIBW_SKIP: "*-musllinux_*"
+          CIBW_BEFORE_ALL_LINUX: "yum install -y cmake make gcc-c++"
+          # No extras: the wheel must import without any optional dependency.
+          CIBW_TEST_COMMAND: python -c "import libmata.nfa.nfa as nfa; nfa.Nfa(1)"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pypi-wheels-${{ matrix.runner }}
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+  # Publishes the sdist and all wheels at once, and only after every one of them has been built.
+  deploy-pypi:
+    needs: [build-pypi-sdist, build-pypi-wheels]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+      # Each artifact is downloaded by its exact name, so a missing one (deleted or expired before a deploy-only retry)
+      #  fails this job instead of publishing a partial release. Keep the wheel names in sync with the runner matrix
+      #  of `build-pypi-wheels`.
+      - uses: actions/download-artifact@v8
+        with:
+          name: pypi-sdist
+          path: dist
+      - uses: actions/download-artifact@v8
+        with:
+          name: pypi-wheels-ubuntu-latest
+          path: dist
+      - uses: actions/download-artifact@v8
+        with:
+          name: pypi-wheels-ubuntu-24.04-arm
+          path: dist
+      - uses: actions/download-artifact@v8
+        with:
+          name: pypi-wheels-macos-15
+          path: dist
+      - uses: actions/download-artifact@v8
+        with:
+          name: pypi-wheels-macos-15-intel
+          path: dist
       - uses: ./.github/workflows/actions/deploy-pypi
         with:
-          os: ${{ runner.os }}
-          python-version: ${{ matrix.python-version }}
-          version: ${{ needs.release.outputs.new-tag }}
+          dist-dir: dist
           pypi-token: ${{ secrets.PYPI_SECRET_TOKEN }}

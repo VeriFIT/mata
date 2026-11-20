@@ -17,6 +17,10 @@ inputs:
       Whether to install the binding itself ("true") or only its dependencies ("false"), for jobs that build the binding later anyway.
     required: false
     default: "true"
+  init:
+    description: "Which Python dependencies to install: full also builds the binding and installs the test packages, build only the tools for creating an sdist."
+    required: false
+    default: "full"
 runs:
   using: "composite"
   steps:
@@ -35,16 +39,20 @@ runs:
       shell: bash
       run: |
         python3 -m pip install --upgrade pip
-        make -C bindings/python init
-    # Building the binding compiles Mata, so a job that builds the binding later itself takes only the dependencies
-    #  the binding declares.
-    - name: Install the dependencies of the binding
+        if [ "${{ inputs.init }}" = full ]; then
+          make -C bindings/python init
+        else
+          # An sdist build needs no compiled binding: only the backend tools.
+          python3 -m pip install "Cython>=3.0,<4" setuptools wheel
+        fi
+    # Building the binding compiles Mata, so a job that builds the binding later itself takes only the build and test
+    #  tools (the shared dev group): the runtime dependency list is empty.
+    - name: Install the build and test tools of the binding
       if: ${{ inputs.install-binding != 'true' }}
       shell: bash
       run: |
-        python3 -m pip install --upgrade pip
-        python3 -c 'import tomllib; print("\n".join(tomllib.load(open("bindings/python/pyproject.toml", "rb"))["project"]["dependencies"]))' > "$RUNNER_TEMP/binding-requirements.txt"
-        python3 -m pip install --requirement "$RUNNER_TEMP/binding-requirements.txt"
+        python3 -m pip install --upgrade "pip>=25.1"
+        python3 -m pip install --group bindings/python/pyproject.toml:dev
     - name: Building MacOS dependencies
       if: ${{ inputs.os == 'macos-latest' }}
       shell: bash

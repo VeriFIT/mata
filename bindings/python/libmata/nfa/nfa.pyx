@@ -2,8 +2,6 @@ import copy
 from enum import IntEnum
 import shlex
 import subprocess
-import pandas
-import networkx as nx
 
 from cpython.array cimport array, clone as array_clone
 from libc.stdint cimport int64_t, uint8_t, uint64_t
@@ -1204,7 +1202,7 @@ cdef class Nfa:
         __pyx_fill_transition_arrays(dereference(c_delta), c_sources, c_symbols, c_targets)
         return sources, symbols, targets
 
-    def to_dataframe(self) -> pandas.DataFrame:
+    def to_dataframe(self):
         """Transforms the automaton to DataFrame format.
 
         Transforms the automaton into pandas.DataFrame format,
@@ -1214,14 +1212,20 @@ cdef class Nfa:
 
         :return: automaton represented as a pandas dataframe
         """
+        try:
+            import pandas
+        except ImportError as error:
+            raise ImportError(
+                "Nfa.to_dataframe() needs pandas: install it with \"pip install libmata[pandas]\"."
+            ) from error
         # numpy comes with pandas. pandas copies an `array.array` element by element, an ndarray in one go.
         import numpy
 
         columns = zip(('source', 'symbol', 'target'), self.transitions_as_arrays())
         return pandas.DataFrame({name: numpy.frombuffer(column, dtype=numpy.int64) for name, column in columns})
 
-    def to_networkx_graph(self) -> nx.Graph:
-        """Transforms the automaton into networkx.Graph
+    def to_networkx_graph(self):
+        """Transforms the automaton to networkx.Graph
 
         Transforms the automaton into networkx.Graph format,
         that is represented as graph with edges (source, target) with
@@ -1233,6 +1237,12 @@ cdef class Nfa:
 
         :return:
         """
+        try:
+            import networkx as nx
+        except ImportError as error:
+            raise ImportError(
+                "Nfa.to_networkx_graph() needs networkx: install it with \"pip install libmata[plotting]\"."
+            ) from error
         # Accumulate symbols per (source, target) pair.
         edge_symbols = {}
         sources, symbols, targets = self.transitions_as_arrays()
