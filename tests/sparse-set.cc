@@ -298,6 +298,12 @@ TEST_CASE("mata::utils::SparseSet against std::set (randomized)") {
 					CHECK(set.domain_size() == static_cast<State>(expected.empty() ? 0 : *expected.rbegin() + 1));
 					break;
 				}
+				case 9: {
+					// Aliased erase(set): walking this->begin()..end() would read a pop_back-ed dense array.
+					set.erase(set);
+					expected.clear();
+					break;
+				}
 				default: {
 					set.sort();
 					CHECK(std::ranges::is_sorted(set));
@@ -334,4 +340,24 @@ TEST_CASE("mata::utils::SparseSet against std::set (randomized)") {
 		CHECK(copy.empty());
 		CHECK(sorted_elements(set) == elements(expected));
 	}
+}
+
+TEST_CASE("mata::utils::SparseSet::erase(set) clears when the range aliases the set - #224") {
+	SparseSet<State> set{std::initializer_list<State>{1, 3, 5}};
+	REQUIRE(set.size() == 3);
+	set.erase(set);
+	CHECK(set.empty());
+	CHECK(set.size() == 0);
+	CHECK(!set.contains(1));
+	// The domain size survives: clear() empties the set, not the reserved domain.
+	CHECK(set.domain_size() == 6);
+
+	SparseSet<State> empty{};
+	empty.erase(empty);
+	CHECK(empty.empty());
+
+	SparseSet<State> one{std::initializer_list<State>{7}};
+	one.erase(one);
+	CHECK(one.empty());
+	CHECK(one.domain_size() == 8);
 }

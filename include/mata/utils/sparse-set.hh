@@ -29,9 +29,9 @@
 namespace mata::utils {
 
 template <typename T>
-concept Iterable = requires(T t) {
-	typename std::iterator_traits<decltype(begin(t))>::value_type;
-	{ begin(t) } -> std::same_as<decltype(end(t))>;
+concept Iterable = requires(const T& t) {
+	typename std::iterator_traits<decltype(std::ranges::begin(t))>::value_type;
+	{ std::ranges::begin(t) } -> std::same_as<decltype(std::ranges::end(t))>;
 };
 
 /**
@@ -251,7 +251,15 @@ template <typename Number> class SparseSet {
 		MATA_ASSERT(consistent());
 	}
 
-	template <Iterable T> void erase(const T& set) { erase(set.begin(), set.end()); }
+	// Aliasing the whole set erases everything; walking the range would read past a pop_back-ed dense array.
+	template <Iterable T> void erase(const T& set) {
+		if (&set == static_cast<const void*>(this)) {
+			clear();
+			MATA_ASSERT(consistent());
+			return;
+		}
+		erase(set.begin(), set.end());
+	}
 
 	void erase(const std::initializer_list<Number>& list) { erase(list.begin(), list.end()); }
 
