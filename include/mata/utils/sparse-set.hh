@@ -42,7 +42,8 @@ concept Iterable = requires(T t) {
  * Importantly
  * - Insertion and removal are constant time.
  * - Iteration is linear in the number of stored elements.
- * - It takes a lot of space, the sparse and dense vectors allocate as many indexes as the maximal stored number.
+ * - Only the sparse index allocates as many indexes as the maximal stored number; the dense array grows with the
+ *   number of stored elements.
  *
  * @tparam  Number  Number type: type of numbers contained in the container.
  */
@@ -62,7 +63,7 @@ template <typename Number> class SparseSet {
 	///
 	/// `truncate()` will update the domain size to the current maximal Number + 1.
 	/// Constructor can preallocate the sparse set and set domain size to the requested value.
-	/// The structures are preallocated to at least @c domain_size_ size (can be more when maximal Number is removed).
+	/// The sparse index is preallocated to at least @c domain_size_ size; the dense array tracks @c size_ instead.
 	size_t domain_size_ = 0;
 
   public:
@@ -82,14 +83,16 @@ template <typename Number> class SparseSet {
 
 	bool empty() const { return size_ == 0; }
 
-	void clear() { size_ = 0; }
+	void clear() {
+		size_ = 0;
+		dense_.clear();
+	}
 
 	// TODO: maybe we could reserve space more efficiently, by something as doubling?
 	//  But we should not create havoc with domain_size, which is used outside, namely for determining the states of an
 	//  automaton.
 	void reserve(size_t u) {
 		if (u > domain_size_) {
-			dense_.resize(u, 0);
 			sparse_.resize(u, 0);
 			domain_size_ = u;
 		}
@@ -105,7 +108,7 @@ template <typename Number> class SparseSet {
 
 		if (!contains(val)) {
 			if (static_cast<size_t>(val) >= domain_size_) { reserve(static_cast<size_t>(val) + 1); }
-			dense_[size_] = val;
+			dense_.push_back(val);
 			sparse_[val] = static_cast<Number>(size_);
 			++size_;
 		}
@@ -122,6 +125,7 @@ template <typename Number> class SparseSet {
 		dense_[sparse_[number]] = dense_[size_ - 1];
 		sparse_[dense_[size_ - 1]] = sparse_[number];
 		--size_;
+		dense_.pop_back();
 	}
 
 	void erase(const Number val) {
@@ -136,7 +140,7 @@ template <typename Number> class SparseSet {
 
 	SparseSet() = default;
 	/// Basic constructor where you may reserve a domain size.
-	explicit SparseSet(Number domain_size) : dense_(domain_size), sparse_(domain_size, 0), domain_size_(domain_size) {
+	explicit SparseSet(Number domain_size) : sparse_(domain_size, 0), domain_size_(domain_size) {
 		MATA_ASSERT(consistent());
 	};
 
@@ -207,8 +211,8 @@ template <typename Number> class SparseSet {
 	}
 	~SparseSet() = default;
 
-	/// Compare the contents: the buffers keep stale slots behind @c size_ and the domain size depends on the
-	///  insertion history, so equal sets may differ member-wise.
+	/// Compare the contents: the sparse index keeps stale slots, and the order of the dense array and the domain size
+	///  depend on the insertion history, so equal sets may differ member-wise.
 	bool operator==(const SparseSet<Number>& other) const {
 		if (size_ != other.size_) { return false; }
 		for (size_t i{0}; i < size_; ++i) {
@@ -222,7 +226,7 @@ template <typename Number> class SparseSet {
 	// Tests the basic invariant of the sparse set.
 	bool consistent() const {
 		return domain_size_ >= size_ && (max() < domain_size_ || (size_ == 0 && domain_size_ == 0)) &&
-			   dense_.size() >= domain_size_ && sparse_.size() >= domain_size_;
+			   dense_.size() == size_ && sparse_.size() >= domain_size_;
 	}
 
 	/**
