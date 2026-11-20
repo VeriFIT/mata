@@ -83,6 +83,19 @@ TEST_CASE("mata::nfa::create_alphabet()") {
 	// create_alphabet(a, b, 4); // Will not compile: '4' is not of the required type.
 }
 
+TEST_CASE("mata::nfa::create_alphabet() handles a symbol used by many posts") { // {{{
+	// Regression guard for the fill_alphabet() path through Delta::get_used_symbols(): the alphabet must be built
+	//  from the distinct symbols over all posts, not one entry per symbol post.
+	Nfa a{16};
+	for (mata::nfa::State s{0}; s < 15; ++s) {
+		a.delta.add(s, 'a', (s + 1) % 15);
+		a.delta.add(s, 'b', (s + 1) % 15);
+	}
+	a.delta.add(15, EPSILON, 0);
+	const auto alphabet{create_alphabet(a)};
+	CHECK(alphabet.get_alphabet_symbols() == mata::utils::OrdVector<Symbol>{'b', 'a'});
+} // }}}
+
 TEST_CASE("mata::nfa::Nfa::delta.add()/delta.contains()") { // {{{
 	Nfa a(3);
 
