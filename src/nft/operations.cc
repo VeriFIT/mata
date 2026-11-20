@@ -23,6 +23,7 @@
 #include "mata/simlib/explicit_lts.hh"
 #include "mata/utils/assert.hh"
 #include "mata/utils/sparse-set.hh"
+#include "nft-internal.hh"
 
 using namespace mata::utils;
 using namespace mata::nft;
@@ -1633,7 +1634,7 @@ Nft& Nft::unite_nondet_with(const Nft& nft) & {
 
 	// Combine the levels of both NFTs.
 	this->levels.num_of_levels = std::max(this->levels.num_of_levels, nft.levels.num_of_levels);
-	this->levels.append(nft.levels);
+	internal::append_shifted_levels(this->levels, num_of_states_this, nft.levels, num_of_states_nft);
 
 	return *this;
 }
@@ -1678,7 +1679,7 @@ Nft& Nft::unite_nondet_with(Nft&& nft) & {
 
 	// Combine the levels of both NFTs.
 	this->levels.num_of_levels = std::max(this->levels.num_of_levels, nft_num_of_levels);
-	this->levels.append(nft.levels);
+	internal::append_shifted_levels(this->levels, num_of_states_this, nft.levels, num_of_states_nft);
 
 	nft = Nft::with_levels(nft_num_of_levels);
 	return *this;

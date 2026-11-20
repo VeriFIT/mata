@@ -10,6 +10,7 @@
 #include "mata/nft/builder.hh"
 #include "mata/nft/nft.hh"
 #include "mata/utils/assert.hh"
+#include "nft-internal.hh"
 
 using namespace mata::nft;
 
@@ -76,13 +77,13 @@ Nft concatenate_eps_consuming(
 
 	output_renamings();
 
-	// The lhs states keep their indices in the result, so its delta and initial states move in as they are.
-	// The final states and levels of lhs are only read here.
+	// The lhs states keep their indices in the result, so its delta, initial states and levels move in as they are.
+	// The final states of lhs are only read here.
 	const utils::SparseSet<State> lhs_final_states{std::move(lhs.final)};
-	const Levels lhs_levels{std::move(lhs.levels)};
 	Nft result{Nft::with_levels(num_of_levels)}; // Concatenated automaton.
 	result.delta = std::move(lhs.delta);
 	result.initial = std::move(lhs.initial);
+	result.levels = std::move(lhs.levels);
 	lhs = Nft::with_levels(num_of_levels);
 
 	// Append the rhs transitions, shifted by the number of lhs states, before any state beyond lhs is allocated.
@@ -92,12 +93,8 @@ Nft concatenate_eps_consuming(
 	} else {
 		result.delta.append_shifted(rhs.delta, static_cast<State>(lhs_states_num));
 	}
-	// The result states are the lhs states followed by the shifted rhs states, and so are their levels. Only the
-	//  first lhs_states_num lhs levels belong to those states: a surplus entry cannot shift the rhs levels.
-	Levels result_lhs_levels{lhs_levels};
-	result_lhs_levels.resize(lhs_states_num);
-	result.levels.append(result_lhs_levels);
-	result.levels.append(rhs.levels);
+	// The result states are the lhs states followed by the shifted rhs states, and so are their levels.
+	internal::append_shifted_levels(result.levels, lhs_states_num, rhs.levels, rhs_states_num);
 	result.add_state(static_cast<State>(result_num_of_states - 1));
 
 	// Share one epsilon chain per lhs final state across all rhs initial states.
@@ -176,7 +173,7 @@ Nft& Nft::concatenate(const Nft& aut) & {
 
 	this->delta.allocate(n);
 	this->delta.append_shifted(aut.delta, static_cast<State>(n));
-	this->levels.append(aut.levels);
+	internal::append_shifted_levels(this->levels, n, aut.levels, aut_n);
 
 	// set accepting states
 	utils::SparseSet<State> new_fin{};
@@ -220,7 +217,7 @@ Nft& Nft::concatenate(Nft&& aut) & {
 
 	this->delta.allocate(n);
 	this->delta.append_shifted(std::move(aut.delta), static_cast<State>(n));
-	this->levels.append(aut.levels);
+	internal::append_shifted_levels(this->levels, n, aut.levels, aut_n);
 
 	// set accepting states
 	utils::SparseSet<State> new_fin{};
