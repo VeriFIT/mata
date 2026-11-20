@@ -512,6 +512,57 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() with more than two left pa
 	}
 }
 
+TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() unifies the left side as documented") {
+	// x1 . x2 = y with x1 = a | b through two initial and two final states, x2 = a, y = (a | b) a.
+	const auto make_left = [] {
+		Nfa x1{4};
+		x1.initial = {0, 1};
+		x1.final = {2, 3};
+		x1.delta.add(0, 'a', 2);
+		x1.delta.add(1, 'b', 3);
+		Nfa x2{2};
+		x2.initial = {0};
+		x2.final = {1};
+		x2.delta.add(0, 'a', 1);
+		return std::vector<Nfa>{x1, x2};
+	};
+	Nfa right{3};
+	right.initial = {0};
+	right.final = {2};
+	right.delta.add(0, 'a', 1);
+	right.delta.add(0, 'b', 1);
+	right.delta.add(1, 'a', 2);
+	const Nfa right_before{right};
+
+	SECTION("std::reference_wrapper always unifies the left side automata in place") {
+		std::vector<Nfa> left{make_left()};
+		const std::vector<std::reference_wrapper<Nfa>> left_refs(left.begin(), left.end());
+		CHECK(seg_nfa::noodlify_for_equation(left_refs, right).size() == 1);
+		CHECK(left[0].initial.size() == 1);
+		CHECK(left[0].final.size() == 1);
+		CHECK(right.is_identical(right_before));
+	}
+
+	SECTION("Nfa* leaves the left side automata as they are without reduce") {
+		std::vector<Nfa> left{make_left()};
+		const std::vector<Nfa> left_before{left};
+		const std::vector<Nfa*> left_ptrs{&left[0], &left[1]};
+		// One noodle per final state of x1, unlike the std::reference_wrapper overload.
+		CHECK(seg_nfa::noodlify_for_equation(left_ptrs, right).size() == 2);
+		CHECK(left[0].is_identical(left_before[0]));
+		CHECK(left[1].is_identical(left_before[1]));
+		CHECK(right.is_identical(right_before));
+	}
+
+	SECTION("Nfa* unifies the left side automata in place with reduce") {
+		std::vector<Nfa> left{make_left()};
+		const std::vector<Nfa*> left_ptrs{&left[0], &left[1]};
+		CHECK(seg_nfa::noodlify_for_equation(left_ptrs, right, false, {{"reduce", "forward"}}).size() == 1);
+		CHECK(left[0].initial.size() == 1);
+		CHECK(left[0].final.size() == 1);
+	}
+}
+
 TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() both sides") {
 	SECTION("Empty input") {
 		CHECK(
