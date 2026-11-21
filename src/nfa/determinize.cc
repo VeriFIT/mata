@@ -152,10 +152,8 @@ void merge_sorted(
 	for (; rhs_it != rhs.end(); ++rhs_it) { out.push_back(*rhs_it); }
 }
 
-// The target is added in place, SymbolPost(symbol, target) sorts a one-element list, and moving a SmallStateSet in
-// copies its buffer right after its key is stored.
 inline void append_transition(StatePost& state_post, const Symbol symbol, const State target) {
-	state_post.emplace_back(symbol).emplace_back(target);
+	state_post.emplace_back(symbol, target);
 }
 
 // ===== Symbol classes.

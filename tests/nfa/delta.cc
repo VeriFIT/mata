@@ -1432,7 +1432,7 @@ TEST_CASE("mata::nfa::Delta count of consuming union and concatenation") {
 
 // The bad read only shows under AddressSanitizer (MATA_SANITIZE=address): freed memory usually still holds the size.
 TEST_CASE("mata::nfa::Delta::add() of targets taken from the same state post") {
-	// Fill the capacity that `reserve_on_insert()` gives a state post, so the next new symbol post reallocates it.
+	// Fill a state post to the capacity of 32 that doubling reaches, so the next new symbol post reallocates it.
 	constexpr Symbol num_of_symbol_posts{32};
 	Delta delta{};
 	for (Symbol symbol{0}; symbol < num_of_symbol_posts; ++symbol) { delta.add(0, 2 * symbol, 1); }
