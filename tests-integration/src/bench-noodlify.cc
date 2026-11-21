@@ -78,14 +78,12 @@ int main(int argc, char* argv[]) {
 		std::vector<std::string> equation_files{lhs_files};
 		equation_files.insert(equation_files.end(), rhs_files.begin(), rhs_files.end());
 		mata::OnTheFlyAlphabet alphabet;
-		std::vector<Nfa> lhs_automata;
-		std::vector<Nfa> rhs_automata;
-		if (load_automata(lhs_files, lhs_automata, alphabet) != EXIT_SUCCESS ||
-			load_automata(rhs_files, rhs_automata, alphabet) != EXIT_SUCCESS) {
-			return EXIT_FAILURE;
-		}
-		lhs = to_shared(std::move(lhs_automata));
-		rhs = to_shared(std::move(rhs_automata));
+		std::vector<Nfa> automata;
+		if (load_automata(equation_files, automata, alphabet) != EXIT_SUCCESS) { return EXIT_FAILURE; }
+		const auto rhs_begin{automata.begin() + static_cast<std::ptrdiff_t>(lhs_files.size())};
+		lhs =
+			to_shared(std::vector<Nfa>(std::make_move_iterator(automata.begin()), std::make_move_iterator(rhs_begin)));
+		rhs = to_shared(std::vector<Nfa>(std::make_move_iterator(rhs_begin), std::make_move_iterator(automata.end())));
 	} else if (args.size() <= 1) {
 		unsigned seed{0};
 		if (!args.empty()) {
