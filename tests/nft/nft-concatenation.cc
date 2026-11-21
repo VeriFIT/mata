@@ -961,7 +961,11 @@ TEST_CASE("mata::nft union and concatenation shift states beyond the delta") {
 				  algorithms::concatenate_eps(Nft{lhs_operand}, rhs_operand, EPSILON, use_epsilon),
 				  algorithms::concatenate_eps(Nft{lhs_operand}, Nft{rhs_operand}, EPSILON, use_epsilon)}) {
 				// Without epsilon, the epsilon removal decides the shape; only the relation is fixed.
-				if (use_epsilon) { check_identical(result, expected_eps); }
+				if (use_epsilon) {
+					check_identical(result, expected_eps);
+				} else {
+					CHECK(!result.delta.get_used_symbols().contains(EPSILON));
+				}
 				check_relation(result, expected_direct);
 			}
 			CHECK(lhs_renaming == expected_lhs_renaming);
