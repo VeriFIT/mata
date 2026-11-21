@@ -13,6 +13,7 @@
 #include <optional>
 #include <queue>
 #include <type_traits>
+#include <typeinfo>
 #include <unordered_set>
 #include <utility>
 
@@ -87,8 +88,8 @@ template <class Relation> Relation compute_fw_direct_simulation(const Nfa& aut) 
 
 /// The symbols of @p alphabet: an @c OnTheFlyAlphabet lends its cached ones, the others are copied into @p storage.
 const OrdVector<Symbol>& borrow_symbols(const mata::Alphabet& alphabet, OrdVector<Symbol>& storage) {
-	if (const auto* const on_the_fly{dynamic_cast<const mata::OnTheFlyAlphabet*>(&alphabet)}) {
-		return on_the_fly->get_alphabet_symbols_ref();
+	if (typeid(alphabet) == typeid(mata::OnTheFlyAlphabet)) {
+		return static_cast<const mata::OnTheFlyAlphabet&>(alphabet).get_alphabet_symbols_ref();
 	}
 	storage = alphabet.get_alphabet_symbols();
 	return storage;

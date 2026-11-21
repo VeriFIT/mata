@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cctype>
 #include <charconv>
+#include <typeinfo>
 
 using mata::AlphabetLevels;
 using mata::OnTheFlyAlphabet;
@@ -162,6 +163,8 @@ const mata::utils::OrdVector<Symbol>& OnTheFlyAlphabet::get_alphabet_symbols_ref
 mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_alphabet_symbols() const { return get_alphabet_symbols_ref(); }
 
 mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_complement(const mata::utils::OrdVector<Symbol>& symbols) const {
+	// A derived alphabet may override the virtual enumeration; only the exact class owns the cache.
+	if (typeid(*this) != typeid(OnTheFlyAlphabet)) { return get_alphabet_symbols().difference(symbols); }
 	return get_alphabet_symbols_ref().difference(symbols);
 }
 

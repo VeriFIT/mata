@@ -26,6 +26,26 @@ using Word = std::vector<Symbol>;
 
 template <class T> void unused(const T&) {}
 
+namespace {
+class SingleSymbolAlphabet final : public OnTheFlyAlphabet {
+  public:
+	SingleSymbolAlphabet() : OnTheFlyAlphabet{{"zero", 0}, {"one", 1}, {"three", 3}} {}
+	utils::OrdVector<Symbol> get_alphabet_symbols() const override { return {1}; }
+};
+} // namespace
+
+TEST_CASE("mata::OnTheFlyAlphabet subclasses keep their own enumeration (#754)") {
+	const SingleSymbolAlphabet alphabet{};
+	CHECK(alphabet.get_complement({1}).empty());
+
+	Nfa aut{1};
+	aut.initial.insert(0);
+	aut.final.insert(0);
+	aut.delta.add(0, 1, 0);
+	CHECK(aut.is_complete(&alphabet));
+	CHECK(complement(aut, alphabet).is_lang_empty());
+}
+
 TEST_CASE("mata::IntAlphabet") {
 	auto alphabet1 = IntAlphabet();
 	auto alphabet2 = IntAlphabet();
