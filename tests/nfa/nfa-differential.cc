@@ -327,6 +327,25 @@ void check_nfa_properties(
 		for (const Word& word : words) { CHECK(reference_accepts(complemented, word) != reference_accepts(nfa, word)); }
 	}
 
+	// The lazy naive universality agrees with the antichain algorithm and the materialized complement. A
+	//  counterexample is a word the automaton rejects.
+	Run naive_cex{};
+	const bool naive_universal{algorithms::is_universal_naive(nfa, *alphabet, &naive_cex)};
+	CHECK(naive_universal == algorithms::is_universal_antichains(nfa, *alphabet, nullptr));
+	CHECK(naive_universal == complement(nfa, *alphabet, CLASSICAL).is_lang_empty());
+	if (!naive_universal) {
+		CHECK(!reference_accepts(nfa, naive_cex.word));
+		CHECK(naive_cex.path.empty());
+	}
+
+	// Direct calls read EPSILON as a letter, so its counterexample keeps EPSILON.
+	Nfa empty_word_only{1};
+	empty_word_only.initial.insert(0);
+	empty_word_only.final.insert(0);
+	Run epsilon_cex{};
+	CHECK(!algorithms::is_universal_naive(empty_word_only, EnumAlphabet{EPSILON}, &epsilon_cex));
+	CHECK(epsilon_cex.word == Word{EPSILON});
+
 	// Both inclusion algorithms agree with each other and, when they report inclusion, with the
 	//  bounded check.
 	const bool naive_inclusion{is_included(nfa, other, alphabet.get(), NAIVE)};

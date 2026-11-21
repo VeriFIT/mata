@@ -247,12 +247,17 @@ bool are_equivalent_epsilon_as_symbol(
 );
 
 /**
- * @brief Check universality by checking the emptiness of a complement of @p aut.
+ * @brief Check universality by searching the complement of @p aut for a word.
+ *
+ * The complement is determinized lazily and the search stops at the first word @p aut rejects, so a non-universal
+ *  automaton is decided without building its whole complement. @c EPSILON is read as an ordinary letter;
+ *  @c Nfa::is_universal() removes epsilon transitions first.
  *
  * @param[in] aut Automaton which universality is checked
  * @param[in] alphabet Alphabet of the automaton
- * @param[out] cex Counterexample word which eventually breaks the universality
- * @return True if the complemented automaton has non-empty language, i.e., the original one is not universal
+ * @param[out] cex Word that @p aut rejects, when it is not universal. Its path is cleared: the states would belong
+ *  to the complement, which is not built.
+ * @return True if @p aut accepts every word over @p alphabet.
  */
 bool is_universal_naive(const Nfa& aut, const Alphabet& alphabet, Run* cex);
 

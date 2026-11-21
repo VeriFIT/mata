@@ -13,7 +13,15 @@ using namespace mata::utils;
 //  it is not something needed in practice, so some little overhead is ok
 
 bool mata::nfa::algorithms::is_universal_naive(const Nfa& aut, const Alphabet& alphabet, Run* cex) {
-	return complement(aut, alphabet).is_lang_empty(cex);
+	// The fused subset search stops at the first rejected word; it reads EPSILON as a letter, as complement() does.
+	const std::optional<Word> rejected_word{aut.get_word_from_complement(&alphabet)};
+	if (!rejected_word.has_value()) { return true; }
+	if (cex != nullptr) {
+		cex->word = *rejected_word;
+		// The states of a counterexample would belong to the complement, which is never built.
+		cex->path.clear();
+	}
+	return false;
 }
 
 bool mata::nfa::algorithms::is_universal_antichains(const Nfa& aut, const Alphabet& alphabet,
