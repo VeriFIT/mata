@@ -1,6 +1,18 @@
+From 072183871fab143a7ed3fe4b06666a3311f97899 Mon Sep 17 00:00:00 2001
+From: Mata Experiment <experiment@invalid>
+Date: Sat, 21 Nov 2026 07:49:38 +0100
+Subject: [PATCH] nfa,nft: +perf Share an SCC-based epsilon closure helper
+
+---
+ src/nfa/edge-components.hh | 132 +++++++++++++++++++++++++++++++++++++
+ src/nfa/operations.cc      |  98 ++++++---------------------
+ src/nft/operations.cc      |  84 +++++++++++++++--------
+ 3 files changed, 207 insertions(+), 107 deletions(-)
+ create mode 100644 src/nfa/edge-components.hh
+
 diff --git a/src/nfa/edge-components.hh b/src/nfa/edge-components.hh
 new file mode 100644
-index 0000000000..7e48cebc16
+index 000000000..7e48cebc1
 --- /dev/null
 +++ b/src/nfa/edge-components.hh
 @@ -0,0 +1,132 @@
@@ -137,7 +149,7 @@ index 0000000000..7e48cebc16
 +
 +#endif // MATA_SRC_NFA_EDGE_COMPONENTS_HH_
 diff --git a/src/nfa/operations.cc b/src/nfa/operations.cc
-index 310ba40f7d..2116878def 100644
+index 310ba40f7..2116878de 100644
 --- a/src/nfa/operations.cc
 +++ b/src/nfa/operations.cc
 @@ -27,6 +27,8 @@
@@ -183,7 +195,7 @@ index 310ba40f7d..2116878def 100644
  	const size_t num_of_states = delta.num_of_states();
  	std::vector<const SymbolPost*> epsilon_posts(num_of_states, nullptr);
  
-@@ -650,65 +640,16 @@ EdgeComponents find_epsilon_components(const Delta& delta, const Symbol epsilon)
+@@ -650,65 +640,16 @@ EpsilonComponents find_epsilon_components(const Delta& delta, const Symbol epsil
  		}
  	}
  
@@ -255,7 +267,7 @@ index 310ba40f7d..2116878def 100644
  	}
  	return components;
  }
-@@ -815,10 +756,11 @@ void append_nonempty(const PostRange range, StatePost& result) {
+@@ -815,10 +756,11 @@ class PostUnion {
   * closure post is merged once. @p source may be @p result, so a post is read before it is written.
   */
  void write_epsilon_closures(const Delta& source, Delta& result, SparseSet<State>& final, const Symbol epsilon) {
@@ -297,7 +309,7 @@ index 310ba40f7d..2116878def 100644
  			final.insert(state);
  		}
 diff --git a/src/nft/operations.cc b/src/nft/operations.cc
-index 5c525462ad..4eaf043110 100644
+index 5c525462a..4eaf04311 100644
 --- a/src/nft/operations.cc
 +++ b/src/nft/operations.cc
 @@ -24,6 +24,8 @@
@@ -407,3 +419,6 @@ index 5c525462ad..4eaf043110 100644
  		};
  	};
  
+-- 
+2.56.0
+
