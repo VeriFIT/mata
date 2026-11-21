@@ -3279,7 +3279,17 @@ Nft algorithms::compose_general_reference(
 	insert_self_loops(lhs_synced, lhs_new_levels_mask);
 	insert_self_loops(rhs_synced, rhs_new_levels_mask);
 
-	Nft result{intersection(lhs_synced, rhs_synced, nullptr, jump_mode, lhs_first_aux_state, rhs_first_aux_state)};
+	const auto both_final = [&](const State lhs_state, const State rhs_state) {
+		return lhs_synced.final.contains(lhs_state) && rhs_synced.final.contains(rhs_state);
+	};
+	Nft result{
+		(lhs_synced.final.empty() || lhs_synced.initial.empty() || rhs_synced.initial.empty() ||
+		 rhs_synced.final.empty())
+			? Nft::with_levels(lhs_synced.levels.num_of_levels)
+			: composition_product(
+				  lhs_synced, rhs_synced, both_final, jump_mode, lhs_first_aux_state, rhs_first_aux_state
+			  )
+	};
 	if (project_out_sync_levels) {
 		// `project_out()` allocates per state and runs its closure over all of them, and only trims at the end.
 		result.trim();

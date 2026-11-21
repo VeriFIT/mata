@@ -176,6 +176,22 @@ Nft product(
 );
 
 /**
+ * @brief Product used by the general composition pipeline, where @c DONT_CARE also matches @c EPSILON (#561).
+ *
+ * The public @c product() and @c intersection() follow @c symbols_match(): @c DONT_CARE matches every symbol except
+ *  @c EPSILON. The composition pipeline waits with whole rounds of @c EPSILON and pads with @c DONT_CARE, so it needs
+ *  the permissive matching instead.
+ */
+Nft composition_product(
+	const Nft& lhs,
+	const Nft& rhs,
+	const std::function<bool(State, State)>& final_condition,
+	JumpMode jump_mode,
+	State lhs_first_aux_state,
+	State rhs_first_aux_state
+);
+
+/**
  * @brief Concatenate two NFTs.
  *
  * Connects @p lhs and @p rhs by adding a run of ε-transitions, one per level, from each final state of @p lhs to
