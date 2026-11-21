@@ -10,7 +10,7 @@ from libmata.utils cimport COrdVector, CStringHash, CTransparentEqualTo
 
 cdef extern from "mata/alphabet.hh" namespace "mata":
     ctypedef unsigned int Symbol
-    ctypedef uintptr_t Level
+    ctypedef unsigned int Level
 
     cdef cppclass CConstAlphabet "const mata::Alphabet"
 

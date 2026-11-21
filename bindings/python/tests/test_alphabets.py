@@ -123,7 +123,8 @@ def test_alphabet_levels_multi_level_mode():
         alphabets.for_level(None)
     with pytest.raises(RuntimeError, match="out of range"):
         alphabets.for_level(5)
-
+    with pytest.raises(OverflowError):
+        alphabets.translate_symbol("a", level=2**32)
     alphabets.push_back(alph.IntAlphabet())
     assert len(alphabets) == 3
     alphabets.erase(2)
@@ -170,6 +171,7 @@ def test_alphabet_levels_global_mode():
     assert alphabets.for_level(0).get_alphabet_symbols() == {7, 8}
     # Level argument is ignored in Global mode.
     assert alphabets.for_level(123).get_alphabet_symbols() == {7, 8}
+    assert alphabets.for_level(2**32 - 1).get_alphabet_symbols() == {7, 8}
 
     other = alph.IntAlphabet()
     alphabets.set_multi_level_mode([shared, other])
