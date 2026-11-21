@@ -13,6 +13,7 @@
 #include <optional>
 #include <queue>
 #include <type_traits>
+#include <typeinfo>
 #include <unordered_set>
 #include <utility>
 
@@ -83,6 +84,15 @@ template <class Relation> Relation compute_fw_direct_simulation(const Nfa& aut) 
 	} else {
 		return lts_for_simulation.compute_simulation(partition, relation, state_num);
 	}
+}
+
+/// The symbols of @p alphabet: an @c OnTheFlyAlphabet lends its cached ones, the others are copied into @p storage.
+const OrdVector<Symbol>& borrow_symbols(const mata::Alphabet& alphabet, OrdVector<Symbol>& storage) {
+	if (typeid(alphabet) == typeid(mata::OnTheFlyAlphabet)) {
+		return static_cast<const mata::OnTheFlyAlphabet&>(alphabet).get_alphabet_symbols_ref();
+	}
+	storage = alphabet.get_alphabet_symbols();
+	return storage;
 }
 
 } // namespace
@@ -545,7 +555,8 @@ std::ostream& std::operator<<(std::ostream& os, const mata::nfa::Transition& tra
 }
 
 bool mata::nfa::Nfa::make_complete(const Alphabet* const alphabet, const std::optional<State> sink_state) {
-	return make_complete(get_symbols_to_work_with(alphabet), sink_state);
+	OrdVector<Symbol> copied_symbols{};
+	return make_complete(borrow_symbols(*resolve_alphabet(alphabet), copied_symbols), sink_state);
 }
 
 bool mata::nfa::Nfa::make_complete(const OrdVector<Symbol>& symbols, const std::optional<State> sink_state) {
@@ -1150,7 +1161,10 @@ bool mata::nfa::Nfa::is_minimal() const {
 	return algorithms::minimize_hopcroft(*this).num_of_states() == num_of_states();
 }
 
-bool Nfa::is_complete(const Alphabet* const alphabet) const { return is_complete(get_symbols_to_work_with(alphabet)); }
+bool Nfa::is_complete(const Alphabet* const alphabet) const {
+	OrdVector<Symbol> copied_symbols{};
+	return is_complete(borrow_symbols(*resolve_alphabet(alphabet), copied_symbols));
+}
 
 bool mata::nfa::Nfa::is_complete(const OrdVector<Symbol>& symbols) const {
 	// TODO: make a general function for traversal over reachable states that can be shared by other functions?
@@ -2516,7 +2530,9 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
 	using Iterator = StatePost::const_iterator;
 	SynchronizedExistentialSymbolPostIterator synchronized_iterator{};
 
-	const utils::OrdVector<Symbol> symbols{get_symbols_to_work_with(alphabet)};
+	const std::shared_ptr<const Alphabet> resolved_alphabet{resolve_alphabet(alphabet)};
+	OrdVector<Symbol> copied_symbols{};
+	const utils::OrdVector<Symbol>& symbols{borrow_symbols(*resolved_alphabet, copied_symbols)};
 	const auto symbols_end{symbols.end()};
 	bool continue_complementation{true};
 	while (continue_complementation && !worklist.empty()) {

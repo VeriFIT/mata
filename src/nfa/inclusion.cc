@@ -14,6 +14,18 @@ using mata::nfa::internal::Node;
 using mata::nfa::internal::ProcessedAntichain;
 using mata::nfa::internal::Step;
 
+namespace {
+/// The symbols of @c create_alphabet(lhs, rhs), without building the names it maps them to.
+OrdVector<mata::Symbol> used_letters(const Nfa& lhs, const Nfa& rhs) {
+	OrdVector<mata::Symbol> symbols{
+		OrdVector<mata::Symbol>::set_union(lhs.delta.get_used_symbols(), rhs.delta.get_used_symbols())
+	};
+	// EPSILON sorts last and is no letter.
+	if (!symbols.empty() && symbols.back() == EPSILON) { symbols.pop_back(); }
+	return symbols;
+}
+} // namespace
+
 /// naive language inclusion check (complementation + intersection + emptiness)
 bool mata::nfa::algorithms::is_included_naive(
 	const Nfa& smaller,
@@ -28,7 +40,7 @@ bool mata::nfa::algorithms::is_included_naive(
 	}
 	Nfa bigger_cmpl;
 	if (alphabet == nullptr) {
-		bigger_cmpl = complement(bigger, create_alphabet(smaller, bigger));
+		bigger_cmpl = complement(bigger, used_letters(smaller, bigger));
 	} else {
 		bigger_cmpl = complement(bigger, *alphabet);
 	}
@@ -287,7 +299,7 @@ bool mata::nfa::algorithms::are_equivalent_epsilon_as_symbol(
 
 	if (params.at("algorithm") == "naive") {
 		if (alphabet == nullptr) {
-			const auto computed_alphabet{create_alphabet(lhs, rhs)};
+			const EnumAlphabet computed_alphabet{used_letters(lhs, rhs)};
 			return compute_equivalence(lhs, rhs, &computed_alphabet, algo, cex);
 		}
 	}

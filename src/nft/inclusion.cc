@@ -36,7 +36,9 @@ bool has_dont_care_transition(const Nft& nft) {
 ///  then behaves alike, and dropping it instead would drop the wildcard links from the comparison.
 OrdVector<Symbol> unwinding_symbols(const Nft& lhs, const Nft& rhs, const mata::Alphabet* const alphabet) {
 	if (alphabet != nullptr) { return alphabet->get_alphabet_symbols(); }
-	OrdVector<Symbol> symbols{create_alphabet(lhs, rhs).get_alphabet_symbols()};
+	OrdVector<Symbol> symbols{OrdVector<Symbol>::set_union(lhs.delta.get_used_symbols(), rhs.delta.get_used_symbols())};
+	// The symbols of create_alphabet(lhs, rhs): DONT_CARE and EPSILON sort last and are no letters.
+	while (!symbols.empty() && symbols.back() >= DONT_CARE) { symbols.pop_back(); }
 	if (symbols.empty() && (has_dont_care_transition(lhs) || has_dont_care_transition(rhs))) {
 		symbols.insert(DONT_CARE);
 	}
@@ -634,7 +636,7 @@ bool algorithms::is_included_naive(
 	internal::validate_nft_levels(smaller, "is_included_naive");
 	internal::validate_nft_levels(bigger, "is_included_naive");
 	const OrdVector<Symbol> symbols{unwinding_symbols(smaller, bigger, alphabet)};
-	// EPSILON is excluded from create_alphabet(): it belongs in the complement whenever an operand uses it, or a
+	// EPSILON is excluded from unwinding_symbols(): it belongs in the complement whenever an operand uses it, or a
 	//  round labeled with it would have no match in the complement.
 	OrdVector<Symbol> complement_symbols{symbols};
 	const auto has_epsilon{[](const Nft& nft) {
