@@ -8,13 +8,14 @@
 #include "mata/automaton.hh"
 #include "mata/utils/sparse-set.hh"
 
+#include "automaton-tarjan.hh"
+
 using namespace mata;
 using namespace mata::utils;
 
 using mata::nfa::Delta;
 using mata::nfa::State;
 using mata::nfa::StateSet;
-using mata::nfa::SuccessorCursor;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
@@ -146,29 +147,6 @@ PredecessorIndex
 	return index;
 }
 
-// A structure to store metadata related to each state/node during the computation
-// of useful states. It contains Tarjan's metadata and the state of the
-// iteration through the successors.
-struct TarjanNodeData {
-	SuccessorCursor::const_iterator current_successor_it{};
-	// index of a node (corresponds to the time of discovery)
-	unsigned long index{0};
-	// index of a lower node in the same SCC
-	unsigned long lowlink{0};
-	// was the node already initialized (=the initial phase of the Tarjan's recursive call was executed)
-	bool initialized{false};
-	// is node on Tarjan's stack?
-	bool on_stack{false};
-
-	TarjanNodeData() = default;
-
-	TarjanNodeData(const State q, const Delta& delta, const unsigned long index)
-		: current_successor_it(delta.successor_cursor(q).begin()),
-		  index(index),
-		  lowlink(index),
-		  initialized(true),
-		  on_stack(true) {}
-};
 } // anonymous namespace
 
 Automaton& Automaton::operator=(Automaton&& other) noexcept {
@@ -360,75 +338,33 @@ void Automaton::tarjan_scc_discover(
 	const TarjanDiscoverCallback& callback,
 	const std::optional<std::reference_wrapper<const SparseSet<State>>> initial_states
 ) const {
-	std::vector<TarjanNodeData> node_info(this->num_of_states());
-	std::vector<State> program_stack;
-	std::vector<State> tarjan_stack;
-	unsigned long index_cnt = 0;
-
-	for (const State& q0 : (initial_states.value_or(this->initial)).get()) { program_stack.push_back(q0); }
-
-	while (!program_stack.empty()) {
-		const State act_state = program_stack.back();
-		TarjanNodeData& act_state_data = node_info[act_state];
-
-		// if a node is initialized and is not on stack --> skip it; this state was
-		// already processed (=this state is initial and was reachable from another initial).
-		if (act_state_data.initialized && !act_state_data.on_stack) {
-			program_stack.pop_back();
-			continue;
-		}
-
-		// node has not been initialized yet --> corresponds to the first call of strongconnect(act_state)
-		if (!act_state_data.initialized) {
-			// initialize node
-			act_state_data = TarjanNodeData(act_state, this->delta, index_cnt++);
-			tarjan_stack.push_back(act_state);
-
-			if (callback.state_discover && callback.state_discover(act_state)) { return; }
-		} else { // return from the recursive call
-			const State act_succ = *act_state_data.current_successor_it;
-			act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[act_succ].lowlink);
-			// act_succ is the state that caused the recursive call. Move on to the next successor.
-			++act_state_data.current_successor_it;
-		}
-
-		// rec_call simulates call of the strongconnect. Since c++ cannot do continue over
-		// multiple loops, we use rec_call to jump to the main loop
-		bool rec_call = false;
-		for (; act_state_data.current_successor_it != std::default_sentinel; ++act_state_data.current_successor_it) {
-			// iterate through outgoing edges
-			const State next_state{*act_state_data.current_successor_it};
-			if (callback.succ_state_discover) { callback.succ_state_discover(act_state, next_state); }
-
-			if (not node_info[next_state].initialized) { // recursive call
-				program_stack.push_back(next_state);
-				rec_call = true;
-				break;
-			}
-
-			if (node_info[next_state].on_stack) {
-				act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[next_state].index);
-			}
-		}
-		if (rec_call) { continue; }
-
-		// check if we have the root of an SCC
-		if (act_state_data.lowlink == act_state_data.index) {
-			State st;
-			std::vector<State> scc;
-			do {
-				st = tarjan_stack.back();
-				tarjan_stack.pop_back();
-				node_info[st].on_stack = false;
-
-				if (callback.scc_state_discover) { callback.scc_state_discover(st); }
-				scc.push_back(st);
-			} while (st != act_state);
-			if (callback.scc_discover && callback.scc_discover(scc, tarjan_stack)) { return; }
-		}
-		// all successors have been processed, we can remove act_state from the program stack
-		program_stack.pop_back();
-	}
+	// A copy of a std::function copies its target, so a stateful callback would mutate the copy instead of the
+	//  caller's object. Wrap with lambdas that forward to the originals, and keep the old skips of empty functions.
+	auto state_discover = [&callback](const State state) {
+		if (!callback.state_discover) { return false; }
+		return callback.state_discover(state);
+	};
+	auto succ_state_discover = [&callback](const State from, const State to) {
+		if (callback.succ_state_discover) { callback.succ_state_discover(from, to); }
+	};
+	auto scc_discover = [&callback](const std::span<const State> scc, const std::span<const State> remaining_stack) {
+		if (!callback.scc_discover) { return false; }
+		// Keep the std::vector-based public interface and its pop order (top of the Tarjan stack first). Internal
+		//  callers take the spans directly and avoid these copies.
+		const std::vector<State> scc_vector{scc.rbegin(), scc.rend()};
+		const std::vector<State> stack_vector{remaining_stack.begin(), remaining_stack.end()};
+		return callback.scc_discover(scc_vector, stack_vector);
+	};
+	auto scc_state_discover = [&callback](const State state) {
+		if (callback.scc_state_discover) { callback.scc_state_discover(state); }
+	};
+	const mata::nfa::internal::TarjanCallbacks callbacks{
+		std::move(state_discover), std::move(succ_state_discover), std::move(scc_discover),
+		std::move(scc_state_discover)
+	};
+	mata::nfa::internal::tarjan_scc_discover(
+		this->delta, this->num_of_states(), initial_states.value_or(this->initial), callbacks
+	);
 }
 
 BoolVector Automaton::get_useful_states(
@@ -508,22 +444,18 @@ bool Automaton::has_no_accepting_path() const {
 
 bool Automaton::is_acyclic() const {
 	bool acyclic = true;
-
-	TarjanDiscoverCallback callback{};
-	callback.scc_discover = [&](const std::vector<State>& scc, const std::vector<State>& tarjan_stack) -> bool {
-		(void) tarjan_stack;
-		if (scc.size() > 1) {
-			acyclic = false;
-			return true;
-		} // check for self-loops.
-		if (delta.has_self_loop(scc[0])) {
-			acyclic = false;
-			return true;
-		}
-
-		return false;
+	const mata::nfa::internal::TarjanCallbacks callbacks{
+		std::nullptr_t{}, std::nullptr_t{},
+		[this, &acyclic](const std::span<const State> scc, const std::span<const State> remaining_stack) {
+			(void) remaining_stack;
+			if (scc.size() > 1 || delta.has_self_loop(scc[0])) {
+				acyclic = false;
+				return true;
+			}
+			return false;
+		},
+		std::nullptr_t{}
 	};
-
-	tarjan_scc_discover(callback);
+	mata::nfa::internal::tarjan_scc_discover(this->delta, this->num_of_states(), this->initial, callbacks);
 	return acyclic;
 }
