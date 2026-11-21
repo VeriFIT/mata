@@ -14,8 +14,10 @@ Before starting a performance or design change, check here whether it has been t
 | [EXP-1](1-ordvector-flat-set/README.md) | Change `OrdVector` merge, search, and storage       | rejected |
 | [EXP-2](2-nft-bdd-automata/README.md)   | Use NFT levels as BDDs on automaton transitions     | rejected |
 | [EXP-3][exp-3]                          | Adaptive merging and universality through inclusion | rejected |
+| [EXP-5][exp-5]                          | Shared SCC-based epsilon closure                    | rejected |
 
 [exp-3]: 3-antichain-iterator-universality/README.md
+[exp-5]: 5-shared-closure-helper/README.md
 
 ## Adding a record
 

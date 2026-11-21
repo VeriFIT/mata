@@ -3071,15 +3071,18 @@ TEST_CASE("mata::nft::Nft::is_in_lang[_prefix][_by_levels]()") {
 		nft.delta.add(1, 'a', 0);
 		nft.delta.add(2, 'a', 0);
 
-		std::vector<Word> rejecting_word(2, Word(8, 'a'));
+		// Each round of a's can take either branch, so an unbounded search expands 2^64 configurations
+		// before it rejects the word. The expansion bound must fall back before then.
+		std::vector<Word> rejecting_word(2, Word(64, 'a'));
 		rejecting_word[0].push_back('b');
 		rejecting_word[1].push_back('b');
 		for (const bool match_prefix : {false, true}) {
-			const bool expected{
-				nft.is_in_lang_by_levels(rejecting_word, match_prefix, JumpMode::AppendDontCares, true)
-			};
+			// The initial state is final, so the empty prefix is accepted.
+			const bool expected{match_prefix};
+			CHECK(nft.is_in_lang_by_levels(rejecting_word, match_prefix, JumpMode::AppendDontCares, true) == expected);
 			for (const JumpMode mode : {JumpMode::RepeatSymbol, JumpMode::NoJump}) {
 				CHECK(nft.is_in_lang_by_levels(rejecting_word, match_prefix, mode, false) == expected);
+				CHECK(nft.is_in_lang_by_levels(rejecting_word, match_prefix, mode, true) == expected);
 			}
 		}
 		// A DONT_CARE input matches ordinary symbol transitions too, including these two all-'a' branches.

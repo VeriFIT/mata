@@ -136,7 +136,11 @@ std::string describe(const unsigned seed, const Nft& nft) {
 /// The tuples of words, one word per level, of @p nft with no word longer than @p max_length: a search over the
 ///  paths that drops EPSILON, spells DONT_CARE out as each of the symbols {0, ..., num_of_symbols - 1}, and repeats
 ///  the symbol of a jump on every level it covers. Exact up to the bound, since a path never shortens a word.
-std::set<std::vector<Word>> bounded_tuples(const Nft& nft, const size_t num_of_symbols, const size_t max_length) {
+/// The words of @p dropped_levels are left out of the tuples and not bounded, which gives the projection of the
+///  relation, again exact up to the bound.
+std::set<std::vector<Word>> bounded_tuples(
+	const Nft& nft, const size_t num_of_symbols, const size_t max_length, const OrdVector<Level>& dropped_levels = {}
+) {
 	const size_t num_of_levels{nft.levels.num_of_levels};
 	using Configuration = std::pair<State, std::vector<Word>>;
 	std::set<Configuration> visited{};
@@ -150,7 +154,13 @@ std::set<std::vector<Word>> bounded_tuples(const Nft& nft, const size_t num_of_s
 		const Configuration configuration{std::move(worklist.back())};
 		worklist.pop_back();
 		const auto& [source, words] = configuration;
-		if (nft.final.contains(source)) { tuples.insert(words); }
+		if (nft.final.contains(source)) {
+			std::vector<Word> tuple{};
+			for (size_t level{0}; level < num_of_levels; ++level) {
+				if (!dropped_levels.contains(static_cast<Level>(level))) { tuple.push_back(words[level]); }
+			}
+			tuples.insert(std::move(tuple));
+		}
 		for (const auto& symbol_post : nft.delta[source]) {
 			std::vector<Symbol> symbols{};
 			if (symbol_post.symbol == DONT_CARE) {
@@ -164,6 +174,7 @@ std::set<std::vector<Word>> bounded_tuples(const Nft& nft, const size_t num_of_s
 					Configuration next{target, words};
 					bool is_within_bound{true};
 					for (size_t level{nft.levels[source]}; symbol != EPSILON && level < end_level; ++level) {
+						if (dropped_levels.contains(static_cast<Level>(level))) { continue; }
 						next.second[level].push_back(symbol);
 						is_within_bound = is_within_bound && next.second[level].size() <= max_length;
 					}
@@ -318,6 +329,68 @@ TEST_CASE("mata::nft differential: remove_epsilon() keeps the relation", "[diffe
 		}
 	}
 	CHECK(shared_epsilon_successors > 0);
+}
+
+// project_out() keeps the relation of its input with the words of the projected levels left out, for every proper
+//  subset of the levels, including those that wrap around through level 0, such as {0, 2} of three levels. The
+//  jumps are read in the jump mode given to project_out() on both sides. On a trimmed input, the result is trimmed.
+TEST_CASE("mata::nft differential: project_out() leaves out the words of the projected levels", "[differential]") {
+	size_t num_of_nonempty{0};
+	size_t num_of_nonempty_wrapped{0};
+	size_t num_of_nonempty_with_jumps{0};
+	size_t num_of_nonempty_with_epsilon{0};
+	size_t num_of_nonempty_with_dont_care{0};
+	for (const JumpMode jump_mode : {JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+		for (unsigned seed{0}; seed < 300; ++seed) {
+			std::mt19937 rng{seed};
+			const size_t num_of_symbols{1 + seed % 2};
+			const size_t num_of_levels{2 + seed % 3};
+			const bool with_dont_care{seed % 3 == 1};
+			const bool with_epsilon{seed % 4 == 2};
+			const bool with_jumps{seed % 5 < 3};
+			const Nft nft{random_nft(
+				rng, 1 + draw(rng, 3), num_of_symbols, num_of_levels, with_dont_care, with_epsilon, with_jumps
+			)};
+			INFO(describe(seed, nft) << "jump mode " << static_cast<int>(jump_mode));
+			const Nft unwound{nft.unwind_jumps(OrdVector<Symbol>{DONT_CARE}, jump_mode)};
+			Nft trimmed{nft};
+			trimmed.trim();
+			const size_t max_length{num_of_levels == 2 ? 3U : 2U};
+			for (size_t mask{1}; mask + 1 < (size_t{1} << num_of_levels); ++mask) {
+				OrdVector<Level> projected{};
+				for (Level level{0}; level < num_of_levels; ++level) {
+					if ((mask >> level) & 1U) { projected.push_back(level); }
+				}
+				INFO("projected levels " << mask);
+				const Nft result{project_out(nft, projected, jump_mode)};
+				REQUIRE(result.levels.num_of_levels == num_of_levels - projected.size());
+				const std::set<std::vector<Word>> tuples{bounded_tuples(
+					result.unwind_jumps(OrdVector<Symbol>{DONT_CARE}, jump_mode), num_of_symbols, max_length
+				)};
+				CHECK(tuples == bounded_tuples(unwound, num_of_symbols, max_length, projected));
+
+				const Nft from_trimmed{project_out(trimmed, projected, jump_mode)};
+				Nft retrimmed{from_trimmed};
+				retrimmed.trim();
+				CHECK(retrimmed.num_of_states() == from_trimmed.num_of_states());
+				CHECK(retrimmed.delta.num_of_transitions() == from_trimmed.delta.num_of_transitions());
+
+				if (tuples.empty()) { continue; }
+				++num_of_nonempty;
+				if (projected.contains(0) && projected.contains(static_cast<Level>(num_of_levels - 1))) {
+					++num_of_nonempty_wrapped;
+				}
+				if (with_jumps && nft.contains_jump_transitions()) { ++num_of_nonempty_with_jumps; }
+				if (has_epsilon_transition(nft)) { ++num_of_nonempty_with_epsilon; }
+				if (with_dont_care) { ++num_of_nonempty_with_dont_care; }
+			}
+		}
+	}
+	CHECK(num_of_nonempty > 0);
+	CHECK(num_of_nonempty_wrapped > 0);
+	CHECK(num_of_nonempty_with_jumps > 0);
+	CHECK(num_of_nonempty_with_epsilon > 0);
+	CHECK(num_of_nonempty_with_dont_care > 0);
 }
 
 // An operand carries DONT_CARE or EPSILON, never both: General matches DONT_CARE with EPSILON (#763, item 7). For the
