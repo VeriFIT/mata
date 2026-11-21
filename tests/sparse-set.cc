@@ -361,6 +361,12 @@ TEST_CASE("mata::utils::SparseSet::erase(set) clears when the range aliases the 
 	empty.erase(empty);
 	CHECK(empty.empty());
 
+	SparseSet<State> subrange_source{std::initializer_list<State>{1, 3, 5, 7}};
+	subrange_source.erase(std::ranges::subrange(subrange_source.begin() + 1, subrange_source.end()));
+	CHECK(sorted_elements(subrange_source) == std::vector<State>{1});
+	subrange_source.erase(std::ranges::subrange(subrange_source));
+	CHECK(subrange_source.empty());
+
 	SparseSet<State> one{std::initializer_list<State>{7}};
 	one.erase(one);
 	CHECK(one.empty());

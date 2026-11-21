@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <concepts>
+#include <cstdint>
 #include <iterator>
 #include <ranges>
 #include <type_traits>
@@ -251,14 +252,28 @@ template <typename Number> class SparseSet {
 		MATA_ASSERT(consistent());
 	}
 
-	// Aliasing the whole set erases everything; walking the range would read past a pop_back-ed dense array.
+	// Ranges over our own dense array must be copied: every erased element pops the back, invalidating their iterators.
 	template <Iterable T> void erase(const T& set) {
-		if (&set == static_cast<const void*>(this)) {
-			clear();
-			MATA_ASSERT(consistent());
-			return;
+		const auto first{std::ranges::begin(set)};
+		const auto last{std::ranges::end(set)};
+		const auto address = [](const auto& iterator) -> const void* {
+			if constexpr (std::contiguous_iterator<decltype(iterator)>) {
+				return std::to_address(iterator);
+			} else {
+				return nullptr;
+			}
+		};
+		const auto first_address{reinterpret_cast<std::uintptr_t>(address(first))};
+		const auto last_address{reinterpret_cast<std::uintptr_t>(address(last))};
+		const auto dense_begin{reinterpret_cast<std::uintptr_t>(dense_.data())};
+		const auto dense_end{reinterpret_cast<std::uintptr_t>(dense_.data() + dense_.size())};
+		if (first_address >= dense_begin && first_address <= dense_end && last_address >= dense_begin &&
+			last_address <= dense_end) {
+			const std::vector<Number> copy{first, last};
+			erase(copy.begin(), copy.end());
+		} else {
+			erase(first, last);
 		}
-		erase(std::ranges::begin(set), std::ranges::end(set));
 	}
 
 	void erase(const std::initializer_list<Number>& list) { erase(list.begin(), list.end()); }
