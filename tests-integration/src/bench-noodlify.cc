@@ -24,7 +24,9 @@
 #include "mata/nfa/builder.hh"
 
 #include <algorithm>
+#include <cstddef>
 #include <exception>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <vector>
@@ -72,6 +74,9 @@ int main(int argc, char* argv[]) {
 		std::vector<std::string> lhs_files(args.begin(), separator);
 		std::vector<std::string> rhs_files(separator + 1, args.end());
 		if (lhs_files.empty() || rhs_files.empty()) { return usage(argv[0]); }
+		// Load both sides together: separate mintermizations could give one number to different predicates.
+		std::vector<std::string> equation_files{lhs_files};
+		equation_files.insert(equation_files.end(), rhs_files.begin(), rhs_files.end());
 		mata::OnTheFlyAlphabet alphabet;
 		std::vector<Nfa> lhs_automata;
 		std::vector<Nfa> rhs_automata;
