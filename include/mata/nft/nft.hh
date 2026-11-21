@@ -1843,10 +1843,11 @@ Nft intersection(
  * of @c DONT_CARE.
  * @param[in] composition_mode Mode of composition to use. Default is Auto, which takes FastNoJump for one
  *                             synchronization level per NFT when @p jump_mode is NoJump, or when neither NFT has a
- *                             jump transition or DONT_CARE and both have EPSILON only on transitions from level 0 to
- *                             level 0 of NFTs with more than one level, outside @c JumpMode::AppendDontCares (the jump
- *                             mode then does not matter, and the result is the relation of General up to the
- *                             placement of EPSILON), and General otherwise. General mode supports all NFTs, while
+ *                             jump transition or DONT_CARE and both use EPSILON only on transitions to the next level
+ *                             or from level 0 to level 0 of NFTs with more than one level, outside
+ *                             @c JumpMode::AppendDontCares (the jump mode then does not matter, and the result is the
+ *                             relation of General up to the placement of EPSILON), and General otherwise. General
+ *                             mode supports all NFTs, while
  *                             FastNoJump mode is optimized for NFTs without jump transitions and with only one
  *                             synchronization level.
  * @param[in] normalization How to normalize the result after the construction; see @c CompositionNormalization.
@@ -1921,10 +1922,11 @@ std::shared_ptr<mata::AlphabetLevels> compose_alphabets(
  * of @c DONT_CARE.
  * @param[in] composition_mode Mode of composition to use. Default is Auto, which takes FastNoJump for one
  *                             synchronization level per NFT when @p jump_mode is NoJump, or when neither NFT has a
- *                             jump transition or DONT_CARE and both have EPSILON only on transitions from level 0 to
- *                             level 0 of NFTs with more than one level, outside @c JumpMode::AppendDontCares (the jump
- *                             mode then does not matter, and the result is the relation of General up to the
- *                             placement of EPSILON), and General otherwise. General mode supports all NFTs, while
+ *                             jump transition or DONT_CARE and both use EPSILON only on transitions to the next level
+ *                             or from level 0 to level 0 of NFTs with more than one level, outside
+ *                             @c JumpMode::AppendDontCares (the jump mode then does not matter, and the result is the
+ *                             relation of General up to the placement of EPSILON), and General otherwise. General
+ *                             mode supports all NFTs, while
  *                             FastNoJump mode is optimized for NFTs without jump transitions and with only one
  *                             synchronization level.
  * @param[in] normalization How to normalize the result after the construction; see @c CompositionNormalization.
