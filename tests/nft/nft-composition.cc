@@ -4,6 +4,12 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include <format>
+#include <random>
+#include <set>
+#include <utility>
+#include <vector>
+
 #include "mata/nft/algorithms.hh"
 #include "mata/nft/builder.hh"
 #include "mata/nft/nft.hh"
@@ -11,6 +17,49 @@
 
 using namespace mata::nft;
 using namespace mata::utils;
+
+namespace {
+/// The tuples of words, one word per level, of @p nft with no word longer than @p max_length, EPSILON erased: the
+///  relation of a composition, which leaves the placement of EPSILON open. A jump repeats its symbol on every level
+///  it covers, and DONT_CARE reads as a letter. Exact up to the bound, since a path never shortens a word.
+std::set<std::vector<mata::Word>> epsilon_free_tuples(const Nft& nft, const size_t max_length = 6) {
+	const size_t num_of_levels{nft.levels.num_of_levels};
+	using Configuration = std::pair<State, std::vector<mata::Word>>;
+	std::set<Configuration> visited{};
+	std::vector<Configuration> worklist{};
+	for (const State state : nft.initial) {
+		Configuration initial{state, std::vector<mata::Word>(num_of_levels)};
+		if (visited.insert(initial).second) { worklist.push_back(std::move(initial)); }
+	}
+	std::set<std::vector<mata::Word>> tuples{};
+	while (!worklist.empty()) {
+		const Configuration configuration{std::move(worklist.back())};
+		worklist.pop_back();
+		const auto& [source, words] = configuration;
+		if (nft.final.contains(source)) { tuples.insert(words); }
+		for (const SymbolPost& symbol_post : nft.delta[source]) {
+			for (const State target : symbol_post.targets) {
+				const size_t end_level{nft.levels[target] == 0 ? num_of_levels : nft.levels[target]};
+				Configuration next{target, words};
+				bool is_within_bound{true};
+				for (size_t level{nft.levels[source]}; symbol_post.symbol != EPSILON && level < end_level; ++level) {
+					next.second[level].push_back(symbol_post.symbol);
+					is_within_bound = is_within_bound && next.second[level].size() <= max_length;
+				}
+				if (is_within_bound && visited.insert(next).second) { worklist.push_back(std::move(next)); }
+			}
+		}
+	}
+	return tuples;
+}
+
+/// Whether @p lhs and @p rhs have the same levels and the same relation up to the placement of EPSILON, compared on
+///  the words up to @p max_length.
+bool same_epsilon_free_relation(const Nft& lhs, const Nft& rhs, const size_t max_length = 6) {
+	return lhs.levels.num_of_levels == rhs.levels.num_of_levels &&
+		   epsilon_free_tuples(lhs, max_length) == epsilon_free_tuples(rhs, max_length);
+}
+} // namespace
 
 TEST_CASE("Mata::nft::compose()") {
 	Nft lhs, rhs, expected, result;
@@ -149,7 +198,7 @@ TEST_CASE("Mata::nft::compose()") {
 
 				result = compose(lhs, rhs, OrdVector<Level>{1}, OrdVector<Level>{0});
 
-				CHECK(are_equivalent(result, expected));
+				CHECK(same_epsilon_free_relation(result, expected));
 			}
 		}
 
@@ -209,7 +258,7 @@ TEST_CASE("Mata::nft::compose()") {
 
 				result = compose(lhs, rhs);
 
-				CHECK(are_equivalent(result, expected));
+				CHECK(same_epsilon_free_relation(result, expected));
 			}
 
 			SECTION("Epsilon is even on non-synchronization levels") {
@@ -244,7 +293,7 @@ TEST_CASE("Mata::nft::compose()") {
 
 				result = compose(lhs, rhs);
 
-				CHECK(are_equivalent(result, expected));
+				CHECK(same_epsilon_free_relation(result, expected));
 			}
 		}
 	}
@@ -4347,4 +4396,144 @@ TEST_CASE("mata::nft::compose_fast_no_jump() reaches a shared waiting state out 
 		CHECK(fast.is_in_lang_by_levels({{0}, {}, {1}, {}}));
 		check_composition_modes_agree(lhs, rhs);
 	}
+}
+
+TEST_CASE("mata::nft::compose() checks the no-jump shape under JumpMode::NoJump - issue #753") {
+	constexpr mata::Symbol a{'a'}, b{'b'}, c{'c'};
+	Nft plain{Nft::with_levels({2, {0, 1}}, 2, {0}, {0})};
+	plain.delta.add(0, a, 1);
+	plain.delta.add(1, b, 0);
+	// A whole-round jump over c.
+	Nft whole_round_jump{plain};
+	whole_round_jump.delta.add(0, c, 0);
+	// A jump from level 0 to level 2 of three.
+	Nft level_jump{Nft::with_levels({3, {0, 1, 2}}, 3, {0}, {0})};
+	level_jump.delta.add(0, a, 1);
+	level_jump.delta.add(1, b, 2);
+	level_jump.delta.add(2, c, 0);
+	level_jump.delta.add(0, c, 2);
+
+	SECTION("every fast entry point throws, in Release builds too") {
+		for (const Nft& jumping : {whole_round_jump, level_jump}) {
+			CHECK_THROWS_AS(algorithms::compose_fast_no_jump(jumping, plain), std::invalid_argument);
+			CHECK_THROWS_AS(algorithms::compose_fast_no_jump(plain, jumping), std::invalid_argument);
+			CHECK_THROWS_AS(
+				algorithms::compose_fast(jumping, plain, 1, 0, true, JumpMode::NoJump), std::invalid_argument
+			);
+			CHECK_THROWS_AS(compose(jumping, plain, 1, 0, true, JumpMode::NoJump), std::invalid_argument);
+			CHECK_THROWS_AS(
+				compose(plain, jumping, 1, 0, true, JumpMode::NoJump, CompositionMode::FastNoJump),
+				std::invalid_argument
+			);
+		}
+	}
+
+	SECTION("the error names the caller, the operand and the transition") {
+		using Catch::Matchers::ContainsSubstring;
+		CHECK_THROWS_WITH(
+			algorithms::compose_fast_no_jump(plain, level_jump), ContainsSubstring("compose_fast_no_jump") &&
+																	 ContainsSubstring("rhs") &&
+																	 ContainsSubstring(std::format("0 -{}-> 2", c))
+		);
+		CHECK_THROWS_WITH(
+			compose(whole_round_jump, plain, 1, 0, true, JumpMode::NoJump),
+			ContainsSubstring("compose:") && ContainsSubstring("lhs") && ContainsSubstring(std::format("0 -{}-> 0", c))
+		);
+	}
+
+	SECTION("fast EPSILON transitions and other jump modes are accepted") {
+		Nft fast_epsilon{plain};
+		fast_epsilon.delta.add(0, EPSILON, 0);
+		CHECK_NOTHROW(algorithms::compose_fast_no_jump(fast_epsilon, fast_epsilon));
+		// One level has no jumps: every transition goes to the next round.
+		Nft one_level{Nft::with_levels({1, {0, 0}}, 2, {0}, {1})};
+		one_level.delta.add(0, a, 1);
+		one_level.delta.add(1, EPSILON, 0);
+		CHECK_NOTHROW(compose(one_level, plain, 0, 0, true, JumpMode::NoJump));
+		// The default jump mode reads the whole-round jump as c on both levels.
+		const Nft composed{compose(whole_round_jump, whole_round_jump)};
+		CHECK(composed.is_in_lang_by_levels({{c}, {c}}));
+		CHECK_NOTHROW(algorithms::compose_fast(level_jump, plain, 1, 0, true, JumpMode::RepeatSymbol));
+	}
+}
+
+namespace {
+/// A random level-respecting NFT with @p num_of_levels levels over {0, 1} whose zero-level states have fast EPSILON
+///  transitions (to zero-level states), from raw std::mt19937 output.
+Nft random_nft_with_fast_epsilon(std::mt19937& rng, const size_t num_of_levels) {
+	const auto draw{[&](const size_t bound) { return static_cast<size_t>(rng()) % bound; }};
+	const size_t num_of_states_per_level{1 + draw(3)};
+	Nft nft{Nft::with_levels(num_of_levels)};
+	const auto state_on{[&](const size_t level, const size_t index) {
+		return static_cast<State>(level * num_of_states_per_level + index);
+	}};
+	for (size_t level{0}; level < num_of_levels; ++level) {
+		for (size_t index{0}; index < num_of_states_per_level; ++index) {
+			nft.add_state_with_level(static_cast<Level>(level));
+		}
+	}
+	nft.initial.insert(state_on(0, draw(num_of_states_per_level)));
+	for (size_t index{0}; index < num_of_states_per_level; ++index) {
+		if (draw(3) == 0) { nft.final.insert(state_on(0, index)); }
+	}
+	for (size_t level{0}; level < num_of_levels; ++level) {
+		for (size_t index{0}; index < num_of_states_per_level; ++index) {
+			const State source{state_on(level, index)};
+			for (mata::Symbol symbol{0}; symbol < 2; ++symbol) {
+				for (size_t transition{0}, transitions{draw(3)}; transition < transitions; ++transition) {
+					nft.delta.add(source, symbol, state_on((level + 1) % num_of_levels, draw(num_of_states_per_level)));
+				}
+			}
+			if (level == 0 && draw(2) == 0) {
+				nft.delta.add(source, EPSILON, state_on(0, draw(num_of_states_per_level)));
+			}
+		}
+	}
+	return nft;
+}
+} // namespace
+
+TEST_CASE(
+	"mata::nft::compose() takes the fast composition on fast EPSILON transitions - issue #753", "[differential]"
+) {
+	size_t num_of_nonempty{0};
+	for (unsigned seed{0}; seed < 150; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t lhs_num_of_levels{2 + seed % 2};
+		const size_t rhs_num_of_levels{2 + (seed / 2) % 2};
+		const Nft lhs{random_nft_with_fast_epsilon(rng, lhs_num_of_levels)};
+		const Nft rhs{random_nft_with_fast_epsilon(rng, rhs_num_of_levels)};
+		INFO("seed " << seed << "\n" << lhs.print_to_mata() << "---\n" << rhs.print_to_mata());
+		for (Level lhs_sync_level{0}; lhs_sync_level < lhs_num_of_levels; ++lhs_sync_level) {
+			for (Level rhs_sync_level{0}; rhs_sync_level < rhs_num_of_levels; ++rhs_sync_level) {
+				for (const bool project_out : {true, false}) {
+					INFO("sync " << lhs_sync_level << "," << rhs_sync_level << " project_out " << project_out);
+					const Nft by_default{compose(lhs, rhs, lhs_sync_level, rhs_sync_level, project_out)};
+					const Nft fast{compose(
+						lhs, rhs, lhs_sync_level, rhs_sync_level, project_out, JumpMode::NoJump,
+						CompositionMode::FastNoJump
+					)};
+					const Nft general{compose(
+						lhs, rhs, lhs_sync_level, rhs_sync_level, project_out, JumpMode::RepeatSymbol,
+						CompositionMode::General
+					)};
+					// Auto takes the fast composition, whose relation is the general one up to EPSILON placement.
+					CHECK(are_equivalent(by_default, fast));
+					CHECK(same_epsilon_free_relation(by_default, general, 3));
+					// AppendDontCares reads a fast EPSILON transition as EPSILON followed by DONT_CARE.
+					const Nft append_dont_cares{
+						compose(lhs, rhs, lhs_sync_level, rhs_sync_level, project_out, JumpMode::AppendDontCares)
+					};
+					CHECK(are_equivalent(
+						append_dont_cares, compose(
+											   lhs, rhs, lhs_sync_level, rhs_sync_level, project_out,
+											   JumpMode::AppendDontCares, CompositionMode::General
+										   )
+					));
+					if (!general.is_lang_empty()) { ++num_of_nonempty; }
+				}
+			}
+		}
+	}
+	CHECK(num_of_nonempty > 0);
 }

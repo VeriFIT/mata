@@ -420,9 +420,9 @@ std::optional<Nft> compose_general_direct(
  *
  * @return A new NFT after the composition.
  * @throws std::invalid_argument When a synchronization level is out of range for its operand, when the composition
- *  would leave no levels, or, under a jump mode other than @c JumpMode::NoJump, when a transition goes to an earlier
- *  level of its round. The no-jump shape of the operands under @c JumpMode::NoJump is only checked by
- *  @c MATA_ASSERT.
+ *  would leave no levels, under a jump mode other than @c JumpMode::NoJump when a transition goes to an earlier level
+ *  of its round, and under @c JumpMode::NoJump when a transition goes to another level than the next one of its
+ *  round and is no fast EPSILON transition, which takes one pass over the transitions.
  */
 Nft compose_fast(
 	const Nft& lhs,
@@ -446,8 +446,9 @@ Nft compose_fast(
  * @param[in] normalization How to normalize the result after the construction; see @c CompositionNormalization.
  *
  * @return A new NFT after the composition.
- * @throws std::invalid_argument When a synchronization level is out of range for its operand, or when the
- *  composition would leave no levels. The no-jump shape of the operands is only checked by @c MATA_ASSERT.
+ * @throws std::invalid_argument When a synchronization level is out of range for its operand, when the composition
+ *  would leave no levels, or when a transition goes to another level than the next one of its round and is no fast
+ *  EPSILON transition (from level 0 to level 0), which takes one pass over the transitions.
  */
 Nft compose_fast_no_jump(
 	const Nft& lhs,
