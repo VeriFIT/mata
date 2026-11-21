@@ -239,7 +239,7 @@ template <typename Number> class SparseSet {
 		MATA_ASSERT(consistent());
 	}
 
-	template <Iterable T> void insert(const T& set) { insert(set.begin(), set.end()); }
+	template <Iterable T> void insert(const T& set) { insert(std::ranges::begin(set), std::ranges::end(set)); }
 
 	void insert(const std::initializer_list<Number>& list) { insert(list.begin(), list.end()); }
 
@@ -258,7 +258,7 @@ template <typename Number> class SparseSet {
 			MATA_ASSERT(consistent());
 			return;
 		}
-		erase(set.begin(), set.end());
+		erase(std::ranges::begin(set), std::ranges::end(set));
 	}
 
 	void erase(const std::initializer_list<Number>& list) { erase(list.begin(), list.end()); }

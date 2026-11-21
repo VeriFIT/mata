@@ -7885,7 +7885,7 @@ TEST_CASE("mata::Automaton::tarjan_scc_discover keeps components and callback be
 			all_states.insert(state);
 			return false;
 		};
-		const SparseSet<State> starting_states{{2}};
+		const SparseSet<State> starting_states{std::initializer_list<State>{2}};
 		aut.tarjan_scc_discover(callbacks, starting_states);
 		for (std::vector<State>& component : components) { std::ranges::sort(component); }
 		std::ranges::sort(components);

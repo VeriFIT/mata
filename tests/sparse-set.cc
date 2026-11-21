@@ -182,6 +182,11 @@ TEST_CASE("mata::utils::SparseSet constructors - issue #769") {
 	SECTION("a built-in array") {
 		const unsigned long values[]{2, 4};
 		CHECK(SparseSet<unsigned long>{values} == SparseSet<unsigned long>{2, 4});
+		SparseSet<unsigned long> from_array{};
+		from_array.insert(values);
+		CHECK(from_array == SparseSet<unsigned long>{2, 4});
+		from_array.erase(values);
+		CHECK(from_array.empty());
 	}
 
 	SECTION("a range whose sentinel differs from its iterator") {
@@ -247,7 +252,7 @@ TEST_CASE("mata::utils::SparseSet against std::set (randomized)") {
 		for (size_t step{0}; step < 60; ++step) {
 			INFO("step " << step);
 			const State value{static_cast<State>(draw(rng, UNIVERSE))};
-			switch (draw(rng, 10)) {
+			switch (draw(rng, 11)) {
 				case 0:
 				case 1:
 				case 2: {
