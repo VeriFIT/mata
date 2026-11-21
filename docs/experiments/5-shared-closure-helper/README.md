@@ -16,7 +16,7 @@ koniksedy's follow-up to #753 asks whether NFT `project_out()` and NFA `remove_e
 
 ## What was tried
 
-[`rejected.patch`](rejected.patch) adds an internal `EdgeComponents` helper. NFA epsilon removal uses its SCC decomposition instead of its specialized closure, and `project_out()` composes successor-component closures bottom-up into the flat closure buffers introduced by #1083. It is applied against the base above with `git apply rejected.patch`.
+[`rejected.patch`](rejected.patch) adds an internal `EdgeComponents` helper. NFA epsilon removal uses its SCC decomposition instead of its specialized closure, and `project_out()` composes successor-component closures bottom-up into the flat closure buffers introduced by #1083. It is `git format-patch` output against the base above; apply it with `git am rejected.patch`.
 
 ## Method
 
@@ -38,4 +38,16 @@ The candidate was 1.131x slower on projection and 1.612x slower on epsilon remov
 
 ## Reproducing
 
-Build the base and patched workspaces in Release with `make release BUILD_DIR=build/release`. Link the same standalone probe against each `build/release*/src/libmata.a`; its sources are derivable from the operations listed in Method. Alternate the executables five times on one pinned core.
+Create the base checkout and a patched one with `git am rejected.patch`, then build each with `make release-lib
+BUILD_DIR=build/release`. [`probe_closure.cc`](probe_closure.cc) is the exact probe: `projection` builds a two-level
+chain of 1000 level-0 states, each `q -0-> n+q -EPSILON-> q+1`, with initial state 0 and final state 999, and times
+`project_out({1}, RepeatSymbol)`. `epsilon` builds a 1000-state NFA from 0 to 999 with every `q -EPSILON-> q+1` and
+`q -0-> q+1` on even `q`, then times `remove_epsilon()`. Each run executes the operation ten times and prints the total
+milliseconds and a checksum. Compile it against each library:
+
+```sh
+g++ -std=gnu++23 -O3 -DNDEBUG -Iinclude -Ibuild/release/include -I3rdparty/simlib/include -I3rdparty/cudd/include \
+  docs/experiments/5-shared-closure-helper/probe_closure.cc build/release/src/libmata.a -lpthread -o probe
+```
+
+Alternate the base and candidate executables five times on one pinned core for each mode and compare medians.
