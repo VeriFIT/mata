@@ -879,6 +879,15 @@ TEST_CASE("mata::nfa::Nfa::get_word_from_complement()") {
 		CHECK(*result == Word{'a'});
 	}
 
+	SECTION("an explicit EPSILON letter stays in the witness") {
+		aut.initial = {0};
+		aut.final = {0};
+		const EnumAlphabet epsilon_alphabet{EPSILON};
+		result = aut.get_word_from_complement(&epsilon_alphabet);
+		REQUIRE(result.has_value());
+		CHECK(*result == Word{EPSILON});
+	}
+
 	SECTION("simple automaton 2") {
 		aut.initial = {0};
 		aut.final = {1};

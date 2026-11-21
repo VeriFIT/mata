@@ -2580,7 +2580,8 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
 			sync_it_advanced = synchronized_iterator.advance();
 		}
 	}
-	return nfa_complete.get_word();
+	// Every edge reads a symbol of the requested alphabet; none of them is an epsilon to omit from the witness.
+	return nfa_complete.get_word(std::nullopt);
 }
 
 Nfa mata::nfa::lang_difference(

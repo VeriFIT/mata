@@ -338,6 +338,14 @@ void check_nfa_properties(
 		CHECK(naive_cex.path.empty());
 	}
 
+	// Direct calls read EPSILON as a letter, so its counterexample keeps EPSILON.
+	Nfa empty_word_only{1};
+	empty_word_only.initial.insert(0);
+	empty_word_only.final.insert(0);
+	Run epsilon_cex{};
+	CHECK(!algorithms::is_universal_naive(empty_word_only, EnumAlphabet{EPSILON}, &epsilon_cex));
+	CHECK(epsilon_cex.word == Word{EPSILON});
+
 	// Both inclusion algorithms agree with each other and, when they report inclusion, with the
 	//  bounded check.
 	const bool naive_inclusion{is_included(nfa, other, alphabet.get(), NAIVE)};
