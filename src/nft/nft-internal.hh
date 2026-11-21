@@ -26,6 +26,16 @@ void validate_nft_levels(const Nft& nft, const char* operation);
  */
 bool unwinding_changes(const Nft& nft, const utils::OrdVector<Symbol>& dont_care_symbol_replacements);
 
+/**
+ * @brief Lay the levels of @p appended_num_of_states states, taken from @p appended, after the levels of the first
+ *  @p num_of_states states in @p levels, as the states of an operand shifted by @p num_of_states.
+ *
+ * A level vector may miss states past the delta (they are on @c DEFAULT_LEVEL) or hold surplus entries, so both
+ *  vectors are cut or padded to their state counts first; appending them as they are misplaces the shifted levels.
+ *  @p appended may be @p levels itself.
+ */
+void append_shifted_levels(Levels& levels, size_t num_of_states, const Levels& appended, size_t appended_num_of_states);
+
 } // namespace mata::nft::internal
 
 #endif // MATA_SRC_NFT_NFT_INTERNAL_HH_

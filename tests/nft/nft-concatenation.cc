@@ -842,6 +842,140 @@ TEST_CASE("mata::nft::concatenate() over epsilon with multiple finals and initia
 	}
 }
 
+TEST_CASE("mata::nft union and concatenation shift states beyond the delta") {
+	// Two levels. Delta 0 -a-> 1 -b-> 2; initial 4 and finals 4 and 5 lie past the delta: six states.
+	Nft lhs{Nft::with_levels(2)};
+	lhs.add_state_with_level(0);
+	lhs.add_state_with_level(1);
+	lhs.add_state_with_level(0);
+	lhs.delta.add(0, 'a', 1);
+	lhs.delta.add(1, 'b', 2);
+	lhs.initial.insert({0, 4});
+	lhs.final.insert({2, 4, 5});
+	// Delta 0 -c-> 1 -d-> 2; the initial and final state 4 lies past the delta: five states.
+	Nft rhs{Nft::with_levels(2)};
+	rhs.add_state_with_level(0);
+	rhs.add_state_with_level(1);
+	rhs.add_state_with_level(0);
+	rhs.delta.add(0, 'c', 1);
+	rhs.delta.add(1, 'd', 2);
+	rhs.initial.insert({0, 4});
+	rhs.final.insert({2, 4});
+	REQUIRE(lhs.delta.num_of_states() == 3);
+	REQUIRE(lhs.num_of_states() == 6);
+	REQUIRE(rhs.num_of_states() == 5);
+
+	// Every result shifts the rhs states, and their levels, by lhs.num_of_states() = 6, not by
+	//  lhs.delta.num_of_states() = 3. The states past the delta are on level 0.
+	constexpr State shift{6};
+	const std::vector<State> lhs_finals{2, 4, 5};
+	const Levels expected_levels{2, {0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0}};
+	const auto add_operand_transitions = [](Nft& nft) {
+		nft.delta.add(0, 'a', 1);
+		nft.delta.add(1, 'b', 2);
+		nft.delta.add(shift + 0, 'c', shift + 1);
+		nft.delta.add(shift + 1, 'd', shift + 2);
+	};
+
+	Nft expected_union{Nft::with_levels(expected_levels, 11)};
+	add_operand_transitions(expected_union);
+	expected_union.initial.insert({0, 4, shift + 0, shift + 4});
+	expected_union.final.insert({2, 4, 5, shift + 2, shift + 4});
+
+	// The lhs finals take over the transitions of the shifted rhs initials and stay final, since the rhs
+	//  initial 4 is final.
+	Nft expected_direct{Nft::with_levels(expected_levels, 11)};
+	add_operand_transitions(expected_direct);
+	for (const State lhs_final : lhs_finals) { expected_direct.delta.add(lhs_final, 'c', shift + 1); }
+	expected_direct.initial.insert({0, 4});
+	expected_direct.final.insert({2, 4, 5, shift + 2, shift + 4});
+
+	// One epsilon chain per lhs final, through a new state on level 1, to both shifted rhs initials.
+	Nft expected_eps{Nft::with_levels(Levels{2, {0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1}}, 14)};
+	add_operand_transitions(expected_eps);
+	for (State index{0}; index < lhs_finals.size(); ++index) {
+		expected_eps.delta.add(lhs_finals[index], EPSILON, 11 + index);
+		expected_eps.delta.add(11 + index, EPSILON, {shift + 0, shift + 4});
+	}
+	expected_eps.initial.insert({0, 4});
+	expected_eps.final.insert({shift + 2, shift + 4});
+
+	StateRenaming expected_lhs_renaming{};
+	for (State state{0}; state < 6; ++state) { expected_lhs_renaming[state] = state; }
+	StateRenaming expected_rhs_renaming{};
+	for (State state{0}; state < 5; ++state) { expected_rhs_renaming[state] = shift + state; }
+
+	const auto check_identical = [](const Nft& result, const Nft& expected) {
+		CHECK(result.is_identical(expected));
+		CHECK(result.num_of_states() == expected.num_of_states());
+	};
+	const auto check_relation = [](const Nft& result, const Nft& expected) {
+		REQUIRE(result.levels.size() == result.num_of_states());
+		CHECK(mata::nfa::are_equivalent(relation_as_nfa(result), relation_as_nfa(expected)));
+	};
+
+	// Operands whose level vectors stop at the delta, as after inserting initial and final states directly, and
+	//  operands whose level vectors cover every state.
+	for (const bool levels_cover_states : {false, true}) {
+		INFO("levels cover all states: " << levels_cover_states);
+		Nft lhs_operand{lhs};
+		Nft rhs_operand{rhs};
+		if (levels_cover_states) {
+			lhs_operand.levels.resize(lhs.num_of_states());
+			rhs_operand.levels.resize(rhs.num_of_states());
+		}
+
+		Nft united_in_place{lhs_operand};
+		united_in_place.unite_nondet_with(rhs_operand);
+		Nft united_in_place_consuming{lhs_operand};
+		united_in_place_consuming.unite_nondet_with(Nft{rhs_operand});
+		for (const Nft& result :
+			 {union_nondet(lhs_operand, rhs_operand), union_nondet(Nft{lhs_operand}, rhs_operand),
+			  union_nondet(Nft{lhs_operand}, Nft{rhs_operand}), united_in_place, united_in_place_consuming}) {
+			check_identical(result, expected_union);
+			check_relation(result, expected_union);
+		}
+
+		Nft concatenated_in_place{lhs_operand};
+		concatenated_in_place.concatenate(rhs_operand);
+		Nft concatenated_in_place_consuming{lhs_operand};
+		concatenated_in_place_consuming.concatenate(Nft{rhs_operand});
+		for (const Nft& result : {concatenated_in_place, concatenated_in_place_consuming}) {
+			check_identical(result, expected_direct);
+			check_relation(result, expected_direct);
+		}
+
+		for (const bool use_epsilon : {false, true}) {
+			INFO("use_epsilon: " << use_epsilon);
+			StateRenaming lhs_renaming{};
+			StateRenaming rhs_renaming{};
+			StateRenaming consumed_lhs_renaming{};
+			StateRenaming consumed_rhs_renaming{};
+			for (const Nft& result :
+				 {concatenate(lhs_operand, rhs_operand, use_epsilon, &lhs_renaming, &rhs_renaming),
+				  concatenate(Nft{lhs_operand}, rhs_operand, use_epsilon),
+				  concatenate(
+					  Nft{lhs_operand}, Nft{rhs_operand}, use_epsilon, &consumed_lhs_renaming, &consumed_rhs_renaming
+				  ),
+				  algorithms::concatenate_eps(lhs_operand, rhs_operand, EPSILON, use_epsilon),
+				  algorithms::concatenate_eps(Nft{lhs_operand}, rhs_operand, EPSILON, use_epsilon),
+				  algorithms::concatenate_eps(Nft{lhs_operand}, Nft{rhs_operand}, EPSILON, use_epsilon)}) {
+				// Without epsilon, the epsilon removal decides the shape; only the relation is fixed.
+				if (use_epsilon) {
+					check_identical(result, expected_eps);
+				} else {
+					CHECK(!result.delta.get_used_symbols().contains(EPSILON));
+				}
+				check_relation(result, expected_direct);
+			}
+			CHECK(lhs_renaming == expected_lhs_renaming);
+			CHECK(rhs_renaming == expected_rhs_renaming);
+			CHECK(consumed_lhs_renaming == expected_lhs_renaming);
+			CHECK(consumed_rhs_renaming == expected_rhs_renaming);
+		}
+	}
+}
+
 TEST_CASE("mata::nft::concatenate() inplace") {
 	SECTION("Empty automaton without states") {
 		Nft lhs{};
@@ -949,9 +1083,43 @@ TEST_CASE("mata::nft::concatenate() inplace") {
 		lhs.delta.add(0, 115, 0);
 		lhs.delta.add(0, 116, 0);
 
+		const Nft copy{lhs};
+		Nft expected{copy};
+		expected.concatenate(copy);
+
 		size_t lhs_size = lhs.num_of_states();
 		Nft result = lhs.concatenate(lhs);
 		CHECK(result.num_of_states() == lhs_size * 2);
+		CHECK(result.is_identical(expected));
+		CHECK(are_equivalent(result, concatenate(copy, copy)));
+	}
+
+	SECTION("the same transducer with several initial and final states, some past the delta and the levels") {
+		Nft aut{Nft::with_levels(2)};
+		aut.add_state_with_level(0);
+		aut.add_state_with_level(1);
+		aut.add_state_with_level(0);
+		aut.add_state_with_level(1);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		aut.delta.add(2, 'c', 3);
+		aut.delta.add(3, 'd', 0);
+		aut.initial.insert({0, 5});
+		aut.final.insert({2, 5});
+		const Nft copy{aut};
+		Nft expected{copy};
+		expected.concatenate(copy);
+		REQUIRE(expected.num_of_states() == 12);
+		CHECK(expected.levels == Levels{2, {0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0}});
+
+		Nft result{aut};
+		result.concatenate(result);
+		CHECK(result.is_identical(expected));
+		CHECK(are_equivalent(result, concatenate(copy, copy)));
+
+		Nft consumed{aut};
+		consumed.concatenate(std::move(consumed));
+		CHECK(consumed.is_identical(expected));
 	}
 }
 

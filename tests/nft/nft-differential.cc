@@ -238,24 +238,42 @@ TEST_CASE("mata::nft differential: the inclusion algorithms agree", "[differenti
 	CHECK(nondeterministic_inputs > 0);
 }
 
-TEST_CASE("mata::nft differential: the revert variants build the same transducer", "[differential]") {
-	for (unsigned seed{0}; seed < 100; ++seed) {
+namespace {
+
+/// The reversal of @p nft built one reversed transition at a time, over the same state domain. Reversing the
+///  transitions also reverses the order of the tapes, so a state on level l moves to level (L - l) mod L.
+Nft reference_revert(const Nft& nft) {
+	const size_t num_of_levels{nft.levels.num_of_levels};
+	std::vector<Level> levels(nft.num_of_states(), DEFAULT_LEVEL);
+	for (State state{0}; state < nft.levels.size(); ++state) {
+		levels[state] = static_cast<Level>((num_of_levels - nft.levels[state]) % num_of_levels);
+	}
+	Nft reverted{Nft::with_levels(Levels{num_of_levels, std::move(levels)}, nft.num_of_states())};
+	reverted.initial = nft.final;
+	reverted.final = nft.initial;
+	for (const Transition& transition : nft.delta.transitions()) {
+		reverted.delta.add(transition.target, transition.symbol, transition.source);
+	}
+	return reverted;
+}
+
+} // namespace
+
+TEST_CASE("mata::nft differential: revert is the per-transition reversal", "[differential]") {
+	for (unsigned seed{0}; seed < 200; ++seed) {
 		std::mt19937 rng{seed};
 		const size_t num_of_symbols{1 + seed % 3};
 		const size_t num_of_levels{1 + seed % 3};
-		const Nft nft{random_nft(rng, 1 + seed % 4, num_of_symbols, num_of_levels)};
+		// DONT_CARE is EPSILON - 1, so the symbols near EPSILON mix with the ordinary ones in one state post.
+		const Nft nft{random_nft(
+			rng, 1 + seed % 4, num_of_symbols, num_of_levels, (seed & 1U) != 0, (seed & 2U) != 0, (seed & 4U) != 0
+		)};
 		INFO(describe(seed, nft));
 
 		const Nft reverted{revert(nft)};
-		CHECK(reverted.delta == simple_revert(nft).delta);
-		CHECK(reverted.delta == fragile_revert(nft).delta);
-		CHECK(reverted.delta == somewhat_simple_revert(nft).delta);
-		CHECK(reverted.initial == simple_revert(nft).initial);
-		CHECK(reverted.final == simple_revert(nft).final);
-		CHECK(reverted.levels == fragile_revert(nft).levels);
-		CHECK(reverted.levels == simple_revert(nft).levels);
-		// Reverting twice gives the original transition relation back.
-		CHECK(revert(reverted).delta == nft.delta);
+		CHECK(reverted.is_identical(reference_revert(nft)));
+		CHECK(reverted.num_of_states() == nft.num_of_states());
+		CHECK(revert(reverted).is_identical(nft));
 	}
 }
 
