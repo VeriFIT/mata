@@ -47,6 +47,17 @@ Nft intersection(
 	return algorithms::product(lhs, rhs, both_final, prod_map, jump_mode, lhs_first_aux_state, rhs_first_aux_state);
 }
 
+static Nft product_impl(
+	const Nft& lhs,
+	const Nft& rhs,
+	const std::function<bool(State, State)>& final_condition,
+	ProductMap* product_map,
+	JumpMode jump_mode,
+	State lhs_first_aux_state,
+	State rhs_first_aux_state,
+	bool dont_care_matches_epsilon
+);
+
 // TODO: move this method to nft.hh? It is something one might want to use (e.g. for union, inclusion, equivalence of
 // DFAs).
 Nft mata::nft::algorithms::product(
@@ -57,6 +68,32 @@ Nft mata::nft::algorithms::product(
 	const JumpMode jump_mode,
 	const State lhs_first_aux_state,
 	const State rhs_first_aux_state
+) {
+	return product_impl(
+		lhs, rhs, final_condition, product_map, jump_mode, lhs_first_aux_state, rhs_first_aux_state, false
+	);
+}
+
+Nft mata::nft::algorithms::composition_product(
+	const Nft& lhs,
+	const Nft& rhs,
+	const std::function<bool(State, State)>& final_condition,
+	const JumpMode jump_mode,
+	const State lhs_first_aux_state,
+	const State rhs_first_aux_state
+) {
+	return product_impl(lhs, rhs, final_condition, nullptr, jump_mode, lhs_first_aux_state, rhs_first_aux_state, true);
+}
+
+static Nft product_impl(
+	const Nft& lhs,
+	const Nft& rhs,
+	const std::function<bool(State, State)>& final_condition,
+	ProductMap* product_map,
+	const JumpMode jump_mode,
+	const State lhs_first_aux_state,
+	const State rhs_first_aux_state,
+	const bool dont_care_matches_epsilon
 ) {
 	MATA_ASSERT(lhs.levels.num_of_levels == rhs.levels.num_of_levels);
 
@@ -112,6 +149,7 @@ Nft mata::nft::algorithms::product(
 		const auto dont_care_symbol_post_it = dont_care_state_post.find(DONT_CARE);
 		if (dont_care_symbol_post_it == dont_care_state_post.end()) { return; }
 		for (const auto& specific_symbol_post : specific_state_post) {
+			if (!dont_care_matches_epsilon && specific_symbol_post.symbol == EPSILON) { continue; }
 			product_targets.clear();
 			for (const State dont_care_target : dont_care_symbol_post_it->targets) {
 				const Level dont_care_target_level =

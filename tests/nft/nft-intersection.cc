@@ -1055,6 +1055,23 @@ TEST_CASE("mata::nft::intersection() keeps exactly the symbols both state posts 
 	CHECK(result.final.contains(prod_map[{3, 3}]));
 }
 
+TEST_CASE("mata::nft::intersection() does not match DONT_CARE with EPSILON (#987)") {
+	Nft any_symbol{Nft::with_levels(1, 2, {0}, {1})};
+	any_symbol.delta.add(0, DONT_CARE, 1);
+	Nft nothing{Nft::with_levels(1, 2, {0}, {1})};
+	nothing.delta.add(0, EPSILON, 1);
+
+	for (const Nft& result : {intersection(any_symbol, nothing), intersection(nothing, any_symbol)}) {
+		CHECK(result.is_lang_empty());
+		CHECK(!result.is_in_lang(mata::Word{}));
+	}
+
+	Nft letter{Nft::with_levels(1, 2, {0}, {1})};
+	letter.delta.add(0, 'a', 1);
+	CHECK(intersection(any_symbol, letter).is_in_lang(mata::Word{'a'}));
+	CHECK(intersection(letter, any_symbol).is_in_lang(mata::Word{'a'}));
+}
+
 TEST_CASE("mata::nft::algorithms::product() takes a named final-state predicate - issue #769") {
 	Nft lhs{Nft::with_levels(1, 2, {0}, {1})};
 	lhs.delta.add(0, 'a', 1);
