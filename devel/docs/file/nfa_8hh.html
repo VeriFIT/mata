@@ -706,25 +706,43 @@ Epsilon transitions are removed from copies of the operands that have them. </p>
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa6revertERK3Nfa">
 <span id="_CPPv3N4mata3nfa6revertERK3Nfa"></span><span id="_CPPv2N4mata3nfa6revertERK3Nfa"></span><span id="mata::nfa::revert__NfaCR"></span><span class="target" id="namespacemata_1_1nfa_1af8069e56b9491f47fadca10629e631e6"></span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">revert</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata3nfa6revertERK3Nfa" title="Link to this definition">¶</a><br /></dt>
-<dd><p>Reverting the automaton by a counting sort (see <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1Delta_1aaabe753ed5b1a6d04ba7331f4c55bcb8"><span class="std std-ref"><span class="pre">Delta::reverted()</span></span></a></code>): much faster than the three insertion-based variants below, which are kept for benchmarking. </p>
+<dd><p>Reverting the automaton by a counting sort (see <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1Delta_1aaabe753ed5b1a6d04ba7331f4c55bcb8"><span class="std std-ref"><span class="pre">Delta::reverted()</span></span></a></code>). </p>
 </dd></dl>
 
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa14fragile_revertERK3Nfa">
 <span id="_CPPv3N4mata3nfa14fragile_revertERK3Nfa"></span><span id="_CPPv2N4mata3nfa14fragile_revertERK3Nfa"></span><span id="mata::nfa::fragile_revert__NfaCR"></span><span class="target" id="namespacemata_1_1nfa_1a68f6a4eb09ae17989ee1a10fe6f0a68e"></span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">fragile_revert</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata3nfa14fragile_revertERK3Nfa" title="Link to this definition">¶</a><br /></dt>
-<dd><p>This revert algorithm is fragile, uses low level accesses to <a class="reference internal" href="../namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1Nfa"><span class="std std-ref">Nfa</span></a> and static data structures, and is potentially dangerous when there are used symbols with large numbers (allocates an array indexed by symbols). It is asymptotically faster, however. For somewhat dense automata, the performance is the same or a little bit slower than simple_revert otherwise. Not affected by pre-reserving vectors. </p>
+<dd><p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd><p>Kept for source compatibility; forwards to <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1nfa.html#namespacemata_1_1nfa_1af8069e56b9491f47fadca10629e631e6"><span class="std std-ref"><span class="pre">revert()</span></span></a></code>. Call <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1nfa.html#namespacemata_1_1nfa_1af8069e56b9491f47fadca10629e631e6"><span class="std std-ref"><span class="pre">revert()</span></span></a></code> instead. </p>
+</dd></dl>
+
+</p>
 </dd></dl>
 
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa13simple_revertERK3Nfa">
 <span id="_CPPv3N4mata3nfa13simple_revertERK3Nfa"></span><span id="_CPPv2N4mata3nfa13simple_revertERK3Nfa"></span><span id="mata::nfa::simple_revert__NfaCR"></span><span class="target" id="namespacemata_1_1nfa_1ac1477f7199e1de1d2461ca42627b6a78"></span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">simple_revert</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata3nfa13simple_revertERK3Nfa" title="Link to this definition">¶</a><br /></dt>
-<dd><p>Reverting the automaton by a simple algorithm, which does a lot of random access addition to Post and <a class="reference internal" href="../namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1Move"><span class="std std-ref">Move</span></a>. Much affected by pre-reserving vectors. </p>
+<dd><p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd><p>Kept for source compatibility; forwards to <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1nfa.html#namespacemata_1_1nfa_1af8069e56b9491f47fadca10629e631e6"><span class="std std-ref"><span class="pre">revert()</span></span></a></code>. Call <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1nfa.html#namespacemata_1_1nfa_1af8069e56b9491f47fadca10629e631e6"><span class="std std-ref"><span class="pre">revert()</span></span></a></code> instead. </p>
+</dd></dl>
+
+</p>
 </dd></dl>
 
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4N4mata3nfa22somewhat_simple_revertERK3Nfa">
 <span id="_CPPv3N4mata3nfa22somewhat_simple_revertERK3Nfa"></span><span id="_CPPv2N4mata3nfa22somewhat_simple_revertERK3Nfa"></span><span id="mata::nfa::somewhat_simple_revert__NfaCR"></span><span class="target" id="namespacemata_1_1nfa_1a3076ab0b149b8cb2c7377a5deab838bb"></span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">somewhat_simple_revert</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1nfa_1_1Nfa.html#_CPPv4N4mata3nfa3NfaE" title="mata::nfa::Nfa"><span class="n"><span class="pre">Nfa</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">aut</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata3nfa22somewhat_simple_revertERK3Nfa" title="Link to this definition">¶</a><br /></dt>
-<dd><p>Reverting the automaton by a modification of the simple algorithm. It replaces random access addition to <a class="reference internal" href="../namespace/namespacemata_1_1nfa.html#classmata_1_1nfa_1_1SymbolPost"><span class="std std-ref">SymbolPost</span></a> by push_back and sorting later, so far seems the slowest of all, except on dense automata, where it is almost as slow as simple_revert. Candidate for removal. </p>
+<dd><p><dl>
+<dt class="sig sig-object cpp">
+<em><span class="pre">Deprecated:</span></em></dt>
+<dd><p>Kept for source compatibility; forwards to <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1nfa.html#namespacemata_1_1nfa_1af8069e56b9491f47fadca10629e631e6"><span class="std std-ref"><span class="pre">revert()</span></span></a></code>. Call <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1nfa.html#namespacemata_1_1nfa_1af8069e56b9491f47fadca10629e631e6"><span class="std std-ref"><span class="pre">revert()</span></span></a></code> instead. </p>
+</dd></dl>
+
+</p>
 </dd></dl>
 
 <dl class="cpp function">
@@ -2036,6 +2054,7 @@ Transitions over symbols outside of the chosen alphabet are ignored; the automat
 <li class="toctree-l2"><a class="reference internal" href="assert_8hh.html">File assert.hh</a></li>
 <li class="toctree-l2"><a class="reference internal" href="automaton_8hh.html">File automaton.hh</a></li>
 <li class="toctree-l2"><a class="reference internal" href="closed-set_8hh.html">File closed-set.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="concatenation-internal_8hh.html">File concatenation-internal.hh</a></li>
 <li class="toctree-l2"><a class="reference internal" href="delta-allocator_8hh.html">File delta-allocator.hh</a></li>
 <li class="toctree-l2"><a class="reference internal" href="explicit-section-reader_8hh.html">File explicit-section-reader.hh</a></li>
 <li class="toctree-l2"><a class="reference internal" href="generator-support_8hh.html">File generator-support.hh</a></li>
