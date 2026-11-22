@@ -372,6 +372,18 @@ def test_levels_basic():
     assert not mata_nft.Levels.can_follow(1, 1)
 
 
+def test_levels_reject_values_outside_unsigned_range():
+    assert list(mata_nft.Levels(2, [2**32 - 1])) == [2**32 - 1]
+    with pytest.raises(OverflowError):
+        mata_nft.Levels(2, [2**32])
+    with pytest.raises(OverflowError):
+        mata_nft.Levels(2, count=1, value=2**32)
+    with pytest.raises(OverflowError):
+        mata_nft.Levels(2).set(0, 2**32)
+    with pytest.raises(OverflowError):
+        mata_nft.Levels(2)[0] = 2**32
+
+
 def test_levels_get_minimal_level_of():
     levels = mata_nft.Levels(3, [0, 1, 2])
     assert levels.get_minimal_level_of({0, 1, 2}) == 0
