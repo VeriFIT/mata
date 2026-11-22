@@ -1,0 +1,5 @@
+Struct mata::OnTheFlyAlphabet::SortedSymbols
+============================================
+
+.. doxygenstruct:: mata::OnTheFlyAlphabet::SortedSymbols
+   :members:

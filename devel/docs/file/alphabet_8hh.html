@@ -883,6 +883,18 @@
 </dd></dl>
 
 <dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata16OnTheFlyAlphabet24get_alphabet_symbols_refEv">
+<span id="_CPPv3NK4mata16OnTheFlyAlphabet24get_alphabet_symbols_refEv"></span><span id="_CPPv2NK4mata16OnTheFlyAlphabet24get_alphabet_symbols_refEv"></span><span id="mata::OnTheFlyAlphabet::get_alphabet_symbols_refC"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a040d11afd087c93bb9f70150302bb602"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="delta-allocator_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I00EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">get_alphabet_symbols_ref</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Get the symbols of the alphabet, as <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1OnTheFlyAlphabet_1a3c0c3020b65d29e54dcd8baeea4e87ec"><span class="std std-ref"><span class="pre">get_alphabet_symbols()</span></span></a></code> does, without copying them. </p>
+<p>The sorted symbols are kept between calls and rebuilt only after the set of symbols changes. The reference stays valid until the alphabet is modified, moved from, or destroyed. Concurrent calls are safe as long as no thread modifies the alphabet. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Sorted symbols of the alphabet. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4NK4mata16OnTheFlyAlphabet5printERNSt7ostreamE">
 <span id="_CPPv3NK4mata16OnTheFlyAlphabet5printERNSt7ostreamE"></span><span id="_CPPv2NK4mata16OnTheFlyAlphabet5printERNSt7ostreamE"></span><span id="mata::OnTheFlyAlphabet::print__osRC"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a77e68c313e3ce2725b9875db0c4fc5f0"></span><span class="k"><span class="pre">virtual</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">ostream</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="n"><span class="pre">print</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">ostream</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">os</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">override</span></span><br /></dt>
 <dd><p>Prints the name to symbol pairs of the alphabet. </p>
@@ -1155,6 +1167,12 @@
 <div class="breathe-sectiondef docutils container">
 <p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-functions">Private Functions</p>
 <dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata16OnTheFlyAlphabet15collect_symbolsEv">
+<span id="_CPPv3NK4mata16OnTheFlyAlphabet15collect_symbolsEv"></span><span id="_CPPv2NK4mata16OnTheFlyAlphabet15collect_symbolsEv"></span><span id="mata::OnTheFlyAlphabet::collect_symbolsC"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a6ef1d05851e1cab12f6d1e1e59260298"></span><a class="reference internal" href="delta-allocator_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I00EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">collect_symbols</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
+<dd><p>Collect the symbols of <code class="docutils literal notranslate"><span class="pre">symbol_map_</span></code> in ascending order. </p>
+</dd></dl>
+
+<dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4NK4mata16OnTheFlyAlphabet10find_namesE6Symbol">
 <span id="_CPPv3NK4mata16OnTheFlyAlphabet10find_namesE6Symbol"></span><span id="_CPPv2NK4mata16OnTheFlyAlphabet10find_namesE6Symbol"></span><span id="mata::OnTheFlyAlphabet::find_names__SymbolC"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1a08e928075dfb15cf0354f1581f2c840e"></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet11SymbolNamesE" title="mata::OnTheFlyAlphabet::SymbolNames"><span class="n"><span class="pre">SymbolNames</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">find_names</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">symbol</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
 <dd></dd></dl>
@@ -1217,8 +1235,13 @@
 <dl class="cpp var">
 <dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet18next_symbol_value_E">
 <span id="_CPPv3N4mata16OnTheFlyAlphabet18next_symbol_value_E"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet18next_symbol_value_E"></span><span id="mata::OnTheFlyAlphabet::next_symbol_value___Symbol"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1ae5ca0690794f8662bdd97d94b1e68e29"></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">next_symbol_value_</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><br /></dt>
-<dd><p>Next value to be used for a newly added symbol. </p>
+<dd><p>Next value to be used for a newly added symbol. Not copied: a copy rebuilds it on its first read. </p>
 </dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet15sorted_symbols_E">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet15sorted_symbols_E"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet15sorted_symbols_E"></span><span id="mata::OnTheFlyAlphabet::sorted_symbols___SortedSymbols"></span><span class="target" id="classmata_1_1OnTheFlyAlphabet_1afd0aea6af27333a228cc31f77f9eccc1"></span><span class="k"><span class="pre">mutable</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet13SortedSymbolsE" title="mata::OnTheFlyAlphabet::SortedSymbols"><span class="n"><span class="pre">SortedSymbols</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sorted_symbols_</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><br /></dt>
+<dd></dd></dl>
 
 </div>
 <dl class="cpp struct">
@@ -1238,6 +1261,69 @@
 <span id="_CPPv3N4mata16OnTheFlyAlphabet11SymbolNames12num_of_namesE"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet11SymbolNames12num_of_namesE"></span><span id="mata::OnTheFlyAlphabet::SymbolNames::num_of_names__s"></span><span class="target" id="structmata_1_1OnTheFlyAlphabet_1_1SymbolNames_1a4b03a814e986eae2ba7f9d20622d6d70"></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">num_of_names</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">}</span></span><br /></dt>
 <dd><p>0 for a symbol without a name. </p>
 </dd></dl>
+
+</div>
+</dd></dl>
+
+<dl class="cpp struct">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet13SortedSymbolsE">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet13SortedSymbolsE"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet13SortedSymbolsE"></span><span id="mata::OnTheFlyAlphabet::SortedSymbols"></span><span class="target" id="structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols"></span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SortedSymbols</span></span></span><br /></dt>
+<dd><p>Sorted symbols of <code class="docutils literal notranslate"><span class="pre">symbol_map_</span></code>, built on the first read after the set of symbols changes. Concurrent const reads stay race-free: only a build takes <code class="docutils literal notranslate"><span class="pre">mutex</span></code>, and <code class="docutils literal notranslate"><span class="pre">valid</span></code> publishes the finished build to the readers. </p>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet13SortedSymbols13SortedSymbolsEv">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet13SortedSymbols13SortedSymbolsEv"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet13SortedSymbols13SortedSymbolsEv"></span><span id="mata::OnTheFlyAlphabet::SortedSymbols::SortedSymbols"></span><span class="target" id="structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols_1a1c66f27a0c1bd42a53ecb33c20531551"></span><span class="sig-name descname"><span class="n"><span class="pre">SortedSymbols</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet13SortedSymbols13SortedSymbolsERR13SortedSymbols">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet13SortedSymbols13SortedSymbolsERR13SortedSymbols"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet13SortedSymbols13SortedSymbolsERR13SortedSymbols"></span><span id="mata::OnTheFlyAlphabet::SortedSymbols::SortedSymbols__SortedSymbolsRR"></span><span class="target" id="structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols_1a25b9365169f36a1ce335158449ec6ba4"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">SortedSymbols</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet13SortedSymbols13SortedSymbolsERR13SortedSymbols" title="mata::OnTheFlyAlphabet::SortedSymbols::SortedSymbols"><span class="n"><span class="pre">SortedSymbols</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet13SortedSymbolsaSERR13SortedSymbols">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet13SortedSymbolsaSERR13SortedSymbols"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet13SortedSymbolsaSERR13SortedSymbols"></span><span id="mata::OnTheFlyAlphabet::SortedSymbols::assign-operator__SortedSymbolsRR"></span><span class="target" id="structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols_1a80a51fb3bd42bd96065fb29620e7d4cf"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet13SortedSymbolsE" title="mata::OnTheFlyAlphabet::SortedSymbols"><span class="n"><span class="pre">SortedSymbols</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet13SortedSymbolsE" title="mata::OnTheFlyAlphabet::SortedSymbols"><span class="n"><span class="pre">SortedSymbols</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">noexcept</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet13SortedSymbolsD0Ev">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet13SortedSymbolsD0Ev"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet13SortedSymbolsD0Ev"></span><span id="mata::OnTheFlyAlphabet::SortedSymbols::~SortedSymbols"></span><span class="target" id="structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols_1a12f2b588dbd5fed4370b0f48feb712a7"></span><span class="sig-name descname"><span class="n"><span class="pre">~SortedSymbols</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">default</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet13SortedSymbols13SortedSymbolsERK13SortedSymbols">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet13SortedSymbols13SortedSymbolsERK13SortedSymbols"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet13SortedSymbols13SortedSymbolsERK13SortedSymbols"></span><span id="mata::OnTheFlyAlphabet::SortedSymbols::SortedSymbols__SortedSymbolsCR"></span><span class="target" id="structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols_1afcada172ec7922ea0fb96a4e922e9b52"></span><span class="sig-name descname"><span class="n"><span class="pre">SortedSymbols</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet13SortedSymbols13SortedSymbolsERK13SortedSymbols" title="mata::OnTheFlyAlphabet::SortedSymbols::SortedSymbols"><span class="n"><span class="pre">SortedSymbols</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">delete</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet13SortedSymbolsaSERK13SortedSymbols">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet13SortedSymbolsaSERK13SortedSymbols"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet13SortedSymbolsaSERK13SortedSymbols"></span><span id="mata::OnTheFlyAlphabet::SortedSymbols::assign-operator__SortedSymbolsCR"></span><span class="target" id="structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols_1a13c9c5eda521fa535497224d454157da"></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet13SortedSymbolsE" title="mata::OnTheFlyAlphabet::SortedSymbols"><span class="n"><span class="pre">SortedSymbols</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata16OnTheFlyAlphabet13SortedSymbolsE" title="mata::OnTheFlyAlphabet::SortedSymbols"><span class="n"><span class="pre">SortedSymbols</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">delete</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet13SortedSymbols10invalidateEv">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet13SortedSymbols10invalidateEv"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet13SortedSymbols10invalidateEv"></span><span id="mata::OnTheFlyAlphabet::SortedSymbols::invalidate"></span><span class="target" id="structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols_1a893f1101c650c08c98612515c2b1a89c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">invalidate</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><br /></dt>
+<dd><p>Called by every change of the set of symbols, which already excludes concurrent readers. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-members">Public Members</p>
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet13SortedSymbols7symbolsE">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet13SortedSymbols7symbolsE"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet13SortedSymbols7symbolsE"></span><span id="mata::OnTheFlyAlphabet::SortedSymbols::symbols__utils::OrdVector:Symbol:"></span><span class="target" id="structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols_1a9b396d717da5c6e946b42d9bee838b43"></span><a class="reference internal" href="delta-allocator_8hh.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1OrdVector.html#_CPPv4I00EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../alphabet.html#_CPPv4N4mata6SymbolE" title="mata::Symbol"><span class="n"><span class="pre">Symbol</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">symbols</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet13SortedSymbols5validE">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet13SortedSymbols5validE"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet13SortedSymbols5validE"></span><span id="mata::OnTheFlyAlphabet::SortedSymbols::valid__std::atomic:b:"></span><span class="target" id="structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols_1a6a1c56a30fef59e8f25234c41362acc8"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">atomic</span></span><span class="p"><span class="pre">&lt;</span></span><span class="kt"><span class="pre">bool</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">valid</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="k"><span class="pre">false</span></span><span class="p"><span class="pre">}</span></span><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata16OnTheFlyAlphabet13SortedSymbols5mutexE">
+<span id="_CPPv3N4mata16OnTheFlyAlphabet13SortedSymbols5mutexE"></span><span id="_CPPv2N4mata16OnTheFlyAlphabet13SortedSymbols5mutexE"></span><span id="mata::OnTheFlyAlphabet::SortedSymbols::mutex__std::mutex"></span><span class="target" id="structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols_1a1be3f7fa26e4521098de5f1ec0f865f3"></span><a class="reference internal" href="../alphabet.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">mutex</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">mutex</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="p"><span class="pre">}</span></span><br /></dt>
+<dd></dd></dl>
 
 </div>
 </dd></dl>
