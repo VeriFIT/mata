@@ -80,7 +80,7 @@ Nft concatenate_eps_consuming(
 
 	// The lhs states keep their indices in the result, so its delta, initial states and levels move in as they are.
 	// The final states of lhs are only read here.
-	const utils::SparseSet<State> lhs_final_states{std::move(lhs.final)};
+	utils::SparseSet<State> lhs_final_states{std::move(lhs.final)};
 	Nft result{Nft::with_levels(num_of_levels)}; // Concatenated automaton.
 	result.delta = std::move(lhs.delta);
 	result.initial = std::move(lhs.initial);
@@ -119,7 +119,9 @@ Nft concatenate_eps_consuming(
 		result.delta.add(source, epsilon, std::span<const State>{shifted_rhs_initials});
 	}
 
-	// Make result final states.
+	// Make result final states, reusing the storage of the lhs final states, which spans the lhs states already.
+	result.final = std::move(lhs_final_states);
+	result.final.clear();
 	for (const State rhs_final_state : rhs.final) {
 		result.final.insert(static_cast<State>(lhs_states_num) + rhs_final_state);
 	}
