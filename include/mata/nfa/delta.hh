@@ -67,7 +67,8 @@ class SymbolPost {
 
 	SymbolPost() = default;
 	explicit SymbolPost(const Symbol symbol) : symbol{symbol} {}
-	SymbolPost(const Symbol symbol, const State state_to) : targets{state_to}, symbol{symbol} {}
+	/// Parentheses, not braces: braces pick the @c initializer_list constructor, which sorts the one-element list.
+	SymbolPost(const Symbol symbol, const State state_to) : targets(state_to), symbol{symbol} {}
 	/// @p states_to are sorted and duplicate-free, such as a @c StateSet.
 	SymbolPost(const Symbol symbol, const std::span<const State> states_to) : targets{states_to}, symbol{symbol} {}
 	SymbolPost(const Symbol symbol, SmallStateSet states_to) : targets{std::move(states_to)}, symbol{symbol} {}

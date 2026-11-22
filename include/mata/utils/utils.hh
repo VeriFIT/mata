@@ -313,10 +313,8 @@ template <class Tuple> struct TuplePrinter<Tuple, 1> {
 
 // This reserves space in a vector, to be used before push_back or insert.
 // Assuming the doubling extension strategy, it only makes the first reserve large, after that it leaves it to the
-// doubling. Might be worth thinking about it.
-//  around 30% speedup for fragile revert,
-//  more than 50% for simple revert,
-// (when testing on a stupid test case)
+// doubling. The revert speed-ups that once justified it are gone: no revert calls it any more, and #179 measured the
+// default revert faster without it.
 template <class Vector> void inline reserve_on_insert(Vector& vec, size_t needed_capacity = 0, size_t extension = 32) {
 	// return; //Try this to see the effect of calling this. It should not affect functionality.
 	if (vec.capacity() < extension) // if the size is already large enough, leave it to the default doubling strategy.

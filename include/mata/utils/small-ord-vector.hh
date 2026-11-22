@@ -327,6 +327,10 @@ class SmallOrdVector {
 		std::memcpy(&buffer_, &other.buffer_, sizeof(buffer_));
 		size_ = other.size_;
 		other.size_ = 0;
+		// Reset the bytes too: GCC otherwise reads the stale block while destroying a moved-from set. Do not
+		//  assign the union: a trivially copyable Key with a const member deletes its assignment.
+		const Buffer empty{};
+		std::memcpy(&other.buffer_, &empty, sizeof(empty));
 	}
 	/// Replace the content with the sorted, duplicate-free @p keys, which must not alias this set.
 	void assign_sorted(const std::span<const Key> keys) {
