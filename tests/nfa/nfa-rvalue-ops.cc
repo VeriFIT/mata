@@ -2,7 +2,9 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
+#include <set>
 #include <type_traits>
+#include <vector>
 
 #include "mata/nfa/algorithms.hh"
 #include "mata/nfa/nfa.hh"
@@ -10,6 +12,7 @@
 
 using namespace mata::nfa;
 using mata::Symbol;
+using mata::Word;
 
 namespace {
 
@@ -577,4 +580,112 @@ TEST_CASE("mata::nfa::Nfa ref-qualified in-place operations are selected by valu
 				  Nfa>);
 	static_assert(std::is_same_v<decltype(Nfa{}.concatenate(Nfa{})), Nfa>);
 	static_assert(!std::is_reference_v<decltype(Nfa{}.concatenate(Nfa{}))>);
+}
+
+TEST_CASE("mata::nfa union and concatenation shift states beyond the delta") {
+	// Delta 0 -a-> 1; initial 4 and finals 4 and 5 lie past the delta: six states, language {ε, a}.
+	Nfa lhs{};
+	lhs.delta.add(0, 'a', 1);
+	lhs.initial.insert({0, 4});
+	lhs.final.insert({1, 4, 5});
+	// Delta 0 -b-> 1; the initial and final state 3 lies past the delta: four states, language {ε, b}.
+	Nfa rhs{};
+	rhs.delta.add(0, 'b', 1);
+	rhs.initial.insert({0, 3});
+	rhs.final.insert({1, 3});
+	REQUIRE(lhs.delta.num_of_states() == 2);
+	REQUIRE(lhs.num_of_states() == 6);
+	REQUIRE(rhs.delta.num_of_states() == 2);
+	REQUIRE(rhs.num_of_states() == 4);
+
+	// Every result shifts the rhs states by lhs.num_of_states() = 6, not by lhs.delta.num_of_states() = 2.
+	constexpr State shift{6};
+	const std::vector<State> lhs_finals{1, 4, 5};
+	const auto accepted = [](const Nfa& nfa, const bool use_epsilon) {
+		std::set<Word> words{};
+		for (const Word& word : std::vector<Word>{{}, {'a'}, {'b'}, {'a', 'a'}, {'a', 'b'}, {'b', 'a'}, {'b', 'b'}}) {
+			if (nfa.is_in_lang(word, use_epsilon)) { words.insert(word); }
+		}
+		return words;
+	};
+
+	SECTION("union") {
+		Nfa expected{};
+		expected.delta.add(0, 'a', 1);
+		expected.delta.add(shift + 0, 'b', shift + 1);
+		expected.initial.insert({0, 4, shift + 0, shift + 3});
+		expected.final.insert({1, 4, 5, shift + 1, shift + 3});
+
+		Nfa in_place{lhs};
+		in_place.unite_nondet_with(rhs);
+		Nfa in_place_consuming{lhs};
+		in_place_consuming.unite_nondet_with(Nfa{rhs});
+		for (const Nfa& result :
+			 {union_nondet(lhs, rhs), union_nondet(Nfa{lhs}, rhs), union_nondet(Nfa{lhs}, Nfa{rhs}), in_place,
+			  in_place_consuming}) {
+			CHECK(result.is_identical(expected));
+			CHECK(result.num_of_states() == 10);
+			CHECK(accepted(result, false) == std::set<Word>{{}, {'a'}, {'b'}});
+		}
+	}
+
+	// The lhs finals take over the transitions of the shifted rhs initials and stay final, since the rhs
+	//  initial 3 is final.
+	Nfa expected_direct{};
+	expected_direct.delta.add(0, 'a', 1);
+	for (const State lhs_final : lhs_finals) { expected_direct.delta.add(lhs_final, 'b', shift + 1); }
+	expected_direct.delta.add(shift + 0, 'b', shift + 1);
+	expected_direct.initial.insert({0, 4});
+	expected_direct.final.insert({1, 4, 5, shift + 1, shift + 3});
+	const std::set<Word> concatenated_language{{}, {'a'}, {'b'}, {'a', 'b'}};
+
+	SECTION("member concatenate") {
+		Nfa in_place{lhs};
+		in_place.concatenate(rhs);
+		Nfa in_place_consuming{lhs};
+		in_place_consuming.concatenate(Nfa{rhs});
+		for (const Nfa& result : {in_place, in_place_consuming, Nfa{lhs}.concatenate(rhs)}) {
+			CHECK(result.is_identical(expected_direct));
+			CHECK(result.num_of_states() == 10);
+			CHECK(accepted(result, false) == concatenated_language);
+		}
+	}
+
+	SECTION("free concatenate and concatenate_eps") {
+		StateRenaming expected_lhs_renaming{};
+		for (State state{0}; state < 6; ++state) { expected_lhs_renaming[state] = state; }
+		StateRenaming expected_rhs_renaming{};
+		for (State state{0}; state < 4; ++state) { expected_rhs_renaming[state] = shift + state; }
+
+		// One epsilon post from every lhs final to both shifted rhs initials.
+		Nfa expected_eps{};
+		expected_eps.delta.add(0, 'a', 1);
+		for (const State lhs_final : lhs_finals) { expected_eps.delta.add(lhs_final, EPSILON, {shift + 0, shift + 3}); }
+		expected_eps.delta.add(shift + 0, 'b', shift + 1);
+		expected_eps.initial.insert({0, 4});
+		expected_eps.final.insert({shift + 1, shift + 3});
+
+		for (const bool use_epsilon : {false, true}) {
+			const Nfa& expected{use_epsilon ? expected_eps : expected_direct};
+			StateRenaming lhs_renaming{};
+			StateRenaming rhs_renaming{};
+			StateRenaming consumed_lhs_renaming{};
+			StateRenaming consumed_rhs_renaming{};
+			for (const Nfa& result :
+				 {concatenate(lhs, rhs, use_epsilon, &lhs_renaming, &rhs_renaming),
+				  concatenate(Nfa{lhs}, rhs, use_epsilon),
+				  concatenate(Nfa{lhs}, Nfa{rhs}, use_epsilon, &consumed_lhs_renaming, &consumed_rhs_renaming),
+				  algorithms::concatenate_eps(lhs, rhs, EPSILON, use_epsilon),
+				  algorithms::concatenate_eps(Nfa{lhs}, rhs, EPSILON, use_epsilon),
+				  algorithms::concatenate_eps(Nfa{lhs}, Nfa{rhs}, EPSILON, use_epsilon)}) {
+				CHECK(result.is_identical(expected));
+				CHECK(result.num_of_states() == 10);
+				CHECK(accepted(result, use_epsilon) == concatenated_language);
+			}
+			CHECK(lhs_renaming == expected_lhs_renaming);
+			CHECK(rhs_renaming == expected_rhs_renaming);
+			CHECK(consumed_lhs_renaming == expected_lhs_renaming);
+			CHECK(consumed_rhs_renaming == expected_rhs_renaming);
+		}
+	}
 }

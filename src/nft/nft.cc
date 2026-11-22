@@ -1803,6 +1803,18 @@ bool mata::nft::internal::unwinding_changes(const Nft& nft, const OrdVector<Symb
 	});
 }
 
+void mata::nft::internal::append_shifted_levels(
+	Levels& levels, const size_t num_of_states, const Levels& appended, const size_t appended_num_of_states
+) {
+	levels.resize(num_of_states);
+	// The source range is read only after the last resize, so `appended` may alias `levels`.
+	levels.resize(num_of_states + appended_num_of_states, DEFAULT_LEVEL);
+	std::copy_n(
+		appended.begin(), std::min(appended.size(), appended_num_of_states),
+		levels.begin() + static_cast<std::ptrdiff_t>(num_of_states)
+	);
+}
+
 mata::nfa::Nfa
 	Nft::to_nfa_update_copy(const OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) const {
 	internal::validate_nft_levels(*this, "to_nfa_update_copy");

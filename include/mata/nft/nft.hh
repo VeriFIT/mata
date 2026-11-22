@@ -85,8 +85,7 @@
 #ifndef MATA_NFT_HH_
 #define MATA_NFT_HH_
 
-// Static data structures, such as search stack, in algorithms. Might have some effect on some algorithms (like
-//  fragile_revert).
+// Static data structures, such as search stack, in algorithms. Might have some effect on some algorithms (like trim).
 // #define _STATIC_STRUCTURES_
 
 #include <cassert>
@@ -2190,24 +2189,16 @@ bool are_equivalent(
 	const ParameterMap& params = {{"algorithm", "antichains"}}
 );
 
-// Reverting the automaton by a counting sort (see @c Delta::reverted()): much faster than the three
-//  insertion-based variants below, which are kept for benchmarking.
+/// Reverting the automaton by a counting sort (see @c Delta::reverted()).
 Nft revert(const Nft& aut);
 
-// This revert algorithm is fragile, uses low level accesses to Nft and static data structures,
-// and it is potentially dangerous when there are used symbols with large numbers (allocates an array indexed by
-// symbols) It is faster asymptotically and for somewhat dense automata, the same or a little bit slower than
-// simple_revert otherwise. Not affected by pre-reserving vectors.
+/// @deprecated Kept for source compatibility; forwards to @c revert(). Call @c revert() instead.
 Nft fragile_revert(const Nft& aut);
 
-// Reverting the automaton by a simple algorithm, which does a lot of random access addition to Post and Move.
-//  Much affected by pre-reserving vectors.
+/// @deprecated Kept for source compatibility; forwards to @c revert(). Call @c revert() instead.
 Nft simple_revert(const Nft& aut);
 
-// Reverting the automaton by a modification of the simple algorithm.
-// It replaces random access addition to SymbolPost by push_back and sorting later, so far seems the slowest of all,
-// except on
-//  dense automata, where it is almost as slow as simple_revert. Candidate for removal.
+/// @deprecated Kept for source compatibility; forwards to @c revert(). Call @c revert() instead.
 Nft somewhat_simple_revert(const Nft& aut);
 
 /**

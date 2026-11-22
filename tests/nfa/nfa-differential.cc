@@ -230,6 +230,52 @@ std::shared_ptr<EnumAlphabet> alphabet_of(const size_t num_of_symbols) {
 	return alphabet;
 }
 
+/// The reversal of @p nfa built one reversed transition at a time, over the same state domain.
+Nfa reference_revert(const Nfa& nfa) {
+	Nfa reverted{nfa.num_of_states()};
+	reverted.initial = nfa.final;
+	reverted.final = nfa.initial;
+	for (const Transition& transition : nfa.delta.transitions()) {
+		reverted.delta.add(transition.target, transition.symbol, transition.source);
+	}
+	return reverted;
+}
+
+/// revert() builds the per-transition reversal, keeps the state domain, and reverting twice is the identity.
+void check_revert(const Nfa& nfa) {
+	const Nfa reverted{revert(nfa)};
+	CHECK(reverted.is_identical(reference_revert(nfa)));
+	CHECK(reverted.num_of_states() == nfa.num_of_states());
+	CHECK(revert(reverted).is_identical(nfa));
+}
+
+/// The member concatenation of @p lhs and @p rhs built one transition at a time: the rhs shifted by the lhs states,
+///  every lhs final state given each transition of each shifted rhs initial state, and kept final when an rhs
+///  initial state is final.
+Nfa reference_concatenate(const Nfa& lhs, const Nfa& rhs) {
+	const auto offset{static_cast<mata::nfa::State>(lhs.num_of_states())};
+	Nfa result{offset + rhs.num_of_states()};
+	result.initial = lhs.initial;
+	for (const Transition& transition : lhs.delta.transitions()) { result.delta.add(transition); }
+	for (const Transition& transition : rhs.delta.transitions()) {
+		result.delta.add(transition.source + offset, transition.symbol, transition.target + offset);
+	}
+	bool rhs_initial_is_final{false};
+	for (const mata::nfa::State rhs_initial : rhs.initial) {
+		rhs_initial_is_final = rhs_initial_is_final || rhs.final.contains(rhs_initial);
+		for (const mata::nfa::State lhs_final : lhs.final) {
+			for (const Move& move : rhs.delta[rhs_initial].moves()) {
+				result.delta.add(lhs_final, move.symbol, move.target + offset);
+			}
+		}
+	}
+	if (rhs_initial_is_final) {
+		for (const mata::nfa::State lhs_final : lhs.final) { result.final.insert(lhs_final); }
+	}
+	for (const mata::nfa::State rhs_final : rhs.final) { result.final.insert(rhs_final + offset); }
+	return result;
+}
+
 void check_shortest_words(const unsigned seed) {
 	std::mt19937 rng{seed};
 	const size_t num_of_states{2 + seed % 5};
@@ -302,12 +348,7 @@ void check_nfa_properties(
 	Nfa deterministic{determinize(nfa)};
 	deterministic.trim();
 
-	// The three revert variants build the same transition relation, and reverting twice gives
-	//  the original delta back.
-	const Nfa reverted{revert(nfa)};
-	CHECK(reverted.delta == fragile_revert(nfa).delta);
-	CHECK(reverted.delta == somewhat_simple_revert(nfa).delta);
-	CHECK(revert(reverted).delta == nfa.delta);
+	check_revert(nfa);
 
 	// Intersection accepts exactly the words both operands accept.
 	std::mt19937 other_rng{seed + 1'000};
@@ -706,7 +747,7 @@ TEST_CASE("mata::nfa differential: antichain inclusion on dense automata with mo
 	}
 }
 
-TEST_CASE("mata::nfa differential: the revert variants agree with epsilon transitions", "[differential]") {
+TEST_CASE("mata::nfa differential: revert with epsilon transitions", "[differential]") {
 	for (unsigned seed{0}; seed < 200; ++seed) {
 		std::mt19937 rng{seed};
 		const size_t num_of_states{2 + seed % 5};
@@ -716,22 +757,12 @@ TEST_CASE("mata::nfa differential: the revert variants agree with epsilon transi
 		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) { alphabet->add_new_symbol(std::to_string(symbol)); }
 		const Nfa nfa{random_nfa(rng, num_of_states, num_of_symbols, alphabet, EPSILON)};
 		INFO(describe(seed, nfa));
-
-		// Epsilon is the largest symbol, so the symbol-indexed fragile_revert has to keep it out of its
-		//  arrays while the counting sort of revert() does not see any difference.
-		const Nfa reverted{revert(nfa)};
-		CHECK(reverted.delta == simple_revert(nfa).delta);
-		CHECK(reverted.delta == fragile_revert(nfa).delta);
-		CHECK(reverted.delta == somewhat_simple_revert(nfa).delta);
-		CHECK(reverted.initial == simple_revert(nfa).initial);
-		CHECK(reverted.final == simple_revert(nfa).final);
-		CHECK(revert(reverted).delta == nfa.delta);
+		check_revert(nfa);
 	}
 }
 
 TEST_CASE("mata::nfa differential: revert with symbols near EPSILON", "[differential]") {
-	// fragile_revert is excluded on purpose: it allocates two vectors per symbol value up to the largest
-	//  one (EPSILON-1 here), which is exactly the flaw #751 removes from revert().
+	// The largest symbols cost revert() nothing extra: it allocates no symbol-indexed array.
 	for (unsigned seed{0}; seed < 200; ++seed) {
 		std::mt19937 rng{seed};
 		const size_t num_of_states{2 + seed % 4};
@@ -749,12 +780,37 @@ TEST_CASE("mata::nfa differential: revert with symbols near EPSILON", "[differen
 		}
 		INFO(describe(seed, nfa));
 
-		const Nfa reverted{revert(nfa)};
-		CHECK(reverted.delta == simple_revert(nfa).delta);
-		CHECK(reverted.delta == somewhat_simple_revert(nfa).delta);
-		CHECK(reverted.initial == simple_revert(nfa).initial);
-		CHECK(reverted.final == simple_revert(nfa).final);
-		CHECK(revert(reverted).delta == nfa.delta);
+		check_revert(nfa);
+	}
+}
+
+TEST_CASE("mata::nfa differential: member concatenation connects every final to every initial", "[differential]") {
+	for (unsigned seed{0}; seed < 200; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_states{2 + seed % 5};
+		const size_t num_of_symbols{1 + seed % 3};
+		const auto alphabet{alphabet_of(num_of_symbols)};
+		Nfa lhs{random_nfa(rng, num_of_states, num_of_symbols, alphabet)};
+		Nfa rhs{random_nfa(rng, num_of_states, num_of_symbols, alphabet, EPSILON)};
+		// Several rhs initial states, whose posts overlap, and initial and final states past the delta.
+		for (size_t extra{0}, extras{seed % 4}; extra < extras; ++extra) {
+			rhs.initial.insert(static_cast<mata::nfa::State>(draw(rng, num_of_states)));
+		}
+		if (seed % 3 == 0) {
+			lhs.final.insert(static_cast<mata::nfa::State>(num_of_states + 1));
+			rhs.initial.insert(static_cast<mata::nfa::State>(num_of_states + 2));
+		}
+		if (seed % 5 == 0) { rhs.final.insert(static_cast<mata::nfa::State>(num_of_states + 2)); }
+		INFO(describe(seed, lhs) + "\n---\n" + describe(seed, rhs));
+
+		const Nfa expected{reference_concatenate(lhs, rhs)};
+		Nfa result{lhs};
+		result.concatenate(rhs);
+		CHECK(result.is_identical(expected));
+		CHECK(result.num_of_states() == expected.num_of_states());
+		Nfa consumed{lhs};
+		consumed.concatenate(Nfa{rhs});
+		CHECK(consumed.is_identical(expected));
 	}
 }
 

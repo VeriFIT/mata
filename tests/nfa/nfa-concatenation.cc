@@ -781,9 +781,37 @@ TEST_CASE("mata::nfa::concatenate() inplace") {
 		lhs.delta.add(0, 115, 0);
 		lhs.delta.add(0, 116, 0);
 
+		const Nfa copy{lhs};
+		Nfa expected{copy};
+		expected.concatenate(copy);
+
 		size_t lhs_size = lhs.num_of_states();
 		Nfa result = lhs.concatenate(lhs);
 		CHECK(result.num_of_states() == lhs_size * 2);
+		CHECK(result.is_identical(expected));
+		CHECK(are_equivalent(result, concatenate(copy, copy)));
+	}
+
+	SECTION("the same automaton with several initial and final states, some past the delta") {
+		Nfa aut{};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 0);
+		aut.delta.add(1, 'c', 2);
+		aut.initial.insert({0, 3});
+		aut.final.insert({1, 3});
+		const Nfa copy{aut};
+		Nfa expected{copy};
+		expected.concatenate(copy);
+		REQUIRE(expected.num_of_states() == 8);
+
+		Nfa result{aut};
+		result.concatenate(result);
+		CHECK(result.is_identical(expected));
+		CHECK(are_equivalent(result, concatenate(copy, copy)));
+
+		Nfa consumed{aut};
+		consumed.concatenate(std::move(consumed));
+		CHECK(consumed.is_identical(expected));
 	}
 }
 

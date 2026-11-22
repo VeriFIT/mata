@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "concatenation-internal.hh"
 #include "mata/nfa/algorithms.hh"
 #include "mata/nfa/builder.hh"
 #include "mata/nfa/nfa.hh"
@@ -215,35 +216,13 @@ Nfa& Nfa::concatenate(const Nfa& aut) & {
 	const size_t n = this->num_of_states();
 	const size_t aut_n = aut.num_of_states();
 	check_num_of_states(n + aut_n);
-	auto upd_fnc = [&](const State st) { return static_cast<State>(st + n); };
-
-	// copy the information about aut to save the case when this is the same object as aut.
-	const utils::SparseSet<mata::nfa::State> aut_initial = aut.initial;
-	const utils::SparseSet<mata::nfa::State> aut_final = aut.final;
 
 	this->delta.allocate(n);
 	this->delta.append_shifted(aut.delta, static_cast<State>(n));
-
-	// set accepting states
-	utils::SparseSet<State> new_fin{};
-	new_fin.reserve(n + aut_n);
-	for (const State& aut_fin : aut_final) { new_fin.insert(upd_fnc(aut_fin)); }
-
-	// connect both parts
-	for (const State& ini : aut_initial) {
-		const StatePost& ini_post = this->delta[upd_fnc(ini)];
-		// is ini state also final?
-		const bool is_final = aut_final[ini];
-		for (const State& fin : this->final) {
-			if (is_final) { new_fin.insert(fin); }
-			for (const SymbolPost& ini_mv : ini_post) {
-				// TODO: this should be done efficiently in a delta method
-				// TODO: in fact it is not efficient for now
-				for (const State& dest : ini_mv.targets) { this->delta.add(fin, ini_mv.symbol, dest); }
-			}
-		}
-	}
-	this->final = new_fin;
+	// `aut` may be `*this`: its initial and final states are only read until the final states are replaced.
+	this->final = internal::connect_concatenation(
+		this->delta, this->final, aut.initial, aut.final, static_cast<State>(n), n + aut_n
+	);
 	return *this;
 }
 
@@ -258,35 +237,12 @@ Nfa& Nfa::concatenate(Nfa&& aut) & {
 	const size_t n = this->num_of_states();
 	const size_t aut_n = aut.num_of_states();
 	check_num_of_states(n + aut_n);
-	auto upd_fnc = [&](const State st) { return static_cast<State>(st + n); };
-
-	// The state sets of `aut` are still read after its delta has been consumed.
-	const utils::SparseSet<State> aut_initial{aut.initial};
-	const utils::SparseSet<State> aut_final{aut.final};
 
 	// Move the operand's state posts in; the shift by `n` is the renumbering the lvalue path copies for.
 	this->delta.append_shifted(std::move(aut.delta), static_cast<State>(n));
-
-	// set accepting states
-	utils::SparseSet<State> new_fin{};
-	new_fin.reserve(n + aut_n);
-	for (const State& aut_fin : aut_final) { new_fin.insert(upd_fnc(aut_fin)); }
-
-	// connect both parts
-	for (const State& ini : aut_initial) {
-		const StatePost& ini_post = this->delta[upd_fnc(ini)];
-		// is ini state also final?
-		const bool is_final = aut_final[ini];
-		for (const State& fin : this->final) {
-			if (is_final) { new_fin.insert(fin); }
-			for (const SymbolPost& ini_mv : ini_post) {
-				// TODO: this should be done efficiently in a delta method
-				// TODO: in fact it is not efficient for now
-				for (const State& dest : ini_mv.targets) { this->delta.add(fin, ini_mv.symbol, dest); }
-			}
-		}
-	}
-	this->final = new_fin;
+	this->final = internal::connect_concatenation(
+		this->delta, this->final, aut.initial, aut.final, static_cast<State>(n), n + aut_n
+	);
 
 	// Reset `aut` to leave it valid and empty; `clear()` keeps the state domain of the sparse sets.
 	aut = Nfa{};

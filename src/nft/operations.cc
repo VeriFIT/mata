@@ -23,6 +23,7 @@
 #include "mata/simlib/explicit_lts.hh"
 #include "mata/utils/assert.hh"
 #include "mata/utils/sparse-set.hh"
+#include "nft-internal.hh"
 
 using namespace mata::utils;
 using namespace mata::nft;
@@ -1123,186 +1124,8 @@ Nft mata::nft::insert_level(
 	return insert_levels(nft, new_levels_mask, new_level_alphabets, jump_mode);
 }
 
-Nft mata::nft::fragile_revert(const Nft& aut) {
-	const size_t num_of_states{aut.num_of_states()};
-
-	Nft result(num_of_states);
-
-	result.initial = aut.final;
-	result.final = aut.initial;
-	result.levels = revert_levels(aut.levels, num_of_states);
-
-	// Compute non-epsilon symbols.
-	OrdVector<Symbol> symbols = aut.delta.get_used_symbols();
-	if (symbols.empty()) { return result; }
-	if (symbols.back() == EPSILON) { symbols.pop_back(); }
-	// size of the "used alphabet", i.e. max symbol+1 or 0
-	const Symbol alphasize = (symbols.empty()) ? 0 : (symbols.back() + 1);
-
-#ifdef _STATIC_STRUCTURES_
-	// STATIC DATA STRUCTURES:
-	//  Not sure that it works ideally, whether the space for the inner vectors stays there.
-	static std::vector<std::vector<State>> sources;
-	static std::vector<std::vector<State>> targets;
-	static std::vector<State> e_sources;
-	static std::vector<State> e_targets;
-	if (alphasize > sources.size()) {
-		sources.resize(alphasize);
-		targets.resize(alphasize);
-	}
-
-	e_sources.clear();
-	e_targets.clear();
-
-	// WHEN ONLY MAX SYMBOL IS COMPUTED
-	//  for (int i = 0;i<alphasize;i++) {
-	//      for (int i = 0;i<alphasize;i++) {
-	//          if (!sources[i].empty())
-	//          {
-	//              sources[i].resize(0);
-	//              targets[i].resize(0);
-	//          }
-	//      }
-	//  }
-
-	// WHEN ALL SYMBOLS ARE COMPUTED
-	for (Symbol symbol : symbols) {
-		if (!sources[symbol].empty()) {
-			sources[symbol].clear();
-			targets[symbol].clear();
-		}
-	}
-#else
-	// NORMAL, NON-STATIC DATA STRUCTURES:
-	// All transition of delta are to be copied here, into two arrays of transition sources and targets indexed by the
-	// transition symbol.
-	// There is a special treatment for epsilon, since we want the arrays to be only as long as the largest symbol in
-	// the automaton, and epsilon is the maximum (so we don't want to have the maximum array length whenever epsilon is
-	// present)
-	std::vector<std::vector<State>> sources(alphasize);
-	std::vector<std::vector<State>> targets(alphasize);
-	std::vector<State> e_sources;
-	std::vector<State> e_targets;
-#endif
-
-	// Copy all transition with non-e symbols to the arrays of sources and targets indexed by symbols.
-	// Targets and sources of e-transitions go to the special place.
-	// Important: since we are going through delta in order of sources, the sources arrays are all ordered.
-	for (State source_state{0}; source_state < num_of_states; ++source_state) {
-		for (const SymbolPost& move : aut.delta[source_state]) {
-			if (move.symbol == EPSILON) {
-				for (const State target_state : move.targets) {
-					// reserve_on_insert(e_sources);
-					e_sources.push_back(source_state);
-					// reserve_on_insert(e_targets);
-					e_targets.push_back(target_state);
-				}
-			} else {
-				for (const State target_state : move.targets) {
-					// reserve_on_insert(sources[move.symbol]);
-					sources[move.symbol].push_back(source_state);
-					// reserve_on_insert(targets[move.symbol]);
-					targets[move.symbol].push_back(target_state);
-				}
-			}
-		}
-	}
-
-	// Now make the delta of the reversed automaton.
-	// Important: since sources are ordered, when adding them as targets, we can just push them back.
-	result.delta.reserve(num_of_states);
-
-	// adding non-e transitions
-	for (const Symbol symbol : symbols) {
-		for (size_t i{0}; i < sources[symbol].size(); ++i) {
-			const State tgt_state = sources[symbol][i];
-			const State src_state = targets[symbol][i];
-			StatePost& src_post = result.delta.mutable_state_post(src_state);
-			if (src_post.empty() || src_post.back().symbol != symbol) { src_post.push_back(SymbolPost(symbol)); }
-			src_post.back().push_back(tgt_state);
-		}
-	}
-
-	// adding e-transitions
-	for (size_t i{0}; i < e_sources.size(); ++i) {
-		const State tgt_state = e_sources[i];
-		const State src_state = e_targets[i];
-		StatePost& src_post = result.delta.mutable_state_post(src_state);
-		if (src_post.empty() || src_post.back().symbol != EPSILON) { src_post.push_back(SymbolPost(EPSILON)); }
-		src_post.back().push_back(tgt_state);
-	}
-
-	// sorting the targets
-	// Hm I don't know why I put this here, but it should not be needed ...
-	// for (State q = 0, states_num = result.delta.post_size(); q<states_num;++q) {
-	//     for (auto m = result.delta.get_mutable_post(q).begin(); m != result.delta.get_mutable_post(q).end(); ++m) {
-	//         sort_and_rmdupl(m->targets);
-	//     }
-	// }
-
-	return result;
-}
-
-Nft mata::nft::simple_revert(const Nft& aut) {
-	Nft result;
-	result.clear();
-
-	const size_t num_of_states{aut.num_of_states()};
-	result.delta.allocate(num_of_states);
-
-	for (State source_state{0}; source_state < num_of_states; ++source_state) {
-		for (const SymbolPost& transition : aut.delta[source_state]) {
-			for (const State target_state : transition.targets) {
-				result.delta.add(target_state, transition.symbol, source_state);
-			}
-		}
-	}
-
-	result.initial = aut.final;
-	result.final = aut.initial;
-	result.levels = revert_levels(aut.levels, num_of_states);
-
-	return result;
-}
-
-// not so great, can be removed
-Nft mata::nft::somewhat_simple_revert(const Nft& aut) {
-	const size_t num_of_states{aut.num_of_states()};
-	Nft result(num_of_states);
-
-	result.initial = aut.final;
-	result.final = aut.initial;
-	result.levels = revert_levels(aut.levels, num_of_states);
-
-	for (State source_state{0}; source_state < num_of_states; ++source_state) {
-		for (const SymbolPost& transition : aut.delta[source_state]) {
-			for (const State target_state : transition.targets) {
-				StatePost& post = result.delta.mutable_state_post(target_state);
-				// auto move = std::find(post.begin(),post.end(),Move(transition.symbol));
-				if (auto move = post.find(SymbolPost(transition.symbol)); move == post.end()) {
-					// post.push_back(Move(transition.symbol,sourceState));
-					post.insert(SymbolPost(transition.symbol, source_state));
-				} else {
-					move->push_back(source_state);
-				}
-				// move->insert(sourceState);
-			}
-		}
-	}
-
-	// sorting the targets
-	for (State q = 0, states_num = static_cast<State>(result.delta.num_of_states()); q < states_num; ++q) {
-		// Post & post = result.delta.get_mutable_post(q);
-		// utils::sort_and_rmdupl(post);
-		for (SymbolPost& m : result.delta.mutable_state_post(q)) { m.targets.sort_and_rmdupl(); }
-	}
-
-	return result;
-}
-
 Nft nft::revert(const Nft& aut) {
-	// The counting sort of Delta::reverted is much faster than the insertion-based variants below
-	//  (kept for benchmarking) and does not allocate any symbol-indexed arrays as fragile_revert does.
+	// The counting sort of Delta::reverted needs no symbol-indexed arrays and no per-transition insertion.
 	const size_t num_of_states{aut.num_of_states()};
 	Nft result{};
 	result.delta = aut.delta.reverted(num_of_states);
@@ -1311,6 +1134,12 @@ Nft nft::revert(const Nft& aut) {
 	result.levels = revert_levels(aut.levels, num_of_states);
 	return result;
 }
+
+Nft mata::nft::fragile_revert(const Nft& aut) { return revert(aut); }
+
+Nft mata::nft::simple_revert(const Nft& aut) { return revert(aut); }
+
+Nft mata::nft::somewhat_simple_revert(const Nft& aut) { return revert(aut); }
 
 namespace {
 /**
@@ -1806,7 +1635,7 @@ Nft& Nft::unite_nondet_with(const Nft& nft) & {
 
 	// Combine the levels of both NFTs.
 	this->levels.num_of_levels = std::max(this->levels.num_of_levels, nft.levels.num_of_levels);
-	this->levels.append(nft.levels);
+	internal::append_shifted_levels(this->levels, num_of_states_this, nft.levels, num_of_states_nft);
 
 	return *this;
 }
@@ -1851,7 +1680,7 @@ Nft& Nft::unite_nondet_with(Nft&& nft) & {
 
 	// Combine the levels of both NFTs.
 	this->levels.num_of_levels = std::max(this->levels.num_of_levels, nft_num_of_levels);
-	this->levels.append(nft.levels);
+	internal::append_shifted_levels(this->levels, num_of_states_this, nft.levels, num_of_states_nft);
 
 	nft = Nft::with_levels(nft_num_of_levels);
 	return *this;
