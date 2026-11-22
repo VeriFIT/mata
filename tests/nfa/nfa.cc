@@ -2,6 +2,7 @@
  * @brief Tests for Nondeterministic Finite Automata (NFAs).
  */
 
+#include <array>
 #include <random>
 #include <sstream>
 #include <unordered_set>
@@ -3457,6 +3458,36 @@ TEST_CASE("mata::nfa::is_included() antichains agree with naive on random automa
 		const bool naive_reverse{algorithms::is_included_naive(bigger, smaller, &alphabet, nullptr)};
 		const bool antichains_reverse{algorithms::is_included_antichains(bigger, smaller, &alphabet, nullptr)};
 		CHECK(naive_reverse == antichains_reverse);
+	}
+}
+
+TEST_CASE("mata::nfa naive inclusion and equivalence without an alphabet agree with antichains (#754)") {
+	// Without an alphabet, the naive algorithms complement over the letters of both operands. Each operand has a
+	//  letter of its own here, and epsilon transitions, which are no letter.
+	const ParameterMap naive{{"algorithm", "naive"}};
+	const ParameterMap antichains{{"algorithm", "antichains"}};
+	std::mt19937 gen{754};
+	for (size_t iteration{0}; iteration < 200; ++iteration) {
+		const size_t num_of_states{1 + (gen() % 5)};
+		const auto random_nfa{[&](const Symbol own_letter) {
+			Nfa nfa(num_of_states);
+			nfa.initial.insert(0);
+			const std::array<Symbol, 4> letters{0, 1, own_letter, EPSILON};
+			for (State source{0}; source < num_of_states; ++source) {
+				for (const Symbol letter : letters) {
+					if (gen() % 2 == 0) { nfa.delta.add(source, letter, static_cast<State>(gen() % num_of_states)); }
+				}
+				if (gen() % 3 == 0) { nfa.final.insert(source); }
+			}
+			return nfa;
+		}};
+		const Nfa lhs{random_nfa(7)};
+		// Every other instance uses the same letters in both operands.
+		const Nfa rhs{iteration % 2 == 0 ? random_nfa(7) : random_nfa(9)};
+		INFO("iteration " << iteration);
+		CHECK(is_included(lhs, rhs, nullptr, nullptr, naive) == is_included(lhs, rhs, nullptr, nullptr, antichains));
+		CHECK(is_included(rhs, lhs, nullptr, nullptr, naive) == is_included(rhs, lhs, nullptr, nullptr, antichains));
+		CHECK(are_equivalent(lhs, rhs, nullptr, naive) == are_equivalent(lhs, rhs, nullptr, antichains));
 	}
 }
 

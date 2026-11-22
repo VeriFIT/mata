@@ -5,8 +5,10 @@
 #define MATA_ALPHABET_HH
 
 #include <algorithm>
+#include <atomic>
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -391,6 +393,16 @@ class OnTheFlyAlphabet : public Alphabet {
 
 	utils::OrdVector<Symbol> get_alphabet_symbols() const override;
 
+	/**
+	 * @brief Get the symbols of the alphabet, as @c get_alphabet_symbols() does, without copying them.
+	 *
+	 * The sorted symbols are kept between calls and rebuilt only after the set of symbols changes. The reference
+	 *  stays valid until the alphabet is modified, moved from, or destroyed. Concurrent calls are safe as long as no
+	 *  thread modifies the alphabet.
+	 * @return Sorted symbols of the alphabet.
+	 */
+	const utils::OrdVector<Symbol>& get_alphabet_symbols_ref() const;
+
 	/// Prints the name to symbol pairs of the alphabet.
 	std::ostream& print(std::ostream& os) const override;
 
@@ -491,6 +503,32 @@ class OnTheFlyAlphabet : public Alphabet {
 		size_t num_of_names{0}; ///< 0 for a symbol without a name.
 	};
 
+	/// Sorted symbols of @c symbol_map_, built on the first read after the set of symbols changes. Concurrent const
+	///  reads stay race-free: only a build takes @c mutex, and @c valid publishes the finished build to the readers.
+	struct SortedSymbols {
+		utils::OrdVector<Symbol> symbols{};
+		std::atomic<bool> valid{false};
+		std::mutex mutex{};
+
+		SortedSymbols() = default;
+		SortedSymbols(SortedSymbols&& other) noexcept
+			: symbols{std::move(other.symbols)},
+			  valid{other.valid.exchange(false, std::memory_order_relaxed)} {}
+		SortedSymbols& operator=(SortedSymbols&& other) noexcept {
+			if (this != &other) {
+				symbols = std::move(other.symbols);
+				valid.store(other.valid.exchange(false, std::memory_order_relaxed), std::memory_order_relaxed);
+			}
+			return *this;
+		}
+		~SortedSymbols() = default;
+		SortedSymbols(const SortedSymbols&) = delete;
+		SortedSymbols& operator=(const SortedSymbols&) = delete;
+
+		/// Called by every change of the set of symbols, which already excludes concurrent readers.
+		void invalidate() { valid.store(false, std::memory_order_relaxed); }
+	};
+
 	StringToSymbolMap symbol_map_{}; ///< Map of string transition symbols to symbol values.
 	/// Reverse index of @c symbol_map_, indexed by symbol; symbols are usually numbered densely from 0. When several
 	///  names share a symbol, the first one registered is reported.
@@ -499,7 +537,11 @@ class OnTheFlyAlphabet : public Alphabet {
 	std::unordered_map<Symbol, SymbolNames> sparse_names_{};
 	size_t num_of_dense_symbols_{0}; ///< Number of named symbols in @c dense_names_.
 	Symbol next_symbol_value_{}; ///< Next value to be used for a newly added symbol.
+	/// Not copied: a copy rebuilds it on its first read.
+	mutable SortedSymbols sorted_symbols_{};
 
+	/// Collect the symbols of @c symbol_map_ in ascending order.
+	utils::OrdVector<Symbol> collect_symbols() const;
 	const SymbolNames* find_names(Symbol symbol) const;
 	/// The names of @p symbol, which has to be a symbol of @c symbol_map_.
 	SymbolNames& indexed_names(Symbol symbol);
@@ -556,6 +598,7 @@ class OnTheFlyAlphabet : public Alphabet {
 	}
 
 	void clear() override {
+		sorted_symbols_.invalidate();
 		symbol_map_.clear();
 		dense_names_.clear();
 		sparse_names_.clear();
