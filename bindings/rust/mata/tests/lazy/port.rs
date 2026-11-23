@@ -49,6 +49,15 @@ fn assert_emptiness(
 	Ok(())
 }
 
+/// Checks that `lhs` and `rhs` hold the same words: both differences are empty, each one query with one alphabet.
+fn assert_same_language(formula: &mut Formula, lhs: Term, rhs: Term) -> Result<(), Error> {
+	let not_lhs = formula.complement(lhs)?;
+	let not_rhs = formula.complement(rhs)?;
+	let lhs_only = formula.intersection(lhs, not_rhs)?;
+	let rhs_only = formula.intersection(rhs, not_lhs)?;
+	assert_emptiness(formula, [(lhs_only, true), (rhs_only, true)])
+}
+
 // Leaf NFA and NFT emptiness
 
 #[test]
@@ -148,7 +157,7 @@ fn de_morgan_complement_of_union() -> Result<(), Error> {
 	let not_epsilon = formula.complement(epsilon)?;
 	let rhs = formula.intersection(not_a, not_epsilon)?;
 
-	assert_eq!(formula.is_empty(lhs)?, formula.is_empty(rhs)?);
+	assert_same_language(&mut formula, lhs, rhs)?;
 
 	Ok(())
 }
@@ -164,7 +173,7 @@ fn de_morgan_complement_of_intersection() -> Result<(), Error> {
 	let not_b = formula.complement(b)?;
 	let rhs = formula.union(not_a, not_b)?;
 
-	assert_eq!(formula.is_empty(lhs)?, formula.is_empty(rhs)?);
+	assert_same_language(&mut formula, lhs, rhs)?;
 	assert!(!formula.is_empty(lhs)?);
 
 	Ok(())

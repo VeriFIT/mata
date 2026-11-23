@@ -22,9 +22,12 @@ fn patterns_parse_with_from_str() -> Result<(), Box<dyn std::error::Error>> {
 	let parsed = formula.leaf(&"a|b".parse::<Regex>()?)?;
 	let built = formula.leaf(&Regex::new("[ab]")?)?;
 	let not_built = formula.complement(built)?;
-	let difference = formula.intersection(parsed, not_built)?;
+	let parsed_only = formula.intersection(parsed, not_built)?;
+	let not_parsed = formula.complement(parsed)?;
+	let built_only = formula.intersection(built, not_parsed)?;
 
-	assert!(formula.is_empty(difference)?);
+	assert!(formula.is_empty(parsed_only)?);
+	assert!(formula.is_empty(built_only)?);
 
 	Ok(())
 }
