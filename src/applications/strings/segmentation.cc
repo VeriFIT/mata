@@ -7,9 +7,7 @@
 using namespace mata::nfa;
 using namespace mata::applications::strings;
 
-void seg_nfa::Segmentation::process_state_depth_pair(
-	const StateDepthTuple& state_depth_pair, std::deque<StateDepthTuple>& worklist
-) {
+void seg_nfa::Segmentation::process_state_depth_pair(const StateDepthTuple& state_depth_pair, Worklist& worklist) {
 	for (const StatePost& outgoing_post{automaton_.delta[state_depth_pair.state]};
 		 const SymbolPost& outgoing_move : outgoing_post) {
 		if (this->epsilons_.contains(outgoing_move.symbol)) {
@@ -21,7 +19,7 @@ void seg_nfa::Segmentation::process_state_depth_pair(
 }
 
 void seg_nfa::Segmentation::handle_epsilon_transitions(
-	const StateDepthTuple& state_depth_pair, const SymbolPost& move, std::deque<StateDepthTuple>& worklist
+	const StateDepthTuple& state_depth_pair, const SymbolPost& move, Worklist& worklist
 ) {
 	const EpsilonDepth depth{state_depth_pair.depth};
 	if (depth >= epsilon_transitions_by_depth_.size()) { epsilon_transitions_by_depth_.resize(depth + 1); }
@@ -42,37 +40,28 @@ void seg_nfa::Segmentation::handle_epsilon_transitions(
 
 	for (const State target_state : move.targets) {
 		depth_transitions.emplace_back(state_depth_pair.state, move.symbol, target_state);
-		worklist.push_back({.state = target_state, .depth = depth + 1, .eps_index = eps_index});
+		// Written also for a state queued before: the public map keeps the last write of every target.
 		last_eps_count_index_[target_state] = eps_index;
+		worklist.push({.state = target_state, .depth = depth + 1, .eps_index = eps_index});
 	}
 	span.end = depth_transitions.size();
 }
 
 void seg_nfa::Segmentation::add_transitions_to_worklist(
-	const StateDepthTuple& state_depth_pair, const SymbolPost& move, std::deque<StateDepthTuple>& worklist
+	const StateDepthTuple& state_depth_pair, const SymbolPost& move, Worklist& worklist
 ) {
 	for (const State target_state : move.targets) {
-		worklist.push_back(
+		last_eps_count_index_[target_state] = state_depth_pair.eps_index;
+		worklist.push(
 			{.state = target_state, .depth = state_depth_pair.depth, .eps_index = state_depth_pair.eps_index}
 		);
-		last_eps_count_index_[target_state] = state_depth_pair.eps_index;
 	}
 }
 
-std::deque<seg_nfa::Segmentation::StateDepthTuple> seg_nfa::Segmentation::initialize_worklist() const {
-	std::deque<StateDepthTuple> worklist{};
-
-	for (const State state : automaton_.initial) {
-		worklist.push_back(StateDepthTuple{.state = state, .depth = 0, .eps_index = 0});
-	}
+seg_nfa::Segmentation::Worklist seg_nfa::Segmentation::initialize_worklist() const {
+	Worklist worklist{.queue = {}, .queued = BoolVector(automaton_.num_of_states(), false)};
+	for (const State state : automaton_.initial) { worklist.push({.state = state, .depth = 0, .eps_index = 0}); }
 	return worklist;
-}
-
-std::unordered_map<State, bool> seg_nfa::Segmentation::initialize_visited_map() const {
-	std::unordered_map<State, bool> visited{};
-	const size_t state_num = automaton_.num_of_states();
-	for (State state{0}; state < state_num; ++state) { visited[state] = false; }
-	return visited;
 }
 
 void seg_nfa::Segmentation::split_aut_into_segments() {
@@ -167,17 +156,12 @@ void seg_nfa::Segmentation::compute_epsilon_depths() {
 	epsilon_counts_.emplace_back(epsilons_.size(), 0); // Seed of the initial states.
 	last_eps_count_index_.assign(automaton_.num_of_states(), no_eps_count);
 	epsilon_transitions_of_state_.resize(automaton_.num_of_states());
-	std::unordered_map<State, bool> visited{initialize_visited_map()};
-	std::deque<StateDepthTuple> worklist{initialize_worklist()};
+	Worklist worklist{initialize_worklist()};
 
-	while (!worklist.empty()) {
-		const StateDepthTuple state_depth_pair{worklist.front()};
-		worklist.pop_front();
-
-		if (!visited[state_depth_pair.state]) {
-			visited[state_depth_pair.state] = true;
-			process_state_depth_pair(state_depth_pair, worklist);
-		}
+	while (!worklist.queue.empty()) {
+		const StateDepthTuple state_depth_pair{worklist.queue.front()};
+		worklist.queue.pop_front();
+		process_state_depth_pair(state_depth_pair, worklist);
 	}
 
 	// Materialize the public map once, keeping the last-write-wins value of each target.
