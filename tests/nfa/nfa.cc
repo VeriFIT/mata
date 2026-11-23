@@ -3511,6 +3511,10 @@ TEST_CASE("mata::nfa naive inclusion uses lazy difference only for eligible Bool
 	no_initial.initial.clear();
 	CHECK(!algorithms::is_included_naive(all_final_cycle(7), no_initial, nullptr, nullptr));
 	CHECK(!algorithms::is_included_naive(any_letter, all_final_cycle(3), nullptr, nullptr));
+	// The left language is empty even though this automaton has an initial state and transitions.
+	Nfa non_accepting{all_final_cycle(7)};
+	non_accepting.final.clear();
+	CHECK(algorithms::is_included_naive(non_accepting, only_b, nullptr, nullptr));
 
 	// The supplied alphabet must be respected: words outside it cannot form a counterexample.
 	const EnumAlphabet just_a{static_cast<Symbol>('a')};

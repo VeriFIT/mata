@@ -47,6 +47,8 @@ bool mata::nfa::algorithms::is_included_naive(
 		cex->word.clear();
 		cex->path.clear();
 	}
+	// An empty left language is included in every right-hand language, without constructing a complement or product.
+	if (cex == nullptr && smaller.final.empty()) { return true; }
 	// Boolean queries on deterministic left inputs can stop at the first difference instead of constructing the full
 	// complement. The lazy difference determinizes its left input, so other inputs retain the legacy path to avoid
 	// subset-constructing them. It also requires epsilon-free inputs and the full alphabet used by the legacy path.
