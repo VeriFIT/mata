@@ -31,10 +31,12 @@ int main(int argc, char* argv[]) {
 	TIME_END(complement);
 
 	Nfa min_compl_aut;
+	Nfa second_complement;
 	TIME_BEGIN(complement_and_minize);
 	// > START OF PROFILED CODE
-	// Only complement and its callees will be measured
-	mata::nfa::plumbing::complement(&min_compl_aut, aut, alphabet, {{"algorithm", "classical"}, {"minimize", "true"}});
+	// Complement first, then minimize the complement, as this timer's name specifies.
+	mata::nfa::plumbing::complement(&second_complement, aut, alphabet);
+	mata::nfa::plumbing::minimize(&min_compl_aut, second_complement);
 	// > END OF PROFILED CODE
 	TIME_END(complement_and_minize);
 
