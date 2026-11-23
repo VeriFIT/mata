@@ -2,14 +2,15 @@
 title: Lazy automata operations - use cases, Mata Script, playground and strategies
 status: draft sketch
 date: 2026-11-23
-base: devel @ NZR (#1099); lazymat as in PR #1041 @ 6316ff869b85
+base: devel @ NZR (#1099); lazymat (to be renamed mata-lazy) as in PR #1041 @ 6316ff869b85
 related: [PR #1041]
 ---
 
 # Lazy automata operations: use cases and integration (design sketch)
 
-This is a working design for later implementation sessions. It builds on `lazymat`, the lazy Boolean and relational
-engine from [PR #1041](https://github.com/VeriFIT/mata/pull/1041) (`bindings/rust/lazymat`). It covers four use cases
+This is a working design for later implementation sessions. It builds on the lazy Boolean and relational engine from
+[PR #1041](https://github.com/VeriFIT/mata/pull/1041), submitted as `lazymat` (`bindings/rust/lazymat`) and renamed
+here to `mata-lazy` / `mata::lazy` (see [Naming and packaging](#naming-and-packaging)). It covers four use cases
 and the features they need:
 
 1. regular model checking (RMC) loops with a length abstraction,
@@ -40,6 +41,45 @@ implement in. Each milestone is one PR.
 | `.mata` format                   | NFAs, NFTs (`@NFT-explicit`, `%Levels`) and bit-vector NFAs (`@NFA-bits`). There are no NFTs over bit vectors.                                                                                                                                                                                                                                                                                        |
 | WS1S, LIA                        | No code. `examples/notebooks/example-01-ws1s-formulae.ipynb` builds one WS1S formula eagerly by hand, with hand-written atom automata and `"010"`-style track strings.                                                                                                                                                                                                                                |
 
+The table above describes PR #1041 as submitted, so it keeps the name `lazymat`. The rest of this document uses the
+new names.
+
+## Naming and packaging
+
+Decided: the lazy engine is part of Mata under the names `mata-lazy` (crate) and `mata::lazy` (Rust path). Typing
+`mata` must show everything Mata offers, the lazy variant included.
+
+| Layer            | Name                                                                                         |
+| ---------------- | -------------------------------------------------------------------------------------------- |
+| Cargo package    | `mata-lazy`, in `bindings/rust/mata-lazy` (was `bindings/rust/lazymat`), library `mata_lazy` |
+| Rust path        | `mata::lazy::{Formula, Term, Options, Automaton, …}`, re-exported from the `mata` crate      |
+| Mata Script      | `lazy:` namespace (`lazy:intersection`, `lazy:empty?`, …), next to `nfa:` and `nft:`         |
+| `mata` command   | `mata lazy <op> files…`, next to the direct commands `mata nfa`, `mata nft`, `mata strings`  |
+| C++, Python      | none; `mata::lazy` (C++) and `libmata.lazy` (Python) are reserved for bindings, if ever      |
+| Logic front-ends | the same rule: crate `mata-logic`, path `mata::logic::{ws1s, lia}`, script `ws1s:` / `lia:`  |
+
+**Dependency cycle.** `lazymat` depends on the `mata` crate for its Mata leaves (`src/mata.rs`: `Automaton` for
+`Nfa`/`Nft`, `materialize -> Nft`). So `mata` cannot simply re-export `mata-lazy`. Split by backend:
+
+- `mata-lazy` holds the backend-neutral engine: formulas, the `Automaton` trait, options, statistics, and the
+  `regex` and `rustfst` backends. It does **not** depend on `mata` or `mata-sys`. This keeps PR #1041's reason for
+  existing as a separate crate: it builds without a C++ toolchain, on tier-1 targets and `wasm32-unknown-unknown`.
+- The `mata` crate gets an optional dependency on `mata-lazy` behind a Cargo feature `lazy` (default on), with
+  `pub mod lazy { pub use mata_lazy::*; … }`. The module also holds the Mata adapters moved from `src/mata.rs`:
+  `impl mata_lazy::Automaton for Nfa / Nft` (allowed by the orphan rule, since `Nfa` is local to `mata`) and
+  `materialize`.
+- `materialize` currently fills an `Nft` from an internal leaf (`fill`). `mata-lazy` therefore needs a public,
+  backend-neutral export, for example `Formula::explore(term, &Options) -> Explored{states, initial, finals, moves}`.
+  `mata::lazy::materialize` converts that to an `Nft` or `Nfa`. Other backends can then materialise too.
+- Users of pure-Rust backends depend on `mata-lazy` directly. Everyone else uses `mata::lazy`.
+- Most of lazymat's tests and examples need the `mata` feature (`required-features = ["mata"]` in its
+  `Cargo.toml`). Move those to `bindings/rust/mata/tests` and `examples`, and keep the `regex` tests and the fuzz
+  crate in `mata-lazy`. A dev-dependency `mata-lazy → mata` would compile two copies of `mata-lazy`, and the
+  `Automaton` impls would not match the trait in the second copy.
+
+Whether the rename happens inside PR #1041 or in the first follow-up PR is for the PR author and maintainers to agree
+on (M0).
+
 ## Architecture
 
 ```mermaid
@@ -47,25 +87,25 @@ flowchart LR
   S[".matasc script"] --> P[mata-cli parser and checker]
   P --> E[mata-cli evaluator]
   E -- "nfa:/nft: ops (eager)" --> M[mata C++ via bindings/rust/mata]
-  E -- "lazy: builders" --> F["lazymat Formula (DAG)"]
+  E -- "lazy: builders" --> F["mata::lazy Formula (DAG)"]
   L["ws1s: / lia: front-ends"] --> F
   F --> PL["planner: rewrites + policy annotations"]
-  PL --> X["lazymat engine: check / find_word / materialize"]
+  PL --> X["mata::lazy engine: check / find_word / materialize"]
   X -- "leaves, explicit nodes" --> M
   W["playground worker (wasm)"] --> E
 ```
 
-- `lazymat` stays a library with no knowledge of scripts. `mata-cli` maps script values to `lazymat` terms.
-- The logic front-ends (WS1S, LIA) compile formulas into `lazymat` terms and do not call the engine themselves.
-- The planner sits between a formula and a query: rewrites inside `lazymat`, plus annotations supplied from outside
+- `mata::lazy` stays a library with no knowledge of scripts. `mata-cli` maps script values to `mata::lazy` terms.
+- The logic front-ends (WS1S, LIA) compile formulas into `mata::lazy` terms and do not call the engine themselves.
+- The planner sits between a formula and a query: rewrites inside `mata-lazy`, plus annotations supplied from outside
   (see [Strategies](#strategies-and-preprocessing)).
 
 ## Operations to support (all layers)
 
 The request lists intersection, union, complement, inclusion, membership, projection, composition and more. They
-map to `lazymat` as follows. "New" means the operation has to be added.
+map to `mata::lazy` as follows. "New" means the operation has to be added.
 
-| Operation                   | lazymat                                                   | Proposed script name                                    |
+| Operation                   | `mata::lazy`                                              | Proposed script name                                    |
 | --------------------------- | --------------------------------------------------------- | ------------------------------------------------------- |
 | leaf from Nfa/Nft value     | `leaf`, `leaf_over`                                       | `lazy:leaf a [:alphabet …]`                             |
 | union / intersection        | `union`, `intersection` (equal arity)                     | `lazy:union`, `lazy:intersection` (n-ary, folded)       |
@@ -87,7 +127,7 @@ map to `lazymat` as follows. "New" means the operation has to be added.
 | length bound (new)          | none                                                      | `:max-length n` on queries                              |
 | per-node statistics (new)   | only `Stats.explicit`                                     | `lazy:stats` record, `:explain true`                    |
 
-Queries take the `lazymat` options as keywords: `:max-states`, `:time-limit`, `:cache-budget`, `:antichain`,
+Queries take the `mata::lazy` options as keywords: `:max-states`, `:time-limit`, `:cache-budget`, `:antichain`,
 `:subsumption`, `:alphabet`, `:max-length` (new), `:plan` (new, see [Strategies](#strategies-and-preprocessing)).
 
 ## Use case 1: regular model checking loop
@@ -128,15 +168,25 @@ Which steps are lazy and which eager. This is the motivating example for mixing 
 | `R_{i+1} ⊆ R_i`                        | lazy  | Inclusion with antichains. The `ExplicitCache` of R_i is reused across rounds when the alphabets stay the same.                   |
 | `Init ∩ pre(T, …pre(T, Bad))`, i times | lazy  | A chain of i compositions that is never built. This is where the lazy approach should win the most.                               |
 
-### Length abstraction: two readings, to be decided
+### Length abstraction: both variants
 
-The request says "make all states final and search until a given length limit". This sketch supports both readings
-until the choice is made ([Open questions](#open-questions)).
+Decided: implement both. The finite-length abstraction from ARMC (B) is the one intended for the RMC loop. Bounded
+exploration (A), "make all states final and search to a length limit", is a query option for bug finding and as a
+cheap first pass.
 
-- **(A) Bounded exploration** (bug finding, parameterised by instance size). Make every state of the configuration
-  automaton final, which gives the prefixes of configurations. Search the lazy product to depth `L` only. The query
-  answers one of three ways: a witness (a real error of an instance of size ≤ `L`), `empty` (the search finished
-  before depth `L`), or `empty-up-to L`. Needed in `lazymat`:
+- **(B) Finite-length abstraction α_n from ARMC (primary).** Two states are merged when their forward languages of
+  words of length ≤ n are equal. The "all states final" variant compares the trace languages of length ≤ n instead.
+  This is an eager operation on an explicit NFA, proposed in Mata (C++, `src/nfa/`) as
+  `nfa:collapse-by-length a :length n`, with the keywords
+  - `:languages "words"` or `"traces"` (trace languages: all states final), and
+  - `:direction "forward"` or `"backward"`.
+
+  The refinement is n := n + 1, or, as in the paper, an abstraction refined by the spurious counterexample.
+
+- **(A) Bounded exploration.** Make every state of the configuration automaton final, which gives the prefixes of
+  configurations. Search the lazy product to depth `L` only. The query answers one of three ways: a witness (a real
+  error of an instance of size ≤ `L`), `empty` (the search finished before depth `L`), or `empty-up-to L`. Needed in
+  `mata-lazy`:
   - `Options::max_length(L)`: a depth counter in the depth-first search (`find_accepting`, stored per `Step`), and a
     new outcome `Outcome::Bounded{length}`. Breadth-first order would give shortest witnesses; consider it as a
     second search order.
@@ -144,13 +194,8 @@ until the choice is made ([Open questions](#open-questions)).
     final" is not the same as the prefix closure of the language, because it accepts dead macrostates too. It is
     exact only over trimmed nodes (`Leaf::build` trims leaves; explicit nodes are trimmed), so define it on leaves
     and explicit nodes, and reject it elsewhere or make the child explicit first.
-- **(B) Finite-length abstraction α_n from ARMC.** Two states are merged when their forward languages of words of
-  length ≤ n are equal. The "all states final" variant compares the trace languages of length ≤ n. This is an eager
-  operation on an explicit NFA: proposed as `nfa:collapse-by-length a :length n :languages words|traces
-:direction forward|backward` in Mata (C++, `src/nfa/`). The refinement is n := n + 1, or, as in the paper, an
-  abstraction refined by the spurious counterexample.
 
-### Script sketch (reading B, not checked against the interpreter)
+### Script sketch (variant B, not checked against the interpreter)
 
 ```scheme
 (mata-script "0.2.0" :requires (lazy))
@@ -183,9 +228,9 @@ until the choice is made ([Open questions](#open-questions)).
 
 Issues found while sketching:
 
-- **Formula growth.** A `lazymat` `Formula` only grows (`&mut` builders, nodes appended). A script loop that builds
+- **Formula growth.** A `mata::lazy` `Formula` only grows (`&mut` builders, nodes appended). A script loop that builds
   terms each round grows it without bound. Options: one `Formula` per top-level query, collected afterwards; or a
-  `lazymat` API that drops nodes not reachable from live terms. The `ExplicitCache` gives reuse across rounds only
+  `mata-lazy` API that drops nodes not reachable from live terms. The `ExplicitCache` gives reuse across rounds only
   inside one formula. This needs a decision in M2.
 - **Repeated import.** `lazy:leaf r` copies the reachable part of `r` each time. Memoise by the `Rc` pointer of the
   script value, as `optimize.rs` `Memo` already does.
@@ -198,9 +243,9 @@ smallest end-to-end test of `compose_on`, `identity`, `project` and `explicit`, 
 
 ## Use case 2: WS1S decision procedure
 
-### Encoding onto `lazymat`
+### Encoding onto `mata::lazy`
 
-- One tape per free variable, binary tape alphabet {0, 1}, read in lock step. This matches `lazymat` tapes directly.
+- One tape per free variable, binary tape alphabet {0, 1}, read in lock step. This matches `mata::lazy` tapes directly.
   The notebook's `"010"` strings become 3-tape symbols.
 - **Atoms** (`x ∈ X`, `x = y + 1`, `X ⊆ Y`, `x < y`, singleton constraints for first-order variables): small
   hand-written automata over 1-3 tapes. Write them as `Automaton` implementations (`src/automaton.rs`), or as Mata
@@ -224,12 +269,13 @@ smallest end-to-end test of `compose_on`, `identity`, `project` and `explicit`, 
 ### Front-end and placement
 
 - Parser for a MONA-like subset (`ex1`, `ex2`, `all1`, `all2`, `&`, `|`, `~`, `=>`, `<=>`, `in`, `sub`, `<`, `+1`,
-  `=`). Its output is a `lazymat` term plus a map from variables to tapes.
-- Placement, recommended: a new Rust crate `bindings/rust/mata-logic` with modules `ws1s` and `lia`, on top of
-  `lazymat`. Reasons: `lazymat` and `mata-cli` are Rust, the playground needs wasm, and an eager baseline is
-  available through `lazymat::materialize` or the `mata` crate. The alternative is C++ under
-  `src/applications/` (next to `strings`), which would reach the Python bindings, but it cannot use `lazymat`.
-  See [Open questions](#open-questions).
+  `=`). Its output is a `mata::lazy` term plus a map from variables to tapes.
+- Placement, recommended: a new Rust crate `mata-logic` (`bindings/rust/mata-logic`) with modules `ws1s` and `lia`,
+  on top of `mata-lazy`, re-exported as `mata::logic` like `mata::lazy` (see
+  [Naming and packaging](#naming-and-packaging)). Reasons: the engine and `mata-cli` are Rust, the playground needs
+  wasm, and an eager baseline is available through `mata::lazy::materialize` or the `mata` crate. The alternative is
+  C++ under `src/applications/` (next to `strings`), which would reach the Python bindings, but it cannot use the lazy
+  engine. See [Open questions](#open-questions).
 - Answers: `valid`, `satisfiable` with a model (decode the witness tapes into variable values), `unsatisfiable`.
 - Tests: the notebook formula `(x = y + 1 ∧ y = z + 1) → x = z + 2` must be `valid`. Run differential tests against
   the eager path: each node made `explicit` and built by Mata gives the same answer as the lazy path.
@@ -266,9 +312,9 @@ smallest end-to-end test of `compose_on`, `identity`, `project` and `explicit`, 
 ### Design
 
 - **Explicit `lazy:` namespace first.** Builders do no library work and produce a value of the new sort `Term`
-  (arity checked at run time). Queries run one `lazymat` `check`. This keeps design principle 2 intact: one query is
+  (arity checked at run time). Queries run one `mata::lazy` `check`. This keeps design principle 2 intact: one query is
   one library call, and builders make no call.
-- One `lazymat::Formula` per `Engine` (or per top-level query, see "Formula growth" above), held in a `RefCell`. Terms
+- One `mata::lazy::Formula` per `Engine` (or per top-level query, see "Formula growth" above), held in a `RefCell`. Terms
   from another formula give `ForeignTerm`, which the type checker cannot see. Keep a single formula unless memory
   forces otherwise.
 - **Later, automatic lazification** under `(set-option :optimize true)`: `nfa:`/`nft:` operations whose result
@@ -281,8 +327,9 @@ smallest end-to-end test of `compose_on`, `identity`, `project` and `explicit`, 
   playground only.
 - **Inputs**: `.mata` stays the format for automata (NFA, NFT, bit-vector NFA). The script is the format that holds
   the operations. Formulas (WS1S, LIA) come in as strings or as `declare-input … String` files.
-- **Dependency**: `mata-cli` gains a path dependency on `lazymat`, a workspace crate. It goes behind a Cargo
-  feature `lazy` (default on), so that a build without it stays possible.
+- **Dependency**: `mata-cli` uses `mata::lazy` through the `mata` crate's `lazy` feature, enabled by a `mata-cli`
+  feature `lazy` (default on), so that a build without it stays possible. The direct command `mata lazy <op>` maps to
+  the same operations as the script namespace `lazy:`.
 
 ### Outputs
 
@@ -296,7 +343,7 @@ smallest end-to-end test of `compose_on`, `identity`, `project` and `explicit`, 
 
 ### Proposal: a "Script" mode next to the existing operation mode
 
-- **Engine.** Build `mata-cli` as a library, with `lazymat` and `mata-logic`, for `wasm32-unknown-emscripten`.
+- **Engine.** Build `mata-cli` as a library, with `mata::lazy` and `mata::logic`, for `wasm32-unknown-emscripten`.
   Export one entry point `run_script(request_json) -> response_json`:
   - request: `{source, inputs: {name: text}, params, options}`;
   - response: `{records: [...], printed: [...], stats, error}`.
@@ -309,17 +356,17 @@ smallest end-to-end test of `compose_on`, `identity`, `project` and `explicit`, 
   - output: records (verdicts, `echo`, timings), witnesses, printed automata drawn through the existing
     DOT-to-SVG path with its size caps (120 states, 400 transitions; listing cut at 5000 transitions);
   - a statistics panel, and a formula-tree view with per-node statistics and annotations, which needs per-node
-    statistics in `lazymat` (M1).
+    statistics in `mata-lazy` (M1).
 - **Limits.** Pass the worker timeout (`TIMEOUT_MS = 20000`) to `:time-limit` a little below it, so that the user
   gets partial statistics (`Error::TimeLimit{stats}`) instead of a killed worker. Keep killing the worker as the
   backstop. Memory: the wasm module grows to 2 GB at most, so set `cache_budget` from it.
-- **Examples** (`examples.js`): token passing (RMC, reading B), the CONCUR 2024 invariant, the WS1S notebook formula,
+- **Examples** (`examples.js`): token passing (RMC, ARMC length abstraction), the CONCUR 2024 invariant, the WS1S notebook formula,
   a LIA example, and lazy inclusion of two regexes. URL-fragment sharing (`automata.js` `encodeState`) is extended
   with the script text.
 - **CI.** `.github/workflows/website.yml` builds the playground. Add the `mata-cli` wasm build and a Node smoke test
   next to `bindings/wasm/smoke-test.mjs`.
 - **Risk.** Native `mata-cli` runs scripts on a thread with a 1 GiB stack. On wasm32 it runs on the calling thread
-  (seen in the stack-depth failures on wasm before). Deep formulas are only safe because `lazymat` ranks set members
+  (seen in the stack-depth failures on wasm before). Deep formulas are only safe because the lazy engine ranks set members
   without recursion (commit 6316ff8). Test deep RMC unrollings on wasm.
 
 ## Strategies and preprocessing
@@ -329,7 +376,7 @@ smallest end-to-end test of `compose_on`, `identity`, `project` and `explicit`, 
 The same formula can run with different per-node choices: lazy or eager, operand order, pruning. The choices may
 come from fixed rules, from a learned or LLM-produced plan, or from the user. The **invariant**: annotations change
 the cost only, never the answer, except that a query may hit a limit. This is checkable: the fuzz crate
-(`bindings/rust/lazymat/fuzz`) runs every formula under random annotations and compares the answers.
+(`bindings/rust/mata-lazy/fuzz`) runs every formula under random annotations and compares the answers.
 
 ### Example from the request
 
@@ -345,7 +392,7 @@ outer intersection lazily.
 (lazy:empty? (lazy:intersection (lazy:intersection a b) c) :plan "plan.json")
 ```
 
-### Mechanism (proposed `lazymat` API)
+### Mechanism (proposed `mata::lazy` API)
 
 1. **Read-only plan view.** A public `Formula::view(term) -> PlanView`, a DAG of `NodeView{id, kind, arity,
 children, leaf_info{states, transitions, deterministic, tape_alphabet_sizes}, fan_out}`. It does not expose
@@ -357,7 +404,7 @@ children, leaf_info{states, transitions, deterministic, tape_alphabet_sizes}, fa
    - `subsumption: Option<bool>`, `antichain: Option<bool>`, `max_states: Option<usize>`.
 
    `Eager` generalises `ExplicitOptions`. Its minimise/determinise steps go through `materialize` → Mata → leaf,
-   since `lazymat` has no minimisation itself.
+   since `mata-lazy` has no minimisation itself.
 
 3. **Policies.** `trait Policy { fn plan(&self, view: &PlanView, history: Option<&Stats>) -> Annotations; }`:
    - `AllLazy`: today's behaviour and the default.
@@ -371,7 +418,7 @@ children, leaf_info{states, transitions, deterministic, tape_alphabet_sizes}, fa
      `mata script run --plan` or the playground's plan panel, so runs stay deterministic and reproducible.
    - `Portfolio` (native only): run k plans on threads with limits and take the first answer. This works because
      queries are `&self`.
-4. **Preprocessing passes** (in `lazymat`, which sees the whole DAG; `mata-cli` only maps scripts to builders and
+4. **Preprocessing passes** (in `mata-lazy`, which sees the whole DAG; `mata-cli` only maps scripts to builders and
    annotations):
    - n-ary flattening and ordering of ∩ by estimated size and selectivity. Existing for ∪; ∩ is only binary-swapped.
    - Association order for chains of compositions: dynamic programming over estimated sizes, as for matrix chains.
@@ -390,30 +437,31 @@ benchmarked cost rule. The fast and the direct NFT composition each win on diffe
 
 Each milestone is one PR. The order follows the dependencies.
 
-| #   | Deliverable                                                                                                                                                                  | Depends on              |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| M0  | PR #1041 merged (review threads resolved)                                                                                                                                    | none                    |
-| M1  | `lazymat`: `PlanView`, per-node statistics, `max_length` + `Outcome::Bounded`, `prefixes`, `insert_tape`, `pad_closure`                                                      | M0                      |
-| M2  | `mata-cli`: `Term` sort, `lazy:` builders and queries, limit keywords, `lazy:stats`, formula lifetime; spec and `cli.md` updated; black-box tests in `mata-cli/tests/cli.rs` | M0 (M1 for new ops)     |
-| M3  | RMC: `nfa:collapse-by-length` (C++ plus bindings), token-passing / Burns / CONCUR scripts as examples and integration tests, comparison of lazy and eager `post`             | M1, M2                  |
-| M4  | `mata-logic` WS1S front-end, differential tests against the eager path, notebook formula, Gaston benchmark subset                                                            | M1                      |
-| M5  | `mata-logic` LIA front-end (carry-automaton leaves, sign-extension closure)                                                                                                  | M4                      |
-| M6  | Playground Script mode: wasm build of `mata-cli`, worker entry point, UI, examples, CI smoke test                                                                            | M2 (M3-M5 for examples) |
-| M7  | Annotations and policies (`AllLazy`, `AllEager`, `Heuristic`, `External`), `--plan` and `--explain`, the fuzz invariant over annotations, benchmarks                         | M1, M2                  |
-| M8  | Optional: automatic lazification under `:optimize`, `Portfolio`, symbolic tape alphabets for WS1S/LIA complement                                                             | M7                      |
+| #   | Deliverable                                                                                                                                                                                                                       | Depends on              |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| M0  | PR #1041 merged (review threads resolved); renamed to `mata-lazy`, split from the Mata adapters, re-exported as `mata::lazy` behind the `mata` feature `lazy` (in #1041 or the first follow-up)                                   | none                    |
+| M1  | `mata-lazy`: `Formula::explore`, `PlanView`, per-node statistics, `max_length` + `Outcome::Bounded`, `prefixes`, `insert_tape`, `pad_closure`                                                                                     | M0                      |
+| M2  | `mata-cli`: `Term` sort, `lazy:` builders and queries, limit keywords, `lazy:stats`, formula lifetime; spec and `cli.md` updated; black-box tests in `mata-cli/tests/cli.rs`                                                      | M0 (M1 for new ops)     |
+| M3  | RMC: `nfa:collapse-by-length` (C++ plus bindings, ARMC variant first), token-passing / Burns / CONCUR scripts as examples and integration tests, `max_length` bounded search as a first pass, comparison of lazy and eager `post` | M1, M2                  |
+| M4  | `mata-logic` (`mata::logic::ws1s`) WS1S front-end, differential tests against the eager path, notebook formula, Gaston benchmark subset                                                                                           | M1                      |
+| M5  | `mata::logic::lia` LIA front-end (carry-automaton leaves, sign-extension closure)                                                                                                                                                 | M4                      |
+| M6  | Playground Script mode: wasm build of `mata-cli`, worker entry point, UI, examples, CI smoke test                                                                                                                                 | M2 (M3-M5 for examples) |
+| M7  | Annotations and policies (`AllLazy`, `AllEager`, `Heuristic`, `External`), `--plan` and `--explain`, the fuzz invariant over annotations, benchmarks                                                                              | M1, M2                  |
+| M8  | Optional: automatic lazification under `:optimize`, `Portfolio`, symbolic tape alphabets for WS1S/LIA complement                                                                                                                  | M7                      |
 
 ## Open questions
 
 Each question lists the recommendation, which is the default unless the user decides otherwise.
 
-1. **Length abstraction: reading A (bounded search) or B (ARMC α_n)?** Recommended: both, B for the loop and A as a
-   query option. The request ("all states final, search to a length limit") fits A and the trace variant of B.
-2. **Where do WS1S and LIA live?** Recommended: the Rust crate `mata-logic` on `lazymat`. The alternative is C++
-   under `src/applications/`, reachable from Python but without `lazymat`.
-3. **Notebook style.** The request mentions the Python notebooks. `lazymat` has no Python bindings, and pyo3 would be
-   a new dependency, which needs approval. Recommended: literate `.matasc` scripts (comments as prose), runnable both
-   in the playground and from `mata script run`. Add Python notebooks only if `lazymat` gets Python bindings.
-4. **Formula lifetime in scripts**: one formula per query, or garbage collection inside `lazymat`.
+1. **Length abstraction.** Decided: both variants. ARMC's finite-length abstraction α_n is the intended one and drives
+   the RMC loop; bounded search with all states final is a query option (`:max-length`).
+2. **Where do WS1S and LIA live?** Recommended: the Rust crate `mata-logic`, re-exported as `mata::logic`, on
+   `mata-lazy`. The alternative is C++ under `src/applications/`, reachable from Python but without the lazy engine.
+3. **Notebook style.** The request mentions the Python notebooks. `mata-lazy` has no Python bindings, and pyo3 would
+   be a new dependency, which needs approval. Recommended: literate `.matasc` scripts (comments as prose), runnable
+   both in the playground and from `mata script run`. Add Python notebooks only if the lazy engine gets Python
+   bindings (`libmata.lazy`).
+4. **Formula lifetime in scripts**: one formula per query, or garbage collection inside `mata-lazy`.
 5. **Lock-step compose vs Mata `nft:compose`**: document the difference, or reject non-length-preserving NFT
    leaves in `lazy:compose`.
 6. **Witness order**: whether shortest witnesses (breadth-first) are needed for RMC counterexamples, or depth-first
@@ -423,7 +471,7 @@ Each question lists the recommendation, which is the default unless the user dec
 
 ## References
 
-- PR #1041, `lazymat`: <https://github.com/VeriFIT/mata/pull/1041>
+- PR #1041, `lazymat` (to become `mata-lazy`): <https://github.com/VeriFIT/mata/pull/1041>
 - Bouajjani, Habermehl, Vojnar, _Abstract Regular Model Checking_, CAV 2004:
   <https://link.springer.com/chapter/10.1007/978-3-540-27813-9_29>
 - _Computing Inductive Invariants of Regular Abstraction Frameworks_, CONCUR 2024,
