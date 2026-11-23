@@ -88,6 +88,8 @@ html_static_path = ["_static"]
 breathe_projects = {project: "xml/"}
 breathe_default_project = project
 myst_heading_anchors = 7
+# Symbols render on both the hand-written pages and the generated overview pages, so duplicates are by design.
+suppress_warnings = ["duplicate_declaration.cpp", "duplicate_declaration.c"]
 
 
 def _restore_doxygenfile_path_lookup():
