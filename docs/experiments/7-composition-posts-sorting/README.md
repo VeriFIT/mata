@@ -32,22 +32,22 @@ Output identity compared the states, transitions, and an FNV hash of levels, ini
 
 Aggregate instruction counts, with ratios candidate/base:
 
-| group | cases | Ir base | Ir candidate | candidate/base |
-| --- | ---: | ---: | ---: | ---: |
-| `composition/pair` | 14 | 42,153,794,029 | 43,506,278,298 | 1.0321 |
-| `composition/construct_replace` | 14 | 4,746,629,486 | 4,822,778,175 | 1.0160 |
-| `length_formula/sync_1_0` | 14 | 30,932,182,907 | 30,822,847,211 | 0.9965 |
-| `length_formula/sync_0_0` | 13 | 21,902,163,771 | 20,802,546,028 | 0.9498 |
-| random | 5 | 39,742,255,487 | 38,996,024,053 | 0.9812 |
-| **total** | **60** | **139,477,025,680** | **138,950,473,765** | **0.9962** |
+| group                           |  cases |             Ir base |        Ir candidate | candidate/base |
+| ------------------------------- | -----: | ------------------: | ------------------: | -------------: |
+| `composition/pair`              |     14 |      42,153,794,029 |      43,506,278,298 |         1.0321 |
+| `composition/construct_replace` |     14 |       4,746,629,486 |       4,822,778,175 |         1.0160 |
+| `length_formula/sync_1_0`       |     14 |      30,932,182,907 |      30,822,847,211 |         0.9965 |
+| `length_formula/sync_0_0`       |     13 |      21,902,163,771 |      20,802,546,028 |         0.9498 |
+| random                          |      5 |      39,742,255,487 |      38,996,024,053 |         0.9812 |
+| **total**                       | **60** | **139,477,025,680** | **138,950,473,765** |     **0.9962** |
 
 The three largest `pair` cases all regressed:
 
-| abbreviated case | output transitions | candidate/base |
-| --- | ---: | ---: |
-| `non-incremental-QF_SLIA-202303…e-escapeString-smt2_reverse_331.mata` | 4,252,702 | 1.0318 |
-| `non-incremental-QF_SLIA-202303…lUnescape-escapeString-smt2_335.mata` | 10,477,174 | 1.0316 |
-| `non-incremental-QF_SLIA-202303…e-escapeString-smt2_reverse_335.mata` | 10,489,746 | 1.0327 |
+| abbreviated case                                                      | output transitions | candidate/base |
+| --------------------------------------------------------------------- | -----------------: | -------------: |
+| `non-incremental-QF_SLIA-202303…e-escapeString-smt2_reverse_331.mata` |          4,252,702 |         1.0318 |
+| `non-incremental-QF_SLIA-202303…lUnescape-escapeString-smt2_335.mata` |         10,477,174 |         1.0316 |
+| `non-incremental-QF_SLIA-202303…e-escapeString-smt2_reverse_335.mata` |         10,489,746 |         1.0327 |
 
 Nearly every target in these cases is a freshly created pair state, so `insert()` already appends and the additional `is_sorted` check is pure cost. These three cases contribute 42.1G base instructions, dominating the aggregate result.
 

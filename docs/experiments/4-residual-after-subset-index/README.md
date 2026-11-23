@@ -34,11 +34,11 @@ under Callgrind with `--toggle-collect='*reduce_residual_after*'`. The output ha
 
 Instruction counts (Ir), with ratios candidate/base:
 
-| case | Ir base | Ir candidate | candidate/base |
-| --- | ---: | ---: | ---: |
-| `automata_inclusion/false-IBakery-4P-BinEnc-BwBad-A-3-lhs.mata` | 302,100,613 | 17,747,591,634 | 58.7x |
-| `regexps/Snort/together/together_aut_1018.mata` | 153,176,848 | 512,253,185 | 3.34x |
-| Tabakov-Vardi (40 states, 4 symbols, ratio 2.0, density 0.5, seed 1) | 50,243,473 | 552,365,834 | 11.0x |
+| case                                                                 |     Ir base |   Ir candidate | candidate/base |
+| -------------------------------------------------------------------- | ----------: | -------------: | -------------: |
+| `automata_inclusion/false-IBakery-4P-BinEnc-BwBad-A-3-lhs.mata`      | 302,100,613 | 17,747,591,634 |          58.7x |
+| `regexps/Snort/together/together_aut_1018.mata`                      | 153,176,848 |    512,253,185 |          3.34x |
+| Tabakov-Vardi (40 states, 4 symbols, ratio 2.0, density 0.5, seed 1) |  50,243,473 |    552,365,834 |          11.0x |
 
 For a query on macrostate `S`, the candidate walks the complete posting list of every state in `S`. Its work is therefore proportional to `sum over s in S of |{M : s in M}|`, approaching the total macrostate size in the worst case. The old linear scan instead used `all_of` for each candidate and stopped at the first candidate state absent from `S`.
 
