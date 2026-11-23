@@ -668,12 +668,6 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 		return next_unprojected[nft.levels[src]] >= stop_lvl;
 	};
 
-	// Determines the transition length between two states based on their levels.
-	auto get_trans_len = [&](const State src, const State tgt) {
-		return (nft.levels[src] == 0) ? (nft.levels.num_of_levels - nft.levels[src])
-									  : (nft.levels[tgt] - nft.levels[src]);
-	};
-
 	if (nft.levels.num_of_levels == levels_to_project.size()) {
 		throw std::invalid_argument("Cannot project out all levels of the NFT.");
 		// TODO: Returning an empty NFT with 0 levels as a boolean automaton, equivalent to a bool flag?
@@ -832,10 +826,7 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 			if (nft.final[cls_state] && can_be_final(src_state)) { source_final[src_state] = true; }
 			for (const SymbolPost& move : nft.delta[cls_state]) {
 				for (const State tgt_state : move.targets) {
-					const bool is_loop_on_target = cls_state == tgt_state;
 					if (is_projected_along_path(cls_state, tgt_state)) { continue; }
-					if (cls_projected && get_trans_len(cls_state, tgt_state) == 1 && !is_loop_on_target) { continue; }
-
 					if (cls_projected) {
 						// If there are remaining levels between cls_state and tgt_state
 						// on a transition with a length greater than 1, then these levels must be preserved.
@@ -1139,8 +1130,6 @@ Nft nft::revert(const Nft& aut) {
 Nft mata::nft::fragile_revert(const Nft& aut) { return revert(aut); }
 
 Nft mata::nft::simple_revert(const Nft& aut) { return revert(aut); }
-
-Nft mata::nft::somewhat_simple_revert(const Nft& aut) { return revert(aut); }
 
 namespace {
 /**

@@ -68,9 +68,6 @@
 #ifndef MATA_NFA_HH_
 #define MATA_NFA_HH_
 
-// Static data structures, such as search stack, in algorithms. Might have some effect on some algorithms (like trim).
-// #define _STATIC_STRUCTURES_
-
 #include <cassert>
 #include <functional>
 #include <memory>
@@ -1566,9 +1563,6 @@ Nfa fragile_revert(const Nfa& aut);
 
 /// @deprecated Kept for source compatibility; forwards to @c revert(). Call @c revert() instead.
 Nfa simple_revert(const Nfa& aut);
-
-/// @deprecated Kept for source compatibility; forwards to @c revert(). Call @c revert() instead.
-Nfa somewhat_simple_revert(const Nfa& aut);
 
 /// Removing epsilon transitions
 Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
