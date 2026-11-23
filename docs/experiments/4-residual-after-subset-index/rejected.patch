@@ -1,0 +1,166 @@
+From b1329134e141830502f26f3a9a80cde289afa720 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Mon, 23 Nov 2026 09:24:04 +0100
+Subject: [PATCH] nfa: +perf Index residual-after subset candidates
+
+Use state-to-macrostate postings and generation-stamped hit counts for subset detection. Preserve candidate ordering, singleton fast paths and explicit handling of empty macrostates.
+
+Part of #808
+---
+ src/nfa/operations.cc | 97 +++++++++++++++++++++++++++++++------------
+ 1 file changed, 71 insertions(+), 26 deletions(-)
+
+diff --git a/src/nfa/operations.cc b/src/nfa/operations.cc
+index 91fe08ddb..a01b7b36a 100644
+--- a/src/nfa/operations.cc
++++ b/src/nfa/operations.cc
+@@ -459,9 +459,13 @@ void redirect_covered_states(const CoveredStates& covered_states, Nfa& nfa) {
+ /**
+  * Coverage analysis of residual reduction "after" over the macrostates ordered from the largest.
+  *
+- * A macrostate is covered when it is the union of the uncovered smaller macrostates it contains. Membership in the
+- *  tested macrostate and in the union so far is marked by stamps over the states of the determinized NFA, so a
+- *  subset test costs at most the size of the candidate and a union test the total size of the candidates.
++ * A macrostate is covered when it is the union of the uncovered smaller macrostates it contains. Equal-sized subsets
++ *  would be identical, so proper subsets always have later indices. Root and recursive searches can therefore both
++ *  consider all later indices; coverage still takes precedence exactly as in the candidate lists this replaces.
++ *
++ * For each candidate, count hits in the posting lists of states from the tested macrostate. One hit per candidate
++ *  state is exactly the subset predicate. Once collected in index order, candidates are united using generation stamps
++ *  over states of the determinized NFA, avoiding per-query allocations.
+  */
+ class ResidualCoverage {
+   public:
+@@ -472,16 +476,39 @@ class ResidualCoverage {
+ 		  result_states_{std::move(result_states)},
+ 		  covered_(macrostates_.size(), false),
+ 		  visited_(macrostates_.size(), false),
+-		  member_stamp_(num_of_nfa_states),
+-		  union_stamp_(num_of_nfa_states) {}
++		  candidate_hit_stamp_(macrostates_.size()),
++		  candidate_hit_count_(macrostates_.size()),
++		  union_stamp_(num_of_nfa_states),
++		  posting_offsets_(num_of_nfa_states + 1, 0) {
++		if (macrostates_.size() < 2 || macrostates_.front()->size() <= 1) { return; }
++
++		size_t index{0};
++		for (const StateSet* const macrostate : macrostates_) {
++			if (macrostate->empty()) { empty_macrostates_.push_back(static_cast<State>(index)); }
++			for (const State state : *macrostate) { ++posting_offsets_[state]; }
++			++index;
++		}
++		for (size_t state{1}; state < posting_offsets_.size(); ++state) {
++			posting_offsets_[state] += posting_offsets_[state - 1];
++		}
++		posting_indices_.resize(posting_offsets_.back());
++
++		// Filling backwards leaves each cursor at the start of its state's range.
++		for (size_t candidate{index}; candidate-- > 0;) {
++			for (const State state : *macrostates_[candidate]) {
++				posting_indices_[--posting_offsets_[state]] = static_cast<State>(candidate);
++			}
++		}
++	}
+ 
+ 	CoveredStates run() {
+ 		const size_t num_of_macrostates{macrostates_.size()};
++		if (num_of_macrostates < 2 || macrostates_.front()->size() <= 1) { return std::move(covered_states_); }
+ 		for (size_t i{0}; i < num_of_macrostates - 1; ++i) {
+ 			if (macrostates_[i]->size() == 1) { break; } // Singletons are never covered.
+ 			if (visited_[i]) { continue; }
+ 			visited_[i] = true;
+-			try_cover(i, std::views::iota(i + 1, num_of_macrostates));
++			try_cover(i);
+ 		}
+ 		return std::move(covered_states_);
+ 	}
+@@ -491,23 +518,28 @@ class ResidualCoverage {
+ 	std::vector<State> result_states_;
+ 	std::vector<bool> covered_;
+ 	std::vector<bool> visited_;
+-	std::vector<size_t> member_stamp_;
++	std::vector<size_t> candidate_hit_stamp_;
++	std::vector<size_t> candidate_hit_count_;
+ 	std::vector<size_t> union_stamp_;
++	// Flat posting lists from an original NFA state to the indices of all macrostates containing it.
++	std::vector<size_t> posting_offsets_;
++	std::vector<State> posting_indices_{};
++	// Empty macrostates need explicit enumeration because no state can identify them in the index.
++	std::vector<State> empty_macrostates_{};
+ 	size_t stamp_{0};
+ 	CoveredStates covered_states_{};
+ 
+-	/// Cover macrostate @p index by its uncovered subsets among @p candidates (ascending indexes after @p index),
+-	///  first trying to cover each of them by its successors in that list.
+-	template <class Candidates> void try_cover(const size_t index, const Candidates& candidates) {
++	/// Cover macrostate @p index by its uncovered subsets, first trying to cover each by its uncovered subsets.
++	void try_cover(const size_t index) {
+ 		std::vector<size_t> covering_indexes{};
+-		if (!find_covering(index, candidates, covering_indexes)) { return; }
++		if (!find_covering(index, covering_indexes)) { return; }
+ 		const size_t covering_size{covering_indexes.size() - 1};
+ 		for (size_t k{0}; k < covering_size; ++k) {
+ 			const size_t candidate{covering_indexes[k]};
+ 			if (macrostates_[candidate]->size() == 1) { break; }
+ 			if (visited_[candidate]) { continue; }
+ 			visited_[candidate] = true;
+-			try_cover(candidate, std::span<const size_t>{covering_indexes}.subspan(k + 1));
++			try_cover(candidate);
+ 		}
+ 
+ 		StateSet covering_set{};
+@@ -519,24 +551,37 @@ class ResidualCoverage {
+ 		covered_[index] = true;
+ 	}
+ 
+-	/// Collect the uncovered @p candidates which are subsets of macrostate @p index into @p covering_indexes and
+-	///  return whether their union is the macrostate.
+-	template <class Candidates>
+-	bool find_covering(const size_t index, const Candidates& candidates, std::vector<size_t>& covering_indexes) {
++	/// Collect the uncovered subsets of macrostate @p index in ascending index order and return whether their union
++	///  is the macrostate.
++	bool find_covering(const size_t index, std::vector<size_t>& covering_indexes) {
+ 		++stamp_;
+-		const StateSet& macrostate{*macrostates_[index]};
+-		for (const State state : macrostate) { member_stamp_[state] = stamp_; }
+-		size_t num_of_united{0};
+-		for (const size_t candidate : candidates) {
+-			if (covered_[candidate]) { continue; }
++		const auto consider_candidate = [&](const size_t candidate) {
++			if (candidate <= index || covered_[candidate]) { return; }
+ 			const StateSet& candidate_macrostate{*macrostates_[candidate]};
+-			if (!std::ranges::all_of(candidate_macrostate, [&](const State state) {
+-					return member_stamp_[state] == stamp_;
+-				})) {
+-				continue;
++			if (!candidate_macrostate.empty()) {
++				if (candidate_hit_stamp_[candidate] != stamp_) {
++					candidate_hit_stamp_[candidate] = stamp_;
++					candidate_hit_count_[candidate] = 0;
++				}
++				// A StateSet contains each state once, so one hit per state is exactly the subset predicate.
++				if (++candidate_hit_count_[candidate] != candidate_macrostate.size()) { return; }
+ 			}
+ 			covering_indexes.push_back(candidate);
+-			for (const State state : candidate_macrostate) {
++		};
++
++		const StateSet& macrostate{*macrostates_[index]};
++		for (const State state : macrostate) {
++			for (size_t i{posting_offsets_[state]}; i < posting_offsets_[state + 1]; ++i) {
++				consider_candidate(posting_indices_[i]);
++			}
++		}
++		for (const State candidate : empty_macrostates_) { consider_candidate(candidate); }
++		// Posting-list traversal follows state order. Restore the old covering and recursion order.
++		std::ranges::sort(covering_indexes);
++
++		size_t num_of_united{0};
++		for (const size_t candidate : covering_indexes) {
++			for (const State state : *macrostates_[candidate]) {
+ 				if (union_stamp_[state] != stamp_) {
+ 					union_stamp_[state] = stamp_;
+ 					++num_of_united;
+-- 
+2.56.0
+
