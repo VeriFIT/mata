@@ -97,10 +97,8 @@ class Namings {
 			return std::nullopt;
 		}
 		if (first == '\\' && (token == "\\true" || token == "\\false")) { return std::nullopt; }
-		if (namings_[static_cast<size_t>(Kind::STATES)] == Naming::Marked && first == 'q') { return token.substr(1); }
-		if ((namings_[static_cast<size_t>(Kind::NODES)] == Naming::Marked && first == 'n') ||
-			(namings_[static_cast<size_t>(Kind::SYMBOLS)] == Naming::Marked && first == 'a')) {
-			return std::nullopt;
+		if (namings_[static_cast<size_t>(Kind::STATES)] == Naming::Marked) {
+			return first == 'q' ? token.substr(1) : token;
 		}
 		if (namings_[static_cast<size_t>(Kind::STATES)] == Naming::Auto) { return token; }
 		return std::nullopt;

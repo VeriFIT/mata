@@ -317,6 +317,13 @@ TEST_CASE("parse_explicit_from_mata() reads what the general reader reads") {
 		);
 		check_explicit_reader_reads("@NFA-explicit\n%Alphabet-marked\n%States-marked\n%Initial q0\nq0 b q1\n");
 		check_explicit_reader_reads("@NFA-explicit\n%Alphabet\n%Initial q0\nq0 a q1\n");
+		check_explicit_reader_reads("@NFA-explicit\n%Initial p0\n%Final p1\np0 a p1\n");
+	}
+
+	SECTION("positional state names") {
+		check_explicit_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q0\nq0 a n1\n");
+		check_explicit_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q0\nq0 a x1\n");
+		check_explicit_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial x0\nq0 a q1\n");
 	}
 
 	SECTION("quoted names") {
@@ -326,6 +333,7 @@ TEST_CASE("parse_explicit_from_mata() reads what the general reader reads") {
 		check_explicit_reader_reads(input);
 		check_explicit_reader_reads("@NFA-explicit\n%Alphabet-auto\nq0 \"a b\" q1\nq1 \"x\\\"y\" q0\n", true);
 		check_explicit_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q0\nq0 \"&\" q1\nq1 \"(\" q0\n");
+		check_explicit_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q0\n\"q0\" a \"q1\"\n", true);
 	}
 
 	SECTION("special symbols") {
@@ -372,14 +380,6 @@ TEST_CASE("parse_explicit_from_mata() leaves the general format to the general r
 		check_general_reader_reads(
 			"@NFA-bits\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 x & !y q1\nq1 (x | y) & !z q0\nq0 z q0\n"
 		);
-	}
-
-	SECTION("names that are not states") {
-		// IntermediateAut reads these as nodes and symbols, and builder::construct() then takes them for states.
-		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q0\nq0 a n1\n");
-		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q0\nq0 a x1\n");
-		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial x0\nq0 a q1\n");
-		check_general_reader_reads("@NFA-explicit\n%Alphabet-auto\n%Initial q0\n\"q0\" a \"q1\"\n", true);
 	}
 
 	SECTION("namings") {
@@ -553,6 +553,11 @@ TEST_CASE("BitvectorNfaReader reads what the general reader and mintermization r
 		check_bitvector_reader_reads(
 			{"@NFA-bits\n%Alphabet-auto\n%Nodes-auto\n%States-auto\n%Initial p\n%Final r\np x & !y r\n"}
 		);
+		check_bitvector_reader_reads({"@NFA-bits\n%Initial p0\n%Final p1\np0 a0 p1\n"});
+		check_bitvector_reader_reads({"@NFA-bits\n%Nodes-auto\n%Initial p0\n%Final p1\np0 a0 p1\n"});
+		check_bitvector_reader_reads({"@NFA-bits\n%Initial p0\n%Final p1 | p0\np0 a0 p1\n"}, Read::ByGeneralReader);
+		check_bitvector_reader_reads({"@NFA-bits\n%Initial p0\n%Final p1\np0 a0 & p1\n"}, Read::ByGeneralReader);
+		check_bitvector_reader_reads({"@NFA-bits\n%Initial p0\n%Final p1\np0 (a0 | a1) & p1\n"}, Read::ByGeneralReader);
 	}
 
 	SECTION("automata sharing minterms") {
