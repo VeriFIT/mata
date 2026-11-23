@@ -46,6 +46,17 @@ fn peak_bytes<T>(run: impl FnOnce() -> T) -> (T, usize) {
 /// States `0..length`, all initial, where `i` moves silently to `i + 1` and on `a` to the final state `length`.
 struct SharedMove {
 	length: u32,
+	/// The calls of `for_each_move` so far.
+	calls: AtomicUsize,
+}
+
+impl SharedMove {
+	fn new(length: u32) -> SharedMove {
+		SharedMove {
+			length,
+			calls: AtomicUsize::new(0),
+		}
+	}
 }
 
 impl Automaton for SharedMove {
@@ -64,6 +75,7 @@ impl Automaton for SharedMove {
 	}
 
 	fn for_each_move(&self, state: u32, mut visit: impl FnMut(&[Symbol], u32)) {
+		self.calls.fetch_add(1, Ordering::Relaxed);
 		if state < self.length {
 			visit(&[Symbol::from(b'a')], self.length);
 		}
@@ -80,11 +92,64 @@ impl Automaton for SharedMove {
 fn a_move_that_many_closures_share_is_held_once_per_closure() -> Result<(), Error> {
 	let length = 2000;
 	let mut formula = Formula::new();
-	let (leaf, peak) = peak_bytes(|| formula.leaf(&SharedMove { length }));
+	let (leaf, peak) = peak_bytes(|| formula.leaf(&SharedMove::new(length)));
 	assert!(peak < 1 << 22, "importing took {peak} bytes");
 
 	let explicit = formula.materialize(leaf?, &Options::new())?;
 	assert_eq!(explicit.num_moves(), length as usize);
+
+	Ok(())
+}
+
+/// Every state is a source that silently reaches all later ones; walking each closure to its end would read the moves
+/// of a state `length^2 / 2` times (2 million here) instead of once.
+#[test]
+fn a_chain_of_silent_moves_reads_each_state_once() -> Result<(), Error> {
+	let length = 2000;
+	let automaton = SharedMove::new(length);
+	let mut formula = Formula::new();
+	let leaf = formula.leaf(&automaton)?;
+	assert_eq!(automaton.calls.load(Ordering::Relaxed), length as usize + 1);
+
+	let explicit = formula.materialize(leaf, &Options::new())?;
+	assert_eq!(explicit.num_moves(), length as usize);
+
+	Ok(())
+}
+
+/// States `0..3`, all initial, on a silent cycle; `i` reads `b'a' + i` to the final state 3.
+struct SilentCycle;
+
+impl Automaton for SilentCycle {
+	type State = u8;
+
+	fn arity(&self) -> usize {
+		1
+	}
+
+	fn initial_states(&self) -> impl IntoIterator<Item = u8> {
+		0..3
+	}
+
+	fn is_final(&self, state: u8) -> bool {
+		state == 3
+	}
+
+	fn for_each_move(&self, state: u8, mut visit: impl FnMut(&[Symbol], u8)) {
+		if state < 3 {
+			visit(&[Symbol::from(b'a' + state)], 3);
+			visit(&[Symbol::EPSILON], (state + 1) % 3);
+		}
+	}
+}
+
+/// A source that the walk of another one reaches while that walk is still open gets the moves of the whole cycle.
+#[test]
+fn every_state_of_a_silent_cycle_reads_the_moves_of_all_of_it() -> Result<(), Error> {
+	let mut formula = Formula::new();
+	let leaf = formula.leaf(&SilentCycle)?;
+	let explicit = formula.materialize(leaf, &Options::new())?;
+	assert_eq!(explicit.num_moves(), 9);
 
 	Ok(())
 }

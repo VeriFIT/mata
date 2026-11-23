@@ -62,6 +62,83 @@ impl Raw {
 	fn tuple(&self, edge: usize) -> &[Symbol] {
 		&self.letters[edge * self.arity..(edge + 1) * self.arity]
 	}
+
+	/// Moves the moves of `moves` to the end of `self`, and returns where they are.
+	fn append(&mut self, moves: &mut Raw) -> (usize, usize) {
+		let start = self.edges.len();
+		self.edges.append(&mut moves.edges);
+		self.letters.append(&mut moves.letters);
+		(start, self.edges.len())
+	}
+}
+
+/// How far the import of a source (a state that a non-silent move or the start reaches) is.
+#[derive(Clone, Copy)]
+enum Import {
+	Pending,
+	Walking,
+	/// Its finality and its moves, `raw.edges[start..end]`, with the silent moves removed.
+	Done {
+		is_final: bool,
+		start: usize,
+		end: usize,
+	},
+}
+
+/// The walk of the silent closure of a source.
+struct Walk<S> {
+	source: usize,
+	/// The states that silent moves reach from the source; also the worklist, expanded up to `next`.
+	closure: IndexSet<S, FxBuildHasher>,
+	next: usize,
+	is_final: bool,
+	/// The moves found so far; `pushed` holds them so that a move shared along the closure is pushed once.
+	moves: Raw,
+	pushed: HashTable<usize>,
+}
+
+impl<S: Copy + Eq + std::hash::Hash> Walk<S> {
+	/// What to do with the next member of the closure, given the sources and how far their imports are.
+	fn step(&self, states: &IndexSet<S, FxBuildHasher>, imports: &[Import]) -> Step {
+		let Some(state) = self.closure.get_index(self.next) else {
+			return Step::Finish;
+		};
+		if self.next == 0 {
+			return Step::Expand;
+		}
+
+		let Some(index) = states.get_index_of(state) else {
+			return Step::Expand;
+		};
+		match imports.get(index).copied().unwrap_or(Import::Pending) {
+			Import::Pending => Step::Descend(index),
+			// A silent cycle back to a source on the stack, whose closure is not complete yet.
+			Import::Walking => Step::Expand,
+			Import::Done {
+				is_final,
+				start,
+				end,
+			} => Step::Inherit {
+				is_final,
+				start,
+				end,
+			},
+		}
+	}
+}
+
+/// What the walk on top of the stack does with the next member of its closure.
+enum Step {
+	Expand,
+	/// Takes over the moves of a source that is done.
+	Inherit {
+		is_final: bool,
+		start: usize,
+		end: usize,
+	},
+	/// Walks this pending source first.
+	Descend(usize),
+	Finish,
 }
 
 /// A trimmed automaton over tuples of symbols with dense states and sorted moves.
@@ -87,6 +164,10 @@ pub(crate) struct Leaf {
 
 impl Leaf {
 	/// Copies the reachable part of `automaton`, without silent moves; `declared[tape]` joins `tape`'s symbols.
+	///
+	/// A closure that silently reaches another source takes over that source's moves instead of walking past it, and
+	/// walks a pending source first, on a stack, so that a chain of `n` sources joined by silent moves calls
+	/// `for_each_move` `n` times rather than `n^2 / 2`.
 	pub(crate) fn import<A: Automaton>(
 		automaton: &A,
 		declared: Vec<Vec<Symbol>>,
@@ -99,41 +180,88 @@ impl Leaf {
 		}
 
 		let mut wrong_width = None;
-		// The states that silent moves reach from `first`; also the worklist.
-		let mut closure: IndexSet<A::State, FxBuildHasher> = IndexSet::default();
-		// The moves of `first` pushed so far, as edges of `raw`, so that a move shared along the closure is pushed once.
-		let mut pushed: HashTable<usize> = HashTable::new();
-		let mut next = 0;
-		while let Some(&first) = states.get_index(next) {
-			let source = StateId::new(next);
-			next += 1;
-			closure.clear();
-			closure.insert(first);
-			pushed.clear();
+		let mut imports: Vec<Import> = Vec::new();
+		let mut walks: Vec<Walk<A::State>> = Vec::new();
+		// Finished walks, kept for their allocations.
+		let mut spare: Vec<Walk<A::State>> = Vec::new();
+		let mut first = 0;
+		while first < states.len() {
+			imports.resize(states.len(), Import::Pending);
+			if matches!(imports[first], Import::Pending) {
+				imports[first] = Import::Walking;
+				walks.push(start_walk(&mut spare, arity, first, states[first]));
+			}
 
-			let mut is_final = false;
-			let mut member = 0;
-			while let Some(&state) = closure.get_index(member) {
-				member += 1;
-				is_final |= automaton.is_final(state);
-				automaton.for_each_move(state, |tuple, target| {
-					if tuple.len() != arity {
-						wrong_width.get_or_insert(tuple.len());
-					} else if arity > 0 && tuple.iter().all(|&symbol| symbol == Symbol::EPSILON) {
-						closure.insert(target);
-					} else {
-						let target = StateId::new(states.insert_full(target).0);
-						raw.push_new(&mut pushed, source, tuple, target);
+			first += 1;
+			while let Some(walk) = walks.last_mut() {
+				let step = walk.step(&states, &imports);
+
+				match step {
+					Step::Expand => {
+						let state = walk.closure[walk.next];
+						walk.next += 1;
+						walk.is_final |= automaton.is_final(state);
+						let source = StateId::new(walk.source);
+						automaton.for_each_move(state, |tuple, target| {
+							if tuple.len() != arity {
+								wrong_width.get_or_insert(tuple.len());
+							} else if arity > 0
+								&& tuple.iter().all(|&symbol| symbol == Symbol::EPSILON)
+							{
+								walk.closure.insert(target);
+							} else {
+								let target = StateId::new(states.insert_full(target).0);
+								walk.moves.push_new(&mut walk.pushed, source, tuple, target);
+							}
+						});
+
+						if let Some(found) = wrong_width {
+							return Err(Error::MoveWidth { arity, found });
+						}
 					}
-				});
+					Step::Inherit {
+						is_final,
+						start,
+						end,
+					} => {
+						walk.next += 1;
+						walk.is_final |= is_final;
+						let source = StateId::new(walk.source);
+						for edge in start..end {
+							walk.moves.push_new(
+								&mut walk.pushed,
+								source,
+								raw.tuple(edge),
+								raw.edges[edge].1,
+							);
+						}
+					}
+					Step::Descend(index) => {
+						imports.resize(states.len(), Import::Pending);
+						imports[index] = Import::Walking;
+						walks.push(start_walk(&mut spare, arity, index, states[index]));
+					}
+					Step::Finish => {
+						let mut walk = walks.pop().expect("the loop has a walk");
+						let (start, end) = raw.append(&mut walk.moves);
+						imports[walk.source] = Import::Done {
+							is_final: walk.is_final,
+							start,
+							end,
+						};
+						spare.push(walk);
+					}
+				}
 			}
-
-			if let Some(found) = wrong_width {
-				return Err(Error::MoveWidth { arity, found });
-			}
-
-			raw.finals.push(is_final);
 		}
+
+		raw.finals = imports
+			.iter()
+			.map(|import| match import {
+				Import::Done { is_final, .. } => *is_final,
+				Import::Pending | Import::Walking => unreachable!("every source is imported"),
+			})
+			.collect();
 
 		Ok(Leaf::build(&raw, declared))
 	}
@@ -286,6 +414,30 @@ impl Leaf {
 	pub(crate) fn computed_simulation(&self) -> Option<&Simulation> {
 		self.simulation.get()
 	}
+}
+
+/// A walk from `source`, whose state is `state`, reusing the allocations of a finished walk.
+fn start_walk<S: Copy + Eq + std::hash::Hash>(
+	spare: &mut Vec<Walk<S>>,
+	arity: usize,
+	source: usize,
+	state: S,
+) -> Walk<S> {
+	let mut walk = spare.pop().unwrap_or_else(|| Walk {
+		source,
+		closure: IndexSet::default(),
+		next: 0,
+		is_final: false,
+		moves: Raw::new(arity),
+		pushed: HashTable::new(),
+	});
+	walk.source = source;
+	walk.closure.clear();
+	walk.closure.insert(state);
+	walk.next = 0;
+	walk.is_final = false;
+	walk.pushed.clear();
+	walk
 }
 
 /// The letters that the moves of `letters` read on `tape`.
