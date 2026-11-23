@@ -50,9 +50,10 @@ linear scan to all overlapping non-subset unions is not justified by these resul
 
 ## Reproducing
 
-Read `devel` at the recorded base. Preserve the experiment directory in the base checkout,
-then apply the candidate with `git am docs/experiments/6-ordvector-subset-guard/rejected.patch`.
-Build `probe_subsets.cc` against each include tree and keep both executables:
+Read `devel` at the recorded base. Preserve the experiment directory in the base checkout.
+First build `probe-old` from the unchanged tree, then apply the candidate with `git am
+docs/experiments/6-ordvector-subset-guard/rejected.patch` and build `probe-new`. Keep both
+executables:
 
 ```sh
 g++ -std=gnu++23 -O3 -DNDEBUG \
