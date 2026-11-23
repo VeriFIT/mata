@@ -71,11 +71,24 @@ regressions on the largest realistic composition inputs or the 1.0160x `construc
 
 ## Reproducing
 
-Create base and candidate checkouts at `a803d22d11c5d54f12a61c497bebbcb3052d096b`, apply `rejected.patch` in the
-candidate with `git am`, and build both with `just cpp build release`. Use the rank-stratified sampling and Callgrind
-command above on the four automata-lib-bench groups. Generate the five random cases with parameters `300,4,3,100,1`;
-`1000,3,4,50,2`; `500,6,2,200,4`; `300,8,2,0,5`; and `150,8,2,0,6`. Sum Ir by group and overall, then compare native
-output hashes over the complete corpora and all random cases.
+Only the patched source variants can be reconstructed from this record. Create base and candidate checkouts at
+`a803d22d11c5d54f12a61c497bebbcb3052d096b`, apply `rejected.patch` in the candidate with `git am`, and build both
+with `just cpp build release`.
+
+The results above are retained historical measurements; the original measurement pipeline was not archived. The
+one-off driver, its executable name and build commands, the random-case generator, the corpus-sampling script and
+selected-file manifests, and the full Callgrind and native-comparison command lines are therefore unavailable. The
+only surviving Callgrind details are `--collect-atstart=no --toggle-collect='run_compose*'` and the composition call
+under **Method**. They are not, by themselves, a runnable reproduction command.
+
+The random cases were recorded as `300,4,3,100,1`; `1000,3,4,50,2`; `500,6,2,200,4`; `300,8,2,0,5`; and
+`150,8,2,0,6`. These tuples are retained only as historical case identifiers: the meanings of their five fields and
+the generator that consumed them are unknown. Do not substitute `tests-integration/src/bench-nft-compose.cc`; its
+one-argument interface and fixed generation settings do not match this record.
+
+A new harness and sampling procedure would be required to rerun a comparable experiment, but that would not regenerate
+the original random cases or selected corpus exactly and must be reported as a new measurement rather than a
+reproduction of these Ir totals.
 
 ## Conclusion
 
