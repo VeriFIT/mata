@@ -1503,7 +1503,7 @@ TEST_CASE("mata::nfa::Delta iterators compose with ranges") {
 	const StatePost::Moves moves{source.moves()};
 	// A const Moves object must be copyable. This used to attempt Moves(Moves&) instead.
 	const StatePost::Moves moves_copy{moves};
-	const std::vector<Move> moves_of_copy{moves_copy.begin(), moves_copy.end()};
+	const std::vector<Move> moves_of_copy(moves_copy.begin(), moves_copy.end());
 	CHECK(moves_of_copy == (std::vector<Move>{{'a', 1}, {'a', 2}, {'b', 3}, {'b', 4}}));
 	CHECK(std::ranges::distance(moves) == std::ranges::distance(moves_copy));
 
