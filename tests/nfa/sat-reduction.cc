@@ -37,6 +37,7 @@ using Catch::Matchers::ContainsSubstring;
 using Catch::Matchers::MessageMatches;
 using mata::EnumAlphabet;
 using mata::Symbol;
+using mata::Word;
 using mata::nfa::algorithms::ExternalSolverNotFound;
 
 namespace {
@@ -565,6 +566,39 @@ TEST_CASE("mata::nfa::reduce() with algorithms \"sat\" and \"qbf\" running fake 
 		}
 		// "dfa" is a type of "sat" only; "qbf" always computes an NFA.
 		check_rejected({{"algorithm", "qbf"}, {"type", "dfa"}});
+	}
+
+	SECTION("EPSILON is a letter by default and can be removed explicitly") {
+		Nfa input{2, {0}, {1}};
+		input.delta.add(0, 'a', 0);
+		input.delta.add(0, EPSILON, 1);
+		input.delta.add(1, 'b', 1);
+		const FakeSolver unsat{check_arguments() + "echo 's UNSATISFIABLE'\nexit 20"};
+		const FakeSolver qbf_unsat{check_arguments() + "echo 's cnf 0 10 20'\nexit 20"};
+		for (ParameterMap params :
+			 {ParameterMap{{"algorithm", "sat"}, {"solver", unsat.command()}},
+			  ParameterMap{{"algorithm", "qbf"}, {"solver", qbf_unsat.command()}}}) {
+			INFO(params.at("algorithm"));
+			const Nfa default_result{reduce(input, nullptr, params)};
+			CHECK(default_result.is_in_lang(Word{EPSILON}));
+			CHECK(!default_result.is_in_lang(Word{'a', 'b'}));
+
+			params["epsilon"] = "letter";
+			const Nfa letter_result{reduce(input, nullptr, params)};
+			CHECK(letter_result.is_in_lang(Word{EPSILON}));
+			CHECK(!letter_result.is_in_lang(Word{'a', 'b'}));
+
+			params["epsilon"] = "empty";
+			const Nfa empty_result{reduce(input, nullptr, params)};
+			CHECK(!empty_result.is_in_lang(Word{EPSILON}));
+			CHECK(empty_result.is_in_lang(Word{'a', 'b'}));
+		}
+		CHECK(algorithms::reduce_sat(input, "nfa", unsat.command(), "letter").is_in_lang(Word{EPSILON}));
+		CHECK(algorithms::reduce_qbf(input, qbf_unsat.command(), "letter").is_in_lang(Word{EPSILON}));
+		CHECK_THROWS_MATCHES(
+			algorithms::reduce_sat(input, "nfa", unsat.command(), "invalid"), std::runtime_error,
+			MessageMatches(ContainsSubstring("epsilon mode"))
+		);
 	}
 }
 #endif

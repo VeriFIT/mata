@@ -1940,7 +1940,10 @@ Nfa mata::nfa::reduce(const Nfa& aut, StateRenaming* state_renaming, const Param
 				std::to_string(__func__) + " received an unknown type of automaton for the \"qbf\" algorithm: " + type
 			);
 		}
-		result = algorithms::reduce_qbf(aut, haskey(params, "solver") ? params.at("solver") : "");
+		result = algorithms::reduce_qbf(
+			aut, haskey(params, "solver") ? params.at("solver") : "",
+			haskey(params, "epsilon") ? params.at("epsilon") : std::string{"letter"}
+		);
 	} else {
 		throw std::runtime_error(
 			std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + algorithm

@@ -463,7 +463,9 @@ class ExternalSolverNotFound : public std::runtime_error {
  *  word is added to the samples until the candidate is equivalent or no k-state automaton exists. The search is
  *  exponential in the worst case and is practical only for languages whose minimal automata have about ten states.
  *
- * Epsilon transitions over @c EPSILON are removed first. The result uses the symbols and the alphabet of @p nfa.
+ * By default, an @c EPSILON transition is treated as a transition over an ordinary letter, as in the other reduction
+ *  algorithms. Set @p epsilon to "empty" to run @c remove_epsilon() on the input first instead.
+ * The result uses the symbols and the alphabet of @p nfa.
  *
  * @param[in] nfa NFA to reduce.
  * @param[in] type Kind of the resulting automaton (values: "nfa", "dfa"):
@@ -475,11 +477,18 @@ class ExternalSolverNotFound : public std::runtime_error {
  *  format of the SAT competitions, that is, an "s SATISFIABLE" or "s UNSATISFIABLE" line and the model on "v" lines.
  *  If empty, the value of the environment variable @c MATA_SAT_SOLVER is used and, if that is not set, the first of
  *  @c cadical, @c kissat, @c cryptominisat5 and @c picosat found in @c PATH.
+ * @param[in] epsilon Whether to treat @c EPSILON as an ordinary letter ("letter", default) or remove it first as
+ *  the empty word ("empty").
  * @return An automaton equivalent to @p nfa with the minimum number of states of the given @p type.
  * @throws ExternalSolverNotFound If no SAT solver can be found or run.
- * @throws std::runtime_error If the solver fails or its output cannot be understood.
+ * @throws std::runtime_error If @p epsilon has an invalid value, the solver fails, or its output cannot be understood.
  */
-Nfa reduce_sat(const Nfa& nfa, const std::string& type = "nfa", const std::string& solver = "");
+Nfa reduce_sat(
+	const Nfa& nfa,
+	const std::string& type = "nfa",
+	const std::string& solver = "",
+	const std::string& epsilon = "letter"
+);
 
 /**
  * @brief Reduce NFA to an NFA with the minimum number of states using an external QBF solver.
@@ -497,11 +506,13 @@ Nfa reduce_sat(const Nfa& nfa, const std::string& type = "nfa", const std::strin
  *  variables only with it, while older versions reject it. The probe runs the executable alone, and a probe killed by
  *  a signal leaves the command unchanged. A DepQBF reached under another name (e.g. a @c depqbf-6 symlink or a
  *  wrapper script) is not probed: pass @c --no-dynamic-nenofex in @p solver when that version needs it.
+ * @param[in] epsilon Whether to treat @c EPSILON as an ordinary letter ("letter", default) or remove it first as
+ *  the empty word ("empty").
  * @return An NFA equivalent to @p nfa with the minimum number of states.
  * @throws ExternalSolverNotFound If no QBF solver can be found or run.
- * @throws std::runtime_error If the solver fails or its output cannot be understood.
+ * @throws std::runtime_error If @p epsilon has an invalid value, the solver fails, or its output cannot be understood.
  */
-Nfa reduce_qbf(const Nfa& nfa, const std::string& solver = "");
+Nfa reduce_qbf(const Nfa& nfa, const std::string& solver = "", const std::string& epsilon = "letter");
 
 } // Namespace mata::nfa::algorithms.
 
