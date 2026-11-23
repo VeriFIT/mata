@@ -156,6 +156,21 @@ TEST_CASE("mata::nfa::Delta::get_used_symbols() returns sorted unique symbols") 
 	CHECK(std::vector<Symbol>{result.begin(), result.end()} == std::vector<Symbol>{expected.begin(), expected.end()});
 }
 
+TEST_CASE("mata::nfa::Delta::get_used_symbols() handles the 64-symbol boundary and duplicates") {
+	Delta delta{};
+	std::set<Symbol> expected{};
+	for (State source{0}; source < 66; ++source) {
+		delta.add(source, source, 0);
+		expected.insert(source);
+	}
+	// These duplicate posts are not reasons to fall back from the bounded incremental collection.
+	delta.add(66, 0, 0);
+	delta.add(67, 63, 0);
+
+	const auto result{delta.get_used_symbols()};
+	CHECK(std::vector<Symbol>{result.begin(), result.end()} == std::vector<Symbol>{expected.begin(), expected.end()});
+}
+
 TEST_CASE("mata::nfa::Delta::state_post()") {
 	Nfa aut{};
 

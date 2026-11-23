@@ -759,8 +759,12 @@ mata::utils::OrdVector<Symbol> Delta::get_used_symbols_vec() const {
 			if (!incremental) {
 				symbols.push_back(symbol);
 			} else if (symbols.empty() || symbols.back() < symbol) {
+				if (num_distinct == 64) {
+					incremental = false;
+				} else {
+					++num_distinct;
+				}
 				symbols.push_back(symbol);
-				++num_distinct;
 			} else if (symbols.back() != symbol) {
 				if (num_distinct == 64) {
 					incremental = false;
