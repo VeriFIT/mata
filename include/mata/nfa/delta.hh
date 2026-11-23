@@ -13,6 +13,7 @@
 #include <concepts>
 
 #include "mata/relation.hh"
+#include "mata/synchronized-symbol-post-iterator.hh"
 #include "mata/nfa/types.hh"
 
 namespace mata::nfa {

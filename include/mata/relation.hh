@@ -1,25 +1,5 @@
 /** @file
- * @brief The transition relation and automaton this library ships: depth 2, symbols keying states.
- *
- * @c mata/core/ is generic. It has the post templates, the visits, the cursor, the concepts and
- *  @c mata::AutomatonBase, and it names no particular relation anywhere — deliberately, because a
- *  third party building their own relation compiles all of it and should not be paying for, or
- *  tripping over, the one this library happens to ship.
- *
- * *This* is the one it ships. Every alias below is a single line, and together they are the whole of
- *  what "an NFA's transition relation" means here: a vector indexed by source state, over one key —
- *  the symbol — ending in a set of target states. @c mata::nfa and @c mata::nft both re-export these
- *  through their own seams, which is what lets either module substitute something else later by
- *  editing its own two lines rather than this file.
- *
- * Keeping it out of @c core/ is not tidiness. It is the difference between a core that *is* generic
- *  and a core that merely *contains* something generic: with the instantiation in here, the
- *  layering check "does core name a concrete relation" has an answer, and the answer is no.
- *
- * @note The explicit instantiations matching the @c extern template declarations at the bottom live
- *  in `src/relation.cc`. They are load-bearing, not an optimisation to be tidied away: without
- *  them every translation unit that includes this header instantiates the entire post stack and
- *  @c mata::AutomatonBase's ~400 lines of template bodies.
+ * @brief The depth-2 relation (state, symbol, StateSet) shipped with the library, and automata built on it.
  */
 
 #ifndef MATA_RELATION_HH
@@ -35,46 +15,27 @@
 #include "mata/core/delta.hh"
 #include "mata/types.hh"
 #include "mata/utils/ord-vector.hh"
-#include "mata/utils/synchronized-iterator.hh"
 
 namespace mata {
 
-/// A transition of the depth-2 relation: (source, symbol, target).
+/// A transition (source, symbol, target).
 using Transition = posts::Transition<State, Symbol, State>;
-
 /// A move out of the depth-2 relation: a symbol and one target state.
 using Move = posts::Move<Symbol, State>;
-
-/// The depth-2 entry: a symbol keying a set of target states. The targets are @c mata::StateSet
-///  itself: a target is a state, so the innermost post *is* a set of states, one type, no wrapper.
+/// The depth-2 entry: a symbol keying a set of target states.
 using SymbolPost = posts::PostEntry<Symbol, StateSet>;
-
-/// The depth-2 post: symbols keying sets of target states. Every existing call site names this.
+/// The depth-2 post: symbols keying sets of target states.
 using StatePost = posts::Post<SymbolPost>;
 
 /**
- * @brief The depth-2 relation: states, then symbols, then target states. Every call site names this.
+ * @brief The depth-2 relation: (state, symbol, StateSet).
  *
- * A **class**, not an alias, and the reason is diagnostics. An alias does not survive into compiler
- *  messages — GCC prints the canonical type — so `delta.add_transition(...)` on the alias reported
- *  `'class mata::posts::DeltaBase<mata::posts::Post<mata::posts::PostEntry<unsigned int,
- *  mata::utils::OrdVector<long unsigned int> > > >' has no member named 'add_transition'`:
- *  well over a hundred characters of noun for a one-word mistake. Measured; the rest of the message was unchanged.
- *
- * It adds **nothing** — no members, no behaviour, no virtuals. That is what makes the conversions
- *  below safe: there is nothing to slice, so a base and a derived object differ only in the name the
- *  compiler prints. @c sizeof is asserted equal at the bottom of this file.
- *
- * @note The conversions from the base are not decoration. Generic code in @c core legitimately
- *  produces a `posts::DeltaBase<StatePost>` — `posts::defragment()` returns one, and
- *  `src/nfa/nfa.cc` assigns it straight into an automaton's @c delta. Core cannot know about this
- *  class and must not, so the class has to accept what core hands back.
- * @see mata::Automaton, which is @c AutomatonBase over this.
+ * @note Exposes the generic relation as a concrete type, so that users are shielded from the template plumbing.
  */
 class Delta : public posts::DeltaBase<StatePost, posts::SymbolTransitionTraits<StatePost>> {
   public:
-	using Base = posts::DeltaBase<StatePost, posts::SymbolTransitionTraits<StatePost>>;
-	using Base::Base; ///< including `explicit Delta(size_t)`, which @c mata::DeltaLike requires
+	using Base = posts::DeltaBase<StatePost, posts::SymbolTransitionTraits<StatePost>>; ///< The generic relation.
+	using Base::Base; ///< The constructors of the generic relation, including `explicit Delta(size_t)`.
 
 	Delta() = default;
 	Delta(const Delta&) = default;
@@ -83,8 +44,8 @@ class Delta : public posts::DeltaBase<StatePost, posts::SymbolTransitionTraits<S
 	Delta& operator=(Delta&&) = default;
 	~Delta() = default;
 
-	/// @name Accepting what core hands back
-	/// Implicit on purpose: a `posts::DeltaBase<StatePost>` *is* this relation, spelled the long way.
+	/// @name Conversions from the generic relation
+	/// Implicit, since a `posts::DeltaBase<StatePost>` is this relation.
 	///@{
 	Delta(const Base& other) : Base{other} {}
 	Delta(Base&& other) noexcept : Base{std::move(other)} {}
@@ -98,126 +59,172 @@ class Delta : public posts::DeltaBase<StatePost, posts::SymbolTransitionTraits<S
 	}
 	///@}
 
-	/// @name The depth-2 keyed members, spelled concretely
-	/// Forwarders, so that diagnostics and IDEs show `add(State, Symbol, State)` rather than the
-	///  base's member templates. Redeclaring a name hides every base overload of it, so all depth-2
-	///  overloads are listed; a new one on the base must be added here. Spelled in @c mata::State /
-	///  @c mata::Symbol because GCC prints an inherited alias in its long canonical form.
+	/// @name Keyed members in concrete types
+	/// Forwarders, so that diagnostics and IDEs show `add(State, Symbol, State)`.
+	/// Redeclaring a name hides every base overload of it, so every overload is listed here.
 	///@{
-	/// @brief Add a transition from @p source over @p symbol to @p target.
+	/**
+	 * @brief Add a transition from @p source over @p symbol to @p target.
+	 *
+	 * @param source Source state of the transition.
+	 * @param symbol Symbol of the transition.
+	 * @param target Target of the transition.
+	 */
 	void add(const mata::State source, const mata::Symbol symbol, const mata::State target) {
 		Base::add(source, symbol, target);
 	}
-	/// @brief Add transitions from @p source over @p symbol to every state in @p targets.
+
+	/**
+	 * @brief Add a transition from @p source over @p symbol to every one of @p targets.
+	 *
+	 * @param source Source state of the transition.
+	 * @param symbol Symbol of the transition.
+	 * @param targets Set of targets of the transition.
+	 */
 	void add(const mata::State source, const mata::Symbol symbol, const mata::StateSet& targets) {
 		Base::add(source, symbol, targets);
 	}
-	/// @brief Add a transition given as a triple.
+
+	/**
+	 * @brief Add the transition @p transition.
+	 *
+	 * @param transition Transition to add.
+	 */
 	void add(const Transition& transition) { Base::add(transition); }
-	/// @brief Remove a transition; throws @c std::invalid_argument if it is not there.
+
+	/**
+	 * @brief Remove the transition from @p source over @p symbol to @p target.
+	 *
+	 * @param source Source state of the transition.
+	 * @param symbol Symbol of the transition.
+	 * @param target Target of the transition.
+	 * @throws Throws std::invalid_argument if @p source has no transition over @p symbol.
+	 */
 	void remove(const mata::State source, const mata::Symbol symbol, const mata::State target) {
 		Base::remove(source, symbol, target);
 	}
-	/// @brief Remove a transition given as a triple; throws @c std::invalid_argument if it is not there.
+
+	/**
+	 * @brief Remove the transition @p transition.
+	 *
+	 * @param transition Transition to remove.
+	 * @throws Throws std::invalid_argument if the source of @p transition has no transition over its symbol.
+	 */
 	void remove(const Transition& transition) { Base::remove(transition); }
-	/// @brief Is the transition from @p source over @p symbol to @p target present?
+
+	/**
+	 * @brief Check whether the relation contains the transition from @p source over @p symbol to @p target.
+	 *
+	 * @param source Source state of the transition.
+	 * @param symbol Symbol of the transition.
+	 * @param target Target of the transition.
+	 * @return True if the relation contains the transition, false otherwise.
+	 */
 	bool contains(const mata::State source, const mata::Symbol symbol, const mata::State target) const {
 		return Base::contains(source, symbol, target);
 	}
-	/// @brief Is the transition given as a triple present?
+
+	/**
+	 * @brief Check whether the relation contains the transition @p transition.
+	 *
+	 * @param transition Transition to look for.
+	 * @return True if the relation contains the transition, false otherwise.
+	 */
 	bool contains(const Transition& transition) const { return Base::contains(transition); }
 	///@}
 
-	/// @name The key members, spelled as symbols
-	/// For this relation a key *is* a symbol (asserted below), so the base's protected key members
-	///  are re-exported under the names NFA and NFT code has always used.
+	/// @name Key members as symbols
+	/// For this relation a key is a symbol, so the protected key members of the base are exported
+	///  under the symbol names.
 	///@{
-	/// @brief Expand @p target_alphabet by the symbols used on the transitions.
-	template <ExtensibleAlphabet A>
-		requires std::same_as<typename A::Symbol, mata::Symbol>
+	/**
+	 * @brief Expand @p target_alphabet by the symbols used on the transitions.
+	 *
+	 * The already existing symbols of @p target_alphabet are not overwritten.
+	 *
+	 * @param target_alphabet Alphabet to expand.
+	 */
+	template <ExtensibleAlphabet A> requires std::same_as<typename A::Symbol, mata::Symbol>
 	void add_symbols_to(A& target_alphabet) const {
 		Base::add_keys_to(target_alphabet);
 	}
-	/// @brief The symbols used on the transitions.
-	/// @copydetails mata::posts::DeltaBase::get_used_keys
+
+	/**
+	 * @brief Get the symbols used on the transitions.
+	 *
+	 * They do not have to equal the symbols of the alphabet used by the automaton.
+	 *
+	 * @return The used symbols, ordered.
+	 */
 	utils::OrdVector<mata::Symbol> get_used_symbols() const { return Base::get_used_keys(); }
+
+	/**
+	 * @brief Get the symbols used on the transitions.
+	 *
+	 * @return The used symbols, ordered.
+	 */
 	utils::OrdVector<mata::Symbol> get_used_symbols_vec() const { return Base::get_used_keys_vec(); }
+
+	/**
+	 * @brief Get the symbols used on the transitions.
+	 *
+	 * @return The used symbols, as a @c std::set.
+	 */
 	std::set<mata::Symbol> get_used_symbols_set() const { return Base::get_used_keys_set(); }
+
+	/**
+	 * @brief Get the symbols used on the transitions.
+	 *
+	 * @return The used symbols, as a sparse set.
+	 */
 	utils::SparseSet<mata::Symbol> get_used_symbols_sps() const { return Base::get_used_keys_sps(); }
+
+	/**
+	 * @brief Get the symbols used on the transitions.
+	 *
+	 * @note Indexed by symbol, so it allocates up to the greatest symbol used, epsilons included.
+	 *
+	 * @return A bit vector, true at every used symbol.
+	 */
 	std::vector<bool> get_used_symbols_bv() const { return Base::get_used_keys_bv(); }
+
+	/**
+	 * @brief Get the symbols used on the transitions.
+	 *
+	 * @note Indexed by symbol, so it allocates up to the greatest symbol used, epsilons included.
+	 *
+	 * @return A @c BoolVector, true at every used symbol.
+	 */
 	BoolVector get_used_symbols_chv() const { return Base::get_used_keys_chv(); }
-	/// @brief The greatest symbol used, epsilons included, or zero when there are no transitions.
+
+	/**
+	 * @brief Get the greatest symbol used on the transitions, epsilons included.
+	 *
+	 * @return The greatest symbol used, or zero when there are no transitions.
+	 */
 	mata::Symbol get_max_symbol() const { return Base::get_max_key().value_or(0); }
 	///@}
 };
 
-/// The depth-2 successor cursor. Every existing call site names this.
-using SuccessorCursor = posts::SuccessorCursor<StatePost>;
+using SuccessorCursor = posts::SuccessorCursor<StatePost>; ///< The successor cursor of @c Delta.
 
-/**
- * @brief Specialization of utils::SynchronizedExistentialIterator for iterating over SymbolPosts.
- */
-class SynchronizedExistentialSymbolPostIterator
-	: public utils::SynchronizedExistentialIterator<utils::OrdVector<SymbolPost>::const_iterator> {
-  public:
-	/**
-	 * @brief Get union of all targets.
-	 */
-	StateSet unify_targets() const;
-
-	/**
-	 * @brief Synchronize with the given SymbolPost @p sync.
-	 *
-	 * Alignes the synchronized iterator to the same symbol as @p sync.
-	 * @return True iff the synchronized iterator points to the same symbol as @p sync.
-	 */
-	bool synchronize_with(const SymbolPost& sync);
-
-	/**
-	 * @brief Synchronize with the given symbol @p sync_symbol.
-	 *
-	 * Alignes the synchronized iterator to the same symbol as @p sync_symbol.
-	 * @return True iff the synchronized iterator points to the same symbol as @p sync.
-	 */
-	bool synchronize_with(Symbol sync_symbol);
-}; // class SynchronizedExistentialSymbolPostIterator.
-
-/**
- * @brief The automaton every NFA and NFT in the tree derives from.
- *
- * @c mata::AutomatonBase over the relation above. Never named as a type outside inheritance
- *  plumbing — no variable, parameter or return type anywhere — which is why it is an alias here
- *  rather than a class: it is a *data-owning mixin*, which cannot be dissolved into free
- *  functions.
- */
+/// The automaton every NFA and NFT derives from: @c mata::AutomatonBase over @c Delta.
 using Automaton = AutomatonBase<Delta>;
 
 /// @name Contract checks
-/// The concrete relation must satisfy the contract the generic algorithms are written against.
-/// A failure here means @c mata/core/concepts.hh and this file have drifted apart. What every
-/// relation owes is stated once, in @c mata::posts::relation_contract_holds; only what is specific
-/// to this relation is spelled here.
+/// @c Delta must satisfy the contract the generic algorithms are written against.
 ///@{
 static_assert(posts::relation_contract_holds<Delta>());
 static_assert(
 	std::integral<Delta::Key<0>>,
 	"the depth-2 relation is keyed by symbols, so the symbol forwarders and the indexed key members must exist."
 );
-/**
- * The one place the relation's epsilon and the module constant meet.
- *
- * @c mata::EPSILON is what call sites write and @c Delta::Reserved<0>::min_epsilon is what the relation's
- *  own members default to; they are two spellings that have to denote one value. Give a relation a
- *  different reserved tail without updating the constant and every explicit `EPSILON` argument at a
- *  call site starts disagreeing with every defaulted one -- which is the silent wrong answer this
- *  whole descriptor exists to prevent, so it is a compile error instead.
- */
+/// @c mata::EPSILON, written at call sites, and the epsilon the relation's members default to must be one value.
 static_assert(
 	Delta::Reserved<0>::min_epsilon == EPSILON,
 	"mata::EPSILON and the relation's own epsilon must be the same value."
 );
-/// The keyed writes take a bare state by value, as they always have; the reference form would spill
-///  at every call site of the out-of-line arity-1 @c add.
+/// The keyed members take a target state by value.
 static_assert(
 	std::is_same_v<Delta::TargetArg, const State>,
 	"the shipped relation must take its targets by value; see mata::utils::ArgOf."
@@ -227,8 +234,7 @@ static_assert(
 } // namespace mata.
 
 namespace mata {
-/// Instantiated once, in `src/relation.cc`. Without these, every translation unit including this
-///  header instantiates the whole post stack and the automaton on top of it.
+/// Instantiated once, in `src/relation.cc`, instead of in every translation unit including this header.
 extern template class posts::detail::PostEntryCore<Symbol, StateSet, ReservedKeys<Symbol>>;
 extern template class posts::PostEntry<Symbol, StateSet>;
 extern template class posts::Post<SymbolPost>;

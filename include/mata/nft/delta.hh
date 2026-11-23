@@ -14,6 +14,7 @@
 #include <concepts>
 
 #include "mata/relation.hh"
+#include "mata/synchronized-symbol-post-iterator.hh"
 #include "mata/nft/types.hh"
 
 namespace mata::nft {
