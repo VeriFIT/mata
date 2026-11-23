@@ -1516,7 +1516,7 @@ inline bool is_included(
  * @param[in] lhs First automaton to concatenate.
  * @param[in] rhs Second automaton to concatenate.
  * @param[in] alphabet Alphabet of both NFAs to compute with.
- * @param[in] params[ Optional parameters to control the equivalence check algorithm:
+ * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains", "hkc" (the inclusion algorithm run in each direction) (Default: "antichains")
  * @param[out] cex If not null and @p lhs and @p rhs are not equivalent, filled with a witness word: a word in the
  *  language of one of @p lhs/@p rhs but not the other (as also produced by @c is_included() for whichever direction
