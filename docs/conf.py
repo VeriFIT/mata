@@ -88,3 +88,37 @@ html_static_path = ["_static"]
 breathe_projects = {project: "xml/"}
 breathe_default_project = project
 myst_heading_anchors = 7
+
+
+def _restore_doxygenfile_path_lookup():
+    """Make ``doxygenfile:: nfa/types.hh`` resolve again under Breathe 5.
+
+    Breathe 5 matches the path against the basename-only ``<name>`` from ``index.xml``, so any path with a directory
+    never matches (https://github.com/breathe-doc/breathe/issues/1084). Match against the file location, as Breathe 4 did.
+    """
+    from pathlib import PurePosixPath
+
+    try:
+        from breathe import renderer
+        from breathe.directives import file as file_directive
+        from breathe.parser import DoxCompoundKind
+    except ImportError:  # Breathe 4 matches by location already.
+        return
+
+    def file_finder_filter(filename, d_parser, project_info, index, matches):
+        target = PurePosixPath(filename).parts
+        for c in index.file_compounds:
+            if PurePosixPath(c.name).name != target[-1]:
+                continue
+            for cd in d_parser.parse_compound(c.refid, project_info).root.compounddef:
+                if (
+                    cd.kind == DoxCompoundKind.file
+                    and cd.location is not None
+                    and PurePosixPath(cd.location.file).parts[-len(target) :] == target
+                ):
+                    matches.append([renderer.TaggedNode(None, cd)])
+
+    file_directive.file_finder_filter = file_finder_filter
+
+
+_restore_doxygenfile_path_lookup()
