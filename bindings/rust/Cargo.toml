@@ -5,7 +5,9 @@ resolver = "3"
 [workspace.package]
 edition = "2024"
 rust-version = "1.95"
-authors = ["Nguyen Le Duy <nguyenleduy12610@gmail.com>"]
+authors = [
+  "The Core Mata Group (https://github.com/VeriFIT/mata/blob/devel/AUTHORS.md)",
+]
 license = "MIT"
 repository = "https://github.com/VeriFIT/mata"
 keywords = ["automata", "nfa", "transducer", "regex", "verification"]
