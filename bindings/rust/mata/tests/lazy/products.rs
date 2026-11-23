@@ -1,14 +1,11 @@
 //! Products of nondeterministic operands with many initial macrostates.
 
-mod common;
-mod words;
-
 use std::time::Duration;
 
-use common::nfa;
+use crate::common::nfa;
+use crate::words::{A, B, every_word, intersect, just, unions_of_a_and_ab, word_of};
+use mata::lazy::{Error, ExplicitOptions, Formula, Options};
 use mata::{Nfa, Symbol};
-use mata_lazy::{Error, ExplicitOptions, Formula, Options};
-use words::{A, B, every_word, intersect, just, unions_of_a_and_ab, word_of};
 
 const X: Symbol = Symbol::new(b'x' as u32);
 const Y: Symbol = Symbol::new(b'y' as u32);

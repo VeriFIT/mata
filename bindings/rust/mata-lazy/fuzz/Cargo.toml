@@ -13,7 +13,7 @@ cargo-fuzz = true
 [dependencies]
 arbitrary = "1.5.0"
 # The automata are its own, but mata-lazy needs a backend: regex is pure Rust, so no C++ under the sanitizers.
-mata-lazy = { path = "..", default-features = false, features = ["regex"] }
+mata-lazy = { path = "..", features = ["regex"] }
 libfuzzer-sys = "0.4.13"
 
 [lib]

@@ -2,17 +2,18 @@
 //!
 //! A [`Formula`] is a DAG of operations (union, intersection, complement, identity, projection,
 //! synchronized product, composition, images) over leaves. A leaf is any [`Automaton`], and the backends
-//! implement it for the automata of other crates.
+//! implement it for the automata of other crates. [`materialize`](Formula::materialize) builds the relation of a
+//! term as an [`ExplicitAutomaton`] that other crates can copy.
 //!
-//! | Feature | Leaves |
+//! | Backend | Leaves |
 //! |---|---|
-//! | `mata` (default) | Mata `Nfa` and `Nft` (Mata's Rust bindings); also enables `materialize` |
-//! | `regex` | regex-automata DFAs (`Regex`), pure Rust |
-//! | `rustfst` | rustfst `VectorFst` and `ConstFst` transducers, pure Rust |
+//! | `mata` crate, feature `lazy` (default) | Mata `Nfa` and `Nft`; this crate is re-exported as `mata::lazy`, which also turns an [`ExplicitAutomaton`] into an `Nft` |
+//! | feature `regex` | regex-automata DFAs (`Regex`), pure Rust |
+//! | feature `rustfst` | rustfst `VectorFst` and `ConstFst` transducers, pure Rust |
 //!
-//! The default build compiles Mata, a C++ library, or links an installed one (the README says what that
-//! needs). `default-features = false` builds in pure Rust, with the other backends or with your own automata.
-//! Leaves of different backends mix in one formula, as they share [`Symbol`]s, numbered as in Mata.
+//! This crate itself is pure Rust: it builds without a C++ toolchain, with the pure-Rust backends or with your own
+//! automata. Use it through `mata::lazy` for Mata leaves. Leaves of different backends mix in one formula, as they
+//! share [`Symbol`]s, numbered as in Mata.
 //!
 //! Building a formula does no automata work. A query ([`is_empty`](Formula::is_empty),
 //! [`check`](Formula::check)) explores only the macrostates it needs. Products pair states and complements
@@ -20,13 +21,13 @@
 //! marked [`explicit`](Formula::explicit) is built as an automaton when a query starts and read like a leaf.
 //!
 //! ```
-//! # #[cfg(feature = "mata")] {
+//! # #[cfg(feature = "regex")] {
 //! use mata_lazy::Formula;
-//! use mata::Nfa;
+//! use mata_lazy::regex::Regex;
 //!
 //! let mut formula = Formula::new();
-//! let a = formula.leaf(&Nfa::from_regex("a(a|b)*")?)?;
-//! let b = formula.leaf(&Nfa::from_regex("(a|b)*b")?)?;
+//! let a = formula.leaf(&Regex::new("a(a|b)*")?)?;
+//! let b = formula.leaf(&Regex::new("(a|b)*b")?)?;
 //! // L(a) ⊆ L(b) iff L(a) ∩ ¬L(b) = ∅.
 //! let not_b = formula.complement(b)?;
 //! let difference = formula.intersection(a, not_b)?;
@@ -64,11 +65,10 @@
 mod automaton;
 mod engine;
 mod error;
+mod explicit;
 mod formula;
 mod ids;
 mod leaf;
-#[cfg(feature = "mata")]
-mod mata;
 mod options;
 #[cfg(feature = "regex")]
 pub mod regex;
@@ -80,6 +80,7 @@ mod witness;
 
 pub use automaton::Automaton;
 pub use error::Error;
+pub use explicit::ExplicitAutomaton;
 pub use formula::{Formula, Tape, Term};
 pub use options::{ExplicitOptions, Materialized, Options, Outcome, Stats};
 pub use symbol::Symbol;

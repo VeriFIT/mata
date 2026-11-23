@@ -1,7 +1,9 @@
 //! Explicit nodes give the same answers, and their budgets, cache across queries and statistics work.
 
+use mata::lazy::{
+	Automaton, Error, ExplicitOptions, Formula, Options, Symbol, Tape, Term, Witness,
+};
 use mata::{Nfa, State};
-use mata_lazy::{Automaton, Error, ExplicitOptions, Formula, Options, Symbol, Tape, Term, Witness};
 
 /// Words over {a, b} whose `n`-th letter from the end is `a`.
 fn nth_from_end(n: u32) -> Nfa {

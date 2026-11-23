@@ -16,6 +16,7 @@ categories = ["api-bindings", "algorithms", "mathematics"]
 [workspace.dependencies]
 mata-sys = { version = "0.1.0", path = "mata-sys" }
 mata = { version = "0.1.0", path = "mata" }
+mata-lazy = { version = "0.1.0", path = "mata-lazy" }
 cxx = "1.0.205"
 cxx-build = { version = "1.0.205", features = ["parallel"] }
 cmake = "0.1.58"

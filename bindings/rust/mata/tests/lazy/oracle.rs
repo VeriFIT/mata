@@ -7,8 +7,8 @@ use std::hash::Hash;
 use std::str::FromStr;
 
 use mata::State;
+use mata::lazy::{Error, Formula, Options, Outcome, Symbol, Tape, Term, Witness};
 use mata::nft::{DONT_CARE, Nft};
-use mata_lazy::{Error, Formula, Options, Outcome, Symbol, Tape, Term, Witness};
 use rand::rngs::StdRng;
 use rand::{RngExt, SeedableRng};
 
@@ -639,7 +639,8 @@ fn assert_agrees(
 		"seed {seed}, all explicit"
 	);
 
-	let materialized = formula.materialize(root, &Options::new())?;
+	let materialized = Nft::try_from(&formula.materialize(root, &Options::new())?)
+		.expect("Mata holds every arity here");
 	if eager.num_states() <= MAX_COMPARED_ORACLE_STATES
 		&& materialized.num_states() <= MAX_COMPARED_NFT_STATES
 	{

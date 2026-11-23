@@ -2,10 +2,10 @@
 
 use std::error::Error;
 
+use mata::lazy::regex::Regex;
+use mata::lazy::{Formula, Options, Symbol, Term};
 use mata::nft::Nft;
 use mata::{Nfa, State};
-use mata_lazy::regex::Regex;
-use mata_lazy::{Formula, Options, Symbol, Term};
 use rand::rngs::StdRng;
 use rand::{RngExt, SeedableRng};
 use rustfst::fst_impls::VectorFst;
@@ -30,7 +30,7 @@ fn over_abc() -> Options {
 }
 
 /// `lhs ∩ ¬rhs`, which is empty iff `lhs ⊆ rhs`.
-fn difference(formula: &mut Formula, lhs: Term, rhs: Term) -> Result<Term, mata_lazy::Error> {
+fn difference(formula: &mut Formula, lhs: Term, rhs: Term) -> Result<Term, mata::lazy::Error> {
 	let not_rhs = formula.complement(rhs)?;
 
 	formula.intersection(lhs, not_rhs)
@@ -224,7 +224,7 @@ fn materialized_terms_go_back_to_mata() -> Result<(), Box<dyn Error>> {
 	let ends_b = formula.leaf(&ends_b_nfa)?;
 	let ends_b_only = difference(&mut formula, ends_b, ends_abb)?;
 
-	let materialized = formula.materialize(ends_b_only, &Options::new())?;
+	let materialized = Nft::try_from(&formula.materialize(ends_b_only, &Options::new())?)?;
 	let alphabet = mata::Alphabet::from_symbols(b"ab".map(mata::Symbol::from))?;
 	let nfa = materialized.to_nfa_over(&alphabet);
 	let expected = ends_b_nfa.difference(&ends_abb_nfa);

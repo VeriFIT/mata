@@ -78,11 +78,6 @@ pub enum Error {
 		/// The alphabets given.
 		found: usize,
 	},
-	/// Mata refused a transducer, such as one with 0 or more than
-	/// [`MAX_LEVELS`](mata::nft::MAX_LEVELS) levels.
-	#[cfg(feature = "mata")]
-	#[error(transparent)]
-	Mata(#[from] mata::NftError),
 	/// The query held more macrostates than [`max_states`](crate::Options::max_states).
 	#[error("the query holds more than {max_states} macrostates")]
 	#[non_exhaustive]

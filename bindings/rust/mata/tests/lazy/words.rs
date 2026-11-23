@@ -1,7 +1,7 @@
 //! Mata automata over {a, b} and formulas with many initial macrostates, shared by `initial` and `products`.
 
+use mata::lazy::{Error, Formula, Term, Witness};
 use mata::{Nfa, Symbol};
-use mata_lazy::{Error, Formula, Term, Witness};
 
 use crate::common::nfa;
 

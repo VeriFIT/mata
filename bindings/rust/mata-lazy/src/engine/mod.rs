@@ -589,7 +589,6 @@ impl<'f> Engine<'f> {
 	}
 
 	/// Builds the root as an explicit automaton.
-	#[cfg(feature = "mata")]
 	pub(crate) fn materialize_root(&mut self) -> Result<Leaf, Error> {
 		let explored = self
 			.explore(self.exec.root, None)

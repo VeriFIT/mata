@@ -4,6 +4,8 @@
 pub mod alphabet;
 mod error;
 mod intermediate;
+#[cfg(feature = "lazy")]
+pub mod lazy;
 mod limits;
 pub mod nfa;
 pub mod nft;

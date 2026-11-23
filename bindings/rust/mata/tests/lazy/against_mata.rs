@@ -1,8 +1,8 @@
 //! Random automata and transducers against Mata's eager operations.
 
+use mata::lazy::{Error, Formula, Options, Term, Witness};
 use mata::nft::Nft;
 use mata::{Alphabet, Nfa, State, Symbol};
-use mata_lazy::{Error, Formula, Options, Term, Witness};
 use rand::rngs::StdRng;
 use rand::{RngExt, SeedableRng};
 
@@ -143,7 +143,8 @@ fn boolean_combinations_agree_with_mata() -> Result<(), Error> {
 			);
 		}
 
-		let materialized = formula.materialize(root, &options())?;
+		let materialized = Nft::try_from(&formula.materialize(root, &options())?)
+			.expect("Mata holds every arity here");
 		assert!(
 			materialized.to_nfa_over(&sigma()).is_equivalent_to(&eager),
 			"seed {seed}: materialized"
@@ -159,7 +160,7 @@ fn boolean_combinations_agree_with_mata() -> Result<(), Error> {
 }
 
 #[test]
-fn transducer_operations_agree_with_mata() -> Result<(), Error> {
+fn transducer_operations_agree_with_mata() -> Result<(), Box<dyn std::error::Error>> {
 	let mut queries: u64 = 0;
 	let mut empty = 0;
 	for seed in 0..SEEDS {
@@ -229,7 +230,7 @@ fn transducer_operations_agree_with_mata() -> Result<(), Error> {
 }
 
 #[test]
-fn transducer_epsilon_is_padding() -> Result<(), Error> {
+fn transducer_epsilon_is_padding() -> Result<(), Box<dyn std::error::Error>> {
 	// For {(a, ε)}, Mata pads the shorter word, and lock step reads (a, ε) in one step.
 	let mut relation = Nft::new(2)?;
 	let (source, target) = (relation.add_state(), relation.add_state());
@@ -243,7 +244,7 @@ fn transducer_epsilon_is_padding() -> Result<(), Error> {
 
 	assert_eq!(
 		witness.steps().next().expect("one step"),
-		[mata_lazy::Symbol::from(b'a'), mata_lazy::Symbol::EPSILON]
+		[mata::lazy::Symbol::from(b'a'), mata::lazy::Symbol::EPSILON]
 	);
 	assert_eq!(witness.tape(1), Some(Vec::new()));
 

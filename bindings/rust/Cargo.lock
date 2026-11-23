@@ -422,8 +422,11 @@ dependencies = [
 name = "mata"
 version = "0.1.0"
 dependencies = [
+ "mata-lazy",
  "mata-sys",
  "proptest",
+ "rand 0.10.3",
+ "rustfst",
  "serde",
  "serde_json",
  "thiserror",
@@ -442,7 +445,6 @@ version = "0.1.0"
 dependencies = [
  "hashbrown",
  "indexmap",
- "mata",
  "parking_lot",
  "rand 0.10.3",
  "regex-automata",

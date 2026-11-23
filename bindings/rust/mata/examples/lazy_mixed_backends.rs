@@ -6,9 +6,10 @@
 
 use std::error::Error;
 
+use mata::lazy::regex::Regex;
+use mata::lazy::{Formula, Options, Witness};
+use mata::nft::Nft;
 use mata::{Alphabet, Nfa, NoSuchState, State, Symbol};
-use mata_lazy::regex::Regex;
-use mata_lazy::{Formula, Options, Witness};
 use rustfst::Tr;
 use rustfst::fst_impls::VectorFst;
 use rustfst::fst_traits::MutableFst;
@@ -73,7 +74,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 	}
 
 	// The outputs as an explicit automaton, minimized by Mata.
-	let explicit = formula.materialize(outputs, &options)?;
+	let explicit = Nft::try_from(&formula.materialize(outputs, &options)?)?;
 	let alphabet = Alphabet::from_symbols(b"abc".map(Symbol::from))?;
 	let minimal = explicit.to_nfa_over(&alphabet).minimize();
 	println!(

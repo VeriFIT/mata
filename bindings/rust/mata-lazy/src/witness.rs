@@ -54,6 +54,19 @@ impl Witness {
 		})
 	}
 
+	/// Displays the steps with `name` for the symbols that have one, as `Display` does with numbers. With Mata's
+	/// names: `witness.display_with(|symbol| alphabet.name(symbol.into()))`.
+	#[must_use = "an adapter does nothing until it is formatted"]
+	pub fn display_with<'a, 'n>(
+		&'a self,
+		name: impl Fn(Symbol) -> Option<&'n str> + 'a,
+	) -> impl fmt::Display + 'a
+	where
+		'n: 'a,
+	{
+		fmt::from_fn(move |f| self.write(f, &name))
+	}
+
 	/// Writes the steps, with `name` for the symbols that have one.
 	pub(crate) fn write<'n>(
 		&self,

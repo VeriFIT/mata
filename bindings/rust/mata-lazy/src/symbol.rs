@@ -64,20 +64,6 @@ impl From<Symbol> for u32 {
 	}
 }
 
-#[cfg(feature = "mata")]
-impl From<mata::Symbol> for Symbol {
-	fn from(symbol: mata::Symbol) -> Symbol {
-		Symbol(symbol.value())
-	}
-}
-
-#[cfg(feature = "mata")]
-impl From<Symbol> for mata::Symbol {
-	fn from(symbol: Symbol) -> mata::Symbol {
-		mata::Symbol::new(symbol.0)
-	}
-}
-
 /// Prints the number, `ε` for [`EPSILON`](Symbol::EPSILON) or `*` for [`ANY`](Symbol::ANY).
 impl fmt::Display for Symbol {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

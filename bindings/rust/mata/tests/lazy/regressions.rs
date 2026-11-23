@@ -1,13 +1,10 @@
 //! Semantic corner cases and inputs that once went wrong or did not scale.
 
-mod automata;
-mod common;
-
-use automata::{nft, single, star, tuple};
-use common::nfa;
+use crate::automata::{nft, single, star, tuple};
+use crate::common::nfa;
 use mata::Symbol;
+use mata::lazy::{Error, ExplicitOptions, Formula, Options};
 use mata::nft::DONT_CARE;
-use mata_lazy::{Error, ExplicitOptions, Formula, Options};
 
 const A: Symbol = Symbol::new(b'a' as u32);
 const B: Symbol = Symbol::new(b'b' as u32);

@@ -1,22 +1,21 @@
 # mata-lazy
 
-Lazy emptiness checking of Boolean and relational combinations of automata and transducers, on top of [Mata](https://github.com/VeriFIT/mata) and its Rust bindings.
+Lazy emptiness checking of Boolean and relational combinations of automata and transducers, the engine behind `mata::lazy` in the Rust bindings of [Mata](https://github.com/VeriFIT/mata).
 
 You build a formula (unions, intersections, complements, products, compositions, projections) over automata from Mata, regex-automata or rustfst, and ask whether its relation is empty. mata-lazy explores only what the answer needs. Complements and products are built on the fly, and subsumption prunes the search. When the relation is not empty, you get a witness.
 
 ## Getting started
 
-mata-lazy is not on crates.io yet, so use it from the repository, together with the `mata` crate.
+With Mata's automata, use the engine through the `mata` crate, which re-exports it as `mata::lazy` (the `lazy` feature, on by default). Neither crate is on crates.io yet, so use them from the repository.
 
 ```toml
 [dependencies]
-mata-lazy = { git = "https://github.com/VeriFIT/mata", branch = "devel" }
 mata = { git = "https://github.com/VeriFIT/mata", branch = "devel" }
 ```
 
 ```rust
-use mata_lazy::Formula;
 use mata::Nfa;
+use mata::lazy::Formula;
 
 let mut formula = Formula::new();
 let a = formula.leaf(&Nfa::from_regex("a(a|b)*b")?)?;
@@ -28,19 +27,25 @@ let difference = formula.intersection(a, not_b)?;
 assert!(formula.is_empty(difference)?);
 ```
 
+Without Mata, depend on `mata-lazy` alone: it is pure Rust and needs no C++ toolchain.
+
+```toml
+[dependencies]
+mata-lazy = { git = "https://github.com/VeriFIT/mata", branch = "devel", features = ["regex"] }
+```
+
 ### Requirements
 
 - Rust 1.95 or newer.
-- The default backend, Mata, is a C++ library built from source, which needs CMake 3.23 or newer and a C++23 compiler (GCC 14 or newer, or Clang 18 or newer). To link an installed Mata instead, set `MATA_DIR` (see the [`mata-sys` README](../mata-sys/README.md)).
-- Without a C++ toolchain, set `default-features = false` and enable a pure-Rust backend (`features = ["regex"]` or `["rustfst"]`), or none if you bring your own automata.
+- Through `mata`: Mata is a C++ library built from source, which needs CMake 3.23 or newer and a C++23 compiler (GCC 14 or newer, or Clang 18 or newer). To link an installed Mata instead, set `MATA_DIR` (see the [`mata-sys` README](../mata-sys/README.md)).
 
 ## Backends
 
-| Feature          | Leaves                                                                                        |
-| ---------------- | --------------------------------------------------------------------------------------------- |
-| `mata` (default) | Mata `Nfa` and `Nft`; also enables `materialize`, which returns a result as a Mata `Nft`      |
-| `regex`          | mata-lazy's `Regex`, a DFA over bytes                                                         |
-| `rustfst`        | rustfst `VectorFst` and `ConstFst` (arity 2; weights only decide whether a transition exists) |
+| Backend                       | Leaves                                                                                                        |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `mata` crate, as `mata::lazy` | Mata `Nfa` and `Nft`; `Nft::try_from(&formula.materialize(term, &options)?)` turns a result into a Mata `Nft` |
+| feature `regex`               | mata-lazy's `Regex`, a DFA over bytes                                                                         |
+| feature `rustfst`             | rustfst `VectorFst` and `ConstFst` (arity 2; weights only decide whether a transition exists)                 |
 
 Leaves of different backends can be mixed in one formula, and your own automata can be leaves too, with or without a backend (below).
 
@@ -98,7 +103,7 @@ A transducer reports one symbol per tape on each move, with the `EPSILON` symbol
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `is_empty`, `find_word` | whether the relation is empty, or a witness                                                                                                                                                                                                               |
 | `check`                 | witness and statistics, with options for extra alphabet symbols, terms made explicit for one query, limits on states and time (their errors carry the statistics so far), a memory budget for cached results, and subsumption and the antichain on or off |
-| `materialize`           | the whole relation as a Mata `Nft`                                                                                                                                                                                                                        |
+| `materialize`           | the whole relation as an `ExplicitAutomaton`, which other libraries copy (into a Mata `Nft` with `Nft::try_from`) and which can be a leaf again                                                                                                           |
 
 Every builder and query returns a `Result` with mata-lazy's `Error`, and misuse such as a wrong arity is an error, not a panic. Queries take `&self`, so several threads can query one formula.
 
@@ -112,14 +117,14 @@ A few things are worth knowing.
 
 ## Examples
 
-Run them from `bindings/rust`.
+Run them from `bindings/rust`. The ones with Mata leaves live in the `mata` crate.
 
 ```text
-cargo run --release -p mata-lazy --example lazy_inclusion                  # language inclusion of regular expressions
-cargo run --release -p mata-lazy --example model_checking                  # regular model checking with an inductive invariant
+cargo run --release -p mata --example lazy_inclusion                       # language inclusion of regular expressions
+cargo run --release -p mata --example lazy_model_checking                  # regular model checking with an inductive invariant
 cargo run --release -p mata-lazy --example custom_automaton                # leaves from your own automaton and transducer
-cargo run --release -p mata-lazy --example sat_solver                      # a SAT solver, on a hard sudoku
-cargo run --release -p mata-lazy --all-features --example mixed_backends   # one formula over all three backends
+cargo run --release -p mata --example lazy_sat_solver                      # a SAT solver, on a hard sudoku
+cargo run --release -p mata --example lazy_mixed_backends                  # one formula over all three backends
 ```
 
 ## Testing
@@ -127,12 +132,11 @@ cargo run --release -p mata-lazy --all-features --example mixed_backends   # one
 Run the tests from `bindings/rust`, or `just bindings rust` from the repository root to test every crate of the Rust bindings.
 
 ```text
-cargo test -p mata-lazy --all-features                            # everything
-cargo test -p mata-lazy                                           # with the default backend
-cargo test -p mata-lazy --no-default-features --features regex    # without Mata
+cargo test -p mata-lazy --all-features      # the engine, without Mata
+cargo test -p mata --test lazy              # with Mata leaves, against Mata's eager operations
 ```
 
-`MATA_LAZY_ORACLE_SEEDS=200000 MATA_LAZY_ORACLE_DEPTH=5 cargo test -p mata-lazy --release --all-features --test oracle` runs a larger random campaign against an independent evaluator. `mata-lazy/fuzz` holds a cargo-fuzz target, which needs nightly and `cargo install cargo-fuzz`.
+`MATA_LAZY_ORACLE_SEEDS=200000 MATA_LAZY_ORACLE_DEPTH=5 cargo test -p mata --release --test lazy -- oracle` runs a larger random campaign against an independent evaluator. `mata-lazy/fuzz` holds a cargo-fuzz target, which needs nightly and `cargo install cargo-fuzz`.
 
 ```text
 cd mata-lazy/fuzz

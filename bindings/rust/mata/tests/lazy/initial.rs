@@ -1,14 +1,11 @@
 //! Unions, complements, explicit nodes and limits with more initial macrostates than are listed at once.
 
-mod common;
-mod words;
-
 use std::time::Duration;
 
-use common::nfa;
+use crate::common::nfa;
+use crate::words::{A, B, every_word, just, unions_of_a_and_ab, word_of};
 use mata::Symbol;
-use mata_lazy::{Error, ExplicitOptions, Formula, Options, Term};
-use words::{A, B, every_word, just, unions_of_a_and_ab, word_of};
+use mata::lazy::{Error, ExplicitOptions, Formula, Options, Term};
 
 /// Whether `term` contains `word`.
 fn contains(formula: &mut Formula, term: Term, word: &[Symbol]) -> Result<bool, Error> {

@@ -8,8 +8,8 @@
 use std::error::Error;
 use std::time::Instant;
 
+use mata::lazy::{Formula, Options, Term};
 use mata::{Nfa, NoSuchState, State, Symbol};
-use mata_lazy::{Formula, Options, Term};
 
 /// AI Escargot (Arto Inkala, 2006), with 0 for an empty cell.
 const PUZZLE: [[u8; 9]; 9] = [
@@ -96,7 +96,7 @@ fn clause_automaton(clause: &[Literal], position: &[usize]) -> Result<Nfa, NoSuc
 }
 
 /// The intersection of `terms`, as a balanced tree.
-fn intersection(formula: &mut Formula, terms: &[Term]) -> Result<Term, mata_lazy::Error> {
+fn intersection(formula: &mut Formula, terms: &[Term]) -> Result<Term, mata::lazy::Error> {
 	if let [term] = terms {
 		return Ok(*term);
 	}

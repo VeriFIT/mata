@@ -10,9 +10,9 @@
 use std::error::Error;
 use std::time::Instant;
 
+use mata::lazy::{Formula, Options, Term};
 use mata::nft::Nft;
 use mata::{Alphabet, Nfa, NftError, NoSuchState, State, Symbol};
-use mata_lazy::{Formula, Options, Term};
 
 fn word(symbol: Symbol) -> Result<Nfa, NoSuchState> {
 	let mut nfa = Nfa::with_states(2);
@@ -116,7 +116,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 	if let Some(witness) = outcome.witness {
 		println!(
 			"  reachable unsafe configuration: {}",
-			witness.display_with(&names)
+			witness.display_with(|symbol| names.name(symbol.into()))
 		);
 	}
 

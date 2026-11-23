@@ -1,7 +1,7 @@
 //! Language inclusion as emptiness, as `L1 ⊆ L2` iff `L1 ∩ ¬L2 = ∅`.
 
 use mata::Nfa;
-use mata_lazy::{Formula, Witness};
+use mata::lazy::{Formula, Witness};
 
 /// The word on tape 0, with bytes shown as characters.
 fn text(witness: &Witness) -> String {

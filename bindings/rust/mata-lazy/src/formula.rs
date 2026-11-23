@@ -3,8 +3,6 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
 
-#[cfg(feature = "mata")]
-use mata::nft::Nft;
 use parking_lot::Mutex;
 use rustc_hash::{FxHashMap, FxHashSet};
 use typed_index_collections::TiVec;
@@ -12,7 +10,9 @@ use typed_index_collections::TiVec;
 use crate::engine;
 use crate::ids::{Id, LeafId, NodeId};
 use crate::leaf::Leaf;
-use crate::{Automaton, Error, ExplicitOptions, Options, Outcome, Symbol, Witness};
+use crate::{
+	Automaton, Error, ExplicitAutomaton, ExplicitOptions, Options, Outcome, Symbol, Witness,
+};
 
 static NEXT_FORMULA: AtomicU32 = AtomicU32::new(0);
 
@@ -128,20 +128,30 @@ impl Formula {
 	/// that a complement over the leaf includes them. A single alphabet applies to every tape.
 	///
 	/// ```
-	/// # #[cfg(feature = "mata")] {
-	/// use mata_lazy::Formula;
-	/// use mata::Nfa;
+	/// use mata_lazy::{Automaton, Formula, Symbol};
 	///
-	/// let only_a = Nfa::from_regex("a*")?;
+	/// /// The words a*.
+	/// struct OnlyA;
+	///
+	/// impl Automaton for OnlyA {
+	///     type State = ();
+	///
+	///     fn arity(&self) -> usize { 1 }
+	///     fn initial_states(&self) -> impl IntoIterator<Item = ()> { [()] }
+	///     fn is_final(&self, (): ()) -> bool { true }
+	///     fn for_each_move(&self, (): (), mut visit: impl FnMut(&[Symbol], ())) {
+	///         visit(&[Symbol::from(b'a')], ());
+	///     }
+	/// }
+	///
 	/// let mut formula = Formula::new();
-	/// let leaf = formula.leaf(&only_a)?;
+	/// let leaf = formula.leaf(&OnlyA)?;
 	/// // Without b in the alphabet, the complement of a* is empty.
 	/// let not_a = formula.complement(leaf)?;
 	/// assert!(formula.is_empty(not_a)?);
-	/// let leaf = formula.leaf_over(&only_a, [*b"ab"])?;
+	/// let leaf = formula.leaf_over(&OnlyA, [*b"ab"])?;
 	/// let not_a = formula.complement(leaf)?;
 	/// assert!(!formula.is_empty(not_a)?);
-	/// # }
 	/// # Ok::<(), Box<dyn std::error::Error>>(())
 	/// ```
 	///
@@ -262,23 +272,27 @@ impl Formula {
 	/// the same words, arranged by `layout`. Tapes missing from `layout` are dropped.
 	///
 	/// ```
-	/// # #[cfg(feature = "mata")] {
-	/// use mata_lazy::{Formula, Tape};
-	/// use mata::Symbol;
-	/// use mata::nft::Nft;
+	/// use mata_lazy::{Automaton, Formula, Symbol, Tape};
 	///
-	/// fn pair(x: u8, y: u8) -> Result<Nft, mata::NftError> {
-	///     let mut t = Nft::new(2)?;
-	///     let (p, q) = (t.add_state(), t.add_state());
-	///     t.add_initial(p)?;
-	///     t.add_final(q)?;
-	///     t.add_transition(p, &[Symbol::from(x), Symbol::from(y)], q)?;
-	///     Ok(t)
+	/// /// The single pair (x, y).
+	/// struct Pair(u8, u8);
+	///
+	/// impl Automaton for Pair {
+	///     type State = bool;
+	///
+	///     fn arity(&self) -> usize { 2 }
+	///     fn initial_states(&self) -> impl IntoIterator<Item = bool> { [false] }
+	///     fn is_final(&self, read: bool) -> bool { read }
+	///     fn for_each_move(&self, read: bool, mut visit: impl FnMut(&[Symbol], bool)) {
+	///         if !read {
+	///             visit(&[self.0.into(), self.1.into()], true);
+	///         }
+	///     }
 	/// }
 	///
 	/// let mut formula = Formula::new();
-	/// let ab = formula.leaf(&pair(b'a', b'b')?)?;
-	/// let bc = formula.leaf(&pair(b'b', b'c')?)?;
+	/// let ab = formula.leaf(&Pair(b'a', b'b'))?;
+	/// let bc = formula.leaf(&Pair(b'b', b'c'))?;
 	/// // {(a, b, c)}: tape 1 of `ab` meets tape 0 of `bc`.
 	/// let layout = [Tape::Lhs(0), Tape::Lhs(1), Tape::Rhs(1)];
 	/// let abc = formula.sync_product(ab, bc, &[(1, 0)], &layout)?;
@@ -287,7 +301,6 @@ impl Formula {
 	/// // Tape 0 of `ab` reads a, tape 0 of `bc` reads b.
 	/// let none = formula.sync_product(ab, bc, &[(0, 0)], &[])?;
 	/// assert!(formula.is_empty(none)?);
-	/// # }
 	/// # Ok::<(), mata_lazy::Error>(())
 	/// ```
 	///
@@ -495,27 +508,19 @@ impl Formula {
 		})
 	}
 
-	/// Builds the relation of `term` as a Mata transducer with one level per tape (trimmed).
+	/// Builds the whole relation of `term` as an explicit automaton (trimmed).
 	///
-	/// [`ANY`](Symbol::ANY) stays as [`DONT_CARE`](mata::nft::DONT_CARE) where every operand of a step reads any
-	/// symbol; [`to_nfa_over`](Nft::to_nfa_over) expands it for arity 1. Mata reads padding asynchronously, so for a
-	/// relation that is not length-preserving the Mata relation drops it, and `(a, ε)` then `(ε, b)` is the pair `(a,
-	/// b)` there. [`leaf_over`](Formula::leaf_over) reads the transducer back in lock step, given the alphabets.
+	/// Other libraries copy it into their own automata; with Mata, `Nft::try_from(&explicit)` (in `mata::lazy`)
+	/// gives a transducer with one level per tape. [`leaf`](Formula::leaf) reads it back into a formula.
 	///
 	/// # Errors
 	///
-	/// As [`check`](Formula::check), or [`Mata`](Error::Mata) if `term` has arity 0 or more than
-	/// [`MAX_LEVELS`](mata::nft::MAX_LEVELS).
-	#[cfg(feature = "mata")]
-	pub fn materialize(&self, term: Term, options: &Options) -> Result<Nft, Error> {
+	/// As [`check`](Formula::check).
+	pub fn materialize(&self, term: Term, options: &Options) -> Result<ExplicitAutomaton, Error> {
 		let node = self.node(term)?;
-		// Before the query, so that a term Mata cannot hold fails fast.
-		let mut nft = Nft::new(self.arities[node])?;
-
 		let mut engine = engine::Engine::new(self, node, options)?;
-		crate::mata::fill(&mut nft, &engine.materialize_root()?)?;
 
-		Ok(nft)
+		Ok(ExplicitAutomaton::new(engine.materialize_root()?))
 	}
 
 	/// Forgets the explicit automata kept for later queries.
