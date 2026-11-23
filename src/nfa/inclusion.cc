@@ -50,9 +50,18 @@ bool mata::nfa::algorithms::is_included_naive(
 	// Boolean queries on deterministic left inputs can stop at the first difference instead of constructing the full
 	// complement. The lazy difference determinizes its left input, so other inputs retain the legacy path to avoid
 	// subset-constructing them. It also requires epsilon-free inputs and the full alphabet used by the legacy path.
-	if (cex == nullptr && smaller.is_deterministic() && !contains_epsilon(smaller) && !contains_epsilon(bigger) &&
-		(alphabet == nullptr || alphabet->get_alphabet_symbols() == used_letters(smaller, bigger))) {
-		return !get_word_from_lang_difference(smaller, bigger).has_value();
+	if (cex == nullptr && smaller.is_deterministic() && !contains_epsilon(smaller) && !contains_epsilon(bigger)) {
+		const OrdVector<mata::Symbol> letters{used_letters(smaller, bigger)};
+		if (alphabet == nullptr || alphabet->get_alphabet_symbols() == letters) {
+			// The legacy path returns at once when the complement of @p bigger has no final state; the lazy search
+			//  would keep every reachable pair instead. Every word over the letters has a run in an automaton with an
+			//  initial state, all states final, and every letter at every reachable state, so it accepts them all.
+			if (!bigger.initial.empty() && bigger.final.size() == bigger.num_of_states() &&
+				bigger.is_complete(letters)) {
+				return true;
+			}
+			return !get_word_from_lang_difference(smaller, bigger).has_value();
+		}
 	}
 
 	Nfa bigger_cmpl;

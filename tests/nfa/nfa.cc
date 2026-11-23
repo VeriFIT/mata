@@ -3489,6 +3489,29 @@ TEST_CASE("mata::nfa naive inclusion uses lazy difference only for eligible Bool
 	CHECK(!algorithms::is_included_naive(only_a, only_b, nullptr, nullptr));
 	CHECK(algorithms::is_included_naive(only_a, only_a, nullptr, nullptr));
 
+	// A universal bigger automaton is answered without searching the pairs. Two all-final unary cycles of coprime
+	//  lengths have no common period, so a search keeps every pair of their states.
+	const auto all_final_cycle{[](const size_t length) {
+		Nfa cycle{length, {0}, {}};
+		for (State state{0}; state < length; ++state) {
+			cycle.final.insert(state);
+			cycle.delta.add(state, 'a', static_cast<State>((state + 1) % length));
+		}
+		return cycle;
+	}};
+	CHECK(algorithms::is_included_naive(all_final_cycle(7), all_final_cycle(11), nullptr, nullptr));
+	Nfa universal_nondeterministic{2, {0}, {0, 1}};
+	universal_nondeterministic.delta.add(0, 'a', 0);
+	universal_nondeterministic.delta.add(0, 'a', 1);
+	universal_nondeterministic.delta.add(1, 'a', 0);
+	CHECK(algorithms::is_included_naive(all_final_cycle(7), universal_nondeterministic, nullptr, nullptr));
+	// All states final is not enough: without an initial state the language is empty, and a letter missing at a
+	//  reachable state leaves the words through it out.
+	Nfa no_initial{all_final_cycle(3)};
+	no_initial.initial.clear();
+	CHECK(!algorithms::is_included_naive(all_final_cycle(7), no_initial, nullptr, nullptr));
+	CHECK(!algorithms::is_included_naive(any_letter, all_final_cycle(3), nullptr, nullptr));
+
 	// The supplied alphabet must be respected: words outside it cannot form a counterexample.
 	const EnumAlphabet just_a{static_cast<Symbol>('a')};
 	CHECK(algorithms::is_included_naive(any_letter, only_a, &just_a, nullptr));
