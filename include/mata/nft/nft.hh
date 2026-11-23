@@ -2157,7 +2157,7 @@ inline bool is_included(
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @p DONT_CARE symbols.
- * @param[in] params[ Optional parameters to control the equivalence check algorithm:
+ * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  * @throw std::invalid_argument when the level vector of an operand does not cover all its states or holds a level
