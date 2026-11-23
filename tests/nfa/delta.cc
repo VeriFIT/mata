@@ -265,7 +265,7 @@ TEST_CASE("mata::nfa::StatePost iteration over moves") {
 		for (auto move_it{moves.begin()}; move_it != moves.end(); ++move_it) { iterated_moves.push_back(*move_it); }
 		CHECK(iterated_moves == expected_moves);
 
-		iterated_moves = {moves.begin(), moves.end()};
+		iterated_moves.assign(moves.begin(), moves.end());
 		CHECK(iterated_moves == expected_moves);
 
 		iterated_moves.clear();
@@ -434,7 +434,7 @@ TEST_CASE("mata::nfa::Delta iteration over transitions") {
 			std::vector<Transition>{{0, 1, 1}, {0, 2, 1}, {0, 5, 1}, {1, 3, 2}, {2, 0, 1}, {2, 0, 3}};
 		CHECK(iterated_transitions == expected_transitions);
 
-		iterated_transitions = {transitions.begin(), transitions.end()};
+		iterated_transitions.assign(transitions.begin(), transitions.end());
 		CHECK(iterated_transitions == expected_transitions);
 
 		iterated_transitions.clear();
@@ -518,10 +518,10 @@ TEST_CASE("mata::nfa::StatePost::Moves") {
 	// TODO: rewrite in a check of moves.
 	StatePost::Moves moves_from_source{nfa.delta[0].moves()};
 
-	CHECK(std::vector<Move>{moves_from_source.begin(), moves_from_source.end()} == std::vector<Move>{{'a', 1}});
+	CHECK(std::vector<Move>(moves_from_source.begin(), moves_from_source.end()) == std::vector<Move>{{'a', 1}});
 	moves_from_source = nfa.delta[1].moves();
 	CHECK(
-		std::vector<Move>{moves_from_source.begin(), moves_from_source.end()} ==
+		std::vector<Move>(moves_from_source.begin(), moves_from_source.end()) ==
 		std::vector<Move>{{'b', 2}, {'c', 2}, {'d', 2}}
 	);
 	StatePost::Moves::const_iterator move_incremented_it{moves_from_source.begin()};
