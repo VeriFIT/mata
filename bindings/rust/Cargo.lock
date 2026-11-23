@@ -423,6 +423,7 @@ name = "mata"
 version = "0.1.0"
 dependencies = [
  "mata-lazy",
+ "mata-logic",
  "mata-sys",
  "proptest",
  "rand 0.10.3",
@@ -453,6 +454,16 @@ dependencies = [
  "stacker",
  "thiserror",
  "typed-index-collections",
+]
+
+[[package]]
+name = "mata-logic"
+version = "0.1.0"
+dependencies = [
+ "mata-lazy",
+ "rand 0.10.3",
+ "rustc-hash",
+ "thiserror",
 ]
 
 [[package]]

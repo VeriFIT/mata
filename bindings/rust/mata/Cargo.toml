@@ -12,9 +12,11 @@ keywords.workspace = true
 categories.workspace = true
 
 [features]
-default = ["lazy"]
+default = ["lazy", "logic"]
 ## `mata::lazy`: lazy emptiness checking of combinations of automata and transducers (the `mata-lazy` crate).
 lazy = ["dep:mata-lazy"]
+## `mata::logic`: decision procedures for logics encoded in automata, on `mata::lazy` (the `mata-logic` crate).
+logic = ["lazy", "dep:mata-logic"]
 ## Serialize and deserialize automata, alphabets and the id types with serde.
 serde = ["dep:serde"]
 
@@ -22,6 +24,7 @@ serde = ["dep:serde"]
 mata-sys.workspace = true
 thiserror.workspace = true
 mata-lazy = { workspace = true, optional = true }
+mata-logic = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
 
 [package.metadata.docs.rs]

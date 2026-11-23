@@ -7,6 +7,8 @@ mod intermediate;
 #[cfg(feature = "lazy")]
 pub mod lazy;
 mod limits;
+#[cfg(feature = "logic")]
+pub mod logic;
 pub mod nfa;
 pub mod nft;
 mod options;

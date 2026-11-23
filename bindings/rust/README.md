@@ -6,7 +6,8 @@ Rust bindings to Mata, in two crates:
 - [`mata-sys`](mata-sys): builds Mata and declares a [cxx](https://cxx.rs) bridge to it ([documentation](https://docs.rs/mata-sys)).
 
 The workspace also holds [`mata-lazy`](mata-lazy), lazy emptiness checking of combinations of automata and
-transducers, which `mata` re-exports as `mata::lazy`, and [`mata-cli`](mata-cli), the `mata` command.
+transducers, which `mata` re-exports as `mata::lazy`, [`mata-logic`](mata-logic), decision procedures for logics
+on top of it, re-exported as `mata::logic`, and [`mata-cli`](mata-cli), the `mata` command.
 
 ```toml
 [dependencies]
