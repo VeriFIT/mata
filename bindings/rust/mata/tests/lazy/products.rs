@@ -180,6 +180,7 @@ fn an_accepting_initial_macrostate_is_found_without_numbering() -> Result<(), Er
 	let root = intersect(&mut formula, unions)?;
 
 	let outcome = formula.check(root, &Options::new().subsumption(false))?;
+	assert!(outcome.stats.macrostates < 1 << 10, "{:?}", outcome.stats);
 	assert_eq!(outcome.witness.map(|witness| witness.len()), Some(0));
 
 	Ok(())
