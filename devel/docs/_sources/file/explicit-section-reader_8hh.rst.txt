@@ -1,4 +1,0 @@
-File explicit-section-reader.hh
-===============================
-
-.. doxygenfile:: explicit-section-reader.hh

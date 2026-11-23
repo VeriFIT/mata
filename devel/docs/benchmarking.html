@@ -179,8 +179,8 @@ directly.</p></li>
 </li>
 <li><p>Create a new <code class="docutils literal notranslate"><span class="pre">&lt;YOUR-BENCHMARK-NAME&gt;.yaml.in</span></code> YAML configuration file in <code class="docutils literal notranslate"><span class="pre">./tests-integration/jobs/</span></code>.
 The file has the following structure:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;BENCHMARK_NAME&gt;</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">cmd</span><span class="p">:</span><span class="w"> </span><span class="err">@</span><span class="l l-Scalar l-Scalar-Plain">PATH@/&lt;YOUR_FILENAME&gt; [$1 $2 $3...]</span>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>&lt;BENCHMARK_NAME&gt;:
+  cmd: @PATH@/&lt;YOUR_FILENAME&gt; [$1 $2 $3...]
 </pre></div>
 </div>
 <p>where the <code class="docutils literal notranslate"><span class="pre">cmd</span></code> contains terminal execution of the binary, the <code class="docutils literal notranslate"><span class="pre">$1</span></code> corresponds to positional arguments that are fed by <code class="docutils literal notranslate"><span class="pre">pycobench</span></code>, <code class="docutils literal notranslate"><span class="pre">BENCHMARK_NAME</span></code> is the name under which the results will be registered (e.g. in the <code class="docutils literal notranslate"><span class="pre">csv</span></code> file, this will correspond to the column).</p>
@@ -549,8 +549,8 @@ qachegrind<span class="w"> </span>&lt;valgrind-output&gt;<span class="w"> </span
 <li class="toctree-l1"><a class="reference internal" href="applications.html">Strings</a></li>
 <li class="toctree-l1"><a class="reference internal" href="namespacelist.html">Namespace list</a></li>
 <li class="toctree-l1"><a class="reference internal" href="classlist.html">Class list</a></li>
-<li class="toctree-l1"><a class="reference internal" href="filelist.html">File list</a></li>
 <li class="toctree-l1"><a class="reference internal" href="structlist.html">Struct list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="unionlist.html">Union list</a></li>
 </ul>
 
 

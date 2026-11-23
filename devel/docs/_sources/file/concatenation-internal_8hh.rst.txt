@@ -1,4 +1,0 @@
-File concatenation-internal.hh
-==============================
-
-.. doxygenfile:: concatenation-internal.hh

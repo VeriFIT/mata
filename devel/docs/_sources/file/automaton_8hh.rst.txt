@@ -1,4 +1,0 @@
-File automaton.hh
-=================
-
-.. doxygenfile:: automaton.hh
