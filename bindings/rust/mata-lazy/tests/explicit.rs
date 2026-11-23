@@ -349,6 +349,10 @@ fn limits_stop_the_query() -> Result<(), Error> {
 }
 
 #[test]
+#[cfg_attr(
+	target_os = "emscripten",
+	ignore = "Rust's standard library for Emscripten cannot spawn threads"
+)]
 fn queries_run_in_parallel_on_one_formula() -> Result<(), Error> {
 	const THREADS: usize = 4;
 

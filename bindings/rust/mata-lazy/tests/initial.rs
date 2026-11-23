@@ -211,6 +211,10 @@ fn initial_macrostates_reached_from_others_give_true_witnesses() -> Result<(), E
 
 /// Queries over 2^17 initial macrostates from several threads give the sequential answer.
 #[test]
+#[cfg_attr(
+	target_os = "emscripten",
+	ignore = "Rust's standard library for Emscripten cannot spawn threads"
+)]
 fn parallel_queries_over_many_initial_macrostates_agree() -> Result<(), Error> {
 	const THREADS: usize = 4;
 
