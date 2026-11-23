@@ -10,7 +10,6 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/types.hh"
 #include "mata/utils/assert.hh"
-#include "mata/utils/sparse-set.hh"
 
 #include <algorithm>
 #include <bit>
