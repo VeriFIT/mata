@@ -34,7 +34,7 @@ namespace mata {
  *  Every operation defined here is a pass over @c delta, @c initial and @c final.
  *
  * @tparam D The transition relation. Every other type is read off @p D rather than passed
- *  alongside it, so the two cannot disagree; see @c mata::DeltaLike for what @p D must provide.
+ *  alongside it, so the two cannot disagree. @see @c mata::DeltaLike for what @p D must provide.
  *
  * @note A data-owning mixin, not a polymorphic base: it owns @c delta, @c initial and @c final, and
  *  has no virtual functions. The members that need their most-derived type take an explicit object
@@ -49,23 +49,8 @@ template <DeltaLike D> class AutomatonBase {
 	using Target = typename D::Target; ///< The leaf payload visiting the successors yields. @see @c State.
 	/// Number of keys between a source state and a target. @see @ref arity.
 	static constexpr size_t key_arity{D::key_arity};
-
-	/// Spelled in terms of @c State rather than taken from @c mata::, so that a relation with a
-	///  divergent state type cannot leave these signatures behind. Both are the same type as
-	///  @c mata::StateSet and @c mata::StateRenaming for @c mata::Automaton.
-	///
-	/// @note A plain set of states, deliberately not the relation's innermost post type: the
-	///  structural operations return *states*, and a relation's targets may carry a payload. The
-	///  member alias hides the namespace-scope @c mata::nfa::StateSet inside @c mata::nfa::Nfa, so it
-	///  must be the same template that one names, or an @c Nfa member declared with one and defined
-	///  with the other stops matching.
 	using StateSet = utils::OrdVector<State>;
 	using StateRenaming = std::unordered_map<State, State>;
-
-	/// Deliberately no key type at all, not even an alias. This class transports keys (in
-	///  @c reverted(), as `const auto&`) but never inspects, compares or stores one, and at a
-	///  @c key_arity above 1 there is no single "the key" to name anyway. Kept spelled this way so
-	///  that grepping this file for a key type stays a meaningful check.
 
 	D delta; ///< Transition relation of the automaton. delta[q] contains transitions from state q.
 	utils::SparseSet<State> initial{}; ///< Set of initial states of the automaton.
@@ -89,8 +74,7 @@ template <DeltaLike D> class AutomatonBase {
 		  final(std::move(final_states)) {}
 
 	/**
-	 * @brief Construct a new AutomatonBase with @p num_of_states states and optionally @p initial_states and @p
-	 * final_states.
+	 * @brief Construct a new AutomatonBase with @p num_of_states states and optionally @p initial_states and @p final_states.
 	 *
 	 * @param[in] num_of_states Number of states for which to preallocate Delta.
 	 * @param[in] initial_states Set of initial states of the automaton.
@@ -227,7 +211,7 @@ template <DeltaLike D> class AutomatonBase {
 	/**
 	 * @brief Is the automaton graph acyclic?
 	 *
-	 * @return true <-> Automaton graph is acyclic.
+	 * @return true iff Automaton graph is acyclic.
 	 */
 	bool is_acyclic() const;
 
@@ -346,17 +330,11 @@ template <DeltaLike D> class AutomatonBase {
 	/**
 	 * @brief Reverse the automaton structurally: reverse every transition and swap initial and final states.
 	 *
+	 * The reversal is only structural. The order of the keys in the transitions is not changed,
+	 *  the source and target states are swapped, and the payload of the transitions is not changed. 
+	 * 
 	 * @note Kept as a protected helper so that @c get_terminating_states() and @c distances_to_final() do not
 	 *  have to go through a leaf-specific `revert()` free function.
-	 * @note One of the two structural operations here that *write* to a relation (the other is
-	 *  @c trim_impl()), and the only one that has to take a transition apart and put it back.
-	 * @note **Generic in the key arity.** It writes through @c mata::posts::insert_target rather than
-	 *  through @c Delta::add, which is what makes that possible: a pack has to come last to deduce,
-	 *  so `add(source, keys..., target)` is not declarable at all, and putting the target first
-	 *  instead — `insert_target(post, target, keys...)` — is. The keys are transported as a pack and
-	 *  never inspected, which is why @c mata::DeltaLike asks for no key type. Reverting swaps
-	 *  source and target and leaves the key order alone, so a key path means the same thing in both
-	 *  directions at any arity.
 	 * @return A new automaton with reversed transitions and swapped initial/final states.
 	 */
 	AutomatonBase reverted() const;
@@ -364,14 +342,10 @@ template <DeltaLike D> class AutomatonBase {
 	/**
 	 * @brief Structural part of `trim()` for a precomputed @p useful_states.
 	 *
-	 * Lets a leaf class compute the useful states once, adjust its own per-state data (such as
-	 *  @c mata::nft::Nft::levels) and then hand the same bool vector over, instead of running Tarjan twice.
+	 * Lets a leaf class compute the useful states once, adjust its own per-state data 
+	 *  and then hand the same bool vector over, instead of running Tarjan twice.
 	 *  Any renaming that happens after the trim follows ascending order of the original state numbers.
-	 *
-	 * @note Kept protected: it assumes @p useful_states was computed for @c self and gives no guarantee about a
-	 *  mismatched one. Templated on @p Self (`deducing this`) purely so it can return @p Self& for @c trim() to
-	 *  return directly; a leaf that redeclares its own @c trim() (hiding this by name, since both share the name
-	 *  `trim`) still reaches it unqualified as `trim_impl(...)`, since only `trim` is redeclared, not `trim_impl`.
+	 * 
 	 * @param useful_states A @c BoolVector indicating which states are useful (true) and which are not (false).
 	 * @param state_renaming Optional pointer to a @c StateRenaming map to fill with the renaming of states
 	 *  after trimming. If provided, the map will be filled with the mapping from old state numbers to

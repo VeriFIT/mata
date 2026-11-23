@@ -1,12 +1,5 @@
 /** @file
  * @brief Member definitions for @c mata::AutomatonBase.
- *
- * Included at the end of @c mata/core/automaton.hh. Every definition here is a pass over @c delta,
- *  @c initial and @c final, reaching successors only through the @c mata::DeltaLike interface.
- *
- * @note The bodies live in a header, rather than in `src/core/automaton.cc`, because a third party
- *  instantiating @c AutomatonBase over its own relation needs them. The one in-tree instantiation
- *  is kept out of every translation unit by the @c extern template declaration in the header.
  */
 
 #ifndef MATA_CORE_AUTOMATON_TPP_
@@ -59,11 +52,14 @@ template <DeltaLike D> void AutomatonBase<D>::clear() {
 }
 
 namespace detail {
-/// Write one visited move back with its source and target exchanged, keys untouched.
-///
-/// The move arrives from @c for_each_move as `(keys..., target)`; @c insert_target wants the target
-///  first and the keys last, so the pack is re-ordered through a tuple. That is the whole of it —
-///  there is no shape change and no variadic @c add.
+/**
+ * @brief Write one visited move back with its source and target exchanged, keys untouched.
+ * 
+ * @param delta The transition relation to write to.
+ * @param source The source state of the move to revert.
+ * @param move The move to revert, as a tuple of keys and target.
+ * @param Keys An index sequence for the keys in the move.
+ */
 template <typename Delta, typename State, typename Move, size_t... Keys>
 void insert_reversed(Delta& delta, const State source, const Move& move, std::index_sequence<Keys...>) {
 	const auto& target{std::get<sizeof...(Keys)>(move)};
@@ -78,14 +74,12 @@ void insert_reversed(Delta& delta, const State source, const Move& move, std::in
 template <DeltaLike D>
 AutomatonBase<D> AutomatonBase<D>::reverted() const {
 	AutomatonBase result{};
-
 	const size_t num_of_states{this->num_of_states()};
 	result.delta.allocate(num_of_states);
 
 	for (State source_state{0}; source_state < num_of_states; ++source_state) {
-		// Every move arrives as `(keys..., target)`, at any arity. Reverting exchanges the source and
-		//  the target and leaves the keys in the same order, so nothing here inspects a key -- a
-		//  relation whose keys are not symbols, or which has more than one of them, works unchanged.
+		// Every move arrives as `(keys..., target)`, at any arity.
+		// Reverting leaves the keys in the same order.
 		delta.for_each_move(source_state, [&](const auto&... move) {
 			static_assert(sizeof...(move) == D::key_arity + 1, "a move is one key per post, then a target");
 			detail::insert_reversed(
@@ -97,7 +91,6 @@ AutomatonBase<D> AutomatonBase<D>::reverted() const {
 
 	result.initial = final;
 	result.final = initial;
-
 	return result;
 }
 
