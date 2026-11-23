@@ -252,12 +252,13 @@ template <typename Number> class SparseSet {
 		MATA_ASSERT(consistent());
 	}
 
-	// Ranges over our own dense array must be copied: every erased element pops the back, invalidating their iterators.
+	// Ranges over our own dense array are erased back to front: erasing position i moves the last element into i, so
+	//  positions below i keep their elements while iterators into the popped tail would be invalidated.
 	template <Iterable T> void erase(const T& set) {
 		const auto first{std::ranges::begin(set)};
 		const auto last{std::ranges::end(set)};
 		const auto address = [](const auto& iterator) -> const void* {
-			if constexpr (std::contiguous_iterator<decltype(iterator)>) {
+			if constexpr (std::contiguous_iterator<std::remove_cvref_t<decltype(iterator)>>) {
 				return std::to_address(iterator);
 			} else {
 				return nullptr;
@@ -269,8 +270,12 @@ template <typename Number> class SparseSet {
 		const auto dense_end{reinterpret_cast<std::uintptr_t>(dense_.data() + dense_.size())};
 		if (first_address >= dense_begin && first_address <= dense_end && last_address >= dense_begin &&
 			last_address <= dense_end) {
-			const std::vector<Number> copy{first, last};
-			erase(copy.begin(), copy.end());
+			const auto first_index{(first_address - dense_begin) / sizeof(Number)};
+			for (auto index{(last_address - dense_begin) / sizeof(Number)}; index > first_index;) {
+				--index;
+				erase_nocheck(dense_[index]);
+			}
+			MATA_ASSERT(consistent());
 		} else {
 			erase(first, last);
 		}
