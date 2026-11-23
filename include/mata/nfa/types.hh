@@ -13,7 +13,8 @@ namespace mata::nfa {
 
 extern const std::string TYPE_NFA;
 
-class Nfa; ///< A non-deterministic finite automaton.
+/// A Nondeterministic Finite Automaton.
+class Nfa; 
 
 using State = mata::State;
 using StateSet = mata::StateSet;

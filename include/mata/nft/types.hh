@@ -22,10 +22,8 @@ using Level = mata::Level;
 // Types shared with the rest of Mata. Redefine any of these here to give NFTs their own.
 using State = mata::State;
 using StateSet = mata::StateSet;
-
 using Run = mata::Run;
 using EpsilonClosureOpt = mata::EpsilonClosureOpt;
-
 using StateRenaming = mata::StateRenaming;
 
 /**
