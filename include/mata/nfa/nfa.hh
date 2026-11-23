@@ -1455,6 +1455,9 @@ Nfa as_dfa(Nfa&& aut);
  *    automata. Their options are:
  * - "type": "nfa" (default), "dfa" (only for "sat"): the kind of the resulting automaton,
  * - "solver": the command running the solver (default: found automatically).
+ * - "epsilon": "letter" (default) treats EPSILON as an ordinary transition symbol, as in simulation and residual
+ *    reduction. "empty" runs remove_epsilon() on the input before minimizing with SAT/QBF. This affects only "sat"
+ *    and "qbf".
  * @throw std::runtime_error if algorithm="residual" and state_renaming is not nullptr.
  * @return Reduced automaton.
  */

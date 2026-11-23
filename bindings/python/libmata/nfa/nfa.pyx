@@ -1820,6 +1820,8 @@ def reduce(Nfa aut, params = None):
         - "solver": (Only for "algorithm": "sat" or "qbf") Command running the solver. Defaults to the environment
           variable MATA_SAT_SOLVER or MATA_QBF_SOLVER, then to a solver found in PATH (cadical, kissat,
           cryptominisat5, picosat; depqbf, caqe).
+        - "epsilon": (Only for "algorithm": "sat" or "qbf") "letter" (default) treats EPSILON as an ordinary letter,
+          as in simulation and residual reduction. "empty" removes EPSILON before minimizing.
     :return: Reduced automaton.
     :raises ExternalSolverNotFound: If no solver can be found or run for "algorithm": "sat" or "qbf".
     :raises RuntimeError: If the reduction fails otherwise.

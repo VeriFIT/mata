@@ -859,8 +859,11 @@ Nfa with_renamed_symbols(const Nfa& aut, const Rename& rename, std::shared_ptr<m
 }
 
 /// Remove the transitions, initial states, and final states of @p aut that @p language does not need.
-void remove_redundant_parts(Nfa& aut, const Nfa& language) {
-	const auto equivalent{[&] { return are_equivalent(language, aut); }};
+void remove_redundant_parts(Nfa& aut, const Nfa& language, const bool epsilon_as_symbol) {
+	const auto equivalent{[&] {
+		return epsilon_as_symbol ? algorithms::are_equivalent_epsilon_as_symbol(language, aut)
+								 : are_equivalent(language, aut);
+	}};
 	std::vector<Transition> transitions{};
 	for (const Transition& transition : aut.delta.transitions()) { transitions.push_back(transition); }
 	for (const Transition& transition : transitions) {
@@ -877,11 +880,14 @@ void remove_redundant_parts(Nfa& aut, const Nfa& language) {
 	}
 }
 
-Nfa reduce_exactly(const Nfa& nfa, const Mode mode, const std::string& solver_command) {
-	// Work with a trimmed epsilon-free automaton over symbols 0, ..., n - 1.
+Nfa reduce_exactly(const Nfa& nfa, const Mode mode, const std::string& solver_command, const std::string& epsilon) {
+	if (epsilon != "letter" && epsilon != "empty") {
+		throw std::runtime_error("the epsilon mode must be \"letter\" or \"empty\", received: " + epsilon);
+	}
+	// Work with a trimmed automaton over symbols 0, ..., n - 1, independent of their original values.
 	Nfa input{trim(nfa)};
 	const mata::utils::OrdVector<Symbol> used_symbols{input.delta.get_used_symbols()};
-	if (used_symbols.contains(EPSILON)) { input = trim(remove_epsilon(input)); }
+	if (epsilon == "empty" && used_symbols.contains(EPSILON)) { input = trim(remove_epsilon(input)); }
 	const std::vector<Symbol> symbols{input.delta.get_used_symbols().to_vector()}; // Sorted.
 	const Nfa target{with_renamed_symbols(input, [&](const Symbol symbol) {
 		return static_cast<Symbol>(std::ranges::lower_bound(symbols, symbol) - symbols.begin());
@@ -911,8 +917,14 @@ Nfa reduce_exactly(const Nfa& nfa, const Mode mode, const std::string& solver_co
 			if (!answer.satisfiable) { break; }
 			Nfa candidate{aut->decode(answer.model)};
 			Run counterexample{};
-			if (are_equivalent(target, candidate, {{"algorithm", "antichains"}}, &counterexample)) {
-				if (mode != Mode::SatDfa) { remove_redundant_parts(candidate, target); }
+			const bool equivalent{
+				epsilon == "letter" ? algorithms::are_equivalent_epsilon_as_symbol(
+										  target, candidate, nullptr, {{"algorithm", "antichains"}}, &counterexample
+									  )
+									: are_equivalent(target, candidate, {{"algorithm", "antichains"}}, &counterexample)
+			};
+			if (equivalent) {
+				if (mode != Mode::SatDfa) { remove_redundant_parts(candidate, target, epsilon == "letter"); }
 				return restore_symbols(candidate);
 			}
 			std::set<Word>& words{target.is_in_lang(counterexample.word) ? samples.accepted : samples.rejected};
@@ -928,13 +940,15 @@ Nfa reduce_exactly(const Nfa& nfa, const Mode mode, const std::string& solver_co
 
 } // namespace
 
-Nfa mata::nfa::algorithms::reduce_sat(const Nfa& nfa, const std::string& type, const std::string& solver) {
+Nfa mata::nfa::algorithms::reduce_sat(
+	const Nfa& nfa, const std::string& type, const std::string& solver, const std::string& epsilon
+) {
 	if (type != "nfa" && type != "dfa") {
 		throw std::runtime_error(std::string{__func__} + " received an unknown type of automaton: " + type);
 	}
-	return reduce_exactly(nfa, type == "nfa" ? Mode::SatNfa : Mode::SatDfa, solver);
+	return reduce_exactly(nfa, type == "nfa" ? Mode::SatNfa : Mode::SatDfa, solver, epsilon);
 }
 
-Nfa mata::nfa::algorithms::reduce_qbf(const Nfa& nfa, const std::string& solver) {
-	return reduce_exactly(nfa, Mode::QbfNfa, solver);
+Nfa mata::nfa::algorithms::reduce_qbf(const Nfa& nfa, const std::string& solver, const std::string& epsilon) {
+	return reduce_exactly(nfa, Mode::QbfNfa, solver, epsilon);
 }
