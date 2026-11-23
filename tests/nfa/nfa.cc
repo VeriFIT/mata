@@ -2966,13 +2966,39 @@ TEST_CASE("mata::nfa::is_universal()") { // {{{
 		for (const auto& algo : ALGORITHMS) {
 			params["algorithm"] = algo;
 			CHECK(star.is_universal(sigma, params));
-			// An alphabet read off the automaton itself contains EPSILON, which is not a letter.
+			// An alphabet read off the automaton itself intentionally excludes EPSILON.
 			CHECK(star.is_universal(create_alphabet(star), params));
 			Run cex;
 			CHECK(star.is_universal(create_alphabet(star), &cex, params));
 		}
 	}
 } // }}}
+
+TEST_CASE("mata::nfa::is_universal() clears reused counterexamples") {
+	const EnumAlphabet alphabet{'a', 'b'};
+	Nfa universal{1, {0}, {0}};
+	universal.delta.add(0, 'a', 0);
+	universal.delta.add(0, 'b', 0);
+	const Nfa non_universal{1, {0}, {}};
+
+	ParameterMap params;
+	for (const std::string algorithm : {"naive", "antichains"}) {
+		CAPTURE(algorithm);
+		params["algorithm"] = algorithm;
+		Run cex{.word = {'a', 'b'}, .path = {0, 1}};
+
+		CHECK(universal.is_universal(alphabet, &cex, params));
+		CHECK(cex.word.empty());
+		CHECK(cex.path.empty());
+
+		cex.word = {'a', 'b'};
+		cex.path = {0, 1};
+		REQUIRE(!non_universal.is_universal(alphabet, &cex, params));
+		CHECK(!non_universal.is_in_lang(cex.word));
+		CHECK(cex.path.empty());
+	}
+}
+
 TEST_CASE("mata::nfa::is_universal() and is_complete() with synchronized iterator (issue #788)") { // {{{
 	Nfa aut;
 	OnTheFlyAlphabet alph;
@@ -3381,6 +3407,7 @@ q10 67 q5
 		eps_smaller.delta.add(1, 'a', 2);
 		Nfa eps_bigger{2, {0}, {1}};
 		eps_bigger.delta.add(0, 'a', 1);
+		const EnumAlphabet alphabet_with_epsilon{'a', EPSILON};
 
 		for (const auto& algo : ALGORITHMS) {
 			SECTION(algo) {
@@ -3388,8 +3415,13 @@ q10 67 q5
 				CHECK(is_included(eps_smaller, eps_bigger, nullptr, nullptr, params));
 				CHECK(is_included(eps_bigger, eps_smaller, nullptr, nullptr, params));
 				CHECK(is_included(eps_smaller, eps_smaller, nullptr, nullptr, params));
+				CHECK(is_included(eps_smaller, eps_bigger, nullptr, &alphabet_with_epsilon, params));
+				CHECK(is_included(eps_bigger, eps_smaller, nullptr, &alphabet_with_epsilon, params));
+				CHECK(is_included(eps_smaller, eps_smaller, nullptr, &alphabet_with_epsilon, params));
+				CHECK(is_included(eps_bigger, eps_bigger, nullptr, &alphabet_with_epsilon, params));
 			}
 		}
+		CHECK(alphabet_with_epsilon.get_alphabet_symbols() == OrdVector<Symbol>{'a', EPSILON});
 	}
 
 	SECTION("a prefilled Run is overwritten, not appended to") {
@@ -3567,6 +3599,56 @@ TEST_CASE("mata::nfa naive inclusion and equivalence without an alphabet agree w
 	}
 }
 
+TEST_CASE("mata::nfa direct naive inclusion and equivalence read EPSILON as a symbol") {
+	Nfa epsilon_word{2, {0}, {1}};
+	epsilon_word.delta.add(0, EPSILON, 1);
+	Nfa a_word{2, {0}, {1}};
+	a_word.delta.add(0, 'a', 1);
+	const Nfa empty_word_only{1, {0}, {0}};
+	const EnumAlphabet alphabet{'a', EPSILON};
+	const ParameterMap naive{{"algorithm", "naive"}};
+
+	CHECK(algorithms::is_included_naive(epsilon_word, epsilon_word));
+	CHECK(algorithms::is_included_naive(epsilon_word, epsilon_word, &alphabet));
+	CHECK(algorithms::are_equivalent_epsilon_as_symbol(epsilon_word, epsilon_word, nullptr, naive));
+	CHECK(algorithms::are_equivalent_epsilon_as_symbol(epsilon_word, epsilon_word, &alphabet, naive));
+
+	const auto check_not_included = [&](const Nfa& smaller, const Nfa& bigger, const Symbol expected) {
+		Run cex{};
+		REQUIRE(!algorithms::is_included_naive(smaller, bigger, &alphabet, &cex));
+		CHECK(cex.word == Word{expected});
+		CHECK(smaller.is_in_lang(cex));
+		CHECK(!bigger.is_in_lang(cex.word));
+	};
+	// Each direction has a distinct literal-letter witness and an accepting path in the smaller operand.
+	check_not_included(epsilon_word, a_word, EPSILON);
+	check_not_included(a_word, epsilon_word, 'a');
+
+	Run equivalence_cex{.word = {'z'}, .path = {7}};
+	REQUIRE(!algorithms::are_equivalent_epsilon_as_symbol(epsilon_word, a_word, &alphabet, naive, &equivalence_cex));
+	CHECK(equivalence_cex.word == Word{EPSILON});
+	CHECK(epsilon_word.is_in_lang(equivalence_cex));
+	CHECK(!a_word.is_in_lang(equivalence_cex.word));
+
+	// The default alphabet must retain EPSILON: the empty word and the one-letter word differ in both directions.
+	for (const bool reverse : {false, true}) {
+		const Nfa& smaller{reverse ? empty_word_only : epsilon_word};
+		const Nfa& bigger{reverse ? epsilon_word : empty_word_only};
+		Run cex{};
+		REQUIRE(!algorithms::is_included_naive(smaller, bigger, nullptr, &cex));
+		CHECK(cex.word == (reverse ? Word{} : Word{EPSILON}));
+		CHECK(smaller.is_in_lang(cex));
+		CHECK(!bigger.is_in_lang(cex.word));
+	}
+	Run default_alphabet_cex{};
+	REQUIRE(!algorithms::are_equivalent_epsilon_as_symbol(
+		epsilon_word, empty_word_only, nullptr, naive, &default_alphabet_cex
+	));
+	CHECK(default_alphabet_cex.word == Word{EPSILON});
+	CHECK(epsilon_word.is_in_lang(default_alphabet_cex));
+	CHECK(!empty_word_only.is_in_lang(default_alphabet_cex.word));
+}
+
 TEST_CASE("mata::nfa::are_equivalent") {
 	Nfa smaller(10);
 	Nfa bigger(16);
@@ -3736,6 +3818,7 @@ TEST_CASE("mata::nfa::are_equivalent") {
 		with_eps.delta.add(1, 'a', 2);
 		Nfa without_eps{2, {0}, {1}};
 		without_eps.delta.add(0, 'a', 1);
+		const EnumAlphabet alphabet_with_epsilon{'a', EPSILON};
 
 		for (const auto& algo : ALGORITHMS) {
 			SECTION(algo) {
@@ -3743,8 +3826,13 @@ TEST_CASE("mata::nfa::are_equivalent") {
 				CHECK(are_equivalent(with_eps, without_eps, params));
 				CHECK(are_equivalent(without_eps, with_eps, params));
 				CHECK(are_equivalent(with_eps, with_eps, params));
+				CHECK(are_equivalent(with_eps, without_eps, &alphabet_with_epsilon, params));
+				CHECK(are_equivalent(without_eps, with_eps, &alphabet_with_epsilon, params));
+				CHECK(are_equivalent(with_eps, with_eps, &alphabet_with_epsilon, params));
+				CHECK(are_equivalent(without_eps, without_eps, &alphabet_with_epsilon, params));
 			}
 		}
+		CHECK(alphabet_with_epsilon.get_alphabet_symbols() == OrdVector<Symbol>{'a', EPSILON});
 	}
 }
 
@@ -3822,6 +3910,25 @@ TEST_CASE("mata::nfa::are_equivalent() counterexample") {
 			CHECK(!are_equivalent(lhs, rhs, &alph, params, &cex));
 			CHECK(rhs.is_in_lang(cex));
 			CHECK(!lhs.is_in_lang(cex));
+		}
+	}
+
+	SECTION("a Run reused across two failing checks is overwritten") {
+		Nfa ab{3, {0}, {2}};
+		ab.delta.add(0, alph["a"], 1);
+		ab.delta.add(1, alph["b"], 2);
+		Nfa a{2, {0}, {1}};
+		a.delta.add(0, alph["a"], 1);
+
+		for (const auto& algo : ALGORITHMS) {
+			params["algorithm"] = algo;
+			Run cex{.word = {'z'}, .path = {7}};
+			REQUIRE(!are_equivalent(ab, a, &alph, params, &cex));
+			CHECK(cex.word == Word{alph["a"], alph["b"]});
+			REQUIRE(!are_equivalent(ab, a, &alph, params, &cex));
+			CHECK(cex.word == Word{alph["a"], alph["b"]});
+			CHECK(ab.is_in_lang(cex));
+			CHECK(!a.is_in_lang(cex.word));
 		}
 	}
 

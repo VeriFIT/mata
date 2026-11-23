@@ -773,7 +773,7 @@ bool mata::nft::are_equivalent(
 	}
 
 	// NFTs are not NFAs: reading the unwound transducers as flat automata has to be spelled out explicitly. EPSILON
-	// on a level means "nothing on this tape" and stays a letter here, so the epsilon-unaware entry point is used.
+	// on a level means "nothing on this tape" and stays a letter here, so the literal-epsilon entry point is used.
 	return nfa::algorithms::are_equivalent_epsilon_as_symbol(
 		flat(lhs, lhs_changes, symbols, jump_mode), flat(rhs, rhs_changes, symbols, jump_mode), alphabet, params
 	);

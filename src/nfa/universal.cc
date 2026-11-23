@@ -13,19 +13,23 @@ using namespace mata::utils;
 //  it is not something needed in practice, so some little overhead is ok
 
 bool mata::nfa::algorithms::is_universal_naive(const Nfa& aut, const Alphabet& alphabet, Run* cex) {
+	if (cex != nullptr) {
+		cex->word.clear();
+		cex->path.clear();
+	}
 	// The fused subset search stops at the first rejected word; it reads EPSILON as a letter, as complement() does.
 	const std::optional<Word> rejected_word{aut.get_word_from_complement(&alphabet)};
 	if (!rejected_word.has_value()) { return true; }
-	if (cex != nullptr) {
-		cex->word = *rejected_word;
-		// The states of a counterexample would belong to the complement, which is never built.
-		cex->path.clear();
-	}
+	if (cex != nullptr) { cex->word = *rejected_word; }
 	return false;
 }
 
 bool mata::nfa::algorithms::is_universal_antichains(const Nfa& aut, const Alphabet& alphabet,
 													Run* cex) { // {{{
+	if (cex != nullptr) {
+		cex->word.clear();
+		cex->path.clear();
+	}
 
 	/// A macrostate of the subset construction together with its signature, which is computed once, when the
 	///  macrostate is built, and then filters most of the subsumption tests in O(1).

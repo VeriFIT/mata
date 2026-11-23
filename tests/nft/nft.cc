@@ -1902,6 +1902,13 @@ TEST_CASE("mata::nft::are_equivalent") {
 		);
 		CHECK_NOTHROW(are_equivalent(smaller, bigger));
 	}
+
+	SECTION("naive self-equivalence keeps EPSILON as a per-level letter") {
+		Nft nft{Nft::with_levels(2, 2, {0}, {1})};
+		nft.insert_word(0, {'a', EPSILON}, 1);
+		params["algorithm"] = "naive";
+		CHECK(are_equivalent(nft, nft, JumpMode::RepeatSymbol, params));
+	}
 }
 
 TEST_CASE("mata::nft comparison keeps wildcard-only languages non-empty") {
