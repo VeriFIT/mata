@@ -169,6 +169,10 @@ fn union_chains_of_either_shape() -> Result<(), Error> {
 /// A complement ranks the members of its sets through the whole product below it, once the product has more states
 /// than a dense complement takes. The lazy explicit node keeps the complement above the product.
 #[test]
+#[cfg_attr(
+	target_os = "emscripten",
+	ignore = "wasm frames also use the JS engine's stack, which stacker cannot grow, so 20 000 nested nodes overflow it"
+)]
 fn complement_over_a_deep_product() -> Result<(), Error> {
 	const DEPTH: usize = 20_000;
 	const LENGTH: u32 = 300;

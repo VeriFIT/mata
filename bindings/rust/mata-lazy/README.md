@@ -145,6 +145,7 @@ cargo run --release --bin replay -- regressions/*      # replays saved inputs, w
 - Tapes are read in lock step only; there is no asynchronous alignment of padding as in Mata's own composition.
 - Leaves are copied in when added, so they must be finite automata.
 - The limits are checked step by step inside the successors of a macrostate and during leaf simulations, and the time limit also during the minimization of a set; one step (one move of a product joined with a very large post) runs to its end first. A leaf simulation cut short by `time_limit` is not kept, so a limit shorter than the simulation fails every time; a query with enough time computes it once for the formula.
+- The engine recurses over the formula and grows its stack with `stacker` when the formula is deep. On WebAssembly (Emscripten), wasm frames also use the JavaScript engine's stack, which `stacker` cannot grow: a chain of 20 000 nested intersections overflows it even under `node --stack-size=4000`, the runner the workspace sets. Keep formulas shallow there, for example by building long chains of unions and intersections as balanced trees.
 
 ## License
 
