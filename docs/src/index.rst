@@ -32,6 +32,7 @@ Indices and tables
 ==================
 
 * :ref:`genindex`
-.. FIXME: The modindex currently does not work.
-.. * :ref:`modindex`
 * :ref:`search`
+
+.. FIXME: The modindex currently does not work.
+   * :ref:`modindex`
