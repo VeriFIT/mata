@@ -182,6 +182,11 @@ TEST_CASE("mata::utils::SparseSet constructors - issue #769") {
 	SECTION("a built-in array") {
 		const unsigned long values[]{2, 4};
 		CHECK(SparseSet<unsigned long>{values} == SparseSet<unsigned long>{2, 4});
+		SparseSet<unsigned long> from_array{};
+		from_array.insert(values);
+		CHECK(from_array == SparseSet<unsigned long>{2, 4});
+		from_array.erase(values);
+		CHECK(from_array.empty());
 	}
 
 	SECTION("a range whose sentinel differs from its iterator") {
@@ -247,7 +252,7 @@ TEST_CASE("mata::utils::SparseSet against std::set (randomized)") {
 		for (size_t step{0}; step < 60; ++step) {
 			INFO("step " << step);
 			const State value{static_cast<State>(draw(rng, UNIVERSE))};
-			switch (draw(rng, 10)) {
+			switch (draw(rng, 11)) {
 				case 0:
 				case 1:
 				case 2: {
@@ -298,6 +303,12 @@ TEST_CASE("mata::utils::SparseSet against std::set (randomized)") {
 					CHECK(set.domain_size() == static_cast<State>(expected.empty() ? 0 : *expected.rbegin() + 1));
 					break;
 				}
+				case 9: {
+					// Aliased erase(set): walking this->begin()..end() would read a pop_back-ed dense array.
+					set.erase(set);
+					expected.clear();
+					break;
+				}
 				default: {
 					set.sort();
 					CHECK(std::ranges::is_sorted(set));
@@ -334,4 +345,30 @@ TEST_CASE("mata::utils::SparseSet against std::set (randomized)") {
 		CHECK(copy.empty());
 		CHECK(sorted_elements(set) == elements(expected));
 	}
+}
+
+TEST_CASE("mata::utils::SparseSet::erase(set) clears when the range aliases the set - #224") {
+	SparseSet<State> set{std::initializer_list<State>{1, 3, 5}};
+	REQUIRE(set.size() == 3);
+	set.erase(set);
+	CHECK(set.empty());
+	CHECK(set.size() == 0);
+	CHECK(!set.contains(1));
+	// The domain size survives: clear() empties the set, not the reserved domain.
+	CHECK(set.domain_size() == 6);
+
+	SparseSet<State> empty{};
+	empty.erase(empty);
+	CHECK(empty.empty());
+
+	SparseSet<State> subrange_source{std::initializer_list<State>{1, 3, 5, 7}};
+	subrange_source.erase(std::ranges::subrange(subrange_source.begin() + 1, subrange_source.end()));
+	CHECK(sorted_elements(subrange_source) == std::vector<State>{1});
+	subrange_source.erase(std::ranges::subrange(subrange_source));
+	CHECK(subrange_source.empty());
+
+	SparseSet<State> one{std::initializer_list<State>{7}};
+	one.erase(one);
+	CHECK(one.empty());
+	CHECK(one.domain_size() == 8);
 }

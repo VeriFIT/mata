@@ -19,6 +19,7 @@
 #include <mata/simlib/explicit_lts.hh>
 #include <mata/utils/assert.hh>
 
+#include "../automaton-tarjan.hh"
 #include "../mata-writer.hh"
 
 using namespace mata::utils;
@@ -64,13 +65,7 @@ Nfa mata::nfa::trim(
 
 	// Compute useful states using two reachability passes.
 	// The result is a bool vector where true means the state is useful.
-#ifdef _STATIC_STRUCTURES_
-	BoolVector useful_states{nfa.get_useful_states(initial_states, final_states)};
-	useful_states.clear();
-	useful_states = nfa.get_useful_states(initial_states, final_states);
-#else
 	const BoolVector useful_states{nfa.get_useful_states(initial_states, final_states)};
-#endif
 	// Build the result from the useful states directly instead of copying and trimming in place, which would copy
 	//  every transition only to discard those of the useless states.
 	Nfa nfa_trimmed{};
@@ -116,29 +111,30 @@ bool Nfa::is_flat() const {
 	std::vector<size_t> scc_id(num_of_states(), 0);
 	size_t current_id{0};
 
-	mata::nfa::Nfa::TarjanDiscoverCallback callback{};
-	callback.scc_discover = [&](const std::vector<mata::nfa::State>& scc,
-								const std::vector<mata::nfa::State>& tarjan_stack) -> bool {
-		(void) tarjan_stack;
-
-		++current_id;
-		for (const mata::nfa::State state : scc) { scc_id[state] = current_id; }
-		for (const mata::nfa::State state : scc) {
-			size_t targets_in_scc{0};
-			for (const mata::nfa::SymbolPost& symbol_post : this->delta[state]) {
-				for (const mata::nfa::State target : symbol_post.targets) {
-					// As before, every in-SCC (symbol, target) pair counts, so parallel edges are not flat either.
-					if (scc_id[target] == current_id && ++targets_in_scc > 1) {
-						flat = false;
-						return true;
+	const mata::nfa::internal::TarjanCallbacks callbacks{
+		std::nullptr_t{}, std::nullptr_t{},
+		[this, &flat, &scc_id,
+		 &current_id](const std::span<const State> scc, const std::span<const State> remaining_stack) {
+			(void) remaining_stack;
+			++current_id;
+			for (const State state : scc) { scc_id[state] = current_id; }
+			for (const State state : scc) {
+				size_t targets_in_scc{0};
+				for (const SymbolPost& symbol_post : this->delta[state]) {
+					for (const State target : symbol_post.targets) {
+						// As before, every in-SCC (symbol, target) pair counts, so parallel edges are not flat either.
+						if (scc_id[target] == current_id && ++targets_in_scc > 1) {
+							flat = false;
+							return true;
+						}
 					}
 				}
 			}
-		}
-		return false;
+			return false;
+		},
+		std::nullptr_t{}
 	};
-
-	tarjan_scc_discover(callback);
+	mata::nfa::internal::tarjan_scc_discover(this->delta, this->num_of_states(), this->initial, callbacks);
 	return flat;
 }
 

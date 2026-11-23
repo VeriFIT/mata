@@ -65,7 +65,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         cppclass const_iterator:
             bool operator==(const_iterator&)
             bool operator!=(const_iterator&)
-            CTrans& operator*()
+            CTrans operator*()
             const_iterator& operator++()
         const_iterator begin()
         const_iterator end()

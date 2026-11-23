@@ -13,10 +13,13 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <concepts>
 #include <functional>
 #include <random>
+#include <ranges>
 #include <set>
 #include <thread>
+#include <type_traits>
 #include <vector>
 
 using namespace mata::nfa;
@@ -262,7 +265,7 @@ TEST_CASE("mata::nfa::StatePost iteration over moves") {
 		for (auto move_it{moves.begin()}; move_it != moves.end(); ++move_it) { iterated_moves.push_back(*move_it); }
 		CHECK(iterated_moves == expected_moves);
 
-		iterated_moves = {moves.begin(), moves.end()};
+		iterated_moves.assign(moves.begin(), moves.end());
 		CHECK(iterated_moves == expected_moves);
 
 		iterated_moves.clear();
@@ -431,7 +434,7 @@ TEST_CASE("mata::nfa::Delta iteration over transitions") {
 			std::vector<Transition>{{0, 1, 1}, {0, 2, 1}, {0, 5, 1}, {1, 3, 2}, {2, 0, 1}, {2, 0, 3}};
 		CHECK(iterated_transitions == expected_transitions);
 
-		iterated_transitions = {transitions.begin(), transitions.end()};
+		iterated_transitions.assign(transitions.begin(), transitions.end());
 		CHECK(iterated_transitions == expected_transitions);
 
 		iterated_transitions.clear();
@@ -515,10 +518,10 @@ TEST_CASE("mata::nfa::StatePost::Moves") {
 	// TODO: rewrite in a check of moves.
 	StatePost::Moves moves_from_source{nfa.delta[0].moves()};
 
-	CHECK(std::vector<Move>{moves_from_source.begin(), moves_from_source.end()} == std::vector<Move>{{'a', 1}});
+	CHECK(std::vector<Move>(moves_from_source.begin(), moves_from_source.end()) == std::vector<Move>{{'a', 1}});
 	moves_from_source = nfa.delta[1].moves();
 	CHECK(
-		std::vector<Move>{moves_from_source.begin(), moves_from_source.end()} ==
+		std::vector<Move>(moves_from_source.begin(), moves_from_source.end()) ==
 		std::vector<Move>{{'b', 2}, {'c', 2}, {'d', 2}}
 	);
 	StatePost::Moves::const_iterator move_incremented_it{moves_from_source.begin()};
@@ -1486,4 +1489,52 @@ TEST_CASE("mata::nfa::Delta concurrent const queries of a dirty count") {
 		CHECK(!s.empty);
 		CHECK(s.count_of_copy == 4);
 	}
+}
+
+static_assert(std::forward_iterator<StatePost::Moves::const_iterator>);
+static_assert(std::forward_iterator<Delta::Transitions::const_iterator>);
+static_assert(std::ranges::input_range<StatePost::Moves>);
+static_assert(std::ranges::input_range<Delta::Transitions>);
+
+TEST_CASE("mata::nfa::Delta iterators compose with ranges") {
+	StatePost source{};
+	source.push_back(SymbolPost{'a', {1, 2}});
+	source.push_back(SymbolPost{'b', {3, 4}});
+	const StatePost::Moves moves{source.moves()};
+	// A const Moves object must be copyable. This used to attempt Moves(Moves&) instead.
+	const StatePost::Moves moves_copy{moves};
+	const std::vector<Move> moves_of_copy(moves_copy.begin(), moves_copy.end());
+	CHECK(moves_of_copy == (std::vector<Move>{{'a', 1}, {'a', 2}, {'b', 3}, {'b', 4}}));
+	CHECK(std::ranges::distance(moves) == std::ranges::distance(moves_copy));
+
+	auto filtered{std::views::filter(moves, [](const Move& move) { return move.target % 2 != 0; })};
+	CHECK(std::vector<Move>{filtered.begin(), filtered.end()} == std::vector<Move>{{'a', 1}, {'b', 3}});
+
+	Delta delta{};
+	delta.add(0, 'a', 2);
+	delta.add(2, 'b', 0);
+	CHECK(std::ranges::distance(delta.transitions()) == 2);
+	auto filtered_transitions{std::views::filter(delta.transitions(), [](const Transition& transition) {
+		return transition.source == transition.target;
+	})};
+	CHECK(std::vector<Transition>{filtered_transitions.begin(), filtered_transitions.end()}.empty());
+}
+
+TEST_CASE("mata::nfa::Delta iterator copies give independent dereference results - #224") {
+	// A stashing operator* returns a reference into the iterator, which dangles once the copy that produced it is
+	//  destroyed. Forward iterators have to keep it valid for as long as the range is.
+	StatePost source{};
+	source.push_back(SymbolPost{'a', {1, 2}});
+	const StatePost::Moves moves{source.moves()};
+
+	const Move* dereferenced{};
+	{
+		const StatePost::Moves::const_iterator copy{moves.begin()};
+		dereferenced = new Move{*copy};
+	}
+	CHECK(dereferenced->symbol == 'a');
+	CHECK(dereferenced->target == 1);
+	delete dereferenced;
+	static_assert(std::same_as<std::iterator_traits<StatePost::Moves::const_iterator>::reference, Move>);
+	static_assert(std::same_as<std::iterator_traits<Delta::Transitions::const_iterator>::reference, Transition>);
 }
