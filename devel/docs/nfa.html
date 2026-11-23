@@ -915,11 +915,11 @@ Epsilon transitions are removed from copies of the operands that have them, so <
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>smaller</strong> – <strong>[in]</strong> First automaton to concatenate. </p></li>
-<li><p><strong>bigger</strong> – <strong>[in]</strong> Second automaton to concatenate. </p></li>
+<li><p><strong>smaller</strong> – <strong>[in]</strong> <a class="reference internal" href="namespace/namespacemata.html#classmata_1_1Automaton"><span class="std std-ref">Automaton</span></a> whose language should be included in the language of <code class="docutils literal notranslate"><span class="pre">bigger</span></code>. </p></li>
+<li><p><strong>bigger</strong> – <strong>[in]</strong> <a class="reference internal" href="namespace/namespacemata.html#classmata_1_1Automaton"><span class="std std-ref">Automaton</span></a> whose language should include the language of <code class="docutils literal notranslate"><span class="pre">smaller</span></code>. </p></li>
 <li><p><strong>cex</strong> – <strong>[out]</strong> Counterexample for the inclusion. </p></li>
 <li><p><strong>alphabet</strong> – <strong>[in]</strong> <a class="reference internal" href="namespace/namespacemata.html#classmata_1_1Alphabet"><span class="std std-ref">Alphabet</span></a> of both NFAs to compute with. </p></li>
-<li><p><strong>params</strong> – <strong>[in]</strong> Optional parameters to control the equivalence check algorithm:<ul>
+<li><p><strong>params</strong> – <strong>[in]</strong> Optional parameters to control the inclusion check algorithm:<ul>
 <li><p>”algorithm”: “naive”, “antichains”, “hkc” (bisimulation up to congruence, <code class="docutils literal notranslate"><a class="reference internal" href="#namespacemata_1_1nfa_1_1algorithms_1aed26881a9fc583ffdadc1bc1a541efe3"><span class="std std-ref"><span class="pre">algorithms::is_included_hkc()</span></span></a></code>) (Default: “antichains”) </p></li>
 </ul>
 </p></li>
@@ -940,10 +940,10 @@ Epsilon transitions are removed from copies of the operands that have them. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>smaller</strong> – <strong>[in]</strong> First automaton to concatenate. </p></li>
-<li><p><strong>bigger</strong> – <strong>[in]</strong> Second automaton to concatenate. </p></li>
+<li><p><strong>smaller</strong> – <strong>[in]</strong> <a class="reference internal" href="namespace/namespacemata.html#classmata_1_1Automaton"><span class="std std-ref">Automaton</span></a> whose language should be included in the language of <code class="docutils literal notranslate"><span class="pre">bigger</span></code>. </p></li>
+<li><p><strong>bigger</strong> – <strong>[in]</strong> <a class="reference internal" href="namespace/namespacemata.html#classmata_1_1Automaton"><span class="std std-ref">Automaton</span></a> whose language should include the language of <code class="docutils literal notranslate"><span class="pre">smaller</span></code>. </p></li>
 <li><p><strong>alphabet</strong> – <strong>[in]</strong> <a class="reference internal" href="namespace/namespacemata.html#classmata_1_1Alphabet"><span class="std std-ref">Alphabet</span></a> of both NFAs to compute with. </p></li>
-<li><p><strong>params</strong> – <strong>[in]</strong> Optional parameters to control the equivalence check algorithm:<ul>
+<li><p><strong>params</strong> – <strong>[in]</strong> Optional parameters to control the inclusion check algorithm:<ul>
 <li><p>”algorithm”: “naive”, “antichains”, “hkc” (bisimulation up to congruence, <code class="docutils literal notranslate"><a class="reference internal" href="#namespacemata_1_1nfa_1_1algorithms_1aed26881a9fc583ffdadc1bc1a541efe3"><span class="std std-ref"><span class="pre">algorithms::is_included_hkc()</span></span></a></code>) (Default: “antichains”) </p></li>
 </ul>
 </p></li>
@@ -964,8 +964,8 @@ Epsilon transitions are removed from copies of the operands that have them, so <
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>lhs</strong> – <strong>[in]</strong> First automaton to concatenate. </p></li>
-<li><p><strong>rhs</strong> – <strong>[in]</strong> Second automaton to concatenate. </p></li>
+<li><p><strong>lhs</strong> – <strong>[in]</strong> First automaton to compare. </p></li>
+<li><p><strong>rhs</strong> – <strong>[in]</strong> Second automaton to compare. </p></li>
 <li><p><strong>alphabet</strong> – <strong>[in]</strong> <a class="reference internal" href="namespace/namespacemata.html#classmata_1_1Alphabet"><span class="std std-ref">Alphabet</span></a> of both NFAs to compute with. </p></li>
 <li><p><strong>params</strong> – <strong>[in]</strong> Optional parameters to control the equivalence check algorithm:<ul>
 <li><p>”algorithm”: “naive”, “antichains”, “hkc” (the inclusion algorithm run in each direction) (Default: “antichains”) </p></li>
@@ -991,8 +991,8 @@ Epsilon transitions are removed from copies of the operands that have them. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>lhs</strong> – <strong>[in]</strong> First automaton to concatenate. </p></li>
-<li><p><strong>rhs</strong> – <strong>[in]</strong> Second automaton to concatenate. </p></li>
+<li><p><strong>lhs</strong> – <strong>[in]</strong> First automaton to compare. </p></li>
+<li><p><strong>rhs</strong> – <strong>[in]</strong> Second automaton to compare. </p></li>
 <li><p><strong>params</strong> – <strong>[in]</strong> Optional parameters to control the equivalence check algorithm:<ul>
 <li><p>”algorithm”: “naive”, “antichains”, “hkc” (the inclusion algorithm run in each direction) (Default: “antichains”) </p></li>
 </ul>
