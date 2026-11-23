@@ -1470,11 +1470,11 @@ Nfa reduce(
 /**
  * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
  *
- * @param[in] smaller First automaton to concatenate.
- * @param[in] bigger Second automaton to concatenate.
+ * @param[in] smaller Automaton whose language should be included in the language of @p bigger.
+ * @param[in] bigger Automaton whose language should include the language of @p smaller.
  * @param[out] cex Counterexample for the inclusion.
  * @param[in] alphabet Alphabet of both NFAs to compute with.
- * @param[in] params Optional parameters to control the equivalence check algorithm:
+ * @param[in] params Optional parameters to control the inclusion check algorithm:
  * - "algorithm": "naive", "antichains", "hkc" (bisimulation up to congruence, @c algorithms::is_included_hkc())
  *   (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
@@ -1494,10 +1494,10 @@ bool is_included(
 /**
  * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
  *
- * @param[in] smaller First automaton to concatenate.
- * @param[in] bigger Second automaton to concatenate.
+ * @param[in] smaller Automaton whose language should be included in the language of @p bigger.
+ * @param[in] bigger Automaton whose language should include the language of @p smaller.
  * @param[in] alphabet Alphabet of both NFAs to compute with.
- * @param[in] params Optional parameters to control the equivalence check algorithm:
+ * @param[in] params Optional parameters to control the inclusion check algorithm:
  * - "algorithm": "naive", "antichains", "hkc" (bisimulation up to congruence, @c algorithms::is_included_hkc())
  *   (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
@@ -1516,8 +1516,8 @@ inline bool is_included(
 /**
  * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
  *
- * @param[in] lhs First automaton to concatenate.
- * @param[in] rhs Second automaton to concatenate.
+ * @param[in] lhs First automaton to compare.
+ * @param[in] rhs Second automaton to compare.
  * @param[in] alphabet Alphabet of both NFAs to compute with.
  * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains", "hkc" (the inclusion algorithm run in each direction) (Default: "antichains")
@@ -1548,8 +1548,8 @@ bool are_equivalent(
  * That way, alphabet has to be computed only once, as opposed to the current ad-hoc construction of the alphabet.
  * The use of the alternative with defined alphabet should be preferred.
  *
- * @param[in] lhs First automaton to concatenate.
- * @param[in] rhs Second automaton to concatenate.
+ * @param[in] lhs First automaton to compare.
+ * @param[in] rhs Second automaton to compare.
  * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains", "hkc" (the inclusion algorithm run in each direction) (Default: "antichains")
  * @param[out] cex If not null and @p lhs and @p rhs are not equivalent, filled with a witness word: a word in the
