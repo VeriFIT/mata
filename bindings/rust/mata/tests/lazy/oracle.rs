@@ -19,6 +19,8 @@ const MAX_COMPLEMENTS: usize = 2;
 /// The language comparison of a materialized term is exponential, so it runs on small automata only.
 const MAX_COMPARED_ORACLE_STATES: usize = 64;
 const MAX_COMPARED_NFT_STATES: usize = 1024;
+/// The number of random formulas from which their answers must be neither mostly empty nor mostly not.
+const MIN_DISTRIBUTION_SEEDS: u64 = 100;
 
 /// The symbols that one step reads, one per tape.
 type Tuple = Vec<u8>;
@@ -676,10 +678,13 @@ fn random_formulas_agree_with_the_oracle() -> Result<(), Error> {
 		}
 	}
 
-	assert!(
-		non_empty > seeds / 5 && non_empty < seeds * 4 / 5,
-		"{non_empty} of {seeds} non-empty"
-	);
+	// A few seeds say nothing about the mix of answers.
+	if seeds >= MIN_DISTRIBUTION_SEEDS {
+		assert!(
+			non_empty > seeds / 5 && non_empty < seeds * 4 / 5,
+			"{non_empty} of {seeds} non-empty"
+		);
+	}
 
 	Ok(())
 }
