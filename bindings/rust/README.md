@@ -5,7 +5,7 @@ Rust bindings to Mata, in two crates:
 - [`mata`](mata): the safe API ([documentation](https://docs.rs/mata)).
 - [`mata-sys`](mata-sys): builds Mata and declares a [cxx](https://cxx.rs) bridge to it ([documentation](https://docs.rs/mata-sys)).
 
-The workspace also holds [`lazymat`](lazymat), lazy emptiness checking of combinations of automata and transducers, built on the `mata` crate.
+The workspace also holds [`mata-lazy`](mata-lazy), lazy emptiness checking of combinations of automata and transducers, built on the `mata` crate.
 
 ```toml
 [dependencies]

@@ -389,23 +389,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lazymat"
-version = "0.1.0"
-dependencies = [
- "hashbrown",
- "indexmap",
- "mata",
- "parking_lot",
- "rand 0.10.3",
- "regex-automata",
- "rustc-hash",
- "rustfst",
- "stacker",
- "thiserror",
- "typed-index-collections",
-]
-
-[[package]]
 name = "libc"
 version = "0.2.191"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -451,6 +434,23 @@ name = "mata-cli"
 version = "0.1.0"
 dependencies = [
  "mata",
+]
+
+[[package]]
+name = "mata-lazy"
+version = "0.1.0"
+dependencies = [
+ "hashbrown",
+ "indexmap",
+ "mata",
+ "parking_lot",
+ "rand 0.10.3",
+ "regex-automata",
+ "rustc-hash",
+ "rustfst",
+ "stacker",
+ "thiserror",
+ "typed-index-collections",
 ]
 
 [[package]]
