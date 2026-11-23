@@ -18,6 +18,8 @@ keywords = [
 categories = ["algorithms", "mathematics"]
 # cargo-fuzz targets build with nightly and sanitizers on their own.
 exclude = ["/fuzz"]
+# Not on crates.io yet: the API is still settling. `mata` re-exports it as `mata::lazy`.
+publish = false
 
 [features]
 ## Leaves from regex-automata DFAs (pure Rust).
