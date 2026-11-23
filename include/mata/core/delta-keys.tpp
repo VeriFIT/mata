@@ -1,8 +1,5 @@
 /** @file
- * @brief Member definitions of @c mata::posts::DeltaBase for the keys in use: which keys the
- *  transitions carry, the greatest one, and feeding them to an alphabet.
- *
- * Included at the end of @c mata/core/delta.hh, after @c mata/core/delta.tpp.
+ * @brief Member definitions of @c mata::posts::DeltaBase for the keys in use.
  */
 
 #ifndef MATA_CORE_DELTA_KEYS_TPP

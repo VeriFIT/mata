@@ -233,6 +233,7 @@ extern template class posts::detail::PostEntryCore<Symbol, StateSet, ReservedKey
 extern template class posts::PostEntry<Symbol, StateSet>;
 extern template class posts::Post<SymbolPost>;
 extern template class posts::PostMoves<StatePost>;
+extern template class posts::KeyedAccess<posts::DeltaBase<StatePost>, StatePost>;
 extern template class posts::DeltaBase<StatePost>;
 extern template class posts::DeltaTransitions<posts::DeltaBase<StatePost>>;
 extern template class AutomatonBase<Delta>;

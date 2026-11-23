@@ -148,8 +148,8 @@ template <typename P> struct PostAt<P, 0> {
 template <typename P, size_t I> using KeyOf = typename PostAt<P, I>::type::Key;
 
 namespace detail {
-template <typename P, size_t... Is>
-auto keys_of(std::index_sequence<Is...>) -> std::tuple<KeyOf<P, Is>...>;
+template <typename P, size_t... KeyIdx>
+auto keys_of(std::index_sequence<KeyIdx...>) -> std::tuple<KeyOf<P, KeyIdx>...>;
 } // namespace mata::posts::detail.
 
 /**

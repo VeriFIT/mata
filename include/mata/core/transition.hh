@@ -262,9 +262,9 @@ template <typename P> struct KeyedTransitionTraits {
 	}
 
   private:
-	template <typename Tup, size_t... Is>
-	static Type make_(utils::ArgOf<State> source, const Tup& rest, std::index_sequence<Is...>) {
-		return Type{source, KeysOf<P>{std::get<Is>(rest)...}, std::get<sizeof...(Is)>(rest)};
+	template <typename Tup, size_t... KeyIdx>
+	static Type make_(utils::ArgOf<State> source, const Tup& rest, std::index_sequence<KeyIdx...>) {
+		return Type{source, KeysOf<P>{std::get<KeyIdx>(rest)...}, std::get<sizeof...(KeyIdx)>(rest)};
 	}
 };
 

@@ -1,22 +1,9 @@
-/** @file
- * @brief The transition relation: a mapping from states and keys to targets.
- *
- * @c DeltaBase is a vector of posts indexed by source state. The rest of the relation lives in the
- *  headers below it, each reading only the ones above it in this list:
- *  - @c mata/core/traits.hh -- what a target denotes, the reserved keys, how deep a chain is (@ref arity)
- *  - @c mata/core/concepts.hh -- the contracts, @c DeltaLike among them
- *  - @c mata/core/transition.hh -- one transition, its traits, and @c DeltaTransitions
- *  - @c mata/core/visits.hh -- the free functions visiting a chain of posts at any depth
- *  - @c mata/core/moves.hh -- @c Move and @c PostMoves
- *  - @c mata/core/post.hh -- @c PostEntry, @c Post and @c PostChain (@ref nesting, @ref sortedness)
- *  - @c mata/core/cursor.hh -- @c SuccessorCursor, generic in the arity, hand-written at arity 1
- *
- * Including this header includes all of them. The member bodies are in @c mata/core/delta.tpp, and
- *  the ones for the keys in use in @c mata/core/delta-keys.tpp.
- */
-
 #ifndef MATA_CORE_DELTA_HH
 #define MATA_CORE_DELTA_HH
+
+/** @file
+ * @brief The transition relation: a mapping from states and keys to targets.
+ */
 
 #include <algorithm>
 #include <concepts>
@@ -47,82 +34,143 @@
 namespace mata {
 namespace posts {
 /**
- * @brief The keyed writes and lookup of a relation above arity 1: one member each, at every arity.
+ * @brief The keyed writes and lookup of a relation: one member each, at every arity.
  *
- * The keys are a pack of this class, not of the member, so every parameter has a *declared* type and
- *  `add(0, 1, 2, 3)` converts its `int`s at the call. A member's own pack would be deduced from the
- *  caller and carry `int` down into @c insert_target -- a narrowing and a sign-conversion warning
- *  each, which `-Werror` rejects.
- *
- * Arity 1 is not served here: @c DeltaBase spells its own, whose `add` has an append fast path
- *  (`back().key() < symbol`) that skips the search when a relation is built in sorted order. Every
- *  member is constrained to arity above 1, so the names exist at every arity and @c DeltaBase can
- *  always bring them in with `using`.
+ * The keys are a pack of this class, not of the member, so every parameter has a declared type and
+ *  `add(0, 1, 2, 3)` converts its `int`s correctly at the call. Arity 1 is specialised below.
  *
  * @tparam D The relation deriving from this. A friend of it, for its posts.
  * @tparam P The relation's post chain.
  */
-template <typename D, typename P, typename Is = std::make_index_sequence<arity_of<P>>> class KeyedAccess;
+template <typename D, typename P, typename = std::make_index_sequence<arity_of<P>>> class KeyedAccess;
 
-template <typename D, typename P, size_t... Is> class KeyedAccess<D, P, std::index_sequence<Is...>> {
+template <typename D, typename P, size_t... KeyIdx> class KeyedAccess<D, P, std::index_sequence<KeyIdx...>> {
 	using Target = target_of<P>;
 	using State = typename TargetTraits<Target>::State;
 	using TargetArg = utils::ArgOf<Target>;
-	using TargetSet = typename PostAt<P, sizeof...(Is)>::type;
+	using TargetSet = typename PostAt<P, sizeof...(KeyIdx)>::type;
 
 	D& self() { return static_cast<D&>(*this); }
 	const D& self() const { return static_cast<const D&>(*this); }
 
   public:
-	/// Add the transition from @p source under @p keys, one per post, to @p target.
-	void add(const State source, const KeyOf<P, Is>... keys, const TargetArg target)
-		requires(sizeof...(Is) > 1)
-	{
+	/**
+	 * @brief Add the transition from @p source under @p keys to @p target.
+	 * 
+	 * @param source Source state of the transition.
+	 * @param keys Keys of the transition.
+	 * @param target Target of the transition.
+	 */
+	void add(const State source, const KeyOf<P, KeyIdx>... keys, const TargetArg target) {
 		self().resize_for_states(source, D::state_of(target));
 		insert_target(self().mutable_state_post(source), target, keys...);
 	}
-	/// Add a transition from @p source under @p keys to every one of @p targets.
-	void add(const State source, const KeyOf<P, Is>... keys, const TargetSet& targets)
-		requires(sizeof...(Is) > 1)
-	{
+	
+	/**
+	 * @brief Add the transition from @p source under @p keys to every one of @p targets.
+	 * 
+	 * @param source Source state of the transition.
+	 * @param keys Keys of the transition.
+	 * @param targets Set of targets of the transition.
+	 */
+	void add(const State source, const KeyOf<P, KeyIdx>... keys, const TargetSet& targets) {
 		for (const Target& target : targets) {
 			self().resize_for_states(source, D::state_of(target));
 			insert_target(self().mutable_state_post(source), target, keys...);
 		}
 	}
-	/// Remove the transition from @p source under @p keys to @p target, pruning every post it empties.
-	/// A @p source past the last state is ignored.
-	/// @throws std::invalid_argument if a key on the path is missing.
-	void remove(const State source, const KeyOf<P, Is>... keys, const TargetArg target)
-		requires(sizeof...(Is) > 1)
-	{
+	
+	/**
+	 * @brief Remove the transition from @p source under @p keys to @p target.
+	 * 
+	 * @param source Source state of the transition.
+	 * @param keys Keys of the transition.
+	 * @param target Target of the transition.
+	 * @throws Throws std::invalid_argument if @p source has no transition under @p keys.
+	 */
+	void remove(const State source, const KeyOf<P, KeyIdx>... keys, const TargetArg target) {
 		if (source >= self().state_posts_.size()) { return; }
 		erase_target(self().state_posts_[source], target, keys...);
 	}
-	/// Whether the relation holds the transition from @p source under @p keys to @p target.
-	bool contains(const State source, const KeyOf<P, Is>... keys, const TargetArg target) const
-		requires(sizeof...(Is) > 1)
-	{
+	
+	/**
+	 * @brief Check whether the relation contains the transition from @p source under @p keys to @p target.
+	 * 
+	 * @param source Source state of the transition.
+	 * @param keys Keys of the transition.
+	 * @param target Target of the transition.
+	 * @return True if the relation contains the transition, false otherwise.
+	 */
+	bool contains(const State source, const KeyOf<P, KeyIdx>... keys, const TargetArg target) const {
 		return source < self().state_posts_.size() && has_target_at(self().state_posts_[source], target, keys...);
 	}
 };
 
 /**
+ * @brief Specialisation of @c KeyedAccess for arity 1.
+ *
+ * Hand-written rather than the generic template: `add` has an append fast path
+ *  (`back().key() < symbol`) that skips the search when a relation is built in sorted order, where
+ *  @c insert_target searches first, and twice on a miss. Bodies in @c mata/core/delta.tpp.
+ */
+template <typename D, typename P> class KeyedAccess<D, P, std::index_sequence<0>> {
+	using Target = target_of<P>;
+	using State = typename TargetTraits<Target>::State;
+	using TargetArg = utils::ArgOf<Target>;
+	using Key = KeyOf<P, 0>;
+	using Nested = typename P::Nested;
+
+	D& self() { return static_cast<D&>(*this); }
+	const D& self() const { return static_cast<const D&>(*this); }
+
+  public:
+	/**
+	 * @brief Add a transition from @p source over @p symbol to @p target.
+	 * 
+	 * @param source Source state of the transition.
+	 * @param symbol Symbol of the transition.
+	 * @param target Target of the transition.
+	 */
+	void add(State source, Key symbol, TargetArg target);
+	
+	/**
+	 * @brief Add a transition from @p source over @p symbol to every one of @p targets.
+	 * 
+	 * @param source Source state of the transition.
+	 * @param symbol Symbol of the transition.
+	 * @param targets Set of targets of the transition.
+	 */
+	void add(State source, Key symbol, const Nested& targets);
+	
+	/**
+	 * @brief Remove the transition from @p source over @p symbol to @p target.
+	 * 
+	 * @param source Source state of the transition.
+	 * @param symbol Symbol of the transition.
+	 * @param target Target of the transition.
+	 * @throws Throws std::invalid_argument if @p source has no transition over @p symbol.
+	 */
+	void remove(State source, Key symbol, TargetArg target);
+	
+	/**
+	 * @brief Check whether the relation contains the transition from @p source over @p symbol to @p target.
+	 * 
+	 * @param source Source state of the transition.
+	 * @param symbol Symbol of the transition.
+	 * @param target Target of the transition.
+	 * @return True if the relation contains the transition, false otherwise.
+	 */
+	bool contains(State source, Key symbol, TargetArg target) const;
+};
+
+/**
  * @brief The generic transition relation: a vector of posts indexed by source state.
  *
- * The template behind @c mata::Delta, as @c mata::AutomatonBase is behind @c mata::Automaton; the
- *  shipped relation derives from `DeltaBase<StatePost>` in @c mata/relation.hh.
+ * A vector of posts indexed by source state, over a chain of posts ending in a set of targets. 
+ *  The depth is deduced from @p P as @c key_arity. Posts are named by key index, not by container count:
+ *  @c Key<0> is the topmost symbol, and @c PostAt<key_arity> is the innermost post.
  *
- * A vector of posts indexed by source state, over a chain of posts ending in a set of targets. For
- *  an NFA that chain is one key deep — a symbol — so it is this class, one @c Post, targets, and the
- *  aliases @c mata::StatePost and @c mata::SymbolPost name that one post and its entry. The depth is
- *  not baked in here: @p P is the whole chain, and @c key_arity is read off it rather than declared;
- *  going deeper adds another @c Post, not another kind of class. Posts are named by key index, not by container count:
- *  @c Key<0> is the symbol an NFA keys by, and @c PostAt<key_arity> is the innermost post.
- *  @see @ref arity for why counting keys and not containers.
- *
- * @tparam P The post reached from one source state, itself parameterised down to the targets. See
- *  @ref nesting.
+ * @tparam P The post reached from one source state, itself parameterised down to the targets. 
  * @tparam TT What one transition of this relation looks like and how to build one: a traits with a
  *  @c Type and a @c make(). Defaults to the symbol-named triple at arity 1 and to the tuple-keyed
  *  transition above it. @see mata::posts::DefaultTransitionTraits.
@@ -132,55 +180,41 @@ template <typename P, typename TT = DefaultTransitionTraits<P>>
 class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
   public:
 	/// @name Post protocol
-	/// @see mata::DeltaLike -- the only way @c mata::Automaton reaches a successor.
 	///@{
 	using PostType = P; ///< The post reached from one source state.
 	using Target = typename PostType::Target; ///< What visiting the successors yields.
-	/// How the keyed members take a target. @see mata::utils::ArgOf.
-	using TargetArg = utils::ArgOf<Target>;
-	/// What indexes this relation and the automaton's state sets. Derived from the target type
-	///  rather than propagated through the posts: which state a target denotes is a property of
-	///  the target, not of any post above it. @see mata::TargetTraits.
-	using State = typename TargetTraits<Target>::State;
+	using TargetArg = utils::ArgOf<Target>; ///< How the keyed members take a target.
+	using State = typename TargetTraits<Target>::State; ///< What indexes this relation.
 	static constexpr size_t key_arity{PostType::key_arity};
 
-	/// The post @p I steps in: @c PostAt<0> is the whole chain and @c PostAt<key_arity> is the
-	///  innermost post, the set of targets.
+	/// The post at index @p I, counted from the outermost one. 
 	template <size_t I> using PostAt = typename posts::PostAt<PostType, I>::type;
-	/**
-	 * @brief The key at index @p I, counted from the source state.
-	 *
-	 * Indexed rather than singular because a relation spans every post: at @c key_arity 2 there is
-	 *  no "the key", and a member named @c Key would have meant the outermost one — right at arity 1
-	 *  and quietly wrong above it. Key 0 is the one an NFA calls the symbol.
-	 *
-	 * @c mata::AutomatonBase never names this. It transports keys (in @c reverted(), as
-	 *  `const auto&`) without inspecting one, which is why @c mata::DeltaLike does not ask for a key
-	 *  type at all.
-	 */
+	/// The key at index @p I, counted from the outermost one.
 	template <size_t I> using Key = typename PostAt<I>::Key;
-	/// Where key @p I's ordinary keys stop. Indexed for the same reason as @c Key: each post
-	///  carries its own convention, on its own entry. @see mata::ReservedKeys.
+	/// The reserved keys at index @p I, counted from the outermost one.
 	template <size_t I> using Reserved = typename PostAt<I>::Reserved;
-	/// The innermost post: what visiting the successors collects into. @c PostAt<key_arity> spelled for the
-	///  one post that has a name of its own.
 	using TargetSet = PostAt<key_arity>;
-	/// @copydoc mata::posts::Post::KeyedSuccessors
-	using KeyedSuccessors = typename PostType::KeyedSuccessors;
-	/// @copydoc mata::TargetTraits::state_of
-	static State state_of(const Target& target) { return TargetTraits<Target>::state_of(target); }
-	/// The targets under one fully-supplied key, and a transition of this relation.
+	using KeyedSuccessors = typename PostType::KeyedSuccessors; ///< The result type of the keyed @c get_successors.
+	
+	/**
+	 * @brief Get the state a target denotes, whatever it carries.
+	 * 
+	 * @param target Target to get the state of.
+	 * @return State denoted by @p target.
+	 */
+	static State state_of(const Target& target) { 
+		return TargetTraits<Target>::state_of(target); 
+	}
+
 	using Entry = typename PostType::Entry;
 	using Nested = typename PostType::Nested;
-	/// The transition traits this relation was instantiated with, and the type they name. What the
-	///  shape *is*, and what its fields are called, comes from @p TT so a module can name its own.
-	///  @see mata::posts::DefaultTransitionTraits.
 	using TransitionTraits = TT;
 	using TransitionType = typename TT::Type;
 	using CursorType = posts::SuccessorCursor<PostType>;
 	///@}
 
-	inline static const PostType empty_state_post; // When posts[q] is not allocated, then delta[q] returns this.
+	/// A constant returned when a state post is requested for a source that has no allocated post.
+	inline static const PostType empty_state_post;
 
 	DeltaBase() : state_posts_{} {}
 	DeltaBase(const DeltaBase& other) = default;
@@ -192,6 +226,11 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 
 	bool operator==(const DeltaBase& other) const;
 
+	/**
+	 * @brief Reserve space for @p n states in the relation.
+	 * 
+	 * @param n Number of states to reserve space for.
+	 */
 	void reserve(const size_t n) { state_posts_.reserve(n); };
 
 	/**
@@ -199,41 +238,26 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	 *
 	 * If we try to access a state post of a @p source which is present in the automaton as an initial/final state,
 	 *  yet does not have allocated space in the relation, an @c empty_post is returned. Hence, the function has no side
-	 *  effects (no allocation is performed; iterators remain valid).
-	 * @param source[in] Source state of a state post to access.
+	 *  effects (no allocation is performed and iterators remain valid).
+	 * 
+	 * @param source Source state of a state post to access.
 	 * @return State post of @p source.
 	 */
 	const PostType& state_post(const State source) const {
 		if (source >= num_of_states()) { return empty_state_post; }
 		return state_posts_[source];
 	}
-
-	/**
-	 * @brief Get constant reference to the state post of @p source.
-	 *
-	 * If we try to access a state post of a @p source which is present in the automaton as an initial/final state,
-	 *  yet does not have allocated space in the relation, an @c empty_post is returned. Hence, the function has no side
-	 *  effects (no allocation is performed; iterators remain valid).
-	 * @param source[in] Source state of a state post to access.
-	 * @return State post of @p source.
-	 */
 	const PostType& operator[](const State source) const { return state_post(source); }
 
 	/**
 	 * @brief Get mutable (non-constant) reference to the state post of @p source.
 	 *
-	 * The function allows modifying the state post.
-	 *
-	 * BEWARE, IT HAS A SIDE EFFECT.
-	 *
+	 * The function allows modifying the state post. BEWARE, IT HAS A SIDE EFFECT.
 	 * If we try to access a state post of a @p source which is present in the automaton as an initial/final state,
 	 *  yet does not have allocated space in the relation, a new state post for @p source will be allocated along with
 	 *  all state posts for all previous states. This in turn may cause that the entire post data structure is
 	 *  re-allocated. Iterators into the relation will get invalidated.
-	 * Use the constant 'state_post()' is possible. Or, to prevent the side effect from causing issues, one might want
-	 *  to make sure that posts of all states in the automaton are allocated, e.g., write an NFA method that allocate
-	 *  the relation for all states of the NFA.
-	 * @param source[in] Source state of a state post to access.
+	 * @param source Source state of a state post to access.
 	 * @return State post of @p source.
 	 */
 	PostType& mutable_state_post(State source);
@@ -241,8 +265,8 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	/**
 	 * @brief Defragment the relation.
 	 *
-	 * This function removes all state posts which are not in @p is_staying and renames the remaining state posts
-	 * according to @p renaming.
+	 * This function removes all state posts which are not in @p is_staying and 
+	 *  renames the remaining state posts according to @p renaming.
 	 *
 	 * @param[in] is_staying Boolean vector indicating which states are staying in the relation.
 	 * @param[in] renaming Vector of states to rename the remaining state posts to.
@@ -258,11 +282,11 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	void clear() { state_posts_.clear(); }
 
 	/**
-	 * @brief Allocate state posts up to @p num_of_states states, creating empty @c PostType for yet unallocated state
-	 *  posts.
+	 * @brief Allocate state posts up to @p num_of_states states, 
+	 *  creating empty @c PostType for yet unallocated state posts.
 	 *
-	 * @param[in] num_of_states Number of states in the relation to allocate state posts for. Have to be at least
-	 *  num_of_states() + 1.
+	 * @param[in] num_of_states Number of states in the relation to allocate state posts for.
+	 *  Have to be at least num_of_states() + 1.
 	 */
 	void allocate(const size_t num_of_states) {
 		MATA_ASSERT(num_of_states >= this->num_of_states());
@@ -284,10 +308,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	 */
 	size_t num_of_transitions() const;
 
-	void add(State source, Key<0> symbol, TargetArg target)
-		requires(P::key_arity == 1);
-
-	/// @name Keyed writes and lookup above arity 1
+	/// @name Keyed writes and lookup
 	/// One member each, at every arity. @see mata::posts::KeyedAccess.
 	///@{
 	friend class KeyedAccess<DeltaBase, P>;
@@ -299,26 +320,40 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	/// @name Transition-shaped members
 	/// Generic in the arity: a transition is taken apart with its type's @c parts() and the pieces
 	///  are forwarded to the keyed overload of the matching arity. What a transition *is* comes from
-	///  the traits; only @c Transitions, which has to carry the keys, is still arity 1.
+	///  the traits. Only @c Transitions, which has to carry the keys, is still arity 1.
 	///@{
+	/**
+	 * @brief Add a transition to the relation.
+	 * 
+	 * @param transition Transition to add.
+	 */
 	void add(const TransitionType& transition) {
 		std::apply([this](const auto&... p) { add(p...); }, TransitionType::parts(transition));
 	}
-	void remove(State source, Key<0> symbol, TargetArg target)
-		requires(P::key_arity == 1);
+
+	/**
+	 * @brief Remove a transition from the relation.
+	 * 
+	 * @param transition Transition to remove.
+	 */
 	void remove(const TransitionType& transition) {
 		std::apply([this](const auto&... p) { remove(p...); }, TransitionType::parts(transition));
 	}
-	/// Check whether the relation contains a passed transition.
-	bool contains(State source, Key<0> symbol, TargetArg target) const
-		requires(P::key_arity == 1);
+
+	/**
+	 * @brief Check whether the relation contains a transition.
+	 * 
+	 * @param transition Transition to check.
+	 * @return True if the relation contains the transition, false otherwise.
+	 */
 	bool contains(const TransitionType& transition) const {
 		return std::apply([this](const auto&... p) { return contains(p...); }, TransitionType::parts(transition));
 	}
 	///@}
 
 	/**
-	 * Check whether automaton contains no transitions.
+	 * @brief Check whether automaton contains no transitions.
+	 * 
 	 * @return True if there are no transitions in the automaton, false otherwise.
 	 */
 	bool empty() const;
@@ -329,30 +364,21 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	 * @param post_vector Vector of posts to be appended.
 	 */
 	void append(const std::vector<PostType>& post_vector) {
-		for (const PostType& pst : post_vector) { this->state_posts_.push_back(pst); }
+		for (const PostType& pst : post_vector) { 
+			this->state_posts_.push_back(pst); 
+		}
 	}
 
 	/**
-	 * @brief Copy posts of delta and apply a lambda update function on each state from
-	 * targets.
+	 * @brief Copy posts of delta and apply a lambda update function on each state from targets.
 	 *
-	 * IMPORTANT: In order to work properly, the lambda function needs to be
+	 * @warning In order to work properly, the lambda function needs to be
 	 * monotonic, that is, the order of states in targets cannot change.
 	 *
 	 * @param target_renumberer Monotonic lambda function mapping states to different states.
 	 * @return std::vector<Post> Copied posts.
 	 */
 	std::vector<PostType> renumber_targets(const std::function<State(State)>& target_renumberer) const;
-
-	/**
-	 * @brief Add transitions to multiple destinations
-	 *
-	 * @param source From
-	 * @param symbol The key of the transition. Named for an NFA's sake, like the field.
-	 * @param targets Set of states to
-	 */
-	void add(State source, Key<0> symbol, const Nested& targets)
-		requires(P::key_arity == 1);
 
 	/**
 	 * @brief Apply @p fn to every target reachable from @p source, under any key.
@@ -369,18 +395,18 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	}
 
 	/**
-	 * @brief Does @p source have @p target among its successors, under any key?
+	 * @brief Checks if @p source have @p target among its successors, under any key.
 	 *
 	 * @param[in] source Source state to look from.
 	 * @param[in] target Target state to look for.
+	 * @return True if @p target is among the successors of @p source, false otherwise.
 	 */
 	bool is_successor(const State source, const State target) const {
-		// By the state a target denotes, so a payload target counts whatever it carries.
 		return any_target(state_post(source), [target](const Target& t) { return state_of(t) == target; });
 	}
 
 	/**
-	 * @brief Does @p state have a transition back to itself under any key?
+	 * @brief Checks if @p state have a transition back to itself under any key.
 	 *
 	 * @param[in] state State to check for self-loop.
 	 * @return True if @p state has a transition back to itself under any key, false otherwise.
@@ -401,41 +427,39 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	const_iterator begin() const { return state_posts_.begin(); }
 	const_iterator end() const { return state_posts_.end(); }
 
-	/// The transitions of this relation, one @c TransitionType per (source, key path, target).
-	///  @see mata::posts::DeltaTransitions.
 	using Transitions = DeltaTransitions<DeltaBase>;
 
 	/**
-	 * Iterator over transitions represented as @c Transition instances.
+	 * @brief Get iterator over transitions represented as @c Transition instances.
 	 */
 	Transitions transitions() const { return Transitions{this}; }
 
 	/**
-	 * Get transitions leading to @p state_to.
-	 * @param state_to[in] Target state for transitions to get.
+	 * @brief Get transitions leading to @p state_to.
+	 * 
+	 * @warning Operation is slow, traverses over every transition in the relation.
+	 * @param state_to Target state for transitions to get.
 	 * @return Transitions leading to @p state_to.
-	 *
-	 * Operation is slow, traverses over every entry of every post.
 	 */
 	std::vector<TransitionType> get_transitions_to(State state_to) const;
 
 	/**
-	 * Get transitions from @p state_from to @p state_to.
-	 * @param state_from[in] Source state.
-	 * @param state_from[in] Target state.
+	 * @brief Get transitions from @p state_from to @p state_to.
+	 * 
+	 * @warning Operation is slow, traverses over every transition in the relation.
+	 * @param state_from Source state.
+	 * @param state_from Target state.
 	 * @return Transitions from @p source to @p state_to.
-	 *
-	 * Operation is slow, traverses over every entry of every post.
 	 */
 	std::vector<TransitionType> get_transitions_between(State state_from, State state_to) const;
 
 	/**
 	 * @brief Resize the delta to fit the given @p states.
+	 * 
 	 * @tparam States A variadic parameter pack of states to resize the delta for.
 	 * @param states States to resize the delta for.
 	 */
-	template <typename... States>
-		requires utils::AllOfType<State, States...>
+	template <typename... States> requires utils::AllOfType<State, States...>
 	DeltaBase& resize_for_states(States... states) {
 		if constexpr (sizeof...(states) > 0) {
 			if (const State max_state{std::max({static_cast<State>(states)...})}; max_state >= num_of_states()) {
@@ -447,7 +471,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	}
 
 	/**
-	 * Get the set of states that are successors of the given @p state.
+	 * @brief Get the set of states that are successors of the given @p state.
 	 * @param[in] state State from which successors are checked.
 	 * @return Set of states that are successors of the given @p state.
 	 */
@@ -456,17 +480,15 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	/**
 	 * @brief The targets reachable from @p state under @p key.
 	 *
-	 * The *targets*, at every arity. Reaching one step down is @c PostType::find()'s job and
-	 *  visiting the posts between is @c for_each_move()'s; this answers "which states can I reach
-	 *  over this key", which means the same thing however many keys are left below it.
-	 *
-	 * @see PostType::KeyedSuccessors for why the return type follows the arity — a reference into the
-	 *  relation at arity 1, a fresh set above it.
+	 * @param[in] state State from which successors are checked.
+	 * @param[in] symbol Key under which successors are checked.
+	 * @return Set of targets reachable from @p state under @p key.
 	 */
 	KeyedSuccessors get_successors(State state, Key<0> symbol) const;
 
 	/**
-	 * Iterate over @p epsilon symbol posts under the given @p state.
+	 * @brief Iterate over @p epsilon symbol posts under the given @p state.
+	 * 
 	 * @param[in] state State from which epsilon transitions are checked.
 	 * @param[in] epsilon User can define his favourite epsilon or used default.
 	 * @return An iterator to @c PostEntry with epsilon symbol. End iterator when there are no epsilon transitions.
@@ -474,13 +496,13 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	PostType::const_iterator epsilon_symbol_posts(State state, Key<0> epsilon = Reserved<0>::min_epsilon) const;
 
 	/**
-	 * Iterate over @p epsilon symbol posts under the given @p state_post.
+	 * @brief Iterate over @p epsilon symbol posts under the given @p state_post.
+	 * 
 	 * @param[in] state_post State post from which epsilon transitions are checked.
 	 * @param[in] epsilon User can define his favourite epsilon or used default.
 	 * @return An iterator to @c PostEntry with epsilon symbol. End iterator when there are no epsilon transitions.
 	 */
-	static PostType::const_iterator
-	epsilon_symbol_posts(const PostType& state_post, Key<0> epsilon = Reserved<0>::min_epsilon);
+	static PostType::const_iterator epsilon_symbol_posts(const PostType& state_post, Key<0> epsilon = Reserved<0>::min_epsilon);
 
   protected:
 	/// @name Keys on the transitions
@@ -511,22 +533,14 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	 *
 	 * Does not necessarily have to equal the set of symbols in the alphabet used by the automaton.
 	 */
-	utils::OrdVector<typename P::Key> get_used_keys() const
-		requires std::totally_ordered<typename P::Key>;
-
-	utils::OrdVector<typename P::Key> get_used_keys_vec() const
-		requires std::totally_ordered<typename P::Key>;
-	std::set<typename P::Key> get_used_keys_set() const
-		requires std::totally_ordered<typename P::Key>;
-	utils::SparseSet<typename P::Key> get_used_keys_sps() const
-		requires std::integral<typename P::Key>;
-	/// @note Indexed *by* key, so it allocates up to the largest key used. Already unusable when
-	///  the automaton has epsilons.
-	std::vector<bool> get_used_keys_bv() const
-		requires std::integral<typename P::Key>;
-	/// @copydoc get_used_keys_bv
-	BoolVector get_used_keys_chv() const
-		requires std::integral<typename P::Key>;
+	utils::OrdVector<typename P::Key> get_used_keys() const requires std::totally_ordered<typename P::Key>;
+	utils::OrdVector<typename P::Key> get_used_keys_vec() const requires std::totally_ordered<typename P::Key>;
+	std::set<typename P::Key> get_used_keys_set() const requires std::totally_ordered<typename P::Key>;
+	utils::SparseSet<typename P::Key> get_used_keys_sps() const requires std::integral<typename P::Key>;
+	/// @note Indexed *by* key, so it allocates up to the largest key used. Already unusable when the automaton has epsilons.
+	std::vector<bool> get_used_keys_bv() const requires std::integral<typename P::Key>;
+	/// @note Indexed *by* key, so it allocates up to the largest key used. Already unusable when the automaton has epsilons.
+	BoolVector get_used_keys_chv() const requires std::integral<typename P::Key>;
 
 	/**
 	 * @brief The greatest key used, or nothing when there are no transitions.
@@ -535,16 +549,23 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	 *  fresh symbols at `max + 1` and above, which has to clear the epsilons too or the fresh
 	 *  symbols collide with real transitions.
 	 */
-	std::optional<typename P::Key> get_max_key() const
-		requires std::totally_ordered<typename P::Key>;
+	std::optional<typename P::Key> get_max_key() const requires std::totally_ordered<typename P::Key>;
 	///@}
 
-	/// Append every transition from @p from to @p to. At arity 1 over bare states each entry's targets
-	///  are searched directly; otherwise the key paths are followed and the target checked at the bottom.
+	/**
+	 * @brief Collect all transitions from @p from to @p to into @p out.
+	 * 
+	 * @param[in] from Source state of the transitions to collect.
+	 * @param[in] to Target state of the transitions to collect.
+	 * @param[out] out Vector to collect the transitions into.
+	 */
 	void collect_transitions_to_(const State from, const State to, std::vector<TransitionType>& out) const {
 		if constexpr (key_arity == 1 && std::same_as<Target, State>) {
+			// The arity-1, bare-state case is the only one that can be done without a search.
 			for (const Entry& entry : state_post(from)) {
-				if (entry.targets.find(to) != entry.targets.end()) { out.push_back(TT::make(from, entry.key(), to)); }
+				if (entry.targets.find(to) != entry.targets.end()) { 
+					out.push_back(TT::make(from, entry.key(), to)); 
+				}
 			}
 		} else {
 			state_post(from).for_each_move([&](const auto&... move) {
@@ -563,14 +584,12 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 template <typename... Ts> using RelationOf = DeltaBase<PostChain<Ts...>>;
 
 /**
- * @brief The contract every concrete relation owes, stated once.
+ * @brief The contract every concrete relation owes.
  *
  * Each check is its own @c static_assert rather than one concept, so that a failure names the check
  *  that failed. A module asks for all of them with a single line,
  *  `static_assert(posts::relation_contract_holds<Delta>());`, which may be repeated in every
- *  translation unit that includes the module's header -- unlike an explicit instantiation
- *  definition, which may appear only once in a program. Checks that belong to one module (its epsilon
- *  constant, its argument-passing policy) stay beside that module's relation.
+ *  translation unit that includes the module's header.
  */
 template <typename D> constexpr bool relation_contract_holds() {
 	using P = typename D::PostType;
@@ -578,14 +597,11 @@ template <typename D> constexpr bool relation_contract_holds() {
 	static_assert(PostEntryLike<typename D::Entry>, "the relation's Entry must be its PostType's entry type.");
 	static_assert(TargetSetLike<typename D::TargetSet>, "the innermost post must be a set of targets.");
 	static_assert(DeltaLike<D>, "the relation must satisfy the contract mata::Automaton is written against.");
-	// A relation class deriving from DeltaBase exists only to shorten a name in diagnostics and must
-	//  add nothing: the empty-base rules then make it the same size as its base, and the base converts
-	//  to it without slicing. Compared against the base with the relation's *own* traits, not the
-	//  default ones, or a relation naming other traits would be measured against a different type.
+	
 	using Base = DeltaBase<P, typename D::TransitionTraits>;
 	static_assert(
 		sizeof(D) == sizeof(Base) && alignof(D) == alignof(Base),
-		"a relation class must add no members to DeltaBase; it exists only to shorten a name in diagnostics."
+		"a relation class must add no members to DeltaBase. It exists only to shorten a name in diagnostics."
 	);
 	return true;
 }
@@ -605,12 +621,11 @@ namespace posts {
  * @return The defragmented relation.
  */
 template <typename P, typename TT>
-DeltaBase<P, TT> defragment(const DeltaBase<P, TT>& delta, const BoolVector& is_staying,
-                    const std::vector<typename DeltaBase<P, TT>::State>& renaming);
+DeltaBase<P, TT> defragment(const DeltaBase<P, TT>& delta, const BoolVector& is_staying, const std::vector<typename DeltaBase<P, TT>::State>& renaming);
 } // namespace mata::posts.
 
-/// Callers name this @c mata::defragment. Declared once, in @c posts, and re-exported here: having
-///  it in both namespaces makes every unqualified call ambiguous through ADL.
+// Makes @c mata::defragment another name for @c posts::defragment, not a second function.
+// A separate @c defragment in @c mata would break unqualified calls inside @c mata.
 using posts::defragment;
 
 } // namespace mata.

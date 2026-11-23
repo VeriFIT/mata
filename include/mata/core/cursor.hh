@@ -33,8 +33,8 @@ template <typename P, size_t Arity = P::key_arity> class SuccessorCursor {
 		typename PostAt<I>::const_iterator it{}, end{};
 		bool operator==(const Position&) const = default;
 	};
-	template <typename Seq> struct Positions;
-	template <size_t... Is> struct Positions<std::index_sequence<Is...>> : Position<Is>... {
+	template <typename> struct Positions;
+	template <size_t... KeyIdx> struct Positions<std::index_sequence<KeyIdx...>> : Position<KeyIdx>... {
 		bool operator==(const Positions&) const = default;
 	};
 
@@ -101,8 +101,8 @@ template <typename P, size_t Arity = P::key_arity> class SuccessorCursor {
 		auto keys() const { return keys(std::make_index_sequence<Arity>{}); }
 
 	  private:
-		template <size_t... Is> auto keys(std::index_sequence<Is...>) const {
-			return std::tuple<typename PostAt<Is>::Key...>{at<Is>().it->key()...};
+		template <size_t... KeyIdx> auto keys(std::index_sequence<KeyIdx...>) const {
+			return std::tuple<typename PostAt<KeyIdx>::Key...>{at<KeyIdx>().it->key()...};
 		}
 	};
 
