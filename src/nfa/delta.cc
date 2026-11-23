@@ -96,7 +96,7 @@ void close_over_epsilons(
 		worklist.pop_back();
 		const StatePost& state_post{delta[state]};
 		for (const Symbol epsilon : epsilons) {
-			const auto symbol_post_it{state_post.find(epsilon)};
+			const auto symbol_post_it{Delta::epsilon_symbol_posts(state_post, epsilon)};
 			if (symbol_post_it == state_post.end()) { continue; }
 			for (const State target : symbol_post_it->targets) {
 				const size_t slot{slot_of(visited, target)};
