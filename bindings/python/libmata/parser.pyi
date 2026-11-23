@@ -28,8 +28,11 @@ def from_regex(
 def from_mata(src: str, alphabet: alph.Alphabet | None = None) -> mata_nfa.Nfa:
     """Loads automata from single file.
 
+    The file must hold exactly one automaton, i.e., a single @-section.
+
     :param src: single path
     :param alphabet: target alphabet; when omitted, the symbols are read as numbers
+    :raises RuntimeError: when the file does not hold exactly one automaton
     :return: single automaton
     """
 
@@ -37,11 +40,13 @@ def from_mata(src: str, alphabet: alph.Alphabet | None = None) -> mata_nfa.Nfa:
 def from_mata(src: Iterable[str], alphabet: alph.Alphabet | None = None) -> list[mata_nfa.Nfa]:
     """Loads automata from list or other stream of files.
 
+    Every file must hold exactly one automaton, i.e., a single @-section.
     All automata passed in sources are mintermized together. The sources can be a list or any other
     iterable of paths, such as a generator.
 
     :param src: iterable of paths to automata
     :param alphabet: target alphabet; when omitted, the symbols are read as numbers
     :raises ValueError: when @p src is an empty iterable
+    :raises RuntimeError: when a file does not hold exactly one automaton
     :return: list of automata
     """

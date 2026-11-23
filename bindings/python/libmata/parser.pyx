@@ -34,17 +34,20 @@ def from_regex(regex, encoding='utf-8', bool reduce=True, bool trim=True, bool k
 def from_mata(src: str | list[str], alph.Alphabet alphabet = None):
     """Loads automata from either single file or list or other stream of files.
 
+    Every file must hold exactly one automaton, i.e., a single @-section.
     All automata passed in sources are mintermized together. To load multiple automata and mintermize them
     together, pass their paths as one iterable: a list, or any other iterable such as a generator.
 
     :param src: iterable of paths to automata or single path
     :param alphabet: target alphabet; when omitted, the symbols are read as numbers
     :raises ValueError: when @p src is an empty iterable
+    :raises RuntimeError: when a file does not hold exactly one automaton
     :return: single automaton or list of automata
     """
     cdef CAlphabet * c_alphabet = NULL
     cdef optional[CNfa] explicit_aut
     cdef parser.ifstream fs
+    cdef parser.Parsed parsed
     cdef parser.CBitvectorNfaReader bitvector_reader
     cdef vector[CNfa] bitvector_auts
     cdef size_t next_bitvector_aut = 0
@@ -80,10 +83,15 @@ def from_mata(src: str | list[str], alph.Alphabet alphabet = None):
             automata.append(None)
         else:
             fs = parser.ifstream(file.encode('utf-8'))
+            parsed = parser.parse_mf(fs, True)
+            # Both fast readers give up on a file of several sections, so only this reader sees one. Same check as
+            #  builder::parse_from_mata() of the single path, naming the file.
+            if parsed.size() != 1:
+                raise RuntimeError(
+                    f"The number of sections in the input file '{file}' is '{parsed.size()}'. Required is '1'."
+                )
             result = mata_nfa.Nfa()
-            parser.construct(
-                (<mata_nfa.Nfa>result).thisptr.get(), parser.parse_from_mf(parser.parse_mf(fs, True))[0], c_alphabet
-            )
+            parser.construct((<mata_nfa.Nfa>result).thisptr.get(), parser.parse_from_mf(parsed)[0], c_alphabet)
             automata.append(result)
     if not automata:
         raise ValueError("from_mata() needs at least one source")
