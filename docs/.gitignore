@@ -9,3 +9,5 @@ src/struct
 src/structlist.rst
 src/class
 src/classlist.rst
+src/union
+src/unionlist.rst

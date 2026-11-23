@@ -24,8 +24,8 @@ Mata automata library
    applications
    namespacelist
    classlist
-   filelist
    structlist
+   unionlist
 
 
 Indices and tables
