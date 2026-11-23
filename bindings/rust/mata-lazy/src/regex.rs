@@ -77,6 +77,10 @@ impl Regex {
 	/// A DFA built elsewhere. It must report all matches ([`All`](MatchKind::All)); otherwise words that a longer
 	/// match passes through are lost.
 	///
+	/// It must be a forward DFA: words are read in the order its transitions are followed, so a reverse DFA
+	/// (built with [`thompson::Config::reverse`](regex_automata::nfa::thompson::Config::reverse)) yields every
+	/// word reversed, such as `ba` for the pattern `ab`.
+	///
 	/// # Errors
 	///
 	/// [`Start`](Error::Start) if the DFA does not support anchored searches, or [`Quit`](Error::Quit) if it
