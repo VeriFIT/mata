@@ -2101,14 +2101,14 @@ Nft reduce(
 /**
  * @brief Checks inclusion of languages of two NFTs: @p smaller and @p bigger (smaller <= bigger).
  *
- * @param[in] smaller First automaton to concatenate.
- * @param[in] bigger Second automaton to concatenate.
+ * @param[in] smaller Transducer whose language should be included in the language of @p bigger.
+ * @param[in] bigger Transducer whose language should include the language of @p smaller.
  * @param[out] cex Counterexample for the inclusion.
  * @param[in] alphabet Alphabet of both NFTs to compute with.
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @p DONT_CARE symbols.
- * @param[in] params Optional parameters to control the equivalence check algorithm:
+ * @param[in] params Optional parameters to control the inclusion check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  * @throw std::invalid_argument when the level vector of an operand does not cover all its states or holds a level
@@ -2126,13 +2126,13 @@ bool is_included(
 /**
  * @brief Checks inclusion of languages of two NFTs: @p smaller and @p bigger (smaller <= bigger).
  *
- * @param[in] smaller First automaton to concatenate.
- * @param[in] bigger Second automaton to concatenate.
+ * @param[in] smaller Transducer whose language should be included in the language of @p bigger.
+ * @param[in] bigger Transducer whose language should include the language of @p smaller.
  * @param[in] alphabet Alphabet of both NFTs to compute with.
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @p DONT_CARE symbols.
- * @param[in] params Optional parameters to control the equivalence check algorithm:
+ * @param[in] params Optional parameters to control the inclusion check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  * @throw std::invalid_argument when the level vector of an operand does not cover all its states or holds a level
@@ -2151,8 +2151,8 @@ inline bool is_included(
 /**
  * @brief Perform equivalence check of two NFTs: @p lhs and @p rhs.
  *
- * @param[in] lhs First automaton to concatenate.
- * @param[in] rhs Second automaton to concatenate.
+ * @param[in] lhs First transducer to compare.
+ * @param[in] rhs Second transducer to compare.
  * @param[in] alphabet Alphabet of both NFTs to compute with.
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
@@ -2182,8 +2182,8 @@ bool are_equivalent(
  * That way, alphabet has to be computed only once, as opposed to the current ad-hoc construction of the alphabet.
  * The use of the alternative with defined alphabet should be preferred.
  *
- * @param[in] lhs First automaton to concatenate.
- * @param[in] rhs Second automaton to concatenate.
+ * @param[in] lhs First transducer to compare.
+ * @param[in] rhs Second transducer to compare.
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @p DONT_CARE symbols.
