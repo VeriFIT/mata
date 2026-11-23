@@ -1931,7 +1931,9 @@ Nfa mata::nfa::reduce(const Nfa& aut, StateRenaming* state_renaming, const Param
 	} else if ("sat" == algorithm) {
 		// The result is constructed anew, its states do not correspond to the states of the original automaton.
 		result = algorithms::reduce_sat(
-			aut, haskey(params, "type") ? params.at("type") : "nfa", haskey(params, "solver") ? params.at("solver") : ""
+			aut, haskey(params, "type") ? params.at("type") : "nfa",
+			haskey(params, "solver") ? params.at("solver") : "",
+			haskey(params, "epsilon") ? params.at("epsilon") : std::string{"letter"}
 		);
 	} else if ("qbf" == algorithm) {
 		// The result is constructed anew, its states do not correspond to the states of the original automaton.
