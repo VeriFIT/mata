@@ -1,0 +1,43 @@
+From 3274f65b8006c79f139939954061911d524b078e Mon Sep 17 00:00:00 2001
+From: David Chocholaty <chocholaty.david@protonmail.com>
+Date: Mon, 23 Nov 2026 10:49:38 +0100
+Subject: [PATCH] utils: +perf Scan for contained ranges before merging
+ OrdVector
+
+Experimental subset pre-scan for issue #1084; rejected by the EXP-6 benchmark.
+---
+ include/mata/utils/ord-vector.hh | 2 ++
+ tests/ord-vector.cc              | 4 ++++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/include/mata/utils/ord-vector.hh b/include/mata/utils/ord-vector.hh
+index 12bc4e567..79ed4c57e 100644
+--- a/include/mata/utils/ord-vector.hh
++++ b/include/mata/utils/ord-vector.hh
+@@ -246,6 +246,8 @@ template <class Key, class Allocator> class OrdVector {
+ 			return true;
+ 		}
+ 
++		if (std::ranges::includes(vec_, keys)) { return false; }
++
+ 		// The merge buffer is local. It used to be a function-local `static` shared by every thread in
+ 		//  the process, which corrupted the result of concurrent unions over unrelated containers.
+ 		VectorType merged{};
+diff --git a/tests/ord-vector.cc b/tests/ord-vector.cc
+index 868f29222..d086c1550 100644
+--- a/tests/ord-vector.cc
++++ b/tests/ord-vector.cc
+@@ -644,6 +644,10 @@ TEST_CASE("mata::utils::OrdVector::insert(const OrdVector&) reports growth - iss
+ 	OrdVectorT values{1, 3};
+ 	CHECK_FALSE(values.insert(OrdVectorT{}));
+ 	CHECK_FALSE(values.insert(OrdVectorT{1, 3}));
++	CHECK_FALSE(values.insert(OrdVectorT{3}));
++	CHECK(values == OrdVectorT{1, 3});
++	CHECK_FALSE(values.insert(values));
++	CHECK(values == OrdVectorT{1, 3});
+ 	CHECK(values.insert(OrdVectorT{2, 3}));
+ 	CHECK(values == OrdVectorT{1, 2, 3});
+ }
+-- 
+2.56.0
+
