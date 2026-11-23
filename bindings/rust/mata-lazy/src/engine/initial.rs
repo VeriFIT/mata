@@ -119,29 +119,41 @@ impl Engine<'_> {
 		starts
 	}
 
-	/// Whether an initial macrostate of `node` accepts, decided without numbering them.
-	pub(super) fn has_accepting_initial(&mut self, node: ExecId) -> bool {
+	/// Whether an initial macrostate of `node` accepts, decided without numbering them, or the limit that the query
+	/// passed.
+	pub(super) fn has_accepting_initial(&mut self, node: ExecId) -> Result<bool, Limit> {
 		if let Some(known) = self.accepting_initials[node] {
-			return known;
+			return Ok(known);
 		}
 
 		let known = deep(|| match self.exec.nodes[node].op.clone() {
-			Op::Leaf(leaf) => leaf.initial().iter().any(|&state| leaf.is_final(state)),
-			Op::Union(branches) => branches
-				.iter()
-				.any(|&branch| self.has_accepting_initial(branch)),
-			Op::Intersection(a, b) | Op::Sync(a, b, _) | Op::Diagonal(a, b) => {
-				self.has_accepting_initial(a) && self.has_accepting_initial(b)
+			// Past a limit the answer is dropped, so the scan stops there.
+			Op::Leaf(leaf) => Ok(leaf.initial().iter().any(|&state| {
+				self.budget.step(0);
+				self.budget.passed() || leaf.is_final(state)
+			})),
+			Op::Union(branches) => {
+				for &branch in branches.iter() {
+					if self.has_accepting_initial(branch)? {
+						return Ok(true);
+					}
+				}
+
+				Ok(false)
 			}
-			Op::Complement(child) => !self.has_accepting_initial(child),
+			Op::Intersection(a, b) | Op::Sync(a, b, _) | Op::Diagonal(a, b) => {
+				Ok(self.has_accepting_initial(a)? && self.has_accepting_initial(b)?)
+			}
+			Op::Complement(child) => Ok(!self.has_accepting_initial(child)?),
 			Op::Identity(child) | Op::Project(child, _) | Op::Transparent(child) => {
 				self.has_accepting_initial(child)
 			}
 			Op::Explicit { .. } => unreachable!("explicit nodes are replaced before the search"),
-		});
+		})?;
+		self.stopped()?;
 		self.accepting_initials[node] = Some(known);
 
-		known
+		Ok(known)
 	}
 
 	/// The batches in which the search takes the root's initial macrostates. Above [`INITIAL_BATCH`], one at a time

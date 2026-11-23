@@ -331,3 +331,47 @@ fn a_time_limit_stops_the_listing_of_a_large_union() -> Result<(), Error> {
 
 	Ok(())
 }
+
+/// Starts `1..=starts`, which move to the final state 0 on 0, and then 0, so that only the last start accepts.
+struct LastStartAccepts {
+	starts: u32,
+}
+
+impl Automaton for LastStartAccepts {
+	type State = u32;
+
+	fn arity(&self) -> usize {
+		1
+	}
+
+	fn initial_states(&self) -> impl IntoIterator<Item = u32> {
+		(1..=self.starts).chain([0])
+	}
+
+	fn is_final(&self, state: u32) -> bool {
+		state == 0
+	}
+
+	fn for_each_move(&self, state: u32, mut visit: impl FnMut(&[Symbol], u32)) {
+		if state > 0 {
+			visit(&[Symbol::new(0)], 0);
+		}
+	}
+}
+
+#[test]
+fn a_time_limit_stops_the_scan_for_an_accepting_start() -> Result<(), Error> {
+	let mut formula = Formula::new();
+	// More starts than are listed, so the search first scans them for an accepting one.
+	let leaf = formula.leaf(&LastStartAccepts { starts: 1 << 17 })?;
+
+	let outcome = formula.check(leaf, &Options::new().time_limit(Duration::ZERO));
+	assert!(
+		matches!(outcome, Err(Error::TimeLimit { .. })),
+		"{outcome:?}"
+	);
+	let witness = formula.check(leaf, &Options::new())?.witness;
+	assert!(witness.is_some_and(|witness| witness.is_empty()));
+
+	Ok(())
+}

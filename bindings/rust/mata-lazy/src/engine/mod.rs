@@ -476,7 +476,7 @@ impl<'f> Engine<'f> {
 		let mut work = Vec::new();
 
 		// An accepting initial macrostate gives the witness ε; with more than are listed, it is asked for first.
-		if !self.is_listed(root) && self.has_accepting_initial(root) {
+		if !self.is_listed(root) && self.has_accepting_initial(root)? {
 			return Ok(Some(Witness::new(self.exec.nodes[root].arity, Vec::new())));
 		}
 
