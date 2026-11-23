@@ -243,9 +243,14 @@ fn assert_satisfying_assignments(
 				"seed {seed}, {options:?}"
 			);
 			if let Some(witness) = outcome.witness {
-				let word = witness.tape(0).expect("one tape");
-				let assignment: Vec<bool> = word.iter().map(|&symbol| symbol == TRUE).collect();
-				assert_eq!(assignment.len(), VARIABLES as usize, "seed {seed}");
+				assert!(
+					witness.len() == VARIABLES as usize
+						&& witness
+							.steps()
+							.all(|step| step == [FALSE] || step == [TRUE]),
+					"seed {seed}: {witness}"
+				);
+				let assignment: Vec<bool> = witness.steps().map(|step| step == [TRUE]).collect();
 				assert!(satisfies(&clauses, &assignment), "seed {seed}");
 			}
 		}

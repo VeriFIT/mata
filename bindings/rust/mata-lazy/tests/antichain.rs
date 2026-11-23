@@ -223,16 +223,23 @@ fn random_cnf(rng: &mut StdRng, variables: u32) -> Vec<Vec<Literal>> {
 		.collect()
 }
 
-/// Checks the answer of `outcome` for `cnf`, and its witness.
-fn assert_answers(outcome: &Outcome, cnf: &[Vec<Literal>], satisfiable: bool, mode: &str) {
+/// Checks the answer of `outcome` for `cnf` over `variables` variables, and its witness.
+fn assert_answers(
+	outcome: &Outcome,
+	cnf: &[Vec<Literal>],
+	variables: u32,
+	satisfiable: bool,
+	mode: &str,
+) {
 	assert_eq!(outcome.is_empty(), !satisfiable, "{mode}: {cnf:?}");
 	if let Some(witness) = &outcome.witness {
-		let assignment: Vec<bool> = witness
-			.tape(0)
-			.expect("one tape")
-			.into_iter()
-			.map(|symbol| symbol == Symbol::from(1_u8))
-			.collect();
+		let (zero, one) = (Symbol::from(0_u8), Symbol::from(1_u8));
+		assert!(
+			witness.len() == variables as usize
+				&& witness.steps().all(|step| step == [zero] || step == [one]),
+			"{mode}: {cnf:?} by {witness}"
+		);
+		let assignment: Vec<bool> = witness.steps().map(|step| step == [one]).collect();
 		assert!(satisfies(cnf, &assignment), "{mode}: {cnf:?} by {witness}");
 	}
 }
@@ -293,9 +300,9 @@ fn products_of_clauses_agree_with_brute_force_with_and_without_the_antichain() -
 		let with = formula.check(root, &Options::new())?;
 		let without = formula.check(root, &Options::new().antichain(false))?;
 		let plain = formula.check(root, &Options::new().subsumption(false))?;
-		assert_answers(&with, &cnf, satisfiable, "antichain");
-		assert_answers(&without, &cnf, satisfiable, "no antichain");
-		assert_answers(&plain, &cnf, satisfiable, "no subsumption");
+		assert_answers(&with, &cnf, variables, satisfiable, "antichain");
+		assert_answers(&without, &cnf, variables, satisfiable, "no antichain");
+		assert_answers(&plain, &cnf, variables, satisfiable, "no subsumption");
 		assert_eq!(without.stats.pruned, 0);
 		assert_eq!(plain.stats.pruned, 0);
 		if !satisfiable {
