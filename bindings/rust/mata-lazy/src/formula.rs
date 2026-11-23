@@ -133,7 +133,8 @@ impl Formula {
 	}
 
 	/// A leaf as [`leaf`](Formula::leaf), whose tape `i` also has the symbols of `alphabets[i]`, read or not, so
-	/// that a complement over the leaf includes them. A single alphabet applies to every tape.
+	/// that a complement over the leaf includes them. A single alphabet applies to every tape. The symbols of
+	/// [`Automaton::alphabet`] join them, in `leaf` too.
 	///
 	/// ```
 	/// use mata_lazy::{Automaton, Formula, Symbol};
@@ -191,6 +192,11 @@ impl Formula {
 					found,
 				});
 			}
+		}
+
+		declared.resize(tapes, Vec::new());
+		for (tape, symbols) in declared.iter_mut().enumerate() {
+			symbols.extend(automaton.alphabet(tape));
 		}
 
 		if let Some(&symbol) = declared

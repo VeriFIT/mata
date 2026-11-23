@@ -28,4 +28,12 @@ pub trait Automaton {
 
 	/// Calls `visit` with the symbols (one per tape) and the target of every move from `state`.
 	fn for_each_move(&self, state: Self::State, visit: impl FnMut(&[Symbol], Self::State));
+
+	/// Symbols of `tape` besides those that its moves read, as the alphabets of
+	/// [`leaf_over`](crate::Formula::leaf_over), which adds its own: a complement over the leaf, and an
+	/// [`ANY`](Symbol::ANY) move on `tape`, range over them too. None by default.
+	fn alphabet(&self, tape: usize) -> impl IntoIterator<Item = Symbol> {
+		let _ = tape;
+		std::iter::empty()
+	}
 }

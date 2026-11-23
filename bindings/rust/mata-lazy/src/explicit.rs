@@ -9,7 +9,8 @@ use crate::{Automaton, Symbol};
 ///
 /// It is trimmed: every state is reachable and reaches a final state. Its moves read one symbol per tape, in lock
 /// step, with [`EPSILON`](Symbol::EPSILON) for padding and [`ANY`](Symbol::ANY) where every operand of a step reads
-/// any symbol. It is an [`Automaton`] too, so it can be a leaf of another formula.
+/// any symbol. It keeps the alphabet of each tape, over which `ANY` ranges. It is an [`Automaton`] too, so it can be
+/// a leaf of another formula, with the same alphabets.
 #[derive(Debug)]
 pub struct ExplicitAutomaton(Leaf);
 
@@ -61,6 +62,17 @@ impl ExplicitAutomaton {
 			.moves(StateId::new(state))
 			.map(|(tuple, target)| (tuple, target.index()))
 	}
+
+	/// The concrete symbols of `tape`, ascending: those its moves read and those of the query's alphabets, over
+	/// which an [`ANY`](Symbol::ANY) move ranges.
+	///
+	/// # Panics
+	///
+	/// If `tape` is not below [`arity`](ExplicitAutomaton::arity).
+	#[must_use]
+	pub fn alphabet(&self, tape: usize) -> &[Symbol] {
+		&self.0.tape_symbols[tape]
+	}
 }
 
 impl Automaton for ExplicitAutomaton {
@@ -82,5 +94,9 @@ impl Automaton for ExplicitAutomaton {
 		for (tuple, target) in self.moves(state) {
 			visit(tuple, target);
 		}
+	}
+
+	fn alphabet(&self, tape: usize) -> impl IntoIterator<Item = Symbol> {
+		self.alphabet(tape).iter().copied()
 	}
 }

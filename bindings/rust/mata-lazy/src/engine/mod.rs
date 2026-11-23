@@ -588,7 +588,7 @@ impl<'f> Engine<'f> {
 		Witness::new(arity, symbols)
 	}
 
-	/// Builds the root as an explicit automaton.
+	/// Builds the root as an explicit automaton, over the alphabets of its tapes.
 	pub(crate) fn materialize_root(&mut self) -> Result<Leaf, Error> {
 		let explored = self
 			.explore(self.exec.root, None)
@@ -597,7 +597,12 @@ impl<'f> Engine<'f> {
 			unreachable!("exploration without a state budget finishes")
 		};
 
-		Ok(Leaf::build(&raw, Vec::new()))
+		let root = self.exec.root;
+		let alphabets = (0..self.exec.nodes[root].arity)
+			.map(|tape| self.alphabets.universe(root, tape).to_vec())
+			.collect();
+
+		Ok(Leaf::build(&raw, alphabets))
 	}
 
 	/// The limit that the query passed, if it did. The posts and initial macrostates computed since may then

@@ -153,3 +153,58 @@ fn every_state_of_a_silent_cycle_reads_the_moves_of_all_of_it() -> Result<(), Er
 
 	Ok(())
 }
+
+/// One move, on [`ANY`](Symbol::ANY), from the initial state 0 to the final state 1.
+struct Wildcard;
+
+impl Automaton for Wildcard {
+	type State = u8;
+
+	fn arity(&self) -> usize {
+		1
+	}
+
+	fn initial_states(&self) -> impl IntoIterator<Item = u8> {
+		[0]
+	}
+
+	fn is_final(&self, state: u8) -> bool {
+		state == 1
+	}
+
+	fn for_each_move(&self, state: u8, mut visit: impl FnMut(&[Symbol], u8)) {
+		if state == 0 {
+			visit(&[Symbol::ANY], 1);
+		}
+	}
+}
+
+/// The wildcard of a materialized term still reads the symbols of its tape once the term is a leaf again.
+#[test]
+fn a_materialized_wildcard_reads_its_alphabet_when_imported_again() -> Result<(), Error> {
+	let mut formula = Formula::new();
+	let leaf = formula.leaf_over(&Wildcard, [*b"a"])?;
+	assert!(!formula.is_empty(leaf)?);
+	let explicit = formula.materialize(leaf, &Options::new())?;
+
+	let mut again = Formula::new();
+	let leaf = again.leaf(&explicit)?;
+	let witness = again.find_word(leaf)?.expect("the leaf reads `a`");
+	assert_eq!(witness.tape(0), Some(vec![Symbol::from(b'a')]));
+
+	Ok(())
+}
+
+/// An explicit node over a wildcard, built by one query and taken from the cache by the next.
+#[test]
+fn a_cached_explicit_wildcard_reads_its_alphabet() -> Result<(), Error> {
+	let mut formula = Formula::new();
+	let leaf = formula.leaf_over(&Wildcard, [*b"a"])?;
+	let explicit = formula.explicit(leaf)?;
+	assert!(!formula.is_empty(explicit)?);
+	assert!(!formula.is_empty(explicit)?);
+	let not = formula.complement(explicit)?;
+	assert!(!formula.is_empty(not)?);
+
+	Ok(())
+}
