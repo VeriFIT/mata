@@ -200,9 +200,12 @@ impl Engine<'_> {
 				.map(|&state| Target::of_leaf(&leaf, state))
 				.collect(),
 			Op::Union(branches) => {
+				let start = self.stores[node].len();
 				let mut initial = Vec::new();
 				for (branch, &child) in (0_u32..).zip(branches.iter()) {
 					for &target in self.initial(child)?.iter() {
+						self.budget.step(self.stores[node].len() - start);
+						self.budget.check()?;
 						initial.push(self.tagged_target(node, branch, target));
 					}
 				}

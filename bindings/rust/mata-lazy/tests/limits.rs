@@ -290,3 +290,44 @@ fn a_time_limit_stops_the_minimization_of_a_large_set() -> Result<(), Error> {
 
 	Ok(())
 }
+
+/// Starts `0..starts`, all final, with no moves.
+struct FinalStarts {
+	starts: u32,
+}
+
+impl Automaton for FinalStarts {
+	type State = u32;
+
+	fn arity(&self) -> usize {
+		1
+	}
+
+	fn initial_states(&self) -> impl IntoIterator<Item = u32> {
+		0..self.starts
+	}
+
+	fn is_final(&self, _: u32) -> bool {
+		true
+	}
+
+	fn for_each_move(&self, _: u32, _: impl FnMut(&[Symbol], u32)) {}
+}
+
+#[test]
+fn a_time_limit_stops_the_listing_of_a_large_union() -> Result<(), Error> {
+	let mut formula = Formula::new();
+	let a = formula.leaf(&FinalStarts { starts: 30_000 })?;
+	let b = formula.leaf(&FinalStarts { starts: 30_000 })?;
+	let union = formula.union(a, b)?;
+
+	// Its first initial macrostate accepts, but the union lists all of them before the search takes one.
+	let outcome = formula.check(union, &Options::new().time_limit(Duration::ZERO));
+	assert!(
+		matches!(outcome, Err(Error::TimeLimit { .. })),
+		"{outcome:?}"
+	);
+	assert!(!formula.check(union, &Options::new())?.is_empty());
+
+	Ok(())
+}
