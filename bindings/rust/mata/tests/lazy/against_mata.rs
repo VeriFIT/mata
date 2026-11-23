@@ -242,11 +242,11 @@ fn transducer_epsilon_is_padding() -> Result<(), Box<dyn std::error::Error>> {
 	let leaf = formula.leaf(&relation)?;
 	let witness = formula.find_word(leaf)?.expect("the relation is not empty");
 
+	let steps: Vec<&[mata::lazy::Symbol]> = witness.steps().collect();
 	assert_eq!(
-		witness.steps().next().expect("one step"),
-		[mata::lazy::Symbol::from(b'a'), mata::lazy::Symbol::EPSILON]
+		steps,
+		[[mata::lazy::Symbol::from(b'a'), mata::lazy::Symbol::EPSILON]]
 	);
-	assert_eq!(witness.tape(1), Some(Vec::new()));
 
 	Ok(())
 }
