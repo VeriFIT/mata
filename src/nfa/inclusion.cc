@@ -24,6 +24,15 @@ OrdVector<mata::Symbol> used_letters(const Nfa& lhs, const Nfa& rhs) {
 	if (!symbols.empty() && symbols.back() == EPSILON) { symbols.pop_back(); }
 	return symbols;
 }
+/// Does @p nfa have a transition on @c EPSILON? EPSILON is the largest symbol, so one symbol post per state is read.
+bool contains_epsilon(const Nfa& nfa) {
+	const size_t num_of_states{nfa.num_of_states()};
+	for (State state{0}; state < num_of_states; ++state) {
+		const StatePost& state_post{nfa.delta[state]};
+		if (Delta::epsilon_symbol_posts(state_post) != state_post.end()) { return true; }
+	}
+	return false;
+}
 } // namespace
 
 /// naive language inclusion check (complementation + intersection + emptiness)
@@ -38,6 +47,13 @@ bool mata::nfa::algorithms::is_included_naive(
 		cex->word.clear();
 		cex->path.clear();
 	}
+	// Boolean queries can stop at the first difference instead of constructing the full complement. The lazy
+	// difference requires epsilon-free inputs and the full alphabet used by the existing implementation.
+	if (cex == nullptr && !contains_epsilon(smaller) && !contains_epsilon(bigger) &&
+		(alphabet == nullptr || alphabet->get_alphabet_symbols() == used_letters(smaller, bigger))) {
+		return !get_word_from_lang_difference(smaller, bigger).has_value();
+	}
+
 	Nfa bigger_cmpl;
 	if (alphabet == nullptr) {
 		bigger_cmpl = complement(bigger, used_letters(smaller, bigger));
@@ -272,16 +288,6 @@ AlgoType set_algorithm(const std::string& function_name, const ParameterMap& par
 	}
 
 	return algo;
-}
-
-/// Does @p nfa have a transition on @c EPSILON? EPSILON is the largest symbol, so one symbol post per state is read.
-bool contains_epsilon(const Nfa& nfa) {
-	const size_t num_of_states{nfa.num_of_states()};
-	for (State state{0}; state < num_of_states; ++state) {
-		const StatePost& state_post{nfa.delta[state]};
-		if (Delta::epsilon_symbol_posts(state_post) != state_post.end()) { return true; }
-	}
-	return false;
 }
 
 /// An epsilon-free view of @p nfa, stored in @p storage only when @p nfa actually has epsilon transitions.
