@@ -124,3 +124,53 @@ def _restore_doxygenfile_path_lookup():
 
 
 _restore_doxygenfile_path_lookup()
+
+# Pages included from the repository root keep their repository-relative links: those to an included page go to
+# that page, the rest to the file on GitHub, on the branch this site is built from.
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_INCLUDED_DOCS = {
+    "README.md": "introduction",
+    "CONTRIBUTING.md": "contributing",
+    "BENCHMARKING.md": "benchmarking",
+    "AUTOMATAFORMAT.md": "automata-format",
+    "docs/src/branches.md": "branches",
+}
+_GITHUB_BLOB = "https://github.com/VeriFIT/mata/blob/{}/".format("devel" if "/devel/" in website_url else "master")
+
+
+def setup(app):
+    from docutils import nodes
+    from sphinx import addnodes
+    from sphinx.transforms.post_transforms import SphinxPostTransform
+
+    class RepositoryLinks(SphinxPostTransform):
+        default_priority = 8  # Before MyST's reference resolver (9).
+
+        def run(self, **kwargs):
+            for node in list(self.document.findall(addnodes.pending_xref)):
+                if node["reftype"] != "myst" or node["refdomain"] == "doc":
+                    continue
+                path, _, anchor = node["reftarget"].partition("#")
+                path = os.path.normpath(path)
+                if not os.path.exists(os.path.join(_REPO_ROOT, path)):
+                    continue
+                if path in _INCLUDED_DOCS and not anchor:
+                    node["refdomain"] = "doc"
+                    node["reftarget"] = _INCLUDED_DOCS[path]
+                    node["reftargetid"] = None
+                    continue
+                if path in _INCLUDED_DOCS:
+                    # MyST keeps the heading slugs of only the last file included into a page, so link the id directly.
+                    uri = self.app.builder.get_relative_uri(self.env.docname, _INCLUDED_DOCS[path]) + "#" + anchor
+                    link = nodes.reference("", "", *node.children, refuri=uri, internal=True)
+                else:
+                    link = nodes.reference(
+                        "",
+                        "",
+                        *node.children,
+                        refuri=_GITHUB_BLOB + path,
+                        internal=False,
+                    )
+                node.replace_self(link)
+
+    app.add_post_transform(RepositoryLinks)
