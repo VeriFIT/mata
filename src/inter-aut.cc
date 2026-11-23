@@ -256,12 +256,15 @@ struct FormulaBuffers {
  * @param aut Automaton for which transition formula is parsed
  * @param tokens Series of tokens representing transition formula parsed from the input text
  * @param buffers Buffers whose @c postfix the postfix notation is appended to
+ * @param state_position Whether every operand of @p tokens stands where a state does
+ * @param last_in_state_position Whether the last token stands where a state does, e.g., the target in `p a & q`
  */
 void infix_to_postfix(
 	mata::IntermediateAut& aut,
 	const std::span<const mata::parser::BodyToken> tokens,
 	FormulaBuffers& buffers,
-	const bool state_position = false
+	const bool state_position = false,
+	const bool last_in_state_position = false
 ) {
 	std::vector<mata::FormulaNode>& opstack{buffers.opstack};
 	std::vector<mata::FormulaNode>& output{buffers.postfix};
@@ -269,8 +272,9 @@ void infix_to_postfix(
 	output.reserve(output.size() + tokens.size());
 
 	for (const mata::parser::BodyToken& token : tokens) {
+		const bool in_state_position{state_position || (last_in_state_position && &token == &tokens.back())};
 		switch (mata::FormulaNode node =
-					create_node(aut, token.token, token.quoted, buffers.names_hint, state_position);
+					create_node(aut, token.token, token.quoted, buffers.names_hint, in_state_position);
 				node.type) {
 			case mata::FormulaNode::Type::Operand:
 				output.emplace_back(std::move(node));
@@ -402,7 +406,9 @@ void parse_transition(mata::IntermediateAut& aut, const mata::parser::BodyLine& 
 
 		postfix.emplace_back(mata::FormulaNode::Type::Operator, "&", mata::FormulaNode::OperatorType::And);
 	} else {
-		infix_to_postfix(aut, rhs, buffers);
+		// An NFA or NFT transition ends with its target even when the conjunction is written out; the formula of an AFA
+		//  is a general one.
+		infix_to_postfix(aut, rhs, buffers, false, explicit_automaton);
 	}
 
 	aut.transitions.emplace_back(std::move(lhs), mata::FormulaGraph::from_postfix(postfix));

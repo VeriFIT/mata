@@ -556,6 +556,8 @@ TEST_CASE("BitvectorNfaReader reads what the general reader and mintermization r
 		check_bitvector_reader_reads({"@NFA-bits\n%Initial p0\n%Final p1\np0 a0 p1\n"});
 		check_bitvector_reader_reads({"@NFA-bits\n%Nodes-auto\n%Initial p0\n%Final p1\np0 a0 p1\n"});
 		check_bitvector_reader_reads({"@NFA-bits\n%Initial p0\n%Final p1 | p0\np0 a0 p1\n"}, Read::ByGeneralReader);
+		check_bitvector_reader_reads({"@NFA-bits\n%Initial p0\n%Final p1\np0 a0 & p1\n"}, Read::ByGeneralReader);
+		check_bitvector_reader_reads({"@NFA-bits\n%Initial p0\n%Final p1\np0 (a0 | a1) & p1\n"}, Read::ByGeneralReader);
 	}
 
 	SECTION("automata sharing minterms") {
