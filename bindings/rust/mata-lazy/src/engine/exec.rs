@@ -609,21 +609,26 @@ pub(crate) fn build<'f>(
 	marked: &FxHashSet<NodeId>,
 ) -> Exec<'f> {
 	let decisions = Rewriter { formula, marked }.decide_all(root);
-	let inner_unions = inner_unions(&decisions, plain(root));
+	let aliases = aliases(&decisions);
+	let resolve = |src: Src| aliases.get(&src).copied().unwrap_or(src);
+	let inner_unions = inner_unions(&decisions, &aliases, resolve(plain(root)));
 	let mut emitter = Emitter::default();
 	let mut built = FxHashMap::default();
 	// The branches of the unions that only one union above uses, which get no node of their own.
 	let mut pending: FxHashMap<Src, Vec<ExecId>> = FxHashMap::default();
 	for (&src, decision) in &decisions {
 		let Decision::Boolean(Boolean::Union, a, b) = decision else {
-			let id = emitter.emit_decision(formula, &built, decision);
-			built.insert(src, id);
+			// The union above an alias of a pending union takes its branches.
+			if !(matches!(decision, Decision::Alias(_)) && inner_unions.contains(&resolve(src))) {
+				let id = emitter.emit_decision(formula, &built, decision);
+				built.insert(src, id);
+			}
 
 			continue;
 		};
 
 		let [first, second] = [a, b].map(|operand| {
-			pending.remove(operand).unwrap_or_else(|| {
+			pending.remove(&resolve(*operand)).unwrap_or_else(|| {
 				let mut branches = Vec::new();
 				emitter.push_branches(built[operand], &mut branches);
 
@@ -658,12 +663,34 @@ pub(crate) fn build<'f>(
 	}
 }
 
-/// The unions, other than `root`, whose only user is one union.
-fn inner_unions(decisions: &BTreeMap<Src, Decision>, root: Src) -> FxHashSet<Src> {
+/// The node that each alias stands for, past chains of aliases.
+fn aliases(decisions: &BTreeMap<Src, Decision>) -> FxHashMap<Src, Src> {
+	let mut aliases = FxHashMap::default();
+	for (&src, decision) in decisions {
+		if let Decision::Alias(target) = decision {
+			let target = aliases.get(target).copied().unwrap_or(*target);
+			aliases.insert(src, target);
+		}
+	}
+
+	aliases
+}
+
+/// The unions, other than `root`, whose only user is one union, counting the users of their aliases.
+fn inner_unions(
+	decisions: &BTreeMap<Src, Decision>,
+	aliases: &FxHashMap<Src, Src>,
+	root: Src,
+) -> FxHashSet<Src> {
 	let mut users: FxHashMap<Src, (usize, bool)> = FxHashMap::default();
 	for decision in decisions.values() {
+		if matches!(decision, Decision::Alias(_)) {
+			continue;
+		}
+
 		let by_union = matches!(decision, Decision::Boolean(Boolean::Union, ..));
 		for dep in decision.deps() {
+			let dep = aliases.get(&dep).copied().unwrap_or(dep);
 			let (count, all_unions) = users.entry(dep).or_insert((0, true));
 			*count += 1;
 			*all_unions &= by_union;
@@ -694,4 +721,60 @@ pub(crate) fn reachable(nodes: &TiVec<ExecId, ExecNode<'_>>, from: ExecId) -> Ti
 	}
 
 	reachable
+}
+
+#[cfg(test)]
+mod tests {
+	use rustc_hash::FxHashSet;
+
+	use super::{Op, build};
+	use crate::{Automaton, Formula, Symbol};
+
+	/// The empty word.
+	struct Epsilon;
+
+	impl Automaton for Epsilon {
+		type State = ();
+
+		fn arity(&self) -> usize {
+			1
+		}
+
+		fn initial_states(&self) -> impl IntoIterator<Item = ()> {
+			[()]
+		}
+
+		fn is_final(&self, (): ()) -> bool {
+			true
+		}
+
+		fn for_each_move(&self, (): (), _: impl FnMut(&[Symbol], ())) {}
+	}
+
+	#[test]
+	fn a_chain_of_unions_through_dropped_projections_holds_each_branch_once() {
+		const LEAVES: usize = 100;
+		let mut formula = Formula::new();
+		let mut root = formula.leaf(&Epsilon).expect("a unary leaf");
+		for _ in 1..LEAVES {
+			let leaf = formula.leaf(&Epsilon).expect("a unary leaf");
+			let union = formula.union(root, leaf).expect("unary operands");
+			root = formula
+				.project(union, &[0])
+				.expect("tape 0 of a unary term");
+		}
+
+		let root = formula.node(root).expect("a term of the formula");
+		let exec = build(&formula, root, &FxHashSet::default());
+		let branches: usize = exec
+			.nodes
+			.iter()
+			.map(|node| match &node.op {
+				Op::Union(branches) => branches.len(),
+				_ => 0,
+			})
+			.sum();
+
+		assert_eq!(branches, LEAVES);
+	}
 }
