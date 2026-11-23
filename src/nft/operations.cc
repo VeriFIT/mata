@@ -128,15 +128,16 @@ Nft reduce_size_by_simulation(const Nft& aut, StateRenaming& state_renaming) {
 			StatePost& q_class_post{result.delta.mutable_state_post(q_class_state)};
 			q_class_post.reserve(q_post.size());
 			for (const auto& q_trans : q_post) {
-				const StateSet representatives_of_states_to = [&] {
-					StateSet state_set;
+				// Small sets, as the targets they come from: singletons stay inline and the result moves into the post.
+				const SmallStateSet representatives_of_states_to = [&] {
+					SmallStateSet state_set;
 					for (const auto s : q_trans.targets) { state_set.insert(static_cast<State>(quot_proj[s])); }
 					return state_set;
 				}();
 
 				// get the class states of those representatives that are not simulated by another representative in
 				// representatives_of_states_to
-				StateSet representatives_class_states;
+				SmallStateSet representatives_class_states;
 				for (const State s : representatives_of_states_to) {
 					bool is_state_important = true; // if true, we need to keep the transition from q to s
 					for (const State p : representatives_of_states_to) {
@@ -152,7 +153,7 @@ Nft reduce_size_by_simulation(const Nft& aut, StateRenaming& state_renaming) {
 
 				// q_trans.symbol is larger than the symbols added so far, as the state post of q is ordered.
 				MATA_ASSERT(q_class_post.empty() || q_class_post.back().symbol < q_trans.symbol);
-				q_class_post.push_back(SymbolPost(q_trans.symbol, representatives_class_states));
+				q_class_post.push_back(SymbolPost(q_trans.symbol, std::move(representatives_class_states)));
 			}
 
 			if (aut.final[q]) { // if q is final, then all states in its class are final => we make q_class_state final
