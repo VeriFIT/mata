@@ -4,7 +4,7 @@ use crate::automata::{nft, single, star, tuple};
 use crate::common::nfa;
 use mata::Symbol;
 use mata::lazy::{Error, ExplicitOptions, Formula, Options};
-use mata::nft::DONT_CARE;
+use mata::nft::{DONT_CARE, Nft};
 
 const A: Symbol = Symbol::new(b'a' as u32);
 const B: Symbol = Symbol::new(b'b' as u32);
@@ -229,6 +229,38 @@ fn all_epsilon_transducer_moves_are_silent() -> Result<(), Error> {
 	let both = formula.intersection(leaf, exact)?;
 
 	assert!(!formula.is_empty(both)?);
+
+	Ok(())
+}
+
+/// A transducer of 24 levels whose inner levels have two states each, every one joined to both of the next level
+/// on `a`: 2^23 paths, but one move. Walking every path would visit the target 2^23 times.
+#[test]
+fn paths_through_the_levels_that_meet_again_are_walked_once()
+-> Result<(), Box<dyn std::error::Error>> {
+	const LEVELS: u32 = 24;
+	let last = 2 * LEVELS - 1;
+	// The pair of level `level`, as NFA states.
+	let pair = |level: u32| [2 * level - 1, 2 * level];
+	let mut moves = vec![(0, A, 1), (0, A, 2)];
+	for level in 1..LEVELS - 1 {
+		for source in pair(level) {
+			moves.extend(pair(level + 1).map(|target| (source, A, target)));
+		}
+	}
+	moves.extend(pair(LEVELS - 1).map(|source| (source, A, last)));
+	let nft = Nft::from_interleaved(&nfa(last + 1, &[0], &[last], &moves), LEVELS as usize)?;
+
+	let start = nft.initial_states()[0];
+	let mut visits = 0;
+	mata::lazy::Automaton::for_each_move(&nft, start, |tuple, _| {
+		assert_eq!(tuple, [mata::lazy::Symbol::from(b'a'); LEVELS as usize]);
+		visits += 1;
+	});
+	assert_eq!(
+		visits, 2,
+		"one visit from each state of the last inner level"
+	);
 
 	Ok(())
 }

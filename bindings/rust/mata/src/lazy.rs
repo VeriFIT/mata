@@ -24,6 +24,8 @@
 
 pub use mata_lazy::*;
 
+use std::collections::HashSet;
+
 use crate::nft::Nft;
 use crate::{Nfa, NftError, State};
 
@@ -68,16 +70,20 @@ impl Automaton for Nft {
 
 	fn for_each_move(&self, state: State, mut visit: impl FnMut(&[Symbol], State)) {
 		let mut tuple = Vec::with_capacity(self.num_levels());
-		walk_levels(self, state, &mut tuple, &mut visit);
+		walk_levels(self, state, &mut tuple, &mut HashSet::new(), &mut visit);
 	}
 }
 
 /// Follows the edges from a state of level `tuple.len()` until they return to level 0. An edge that skips
 /// levels reads its symbol on each of them, as Mata's jumps do.
+///
+/// `seen` holds the inner states reached so far with their prefix, each walked once: paths that meet again with
+/// the same prefix give the same moves, and there can be exponentially many of them.
 fn walk_levels(
 	nft: &Nft,
 	state: State,
 	tuple: &mut Vec<Symbol>,
+	seen: &mut HashSet<(State, Vec<Symbol>)>,
 	visit: &mut dyn FnMut(&[Symbol], State),
 ) {
 	let levels = nft.num_levels();
@@ -98,8 +104,8 @@ fn walk_levels(
 		tuple.resize(next, edge.symbol.into());
 		if next == levels {
 			visit(tuple, edge.target);
-		} else {
-			walk_levels(nft, edge.target, tuple, visit);
+		} else if seen.insert((edge.target, tuple.clone())) {
+			walk_levels(nft, edge.target, tuple, seen, visit);
 		}
 
 		tuple.truncate(level);
