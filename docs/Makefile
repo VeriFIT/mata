@@ -22,6 +22,7 @@ init:
 
 # No file pages: the hand-written pages cover each header, and same-named nfa/nft headers make them ambiguous.
 html:
+	rm -rf src/file/ src/filelist.rst
 	breathe-apidoc --output-dir ./src/ --force --members --generate class,interface,struct,union,namespace,group ./xml/
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo "Finished generating HTML documentation in $(BUILDDIR)/html."
