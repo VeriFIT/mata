@@ -379,9 +379,9 @@ For instructions on how to benchmark and profile Mata, see [BENCHMARKING.md](BEN
 
 ## Supported Automata Models
 
-While we try to keep the provided libray interface stable, Mata is still a project in its infancy.
+While we try to keep the provided library interface stable, Mata is still a project in its infancy.
 Hence, the interface is subject to change.
-For further information, see section [Versioning](README.md#Versioning).
+For further information, see section [Versioning](#versioning).
 
 Mata currently supports (non-)deterministic finite automata (NFAs), defined in `include/mata/nfa/`.
 

@@ -20,8 +20,10 @@ help:
 init:
 	pip3 install ./
 
+# No file pages: the hand-written pages cover each header, and same-named nfa/nft headers make them ambiguous.
 html:
-	breathe-apidoc --output-dir ./src/ --force --members ./xml/
+	rm -rf src/file/ src/filelist.rst
+	breathe-apidoc --output-dir ./src/ --force --members --generate class,interface,struct,union,namespace,group ./xml/
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo "Finished generating HTML documentation in $(BUILDDIR)/html."
 	@echo "Open docs/${BUILDDIR}/html/index.html."
@@ -49,7 +51,9 @@ clean:
 	   src/struct/ \
 	   src/structlist.rst \
 	   src/class/ \
-	   src/classlist.rst
+	   src/classlist.rst \
+	   src/union/ \
+	   src/unionlist.rst
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).

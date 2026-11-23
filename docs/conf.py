@@ -88,3 +88,91 @@ html_static_path = ["_static"]
 breathe_projects = {project: "xml/"}
 breathe_default_project = project
 myst_heading_anchors = 7
+# Symbols render on both the hand-written pages and the generated overview pages, so duplicates are by design.
+suppress_warnings = ["duplicate_declaration.cpp", "duplicate_declaration.c"]
+
+
+def _restore_doxygenfile_path_lookup():
+    """Make ``doxygenfile:: nfa/types.hh`` resolve again under Breathe 5.
+
+    Breathe 5 matches the path against the basename-only ``<name>`` from ``index.xml``, so any path with a directory
+    never matches (https://github.com/breathe-doc/breathe/issues/1084). Match against the file location, as Breathe 4 did.
+    """
+    from pathlib import PurePosixPath
+
+    try:
+        from breathe import renderer
+        from breathe.directives import file as file_directive
+        from breathe.parser import DoxCompoundKind
+    except ImportError:  # Breathe 4 matches by location already.
+        return
+
+    def file_finder_filter(filename, d_parser, project_info, index, matches):
+        target = PurePosixPath(filename).parts
+        for c in index.file_compounds:
+            if PurePosixPath(c.name).name != target[-1]:
+                continue
+            for cd in d_parser.parse_compound(c.refid, project_info).root.compounddef:
+                if (
+                    cd.kind == DoxCompoundKind.file
+                    and cd.location is not None
+                    and PurePosixPath(cd.location.file).parts[-len(target) :] == target
+                ):
+                    matches.append([renderer.TaggedNode(None, cd)])
+
+    file_directive.file_finder_filter = file_finder_filter
+
+
+_restore_doxygenfile_path_lookup()
+
+# Pages included from the repository root keep their repository-relative links: those to an included page go to
+# that page, the rest to the file on GitHub, on the branch this site is built from.
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_INCLUDED_DOCS = {
+    "README.md": "introduction",
+    "CONTRIBUTING.md": "contributing",
+    "BENCHMARKING.md": "benchmarking",
+    "AUTOMATAFORMAT.md": "automata-format",
+    "docs/src/branches.md": "branches",
+}
+_GITHUB_BLOB = "https://github.com/VeriFIT/mata/blob/{}/".format("devel" if "/devel/" in website_url else "master")
+
+
+def setup(app):
+    from docutils import nodes
+    from sphinx import addnodes
+    from sphinx.transforms.post_transforms import SphinxPostTransform
+
+    class RepositoryLinks(SphinxPostTransform):
+        default_priority = 8  # Before MyST's reference resolver (9).
+
+        def run(self, **kwargs):
+            for node in list(self.document.findall(addnodes.pending_xref)):
+                if node["reftype"] != "myst" or node["refdomain"] == "doc":
+                    continue
+                path, _, anchor = node["reftarget"].partition("#")
+                if not path:
+                    continue
+                path = os.path.normpath(path)
+                if not os.path.exists(os.path.join(_REPO_ROOT, path)):
+                    continue
+                if path in _INCLUDED_DOCS and not anchor:
+                    node["refdomain"] = "doc"
+                    node["reftarget"] = _INCLUDED_DOCS[path]
+                    node["reftargetid"] = None
+                    continue
+                if path in _INCLUDED_DOCS:
+                    # MyST keeps the heading slugs of only the last file included into a page, so link the id directly.
+                    uri = self.app.builder.get_relative_uri(self.env.docname, _INCLUDED_DOCS[path]) + "#" + anchor
+                    link = nodes.reference("", "", *node.children, refuri=uri, internal=True)
+                else:
+                    link = nodes.reference(
+                        "",
+                        "",
+                        *node.children,
+                        refuri=_GITHUB_BLOB + path + ("#" + anchor if anchor else ""),
+                        internal=False,
+                    )
+                node.replace_self(link)
+
+    app.add_post_transform(RepositoryLinks)

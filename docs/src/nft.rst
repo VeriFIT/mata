@@ -28,4 +28,4 @@ Algorithms
 
 Plumbing
 --------
-.. doxygenfile:: nfa/plumbing.hh
+.. doxygenfile:: nft/plumbing.hh

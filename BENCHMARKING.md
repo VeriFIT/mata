@@ -107,7 +107,7 @@ We provide a benchmarking infrastructure directly in VeriFIT/mata repository.
   1. Create a new `<YOUR-BENCHMARK-NAME>.yaml.in` YAML configuration file in `./tests-integration/jobs/`.
      The file has the following structure:
 
-     ```yaml
+     ```text
      <BENCHMARK_NAME>:
        cmd: @PATH@/<YOUR_FILENAME> [$1 $2 $3...]
      ```
