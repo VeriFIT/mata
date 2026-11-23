@@ -44,6 +44,7 @@ namespace {
 using D1 = posts::RelationOf<Symbol, StateSet>;
 using D2 = posts::RelationOf<Symbol, Symbol, StateSet>;
 using D3 = posts::RelationOf<Symbol, Symbol, Symbol, StateSet>;
+using D4 = posts::RelationOf<Symbol, Symbol, Symbol, Symbol, StateSet>;
 
 /// A level with its own reserved tail, in the middle of a chain: a descriptor stands in for the key
 ///  at its own position, so no level has to be spelled out to give one level a different epsilon.
@@ -57,6 +58,7 @@ using Mixed2 = posts::RelationOf<Symbol, ReservedKeys<Symbol, 100>, StateSet>;
 template <typename D> concept Add1 = requires(D d) { d.add(0, 1, 2); };
 template <typename D> concept Add2 = requires(D d) { d.add(0, 1, 2, 3); };
 template <typename D> concept Add3 = requires(D d) { d.add(0, 1, 2, 3, 4); };
+template <typename D> concept Add4 = requires(D d) { d.add(0, 1, 2, 3, 4, 5); };
 template <typename D> concept Remove1 = requires(D d) { d.remove(0, 1, 2); };
 template <typename D> concept Remove2 = requires(D d) { d.remove(0, 1, 2, 3); };
 template <typename D> concept Contains1 = requires(const D d) { d.contains(0, 1, 2); };
@@ -227,14 +229,14 @@ static_assert(DeltaLike<D1> && DeltaLike<D2> && DeltaLike<D3> && DeltaLike<Mixed
 ///  above are the positive form of the same statement.
 ///@}
 
-/// @name The transition-shaped members are generic; the bulk writer is spelled per arity
+/// @name The transition-shaped members and the writes are generic
 ///
 /// A transition is whatever the traits says, so @c transitions(), @c get_transitions_to() and
-///  @c get_transitions_between() exist at every arity. The bulk @c add names one key per level and is
-///  written once per supported arity, like the keyed writes below.
+///  @c get_transitions_between() exist at every arity. The bulk @c add takes one key per post, then
+///  the targets, like the keyed writes below. Arity 1 spells its own.
 ///@{
 static_assert(HasAddTargets<D1> && !HasAddTargets<D2>); ///< the arity-1 spelling
-static_assert(HasAddTargets2<D2> && !HasAddTargets2<D1>); ///< …and the arity-2 one
+static_assert(HasAddTargets2<D2> && !HasAddTargets2<D1>); ///< …and the generic one, at arity 2
 static_assert(HasTransitions<D1> && HasTransitions<D2> && HasTransitions<D3>);
 static_assert(HasTransitionsTo<D1> && HasTransitionsTo<D2>);
 static_assert(HasTransitionsBetween<D1> && HasTransitionsBetween<D2>);
@@ -253,21 +255,23 @@ static_assert(std::same_as<decltype(std::declval<const D3&>().get_successors(0))
 
 /// The generic writer is the one that is there at every arity — and only with a full key path, since
 ///  @c KeyPath has exactly @c key_arity entries.
-/// @c add, @c remove and @c contains are **not** in that list any more. Each is written once per
-///  supported arity, so every relation takes one key per level — and, just as importantly, refuses
+/// @c add, @c remove and @c contains are **not** in that list any more. Each declares exactly one key
+///  per post, so every relation takes its own number of keys — and, just as importantly, refuses
 ///  any other number. A wrong count is ordinary overload resolution at the call site, not a member
 ///  that silently is not there.
-static_assert( Add1<D1> && !Add2<D1> && !Add3<D1>);
-static_assert(!Add1<D2> &&  Add2<D2> && !Add3<D2>);
-static_assert(!Add1<D3> && !Add2<D3> &&  Add3<D3>);
+static_assert( Add1<D1> && !Add2<D1> && !Add3<D1> && !Add4<D1>);
+static_assert(!Add1<D2> &&  Add2<D2> && !Add3<D2> && !Add4<D2>);
+static_assert(!Add1<D3> && !Add2<D3> &&  Add3<D3> && !Add4<D3>);
+static_assert(!Add1<D4> && !Add2<D4> && !Add3<D4> &&  Add4<D4>);
 static_assert( Remove1<D1> && !Remove2<D1> && !Remove1<D2> && Remove2<D2>);
 static_assert( Contains1<D1> && !Contains2<D1> && !Contains1<D2> && Contains2<D2>);
 ///@}
 
-/// @c AutomatonBase still instantiates over both deeper relations after the contract lost @c add:
+/// @c AutomatonBase still instantiates over the deeper relations after the contract lost @c add:
 ///  the structural operations reach a successor through the walks and the cursor, never through it.
 template class mata::AutomatonBase<D2>;
 template class mata::AutomatonBase<D3>;
+template class mata::AutomatonBase<D4>;
 
 TEST_CASE("mata::posts::DeltaBase::add — writing a key path at any arity") {
 	SECTION("at arity 1 it agrees with add(), transition for transition") {
@@ -327,6 +331,25 @@ TEST_CASE("mata::posts::DeltaBase::add — writing a key path at any arity") {
 			moves.emplace_back(a, b, c, t);
 		});
 		CHECK(moves == std::vector<std::tuple<Symbol, Symbol, Symbol, State>>{{1, 2, 3, 5}, {1, 2, 4, 6}});
+	}
+
+	SECTION("at arity 4 too, with nothing spelled for it") {
+		D4 delta{};
+		delta.add(0, 1, 2, 3, 4, 5);
+		delta.add(0, 1, 2, 3, 6, 7);
+		delta.add(2, 1, 2, 3, 4, StateSet{8, 9});
+		CHECK(delta.num_of_transitions() == 4);
+		CHECK(all_targets(delta) == std::vector<State>{5, 7, 8, 9});
+		CHECK((delta.contains(0, 1, 2, 3, 6, 7) && !delta.contains(0, 1, 2, 3, 6, 5)));
+
+		delta.remove(0, 1, 2, 3, 4, 5);
+		CHECK_FALSE(delta.contains(0, 1, 2, 3, 4, 5));
+		CHECK_THROWS_AS(delta.remove(0, 1, 2, 9, 4, 5), std::invalid_argument);
+
+		// The transition-shaped add forwards to the generic one.
+		D4 copy{};
+		for (const auto& transition : delta.transitions()) { copy.add(transition); }
+		CHECK(all_targets(copy) == all_targets(delta));
 	}
 
 	SECTION("a deeper relation still reverts, which is what needs a generic write") {

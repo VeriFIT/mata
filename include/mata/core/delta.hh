@@ -9,7 +9,7 @@
  *  - @c mata/core/visits.hh -- the free functions visiting a chain of posts at any depth
  *  - @c mata/core/moves.hh -- @c Move and @c PostMoves
  *  - @c mata/core/post.hh -- @c PostEntry, @c Post and @c PostChain (@ref nesting, @ref sortedness)
- *  - @c mata/core/cursor.hh -- @c SuccessorCursor, hand-written per arity
+ *  - @c mata/core/cursor.hh -- @c SuccessorCursor, generic in the arity, hand-written at arity 1
  *
  * Including this header includes all of them. The member bodies are in @c mata/core/delta.tpp, and
  *  the ones for the keys in use in @c mata/core/delta-keys.tpp.
@@ -47,6 +47,67 @@
 namespace mata {
 namespace posts {
 /**
+ * @brief The keyed writes and lookup of a relation above arity 1: one member each, at every arity.
+ *
+ * The keys are a pack of this class, not of the member, so every parameter has a *declared* type and
+ *  `add(0, 1, 2, 3)` converts its `int`s at the call. A member's own pack would be deduced from the
+ *  caller and carry `int` down into @c insert_target -- a narrowing and a sign-conversion warning
+ *  each, which `-Werror` rejects.
+ *
+ * Arity 1 is not served here: @c DeltaBase spells its own, whose `add` has an append fast path
+ *  (`back().key() < symbol`) that skips the search when a relation is built in sorted order. Every
+ *  member is constrained to arity above 1, so the names exist at every arity and @c DeltaBase can
+ *  always bring them in with `using`.
+ *
+ * @tparam D The relation deriving from this. A friend of it, for its posts.
+ * @tparam P The relation's post chain.
+ */
+template <typename D, typename P, typename Is = std::make_index_sequence<arity_of<P>>> class KeyedAccess;
+
+template <typename D, typename P, size_t... Is> class KeyedAccess<D, P, std::index_sequence<Is...>> {
+	using Target = target_of<P>;
+	using State = typename TargetTraits<Target>::State;
+	using TargetArg = utils::ArgOf<Target>;
+	using TargetSet = typename PostAt<P, sizeof...(Is)>::type;
+
+	D& self() { return static_cast<D&>(*this); }
+	const D& self() const { return static_cast<const D&>(*this); }
+
+  public:
+	/// Add the transition from @p source under @p keys, one per post, to @p target.
+	void add(const State source, const KeyOf<P, Is>... keys, const TargetArg target)
+		requires(sizeof...(Is) > 1)
+	{
+		self().resize_for_states(source, D::state_of(target));
+		insert_target(self().mutable_state_post(source), target, keys...);
+	}
+	/// Add a transition from @p source under @p keys to every one of @p targets.
+	void add(const State source, const KeyOf<P, Is>... keys, const TargetSet& targets)
+		requires(sizeof...(Is) > 1)
+	{
+		for (const Target& target : targets) {
+			self().resize_for_states(source, D::state_of(target));
+			insert_target(self().mutable_state_post(source), target, keys...);
+		}
+	}
+	/// Remove the transition from @p source under @p keys to @p target, pruning every post it empties.
+	/// A @p source past the last state is ignored.
+	/// @throws std::invalid_argument if a key on the path is missing.
+	void remove(const State source, const KeyOf<P, Is>... keys, const TargetArg target)
+		requires(sizeof...(Is) > 1)
+	{
+		if (source >= self().state_posts_.size()) { return; }
+		erase_target(self().state_posts_[source], target, keys...);
+	}
+	/// Whether the relation holds the transition from @p source under @p keys to @p target.
+	bool contains(const State source, const KeyOf<P, Is>... keys, const TargetArg target) const
+		requires(sizeof...(Is) > 1)
+	{
+		return source < self().state_posts_.size() && has_target_at(self().state_posts_[source], target, keys...);
+	}
+};
+
+/**
  * @brief The generic transition relation: a vector of posts indexed by source state.
  *
  * The template behind @c mata::Delta, as @c mata::AutomatonBase is behind @c mata::Automaton; the
@@ -67,7 +128,8 @@ namespace posts {
  *  transition above it. @see mata::posts::DefaultTransitionTraits.
  * @see mata::DeltaLike.
  */
-template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase {
+template <typename P, typename TT = DefaultTransitionTraits<P>>
+class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
   public:
 	/// @name Post protocol
 	/// @see mata::DeltaLike -- the only way @c mata::Automaton reaches a successor.
@@ -225,72 +287,13 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	void add(State source, Key<0> symbol, TargetArg target)
 		requires(P::key_arity == 1);
 
-	/// @name Keyed writes above arity 1
-	///
-	/// One overload per supported arity rather than one variadic member, for the same reason the
-	/// cursor is hand-written per arity: it is the only shape that keeps *declared* parameter types.
-	/// A trailing pack would be deduced from the caller, so `add(0, 1, 2, 3)` would carry `int` down
-	/// and convert it to the key type once per post inside @c insert_target — a narrowing and a
-	/// sign-conversion warning each, which `-Werror` rejects. Declared parameters convert at the
-	/// call, exactly as the arity-1 overload above does. The cap is @c key_arity 3, so this is three
-	/// overloads, not an open-ended family.
-	///
-	/// Each is a member template so that its parameter types depend on its own @p Q: `KeyOf<P, 1>`
-	/// at @c key_arity 1 would name a post that does not exist, and a member's declared type is
-	/// formed when the *class* is instantiated, before any constraint on it is looked at.
-	///
-	/// The arity-1 overloads are deliberately **not** routed through these recursions. `add` there
-	/// has an append fast path (`back().key() < symbol`) that skips the search entirely when a
-	/// relation is built in sorted order, which is the common case; @c insert_target always searches
-	/// first, and searches twice on a miss.
+	/// @name Keyed writes and lookup above arity 1
+	/// One member each, at every arity. @see mata::posts::KeyedAccess.
 	///@{
-	template <typename Q = P>
-		requires(Q::key_arity == 2)
-	void add(const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, TargetArg target) {
-		resize_for_states(source, state_of(target));
-		posts::insert_target(mutable_state_post(source), target, k0, k1);
-	}
-	template <typename Q = P>
-		requires(Q::key_arity == 3)
-	void add(
-		const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, posts::KeyOf<Q, 2> k2,
-		TargetArg target
-	) {
-		resize_for_states(source, state_of(target));
-		posts::insert_target(mutable_state_post(source), target, k0, k1, k2);
-	}
-
-	/// @copydoc remove(State, Key<0>, State)
-	template <typename Q = P>
-		requires(Q::key_arity == 2)
-	void remove(const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, TargetArg target) {
-		if (source >= state_posts_.size()) { return; }
-		posts::erase_target(state_posts_[source], target, k0, k1);
-	}
-	template <typename Q = P>
-		requires(Q::key_arity == 3)
-	void remove(
-		const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, posts::KeyOf<Q, 2> k2,
-		TargetArg target
-	) {
-		if (source >= state_posts_.size()) { return; }
-		posts::erase_target(state_posts_[source], target, k0, k1, k2);
-	}
-
-	/// @copydoc contains(State, Key<0>, State) const
-	template <typename Q = P>
-		requires(Q::key_arity == 2)
-	bool contains(const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, TargetArg target) const {
-		return source < state_posts_.size() && posts::has_target_at(state_posts_[source], target, k0, k1);
-	}
-	template <typename Q = P>
-		requires(Q::key_arity == 3)
-	bool contains(
-		const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, posts::KeyOf<Q, 2> k2,
-		TargetArg target
-	) const {
-		return source < state_posts_.size() && posts::has_target_at(state_posts_[source], target, k0, k1, k2);
-	}
+	friend class KeyedAccess<DeltaBase, P>;
+	using KeyedAccess<DeltaBase, P>::add;
+	using KeyedAccess<DeltaBase, P>::remove;
+	using KeyedAccess<DeltaBase, P>::contains;
 	///@}
 
 	/// @name Transition-shaped members
@@ -350,27 +353,6 @@ template <typename P, typename TT = DefaultTransitionTraits<P>> class DeltaBase 
 	 */
 	void add(State source, Key<0> symbol, const Nested& targets)
 		requires(P::key_arity == 1);
-	/// @copydoc add(State,Key<0>,const Nested&)
-	/// One key per post, then the whole set of targets, at arity 2 and 3.
-	template <typename Q = P>
-		requires(Q::key_arity == 2)
-	void add(const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, const TargetSet& targets) {
-		for (const Target& target : targets) {
-			resize_for_states(source, state_of(target));
-			posts::insert_target(mutable_state_post(source), target, k0, k1);
-		}
-	}
-	template <typename Q = P>
-		requires(Q::key_arity == 3)
-	void add(
-		const State source, posts::KeyOf<Q, 0> k0, posts::KeyOf<Q, 1> k1, posts::KeyOf<Q, 2> k2,
-		const TargetSet& targets
-	) {
-		for (const Target& target : targets) {
-			resize_for_states(source, state_of(target));
-			posts::insert_target(mutable_state_post(source), target, k0, k1, k2);
-		}
-	}
 
 	/**
 	 * @brief Apply @p fn to every target reachable from @p source, under any key.
@@ -604,12 +586,6 @@ template <typename D> constexpr bool relation_contract_holds() {
 	static_assert(
 		sizeof(D) == sizeof(Base) && alignof(D) == alignof(Base),
 		"a relation class must add no members to DeltaBase; it exists only to shorten a name in diagnostics."
-	);
-	// Already required by DeltaLike; repeated for the message. The cursor is hand-written per arity.
-	static_assert(
-		D::key_arity <= 3,
-		"a relation is capped at key_arity 3 (structure depth 4), because SuccessorCursor is hand-written "
-		"per arity and three is where that stops paying. Past it, add a specialisation."
 	);
 	return true;
 }

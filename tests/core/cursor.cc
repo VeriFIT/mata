@@ -1,16 +1,15 @@
 /** @file
- * @brief Every @c SuccessorCursor specialisation, cross-checked against the recursive walk.
+ * @brief @c SuccessorCursor at every arity, cross-checked against the recursive walk.
  *
- * The cursors are hand-written per key arity, because a composed one costs 24.4% at arity 2 and
- *  18.6% at arity 3. The price of that duplication is that each carry is written by
- *  hand, and **a wrong carry skips targets silently** — no compile error, no crash, just a wrong
- *  answer from `get_useful_states()`, `is_acyclic()` or `is_lang_empty()`, all of which reach the
- *  relation through the cursor.
+ * The cursor is flat and carries between posts explicitly: hand-written at arity 1, generic above.
+ *  **A wrong carry skips targets silently** — no compile error, no crash, just a wrong answer from
+ *  `get_useful_states()`, `is_acyclic()` or `is_lang_empty()`, all of which reach the relation
+ *  through the cursor.
  *
- * So every specialisation is checked against @c visit_targets, which is independently recursive and
- *  has no carry to get wrong. The relations here are built to hit the cases a carry actually breaks
- *  on: empty posts at every level, empty target sets, a single target, and several levels exhausting
- *  at once so the carry has to cascade.
+ * So both are checked against @c visit_targets, which is independently recursive and has no carry
+ *  to get wrong. The relations here are built to hit the cases a carry actually breaks on: empty
+ *  posts at every depth, empty target sets, a single target, and several posts exhausting at once so
+ *  the carry has to cascade.
  */
 
 #include <catch2/catch_test_macros.hpp>
@@ -33,10 +32,12 @@ namespace {
 using Targets = utils::OrdVector<State>;
 using Inner2 = posts::PostChain<Symbol, Targets>;
 using Post2 = posts::PostChain<Symbol, Symbol, Targets>;
-/// Arity 3: one level deeper. The cap.
+/// Arity 3: one level deeper.
 using Inner3a = posts::PostChain<Symbol, Targets>;
 using Inner3b = posts::PostChain<Symbol, Symbol, Targets>;
 using Post3 = posts::PostChain<Symbol, Symbol, Symbol, Targets>;
+/// Arity 4.
+using Post4 = posts::PostChain<Symbol, Symbol, Symbol, Symbol, Targets>;
 
 /// What the cursor should yield, derived independently by the recursive walk.
 template <typename Post> std::vector<State> expected(const Post& post) {
@@ -73,6 +74,7 @@ template <typename Post> std::vector<State> from_resumed_cursor(const Post& post
 
 static_assert(Post2::key_arity == 2, "arity is computed from the nesting");
 static_assert(Post3::key_arity == 3, "arity is computed from the nesting");
+static_assert(Post4::key_arity == 4, "arity is computed from the nesting");
 static_assert(StatePost::key_arity == 1);
 
 TEST_CASE("mata::SuccessorCursor agrees with the recursive walk") {
@@ -183,6 +185,38 @@ TEST_CASE("mata::SuccessorCursor agrees with the recursive walk") {
 		CHECK(from_cursor(post) == expected(post));
 		CHECK(from_resumed_cursor(post) == expected(post));
 	}
+
+	SECTION("arity 4: holes at every depth, and the key path") {
+		Inner3a leaf{};
+		leaf.push_back({1, Targets{}}); // no targets under this key
+		leaf.push_back({2, Targets{21, 22}});
+		Inner3b mid{};
+		mid.push_back({3, Inner3a{}}); // nothing under this key
+		mid.push_back({4, leaf});
+		Post3 upper{};
+		upper.push_back({5, Inner3b{}}); // nothing under this key
+		upper.push_back({6, mid});
+		Inner3a last_leaf{};
+		last_leaf.push_back({7, Targets{23}});
+		Inner3b last_mid{};
+		last_mid.push_back({8, last_leaf});
+		Post3 last_upper{};
+		last_upper.push_back({9, last_mid});
+		Post4 post{};
+		post.push_back({10, Post3{}}); // nothing under this key
+		post.push_back({20, upper});
+		post.push_back({30, last_upper});
+		CHECK(from_cursor(post) == expected(post));
+		CHECK(from_cursor(post) == std::vector<State>{21, 22, 23});
+		CHECK(from_resumed_cursor(post) == expected(post));
+
+		const posts::SuccessorCursor<Post4> cursor{post};
+		auto it{cursor.begin()};
+		CHECK(it.keys() == std::tuple<Symbol, Symbol, Symbol, Symbol>{20, 6, 4, 2});
+		++it;
+		++it;
+		CHECK(it.keys() == std::tuple<Symbol, Symbol, Symbol, Symbol>{30, 9, 8, 7});
+	}
 }
 
 TEST_CASE("mata::SuccessorCursor and the walks agree on counts") {
@@ -212,8 +246,8 @@ TEST_CASE("mata::SuccessorCursor and the walks agree on counts") {
 /**
  * @brief An automaton over a relation deeper than two.
  *
- * `DeltaLike` admits `key_arity <= 3`, because every read is generic up to there.
- *  This checks that claim rather than trusting it — a depth-3 relation must satisfy the contract and
+ * `DeltaLike` admits any `key_arity`, because every read is generic.
+ *  This checks that claim rather than trusting it — a deeper relation must satisfy the contract and
  *  give the structural operations, and the three members that still cannot must be *absent* rather
  *  than wrong.
  */
@@ -221,6 +255,7 @@ namespace {
 
 using Delta2 = posts::DeltaBase<Post2>;
 using Delta3 = posts::DeltaBase<Post3>;
+using Delta4 = posts::DeltaBase<Post4>;
 
 // Note: there is deliberately no concept probing `reverted()` itself. It is *protected*, so any
 //  such concept is unsatisfiable from outside the class and would report false whatever the arity —
@@ -240,21 +275,25 @@ template <typename A> concept AnswersForwards = requires(const A a) {
 } // anonymous namespace.
 
 static_assert(DeltaLike<Delta2>, "a depth-3 relation must satisfy the contract");
-static_assert(DeltaLike<Delta3>, "a depth-4 relation must satisfy the contract -- the cap");
-static_assert(Delta2::key_arity == 2 && Delta3::key_arity == 3);
+static_assert(DeltaLike<Delta3>, "a depth-4 relation must satisfy the contract");
+static_assert(DeltaLike<Delta4>, "a depth-5 relation must satisfy the contract");
+static_assert(Delta2::key_arity == 2 && Delta3::key_arity == 3 && Delta4::key_arity == 4);
 
-// The whole class instantiates over both, which is what catches a member that quietly needs more
+// The whole class instantiates over each, which is what catches a member that quietly needs more
 //  than the concept asks for -- ordinary use instantiates one member at a time.
 template class mata::AutomatonBase<Delta2>;
 template class mata::AutomatonBase<Delta3>;
+template class mata::AutomatonBase<Delta4>;
 
-// Every structural operation is available at every supported arity, reverting included: walking a
-//  move out yields `(keys..., target)` and `insert_target` writes it back with the source and target
+// Every structural operation is available at every arity, reverting included: walking a move out
+//  yields `(keys..., target)` and `insert_target` writes it back with the source and target
 //  exchanged and the keys in the same order, so nothing about it is depth-2 shaped.
 static_assert(AnswersForwards<mata::AutomatonBase<Delta2>>);
 static_assert(AnswersForwards<mata::AutomatonBase<Delta3>>);
+static_assert(AnswersForwards<mata::AutomatonBase<Delta4>>);
 static_assert(AnswersBackwards<mata::AutomatonBase<Delta2>>);
 static_assert(AnswersBackwards<mata::AutomatonBase<Delta3>>);
+static_assert(AnswersBackwards<mata::AutomatonBase<Delta4>>);
 static_assert(AnswersBackwards<mata::AutomatonBase<mata::Delta>>);
 
 TEST_CASE("mata::AutomatonBase over an arity-2 relation") {
@@ -328,7 +367,7 @@ TEST_CASE("mata::AutomatonBase over an arity-2 relation") {
 		//  operator== only looks at the key, which is why posts_equal() exists.
 		//
 		// Written through @c Delta::add rather than by reaching into `.targets` twice: @c add takes
-		//  one key per level at every arity the cap allows, so a two-key relation is written with
+		//  one key per level at every arity, so a two-key relation is written with
 		//  two keys and the natural `(source, keys..., target)` order. The keys here are the ones
 		//  the relation was built with above, so this deepens an existing path rather than adding a
 		//  new one.

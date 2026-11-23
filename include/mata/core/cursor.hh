@@ -1,5 +1,5 @@
 /** @file
- * @brief The resumable successor cursor, hand-written per key arity.
+ * @brief The resumable successor cursor: generic in the key arity, hand-written at arity 1.
  */
 
 #ifndef MATA_CORE_CURSOR_HH
@@ -9,44 +9,122 @@
 #include <iterator>
 #include <span>
 #include <tuple>
+#include <utility>
+
+#include "mata/core/traits.hh"
 
 namespace mata::posts {
 
 /**
- * @brief A resumable cursor over every target reachable from one state post.
+ * @brief A generic resumable cursor over every target reachable from one state post.
  *
- * Flattens the descent down the post chain into a single pointer sweep, so a position can be
- *  stored and continued later. Tarjan's SCC discovery is the only thing that needs that, and it is
- *  what @c mata::AutomatonBase drives @c get_useful_states(), @c is_acyclic(), @c is_lang_empty() and
- *  @c trim() through.
+ * Flattens the descent down the post chain into a single pointer sweep,
+ *  so a position can be stored and continued later.
  *
- * @tparam P The whole post chain, not one post of it. Deliberately: this is a *flat* cursor, holding
- *  every post's position as its own member and carrying between them explicitly. It is hand-written
- *  once per @c key_arity, with a specialisation below for each supported depth.
+ * @tparam P The whole post chain, not one post of it.
  *
- * @note Composing it out of per-post cursors instead — one cursor struct per post, each delegating
- *  downwards — is tidier and measurably slower: **24.4% at arity 2 and 18.6% at arity 3**, against
- *  hand-written nested loops on the same shapes, with the flat form holding at 0.79-0.85x. At arity 1
- *  the two are within 1%, which is why the older note here claimed composition was slower without
- *  saying where; the gap only opens once each post has real branching.
- *
- * @note Header-defined so it inlines. The inner range is loaded without a branch.
+ * @note 
  */
 template <typename P, size_t Arity = P::key_arity> class SuccessorCursor {
-	static_assert(
-		sizeof(P) == 0,
-		"SuccessorCursor is hand-written per key arity, 1 to 3 (structure depth 2 to 4). A deeper "
-		"relation needs a new specialisation. This is deliberately a hard error "
-		"rather than a silent fallback to a composed cursor, which would keep working and quietly "
-		"lose 18-24%."
-	);
+	template <size_t I> using PostAt = typename posts::PostAt<P, I>::type;
+
+	/// The position in post @p I. One base per post keeps the iterator flat, outermost post first.
+	template <size_t I> struct Position {
+		typename PostAt<I>::const_iterator it{}, end{};
+		bool operator==(const Position&) const = default;
+	};
+	template <typename Seq> struct Positions;
+	template <size_t... Is> struct Positions<std::index_sequence<Is...>> : Position<Is>... {
+		bool operator==(const Positions&) const = default;
+	};
+
+  // Note: Having one cursor struct per post, each delegating downwards is slower
+  //  by 24.4% at arity 2 and 18.6% at arity 3 against hand-written nested loops on the same shapes.
+  public:
+	using Target = typename P::Target;
+
+	class const_iterator : Positions<std::make_index_sequence<Arity>> {
+	  public:
+		const Target *target_it_{nullptr}, *target_end_{nullptr};
+
+		template <size_t I> Position<I>& at() { return *this; }
+		template <size_t I> const Position<I>& at() const { return *this; }
+
+		/**
+		 * @brief Scan post @p I for the next target, descending into post `I + 1` as needed.
+		 * 
+		 * @tparam I The post index to scan.
+		 * @return true if a target was found, false if post @p I is exhausted.
+		 */
+		template <size_t I> bool scan() {
+			auto& [cur, last]{at<I>()};
+			for (; cur != last; ++cur) {
+				if constexpr (I + 1 == Arity) {
+					const std::span<const Target> targets{cur->target_span()};
+					if (!targets.empty()) {
+						target_it_ = targets.data();
+						target_end_ = target_it_ + targets.size();
+						return true;
+					}
+				} else {
+					at<I + 1>().it = cur->nested().begin();
+					at<I + 1>().end = cur->nested().end();
+					if (scan<I + 1>()) { return true; }
+				}
+			}
+			return false;
+		}
+
+		/// Advance post @p I and rescan. When it is exhausted, carry into post `I - 1`.
+		template <size_t I> void carry() {
+			++at<I>().it;
+			if (scan<I>()) { return; }
+			if constexpr (I > 0) {
+				carry<I - 1>();
+			} else {
+				exhaust();
+			}
+		}
+
+		/// Exhaust the cursor: no more targets to yield.
+		void exhaust() { target_it_ = target_end_ = nullptr; }
+
+		const Target& operator*() const { return *target_it_; }
+		const_iterator& operator++() {
+			if (++target_it_ == target_end_) { carry<Arity - 1>(); }
+			return *this;
+		}
+		bool operator==(std::default_sentinel_t) const { return at<0>().it == at<0>().end; }
+		bool operator==(const const_iterator&) const = default;
+
+		/// Returns the key path to the current target, outermost first.
+		auto keys() const { return keys(std::make_index_sequence<Arity>{}); }
+
+	  private:
+		template <size_t... Is> auto keys(std::index_sequence<Is...>) const {
+			return std::tuple<typename PostAt<Is>::Key...>{at<Is>().it->key()...};
+		}
+	};
+
+	explicit SuccessorCursor(const P& post) : post_{&post} {}
+
+	const_iterator begin() const {
+		const_iterator it;
+		it.template at<0>().it = post_->begin();
+		it.template at<0>().end = post_->end();
+		if (!it.template scan<0>()) { it.exhaust(); }
+		return it;
+	}
+	std::default_sentinel_t end() const { return std::default_sentinel; }
+
+  private:
+	const P* post_;
 };
 
 /**
- * @brief The one-key cursor: the entries of a post, then the targets under each.
+ * @brief Specialization of @c SuccessorCursor for arity 1.
  *
- * Byte-for-byte the implementation that shipped before the posts were templated. Invariant 4 says
- *  `key_arity == 1` must not regress; keeping this specialisation means there is nothing to regress.
+ * @note The generic version is slower at arity 1 (on come cases by up to 24.4%).
  */
 template <typename P> class SuccessorCursor<P, 1> {
   public:
@@ -57,12 +135,14 @@ template <typename P> class SuccessorCursor<P, 1> {
 		typename P::const_iterator symbol_post_it_{}, symbol_post_end_{};
 		const Target *target_it_{nullptr}, *target_end_{nullptr};
 
+		/// Load the targets of the current symbol post into the target iterator.
 		void load_targets() {
 			const std::span<const Target> targets{symbol_post_it_->target_span()};
 			target_it_ = targets.data();
 			target_end_ = target_it_ + targets.size();
 		}
-		/// Restore the invariant "positioned on a target, or exhausted".
+
+		/// Seek the next target, loading the next symbol post if needed.
 		void seek() {
 			while (target_it_ == target_end_) {
 				if (++symbol_post_it_ == symbol_post_end_) {
@@ -72,6 +152,7 @@ template <typename P> class SuccessorCursor<P, 1> {
 				load_targets();
 			}
 		}
+
 		const Target& operator*() const { return *target_it_; }
 		const_iterator& operator++() {
 			if (++target_it_ == target_end_) { seek(); }
@@ -80,7 +161,8 @@ template <typename P> class SuccessorCursor<P, 1> {
 		/// Compares against @c std::default_sentinel: the end is stateless, so no end iterator is stored.
 		bool operator==(std::default_sentinel_t) const { return symbol_post_it_ == symbol_post_end_; }
 		bool operator==(const const_iterator&) const = default;
-		/// The key path to the current target: one key, at arity 1.
+
+		/// Returns the key path to the current target, outermost first.
 		auto keys() const { return std::tuple<typename P::Key>{symbol_post_it_->key()}; }
 	};
 
@@ -99,165 +181,6 @@ template <typename P> class SuccessorCursor<P, 1> {
 
   private:
 	const P* state_post_;
-};
-
-/**
- * @brief The depth-3 cursor: two keys, then the targets.
- *
- * Written flat, like the arity-1 case: every post's position is a named member and the carry between
- *  them is explicit. Composing this out of per-post cursors instead measures **24.4% slower** on the
- *  same shapes, so the duplication is bought deliberately. @c scan_b and @c scan_a are the carry: each
- *  advances its own post and re-descends, returning false when its subtree holds no target.
- *
- * @warning A mistake in the carry silently *skips targets* -- no compile error, no crash, a wrong
- *  answer. `tests/core/cursor.cc` cross-checks every specialisation against @c visit_targets.
- */
-template <typename P> class SuccessorCursor<P, 2> {
-  public:
-	using Target = typename P::Target;
-	using PostB = typename P::Entry::Nested; ///< The post nested under an outermost key.
-
-	class const_iterator {
-	  public:
-		typename P::const_iterator a_{}, a_end_{};
-		typename PostB::const_iterator b_{}, b_end_{};
-		const Target *target_it_{nullptr}, *target_end_{nullptr};
-
-		/// Position on the first non-empty target run at or after @c b_.
-		bool scan_b() {
-			for (; b_ != b_end_; ++b_) {
-				const std::span<const Target> targets{b_->target_span()};
-				if (!targets.empty()) {
-					target_it_ = targets.data();
-					target_end_ = target_it_ + targets.size();
-					return true;
-				}
-			}
-			return false;
-		}
-		/// Descend into @c a_ and onwards until a target is found.
-		bool scan_a() {
-			for (; a_ != a_end_; ++a_) {
-				b_ = a_->nested().begin();
-				b_end_ = a_->nested().end();
-				if (scan_b()) { return true; }
-			}
-			return false;
-		}
-		void exhaust() { target_it_ = target_end_ = nullptr; }
-
-		const Target& operator*() const { return *target_it_; }
-		const_iterator& operator++() {
-			if (++target_it_ != target_end_) { return *this; }
-			++b_;
-			if (scan_b()) { return *this; }
-			++a_;
-			if (!scan_a()) { exhaust(); }
-			return *this;
-		}
-		bool operator==(std::default_sentinel_t) const { return a_ == a_end_; }
-		bool operator==(const const_iterator&) const = default;
-		/// The key path to the current target, outermost first.
-		auto keys() const { return std::tuple<typename P::Key, typename PostB::Key>{a_->key(), b_->key()}; }
-	};
-
-	explicit SuccessorCursor(const P& post) : post_{&post} {}
-
-	const_iterator begin() const {
-		const_iterator it;
-		it.a_ = post_->begin();
-		it.a_end_ = post_->end();
-		if (!it.scan_a()) { it.exhaust(); }
-		return it;
-	}
-	std::default_sentinel_t end() const { return std::default_sentinel; }
-
-  private:
-	const P* post_;
-};
-
-/**
- * @brief The depth-4 cursor: three keys, then the targets. The cap.
- *
- * Same flat carry as arity 2, one post deeper. Composed costs 18.6% here. Past this arity the primary
- *  template is a hard error rather than a fallback.
- *
- * @warning As at arity 2: a wrong carry skips targets silently. Cross-checked in `tests/core/cursor.cc`.
- */
-template <typename P> class SuccessorCursor<P, 3> {
-  public:
-	using Target = typename P::Target;
-	using PostB = typename P::Entry::Nested;
-	using PostC = typename PostB::Entry::Nested;
-
-	class const_iterator {
-	  public:
-		typename P::const_iterator a_{}, a_end_{};
-		typename PostB::const_iterator b_{}, b_end_{};
-		typename PostC::const_iterator c_{}, c_end_{};
-		const Target *target_it_{nullptr}, *target_end_{nullptr};
-
-		bool scan_c() {
-			for (; c_ != c_end_; ++c_) {
-				const std::span<const Target> targets{c_->target_span()};
-				if (!targets.empty()) {
-					target_it_ = targets.data();
-					target_end_ = target_it_ + targets.size();
-					return true;
-				}
-			}
-			return false;
-		}
-		bool scan_b() {
-			for (; b_ != b_end_; ++b_) {
-				c_ = b_->nested().begin();
-				c_end_ = b_->nested().end();
-				if (scan_c()) { return true; }
-			}
-			return false;
-		}
-		bool scan_a() {
-			for (; a_ != a_end_; ++a_) {
-				b_ = a_->nested().begin();
-				b_end_ = a_->nested().end();
-				if (scan_b()) { return true; }
-			}
-			return false;
-		}
-		void exhaust() { target_it_ = target_end_ = nullptr; }
-
-		const Target& operator*() const { return *target_it_; }
-		const_iterator& operator++() {
-			if (++target_it_ != target_end_) { return *this; }
-			++c_;
-			if (scan_c()) { return *this; }
-			++b_;
-			if (scan_b()) { return *this; }
-			++a_;
-			if (!scan_a()) { exhaust(); }
-			return *this;
-		}
-		bool operator==(std::default_sentinel_t) const { return a_ == a_end_; }
-		bool operator==(const const_iterator&) const = default;
-		/// The key path to the current target, outermost first.
-		auto keys() const {
-			return std::tuple<typename P::Key, typename PostB::Key, typename PostC::Key>{a_->key(), b_->key(), c_->key()};
-		}
-	};
-
-	explicit SuccessorCursor(const P& post) : post_{&post} {}
-
-	const_iterator begin() const {
-		const_iterator it;
-		it.a_ = post_->begin();
-		it.a_end_ = post_->end();
-		if (!it.scan_a()) { it.exhaust(); }
-		return it;
-	}
-	std::default_sentinel_t end() const { return std::default_sentinel; }
-
-  private:
-	const P* post_;
 };
 
 } // namespace mata::posts.
