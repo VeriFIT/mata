@@ -290,11 +290,13 @@ void Delta::add(std::vector<Transition>&& transitions) {
 		while (index < size) {
 			const State source{transitions[index].source};
 			const Symbol symbol{transitions[index].symbol};
-			SymbolPost symbol_post{symbol};
-			while (index < size && transitions[index].source == source && transitions[index].symbol == symbol) {
-				symbol_post.targets.push_back(transitions[index].target);
-				++index;
+			size_t run_end{index + 1};
+			while (run_end < size && transitions[run_end].source == source && transitions[run_end].symbol == symbol) {
+				++run_end;
 			}
+			SymbolPost symbol_post{symbol};
+			symbol_post.targets.reserve(run_end - index); // Final form: inline, or one block of exact capacity.
+			for (; index < run_end; ++index) { symbol_post.targets.push_back(transitions[index].target); }
 			add(source, std::move(symbol_post));
 		}
 		return;

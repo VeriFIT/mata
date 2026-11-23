@@ -874,6 +874,51 @@ TEST_CASE("mata::nfa::Delta::add() of a whole symbol post") {
 	}
 }
 
+TEST_CASE("mata::nfa::DeltaBuilder and the batched Delta::add() build symbol posts in their final form - issue #804") {
+	// Posts of 1, 2, 3, 5 and 9 targets under the symbols 0 to 4 of state 0, each transition given twice.
+	constexpr std::array<State, 5> num_of_targets{1, 2, 3, 5, 9};
+	std::vector<Transition> transitions{};
+	for (Symbol symbol{0}; symbol < num_of_targets.size(); ++symbol) {
+		for (State target{1}; target <= num_of_targets[symbol]; ++target) {
+			transitions.emplace_back(0, symbol, target);
+			transitions.emplace_back(0, symbol, target);
+		}
+	}
+	const size_t inline_capacity{SmallStateSet{}.capacity()};
+	const auto check_final_form = [&](const Delta& delta) {
+		REQUIRE(delta[0].size() == num_of_targets.size());
+		for (const SymbolPost& symbol_post : delta[0]) {
+			CHECK(symbol_post.targets.size() == num_of_targets[symbol_post.symbol]);
+			CHECK(symbol_post.targets.capacity() == std::max(symbol_post.targets.size(), inline_capacity));
+		}
+	};
+
+	SECTION("DeltaBuilder") {
+		DeltaBuilder builder{};
+		builder.begin_state(0);
+		for (Symbol symbol{0}; symbol < num_of_targets.size(); ++symbol) {
+			builder.begin_symbol(symbol);
+			for (State target{1}; target <= num_of_targets[symbol]; ++target) { builder.push_sorted_target(target); }
+			builder.finish_symbol();
+		}
+		builder.finish_state();
+		check_final_form(builder.finish());
+	}
+
+	SECTION("a batch into an empty delta") {
+		Delta delta{};
+		delta.add(std::vector<Transition>{transitions});
+		check_final_form(delta);
+	}
+
+	SECTION("a batch into a delta that already holds transitions") {
+		Delta delta{};
+		delta.add(1, 0, 1);
+		delta.add(std::vector<Transition>{transitions});
+		check_final_form(delta);
+	}
+}
+
 TEST_CASE("mata::nfa::Delta::add() of a batch of transitions") {
 	const std::vector<Transition> sorted{{0, 'a', 1}, {0, 'a', 2}, {0, 'b', 0}, {1, 'a', 1}, {3, 'c', 2}, {3, 'c', 7}};
 

@@ -1138,19 +1138,17 @@ class DeltaBuilder {
 	void begin_symbol(const Symbol symbol) {
 		MATA_ASSERT(in_state_ && "begin_symbol() called outside of a state");
 		MATA_ASSERT(!in_symbol_ && "begin_symbol() called before finish_symbol()");
-		MATA_ASSERT((!has_symbol_ || symbol > symbol_post_.symbol) && "symbols must be strictly increasing");
-		symbol_post_ = SymbolPost{symbol};
+		MATA_ASSERT((!has_symbol_ || symbol > symbol_) && "symbols must be strictly increasing");
+		symbol_ = symbol;
+		targets_.clear();
 		in_symbol_ = true;
 	}
 
 	/// Appends @p target to the targets of the current symbol.
 	void push_sorted_target(const State target) {
 		MATA_ASSERT(in_symbol_ && "push_sorted_target() called outside of a symbol");
-		MATA_ASSERT(
-			(symbol_post_.targets.empty() || target > symbol_post_.targets.back()) &&
-			"targets must be strictly increasing"
-		);
-		symbol_post_.targets.push_back(target);
+		MATA_ASSERT((targets_.empty() || target > targets_.back()) && "targets must be strictly increasing");
+		targets_.push_back(target);
 		max_target_ = std::max(max_target_, target);
 	}
 
@@ -1158,9 +1156,10 @@ class DeltaBuilder {
 	void finish_symbol() {
 		MATA_ASSERT(in_symbol_ && "finish_symbol() without begin_symbol()");
 		in_symbol_ = false;
-		if (symbol_post_.targets.empty()) { return; }
+		if (targets_.empty()) { return; }
 		has_symbol_ = true;
-		state_posts_[source_].push_back(std::move(symbol_post_));
+		// Copied in its final form, inline or with exact capacity, instead of grown target by target in the post.
+		state_posts_[source_].emplace_back(symbol_, std::span<const State>{targets_});
 	}
 
 	/// Closes the current source state.
@@ -1186,7 +1185,9 @@ class DeltaBuilder {
 
   private:
 	std::vector<StatePost> state_posts_{};
-	SymbolPost symbol_post_{};
+	/// Targets of the current symbol; reused across symbols, so that it stops allocating once large enough.
+	std::vector<State> targets_{};
+	Symbol symbol_{0};
 	State source_{0};
 	State max_target_{0};
 	bool in_state_{false};
