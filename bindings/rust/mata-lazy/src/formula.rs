@@ -83,7 +83,11 @@ pub(crate) struct SyncSpec {
 ///
 /// Building a formula does no automata work. [`leaf`](Formula::leaf) copies an automaton, and the other builders add a node. [`is_empty`](Formula::is_empty) and [`check`](Formula::check) explore only the macrostates they need.
 ///
-/// A term of arity *n* denotes a relation over *n*-tuples of words of equal length, read in lock step, where one step reads one symbol on every tape ([`EPSILON`](Symbol::EPSILON) pads a shorter word). The complement is taken over the tuples of concrete symbols of each tape's alphabet, which a query computes from the leaves that share the tape
+/// A term of arity *n* denotes a relation over *n*-tuples of words of equal length, read in lock step, where one
+/// step reads one symbol on every tape ([`EPSILON`](Symbol::EPSILON) pads a shorter word). The steps are what
+/// count: a step that pads every tape still is one (only a leaf's own moves that pad every tape are silent), and
+/// a term of arity 0 holds a number of steps. The complement is taken over the tuples of concrete symbols of each
+/// tape's alphabet, which a query computes from the leaves that share the tape.
 #[derive(Debug)]
 pub struct Formula {
 	id: u32,
