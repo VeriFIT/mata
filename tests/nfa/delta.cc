@@ -135,6 +135,27 @@ TEST_CASE("mata::nfa::Delta::get_used_symbols_set() starts empty on every call -
 	CHECK(first.delta.get_used_symbols_set() == std::set<Symbol>{'a'});
 }
 
+TEST_CASE("mata::nfa::Delta::get_used_symbols() returns sorted unique symbols") {
+	Delta delta{};
+	std::set<Symbol> expected{};
+	for (State source = 0; source < 90; ++source) {
+		for (const Symbol symbol : {static_cast<Symbol>(2 * source), Symbol{source + 1}, Symbol{source}}) {
+			delta.add(source, symbol, 0);
+			expected.insert(symbol);
+		}
+	}
+	// A few out-of-order additions, duplicates and the special last symbol.
+	for (const auto [source, symbol, target] : std::vector<Transition>{
+			 {2, EPSILON, 4}, {2, 'a', 5}, {0, 'z', 6}, {2, 'a', 7}, {0, 'z', 8}, {1, EPSILON, 9}
+		 }) {
+		delta.add(source, symbol, target);
+		expected.insert(symbol);
+	}
+
+	const auto result{delta.get_used_symbols()};
+	CHECK(std::vector<Symbol>{result.begin(), result.end()} == std::vector<Symbol>{expected.begin(), expected.end()});
+}
+
 TEST_CASE("mata::nfa::Delta::state_post()") {
 	Nfa aut{};
 

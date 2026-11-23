@@ -748,14 +748,34 @@ OrdVector<Symbol> Delta::get_used_symbols() const {
 // Other versions, maybe an interesting experiment with speed of data structures.
 // Returns symbols appearing in Delta, pushes back to vector and then sorts
 mata::utils::OrdVector<Symbol> Delta::get_used_symbols_vec() const {
-	// Per-call storage: a shared static buffer would race under concurrent const queries.
+	// Keep small alphabets sorted incrementally; retain the full sort/deduplicate for wider alphabets,
+	// so many distinct symbols cannot make insertion quadratic.
 	std::vector<Symbol> symbols{};
+	size_t num_distinct{0};
+	bool incremental{true};
 	for (const StatePost& state_post : state_posts_) {
 		for (const SymbolPost& symbol_post : state_post) {
-			utils::reserve_on_insert(symbols);
-			symbols.push_back(symbol_post.symbol);
+			const Symbol symbol{symbol_post.symbol};
+			if (!incremental) {
+				symbols.push_back(symbol);
+			} else if (symbols.empty() || symbols.back() < symbol) {
+				symbols.push_back(symbol);
+				++num_distinct;
+			} else if (symbols.back() != symbol) {
+				if (num_distinct == 64) {
+					incremental = false;
+					symbols.push_back(symbol);
+				} else {
+					const auto position{std::ranges::lower_bound(symbols, symbol)};
+					if (position == symbols.end() || *position != symbol) {
+						symbols.insert(position, symbol);
+						++num_distinct;
+					}
+				}
+			}
 		}
 	}
+	if (incremental) { return utils::OrdVector<Symbol>{utils::sorted_unique, std::move(symbols)}; }
 	return utils::OrdVector<Symbol>{std::move(symbols)};
 }
 
