@@ -1,0 +1,4 @@
+File automaton-tarjan.hh
+========================
+
+.. doxygenfile:: automaton-tarjan.hh

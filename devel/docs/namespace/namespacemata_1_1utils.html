@@ -505,7 +505,7 @@ In particular, this includes:<ol class="loweralpha simple">
 <p>This class implements the interface of a set (similar to std::set) using sparse-set date structure, that is, a pair of vectors dense and sparse (… google it). Importantly<ul class="simple">
 <li><p>Insertion and removal are constant time.</p></li>
 <li><p>Iteration is linear in the number of stored elements.</p></li>
-<li><p>It takes a lot of space, the sparse and dense vectors allocate as many indexes as the maximal stored number.</p></li>
+<li><p>Only the sparse index allocates as many indexes as the maximal stored number; the dense array grows with the number of stored elements.</p></li>
 </ul>
 </p>
 <dl class="field-list simple">
@@ -551,7 +551,7 @@ In particular, this includes:<ol class="loweralpha simple">
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9SparseSeteqERK9SparseSetI6NumberE">
 <span id="_CPPv3NK4mata5utils9SparseSeteqERK9SparseSetI6NumberE"></span><span id="_CPPv2NK4mata5utils9SparseSeteqERK9SparseSetI6NumberE"></span><span id="mata::utils::SparseSet::eq-operator__SparseSet:Number:CRC"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a873de7dc4867ba4e6ec4f2e14d0f3792"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet"><span class="n"><span class="pre">SparseSet</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
-<dd><p>Compare the contents: the buffers keep stale slots behind <code class="docutils literal notranslate"><span class="pre">size_</span></code> and the domain size depends on the insertion history, so equal sets may differ member-wise. </p>
+<dd><p>Compare the contents: the sparse index keeps stale slots, and the order of the dense array and the domain size depend on the insertion history, so equal sets may differ member-wise. </p>
 </dd></dl>
 
 <dl class="cpp function">

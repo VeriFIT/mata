@@ -73,7 +73,7 @@ In particular, this includes:<ol class="lowerroman simple">
 <p>This class implements the interface of a set (similar to std::set) using sparse-set date structure, that is, a pair of vectors dense and sparse (… google it). Importantly<ul class="simple">
 <li><p>Insertion and removal are constant time.</p></li>
 <li><p>Iteration is linear in the number of stored elements.</p></li>
-<li><p>It takes a lot of space, the sparse and dense vectors allocate as many indexes as the maximal stored number.</p></li>
+<li><p>Only the sparse index allocates as many indexes as the maximal stored number; the dense array grows with the number of stored elements.</p></li>
 </ul>
 </p>
 <dl class="field-list simple">
@@ -232,7 +232,7 @@ In particular, this includes:<ol class="lowerroman simple">
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4NK4mata5utils9SparseSeteqERK9SparseSetI6NumberE">
 <span id="_CPPv3NK4mata5utils9SparseSeteqERK9SparseSetI6NumberE"></span><span id="_CPPv2NK4mata5utils9SparseSeteqERK9SparseSetI6NumberE"></span><span id="mata::utils::SparseSet::eq-operator__SparseSet:Number:CRC"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a873de7dc4867ba4e6ec4f2e14d0f3792"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet"><span class="n"><span class="pre">SparseSet</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../class/classmata_1_1utils_1_1SparseSet.html#_CPPv4I0EN4mata5utils9SparseSetE" title="mata::utils::SparseSet::Number"><span class="n"><span class="pre">Number</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><br /></dt>
-<dd><p>Compare the contents: the buffers keep stale slots behind <code class="docutils literal notranslate"><span class="pre">size_</span></code> and the domain size depends on the insertion history, so equal sets may differ member-wise. </p>
+<dd><p>Compare the contents: the sparse index keeps stale slots, and the order of the dense array and the domain size depend on the insertion history, so equal sets may differ member-wise. </p>
 </dd></dl>
 
 <dl class="cpp function">
@@ -340,7 +340,7 @@ In particular, this includes:<ol class="lowerroman simple">
 <dt class="sig sig-object cpp" id="_CPPv4N4mata5utils9SparseSet12domain_size_E">
 <span id="_CPPv3N4mata5utils9SparseSet12domain_size_E"></span><span id="_CPPv2N4mata5utils9SparseSet12domain_size_E"></span><span id="mata::utils::SparseSet::domain_size___s"></span><span class="target" id="classmata_1_1utils_1_1SparseSet_1a4786b9e7f1ff251aac28c3141d154d81"></span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">domain_size_</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="m"><span class="pre">0</span></span><a class="headerlink" href="#_CPPv4N4mata5utils9SparseSet12domain_size_E" title="Link to this definition">¶</a><br /></dt>
 <dd><p>Over-approximation of Number in sparse set. It represents the Numbers which were in the set throughout the life of the set until now. </p>
-<p><code class="docutils literal notranslate"><a class="reference internal" href="#classmata_1_1utils_1_1SparseSet_1a6cdeae8dd0ba505874283c6d41a91418"><span class="std std-ref"><span class="pre">truncate()</span></span></a></code> will update the domain size to the current maximal Number + 1. Constructor can preallocate the sparse set and set domain size to the requested value. The structures are preallocated to at least <code class="docutils literal notranslate"><span class="pre">domain_size_</span></code> size (can be more when maximal Number is removed). </p>
+<p><code class="docutils literal notranslate"><a class="reference internal" href="#classmata_1_1utils_1_1SparseSet_1a6cdeae8dd0ba505874283c6d41a91418"><span class="std std-ref"><span class="pre">truncate()</span></span></a></code> will update the domain size to the current maximal Number + 1. Constructor can preallocate the sparse set and set domain size to the requested value. The sparse index is preallocated to at least <code class="docutils literal notranslate"><span class="pre">domain_size_</span></code> size; the dense array tracks <code class="docutils literal notranslate"><span class="pre">size_</span></code> instead. </p>
 </dd></dl>
 
 </div>
@@ -406,6 +406,7 @@ In particular, this includes:<ol class="lowerroman simple">
 <li class="toctree-l2"><a class="reference internal" href="alphabet_8hh.html">File alphabet.hh</a></li>
 <li class="toctree-l2"><a class="reference internal" href="antichain-inclusion_8hh.html">File antichain-inclusion.hh</a></li>
 <li class="toctree-l2"><a class="reference internal" href="assert_8hh.html">File assert.hh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automaton-tarjan_8hh.html">File automaton-tarjan.hh</a></li>
 <li class="toctree-l2"><a class="reference internal" href="automaton_8hh.html">File automaton.hh</a></li>
 <li class="toctree-l2"><a class="reference internal" href="closed-set_8hh.html">File closed-set.hh</a></li>
 <li class="toctree-l2"><a class="reference internal" href="concatenation-internal_8hh.html">File concatenation-internal.hh</a></li>
