@@ -151,6 +151,8 @@ def setup(app):
                 if node["reftype"] != "myst" or node["refdomain"] == "doc":
                     continue
                 path, _, anchor = node["reftarget"].partition("#")
+                if not path:
+                    continue
                 path = os.path.normpath(path)
                 if not os.path.exists(os.path.join(_REPO_ROOT, path)):
                     continue
@@ -168,7 +170,7 @@ def setup(app):
                         "",
                         "",
                         *node.children,
-                        refuri=_GITHUB_BLOB + path,
+                        refuri=_GITHUB_BLOB + path + ("#" + anchor if anchor else ""),
                         internal=False,
                     )
                 node.replace_self(link)
