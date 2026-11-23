@@ -61,8 +61,6 @@
               "CMakeLists.txt"
               "**/CMakeLists.txt"
             ];
-            # Vendored, kept byte-identical to upstream.
-            excludes = [ "cmake/GetGitRevisionDescription.cmake" ];
           };
           nixfmt.enable = true;
           yamlfmt.enable = true;
