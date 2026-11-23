@@ -40,7 +40,7 @@ options = ["-i"]
 
 [formatter.cmake-format]
 command = "cmake-format"
-excludes = ["cmake/GetGitRevisionDescription.cmake"]
+excludes = []
 includes = ["*.cmake", "CMakeLists.txt", "**/CMakeLists.txt"]
 options = ["--in-place"]
 
