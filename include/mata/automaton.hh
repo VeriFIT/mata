@@ -193,7 +193,12 @@ class Automaton {
 	 * @param[in] other The other automaton to compare with.
 	 * @return true iff the structural parts of @c this and @p other are identical.
 	 */
+// Sphinx cannot parse explicit object parameters, so Doxygen sees the call-site signatures.
+#ifdef BUILDING_DOX
+	template <typename Self> bool is_identical(const Self& other) const;
+#else
 	template <typename Self> bool is_identical(this const Self& self, const Self& other);
+#endif
 
 	/**
 	 * @brief Remove unreachable and non-terminating states in-place.
@@ -207,7 +212,11 @@ class Automaton {
 	 * @param[out] state_renaming Mapping of trimmed states to new states.
 	 * @return @c this after trimming.
 	 */
+#ifdef BUILDING_DOX
+	template <typename Self> Self& trim(nfa::StateRenaming* state_renaming = nullptr);
+#else
 	template <typename Self> Self& trim(this Self& self, nfa::StateRenaming* state_renaming = nullptr);
+#endif
 
 	/**
 	 * Check whether no accepting path exists, recording a witness in @p cex when one does.
@@ -216,7 +225,11 @@ class Automaton {
 	 *  accepting path exists.
 	 * @return true if no accepting path exists, false otherwise.
 	 */
+#ifdef BUILDING_DOX
+	template <typename Self> bool is_lang_empty(nfa::Run* cex = nullptr) const;
+#else
 	template <typename Self> bool is_lang_empty(this const Self& self, nfa::Run* cex = nullptr);
+#endif
 
   protected:
 	/**
@@ -270,8 +283,12 @@ class Automaton {
 	 *  new state numbers after trimming.
 	 * @return @c self after trimming.
 	 */
+#ifdef BUILDING_DOX
+	template <typename Self> Self& trim_impl(const BoolVector& useful_states, nfa::StateRenaming* state_renaming);
+#else
 	template <typename Self>
 	Self& trim_impl(this Self& self, const BoolVector& useful_states, nfa::StateRenaming* state_renaming);
+#endif
 }; // class Automaton.
 
 } // namespace mata.
