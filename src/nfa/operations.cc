@@ -967,8 +967,6 @@ Nfa mata::nfa::fragile_revert(const Nfa& aut) { return revert(aut); }
 
 Nfa mata::nfa::simple_revert(const Nfa& aut) { return revert(aut); }
 
-Nfa mata::nfa::somewhat_simple_revert(const Nfa& aut) { return revert(aut); }
-
 bool mata::nfa::Nfa::is_deterministic() const {
 	if (initial.size() != 1) { return false; }
 	if (delta.empty()) { return true; }

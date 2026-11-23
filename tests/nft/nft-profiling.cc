@@ -55,25 +55,5 @@ TEST_CASE("mata::nft::get_used_symbols speed, harder", "[.profiling]") {
 	for (int i = 0; i < 2'000'000; i++) { A.delta.get_used_symbols(); }
 }
 
-TEST_CASE("mata::nft::get_used_symbols_bv speed, harder", "[.profiling]") {
-	Nft A{create_nfa("((.*){10})*")};
-	for (int i = 0; i < 2'000'000; i++) { A.delta.get_used_symbols_bv(); }
-}
-
-TEST_CASE("mata::nft::get_used_symbols_vec speed, harder", "[.profiling]") {
-	Nft A{create_nfa("((.*){10})*")};
-	for (int i = 0; i < 2'000'000; i++) { A.delta.get_used_symbols_vec(); }
-}
-
-TEST_CASE("mata::nft::get_used_symbols_set speed, harder", "[.profiling]") {
-	Nft A{create_nfa("((.*){10})*")};
-	for (int i = 0; i < 2'000'000; i++) { A.delta.get_used_symbols_set(); }
-}
-
-TEST_CASE("mata::nft::get_used_symbols_sps speed, harder", "[.profiling]") {
-	Nft A{create_nfa("((.*){10})*")};
-	for (int i = 0; i < 2'000'000; i++) { A.delta.get_used_symbols_sps(); }
-}
-
 /////////////////////////////
 /////////////////////////////

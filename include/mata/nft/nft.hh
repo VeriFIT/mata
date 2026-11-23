@@ -85,9 +85,6 @@
 #ifndef MATA_NFT_HH_
 #define MATA_NFT_HH_
 
-// Static data structures, such as search stack, in algorithms. Might have some effect on some algorithms (like trim).
-// #define _STATIC_STRUCTURES_
-
 #include <cassert>
 #include <functional>
 #include <limits>
@@ -2208,9 +2205,6 @@ Nft fragile_revert(const Nft& aut);
 
 /// @deprecated Kept for source compatibility; forwards to @c revert(). Call @c revert() instead.
 Nft simple_revert(const Nft& aut);
-
-/// @deprecated Kept for source compatibility; forwards to @c revert(). Call @c revert() instead.
-Nft somewhat_simple_revert(const Nft& aut);
 
 /**
  * @brief Inverts the levels of the given transducer @p aut.
