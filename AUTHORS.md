@@ -10,6 +10,8 @@ For a list of all people who have contributed to the codebase, see
 - Juraj Síč ([jurajsic](https://github.com/jurajsic), [sicjuraj@fit.vut.cz](mailto:sicjuraj@fit.vut.cz)): library developer;
 - Michal Šedý ([koniksedy](https://github.com/koniksedy/), [medy@cs.aau.dk](mailto:medy@cs.aau.dk)): library developer;
 - Vojtěch Havlena ([vhavlena](https://github.com/vhavlena/), [ihavlena@fit.vut.cz](mailto:ihavlena@fit.vut.cz)): library developer;
+- Le Duy Nguyen ([tmokenc](https://github.com/tmokenc), [tmokenc@protonmail.com](mailto:tmokenc@protonmail.com),
+  [nguyenleduy12610@gmail.com](mailto:nguyenleduy12610@gmail.com)): Rust bindings and `mata-lazy` developer;
 - Ondřej Lengál ([ondrik](https://github.com/ondrik), [lengal@fit.vut.cz](mailto:lengal@fit.vut.cz)): prototype developer and the world's tallest hobbit;
 
 ## Special Thanks To

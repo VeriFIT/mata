@@ -34,18 +34,23 @@ assert_eq!(a.minimize().num_states(), 4);
   [`Nfa::regex`] writes an RE2 regular expression. Symbols through `0xFF` read back directly as one automaton
   through the Latin1 reader; larger values need a UTF-8 reader and decoding of the resulting automaton.
 - [`nft`] holds finite transducers. Mata's transducers are experimental and moving fast, so expect breaking changes.
+- [`lazy`] checks Boolean and relational combinations of automata and transducers for emptiness lazily, building
+  only what the answer needs (the [`mata-lazy`](https://github.com/VeriFIT/mata/tree/devel/bindings/rust/mata-lazy)
+  crate, with [`Nfa`] and [`nft::Nft`](nft) leaves).
 
 ## Building
 
-`mata-sys` builds Mata from source, which needs CMake 3.23 or newer and GCC 14 or newer or Clang 18 or newer (on macOS, Homebrew's LLVM). The minimum supported Rust version is 1.88. See [`mata-sys`](https://docs.rs/mata-sys) for using an installed Mata or building to WebAssembly.
+`mata-sys` builds Mata from source, which needs CMake 3.23 or newer and GCC 14 or newer or Clang 18 or newer (on macOS, Homebrew's LLVM). The minimum supported Rust version is 1.95. See [`mata-sys`](https://docs.rs/mata-sys) for using an installed Mata or building to WebAssembly.
 
 ## Features
 
+- `lazy` (default): the [`lazy`] module.
 - `serde`: `Serialize` and `Deserialize` for [`Nfa`], [`Alphabet`], [`State`], [`Symbol`] and [`Transition`].
 
 <!-- Explicit link targets, so that the links also work on crates.io, where this README is shown too. -->
 
 [`Alphabet`]: https://docs.rs/mata/latest/mata/alphabet/struct.Alphabet.html
+[`lazy`]: https://docs.rs/mata/latest/mata/lazy/index.html
 [`Limits`]: https://docs.rs/mata/latest/mata/struct.Limits.html
 [`Nfa`]: https://docs.rs/mata/latest/mata/nfa/struct.Nfa.html
 [`Nfa::display_with`]: https://docs.rs/mata/latest/mata/nfa/struct.Nfa.html#method.display_with

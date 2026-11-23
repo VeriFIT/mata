@@ -20,3 +20,6 @@ mata = { path = "../mata" }
 [[bin]]
 name = "mata"
 path = "src/main.rs"
+# Its docs would overwrite those of the `mata` library at `target/doc/mata` (rust-lang/cargo#6313); `mata-cli`'s
+# library holds the documented code.
+doc = false
