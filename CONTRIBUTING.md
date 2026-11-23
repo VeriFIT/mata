@@ -18,7 +18,7 @@ For information on contributing to the Python bindings, refer to [bindings/pytho
 
 3. Create a new feature branch.
 4. Build the project.
-   Refer to [README#Building and installing from sources](README#Building-and-installing-from-sources) for instructions
+   Refer to [README#Building and installing from sources](README.md#building-and-installing-from-sources) for instructions
    on how to build the project from sources.
 5. Commit the changes and push to your fork.
 6. Finally, [create a new pull request](https://github.com/VeriFIT/mata/compare).
