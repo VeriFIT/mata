@@ -22,13 +22,17 @@ The patch is `git format-patch` output for the ported commit `b1329134e141830502
 
 ## Method
 
-Release builds of the base and candidate ran a one-off harness calling
+Release builds of the base and candidate linked [`harness.cc`](harness.cc), which reads one automaton (a `.mata` file or
+a Tabakov–Vardi random NFA) and calls
 
 ```cpp
-reduce(nfa, {{"algorithm", "residual"}, {"type", "after"}, {"direction", "forward"}})
+reduce(nfa, nullptr, {{"algorithm", "residual"}, {"type", "after"}, {"direction", "forward"}})
 ```
 
-under Callgrind with `--toggle-collect='*reduce_residual_after*'`. The output hash covered the number of states, initial and final states, and all transitions. Hashes were identical for all three measured cases and for 310 randomly sampled files across the nfa-bench corpora.
+under Callgrind with `--toggle-collect='*reduce_residual_after*'`, so parsing and generation are not counted. The
+harness prints an FNV-1a hash over the number of states, the initial and final states, and all transitions of the
+result. Hashes were identical for all three measured cases and for 310 randomly sampled files across the nfa-bench
+corpora.
 
 ## Results
 
@@ -46,7 +50,32 @@ Residual-after reduction determinizes NFAs whose macrostates are large and heavi
 
 ## Reproducing
 
-Create base and candidate checkouts at `a803d22d11c5d54f12a61c497bebbcb3052d096b`, apply `rejected.patch` in the candidate with `git am`, and build both with `just cpp build release`. Run the harness above over the three cases in the results table under Callgrind with `--toggle-collect='*reduce_residual_after*'`, collect Ir for each variant, and divide candidate by base totals. Run both variants natively as well and compare the state, initial/final-state, and transition hashes. For the broader identity check, repeat that comparison on a random sample of 310 files from the nfa-bench corpora.
+Create base and candidate checkouts at `a803d22d11c5d54f12a61c497bebbcb3052d096b`, apply `rejected.patch` in the
+candidate with `git am`, and build both with `just cpp build release`. Link the harness in each checkout (GCC 16.2):
+
+```sh
+g++ -std=c++23 -O3 -DNDEBUG \
+  -Iinclude -Ibuild/release/g++/include -I3rdparty/simlib/include -I3rdparty/cudd/include \
+  docs/experiments/4-residual-after-subset-index/harness.cc build/release/g++/src/libmata.a -o harness
+```
+
+With `NFA` set to `benchmarks/nfa-bench/benchmarks/nfa` of
+[automata-lib-bench](https://github.com/VeriFIT/automata-lib-bench), run each case under both builds:
+
+```sh
+valgrind --tool=callgrind --toggle-collect='*reduce_residual_after*' ./harness \
+  file "$NFA/automata_inclusion/false-IBakery-4P-BinEnc-BwBad-A-3-lhs.mata"
+valgrind --tool=callgrind --toggle-collect='*reduce_residual_after*' ./harness \
+  file "$NFA/regexps/regexps/Snort/together/together_aut_1018.mata"
+valgrind --tool=callgrind --toggle-collect='*reduce_residual_after*' ./harness tv 40 4 2.0 0.5 1
+```
+
+Ir is the `Collected` total Callgrind prints. The harness lines of base and candidate must agree on `out_states`,
+`trans` and `hash`; the recorded hashes are `0dabb3ea4f6abf55`, `249b075ecf1c8f44` and `39662cba67f37602` for the
+three cases in table order. Rerun on the base with GCC 16.2 and Valgrind 3.27.1, this harness reproduces those hashes
+and collects 68 Ir fewer than the table on each case (the table was measured with an earlier, untidied copy of the
+same harness). For the broader identity check, run both harnesses natively on a random sample of 310 files from the
+nfa-bench corpora and compare their output lines without the `ms=` field.
 
 ## Conclusion
 
