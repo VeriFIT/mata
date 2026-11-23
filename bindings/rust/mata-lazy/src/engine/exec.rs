@@ -571,7 +571,12 @@ impl<'f> Emitter<'f> {
 	}
 
 	fn explicit(&mut self, child: ExecId, options: ExplicitOptions, origin: NodeId) -> ExecId {
-		if matches!(self.nodes[child].op, Op::Explicit { .. }) {
+		// The outer node adds nothing, unless the inner one may stay lazy at fewer states than it allows.
+		if let Op::Explicit { options: inner, .. } = self.nodes[child].op
+			&& inner
+				.max_states
+				.is_none_or(|inner| options.max_states.is_some_and(|outer| outer <= inner))
+		{
 			return child;
 		}
 

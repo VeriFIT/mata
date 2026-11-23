@@ -143,6 +143,33 @@ fn explicit_nodes_over_budget_stay_lazy() -> Result<(), Error> {
 }
 
 #[test]
+fn an_outer_explicit_node_materializes_an_inner_one_over_budget() -> Result<(), Error> {
+	let Setup {
+		mut formula,
+		second,
+		both,
+		..
+	} = setup()?;
+	let inner = formula.explicit_with(both, ExplicitOptions::new().max_states(0))?;
+	let outer = formula.explicit(inner)?;
+	let not_outer = formula.complement(outer)?;
+	let root = formula.intersection(not_outer, second)?;
+
+	let outcome = formula.check(root, &Options::new())?;
+	assert!(in_root(
+		outcome.witness.as_ref().expect("root is not empty")
+	));
+	let [lazy, materialized] = outcome.stats.explicit.as_slice() else {
+		panic!("two explicit nodes: {:?}", outcome.stats.explicit)
+	};
+
+	assert_eq!((lazy.term, lazy.lazy), (inner, true));
+	assert_eq!((materialized.term, materialized.lazy), (outer, false));
+
+	Ok(())
+}
+
+#[test]
 fn explicit_complement_and_nested_explicit_nodes() -> Result<(), Error> {
 	let Setup {
 		mut formula,
