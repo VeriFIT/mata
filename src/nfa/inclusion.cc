@@ -263,6 +263,8 @@ AlgoType set_algorithm(const std::string& function_name, const ParameterMap& par
 		algo = algorithms::is_included_naive;
 	} else if ("antichains" == str_algo) {
 		algo = algorithms::is_included_antichains;
+	} else if ("hkc" == str_algo) {
+		algo = algorithms::is_included_hkc;
 	} else {
 		throw std::runtime_error(
 			std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + str_algo
@@ -316,7 +318,7 @@ bool mata::nfa::is_included(
 	const ParameterMap& params
 ) { // {{{
 	AlgoType algo{set_algorithm(std::to_string(__func__), params)};
-	// Both algorithms read EPSILON as an ordinary letter, so epsilon has to go before they see the automata.
+	// All algorithms read EPSILON as an ordinary letter, so epsilon has to go before they see the automata.
 	Nfa smaller_storage{};
 	Nfa bigger_storage{};
 	return algo(epsilon_free(smaller, smaller_storage), epsilon_free(bigger, bigger_storage), alphabet, cex);

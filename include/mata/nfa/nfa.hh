@@ -1472,7 +1472,8 @@ Nfa reduce(
  * @param[out] cex Counterexample for the inclusion.
  * @param[in] alphabet Alphabet of both NFAs to compute with.
  * @param[in] params Optional parameters to control the equivalence check algorithm:
- * - "algorithm": "naive", "antichains" (Default: "antichains")
+ * - "algorithm": "naive", "antichains", "hkc" (bisimulation up to congruence, @c algorithms::is_included_hkc())
+ *   (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  *
  * Epsilon transitions are removed from copies of the operands that have them, so @p cex refers to the states of
@@ -1494,7 +1495,8 @@ bool is_included(
  * @param[in] bigger Second automaton to concatenate.
  * @param[in] alphabet Alphabet of both NFAs to compute with.
  * @param[in] params Optional parameters to control the equivalence check algorithm:
- * - "algorithm": "naive", "antichains" (Default: "antichains")
+ * - "algorithm": "naive", "antichains", "hkc" (bisimulation up to congruence, @c algorithms::is_included_hkc())
+ *   (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  *
  * Epsilon transitions are removed from copies of the operands that have them.
@@ -1515,7 +1517,7 @@ inline bool is_included(
  * @param[in] rhs Second automaton to concatenate.
  * @param[in] alphabet Alphabet of both NFAs to compute with.
  * @param[in] params[ Optional parameters to control the equivalence check algorithm:
- * - "algorithm": "naive", "antichains" (Default: "antichains")
+ * - "algorithm": "naive", "antichains", "hkc" (the inclusion algorithm run in each direction) (Default: "antichains")
  * @param[out] cex If not null and @p lhs and @p rhs are not equivalent, filled with a witness word: a word in the
  *  language of one of @p lhs/@p rhs but not the other (as also produced by @c is_included() for whichever direction
  *  of inclusion fails first). Cleared (empty word and path) if @p lhs and @p rhs are equivalent.
@@ -1546,7 +1548,7 @@ bool are_equivalent(
  * @param[in] lhs First automaton to concatenate.
  * @param[in] rhs Second automaton to concatenate.
  * @param[in] params Optional parameters to control the equivalence check algorithm:
- * - "algorithm": "naive", "antichains" (Default: "antichains")
+ * - "algorithm": "naive", "antichains", "hkc" (the inclusion algorithm run in each direction) (Default: "antichains")
  * @param[out] cex If not null and @p lhs and @p rhs are not equivalent, filled with a witness word: a word in the
  *  language of one of @p lhs/@p rhs but not the other. Cleared (empty word and path) if @p lhs and @p rhs are
  *  equivalent.
