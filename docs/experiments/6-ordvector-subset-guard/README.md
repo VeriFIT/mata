@@ -8,8 +8,6 @@ related: ["#1084", "EXP-1"]
 tags: [utils, ord-vector, subset-construction]
 ---
 
-# EXP-6: OrdVector subset pre-scan
-
 ## Question
 
 Does skipping `OrdVector::insert(std::span<const Key>)`'s merge when the inserted keys are
@@ -52,14 +50,19 @@ linear scan to all overlapping non-subset unions is not justified by these resul
 
 ## Reproducing
 
-Read `devel` at the recorded base. Apply the candidate with `git am rejected.patch`. Build
-`probe_subsets.cc` against each include tree:
+Read `devel` at the recorded base. Preserve the experiment directory in the base checkout,
+then apply the candidate with `git am docs/experiments/6-ordvector-subset-guard/rejected.patch`.
+Build `probe_subsets.cc` against each include tree and keep both executables:
 
 ```sh
 g++ -std=gnu++23 -O3 -DNDEBUG \
   -Iinclude -I<configured-build>/include -I3rdparty/simlib/include -I3rdparty/cudd/include \
-  docs/experiments/6-ordvector-subset-guard/probe_subsets.cc -o probe
+  docs/experiments/6-ordvector-subset-guard/probe_subsets.cc -o probe-old
+g++ -std=gnu++23 -O3 -DNDEBUG \
+  -Iinclude -I<configured-build>/include -I3rdparty/simlib/include -I3rdparty/cudd/include \
+  docs/experiments/6-ordvector-subset-guard/probe_subsets.cc -o probe-new
 ```
 
-For five rounds, alternate `taskset --cpu-list 3 probe subset` and the same command with
-`append-only`. Compute medians independently for both executables.
+For five rounds, alternate `taskset --cpu-list 3 ./probe-old <mode>` and
+`taskset --cpu-list 3 ./probe-new <mode>`, with `<mode>` set to `subset` or `append-only`.
+Compute medians independently for both executables.
