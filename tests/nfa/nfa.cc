@@ -3472,6 +3472,18 @@ TEST_CASE("mata::nfa naive inclusion uses lazy difference only for eligible Bool
 	const EnumAlphabet whole_alphabet{static_cast<Symbol>('a'), static_cast<Symbol>('b')};
 
 	CHECK(algorithms::is_included_naive(only_a, any_letter, nullptr, nullptr));
+
+	// This positive-inclusion family is exponential for a search that determinizes the nondeterministic left input.
+	Nfa nondeterministic{4, {0}, {3}};
+	nondeterministic.delta.add(0, static_cast<Symbol>('a'), 0);
+	nondeterministic.delta.add(0, static_cast<Symbol>('b'), 0);
+	nondeterministic.delta.add(0, static_cast<Symbol>('a'), 1);
+	for (State state{1}; state < 3; ++state) {
+		nondeterministic.delta.add(state, static_cast<Symbol>('a'), state + 1);
+		nondeterministic.delta.add(state, static_cast<Symbol>('b'), state + 1);
+	}
+	CHECK(!nondeterministic.is_deterministic());
+	CHECK(algorithms::is_included_naive(nondeterministic, any_letter, nullptr, nullptr));
 	Nfa only_b{2, {0}, {1}};
 	only_b.delta.add(0, 'b', 1);
 	CHECK(!algorithms::is_included_naive(only_a, only_b, nullptr, nullptr));

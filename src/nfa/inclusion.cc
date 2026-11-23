@@ -47,9 +47,10 @@ bool mata::nfa::algorithms::is_included_naive(
 		cex->word.clear();
 		cex->path.clear();
 	}
-	// Boolean queries can stop at the first difference instead of constructing the full complement. The lazy
-	// difference requires epsilon-free inputs and the full alphabet used by the existing implementation.
-	if (cex == nullptr && !contains_epsilon(smaller) && !contains_epsilon(bigger) &&
+	// Boolean queries on deterministic left inputs can stop at the first difference instead of constructing the full
+	// complement. The lazy difference determinizes its left input, so other inputs retain the legacy path to avoid
+	// subset-constructing them. It also requires epsilon-free inputs and the full alphabet used by the legacy path.
+	if (cex == nullptr && smaller.is_deterministic() && !contains_epsilon(smaller) && !contains_epsilon(bigger) &&
 		(alphabet == nullptr || alphabet->get_alphabet_symbols() == used_letters(smaller, bigger))) {
 		return !get_word_from_lang_difference(smaller, bigger).has_value();
 	}
