@@ -1,8 +1,10 @@
 //! The form in which the engine stores a leaf, and the import of an [`Automaton`] into it.
 
+use std::hash::BuildHasher;
 use std::sync::OnceLock;
 use std::time::Instant;
 
+use hashbrown::HashTable;
 use indexmap::IndexSet;
 use parking_lot::Mutex;
 use rustc_hash::FxBuildHasher;
@@ -36,6 +38,25 @@ impl Raw {
 		debug_assert_eq!(tuple.len(), self.arity);
 		self.edges.push((source, target));
 		self.letters.extend_from_slice(tuple);
+	}
+
+	/// Pushes a move unless `pushed`, the edges of `source` so far, has it.
+	fn push_new(
+		&mut self,
+		pushed: &mut HashTable<usize>,
+		source: StateId,
+		tuple: &[Symbol],
+		target: StateId,
+	) {
+		let hash = FxBuildHasher.hash_one((tuple, target));
+		let same = |&edge: &usize| self.edges[edge].1 == target && self.tuple(edge) == tuple;
+		if pushed.find(hash, same).is_some() {
+			return;
+		}
+
+		let rehash = |&edge: &usize| FxBuildHasher.hash_one((self.tuple(edge), self.edges[edge].1));
+		pushed.insert_unique(hash, self.edges.len(), rehash);
+		self.push(source, tuple, target);
 	}
 
 	fn tuple(&self, edge: usize) -> &[Symbol] {
@@ -80,12 +101,15 @@ impl Leaf {
 		let mut wrong_width = None;
 		// The states that silent moves reach from `first`; also the worklist.
 		let mut closure: IndexSet<A::State, FxBuildHasher> = IndexSet::default();
+		// The moves of `first` pushed so far, as edges of `raw`, so that a move shared along the closure is pushed once.
+		let mut pushed: HashTable<usize> = HashTable::new();
 		let mut next = 0;
 		while let Some(&first) = states.get_index(next) {
 			let source = StateId::new(next);
 			next += 1;
 			closure.clear();
 			closure.insert(first);
+			pushed.clear();
 
 			let mut is_final = false;
 			let mut member = 0;
@@ -98,7 +122,8 @@ impl Leaf {
 					} else if arity > 0 && tuple.iter().all(|&symbol| symbol == Symbol::EPSILON) {
 						closure.insert(target);
 					} else {
-						raw.push(source, tuple, StateId::new(states.insert_full(target).0));
+						let target = StateId::new(states.insert_full(target).0);
+						raw.push_new(&mut pushed, source, tuple, target);
 					}
 				});
 			}
