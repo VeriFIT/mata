@@ -171,8 +171,13 @@ std::string_view kept_name(mata::IntermediateAut& aut, const std::string_view na
 	return aut.name_store->store(name);
 }
 
-mata::FormulaNode
-	create_node(mata::IntermediateAut& mata, const std::string_view token, const bool quoted, size_t& names_hint) {
+mata::FormulaNode create_node(
+	mata::IntermediateAut& mata,
+	const std::string_view token,
+	const bool quoted,
+	size_t& names_hint,
+	const bool state_position = false
+) {
 	// A node keeps a view of its name, so the name has to live as long as the automaton does.
 	const std::string_view raw{kept_name(mata, token, names_hint)};
 
@@ -202,6 +207,11 @@ mata::FormulaNode
 		return {mata::FormulaNode::Type::Operand, raw, mata::FormulaNode::OperandType::True};
 	} else if (token.starts_with('\\') && token == "\\false"sv) {
 		return {mata::FormulaNode::Type::Operand, raw, mata::FormulaNode::OperandType::False};
+	} else if (state_position && (is_naming_marker(mata.state_naming) || is_naming_auto(mata.state_naming))) {
+		return {
+			mata::FormulaNode::Type::Operand, raw, mata::FormulaNode::OperandType::State,
+			is_naming_marker(mata.state_naming) && token.starts_with('q')
+		};
 	} else if (is_naming_enum(mata.state_naming) && mata.states_names.contains(std::string{token})) {
 		return {mata::FormulaNode::Type::Operand, raw, mata::FormulaNode::OperandType::State};
 	} else if (is_naming_enum(mata.node_naming) && mata.nodes_names.contains(std::string{token})) {
@@ -248,7 +258,10 @@ struct FormulaBuffers {
  * @param buffers Buffers whose @c postfix the postfix notation is appended to
  */
 void infix_to_postfix(
-	mata::IntermediateAut& aut, const std::span<const mata::parser::BodyToken> tokens, FormulaBuffers& buffers
+	mata::IntermediateAut& aut,
+	const std::span<const mata::parser::BodyToken> tokens,
+	FormulaBuffers& buffers,
+	const bool state_position = false
 ) {
 	std::vector<mata::FormulaNode>& opstack{buffers.opstack};
 	std::vector<mata::FormulaNode>& output{buffers.postfix};
@@ -256,7 +269,9 @@ void infix_to_postfix(
 	output.reserve(output.size() + tokens.size());
 
 	for (const mata::parser::BodyToken& token : tokens) {
-		switch (mata::FormulaNode node = create_node(aut, token.token, token.quoted, buffers.names_hint); node.type) {
+		switch (mata::FormulaNode node =
+					create_node(aut, token.token, token.quoted, buffers.names_hint, state_position);
+				node.type) {
 			case mata::FormulaNode::Type::Operand:
 				output.emplace_back(std::move(node));
 				break;
@@ -297,10 +312,11 @@ void infix_to_postfix(
 }
 
 /// Transforms @p tokens to postfix notation, see @c infix_to_postfix().
-std::vector<mata::FormulaNode>
-	infix_to_postfix(mata::IntermediateAut& aut, const std::span<const mata::parser::BodyToken> tokens) {
+std::vector<mata::FormulaNode> infix_to_postfix(
+	mata::IntermediateAut& aut, const std::span<const mata::parser::BodyToken> tokens, const bool state_position = false
+) {
 	FormulaBuffers buffers;
-	infix_to_postfix(aut, tokens, buffers);
+	infix_to_postfix(aut, tokens, buffers, state_position);
 	return std::move(buffers.postfix);
 }
 
@@ -353,7 +369,7 @@ void parse_transition(mata::IntermediateAut& aut, const mata::parser::BodyLine& 
 		);
 	}
 	size_t& names_hint{buffers.names_hint};
-	mata::FormulaNode lhs = create_node(aut, tokens[0].token, tokens[0].quoted, names_hint);
+	mata::FormulaNode lhs = create_node(aut, tokens[0].token, tokens[0].quoted, names_hint, true);
 	const std::span<const mata::parser::BodyToken> rhs{std::span{tokens}.subspan(1)};
 
 	std::vector<mata::FormulaNode>& postfix{buffers.postfix};
@@ -376,12 +392,12 @@ void parse_transition(mata::IntermediateAut& aut, const mata::parser::BodyLine& 
 				mata::FormulaNode::Type::Operand, kept_name(aut, rhs[0].token, names_hint),
 				mata::FormulaNode::OperandType::Symbol
 			);
-			postfix.emplace_back(create_node(aut, rhs[1].token, rhs[1].quoted, names_hint));
+			postfix.emplace_back(create_node(aut, rhs[1].token, rhs[1].quoted, names_hint, true));
 		} else {
 			// This is a case where rhs state is not separated by a conjunction from the rest of the transitions.
 			const mata::parser::BodyToken& last_token{rhs.back()};
 			infix_to_postfix(aut, rhs.first(rhs.size() - 1), buffers);
-			postfix.emplace_back(create_node(aut, last_token.token, last_token.quoted, names_hint));
+			postfix.emplace_back(create_node(aut, last_token.token, last_token.quoted, names_hint, true));
 		}
 
 		postfix.emplace_back(mata::FormulaNode::Type::Operator, "&", mata::FormulaNode::OperatorType::And);
@@ -442,14 +458,14 @@ mata::IntermediateAut mf_to_aut(const mata::parser::ParsedSection& section) {
 	};
 	for (const auto& [key, symbol_names] : section.dict) {
 		if (key.starts_with("Initial")) {
-			auto postfix = infix_to_postfix(aut, dict_tokens(symbol_names));
+			auto postfix = infix_to_postfix(aut, dict_tokens(symbol_names), true);
 			if (no_operators(postfix)) {
 				aut.initial_enumerated = true;
 				postfix = add_disjunction_implicitly(std::move(postfix));
 			}
 			aut.initial_formula = mata::FormulaGraph::from_postfix(postfix);
 		} else if (key.starts_with("Final")) {
-			auto postfix = infix_to_postfix(aut, dict_tokens(symbol_names));
+			auto postfix = infix_to_postfix(aut, dict_tokens(symbol_names), true);
 			if (no_operators(postfix)) {
 				postfix = add_disjunction_implicitly(std::move(postfix));
 				aut.final_enumerated = true;
