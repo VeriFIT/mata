@@ -103,10 +103,18 @@ impl Default for Formula {
 
 impl Formula {
 	/// An empty formula.
+	///
+	/// # Panics
+	///
+	/// If 2³² − 1 formulas have already been created in this process; reusing an id would let a term of an earlier
+	/// formula pass as one of the new formula.
 	#[must_use]
 	pub fn new() -> Formula {
+		let id = NEXT_FORMULA
+			.try_update(Ordering::Relaxed, Ordering::Relaxed, |id| id.checked_add(1))
+			.expect("formula ids exhausted");
 		Formula {
-			id: NEXT_FORMULA.fetch_add(1, Ordering::Relaxed),
+			id,
 			nodes: TiVec::default(),
 			arities: TiVec::default(),
 			pads: TiVec::default(),
