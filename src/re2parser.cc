@@ -235,8 +235,10 @@ mata::nfa::Nfa mata::parser::create_nfa(const std::string& pattern, const Re2Opt
 	);
 	const std::int64_t budget{options.max_mem > 0 ? options.max_mem : regex_parser.options.max_mem()};
 	// Keep (2 * budget) / 3 exact without overflowing at a caller-selected INT64_MAX budget.
-	const auto program =
-		std::unique_ptr<re2::Prog>(parsed_regex->CompileToProg(budget / 3 * 2 + ((budget % 3) * 2) / 3));
+	const std::int64_t scaled_budget{budget / 3 * 2 + ((budget % 3) * 2) / 3};
+	// Zero is RE2's default-budget sentinel, not a valid result of a positive caller override.
+	const std::int64_t compile_budget{options.max_mem > 0 && scaled_budget == 0 ? 1 : scaled_budget};
+	const auto program = std::unique_ptr<re2::Prog>(parsed_regex->CompileToProg(compile_budget));
 	if (program == nullptr) {
 		throw std::invalid_argument("Error compiling the regular expression: it exceeds RE2's memory budget");
 	}

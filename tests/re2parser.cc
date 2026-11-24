@@ -2051,6 +2051,12 @@ TEST_CASE("mata::parser::create_nfa() accepts a caller-selected memory budget") 
 	negative_budget_options.max_mem = -1;
 	CHECK(are_equivalent(default_automaton, mata::parser::create_nfa("ab", negative_budget_options)));
 
+	Re2Options tiny_options{default_options};
+	tiny_options.max_mem = 1;
+	CHECK_THROWS_WITH(
+		mata::parser::create_nfa("a{1000}", tiny_options), Catch::Matchers::ContainsSubstring("memory budget")
+	);
+
 	Re2Options limited_options{default_options};
 	limited_options.max_mem = 1'024;
 	CHECK_THROWS_WITH(
