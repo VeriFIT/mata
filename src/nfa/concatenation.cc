@@ -125,14 +125,6 @@ Nfa concatenate_eps_consuming(
 	}
 	result.add_state(static_cast<State>(result_num_of_states - 1));
 
-	// The epsilon transitions lead from lhs original finals to shifted rhs initials.
-	std::vector<State> shifted_rhs_initials{};
-	shifted_rhs_initials.reserve(rhs.initial.size());
-	for (const State rhs_initial_state : rhs.initial) {
-		shifted_rhs_initials.push_back(static_cast<State>(lhs_states_num) + rhs_initial_state);
-	}
-	std::ranges::sort(shifted_rhs_initials);
-
 	if (!use_epsilon) {
 		// When neither operand has an existing transition over the connecting epsilon, concatenate without ever
 		//  materialising the epsilon connector and feeding it to global epsilon removal. Otherwise the old global
@@ -140,31 +132,23 @@ Nfa concatenate_eps_consuming(
 		//  over that symbol.
 		if (!delta_has_epsilon_post(result.delta, epsilon)) {
 			// Shifted rhs initials are strictly past lhs originals: no target post aliasing during merging.
-			bool add_lhs_finals{false};
-			for (const State rhs_initial_state : rhs.initial) {
-				if (rhs.final.contains(rhs_initial_state)) {
-					add_lhs_finals = true;
-					break;
-				}
-			}
-			for (const State lhs_final_state : lhs_final_states) {
-				for (const State shifted_rhs_initial : shifted_rhs_initials) {
-					const StatePost& initial_post{result.delta[shifted_rhs_initial]};
-					for (const SymbolPost& symbol_post : initial_post) {
-						// One set union per symbol per pair rather than one add per target.
-						result.delta.add(lhs_final_state, SymbolPost{symbol_post});
-					}
-				}
-				if (add_lhs_finals) { result.final.insert(lhs_final_state); }
-			}
-			for (const State rhs_final_state : rhs.final) {
-				result.final.insert(static_cast<State>(lhs_states_num) + rhs_final_state);
-			}
+			result.final = internal::connect_concatenation(
+				result.delta, lhs_final_states, rhs.initial, rhs.final, static_cast<State>(lhs_states_num),
+				result_num_of_states
+			);
 			if constexpr (consume_rhs) { rhs = Nfa{}; }
 			drop_unused_trailing_state_posts(result.delta);
 			return result;
 		}
 	}
+
+	// The epsilon transitions lead from lhs original finals to shifted rhs initials.
+	std::vector<State> shifted_rhs_initials{};
+	shifted_rhs_initials.reserve(rhs.initial.size());
+	for (const State rhs_initial_state : rhs.initial) {
+		shifted_rhs_initials.push_back(static_cast<State>(lhs_states_num) + rhs_initial_state);
+	}
+	std::ranges::sort(shifted_rhs_initials);
 
 	for (const State lhs_final_state : lhs_final_states) {
 		result.delta.add(lhs_final_state, epsilon, std::span<const State>{shifted_rhs_initials});
