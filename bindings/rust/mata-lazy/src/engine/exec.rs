@@ -348,6 +348,7 @@ impl Rewriter<'_> {
 
 		if kept.len() == 1
 			&& !self.is_marked(base)
+			&& self.order(base) == Order::Auto
 			&& let Node::Intersection(p, q) = self.formula.nodes[base]
 			&& self.formula.arities[base] == 2
 		{
@@ -366,6 +367,7 @@ impl Rewriter<'_> {
 	/// `{w | w ∈ u, (w, w) ∈ x}`.
 	fn decide_diagonal(&self, u: NodeId, x: NodeId) -> Decision {
 		if !self.is_marked(x)
+			&& self.order(x) == Order::Auto
 			&& let Node::Sync(a, b, spec) = &self.formula.nodes[x]
 			&& let [first, second] = *spec.layout
 			&& first.peer.is_none()

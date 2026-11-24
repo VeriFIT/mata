@@ -757,10 +757,17 @@ impl<'f> Engine<'f> {
 			.exec
 			.sources
 			.iter()
-			.map(|&(node, id)| NodeStats {
-				term: self.formula.term(node),
-				macrostates: self.stores[self.exec.owner(id)].len(),
-				posts: self.post_counts[id],
+			.map(|&(node, id)| {
+				let mut counted = id;
+				while let Op::Transparent(child) = self.exec.nodes[counted].op {
+					counted = child;
+				}
+
+				NodeStats {
+					term: self.formula.term(node),
+					macrostates: self.stores[self.exec.owner(id)].len(),
+					posts: self.post_counts[counted],
+				}
 			})
 			.collect();
 

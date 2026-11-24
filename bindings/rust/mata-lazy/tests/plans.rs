@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use mata_lazy::{
 	AllEager, AllLazy, Annotation, Automaton, Error, Eval, Formula, Heuristic, NodeKind, Options,
-	Order, Outcome, Plan, PlanView, Policy, Symbol, Term,
+	Order, Outcome, Plan, PlanView, Policy, Symbol, Tape, Term,
 };
 use rand::rngs::StdRng;
 use rand::{RngExt, SeedableRng};
@@ -441,6 +441,20 @@ fn one_at(index: u32, length: u32) -> Tuples {
 	}
 }
 
+/// `project(identity(u) ∩ (a × b), [0])`, with both products eligible for diagonal rewrites.
+fn diagonal_projection() -> Result<(Formula, Term, Term, Term), Error> {
+	let mut formula = Formula::new();
+	let u = formula.leaf(&Tuples::bounded(1))?;
+	let a = formula.leaf(&one_at(2, 3))?;
+	let b = formula.leaf(&Tuples::bounded(1))?;
+	let identity = formula.identity(u)?;
+	let product = formula.sync_product(a, b, &[], &[Tape::Lhs(0), Tape::Rhs(0)])?;
+	let intersection = formula.intersection(identity, product)?;
+	let projection = formula.project(intersection, &[0])?;
+
+	Ok((formula, projection, intersection, product))
+}
+
 /// `(a ∩ b) ∩ c` with small `a` and `b` and a larger `c`.
 fn two_intersections() -> Result<(Formula, [Term; 5]), Error> {
 	let mut formula = Formula::new();
@@ -572,6 +586,14 @@ fn plans_override_explicit_nodes_and_options() -> Result<(), Error> {
 
 	// A budget below the size of `a ∩ b` keeps it lazy.
 	let tight = Plan::new().annotate(ab, Annotation::eager_within(1));
+	let fallback = formula.check(abc, &options.clone().plan(tight.clone()))?;
+	assert!(
+		fallback
+			.stats
+			.nodes
+			.iter()
+			.any(|node| node.term == ab && node.posts > 0)
+	);
 	assert_eq!(built(&Options::new().plan(tight), abc)?, [(ab, true)]);
 
 	Ok(())
@@ -602,6 +624,49 @@ fn an_operand_order_needs_a_product() -> Result<(), Error> {
 	let foreign = Options::new().plan(Plan::new().annotate(other, Annotation::lazy()));
 	assert_eq!(formula.check(abc, &foreign), Err(Error::ForeignTerm));
 
+	Ok(())
+}
+
+#[test]
+fn a_fixed_intersection_order_survives_diagonal_rewriting() -> Result<(), Error> {
+	let (formula, projection, intersection, _) = diagonal_projection()?;
+	let check = |order| {
+		formula.check(
+			projection,
+			&Options::new()
+				.plan(Plan::new().annotate(intersection, Annotation::default().order(order))),
+		)
+	};
+	let automatic = check(Order::Auto)?;
+	let written = check(Order::AsWritten)?;
+	let swapped = check(Order::Swapped)?;
+
+	assert!(!automatic.is_empty());
+	assert!(!written.is_empty());
+	assert!(!swapped.is_empty());
+	assert_eq!(written.stats, swapped.stats);
+	assert_ne!(automatic.stats, written.stats);
+	Ok(())
+}
+
+#[test]
+fn a_fixed_sync_order_survives_diagonal_fusion() -> Result<(), Error> {
+	let (formula, projection, _, product) = diagonal_projection()?;
+	let check = |order| {
+		formula.check(
+			projection,
+			&Options::new().plan(Plan::new().annotate(product, Annotation::default().order(order))),
+		)
+	};
+	let automatic = check(Order::Auto)?;
+	let written = check(Order::AsWritten)?;
+	let swapped = check(Order::Swapped)?;
+
+	assert!(!automatic.is_empty());
+	assert!(!written.is_empty());
+	assert!(!swapped.is_empty());
+	assert_eq!(written.stats, swapped.stats);
+	assert_ne!(automatic.stats, written.stats);
 	Ok(())
 }
 
