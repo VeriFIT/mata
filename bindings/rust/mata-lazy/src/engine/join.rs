@@ -238,7 +238,7 @@ fn shapes(exec: &Exec<'_>) -> TiVec<ExecId, Shape> {
 					wild: vec![false; arity],
 				},
 			},
-			Op::Transparent(child) => shapes[*child].clone(),
+			Op::Transparent(child) | Op::Prefixes(child) => shapes[*child].clone(),
 		};
 
 		shapes.push(shape);

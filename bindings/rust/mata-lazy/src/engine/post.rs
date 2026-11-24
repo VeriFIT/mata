@@ -334,6 +334,30 @@ impl Post {
 		self.targets.len()
 	}
 
+	/// The same moves, each target accepting as `accepting` decides, or the limit that it passed.
+	pub(super) fn reflagged(
+		&self,
+		mut accepting: impl FnMut(Target) -> Result<bool, Limit>,
+	) -> Result<Post, Limit> {
+		let letters = match &self.letters {
+			Letters::Owned(letters) => Letters::Owned(letters.clone()),
+			Letters::Shared(table) => Letters::Shared(Rc::clone(table)),
+		};
+		let targets = (0..self.len())
+			.map(|index| {
+				let target = self.target(index);
+
+				Ok(target.state.pack(accepting(target)?))
+			})
+			.collect::<Result<Vec<u32>, Limit>>()?;
+
+		Ok(Post {
+			arity: self.arity,
+			letters,
+			targets,
+		})
+	}
+
 	/// The bytes it takes, without a shared table.
 	fn bytes(&self) -> usize {
 		let letters = match &self.letters {
@@ -699,6 +723,7 @@ impl Engine<'_> {
 			Op::Identity(child) => self.identity_post(node, child, state),
 			Op::Project(child, tapes) => self.project_post(node, child, &tapes, state),
 			Op::PadClosure(child, pad) => self.pad_closure_post(node, child, &pad, state),
+			Op::Prefixes(child) => self.prefixes_post(node, child, state),
 			Op::Explicit { .. } | Op::Transparent(_) => {
 				unreachable!("explicit nodes are replaced before the search")
 			}

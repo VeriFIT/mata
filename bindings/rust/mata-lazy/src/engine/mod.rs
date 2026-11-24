@@ -8,7 +8,9 @@
 //! 3. Explicit nodes, children first, are explored completely, numbered densely, trimmed and replaced by the
 //!    leaf they give. The formula keeps that leaf for later queries, keyed by the node and the alphabets below
 //!    it. A node whose exploration passes its `max_states` stays lazy.
-//! 4. The search explores the root's macrostates depth first until one accepts, and returns the path to it.
+//! 4. The search explores the root's macrostates depth first (breadth first for the fewest steps) until one
+//!    accepts, and returns the path to it. Under a length bound it expands no macrostate reached in that many
+//!    steps, and expands one again when it reaches it in fewer steps than before.
 //!
 //! | Node | Macrostate | Accepting | Successors |
 //! |---|---|---|---|
@@ -17,6 +19,7 @@
 //! | intersection, sync product, diagonal | (state, state) | both | pairs of moves whose tuples merge, once each when the product drops tapes |
 //! | complement | a minimized set of child states | no member | one move per tuple of the alphabets |
 //! | identity, projection | the child's | the child's | the child's moves, relabelled |
+//! | prefix closure | the child's | it reaches an accepting one (`prefixes`) | the child's moves |
 //!
 //! # Successors
 //!
@@ -64,9 +67,11 @@ mod join;
 mod memo;
 mod pad;
 mod post;
+mod prefixes;
 mod store;
 mod subsumption;
 
+use std::collections::VecDeque;
 use std::collections::hash_map::Entry;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -155,11 +160,31 @@ impl ExplicitCache {
 	}
 }
 
-/// How the search first reached a macrostate, from `parent` by the tuple at `offset` in its tuple buffer.
+/// How the search reached a macrostate, from `parent` by the tuple at `offset` in its tuple buffer.
 #[derive(Clone, Copy, Debug)]
 struct Step {
 	parent: StateId,
 	offset: usize,
+}
+
+/// How the search last reached a macrostate: in `depth` steps, by `step` unless it is initial.
+#[derive(Clone, Copy, Debug)]
+struct Reached {
+	step: Option<Step>,
+	depth: usize,
+}
+
+/// The state of the search of the root.
+#[derive(Debug)]
+struct Search<'f> {
+	antichain: Option<Antichain<'f>>,
+	reached: FxHashMap<StateId, Reached>,
+	/// The tuples of the steps, `arity` symbols each.
+	tuples: Vec<Symbol>,
+	/// The macrostates to expand and the steps that reached them; a stack, or a queue breadth first.
+	work: VecDeque<(StateId, usize)>,
+	/// Whether a macrostate was left unexpanded at the length bound.
+	bounded: bool,
 }
 
 #[derive(Debug)]
@@ -169,8 +194,9 @@ pub(crate) struct Engine<'f> {
 	alphabets: Alphabets,
 	stores: TiVec<ExecId, Store>,
 	posts: TiVec<ExecId, Vec<Option<Rc<Post>>>>,
-	/// The root and the nodes sharing its macrostates expand each macrostate once, so they keep no posts. An
-	/// identity relabels its child's post, which is kept, as a copy would double it.
+	/// The root and the nodes sharing its macrostates expand each macrostate once, so they keep no posts, down to a
+	/// prefix closure, which searches its child. An identity relabels its child's post, which is kept, as a copy
+	/// would double it.
 	cached: TiVec<ExecId, bool>,
 	/// The tuples of the posts of each complement node, and of each identity of one.
 	tables: TiVec<ExecId, Option<Rc<Table>>>,
@@ -185,6 +211,8 @@ pub(crate) struct Engine<'f> {
 	union_starts: TiVec<ExecId, Option<Rc<[usize]>>>,
 	/// Per node, whether one of its initial macrostates accepts, once asked.
 	accepting_initials: TiVec<ExecId, Option<bool>>,
+	/// Per prefix closure, whether the macrostates of its child it asked about reach an accepting one.
+	live: TiVec<ExecId, FxHashMap<StateId, bool>>,
 	/// What each product's join may skip.
 	plans: TiVec<ExecId, JoinPlan>,
 	join_scratch: Scratch,
@@ -192,6 +220,10 @@ pub(crate) struct Engine<'f> {
 	subsumption: Subsumption,
 	/// Whether the search keeps an antichain of the root's macrostates.
 	antichain: bool,
+	/// The most steps of a witness.
+	max_length: Option<usize>,
+	/// Whether the search goes breadth first, for a witness of the fewest steps.
+	shortest: bool,
 	/// Whether the posts of each complement node use bitsets over its child's states.
 	dense: TiVec<ExecId, Option<Box<Dense>>>,
 	/// The steps and reachability that each pad closure remembers.
@@ -245,6 +277,9 @@ impl<'f> Engine<'f> {
 			.collect();
 		for node in exec.sharing(exec.root) {
 			cached[node] = false;
+			if matches!(exec.nodes[node].op, Op::Prefixes(_)) {
+				break;
+			}
 		}
 
 		let plans = join::plans(&exec);
@@ -271,11 +306,14 @@ impl<'f> Engine<'f> {
 			initials: vec![None; num_nodes].into(),
 			union_starts: vec![None; num_nodes].into(),
 			accepting_initials: vec![None; num_nodes].into(),
+			live: vec![FxHashMap::default(); num_nodes].into(),
 			plans,
 			join_scratch: Scratch::default(),
 			join_buffers: JoinBuffers::default(),
 			subsumption: Subsumption::new(options.subsumption, num_nodes, budget.deadline()),
 			antichain: options.subsumption && options.antichain,
+			max_length: options.max_length,
+			shortest: options.shortest,
 			dense,
 			pad_steps: (0..num_nodes).map(|_| pad::PadSteps::default()).collect(),
 			budget,
@@ -466,93 +504,167 @@ impl<'f> Engine<'f> {
 		Ok(Explored::Done(raw))
 	}
 
-	/// Searches the root for an accepting macrostate, depth first, skipping subsumed macrostates.
-	pub(crate) fn search(&mut self) -> Result<Option<Witness>, Error> {
+	/// Searches the root for an accepting macrostate, skipping subsumed macrostates; returns the witness, or `None`
+	/// and whether a macrostate was left unexpanded at the length bound.
+	pub(crate) fn search(&mut self) -> Result<(Option<Witness>, bool), Error> {
 		self.find_accepting()
 			.map_err(|limit| self.limit_error(limit))
 	}
 
-	fn find_accepting(&mut self) -> Result<Option<Witness>, Limit> {
+	fn find_accepting(&mut self) -> Result<(Option<Witness>, bool), Limit> {
 		let root = self.exec.root;
-		let mut antichain = self.antichain.then(|| Antichain::new(&self.exec));
-		let mut parents: FxHashMap<StateId, Option<Step>> = FxHashMap::default();
-		let mut tuples: Vec<Symbol> = Vec::new();
-		let mut work = Vec::new();
+		let arity = self.exec.nodes[root].arity;
+		// Under a bound or for the fewest steps, a macrostate is only below one reached in at most as many steps.
+		let by_depth = self.max_length.is_some() || self.shortest;
+		let mut search = Search {
+			antichain: self.antichain.then(|| Antichain::new(&self.exec, by_depth)),
+			reached: FxHashMap::default(),
+			tuples: Vec::new(),
+			work: VecDeque::new(),
+			bounded: false,
+		};
 
 		// An accepting initial macrostate gives the witness ε; with more than are listed, it is asked for first.
 		if !self.is_listed(root) && self.has_accepting_initial(root)? {
-			return Ok(Some(Witness::new(self.exec.nodes[root].arity, Vec::new())));
+			return Ok((Some(Witness::new(arity, Vec::new())), false));
 		}
 
-		// The initial macrostates in batches, each searched depth first before the next is numbered.
+		// The initial macrostates in batches, each searched depth first before the next is numbered; breadth first,
+		// they all start the first level.
 		for batch in self.search_order(root) {
 			for index in batch {
 				let target = self.initial_at(root, index)?;
 				if target.accepting {
-					return Ok(Some(Witness::new(self.exec.nodes[root].arity, Vec::new())));
+					return Ok((Some(Witness::new(arity, Vec::new())), false));
 				}
 
-				if let Entry::Vacant(entry) = parents.entry(target.state) {
-					entry.insert(None);
-					self.enqueue(antichain.as_mut(), &mut work, target.state);
-					self.stopped()?;
+				let initial = Reached {
+					step: None,
+					depth: 0,
+				};
+				match search.reached.entry(target.state) {
+					Entry::Vacant(entry) => {
+						entry.insert(initial);
+					}
+					// Reached from an earlier batch, in more steps.
+					Entry::Occupied(mut entry)
+						if self.max_length.is_some() && entry.get().depth > 0 =>
+					{
+						entry.insert(initial);
+					}
+					Entry::Occupied(_) => continue,
 				}
+
+				self.enqueue(&mut search, target.state, 0);
+				self.stopped()?;
 			}
 
-			while let Some(state) = work.pop() {
-				if antichain
-					.as_ref()
-					.is_some_and(|antichain| antichain.is_pruned(state))
-				{
-					continue;
-				}
-
-				self.budget.step(0);
-				self.stopped()?;
-
-				let post = self.post(root, state)?;
-				self.stats.explored += 1;
-				for (tuple, target) in post.iter() {
-					if target.accepting {
-						return Ok(Some(self.witness(&parents, &tuples, state, tuple)));
-					}
-
-					let Entry::Vacant(entry) = parents.entry(target.state) else {
-						continue;
-					};
-
-					entry.insert(Some(Step {
-						parent: state,
-						offset: tuples.len(),
-					}));
-					tuples.extend_from_slice(tuple);
-					self.enqueue(antichain.as_mut(), &mut work, target.state);
-					self.stopped()?;
-				}
+			if !self.shortest
+				&& let Some(witness) = self.expand(&mut search)?
+			{
+				return Ok((Some(witness), false));
 			}
 		}
 
-		Ok(None)
+		let witness = self.expand(&mut search)?;
+		let bounded = witness.is_none() && search.bounded;
+
+		Ok((witness, bounded))
 	}
 
-	/// Pushes `state` to `work` unless the antichain prunes it.
-	fn enqueue(
-		&mut self,
-		antichain: Option<&mut Antichain<'f>>,
-		work: &mut Vec<StateId>,
-		state: StateId,
-	) {
-		let added = match antichain {
+	/// Expands the macrostates of the search's work until one has an accepting successor, which gives the witness.
+	fn expand(&mut self, search: &mut Search<'f>) -> Result<Option<Witness>, Limit> {
+		let root = self.exec.root;
+		loop {
+			let next = if self.shortest {
+				search.work.pop_front()
+			} else {
+				search.work.pop_back()
+			};
+			let Some((state, depth)) = next else {
+				return Ok(None);
+			};
+
+			// Reached again in fewer steps since it was pushed, or dropped from the antichain.
+			if search.reached[&state].depth < depth
+				|| search
+					.antichain
+					.as_ref()
+					.is_some_and(|antichain| antichain.is_pruned(state))
+			{
+				continue;
+			}
+
+			if self
+				.max_length
+				.is_some_and(|max_length| depth >= max_length)
+			{
+				search.bounded = true;
+				continue;
+			}
+
+			self.budget.step(0);
+			self.stopped()?;
+
+			let post = self.post(root, state)?;
+			self.stats.explored += 1;
+			for (tuple, target) in post.iter() {
+				if target.accepting {
+					return Ok(Some(self.witness(
+						&search.reached,
+						&search.tuples,
+						state,
+						tuple,
+					)));
+				}
+
+				let reached = Reached {
+					step: Some(Step {
+						parent: state,
+						offset: search.tuples.len(),
+					}),
+					depth: depth + 1,
+				};
+				match search.reached.entry(target.state) {
+					Entry::Vacant(entry) => {
+						entry.insert(reached);
+					}
+					// Depth first under a bound, a macrostate reached in fewer steps is expanded again, as more of its
+					// successors are within the bound. Breadth first, the first steps are the fewest.
+					Entry::Occupied(mut entry)
+						if self.max_length.is_some() && entry.get().depth > depth + 1 =>
+					{
+						entry.insert(reached);
+					}
+					Entry::Occupied(_) => continue,
+				}
+
+				search.tuples.extend_from_slice(tuple);
+				self.enqueue(search, target.state, depth + 1);
+				self.stopped()?;
+			}
+		}
+	}
+
+	/// Adds `state`, reached in `depth` steps, to the search's work unless the antichain prunes it.
+	fn enqueue(&mut self, search: &mut Search<'f>, state: StateId, depth: usize) {
+		let added = match &mut search.antichain {
 			Some(antichain) => {
 				self.budget.step(0);
 
-				antichain.insert(&self.exec, &self.stores, &mut self.subsumption, state)
+				antichain.insert(
+					&self.exec,
+					&self.stores,
+					&mut self.subsumption,
+					state,
+					depth,
+				)
 			}
 			None => true,
 		};
 
 		if added {
-			work.push(state);
+			search.work.push_back((state, depth));
 		} else {
 			self.stats.pruned += 1;
 		}
@@ -561,7 +673,7 @@ impl<'f> Engine<'f> {
 	/// The word to `state` and then `last`, with each wildcard as the first symbol of its tape.
 	fn witness(
 		&self,
-		parents: &FxHashMap<StateId, Option<Step>>,
+		reached: &FxHashMap<StateId, Reached>,
 		tuples: &[Symbol],
 		mut state: StateId,
 		last: &[Symbol],
@@ -569,7 +681,12 @@ impl<'f> Engine<'f> {
 		let root = self.exec.root;
 		let arity = self.exec.nodes[root].arity;
 		let mut steps = vec![last];
-		while let Some(&Some(Step { parent, offset })) = parents.get(&state) {
+		// Each step leads to a macrostate reached in more steps than its parent, so the walk ends.
+		while let Some(&Reached {
+			step: Some(Step { parent, offset }),
+			..
+		}) = reached.get(&state)
+		{
 			steps.push(&tuples[offset..offset + arity]);
 			state = parent;
 		}

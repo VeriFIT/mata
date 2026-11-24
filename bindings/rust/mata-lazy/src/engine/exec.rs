@@ -8,7 +8,7 @@
 //!   to all tapes in order is dropped;
 //! - `project(id(U) ∩ X, [i])` becomes one diagonal node, or `U ∩ X'` when `X` is a sync product of a tape of
 //!   each operand, where `X'` also synchronizes those two tapes, so it builds only the moves that the diagonal keeps;
-//! - `op(X, X) = X`, and structurally equal nodes are built once;
+//! - `op(X, X) = X`, `prefixes(prefixes(X)) = prefixes(X)`, and structurally equal nodes are built once;
 //! - the cheaper operand of a union or intersection goes left.
 //!
 //! Explicit nodes stop the rewrites from looking into them.
@@ -68,6 +68,8 @@ pub(crate) enum Op<'f> {
 	},
 	/// An explicit node that stayed lazy, whose macrostates are its child's.
 	Transparent(ExecId),
+	/// The prefix closure, whose macrostates are its child's, accepting when they reach an accepting one.
+	Prefixes(ExecId),
 }
 
 impl Op<'_> {
@@ -83,7 +85,8 @@ impl Op<'_> {
 			| Op::Project(a, _)
 			| Op::PadClosure(a, _)
 			| Op::Explicit { child: a, .. }
-			| Op::Transparent(a) => ([Some(*a), None], &[]),
+			| Op::Transparent(a)
+			| Op::Prefixes(a) => ([Some(*a), None], &[]),
 		};
 
 		operands
@@ -95,7 +98,10 @@ impl Op<'_> {
 	/// The child whose macrostates this node shares, if any.
 	pub(crate) fn transparent_child(&self) -> Option<ExecId> {
 		match *self {
-			Op::Identity(child) | Op::Project(child, _) | Op::Transparent(child) => Some(child),
+			Op::Identity(child)
+			| Op::Project(child, _)
+			| Op::Transparent(child)
+			| Op::Prefixes(child) => Some(child),
 			_ => None,
 		}
 	}
@@ -173,6 +179,7 @@ enum Decision {
 	DiagonalSync(Src, Src, Src, Arc<SyncSpec>),
 	Sync(Src, Src, Arc<SyncSpec>),
 	Explicit(Src, ExplicitOptions, NodeId),
+	Prefixes(Src),
 }
 
 impl Decision {
@@ -184,7 +191,8 @@ impl Decision {
 			| Decision::Identity(s)
 			| Decision::Project(s, _)
 			| Decision::PadClosure(s, _)
-			| Decision::Explicit(s, ..) => vec![*s],
+			| Decision::Explicit(s, ..)
+			| Decision::Prefixes(s) => vec![*s],
 			Decision::Boolean(_, a, b)
 			| Decision::IdentityOf(_, a, b)
 			| Decision::Diagonal(a, b)
@@ -256,6 +264,7 @@ impl Rewriter<'_> {
 			Node::PadClosure(child, pad) => Decision::PadClosure(plain(*child), Arc::clone(pad)),
 			Node::Sync(a, b, spec) => Decision::Sync(plain(*a), plain(*b), Arc::clone(spec)),
 			Node::Explicit(child, options) => Decision::Explicit(plain(*child), *options, node),
+			Node::Prefixes(child) => Decision::Prefixes(plain(*child)),
 		}
 	}
 
@@ -353,6 +362,7 @@ enum Key {
 	Sync(ExecId, ExecId, Arc<SyncSpec>),
 	Diagonal(ExecId, ExecId),
 	Explicit(ExecId, NodeId),
+	Prefixes(ExecId),
 }
 
 /// Depth and log2 of a bound on the number of macrostates, to order operands.
@@ -439,6 +449,7 @@ impl<'f> Emitter<'f> {
 				self.intersection(built[u], synced)
 			}
 			Decision::Sync(a, b, spec) => self.sync(built[a], built[b], spec),
+			Decision::Prefixes(src) => self.prefixes(built[src]),
 			Decision::Explicit(src, options, origin) => {
 				self.explicit(built[src], *options, *origin)
 			}
@@ -540,6 +551,17 @@ impl<'f> Emitter<'f> {
 		let cost = self.unary_cost(child);
 
 		self.emit(Key::Identity(child), Op::Identity(child), 2, cost)
+	}
+
+	fn prefixes(&mut self, child: ExecId) -> ExecId {
+		if matches!(self.nodes[child].op, Op::Prefixes(_)) {
+			return child;
+		}
+
+		let cost = self.unary_cost(child);
+		let arity = self.nodes[child].arity;
+
+		self.emit(Key::Prefixes(child), Op::Prefixes(child), arity, cost)
 	}
 
 	fn complement(&mut self, child: ExecId) -> ExecId {
