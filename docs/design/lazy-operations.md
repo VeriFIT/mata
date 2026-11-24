@@ -1,9 +1,9 @@
 ---
 title: Lazy automata operations - use cases, Mata Script, playground and strategies
 status: draft sketch
-date: 2026-11-23
+date: 2026-11-24
 base: devel @ NZR (#1099); lazymat (to be renamed mata-lazy) as in PR #1041 @ 6316ff869b85
-related: [PR #1041]
+related: [PR #1041, PR #1107, PR #1122]
 ---
 
 # Lazy automata operations: use cases and integration (design sketch)
@@ -43,6 +43,22 @@ implement in. Each milestone is one PR.
 
 The table above describes PR #1041 as submitted, so it keeps the name `lazymat`. The rest of this document uses the
 new names.
+
+## Progress (2026-11-24)
+
+- **M0 done.** PR #1107 (superseding #1041) is merged: the engine is the crate `mata-lazy`, re-exported as
+  `mata::lazy` by the `lazy` feature of `mata`, with the Mata adapters in `mata`.
+- **PR #1122 (open)**: the crate `mata-logic` (`mata::logic`), the connectives of a `Logic` over atoms that are
+  automata over bits (`and`, `or`, `not`, `implies`, `iff`, `exists`, `forall`, `model`, `counterexample`), with
+  `Padding::Zero` (WS1S, naturals) and `Padding::Sign` (LIA). It also adds `Formula::pad_closure` to `mata-lazy`
+  (the `pad_closure` of M1), which `exists` uses. A formula without free variables is still decided when it is
+  built.
+- The LIA atoms and SMT-LIB front-end (M5) are given to a colleague, with a separate specification. The WS1S
+  front-end (M4) is not started.
+- **Padding is a node of the engine, not a composition.** A step of `mata-lazy` counts even when every kept tape
+  reads padding: after `project`, a step that only the dropped tape needed is still a step. So a closure under
+  padding cannot be written as a relation `(w, w·0ᵏ)` composed with the projection; the first version of `exists`
+  materialised the projection and closed it explicitly, and was replaced by the node.
 
 ## Naming and packaging
 
@@ -122,7 +138,7 @@ map to `mata::lazy` as follows. "New" means the operation has to be added.
 | membership                  | emptiness of `A ∩ leaf(w)` (a tuple of words for arity n) | `lazy:in-language? t w`                                 |
 | materialise                 | `materialize -> Nft`                                      | `lazy:materialize t` (`Nfa` when the arity is 1)        |
 | cylindrification (new)      | none; a special case of `sync_product` with Σ\*           | `lazy:insert-tape t i`                                  |
-| pad closure (new)           | none                                                      | `lazy:pad-closure t :symbol s`                          |
+| pad closure (#1122)         | `pad_closure(t, Pad::Step(s) \| Pad::Last)`               | `lazy:pad-closure t :step s` / `:last`                  |
 | all states final (new)      | none                                                      | `lazy:prefixes t`                                       |
 | length bound (new)          | none                                                      | `:max-length n` on queries                              |
 | per-node statistics (new)   | only `Stats.explicit`                                     | `lazy:stats` record, `:explain true`                    |
@@ -258,10 +274,10 @@ smallest end-to-end test of `compose_on`, `identity`, `project` and `explicit`, 
   limit: Gaston and MONA use BDD transitions. Record it as a risk, and keep a symbolic tape alphabet (minterms or
   BDDs over tracks) as a later extension.
 - **∃X**: `project` away X's tape, followed by the **zero-padding closure**. A WS1S model is only unique up to
-  trailing all-zero columns, so after projection a state must be final when it reaches a final state on 0-columns.
-  Without the closure, complement after projection is wrong. New node `pad_closure(t, symbol)`: the macrostate is
-  final when some state reaches a final state on words of `symbol`. This is lazy. Alternative: start with M2L-Str
-  semantics, which needs no closure, and add WS1S afterwards.
+  trailing all-zero columns, so after projection a word must be accepted when some padding with 0-columns is.
+  Without the closure, complement after projection is wrong. Done in #1122 as `pad_closure(t, Pad::Step(zeros))`:
+  a macrostate pairs a state of the child with the padding step, and a target accepts when a final state is
+  reachable from it on padding steps alone, searched lazily and memoised per state.
 - The engine already matches the lazy WS1S procedure from the same group (Fiedor, Holík, Janků, Lengál, Vojnar,
   _Lazy Automata Techniques for WS1S_, TACAS 2017, Gaston): on-the-fly subsets, subsumption and antichains. Use
   Gaston's benchmarks and results as the yardstick.
@@ -296,8 +312,8 @@ smallest end-to-end test of `compose_on`, `identity`, `project` and `explicit`, 
   many reachable ones (bounded by about `|c| + Σ|aᵢ|`), and the moves are computed. This fits the `Automaton` trait
   exactly: implement `for_each_move` arithmetically. `Leaf::import` copies the reachable part, which is finite.
 - **Sign extension** replaces WS1S's trailing zeros. A number is unique up to repeating its last (sign) column, so
-  ∃x needs the closure under repeating the last column. Make the `pad_closure` node general enough for both: closure
-  under a given set of padding columns, or under repetition of the last column.
+  ∃x needs the closure under repeating the last column: `pad_closure(t, Pad::Last)` (#1122), whose macrostates also
+  remember the last step read.
 - **Connectives** are the same as for WS1S: join, cylindrify, union, complement.
 - **Reference and comparison target**: Amaya (Habermehl, Havlena, Hečko, Holík, Lengál, _Algebraic Reasoning Meets
   Automata in Solving Linear Integer Arithmetic_, CAV 2024, arXiv 2403.18995). Its algebraic preprocessing
