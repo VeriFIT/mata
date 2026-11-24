@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use mata::{Nfa, Symbol, Word, nft::Nft};
 
@@ -225,6 +225,9 @@ pub(crate) struct Engine {
 	plan: crate::optimize::Plan,
 	/// The results of library applications, for the optimizer.
 	memo: crate::optimize::Memo,
+	/// When the run must stop, and its time limit: an error before the next top-level form, function
+	/// call or loop round once passed. A library operation that runs is not interrupted.
+	pub(crate) deadline: Option<(Instant, Duration)>,
 }
 
 /// How deeply function calls may nest; deeper recursion is an error rather than an overflow of the
@@ -297,6 +300,22 @@ impl Engine {
 			depth: 0,
 			plan: crate::optimize::Plan::default(),
 			memo: crate::optimize::Memo::default(),
+			deadline: None,
+		}
+	}
+
+	/// Fails once the run is past its deadline.
+	///
+	/// # Errors
+	///
+	/// The time limit of the run has run out.
+	fn check_deadline(&self) -> Result<(), String> {
+		match self.deadline {
+			Some((deadline, limit)) if Instant::now() >= deadline => Err(format!(
+				"the run did not finish within its time limit of {} s",
+				limit.as_secs_f64()
+			)),
+			_ => Ok(()),
 		}
 	}
 
@@ -431,7 +450,11 @@ impl Engine {
 		) {
 			self.options_open = Switch::Off;
 		}
-		self.execute_form_at(form).map_err(|mut error| {
+		let result = match self.check_deadline() {
+			Ok(()) => self.execute_form_at(form),
+			Err(message) => Err(Error::plain(message)),
+		};
+		result.map_err(|mut error| {
 			// A `recur` that failed on its way to its loop does not restart the next form.
 			self.recur = None;
 			if error.at.is_none() {
@@ -510,6 +533,7 @@ impl Engine {
 				fresh.loops_and_recursion = self.loops_and_recursion;
 				fresh.options_open = Switch::Off;
 				fresh.plan = std::mem::take(&mut self.plan);
+				fresh.deadline = self.deadline;
 				*self = fresh;
 				Ok(Value::None)
 			}
@@ -1037,6 +1061,8 @@ impl Engine {
 		self.loops.push(names.len());
 		let result = (|| {
 			loop {
+				self.check_deadline()
+					.map_err(|message| expression.at(message))?;
 				// A fresh scope per round: what the body defines belongs to that round.
 				self.scope.push();
 				let round = (|| {
@@ -1161,6 +1187,8 @@ impl Engine {
 		keywords: &[(String, Expr)],
 		expression: &Expr,
 	) -> Result<Value, Error> {
+		self.check_deadline()
+			.map_err(|message| expression.at(message))?;
 		let Value::Function(function) = function else {
 			return Err(
 				expression.at("the first element of an application must be a function".into())

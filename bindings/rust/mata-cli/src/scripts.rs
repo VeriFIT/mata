@@ -41,6 +41,8 @@ pub(crate) struct Inputs {
 	pub(crate) positional: Vec<String>,
 	pub(crate) named: HashMap<String, String>,
 	pub(crate) parameters: HashMap<String, String>,
+	/// How long the run may take; see [`Engine::deadline`](crate::eval::Engine::deadline).
+	pub(crate) time_limit: Option<std::time::Duration>,
 }
 
 /// Parses a script after reading the language version of its header, and checks the version first, so
@@ -85,6 +87,9 @@ pub(crate) fn run(
 	engine.set_inputs(positional.clone(), named);
 	engine.parameters = inputs.parameters;
 	engine.set_base_dir(base_dir);
+	engine.deadline = inputs
+		.time_limit
+		.and_then(|limit| Some((std::time::Instant::now().checked_add(limit)?, limit)));
 	if let Some(path) = output.filter(|path| *path != "-") {
 		// The script was read already, but writing over its file would still destroy it.
 		let script = match source {
