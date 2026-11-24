@@ -1497,6 +1497,8 @@ their own, which <code class="docutils literal notranslate"><span class="pre">ma
 </section>
 <section id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Link to this heading">¶</a></h2>
+<section id="regression-specifications">
+<h3>Regression specifications<a class="headerlink" href="#regression-specifications" title="Link to this heading">¶</a></h3>
 <p>A regression specification that needs no input file:</p>
 <div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="p">)</span>
 <span class="p">(</span><span class="nf">set-option</span><span class="w"> </span><span class="nv">:alphabet</span><span class="w"> </span><span class="s">"bytes"</span><span class="p">)</span>
@@ -1510,6 +1512,169 @@ their own, which <code class="docutils literal notranslate"><span class="pre">ma
 <span class="p">(</span><span class="nf">assert</span><span class="w"> </span><span class="p">(</span><span class="nb">not</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:in-language?</span><span class="w"> </span><span class="nv">minimal</span><span class="w"> </span><span class="p">(</span><span class="nf">word</span><span class="w"> </span><span class="s">"b"</span><span class="p">))))</span>
 </pre></div>
 </div>
+<p>A whole regression suite over a list of regular expressions, still without any input file. Every expression must be
+equivalent to its determinized-and-minimized form, and that form must be deterministic and minimal:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">set-option</span><span class="w"> </span><span class="nv">:alphabet</span><span class="w"> </span><span class="s">"bytes"</span><span class="p">)</span>
+
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">regexes</span><span class="w"> </span><span class="p">(</span><span class="nb">list</span><span class="w"> </span><span class="s">"a(b|c)*"</span><span class="w"> </span><span class="s">"(ab)*"</span><span class="w"> </span><span class="s">"a?b?c?"</span><span class="w"> </span><span class="s">"(a|b|c)*abc"</span><span class="p">))</span>
+
+<span class="p">(</span><span class="nf">list:map</span>
+<span class="w">  </span><span class="p">(</span><span class="k">lambda</span><span class="w"> </span><span class="p">(</span><span class="nf">re</span><span class="p">)</span>
+<span class="w">    </span><span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">parsed</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:create-from-regex</span><span class="w"> </span><span class="nv">re</span><span class="p">))</span>
+<span class="w">    </span><span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">minimized</span><span class="w"> </span><span class="p">(</span><span class="nf">-&gt;</span><span class="w"> </span><span class="nv">parsed</span><span class="w"> </span><span class="nv">nfa:determinize</span><span class="w"> </span><span class="nv">nfa:minimize</span><span class="p">))</span>
+<span class="w">    </span><span class="p">(</span><span class="nf">assert</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:equivalent?</span><span class="w"> </span><span class="nv">parsed</span><span class="w"> </span><span class="nv">minimized</span><span class="p">))</span>
+<span class="w">    </span><span class="p">(</span><span class="nf">assert</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:deterministic?</span><span class="w"> </span><span class="nv">minimized</span><span class="p">))</span>
+<span class="w">    </span><span class="p">(</span><span class="nf">assert</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:minimal?</span><span class="w"> </span><span class="nv">minimized</span><span class="p">))</span>
+<span class="w">    </span><span class="p">(</span><span class="nf">echo</span><span class="w"> </span><span class="p">(</span><span class="nf">concat</span><span class="w"> </span><span class="nv">re</span><span class="w"> </span><span class="s">": "</span><span class="w"> </span><span class="p">(</span><span class="nf">to-string</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:number-of-states</span><span class="w"> </span><span class="nv">minimized</span><span class="p">))</span><span class="w"> </span><span class="s">" states"</span><span class="p">)))</span>
+<span class="w">  </span><span class="nv">regexes</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The same suite written against automata built by <code class="docutils literal notranslate"><span class="pre">nfa:literal</span></code>, so the expected languages are spelled out state by
+state instead of by a regular expression:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">set-option</span><span class="w"> </span><span class="nv">:alphabet</span><span class="w"> </span><span class="s">"bytes"</span><span class="p">)</span>
+
+<span class="c1">; a+ as a literal automaton and as a regular expression</span>
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">a-plus</span>
+<span class="w">  </span><span class="p">(</span><span class="nf">nfa:literal</span><span class="w"> </span><span class="nv">:initial</span><span class="w"> </span><span class="p">(</span><span class="nf">q0</span><span class="p">)</span><span class="w"> </span><span class="nv">:final</span><span class="w"> </span><span class="p">(</span><span class="nf">q1</span><span class="p">)</span>
+<span class="w">               </span><span class="nv">:transitions</span><span class="w"> </span><span class="p">((</span><span class="nf">q0</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">q1</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nf">q1</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">q1</span><span class="p">))))</span>
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">a-plus-re</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:create-from-regex</span><span class="w"> </span><span class="s">"aa*"</span><span class="p">))</span>
+
+<span class="p">(</span><span class="nf">check</span><span class="w"> </span><span class="s">"equivalent"</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:equivalent?</span><span class="w"> </span><span class="nv">a-plus</span><span class="w"> </span><span class="nv">a-plus-re</span><span class="p">))</span>
+<span class="p">(</span><span class="nf">assert</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:in-language?</span><span class="w"> </span><span class="nv">a-plus</span><span class="w"> </span><span class="p">(</span><span class="nf">word</span><span class="w"> </span><span class="s">"a"</span><span class="w"> </span><span class="s">"a"</span><span class="w"> </span><span class="s">"a"</span><span class="p">)))</span>
+<span class="p">(</span><span class="nf">assert</span><span class="w"> </span><span class="p">(</span><span class="nb">not</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:in-language?</span><span class="w"> </span><span class="nv">a-plus</span><span class="w"> </span><span class="p">(</span><span class="nf">word</span><span class="p">))))</span>
+</pre></div>
+</div>
+</section>
+<section id="queries-and-reports">
+<h3>Queries and reports<a class="headerlink" href="#queries-and-reports" title="Link to this heading">¶</a></h3>
+<p>A one-off query that prints the size of an automaton and classifies it, with <code class="docutils literal notranslate"><span class="pre">let</span></code>, <code class="docutils literal notranslate"><span class="pre">cond</span></code> and string concatenation:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">set-option</span><span class="w"> </span><span class="nv">:alphabet</span><span class="w"> </span><span class="s">"bytes"</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">)</span>
+
+<span class="p">(</span><span class="k">let</span><span class="w"> </span><span class="p">((</span><span class="nf">states</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:number-of-states</span><span class="w"> </span><span class="nv">a</span><span class="p">))</span>
+<span class="w">      </span><span class="p">(</span><span class="nf">transitions</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:number-of-transitions</span><span class="w"> </span><span class="nv">a</span><span class="p">)))</span>
+<span class="w">  </span><span class="p">(</span><span class="nf">echo</span><span class="w"> </span><span class="p">(</span><span class="nf">concat</span><span class="w"> </span><span class="s">"states="</span><span class="w"> </span><span class="p">(</span><span class="nf">to-string</span><span class="w"> </span><span class="nv">states</span><span class="p">)</span>
+<span class="w">                </span><span class="s">" transitions="</span><span class="w"> </span><span class="p">(</span><span class="nf">to-string</span><span class="w"> </span><span class="nv">transitions</span><span class="p">)))</span>
+<span class="w">  </span><span class="p">(</span><span class="k">cond</span>
+<span class="w">    </span><span class="p">((</span><span class="nf">nfa:language-empty?</span><span class="w"> </span><span class="nv">a</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nf">echo</span><span class="w"> </span><span class="s">"empty language"</span><span class="p">))</span>
+<span class="w">    </span><span class="p">((</span><span class="nf">nfa:deterministic?</span><span class="w"> </span><span class="nv">a</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nf">echo</span><span class="w"> </span><span class="s">"deterministic"</span><span class="p">))</span>
+<span class="w">    </span><span class="p">(</span><span class="k">else</span><span class="w"> </span><span class="p">(</span><span class="nf">echo</span><span class="w"> </span><span class="s">"non-deterministic, non-empty"</span><span class="p">))))</span>
+</pre></div>
+</div>
+<p>A query that prints a counterexample to an inclusion, or confirms that the inclusion holds. The witness is a word the
+decision procedure happened to find, not necessarily the shortest one. With <code class="docutils literal notranslate"><span class="pre">:produce-witnesses</span></code>, every later decision
+call also stores its witness for <code class="docutils literal notranslate"><span class="pre">get-witness</span></code>:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="w"> </span><span class="nv">:requires</span><span class="w"> </span><span class="p">(</span><span class="nf">witnesses</span><span class="p">))</span>
+<span class="p">(</span><span class="nf">set-option</span><span class="w"> </span><span class="nv">:alphabet</span><span class="w"> </span><span class="s">"bytes"</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">smaller</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">bigger</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">)</span>
+
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">counterexample</span><span class="w"> </span><span class="p">(</span><span class="nf">witness</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:included?</span><span class="w"> </span><span class="nv">smaller</span><span class="w"> </span><span class="nv">bigger</span><span class="p">)))</span>
+<span class="p">(</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nf">none?</span><span class="w"> </span><span class="nv">counterexample</span><span class="p">)</span>
+<span class="w">    </span><span class="p">(</span><span class="nf">echo</span><span class="w"> </span><span class="s">"included"</span><span class="p">)</span>
+<span class="w">    </span><span class="p">(</span><span class="k">do</span>
+<span class="w">      </span><span class="p">(</span><span class="nf">echo</span><span class="w"> </span><span class="s">"not included; a counterexample:"</span><span class="p">)</span>
+<span class="w">      </span><span class="p">(</span><span class="nf">print</span><span class="w"> </span><span class="p">(</span><span class="nf">get</span><span class="w"> </span><span class="nv">counterexample</span><span class="p">))))</span>
+</pre></div>
+</div>
+</section>
+<section id="pipelines-and-output">
+<h3>Pipelines and output<a class="headerlink" href="#pipelines-and-output" title="Link to this heading">¶</a></h3>
+<p>A pipeline that determinizes and minimizes a regular expression, saves the result as a <code class="docutils literal notranslate"><span class="pre">.mata</span></code> file, and prints its
+DOT graph, all as one chain. <code class="docutils literal notranslate"><span class="pre">write</span></code> and <code class="docutils literal notranslate"><span class="pre">print</span></code> return their argument, so they slot into the pipeline:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">set-option</span><span class="w"> </span><span class="nv">:alphabet</span><span class="w"> </span><span class="s">"bytes"</span><span class="p">)</span>
+
+<span class="p">(</span><span class="nf">-&gt;</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:create-from-regex</span><span class="w"> </span><span class="s">"a(b|c)*"</span><span class="p">)</span>
+<span class="w">    </span><span class="nv">nfa:determinize</span>
+<span class="w">    </span><span class="nv">nfa:minimize</span>
+<span class="w">    </span><span class="p">(</span><span class="nb">write</span><span class="w"> </span><span class="s">"minimal.mata"</span><span class="p">)</span>
+<span class="w">    </span><span class="nv">nfa:print-to-dot</span>
+<span class="w">    </span><span class="nv">print</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="parameterized-runs-and-batches">
+<h3>Parameterized runs and batches<a class="headerlink" href="#parameterized-runs-and-batches" title="Link to this heading">¶</a></h3>
+<p>A benchmark that runs the same check a configurable number of times, taking the count from the command line with
+<code class="docutils literal notranslate"><span class="pre">--param</span> <span class="pre">rounds=…</span></code>. Each round gets its own timing label, because a label printed twice is an error:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">set-option</span><span class="w"> </span><span class="nv">:alphabet</span><span class="w"> </span><span class="s">"bytes"</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-param</span><span class="w"> </span><span class="nv">rounds</span><span class="w"> </span><span class="nv">Int</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">smaller</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">bigger</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">)</span>
+
+<span class="p">(</span><span class="nf">list:map</span>
+<span class="w">  </span><span class="p">(</span><span class="k">lambda</span><span class="w"> </span><span class="p">(</span><span class="nb">round</span><span class="p">)</span>
+<span class="w">    </span><span class="p">(</span><span class="nf">time</span><span class="w"> </span><span class="p">(</span><span class="nf">concat</span><span class="w"> </span><span class="s">"inclusion-"</span><span class="w"> </span><span class="p">(</span><span class="nf">to-string</span><span class="w"> </span><span class="nb">round</span><span class="p">))</span>
+<span class="w">      </span><span class="p">(</span><span class="nf">nfa:included?</span><span class="w"> </span><span class="nv">smaller</span><span class="w"> </span><span class="nv">bigger</span><span class="w"> </span><span class="nv">:algorithm</span><span class="w"> </span><span class="s">"antichains"</span><span class="p">)))</span>
+<span class="w">  </span><span class="p">(</span><span class="nf">list:range</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="nv">rounds</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>A batch script that processes every input independently and reports each one’s size before and after determinization,
+labelled by its position on the command line:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-inputs</span><span class="w"> </span><span class="nv">automata</span><span class="w"> </span><span class="p">(</span><span class="nf">List</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">))</span>
+
+<span class="p">(</span><span class="nf">list:map</span>
+<span class="w">  </span><span class="p">(</span><span class="k">lambda</span><span class="w"> </span><span class="p">(</span><span class="nf">i</span><span class="p">)</span>
+<span class="w">    </span><span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="p">(</span><span class="nf">list:nth</span><span class="w"> </span><span class="nv">automata</span><span class="w"> </span><span class="nv">i</span><span class="p">))</span>
+<span class="w">    </span><span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">label</span><span class="w"> </span><span class="p">(</span><span class="nf">concat</span><span class="w"> </span><span class="s">"input-"</span><span class="w"> </span><span class="p">(</span><span class="nf">to-string</span><span class="w"> </span><span class="nv">i</span><span class="p">)))</span>
+<span class="w">    </span><span class="p">(</span><span class="nf">echo</span><span class="w"> </span><span class="p">(</span><span class="nf">concat</span><span class="w"> </span><span class="nv">label</span><span class="w"> </span><span class="s">": "</span><span class="w"> </span><span class="p">(</span><span class="nf">to-string</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:number-of-states</span><span class="w"> </span><span class="nv">a</span><span class="p">))</span><span class="w"> </span><span class="s">" states before"</span><span class="p">))</span>
+<span class="w">    </span><span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">d</span><span class="w"> </span><span class="p">(</span><span class="nf">time</span><span class="w"> </span><span class="p">(</span><span class="nf">concat</span><span class="w"> </span><span class="nv">label</span><span class="w"> </span><span class="s">"-determinize"</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:determinize</span><span class="w"> </span><span class="nv">a</span><span class="p">)))</span>
+<span class="w">    </span><span class="p">(</span><span class="nf">echo</span><span class="w"> </span><span class="p">(</span><span class="nf">concat</span><span class="w"> </span><span class="nv">label</span><span class="w"> </span><span class="s">": "</span><span class="w"> </span><span class="p">(</span><span class="nf">to-string</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:number-of-states</span><span class="w"> </span><span class="nv">d</span><span class="p">))</span><span class="w"> </span><span class="s">" states after"</span><span class="p">)))</span>
+<span class="w">  </span><span class="p">(</span><span class="nf">list:range</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">(</span><span class="nf">list:length</span><span class="w"> </span><span class="nv">automata</span><span class="p">)))</span>
+</pre></div>
+</div>
+<p>A fold that picks the largest input and then runs a single check on it, instead of operating on every input:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-inputs</span><span class="w"> </span><span class="nv">automata</span><span class="w"> </span><span class="p">(</span><span class="nf">List</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">))</span>
+
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">largest</span>
+<span class="w">  </span><span class="p">(</span><span class="nf">list:fold</span>
+<span class="w">    </span><span class="p">(</span><span class="k">lambda</span><span class="w"> </span><span class="p">(</span><span class="nf">best</span><span class="w"> </span><span class="nv">a</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nb">&lt;</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:number-of-states</span><span class="w"> </span><span class="nv">best</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:number-of-states</span><span class="w"> </span><span class="nv">a</span><span class="p">))</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">best</span><span class="p">))</span>
+<span class="w">    </span><span class="p">(</span><span class="nf">list:nth</span><span class="w"> </span><span class="nv">automata</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">    </span><span class="nv">automata</span><span class="p">))</span>
+
+<span class="p">(</span><span class="nf">check</span><span class="w"> </span><span class="s">"largest-intersects-own-complement-empty"</span>
+<span class="w">       </span><span class="p">(</span><span class="nf">nfa:language-empty?</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:intersection</span><span class="w"> </span><span class="nv">largest</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:complement</span><span class="w"> </span><span class="nv">largest</span><span class="p">))))</span>
+</pre></div>
+</div>
+</section>
+<section id="comparing-algorithms">
+<h3>Comparing algorithms<a class="headerlink" href="#comparing-algorithms" title="Link to this heading">¶</a></h3>
+<p>One script that compares several inclusion algorithms on the same inputs, using a parameter for the algorithm name
+and a hint for the library. The first version uses the same approach as the <code class="docutils literal notranslate"><span class="pre">email-filter</span></code> benchmark at the top of
+this page, but with the algorithms given as a list:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="w"> </span><span class="nv">:requires</span><span class="w"> </span><span class="p">(</span><span class="nf">hints</span><span class="p">))</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">lhs</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">rhs</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">)</span>
+
+<span class="p">(</span><span class="nf">list:map</span>
+<span class="w">  </span><span class="p">(</span><span class="k">lambda</span><span class="w"> </span><span class="p">(</span><span class="nf">algorithm</span><span class="p">)</span>
+<span class="w">    </span><span class="p">(</span><span class="nf">check</span><span class="w"> </span><span class="nv">algorithm</span>
+<span class="w">      </span><span class="p">(</span><span class="nf">time</span><span class="w"> </span><span class="p">(</span><span class="nf">concat</span><span class="w"> </span><span class="nv">algorithm</span><span class="w"> </span><span class="s">"-time"</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:included?</span><span class="w"> </span><span class="nv">lhs</span><span class="w"> </span><span class="nv">rhs</span><span class="w"> </span><span class="nv">:algorithm</span><span class="w"> </span><span class="nv">algorithm</span><span class="p">))))</span>
+<span class="w">  </span><span class="p">(</span><span class="nb">list</span><span class="w"> </span><span class="s">"naive"</span><span class="w"> </span><span class="s">"antichains"</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>The default of a hint can also be changed once for the rest of the script, so that only the calls that should
+differ need to spell it out. A hint written in an application still wins over the changed default:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="w"> </span><span class="nv">:requires</span><span class="w"> </span><span class="p">(</span><span class="nf">hints</span><span class="p">))</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">lhs</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">rhs</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">)</span>
+
+<span class="p">(</span><span class="nf">set-option</span><span class="w"> </span><span class="nv">:default</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:included?</span><span class="w"> </span><span class="nv">:algorithm</span><span class="w"> </span><span class="s">"antichains"</span><span class="p">))</span>
+
+<span class="p">(</span><span class="nf">check</span><span class="w"> </span><span class="s">"default"</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:included?</span><span class="w"> </span><span class="nv">lhs</span><span class="w"> </span><span class="nv">rhs</span><span class="p">))</span>
+<span class="p">(</span><span class="nf">check</span><span class="w"> </span><span class="s">"naive"</span><span class="w"> </span><span class="p">(</span><span class="nf">time</span><span class="w"> </span><span class="s">"naive-time"</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:included?</span><span class="w"> </span><span class="nv">lhs</span><span class="w"> </span><span class="nv">rhs</span><span class="w"> </span><span class="nv">:algorithm</span><span class="w"> </span><span class="s">"naive"</span><span class="p">)))</span>
+</pre></div>
+</div>
+</section>
+<section id="transducers">
+<h3>Transducers<a class="headerlink" href="#transducers" title="Link to this heading">¶</a></h3>
 <p>The image of a language under a transducer, checked against a specification, with a function:</p>
 <div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="p">)</span>
 <span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">transducer</span><span class="w"> </span><span class="nv">Nft</span><span class="p">)</span>
@@ -1526,6 +1691,29 @@ their own, which <code class="docutils literal notranslate"><span class="pre">ma
 <span class="w">    </span><span class="p">(</span><span class="nf">print</span><span class="w"> </span><span class="p">(</span><span class="nf">get</span><span class="w"> </span><span class="nv">counterexample</span><span class="p">)))</span>
 </pre></div>
 </div>
+</section>
+<section id="string-solving">
+<h3>String solving<a class="headerlink" href="#string-solving" title="Link to this heading">¶</a></h3>
+<p>A reluctant replacement built from the <code class="docutils literal notranslate"><span class="pre">strings:</span></code> namespace, applied to a regular language. The transducer replaces
+every occurrence of <code class="docutils literal notranslate"><span class="pre">ab</span></code> by <code class="docutils literal notranslate"><span class="pre">x</span></code>, so no word containing <code class="docutils literal notranslate"><span class="pre">ab</span></code> is in the output language:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="w"> </span><span class="nv">:requires</span><span class="w"> </span><span class="p">(</span><span class="nf">strings</span><span class="p">))</span>
+<span class="p">(</span><span class="nf">set-option</span><span class="w"> </span><span class="nv">:alphabet</span><span class="w"> </span><span class="s">"bytes"</span><span class="p">)</span>
+
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">replace-ab</span>
+<span class="w">  </span><span class="p">(</span><span class="nf">strings:replace-reluctant-literal</span><span class="w"> </span><span class="p">(</span><span class="nf">word</span><span class="w"> </span><span class="s">"a"</span><span class="w"> </span><span class="s">"b"</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nf">word</span><span class="w"> </span><span class="s">"x"</span><span class="p">)</span><span class="w"> </span><span class="p">(</span><span class="nf">script-alphabet</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">input</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:create-from-regex</span><span class="w"> </span><span class="s">"(a|b)*"</span><span class="p">))</span>
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">output</span><span class="w"> </span><span class="p">(</span><span class="nf">nft:to-nfa</span><span class="w"> </span><span class="p">(</span><span class="nf">nft:apply</span><span class="w"> </span><span class="nv">replace-ab</span><span class="w"> </span><span class="nv">input</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="nf">assert</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:in-language?</span><span class="w"> </span><span class="nv">output</span><span class="w"> </span><span class="p">(</span><span class="nf">word</span><span class="w"> </span><span class="s">"x"</span><span class="w"> </span><span class="s">"x"</span><span class="p">)))</span>
+<span class="p">(</span><span class="nf">assert</span><span class="w"> </span><span class="p">(</span><span class="nb">not</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:in-language?</span><span class="w"> </span><span class="nv">output</span><span class="w"> </span><span class="p">(</span><span class="nf">word</span><span class="w"> </span><span class="s">"a"</span><span class="w"> </span><span class="s">"b"</span><span class="p">))))</span>
+<span class="p">(</span><span class="nf">check</span><span class="w"> </span><span class="s">"no ab remains"</span>
+<span class="w">       </span><span class="p">(</span><span class="nf">nfa:intersection-empty?</span><span class="w"> </span><span class="nv">output</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:create-from-regex</span><span class="w"> </span><span class="s">"(a|b|x)*ab(a|b|x)*"</span><span class="p">)))</span>
+</pre></div>
+</div>
+</section>
+<section id="either-kind-of-automaton">
+<h3>Either kind of automaton<a class="headerlink" href="#either-kind-of-automaton" title="Link to this heading">¶</a></h3>
 <p>A script that works on an input of either kind:</p>
 <div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="w"> </span><span class="nv">:requires</span><span class="w"> </span><span class="p">(</span><span class="nf">automaton</span><span class="p">))</span>
 <span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">Automaton</span><span class="p">)</span>
@@ -1535,6 +1723,44 @@ their own, which <code class="docutils literal notranslate"><span class="pre">ma
 <span class="p">(</span><span class="nf">check</span><span class="w"> </span><span class="p">(</span><span class="nf">automaton:included?</span><span class="w"> </span><span class="nv">b</span><span class="w"> </span><span class="nv">a</span><span class="p">))</span>
 </pre></div>
 </div>
+</section>
+<section id="fixpoints">
+<h3>Fixpoints<a class="headerlink" href="#fixpoints" title="Link to this heading">¶</a></h3>
+<p>Reachability as a fixpoint over a transducer that encodes one step of a transition relation. The <code class="docutils literal notranslate"><span class="pre">loop</span></code>/<code class="docutils literal notranslate"><span class="pre">recur</span></code> form
+stops when a round adds nothing new; <a class="reference internal" href="#loops-and-recursion">Loops and recursion</a> has the same computation written as
+a recursive function:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="w"> </span><span class="nv">:requires</span><span class="w"> </span><span class="p">(</span><span class="nf">loops-and-recursion</span><span class="p">))</span>
+<span class="p">(</span><span class="nf">set-option</span><span class="w"> </span><span class="nv">:loops-and-recursion</span><span class="w"> </span><span class="nv">true</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">set-option</span><span class="w"> </span><span class="nv">:alphabet</span><span class="w"> </span><span class="s">"bytes"</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">step</span><span class="w"> </span><span class="nv">Nft</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">initial</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">bad</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">)</span>
+
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">reachable</span>
+<span class="w">  </span><span class="p">(</span><span class="nf">loop</span><span class="w"> </span><span class="p">((</span><span class="nf">reached</span><span class="w"> </span><span class="nv">initial</span><span class="p">))</span>
+<span class="w">    </span><span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">next</span>
+<span class="w">      </span><span class="p">(</span><span class="nf">nfa:union-nondeterministic</span><span class="w"> </span><span class="nv">reached</span><span class="w"> </span><span class="p">(</span><span class="nf">nft:to-nfa</span><span class="w"> </span><span class="p">(</span><span class="nf">nft:apply</span><span class="w"> </span><span class="nv">step</span><span class="w"> </span><span class="nv">reached</span><span class="p">))))</span>
+<span class="w">    </span><span class="p">(</span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:included?</span><span class="w"> </span><span class="nv">next</span><span class="w"> </span><span class="nv">reached</span><span class="p">)</span><span class="w"> </span><span class="nv">reached</span><span class="w"> </span><span class="p">(</span><span class="nf">recur</span><span class="w"> </span><span class="nv">next</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="nf">check</span><span class="w"> </span><span class="s">"safe"</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:intersection-empty?</span><span class="w"> </span><span class="nv">reachable</span><span class="w"> </span><span class="nv">bad</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
+<section id="id3">
+<span id="portable-core-1"></span><h3>Portable core<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<p>The same intersection-and-inclusion query restricted to the portable core, so that another library implementing the
+profile can run it too. <code class="docutils literal notranslate"><span class="pre">:profile</span> <span class="pre">core</span></code> rules out functions, conditionals, loops and most operations, and the checker
+rejects anything outside the profile before the script runs:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="w"> </span><span class="nv">:profile</span><span class="w"> </span><span class="nv">core</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">lhs</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">)</span>
+<span class="p">(</span><span class="nf">declare-input</span><span class="w"> </span><span class="nv">rhs</span><span class="w"> </span><span class="nv">Nfa</span><span class="p">)</span>
+
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">both</span><span class="w"> </span><span class="p">(</span><span class="nf">time</span><span class="w"> </span><span class="s">"intersection"</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:intersection</span><span class="w"> </span><span class="nv">lhs</span><span class="w"> </span><span class="nv">rhs</span><span class="p">)))</span>
+<span class="p">(</span><span class="nf">check</span><span class="w"> </span><span class="s">"language-empty"</span><span class="w"> </span><span class="p">(</span><span class="nf">time</span><span class="w"> </span><span class="s">"emptiness"</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:language-empty?</span><span class="w"> </span><span class="nv">both</span><span class="p">)))</span>
+<span class="p">(</span><span class="nf">check</span><span class="w"> </span><span class="s">"included"</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:included?</span><span class="w"> </span><span class="nv">lhs</span><span class="w"> </span><span class="nv">rhs</span><span class="p">))</span>
+</pre></div>
+</div>
+</section>
 </section>
 <section id="open-questions">
 <h2>Open questions<a class="headerlink" href="#open-questions" title="Link to this heading">¶</a></h2>
