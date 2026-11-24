@@ -900,7 +900,8 @@ class Nfa : public Automaton {
 	/**
 	 * @brief Get any accepted shortest word in the language of the automaton.
 	 *
-	 * The automaton is searched using BFS, returning a word for the first reached final state.
+	 * The automaton is searched using 0-1 BFS. Transitions at or above @p first_epsilon cost zero; all other
+	 * transitions cost one, so the returned word has the fewest non-epsilon symbols.
 	 *
 	 * @param first_epsilon If defined, all symbols >=first_epsilon are assumed to be epsilon and therefore are not in
 	 * the returned word.
