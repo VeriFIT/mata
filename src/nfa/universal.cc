@@ -6,6 +6,8 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/utils/sparse-set.hh"
 
+#include "antichain-inclusion.hh"
+
 using namespace mata::nfa;
 using namespace mata::utils;
 
@@ -31,21 +33,10 @@ bool mata::nfa::algorithms::is_universal_antichains(const Nfa& aut, const Alphab
 		cex->path.clear();
 	}
 
-	/// A macrostate of the subset construction together with its signature, which is computed once, when the
-	///  macrostate is built, and then filters most of the subsumption tests in O(1).
+	/// Stored once so worklist and dominance buckets can share stable IDs.
 	struct Macrostate {
-		StateSet set{};
+		StateSet bigger_set{};
 		uint64_t signature{0};
-	};
-
-	auto subsumes = [](const Macrostate& lhs, const Macrostate& rhs) {
-		if (lhs.set.size() > rhs.set.size()) { // bigger set cannot be subset
-			return false;
-		}
-		// A state of `lhs` outside of `rhs` shows up as a signature bit of `lhs` that `rhs` does not have.
-		if ((lhs.signature & ~rhs.signature) != 0) { return false; }
-
-		return std::ranges::includes(rhs.set, lhs.set);
 	};
 
 	// process parameters
@@ -59,36 +50,44 @@ bool mata::nfa::algorithms::is_universal_antichains(const Nfa& aut, const Alphab
 	}
 
 	// initialize
-	const StateSet initial_set{aut.initial};
-	const Macrostate initial{.set = initial_set, .signature = macrostate_signature(initial_set)};
-	std::vector<Macrostate> worklist = {initial};
-	std::vector<Macrostate> processed = {initial};
+	StateSet initial_set{aut.initial};
+	const uint64_t initial_signature{macrostate_signature(initial_set)};
+	std::vector<Macrostate> nodes{{std::move(initial_set), initial_signature}};
+	std::vector<size_t> worklist{0};
+	internal::ProcessedAntichain processed{};
+	processed.insert(nodes, 0);
 	const mata::utils::OrdVector<Symbol> alph_symbols = alphabet.get_alphabet_symbols();
 
-	// 'paths[s] == t' denotes that state 's' was accessed from state 't' via some symbol,
-	// 'paths[s] == {s, 0}' means that 's' is an initial state.
-	// Only populated if a counterexample is requested (@p cex != nullptr).
-	std::map<StateSet, std::pair<StateSet, Symbol>> paths;
-	if (nullptr != cex) { paths[initial_set] = {initial_set, 0}; }
+	// Record parent IDs only when a counterexample is requested. They remain valid when a node is pruned.
+	std::vector<internal::Step> steps{};
+	if (nullptr != cex) { steps.push_back(internal::Step{.parent = 0, .symbol = 0}); }
+	auto set_rejected_word = [&](const size_t node_idx, const Symbol symbol) {
+		cex->word.push_back(symbol);
+		for (size_t current{node_idx}; steps[current].parent != current; current = steps[current].parent) {
+			cex->word.push_back(steps[current].symbol);
+		}
+		std::ranges::reverse(cex->word);
+	};
 
 	using SyncIterator = mata::nfa::SynchronizedExistentialSymbolPostIterator;
 
 	while (!worklist.empty()) {
-		// get a next state, moving it out to avoid a copy
-		Macrostate state;
+		size_t node_idx{0};
 		if (is_dfs) {
-			state = std::move(worklist.back());
+			node_idx = worklist.back();
 			worklist.pop_back();
 		} else { // BFS
-			state = std::move(worklist.front());
+			node_idx = worklist.front();
 			worklist.erase(worklist.begin());
 		}
+		// Every live macrostate contains a final state and is nonempty; pruning empties the set to mark dominance.
+		if (nodes[node_idx].bigger_set.empty()) { continue; }
 
-		// enumerate successors: collect posts of all states in the macrostate into one synchronized iterator,
-		// walk it together with the sorted alphabet. foreign (out-of-alphabet) symbols are skipped, missing
-		// alphabet symbols are detected as gaps and used as a counterexample immediately.
+		// The synchronized iterator owns its state-post cursors even if a later successor prunes this node.
 		SyncIterator sync_it{};
-		for (const State orig_state : state.set) { mata::utils::push_back(sync_it, aut.delta[orig_state]); }
+		for (const State orig_state : nodes[node_idx].bigger_set) {
+			mata::utils::push_back(sync_it, aut.delta[orig_state]);
+		}
 
 		auto alph_it = alph_symbols.begin();
 		const auto alph_end = alph_symbols.end();
@@ -99,16 +98,7 @@ bool mata::nfa::algorithms::is_universal_antichains(const Nfa& aut, const Alphab
 				// The iterator is exhausted but there are remaining alphabet symbols.
 				// This means a symbol is missing: immediate counterexample.
 				MATA_ASSERT(alph_it != alph_end);
-				if (nullptr != cex) {
-					cex->word.clear();
-					cex->word.push_back(*alph_it);
-					StateSet trav = state.set;
-					while (paths[trav].first != trav) {
-						cex->word.push_back(paths[trav].second);
-						trav = paths[trav].first;
-					}
-					std::ranges::reverse(cex->word);
-				}
+				if (nullptr != cex) { set_rejected_word(node_idx, *alph_it); }
 				return false;
 			}
 
@@ -124,16 +114,7 @@ bool mata::nfa::algorithms::is_universal_antichains(const Nfa& aut, const Alphab
 
 			if (sync_symbol > *alph_it) {
 				// Missing alphabet symbol: immediate counterexample.
-				if (nullptr != cex) {
-					cex->word.clear();
-					cex->word.push_back(*alph_it);
-					StateSet trav = state.set;
-					while (paths[trav].first != trav) {
-						cex->word.push_back(paths[trav].second);
-						trav = paths[trav].first;
-					}
-					std::ranges::reverse(cex->word);
-				}
+				if (nullptr != cex) { set_rejected_word(node_idx, *alph_it); }
 				return false;
 			}
 
@@ -141,40 +122,24 @@ bool mata::nfa::algorithms::is_universal_antichains(const Nfa& aut, const Alphab
 			StateSet succ_set = sync_it.unify_targets();
 			if (!aut.final.intersects_with(succ_set)) {
 				// The successor macrostate does not contain any final state: counterexample found.
-				if (nullptr != cex) {
-					cex->word.clear();
-					cex->word.push_back(sync_symbol);
-					StateSet trav = state.set;
-					while (paths[trav].first != trav) {
-						cex->word.push_back(paths[trav].second);
-						trav = paths[trav].first;
-					}
-					std::ranges::reverse(cex->word);
-				}
+				if (nullptr != cex) { set_rejected_word(node_idx, sync_symbol); }
 				return false;
 			}
 
 			const uint64_t succ_signature{macrostate_signature(succ_set)};
-			const Macrostate succ{.set = std::move(succ_set), .signature = succ_signature};
-			// Check if the successor is subsumed by any processed macrostate
-			bool is_subsumed = false;
-			for (const auto& anti_state : processed) {
-				if (subsumes(anti_state, succ)) {
-					is_subsumed = true;
-					break;
-				}
+			if (processed.subsumes(nodes, succ_set, succ_signature)) {
+				++alph_it;
+				sync_it_advanced = sync_it.advance();
+				continue;
 			}
 
-			if (!is_subsumed) {
-				// prune data structures and insert succ inside
-				for (std::vector<Macrostate>* ds : {&processed, &worklist}) {
-					std::erase_if(*ds, [&succ, &subsumes](const Macrostate& stored) { return subsumes(succ, stored); });
-					ds->push_back(succ);
-				}
-
-				// Record the path to the successor if a counterexample is needed
-				if (nullptr != cex) { paths[succ.set] = {state.set, sync_symbol}; }
-			}
+			// Mark strict supersets dominated rather than rescanning the worklist; IDs and witness steps stay valid.
+			processed.prune(nodes, succ_set, succ_signature, [](Macrostate& node) { node.bigger_set = StateSet{}; });
+			const size_t succ_idx{nodes.size()};
+			nodes.push_back(Macrostate{std::move(succ_set), succ_signature});
+			if (nullptr != cex) { steps.push_back(internal::Step{.parent = node_idx, .symbol = sync_symbol}); }
+			processed.insert(nodes, succ_idx);
+			worklist.push_back(succ_idx);
 
 			// Advance both iterators
 			++alph_it;
