@@ -337,7 +337,11 @@ fn option_value<'a>(
 }
 
 /// `NAME=VALUE` of `--input`, `--param`, or `--hint`, with a name each may give once.
-fn insert_pair(pairs: &mut HashMap<String, String>, text: &str, option: &str) -> Result<(), Error> {
+pub(crate) fn insert_pair(
+	pairs: &mut HashMap<String, String>,
+	text: &str,
+	option: &str,
+) -> Result<(), Error> {
 	let (name, value) = text
 		.split_once('=')
 		.ok_or_else(|| Error::plain(format!("{option} needs NAME=VALUE, found '{text}'")))?;
@@ -388,6 +392,7 @@ fn script_run(arguments: &[String]) -> Result<Exit, Error> {
 		positional: Vec::new(),
 		named: HashMap::new(),
 		parameters: HashMap::new(),
+		time_limit: None,
 	};
 	let mut separator = false;
 	let mut index = 0;

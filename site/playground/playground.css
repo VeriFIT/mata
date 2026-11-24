@@ -478,3 +478,95 @@
 .playground-page .colophon {
   margin-top: 3rem;
 }
+
+/* The modes. */
+.mode-tabs {
+  margin: 1.25rem 0 0;
+}
+
+/* The Script mode. */
+@media (min-width: 64rem) {
+  .script-bench {
+    grid-template-columns: minmax(24rem, 40rem) minmax(0, 1fr);
+  }
+}
+
+.script-source textarea {
+  white-space: pre;
+  tab-size: 2;
+}
+
+.script-file {
+  float: right;
+}
+
+.script-param input {
+  width: 100%;
+}
+
+.script-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  font-family: var(--sans);
+  font-size: 0.875rem;
+}
+
+.script-actions label {
+  margin-left: auto;
+}
+
+.script-actions .button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.script-output {
+  margin-top: 1rem;
+}
+
+.script-output > * + * {
+  margin-top: 0.75rem;
+}
+
+.script-lines {
+  max-height: none;
+}
+
+.out-line {
+  min-height: 1.55em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.out-line.is-error {
+  color: var(--reject);
+}
+
+.out-line.is-true {
+  color: var(--accept);
+  font-weight: 600;
+}
+
+.out-line.is-false {
+  color: var(--reject);
+  font-weight: 600;
+}
+
+.out-note {
+  color: var(--ink-soft);
+  font-family: var(--sans);
+}
+
+.script-drawing .facts {
+  margin-bottom: 0.4rem;
+}
+
+.script-drawing details {
+  margin-top: 0.4rem;
+}
+
+.script-drawing summary {
+  cursor: pointer;
+}

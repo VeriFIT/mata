@@ -91,4 +91,6 @@ tests-integration/results/*.output
 # Generated files of the playground on the website (just site playground)
 site/playground/mata-playground.js
 site/playground/mata-playground.wasm
+site/playground/mata-playground-script.js
+site/playground/mata_playground_script.wasm
 site/playground/vendor/

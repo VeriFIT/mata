@@ -66,6 +66,8 @@ pub(crate) mod ops;
 pub(crate) mod optimize;
 pub(crate) mod scripts;
 pub(crate) mod version;
+#[cfg(feature = "web")]
+pub mod web;
 
 /// The `.mata` text of one automaton, which the library prints with a trailing newline of its own.
 fn automaton_text(text: &dyn std::fmt::Display) -> String {

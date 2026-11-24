@@ -14,6 +14,11 @@ publish = false
 [lints]
 workspace = true
 
+[features]
+## `mata_cli::web` and the `mata-playground-script` binary: the WebAssembly module of the website
+## playground's Script mode, built for `wasm32-unknown-emscripten` (`just site script`).
+web = []
+
 [dependencies]
 mata = { path = "../mata" }
 
@@ -23,3 +28,10 @@ path = "src/main.rs"
 # Its docs would overwrite those of the `mata` library at `target/doc/mata` (rust-lang/cargo#6313); `mata-cli`'s
 # library holds the documented code.
 doc = false
+
+[[bin]]
+name = "mata-playground-script"
+path = "src/bin/mata-playground-script.rs"
+required-features = ["web"]
+# It has no tests, and its link options (build.rs) keep a test harness from running.
+test = false

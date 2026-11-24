@@ -9,6 +9,10 @@ VIZ_VERSION := "3.31.0"
 # Build directory of the playground, compiled to WebAssembly.
 WASM_BUILD := BUILD_ROOT / "wasm"
 
+# Cargo target directory of the Mata Script interpreter of the playground's Script mode, compiled to WebAssembly.
+SCRIPT_TARGET := BUILD_ROOT / "wasm-script"
+SCRIPT_RELEASE := SCRIPT_TARGET / "wasm32-unknown-emscripten" / "release"
+
 # Serve the current checkout under VERSION at http://localhost:PORT, with the documentation once `just docs` has built
 # it. The pages are linked rather than copied, so edits show on reload. The playground needs `just site playground`.
 [default]
@@ -34,8 +38,9 @@ serve PORT="8000" VERSION="master":
 	fi
 	python3 '{{ ROOT }}/site/serve.py' "$root" '{{ PORT }}'
 
-# Build Mata for the playground with Emscripten, test the build under Node, and download Viz.js.
-playground: wasm viz
+# Build Mata and the Mata Script interpreter for the playground with Emscripten, test the builds under Node, and
+# download Viz.js.
+playground: wasm script viz
 
 # Build Mata for the playground with Emscripten (`emcmake` on PATH), and test the build under Node.
 wasm:
@@ -43,6 +48,15 @@ wasm:
 	cmake --build '{{ WASM_BUILD }}' --parallel '{{ JOBS }}'
 	node '{{ ROOT }}/bindings/wasm/smoke-test.mjs' '{{ WASM_BUILD }}/mata-playground.js'
 	cp '{{ WASM_BUILD }}/mata-playground.js' '{{ WASM_BUILD }}/mata-playground.wasm' playground/
+
+# Build the Mata Script interpreter (`mata-cli` with the feature `web`) for the Script mode of the playground with
+# Emscripten (`emcc` on PATH, and Rust's standard library for wasm32-unknown-emscripten), and test the build and the
+# script examples of the playground under Node.
+script:
+	cd '{{ ROOT }}/bindings/rust' && cargo build --release --locked --target wasm32-unknown-emscripten \
+		--package mata-cli --features web --bin mata-playground-script --target-dir '{{ SCRIPT_TARGET }}'
+	node '{{ ROOT }}/bindings/wasm/script-smoke-test.mjs' '{{ SCRIPT_RELEASE }}/mata-playground-script.js'
+	cp '{{ SCRIPT_RELEASE }}/mata-playground-script.js' '{{ SCRIPT_RELEASE }}/mata_playground_script.wasm' playground/
 
 # Download Viz.js to playground/vendor/.
 viz:
@@ -57,4 +71,5 @@ viz:
 
 # Remove the generated files of the playground.
 clean:
-	rm -rf playground/mata-playground.js playground/mata-playground.wasm playground/vendor '{{ WASM_BUILD }}'
+	rm -rf playground/mata-playground.js playground/mata-playground.wasm playground/mata-playground-script.js \
+		playground/mata_playground_script.wasm playground/vendor '{{ WASM_BUILD }}' '{{ SCRIPT_TARGET }}'

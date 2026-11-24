@@ -33,6 +33,7 @@ on:
     paths:
       - site/**
       - bindings/wasm/**
+      - bindings/rust/mata-cli/**
       - .github/workflows/website.yml
 permissions:
   contents: read
@@ -65,6 +66,11 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ env.WEBSITE_SOURCE_REF }}
+      # The Mata Script interpreter of the Script mode is mata-cli, built for the same target as the WebAssembly
+      #  tests of the Rust bindings in code-quality.yml.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-emscripten
       - name: Install Emscripten
         run: |
           git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$HOME/emsdk"
@@ -79,6 +85,17 @@ jobs:
         run: |
           source "$HOME/emsdk/emsdk_env.sh"
           node bindings/wasm/smoke-test.mjs build-wasm/mata-playground.js
+      - name: Build the Mata Script interpreter for the playground
+        working-directory: bindings/rust
+        run: |
+          source "$HOME/emsdk/emsdk_env.sh"
+          cargo build --release --locked --target wasm32-unknown-emscripten \
+            --package mata-cli --features web --bin mata-playground-script --target-dir "$RUNNER_TEMP/wasm-script"
+      - name: Test the build and the script examples under Node
+        run: |
+          source "$HOME/emsdk/emsdk_env.sh"
+          node bindings/wasm/script-smoke-test.mjs \
+            "$RUNNER_TEMP/wasm-script/wasm32-unknown-emscripten/release/mata-playground-script.js"
       - name: Download Viz.js
         run: |
           npm pack "@viz-js/viz@$VIZ_VERSION" --pack-destination "$RUNNER_TEMP"
@@ -87,6 +104,9 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/playground/vendor"
           cp build-wasm/mata-playground.js build-wasm/mata-playground.wasm "$RUNNER_TEMP/playground/"
+          cp "$RUNNER_TEMP/wasm-script/wasm32-unknown-emscripten/release/mata-playground-script.js" \
+            "$RUNNER_TEMP/wasm-script/wasm32-unknown-emscripten/release/mata_playground_script.wasm" \
+            "$RUNNER_TEMP/playground/"
           # A single module with Graphviz inlined; its header carries the copyright notices.
           cp "$RUNNER_TEMP/package/dist/viz.js" "$RUNNER_TEMP/playground/vendor/viz.js"
       - uses: actions/upload-artifact@v7

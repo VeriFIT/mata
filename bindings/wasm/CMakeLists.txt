@@ -5,7 +5,7 @@
 #   emcmake cmake -S bindings/wasm -B build-wasm -DCMAKE_BUILD_TYPE=Release
 #   cmake --build build-wasm --parallel
 #
-# The build writes mata-playground.js and mata-playground.wasm to the build directory; `just site build` copies them to
+# The build writes mata-playground.js and mata-playground.wasm to the build directory; `just site wasm` copies them to
 #  the page.
 
 cmake_minimum_required (VERSION 3.23.0)
