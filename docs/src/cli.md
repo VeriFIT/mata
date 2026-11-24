@@ -433,7 +433,7 @@ language page specifies but this build does not have are listed in the
 - Every operation of the catalogue records the language version that added it. A script sees the operations of the
   version its header declares, and the names of all of them are reserved, so an operation added later can never clash
   with a name a script defined.
-- The interpreter implements 162 operations: the portable core of the language, the script forms that a direct command
+- The interpreter implements 163 operations: the portable core of the language, the script forms that a direct command
   needs, and the NFA, NFT, string-solving, automaton and intermediate-automaton operations `bindings/rust/mata` covers,
   so every operation of the [script language](script-language) page runs. An operation outside that table is rejected
   by name and never approximated: a script reports `unknown name 'nft:minimize'` and a direct command reports
