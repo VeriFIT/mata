@@ -1,7 +1,9 @@
 //! The symbolic formula, a DAG of operations over leaves, built without doing any automata work.
 
 use std::sync::Arc;
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::mpsc;
+use std::thread;
 
 use parking_lot::Mutex;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -11,7 +13,7 @@ use crate::engine;
 use crate::ids::{Id, LeafId, NodeId};
 use crate::leaf::Leaf;
 use crate::{
-	Automaton, Error, ExplicitAutomaton, ExplicitOptions, Options, Outcome, Symbol, Witness,
+	Automaton, Error, ExplicitAutomaton, ExplicitOptions, Options, Outcome, Plan, Symbol, Witness,
 };
 
 static NEXT_FORMULA: AtomicU32 = AtomicU32::new(0);
@@ -659,13 +661,96 @@ impl Formula {
 	/// [`ComplementTooLarge`](Error::ComplementTooLarge), or [`ForeignTerm`](Error::ForeignTerm) for `term` or an
 	/// explicit term of `options`.
 	pub fn check(&self, term: Term, options: &Options) -> Result<Outcome, Error> {
-		let mut engine = engine::Engine::new(self, self.node(term)?, options)?;
+		let mut engine = engine::Engine::new(self, self.node(term)?, options, None)?;
 		let (witness, bounded) = engine.search()?;
 
 		Ok(Outcome {
 			witness,
 			bounded,
 			stats: engine.stats(),
+		})
+	}
+
+	/// Checks `term` under each of `plans` at once, one thread per plan, and returns the first answer with the
+	/// index of its plan; the other queries stop. Every plan keeps the answer (see [`Plan`]), so only the time to
+	/// it depends on the plans. `options` holds for every query, its own plan replaced.
+	///
+	/// A plan whose thread cannot be started (as on WebAssembly without threads) runs on the calling thread, before
+	/// the plans after it are started.
+	///
+	/// # Errors
+	///
+	/// [`InvalidPlan`](Error::InvalidPlan) for no plans, [`ForeignTerm`](Error::ForeignTerm) for `term`, and when
+	/// every query fails, the error of the first plan (as of [`check`](Formula::check)).
+	pub fn check_portfolio(
+		&self,
+		term: Term,
+		options: &Options,
+		plans: &[Plan],
+	) -> Result<(usize, Outcome), Error> {
+		let node = self.node(term)?;
+		if plans.is_empty() {
+			return Err(Error::InvalidPlan {
+				reason: "a portfolio needs at least one plan".into(),
+			});
+		}
+
+		let cancel = Arc::new(AtomicBool::new(false));
+		let run = |index: usize| {
+			let options = options.clone().plan(plans[index].clone());
+			let result = engine::Engine::new(self, node, &options, Some(Arc::clone(&cancel)))
+				.and_then(|mut engine| {
+					let (witness, bounded) = engine.search()?;
+					Ok(Outcome {
+						witness,
+						bounded,
+						stats: engine.stats(),
+					})
+				});
+			if result.is_ok() {
+				cancel.store(true, Ordering::Relaxed);
+			}
+			result
+		};
+
+		thread::scope(|scope| {
+			let (sender, receiver) = mpsc::channel();
+			for index in 0..plans.len() {
+				// A plan run on this thread may have answered already.
+				if cancel.load(Ordering::Relaxed) {
+					break;
+				}
+				let thread_sender = sender.clone();
+				let run = &run;
+				let spawned = thread::Builder::new().spawn_scoped(scope, move || {
+					// The receiver is gone only after an answer, when this one is not needed.
+					let _ = thread_sender.send((index, run(index)));
+				});
+				if spawned.is_err() {
+					let _ = sender.send((index, run(index)));
+				}
+			}
+			drop(sender);
+
+			let mut first_error = None;
+			for (index, result) in receiver {
+				match result {
+					Ok(outcome) => return Ok((index, outcome)),
+					Err(error) => {
+						if first_error.as_ref().is_none_or(|&(first, _)| index < first) {
+							first_error = Some((index, error));
+						}
+					}
+				}
+			}
+
+			// Every plan sends its result, and without an answer none was cancelled.
+			Err(first_error.map_or_else(
+				|| Error::InvalidPlan {
+					reason: "no plan of the portfolio answered".into(),
+				},
+				|(_, error)| error,
+			))
 		})
 	}
 
@@ -679,7 +764,7 @@ impl Formula {
 	/// As [`check`](Formula::check).
 	pub fn materialize(&self, term: Term, options: &Options) -> Result<ExplicitAutomaton, Error> {
 		let node = self.node(term)?;
-		let mut engine = engine::Engine::new(self, node, options)?;
+		let mut engine = engine::Engine::new(self, node, options, None)?;
 
 		Ok(ExplicitAutomaton::new(engine.materialize_root()?))
 	}

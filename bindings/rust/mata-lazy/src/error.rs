@@ -103,4 +103,12 @@ pub enum Error {
 		/// What the query did until it stopped.
 		stats: Box<Stats>,
 	},
+	/// A query of a [portfolio](crate::Formula::check_portfolio) stopped because another plan answered first. The
+	/// portfolio returns that answer, so this error stays inside it.
+	#[error("another plan of the portfolio answered first")]
+	#[non_exhaustive]
+	Cancelled {
+		/// What the query did until it stopped.
+		stats: Box<Stats>,
+	},
 }

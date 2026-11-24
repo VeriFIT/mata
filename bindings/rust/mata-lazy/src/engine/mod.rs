@@ -75,6 +75,7 @@ use std::collections::VecDeque;
 use std::collections::hash_map::Entry;
 use std::rc::Rc;
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 
 use indexmap::IndexSet;
 use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
@@ -236,13 +237,14 @@ pub(crate) struct Engine<'f> {
 }
 
 impl<'f> Engine<'f> {
-	/// Prepares the query of `root` and builds its explicit nodes.
+	/// Prepares the query of `root` and builds its explicit nodes; setting `cancel` stops it.
 	pub(crate) fn new(
 		formula: &'f Formula,
 		root: NodeId,
 		options: &Options,
+		cancel: Option<Arc<AtomicBool>>,
 	) -> Result<Engine<'f>, Error> {
-		let budget = Budget::new(options);
+		let budget = Budget::new(options, cancel);
 		let annotations = Annotations::new(formula, options)?;
 		let exec = exec::build(formula, root, &annotations);
 		let alphabets = Alphabets::new(&exec, &root_symbols(options, exec.nodes[exec.root].arity)?);
@@ -762,6 +764,7 @@ impl<'f> Engine<'f> {
 				limit: self.budget.time_limit().expect("only a time limit passes"),
 				stats,
 			},
+			Limit::Cancelled => Error::Cancelled { stats },
 		}
 	}
 

@@ -1,5 +1,7 @@
 //! The limits of one query, and the macrostates and steps counted against them.
 
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use crate::Options;
@@ -14,6 +16,8 @@ pub(crate) enum Limit {
 	States,
 	/// [`time_limit`](Options::time_limit).
 	Time,
+	/// Another plan of a [portfolio](crate::Formula::check_portfolio) answered first.
+	Cancelled,
 }
 
 /// The limits of one query, and what it has spent of them.
@@ -26,10 +30,12 @@ pub(crate) struct Budget {
 	steps_to_clock: u32,
 	/// The first limit passed.
 	passed: Option<Limit>,
+	/// Set once the query is no longer needed; read together with the clock.
+	cancel: Option<Arc<AtomicBool>>,
 }
 
 impl Budget {
-	pub(crate) fn new(options: &Options) -> Budget {
+	pub(crate) fn new(options: &Options, cancel: Option<Arc<AtomicBool>>) -> Budget {
 		let deadline = options
 			.time_limit
 			.and_then(|limit| Some((Instant::now().checked_add(limit)?, limit)));
@@ -40,6 +46,7 @@ impl Budget {
 			macrostates: 0,
 			steps_to_clock: CLOCK_STEPS,
 			passed: None,
+			cancel,
 		}
 	}
 
@@ -57,8 +64,8 @@ impl Budget {
 		self.check_states(0);
 	}
 
-	/// Counts a step of a loop that has created `growing` macrostates not added yet, reading the clock every
-	/// [`CLOCK_STEPS`] steps.
+	/// Counts a step of a loop that has created `growing` macrostates not added yet, reading the clock (and the
+	/// cancellation) every [`CLOCK_STEPS`] steps.
 	pub(crate) fn step(&mut self, growing: usize) {
 		self.check_states(growing);
 
@@ -68,7 +75,7 @@ impl Budget {
 		}
 	}
 
-	/// Reads the clock now, whatever the steps since the last read.
+	/// Reads the clock (and the cancellation) now, whatever the steps since the last read.
 	pub(crate) fn read_clock(&mut self) {
 		self.steps_to_clock = CLOCK_STEPS;
 		if self
@@ -76,6 +83,13 @@ impl Budget {
 			.is_some_and(|(deadline, _)| Instant::now() > deadline)
 		{
 			self.passed.get_or_insert(Limit::Time);
+		}
+		if self
+			.cancel
+			.as_ref()
+			.is_some_and(|cancel| cancel.load(Ordering::Relaxed))
+		{
+			self.passed.get_or_insert(Limit::Cancelled);
 		}
 	}
 
