@@ -688,18 +688,22 @@ library:
 | `(lazy:union t u …)`, `(lazy:intersection t u …)` | `union`, `intersection`     | n, n → n, folded from left  |
 | `(lazy:complement t)`                             | `complement`                | n → n                       |
 | `(lazy:identity t)`                               | `identity`                  | 1 → 2                       |
+| `(lazy:prefixes t)`                               | `prefixes`                  | n → n                       |
+| `(lazy:pad-closure t (symbol "x") …)`             | `pad_closure`               | n → n, one symbol per tape  |
+| `(lazy:pad-closure t)`                            | `pad_closure`               | n → n, repeat the last step |
 | `(lazy:project t (list 2 0))`                     | `project`                   | n → the tapes, in its order |
 | `(lazy:compose r s)`                              | `compose`                   | 2, 2 → 2                    |
 | `(lazy:post-image l r)`, `(lazy:pre-image l r)`   | `post_image`, `pre_image`   | 1, 2 → 1                    |
 | `(lazy:explicit t :max-states n)`                 | `explicit`, `explicit_with` | n → n                       |
 
-| Query                    | `mata::lazy`                 | Value                                  |
-| ------------------------ | ---------------------------- | -------------------------------------- |
-| `(lazy:empty? t)`        | `check(t)`                   | `Bool`: whether `t` is empty           |
-| `(lazy:included? t u)`   | `check(t ∩ ¬u)`              | `Bool`                                 |
-| `(lazy:equivalent? t u)` | `check((t ∩ ¬u) ∪ (u ∩ ¬t))` | `Bool`                                 |
-| `(lazy:witness t)`       | `check(t)`                   | A tuple of `t`, `none` if `t` is empty |
-| `(lazy:materialize t)`   | `materialize(t)` as an `Nft` | An `Nfa` for arity 1, else an `Nft`    |
+| Query                    | `mata::lazy`                 | Value                                                          |
+| ------------------------ | ---------------------------- | -------------------------------------------------------------- |
+| `(lazy:empty? t)`        | `check(t)`                   | `Bool`: whether `t` is empty; false if a bound is inconclusive |
+| `(lazy:empty-within? t)` | `check(t)`                   | `Bool`: no witness within `:max-length`                        |
+| `(lazy:included? t u)`   | `check(t ∩ ¬u)`              | `Bool`                                                         |
+| `(lazy:equivalent? t u)` | `check((t ∩ ¬u) ∪ (u ∩ ¬t))` | `Bool`                                                         |
+| `(lazy:witness t)`       | `check(t)`                   | A tuple of `t`, `none` if `t` is empty                         |
+| `(lazy:materialize t)`   | `materialize(t)` as an `Nft` | An `Nfa` for arity 1, else an `Nft`                            |
 
 - **Lock step.** A term of arity n denotes a relation over n-tuples of words, read in lock step: one step reads one
   symbol on every tape, and `epsilon` pads a shorter word. A language has arity 1, and a leaf of an `Nft` has one tape
@@ -721,19 +725,27 @@ library:
 - **Explicit nodes.** `lazy:explicit` builds its term as an automaton when a query starts and reads it like a leaf;
   later queries of the run reuse it. With `:max-states n` (an `Int`), a term that needs more than `n` states stays
   lazy.
+- **Padding closures.** `lazy:prefixes` prefixes all tapes together, padding included. `lazy:pad-closure` accepts every
+  word that can be padded into its operand. The symbols supply that padding, one per tape; `dont-care` accepts any one
+  symbol of the tape's alphabet. With no symbols, the last step repeats forever (the empty word has no padding). For
+  example, `(lazy:pad-closure (lazy:leaf ab0) (symbol "0"))` turns the language `ab0` into `ab0?`.
 - **Limits.** A query takes `:time-limit` in milliseconds and `:max-states`, the number of macrostates it may hold,
   both `Int`s. A query that passes a limit is an error that stops the script, naming the limit:
   `the query holds more than 2 macrostates`.
+- **Bounded search.** `:max-length n`, an `Int`, searches only words of at most `n` lock-step steps, padding included.
+  Use `lazy:empty-within?` to ask whether no witness exists within that bound. `lazy:empty?` is about the full relation:
+  it returns `false` both when it finds a witness and when a length bound leaves the search inconclusive. Likewise, a
+  bounded `lazy:witness` returning `none` does not by itself prove that a relation is empty. Search for a shortest
+  witness with `:shortest true`; without it the default depth-first search returns the first one it finds.
 - **Witnesses.** `lazy:empty?`, `lazy:included?` and `lazy:equivalent?` are [witness](#witnesses) operations: the
   witness is a tuple of the checked term, so a tuple of `t` not in `u` for `lazy:included?`. A tuple of a language is
-  a `Word`, and of a relation a list of one `Word` per tape. The search is depth-first, so the witness is the first
-  tuple found, not the shortest.
+  a `Word`, and of a relation a list of one `Word` per tape.
 - **Timing and tracing.** `:time-operations` and `:trace` report the queries, which are the calls; builders make none.
   `:optimize` neither remembers nor rewrites `lazy:` applications.
 
-`(lazy:stats label check)` evaluates `check`, an application of `lazy:empty?`, `lazy:witness`, `lazy:included?` or
-`lazy:equivalent?`, returns its value, and prints one record per counter of that query, `label.counter: number`, in
-the form of [timing](#timing) records:
+`(lazy:stats label check)` evaluates `check`, an application of `lazy:empty?`, `lazy:empty-within?`, `lazy:witness`,
+`lazy:included?` or `lazy:equivalent?`, returns its value, and prints one record per counter of that query,
+`label.counter: number`, in the form of [timing](#timing) records:
 
 | Counter                | Meaning                                                                   |
 | ---------------------- | ------------------------------------------------------------------------- |
@@ -746,8 +758,24 @@ the form of [timing](#timing) records:
 | `explicit-transitions` | Transitions of those automata                                             |
 
 Not part of the language yet: synchronized products and composition on chosen tapes (`sync_product`, `compose_on`),
-`lazy:universal?`, `lazy:in-language?`, padding closures, bounded search (`:max-length`), the remaining options of
-`mata::lazy` (`:cache-budget`, `:antichain`, `:subsumption`), and a direct command `mata lazy`.
+`lazy:universal?`, `lazy:in-language?`, the remaining options of `mata::lazy` (`:cache-budget`, `:antichain`,
+`:subsumption`), and a direct command `mata lazy`.
+
+### The `ws1s:` namespace
+
+`ws1s:valid?` decides whether a WS1S formula holds under every assignment, and `ws1s:satisfiable?` whether some
+assignment satisfies it. Both parse the formula with `mata::logic::ws1s::Ws1s` and decide it lazily:
+
+```scheme
+(check "a tautology"
+  (ws1s:valid? "(x = y + 1 & y = z + 1) => x = z + 2"))  ; true
+(check "has a model"
+  (ws1s:satisfiable? "ex1 x: x = 3"))                    ; true
+```
+
+The formula uses the MONA-like syntax of `mata::logic::ws1s`: first-order names start with a lowercase letter and
+second-order ones with an uppercase letter. Both decisions accept `:time-limit`, `:max-states`, `:max-length`, and
+`:shortest`, with the meanings above.
 
 ### Other namespaces
 

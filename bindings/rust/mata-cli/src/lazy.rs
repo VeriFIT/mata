@@ -18,6 +18,7 @@ use crate::ops::{optional, take};
 /// The operations that run one check of a term, with the statistics `lazy:stats` reports.
 pub(crate) const CHECKS: &[&str] = &[
 	"lazy:empty?",
+	"lazy:empty-within?",
 	"lazy:witness",
 	"lazy:included?",
 	"lazy:equivalent?",
@@ -190,17 +191,41 @@ pub(crate) fn dispatch(
 			.map(Value::Term)
 			.map_err(Error::from)
 		}
-		"lazy_complement" | "lazy_identity" => {
+		"lazy_complement" | "lazy_identity" | "lazy_prefixes" => {
 			let [value] = take(arguments, name)?;
 			let operand = term(&value)?;
 			let formula = &mut engine.lazy.formula;
-			if handler == "lazy_complement" {
-				formula.complement(operand)
-			} else {
-				formula.identity(operand)
+			match handler {
+				"lazy_complement" => formula.complement(operand),
+				"lazy_identity" => formula.identity(operand),
+				_ => formula.prefixes(operand),
 			}
 			.map(Value::Term)
 			.map_err(Error::from)
+		}
+		"lazy_pad_closure" => {
+			let mut arguments = arguments.into_iter();
+			let operand = term(&arguments.next().expect("at least one argument"))?;
+			let pad = arguments
+				.map(|value| match value {
+					Value::Symbol(symbol) => Ok(lazy::Symbol::from(symbol)),
+					other => Err(Error::plain(format!(
+						"expected a Symbol, found {}",
+						value_sort(&other)
+					))),
+				})
+				.collect::<Result<Vec<_>, _>>()?;
+			let pad = if pad.is_empty() {
+				lazy::Pad::Last
+			} else {
+				lazy::Pad::Step(pad.into_boxed_slice())
+			};
+			engine
+				.lazy
+				.formula
+				.pad_closure(operand, pad)
+				.map(Value::Term)
+				.map_err(Error::from)
 		}
 		"lazy_project" => {
 			let [value, tapes] = take(arguments, name)?;
@@ -249,6 +274,13 @@ fn dispatch_query(
 			let [value] = take(arguments, name)?;
 			let operand = term(&value)?;
 			decide(engine, operand)
+		}
+		"lazy_empty_within" => {
+			let [value] = take(arguments, name)?;
+			let operand = term(&value)?;
+			let options = options(engine)?;
+			let outcome = engine.lazy.check(operand, &options)?;
+			Ok(Value::Bool(outcome.witness.is_none()))
 		}
 		"lazy_included" => {
 			let [lhs, rhs] = take(arguments, name)?;
@@ -325,7 +357,7 @@ fn witness_value(witness: &Witness) -> Value {
 }
 
 /// The options of a query: its limits and the symbols it adds to the alphabet of the checked term.
-fn options(engine: &mut Engine) -> Result<Options, Error> {
+pub(crate) fn options(engine: &mut Engine) -> Result<Options, Error> {
 	let mut options = Options::new();
 	if let Some(limit) = optional::<i64>(engine, "time-limit") {
 		let milliseconds = u64::try_from(limit)
@@ -334,6 +366,12 @@ fn options(engine: &mut Engine) -> Result<Options, Error> {
 	}
 	if let Some(limit) = optional::<i64>(engine, "max-states") {
 		options = options.max_states(count(limit, ":max-states")?);
+	}
+	if let Some(limit) = optional::<i64>(engine, "max-length") {
+		options = options.max_length(count(limit, ":max-length")?);
+	}
+	if let Some(shortest) = optional::<bool>(engine, "shortest") {
+		options = options.shortest(shortest);
 	}
 	if let Some(symbols) = alphabet(engine)? {
 		options = options.alphabet(symbols);

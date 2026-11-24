@@ -268,6 +268,41 @@ pub(crate) const OPTIONAL_PARAMETERS: &[OptionalParameter] = &[
 	},
 	OptionalParameter {
 		operation: "lazy:empty?",
+		name: "max-length",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:empty?",
+		name: "shortest",
+		sort: "Bool",
+	},
+	OptionalParameter {
+		operation: "lazy:empty?",
+		name: "alphabet",
+		sort: "String",
+	},
+	OptionalParameter {
+		operation: "lazy:empty-within?",
+		name: "time-limit",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:empty-within?",
+		name: "max-states",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:empty-within?",
+		name: "max-length",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:empty-within?",
+		name: "shortest",
+		sort: "Bool",
+	},
+	OptionalParameter {
+		operation: "lazy:empty-within?",
 		name: "alphabet",
 		sort: "String",
 	},
@@ -283,6 +318,16 @@ pub(crate) const OPTIONAL_PARAMETERS: &[OptionalParameter] = &[
 	},
 	OptionalParameter {
 		operation: "lazy:witness",
+		name: "max-length",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:witness",
+		name: "shortest",
+		sort: "Bool",
+	},
+	OptionalParameter {
+		operation: "lazy:witness",
 		name: "alphabet",
 		sort: "String",
 	},
@@ -295,6 +340,16 @@ pub(crate) const OPTIONAL_PARAMETERS: &[OptionalParameter] = &[
 		operation: "lazy:included?",
 		name: "max-states",
 		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:included?",
+		name: "max-length",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:included?",
+		name: "shortest",
+		sort: "Bool",
 	},
 	OptionalParameter {
 		operation: "lazy:included?",
@@ -310,6 +365,16 @@ pub(crate) const OPTIONAL_PARAMETERS: &[OptionalParameter] = &[
 		operation: "lazy:equivalent?",
 		name: "max-states",
 		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:equivalent?",
+		name: "max-length",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:equivalent?",
+		name: "shortest",
+		sort: "Bool",
 	},
 	OptionalParameter {
 		operation: "lazy:equivalent?",
@@ -330,6 +395,46 @@ pub(crate) const OPTIONAL_PARAMETERS: &[OptionalParameter] = &[
 		operation: "lazy:materialize",
 		name: "alphabet",
 		sort: "String",
+	},
+	OptionalParameter {
+		operation: "ws1s:valid?",
+		name: "time-limit",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "ws1s:valid?",
+		name: "max-states",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "ws1s:valid?",
+		name: "max-length",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "ws1s:valid?",
+		name: "shortest",
+		sort: "Bool",
+	},
+	OptionalParameter {
+		operation: "ws1s:satisfiable?",
+		name: "time-limit",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "ws1s:satisfiable?",
+		name: "max-states",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "ws1s:satisfiable?",
+		name: "max-length",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "ws1s:satisfiable?",
+		name: "shortest",
+		sort: "Bool",
 	},
 ];
 
@@ -1478,6 +1583,15 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 		"Term",
 	),
 	op("lazy:identity", "lazy_identity", 1, Some(1), "Term", "Term"),
+	op("lazy:prefixes", "lazy_prefixes", 1, Some(1), "Term", "Term"),
+	op(
+		"lazy:pad-closure",
+		"lazy_pad_closure",
+		1,
+		None,
+		"Term,Symbol*",
+		"Term",
+	),
 	op(
 		"lazy:project",
 		"lazy_project",
@@ -1512,6 +1626,14 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 	),
 	op("lazy:explicit", "lazy_explicit", 1, Some(1), "Term", "Term"),
 	op("lazy:empty?", "lazy_empty", 1, Some(1), "Term", "Bool"),
+	op(
+		"lazy:empty-within?",
+		"lazy_empty_within",
+		1,
+		Some(1),
+		"Term",
+		"Bool",
+	),
 	op("lazy:witness", "lazy_witness", 1, Some(1), "Term", ""),
 	op(
 		"lazy:included?",
@@ -1536,6 +1658,15 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 		Some(1),
 		"Term",
 		"",
+	),
+	op("ws1s:valid?", "ws1s_valid", 1, Some(1), "String", "Bool"),
+	op(
+		"ws1s:satisfiable?",
+		"ws1s_satisfiable",
+		1,
+		Some(1),
+		"String",
+		"Bool",
 	),
 ];
 
@@ -3283,6 +3414,9 @@ fn dispatch_automaton(
 		}
 		_ if handler.starts_with("lazy_") => {
 			crate::lazy::dispatch(handler, name, arguments, engine)
+		}
+		_ if handler.starts_with("ws1s_") => {
+			crate::logic::dispatch(handler, name, arguments, engine)
 		}
 		_ => Err(Error::plain(format!(
 			"operation '{name}' is not available in the Rust bindings"
