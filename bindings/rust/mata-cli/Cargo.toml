@@ -22,6 +22,8 @@ web = []
 [dependencies]
 # `mata::lazy` (the `mata-lazy` crate) with the `Nfa`/`Nft` leaves of the `mata` crate's `lazy` feature.
 mata = { path = "../mata", features = ["lazy"] }
+# The `lazy:view`, `lazy:plan`, and `:plan` script interface reads and writes JSON plans.
+mata-lazy = { workspace = true, features = ["serde"] }
 
 [[bin]]
 name = "mata"

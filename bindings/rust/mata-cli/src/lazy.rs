@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::rc::{Rc, Weak};
 use std::time::Duration;
 
-use mata::lazy::{self, ExplicitOptions, Formula, Options, Outcome, Stats, Term, Witness};
+use mata::lazy::{self, ExplicitOptions, Formula, Options, Outcome, Policy, Stats, Term, Witness};
 use mata::{Nfa, Word, nft::Nft};
 
 use crate::Error;
@@ -78,6 +78,8 @@ pub(crate) struct Lazy {
 	formula: Formula,
 	/// The leaf of every automaton value imported so far, so that a value used in many terms is copied once.
 	leaves: HashMap<LeafKey, (Imported, Term)>,
+	/// The annotations used by every query that has no `:plan` or `:policy`.
+	annotations: lazy::Plan,
 	/// The statistics of the last query, for `lazy:stats`.
 	pub(crate) stats: Option<Stats>,
 }
@@ -87,6 +89,7 @@ impl Lazy {
 		Lazy {
 			formula: Formula::new(),
 			leaves: HashMap::new(),
+			annotations: lazy::Plan::new(),
 			stats: None,
 		}
 	}
@@ -163,6 +166,84 @@ impl Lazy {
 	}
 }
 
+/// Serves plan inspection and `lazy:annotate`; these do no automata search.
+fn dispatch_planning(
+	handler: &str,
+	arguments: Vec<Value>,
+	engine: &mut Engine,
+) -> Result<Value, Error> {
+	match handler {
+		"lazy_plan" => {
+			let [] = take(arguments, "lazy:plan")?;
+			Ok(Value::String(engine.lazy.annotations.to_json()))
+		}
+		"lazy_view" => {
+			let [value] = take(arguments, "lazy:view")?;
+			let view = engine
+				.lazy
+				.formula
+				.view(term(&value)?)
+				.map_err(Error::from)?;
+			Ok(Value::String(view.to_json()))
+		}
+		"lazy_annotate" => {
+			let [value] = take(arguments, "lazy:annotate")?;
+			annotate(engine, &value)
+		}
+		_ => unreachable!("the caller names only planning operations"),
+	}
+}
+
+/// Records one operation's evaluation and operand order for later queries.
+fn annotate(engine: &mut Engine, value: &Value) -> Result<Value, Error> {
+	let operand = term(value)?;
+	let previous = engine
+		.lazy
+		.annotations
+		.annotation(operand)
+		.copied()
+		.unwrap_or_default();
+	let eval = optional::<String>(engine, "eval");
+	let max_states = optional::<i64>(engine, "max-states")
+		.map(|limit| count(limit, ":max-states"))
+		.transpose()?;
+	let mut annotation = previous;
+	annotation.eval = match eval.as_deref() {
+		Some("keep") if max_states.is_none() => lazy::Eval::Keep,
+		None if max_states.is_none() => previous.eval,
+		Some("lazy") if max_states.is_none() => lazy::Eval::Lazy,
+		Some("eager") | None => lazy::Eval::Eager { max_states },
+		Some("keep" | "lazy") => {
+			return Err(Error::plain(
+				":max-states of lazy:annotate requires :eval \"eager\"".into(),
+			));
+		}
+		Some(other) => {
+			return Err(Error::plain(format!(
+				":eval of lazy:annotate must be keep, lazy or eager, not {other}"
+			)));
+		}
+	};
+	if let Some(order) = optional::<String>(engine, "order") {
+		annotation.order = match order.as_str() {
+			"auto" => lazy::Order::Auto,
+			"as-written" => lazy::Order::AsWritten,
+			"swapped" => lazy::Order::Swapped,
+			_ => {
+				return Err(Error::plain(format!(
+					":order of lazy:annotate must be auto, as-written or swapped, not {order}"
+				)));
+			}
+		};
+	}
+	engine.lazy.annotations = engine
+		.lazy
+		.annotations
+		.clone()
+		.annotate(operand, annotation);
+	Ok(Value::Term(operand))
+}
+
 /// Serves the `lazy:` operations.
 pub(crate) fn dispatch(
 	handler: &str,
@@ -171,6 +252,9 @@ pub(crate) fn dispatch(
 	engine: &mut Engine,
 ) -> Result<Value, Error> {
 	match handler {
+		"lazy_plan" | "lazy_view" | "lazy_annotate" => {
+			dispatch_planning(handler, arguments, engine)
+		}
 		"lazy_leaf" => {
 			let [value] = take(arguments, name)?;
 			let alphabet = alphabet(engine)?;
@@ -278,7 +362,7 @@ fn dispatch_query(
 		"lazy_empty_within" => {
 			let [value] = take(arguments, name)?;
 			let operand = term(&value)?;
-			let options = options(engine)?;
+			let options = query_options(engine, operand)?;
 			let outcome = engine.lazy.check(operand, &options)?;
 			Ok(Value::Bool(outcome.witness.is_none()))
 		}
@@ -300,14 +384,14 @@ fn dispatch_query(
 		"lazy_witness" => {
 			let [value] = take(arguments, name)?;
 			let operand = term(&value)?;
-			let options = options(engine)?;
+			let options = query_options(engine, operand)?;
 			let outcome = engine.lazy.check(operand, &options)?;
 			Ok(outcome.witness.as_ref().map_or(Value::None, witness_value))
 		}
 		"lazy_materialize" => {
 			let [value] = take(arguments, name)?;
 			let operand = term(&value)?;
-			let options = options(engine)?;
+			let options = query_options(engine, operand)?;
 			let explicit = engine.lazy.formula.materialize(operand, &options)?;
 			let nft = Nft::try_from(&explicit).map_err(|e| Error::plain(e.to_string()))?;
 			Ok(if explicit.arity() == 1 {
@@ -325,7 +409,7 @@ fn dispatch_query(
 /// Checks `term` for emptiness: `true` when it is empty. The witness, a word of the term, is stored when one is
 /// wanted, as the `nfa:` decisions do.
 fn decide(engine: &mut Engine, term: Term) -> Result<Value, Error> {
-	let options = options(engine)?;
+	let options = query_options(engine, term)?;
 	let outcome = engine.lazy.check(term, &options)?;
 	let wanted = engine.options.produce_witnesses.on() || engine.witness_requested.on();
 	engine.last_witness = if wanted {
@@ -354,6 +438,47 @@ fn witness_value(witness: &Witness) -> Value {
 	} else {
 		Value::List(Rc::new((0..witness.arity()).map(tape).collect()))
 	}
+}
+
+/// The options of one lazy query, including the default annotations or an overriding policy or external plan.
+fn query_options(engine: &mut Engine, term: Term) -> Result<Options, Error> {
+	let options = options(engine)?;
+	let external = optional::<String>(engine, "plan");
+	let policy = optional::<String>(engine, "policy");
+	if external.is_some() && policy.is_some() {
+		return Err(Error::plain(":plan and :policy cannot be combined".into()));
+	}
+	let plan = if let Some(json) = external {
+		engine.lazy.formula.plan_from_json(&json)
+	} else {
+		match policy {
+			None => Ok(engine.lazy.annotations.clone()),
+			Some(policy) => {
+				let view = engine.lazy.formula.view(term);
+				match (policy.as_str(), view) {
+					("lazy", Ok(view)) => Ok(lazy::AllLazy.plan(&view)),
+					("eager", Ok(view)) => Ok(lazy::AllEager.plan(&view)),
+					("heuristic", Ok(view)) => {
+						let heuristic = lazy::Heuristic::new();
+						let heuristic =
+							if let Some(limit) = optional::<i64>(engine, "heuristic-max-states") {
+								heuristic.max_states(count(limit, ":heuristic-max-states")?)
+							} else {
+								heuristic
+							};
+						Ok(heuristic.plan(&view))
+					}
+					("lazy" | "eager" | "heuristic", Err(error)) => Err(error),
+					(other, _) => {
+						return Err(Error::plain(format!(
+							":policy must be lazy, eager or heuristic, not {other}"
+						)));
+					}
+				}
+			}
+		}
+	}?;
+	Ok(options.plan(plan))
 }
 
 /// The options of a query: its limits and the symbols it adds to the alphabet of the checked term.
