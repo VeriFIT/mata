@@ -56,6 +56,10 @@ RAISING_CASES = [
     pytest.param("mn.complement(aut(), alph.Alphabet())", id="complement-base-alphabet"),
     pytest.param("parser.from_regex('(ab')", id="from-regex-syntax-error"),
     pytest.param("parser.from_regex('(?:ab|cd){1000}' * 200)", id="from-regex-too-large"),
+    pytest.param(
+        "parser.from_regex('a' * 1000, max_mem=1024)",
+        id="from-regex-small-memory-budget",
+    ),
 ]
 
 #: Statements that must simply run to completion. They used to read freed memory. Every check raises
@@ -114,6 +118,13 @@ SURVIVING_CASES = [
         "else:\n"
         "    raise SystemExit('returned normally instead of raising')",
         id="from-mata-empty-iterator",
+    ),
+    pytest.param(
+        "aut = parser.from_regex('(?:ab|cd){1000}' * 200, trim=False, reduce=False, max_mem=(1 << 63) - 1)\n"
+        "if not aut.is_in_lang([ord('a'), ord('b')] * 200000):\n"
+        "    raise SystemExit('raised RE2 budget did not compile the oversized regex')\n"
+        "print('ok')",
+        id="from-regex-raised-memory-budget",
     ),
 ]
 

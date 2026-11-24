@@ -5,6 +5,8 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/parser/re2parser.hh"
 
+#include <limits>
+
 using namespace mata::nfa;
 
 using Symbol = mata::Symbol;
@@ -2035,6 +2037,46 @@ TEST_CASE("mata::parser::create_nfa() post-processing options") {
 		CHECK(utf8.is_in_lang(Word{0xc4, 0x80}));
 		CHECK_THROWS(mata::parser::create_nfa("\\x{100}", Re2Options{.encoding = Encoding::Latin1}));
 	}
+}
+
+TEST_CASE("mata::parser::create_nfa() accepts a caller-selected memory budget") {
+	using mata::parser::Re2Options;
+	const Re2Options default_options{.trim = false, .reduce = false};
+	const Nfa default_automaton{mata::parser::create_nfa("ab", default_options)};
+	CHECK(default_automaton.is_in_lang(Word{'a', 'b'}));
+
+	const Re2Options zero_budget_options{default_options};
+	CHECK(are_equivalent(default_automaton, mata::parser::create_nfa("ab", zero_budget_options)));
+	Re2Options negative_budget_options{default_options};
+	negative_budget_options.max_mem = -1;
+	CHECK(are_equivalent(default_automaton, mata::parser::create_nfa("ab", negative_budget_options)));
+
+	Re2Options tiny_options{default_options};
+	tiny_options.max_mem = 1;
+	CHECK_THROWS_WITH(
+		mata::parser::create_nfa("a{1000}", tiny_options), Catch::Matchers::ContainsSubstring("memory budget")
+	);
+
+	Re2Options limited_options{default_options};
+	limited_options.max_mem = 1'024;
+	CHECK_THROWS_WITH(
+		mata::parser::create_nfa("a{1000}", limited_options), Catch::Matchers::ContainsSubstring("memory budget")
+	);
+
+	std::string oversized{};
+	for (int repetition = 0; repetition < 200; ++repetition) { oversized += "(?:ab|cd){1000}"; }
+	Re2Options generous_options{default_options};
+	generous_options.max_mem = std::numeric_limits<std::int64_t>::max();
+	const Nfa larger_automaton{mata::parser::create_nfa(oversized, generous_options)};
+	CHECK(!larger_automaton.is_lang_empty());
+	Word accepted_word{};
+	accepted_word.reserve(400'000);
+	// Each of 200 groups consumes 1,000 alternatives of two symbols: 400,000 symbols in total.
+	for (int repetition = 0; repetition < 200'000; ++repetition) {
+		accepted_word.push_back('a');
+		accepted_word.push_back('b');
+	}
+	CHECK(larger_automaton.is_in_lang(accepted_word));
 }
 
 TEST_CASE("mata::parser::create_nfa() regex beyond RE2's memory budget") {

@@ -9,7 +9,7 @@ cimport libmata.alphabets as alph
 from libmata.alphabets import IntAlphabet
 
 # External Constructors
-def from_regex(regex, encoding='utf-8', bool reduce=True, bool trim=True, bool keep_epsilon=False):
+def from_regex(regex, encoding='utf-8', bool reduce=True, bool trim=True, bool keep_epsilon=False, long long max_mem=0):
     """Creates automaton from the regular expression
 
     The format of the regex conforms to google RE2 regular expression library.
@@ -20,6 +20,8 @@ def from_regex(regex, encoding='utf-8', bool reduce=True, bool trim=True, bool k
     :param bool reduce: whether to reduce the automaton using simulation reduction; costly for large regexes
     :param bool trim: whether to trim the automaton
     :param bool keep_epsilon: whether to keep epsilon transitions (labelled with EPSILON) in the automaton
+    :param int max_mem: approximate RE2 program memory budget in bytes. Non-positive values use RE2's default budget.
+                        Applies to compilation, not to trimming or reduction.
     :return: Nfa automaton
     """
     cdef parser.CRe2Options options
@@ -27,6 +29,7 @@ def from_regex(regex, encoding='utf-8', bool reduce=True, bool trim=True, bool k
     options.epsilon = CEPSILON
     options.trim = trim
     options.reduce = reduce
+    options.max_mem = max_mem
     result = mata_nfa.Nfa()
     parser.create_nfa((<mata_nfa.Nfa>result).thisptr.get(), regex.encode(encoding), options)
     return result
