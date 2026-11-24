@@ -239,6 +239,9 @@ works. <code class="docutils literal notranslate"><span class="pre">loop</span><
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Function</span></code></p></td>
 <td><p>An operation, a defined function or a <code class="docutils literal notranslate"><span class="pre">lambda</span></code></p></td>
 </tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">Term</span></code></p></td>
+<td><p>A node of the run’s lazy formula; see <a class="reference internal" href="#the-lazy-namespace">The <code class="docutils literal notranslate"><span class="pre">lazy:</span></code> namespace</a></p></td>
+</tr>
 </tbody>
 </table>
 <section id="checking">
@@ -578,6 +581,9 @@ builds the alphabet of the symbols that occur in the given automata.</p>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">list:</span></code></p></td>
 <td><p>No library counterpart</p></td>
 </tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">lazy:</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mata::lazy</span></code> of the Rust bindings; see <a class="reference internal" href="#the-lazy-namespace">below</a></p></td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -626,6 +632,8 @@ the overload that runs can be read from the script.</p></li>
 <li><p>With more than two operands, <code class="docutils literal notranslate"><span class="pre">(nfa:intersection</span> <span class="pre">a</span> <span class="pre">b</span> <span class="pre">c)</span></code> is <code class="docutils literal notranslate"><span class="pre">(nfa:intersection</span> <span class="pre">(nfa:intersection</span> <span class="pre">a</span> <span class="pre">b)</span> <span class="pre">c)</span></code>. This holds
 for every operation whose library function takes two automata and returns one: <code class="docutils literal notranslate"><span class="pre">union-nondeterministic</span></code>,
 <code class="docutils literal notranslate"><span class="pre">intersection</span></code> and <code class="docutils literal notranslate"><span class="pre">concatenate</span></code> of both namespaces, and <code class="docutils literal notranslate"><span class="pre">nft:compose</span></code>.</p></li>
+<li><p>A <code class="docutils literal notranslate"><span class="pre">lazy:</span></code> builder makes no call at all; the query that checks its term is the call. See
+<a class="reference internal" href="#the-lazy-namespace">The <code class="docutils literal notranslate"><span class="pre">lazy:</span></code> namespace</a>.</p></li>
 </ul>
 </section>
 <section id="nfa-operations">
@@ -938,6 +946,162 @@ when the script runs. Operands of different kinds are an error; convert explicit
 <code class="docutils literal notranslate"><span class="pre">nft:from-nfa-with-levels-zero</span></code> or <code class="docutils literal notranslate"><span class="pre">nft:to-nfa</span></code>.</p>
 <p><code class="docutils literal notranslate"><span class="pre">automaton:load</span></code> and <code class="docutils literal notranslate"><span class="pre">automaton:parse</span></code> accept either kind and return an <code class="docutils literal notranslate"><span class="pre">Automaton</span></code>.</p>
 </section>
+<section id="script-lazy">
+<span id="the-lazy-namespace"></span><h3>The <code class="docutils literal notranslate"><span class="pre">lazy:</span></code> namespace<a class="headerlink" href="#script-lazy" title="Link to this heading">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">lazy:</span></code> operations decide properties of Boolean and relational combinations of automata and transducers without
+building the combination: products pair states and complements build subsets on the fly, and a query explores only
+the macrostates it needs. They run <code class="docutils literal notranslate"><span class="pre">mata::lazy</span></code>, the <code class="docutils literal notranslate"><span class="pre">mata-lazy</span></code> crate of the Rust bindings, which has no C++
+counterpart. A script that uses them says so with <code class="docutils literal notranslate"><span class="pre">:requires</span> <span class="pre">(lazy)</span></code>.</p>
+<p>Builders combine values of the sort <code class="docutils literal notranslate"><span class="pre">Term</span></code> and do no automata work. A query checks one term, which is one call of the
+library:</p>
+<div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">mata-script</span><span class="w"> </span><span class="s">"0.1.0"</span><span class="w"> </span><span class="nv">:requires</span><span class="w"> </span><span class="p">(</span><span class="nf">lazy</span><span class="p">))</span>
+<span class="p">(</span><span class="nf">set-option</span><span class="w"> </span><span class="nv">:alphabet</span><span class="w"> </span><span class="s">"bytes"</span><span class="p">)</span>
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="p">(</span><span class="nf">lazy:leaf</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:create-from-regex</span><span class="w"> </span><span class="s">"a(a|b)*"</span><span class="p">)))</span>
+<span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">b</span><span class="w"> </span><span class="p">(</span><span class="nf">lazy:leaf</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:create-from-regex</span><span class="w"> </span><span class="s">"(a|b)*b"</span><span class="p">)))</span>
+<span class="p">(</span><span class="nf">check</span><span class="w"> </span><span class="p">(</span><span class="nf">lazy:included?</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">b</span><span class="p">))</span><span class="w">                                     </span><span class="c1">; false</span>
+<span class="p">(</span><span class="nf">print</span><span class="w"> </span><span class="p">(</span><span class="nf">lazy:witness</span><span class="w"> </span><span class="p">(</span><span class="nf">lazy:intersection</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="p">(</span><span class="nf">lazy:complement</span><span class="w"> </span><span class="nv">b</span><span class="p">))))</span><span class="w">  </span><span class="c1">; a</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Builder</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">mata::lazy</span></code></p></th>
+<th class="head"><p>Arities</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">(lazy:leaf</span> <span class="pre">automaton</span> <span class="pre">:alphabet</span> <span class="pre">&quot;x</span> <span class="pre">y&quot;)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">leaf</span></code>, <code class="docutils literal notranslate"><span class="pre">leaf_over</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Nfa</span></code> → 1, <code class="docutils literal notranslate"><span class="pre">Nft</span></code> → levels</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">(lazy:union</span> <span class="pre">t</span> <span class="pre">u</span> <span class="pre">…)</span></code>, <code class="docutils literal notranslate"><span class="pre">(lazy:intersection</span> <span class="pre">t</span> <span class="pre">u</span> <span class="pre">…)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">union</span></code>, <code class="docutils literal notranslate"><span class="pre">intersection</span></code></p></td>
+<td><p>n, n → n, folded from left</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">(lazy:complement</span> <span class="pre">t)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">complement</span></code></p></td>
+<td><p>n → n</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">(lazy:identity</span> <span class="pre">t)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">identity</span></code></p></td>
+<td><p>1 → 2</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">(lazy:project</span> <span class="pre">t</span> <span class="pre">(list</span> <span class="pre">2</span> <span class="pre">0))</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">project</span></code></p></td>
+<td><p>n → the tapes, in its order</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">(lazy:compose</span> <span class="pre">r</span> <span class="pre">s)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">compose</span></code></p></td>
+<td><p>2, 2 → 2</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">(lazy:post-image</span> <span class="pre">l</span> <span class="pre">r)</span></code>, <code class="docutils literal notranslate"><span class="pre">(lazy:pre-image</span> <span class="pre">l</span> <span class="pre">r)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">post_image</span></code>, <code class="docutils literal notranslate"><span class="pre">pre_image</span></code></p></td>
+<td><p>1, 2 → 1</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">(lazy:explicit</span> <span class="pre">t</span> <span class="pre">:max-states</span> <span class="pre">n)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">explicit</span></code>, <code class="docutils literal notranslate"><span class="pre">explicit_with</span></code></p></td>
+<td><p>n → n</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Query</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">mata::lazy</span></code></p></th>
+<th class="head"><p>Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">(lazy:empty?</span> <span class="pre">t)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">check(t)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Bool</span></code>: whether <code class="docutils literal notranslate"><span class="pre">t</span></code> is empty</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">(lazy:included?</span> <span class="pre">t</span> <span class="pre">u)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">check(t</span> <span class="pre">∩</span> <span class="pre">¬u)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Bool</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">(lazy:equivalent?</span> <span class="pre">t</span> <span class="pre">u)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">check((t</span> <span class="pre">∩</span> <span class="pre">¬u)</span> <span class="pre">∪</span> <span class="pre">(u</span> <span class="pre">∩</span> <span class="pre">¬t))</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Bool</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">(lazy:witness</span> <span class="pre">t)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">check(t)</span></code></p></td>
+<td><p>A tuple of <code class="docutils literal notranslate"><span class="pre">t</span></code>, <code class="docutils literal notranslate"><span class="pre">none</span></code> if <code class="docutils literal notranslate"><span class="pre">t</span></code> is empty</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">(lazy:materialize</span> <span class="pre">t)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">materialize(t)</span></code> as an <code class="docutils literal notranslate"><span class="pre">Nft</span></code></p></td>
+<td><p>An <code class="docutils literal notranslate"><span class="pre">Nfa</span></code> for arity 1, else an <code class="docutils literal notranslate"><span class="pre">Nft</span></code></p></td>
+</tr>
+</tbody>
+</table>
+<ul class="simple">
+<li><p><strong>Lock step.</strong> A term of arity n denotes a relation over n-tuples of words, read in lock step: one step reads one
+symbol on every tape, and <code class="docutils literal notranslate"><span class="pre">epsilon</span></code> pads a shorter word. A language has arity 1, and a leaf of an <code class="docutils literal notranslate"><span class="pre">Nft</span></code> has one tape
+per level. This is exact for length-preserving relations, as in regular model checking. Mata’s <code class="docutils literal notranslate"><span class="pre">nft:compose</span></code> and
+<code class="docutils literal notranslate"><span class="pre">nft:apply</span></code> align padding asynchronously, so on a transducer that pads they can give another relation than
+<code class="docutils literal notranslate"><span class="pre">lazy:compose</span></code> and the images.</p></li>
+<li><p><strong>Arities</strong> are checked when the builder runs: <code class="docutils literal notranslate"><span class="pre">(lazy:intersection</span> <span class="pre">language</span> <span class="pre">relation)</span></code> stops the script with
+<code class="docutils literal notranslate"><span class="pre">intersection</span> <span class="pre">expects</span> <span class="pre">arity</span> <span class="pre">1,</span> <span class="pre">found</span> <span class="pre">2</span></code>. The checker knows only that both operands are terms.</p></li>
+<li><p><strong>Alphabets.</strong> The complement is taken over the tuples of concrete symbols of the tapes’ alphabets, so it holds no
+padding. A tape’s alphabet holds the symbols that the leaves read on the tapes that must read the same symbols (both
+operands of an intersection, both tapes of an identity, …), the symbols of <code class="docutils literal notranslate"><span class="pre">:alphabet</span></code> of their <code class="docutils literal notranslate"><span class="pre">lazy:leaf</span></code>, and,
+for the term a query checks, the symbols of the query’s <code class="docutils literal notranslate"><span class="pre">:alphabet</span></code>. <code class="docutils literal notranslate"><span class="pre">:alphabet</span></code> is symbol names separated by
+spaces, translated through the script alphabet. The same complement can therefore mean different things in
+different queries: <code class="docutils literal notranslate"><span class="pre">(lazy:complement</span> <span class="pre">(lazy:leaf</span> <span class="pre">(nfa:create-from-regex</span> <span class="pre">&quot;(a|b)*&quot;)))</span></code> is empty, and not empty with
+<code class="docutils literal notranslate"><span class="pre">:alphabet</span> <span class="pre">&quot;a</span> <span class="pre">b</span> <span class="pre">c&quot;</span></code>.</p></li>
+<li><p><strong>One formula per run.</strong> Every term of a run is a node of one formula, which only grows while the run lasts, so
+terms built for different queries combine. A value is imported as a leaf once for each <code class="docutils literal notranslate"><span class="pre">:alphabet</span></code> it is given, and
+<code class="docutils literal notranslate"><span class="pre">=</span></code> is true of two terms that are the same node, such as two leaves of one value.</p></li>
+<li><p><strong>Explicit nodes.</strong> <code class="docutils literal notranslate"><span class="pre">lazy:explicit</span></code> builds its term as an automaton when a query starts and reads it like a leaf;
+later queries of the run reuse it. With <code class="docutils literal notranslate"><span class="pre">:max-states</span> <span class="pre">n</span></code> (an <code class="docutils literal notranslate"><span class="pre">Int</span></code>), a term that needs more than <code class="docutils literal notranslate"><span class="pre">n</span></code> states stays
+lazy.</p></li>
+<li><p><strong>Limits.</strong> A query takes <code class="docutils literal notranslate"><span class="pre">:time-limit</span></code> in milliseconds and <code class="docutils literal notranslate"><span class="pre">:max-states</span></code>, the number of macrostates it may hold,
+both <code class="docutils literal notranslate"><span class="pre">Int</span></code>s. A query that passes a limit is an error that stops the script, naming the limit:
+<code class="docutils literal notranslate"><span class="pre">the</span> <span class="pre">query</span> <span class="pre">holds</span> <span class="pre">more</span> <span class="pre">than</span> <span class="pre">2</span> <span class="pre">macrostates</span></code>.</p></li>
+<li><p><strong>Witnesses.</strong> <code class="docutils literal notranslate"><span class="pre">lazy:empty?</span></code>, <code class="docutils literal notranslate"><span class="pre">lazy:included?</span></code> and <code class="docutils literal notranslate"><span class="pre">lazy:equivalent?</span></code> are <a class="reference internal" href="#witnesses">witness</a> operations: the
+witness is a tuple of the checked term, so a tuple of <code class="docutils literal notranslate"><span class="pre">t</span></code> not in <code class="docutils literal notranslate"><span class="pre">u</span></code> for <code class="docutils literal notranslate"><span class="pre">lazy:included?</span></code>. A tuple of a language is
+a <code class="docutils literal notranslate"><span class="pre">Word</span></code>, and of a relation a list of one <code class="docutils literal notranslate"><span class="pre">Word</span></code> per tape. The search is depth-first, so the witness is the first
+tuple found, not the shortest.</p></li>
+<li><p><strong>Timing and tracing.</strong> <code class="docutils literal notranslate"><span class="pre">:time-operations</span></code> and <code class="docutils literal notranslate"><span class="pre">:trace</span></code> report the queries, which are the calls; builders make none.
+<code class="docutils literal notranslate"><span class="pre">:optimize</span></code> neither remembers nor rewrites <code class="docutils literal notranslate"><span class="pre">lazy:</span></code> applications.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">(lazy:stats</span> <span class="pre">label</span> <span class="pre">check)</span></code> evaluates <code class="docutils literal notranslate"><span class="pre">check</span></code>, an application of <code class="docutils literal notranslate"><span class="pre">lazy:empty?</span></code>, <code class="docutils literal notranslate"><span class="pre">lazy:witness</span></code>, <code class="docutils literal notranslate"><span class="pre">lazy:included?</span></code> or
+<code class="docutils literal notranslate"><span class="pre">lazy:equivalent?</span></code>, returns its value, and prints one record per counter of that query, <code class="docutils literal notranslate"><span class="pre">label.counter:</span> <span class="pre">number</span></code>, in
+the form of <a class="reference internal" href="#timing">timing</a> records:</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Counter</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">explored</span></code></p></td>
+<td><p>Macrostates of the checked term whose successors were computed</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pruned</span></code></p></td>
+<td><p>Macrostates of the checked term skipped because a found one subsumes them</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">macrostates</span></code></p></td>
+<td><p>Macrostates created in all nodes</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dropped</span></code></p></td>
+<td><p>Cached successors dropped to stay within the cache budget</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">explicit</span></code></p></td>
+<td><p>Explicit nodes built as automata, not those past their <code class="docutils literal notranslate"><span class="pre">:max-states</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">explicit-states</span></code></p></td>
+<td><p>States of those automata</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">explicit-transitions</span></code></p></td>
+<td><p>Transitions of those automata</p></td>
+</tr>
+</tbody>
+</table>
+<p>Not part of the language yet: synchronized products and composition on chosen tapes (<code class="docutils literal notranslate"><span class="pre">sync_product</span></code>, <code class="docutils literal notranslate"><span class="pre">compose_on</span></code>),
+<code class="docutils literal notranslate"><span class="pre">lazy:universal?</span></code>, <code class="docutils literal notranslate"><span class="pre">lazy:in-language?</span></code>, padding closures, bounded search (<code class="docutils literal notranslate"><span class="pre">:max-length</span></code>), the remaining options of
+<code class="docutils literal notranslate"><span class="pre">mata::lazy</span></code> (<code class="docutils literal notranslate"><span class="pre">:cache-budget</span></code>, <code class="docutils literal notranslate"><span class="pre">:antichain</span></code>, <code class="docutils literal notranslate"><span class="pre">:subsumption</span></code>), and a direct command <code class="docutils literal notranslate"><span class="pre">mata</span> <span class="pre">lazy</span></code>.</p>
+</section>
 <section id="other-namespaces">
 <h3>Other namespaces<a class="headerlink" href="#other-namespaces" title="Link to this heading">¶</a></h3>
 <table class="docutils align-default">
@@ -1103,14 +1267,16 @@ get it.</p>
 do not hold, and the two emptiness checks when the language is not empty. <code class="docutils literal notranslate"><span class="pre">(witness</span> <span class="pre">application)</span></code> makes the call with
 the output parameter and returns the stored <code class="docutils literal notranslate"><span class="pre">Word</span></code> for that verdict, and <code class="docutils literal notranslate"><span class="pre">none</span></code> for the other one. The call is made
 once, so the verdict is not computed separately. The application must be a call of <code class="docutils literal notranslate"><span class="pre">nfa:included?</span></code>,
-<code class="docutils literal notranslate"><span class="pre">nfa:equivalent?</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:universal?</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:language-empty?</span></code> or <code class="docutils literal notranslate"><span class="pre">nfa:intersection-empty?</span></code>; anything else is an error:</p>
+<code class="docutils literal notranslate"><span class="pre">nfa:equivalent?</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:universal?</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:language-empty?</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:intersection-empty?</span></code>, or of the
+<a class="reference internal" href="#the-lazy-namespace"><code class="docutils literal notranslate"><span class="pre">lazy:</span></code></a> decisions <code class="docutils literal notranslate"><span class="pre">lazy:empty?</span></code>, <code class="docutils literal notranslate"><span class="pre">lazy:included?</span></code> and <code class="docutils literal notranslate"><span class="pre">lazy:equivalent?</span></code>; anything else is an
+error:</p>
 <div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="k">define</span><span class="w"> </span><span class="nv">counterexample</span><span class="w"> </span><span class="p">(</span><span class="nf">witness</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:included?</span><span class="w"> </span><span class="nv">smaller</span><span class="w"> </span><span class="nv">bigger</span><span class="p">)))</span>
 <span class="p">(</span><span class="nf">assert</span><span class="w"> </span><span class="p">(</span><span class="nf">none?</span><span class="w"> </span><span class="nv">counterexample</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>With <code class="docutils literal notranslate"><span class="pre">(set-option</span> <span class="pre">:produce-witnesses</span> <span class="pre">true)</span></code>, every such call passes the output parameter, and <code class="docutils literal notranslate"><span class="pre">(get-witness)</span></code> returns
-the witness of the most recent decision operation, the <code class="docutils literal notranslate"><span class="pre">nfa:</span></code> and <code class="docutils literal notranslate"><span class="pre">nft:</span></code> operations whose names end in <code class="docutils literal notranslate"><span class="pre">?</span></code>, and <code class="docutils literal notranslate"><span class="pre">none</span></code>
-when that operation stored none. This is the convenient form in an interactive session:</p>
+the witness of the most recent decision operation, the <code class="docutils literal notranslate"><span class="pre">nfa:</span></code>, <code class="docutils literal notranslate"><span class="pre">nft:</span></code> and <code class="docutils literal notranslate"><span class="pre">lazy:</span></code> operations whose names end in <code class="docutils literal notranslate"><span class="pre">?</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">none</span></code> when that operation stored none. This is the convenient form in an interactive session:</p>
 <div class="highlight-scheme notranslate"><div class="highlight"><pre><span></span><span class="p">(</span><span class="nf">set-option</span><span class="w"> </span><span class="nv">:produce-witnesses</span><span class="w"> </span><span class="nv">true</span><span class="p">)</span>
 <span class="p">(</span><span class="nf">check</span><span class="w"> </span><span class="p">(</span><span class="nf">nfa:included?</span><span class="w"> </span><span class="nv">smaller</span><span class="w"> </span><span class="nv">bigger</span><span class="p">))</span><span class="w">   </span><span class="c1">; false</span>
 <span class="p">(</span><span class="nf">get-witness</span><span class="p">)</span><span class="w">                            </span><span class="c1">; a b b</span>
@@ -1315,9 +1481,9 @@ sees only those of its declared version. Every namespaced name and every name of
 the declared version has it yet or not, so adding an operation cannot change the meaning of a script that defined a
 name of its own.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">:requires</span></code></strong> lists optional parts of the language that the script needs: <code class="docutils literal notranslate"><span class="pre">hints</span></code>, <code class="docutils literal notranslate"><span class="pre">witnesses</span></code>, <code class="docutils literal notranslate"><span class="pre">transducers</span></code>,
-<code class="docutils literal notranslate"><span class="pre">loops-and-recursion</span></code>, <code class="docutils literal notranslate"><span class="pre">optimizer</span></code>, <code class="docutils literal notranslate"><span class="pre">trace</span></code>, <code class="docutils literal notranslate"><span class="pre">automaton</span></code>, <code class="docutils literal notranslate"><span class="pre">strings</span></code> and <code class="docutils literal notranslate"><span class="pre">intermediate</span></code>. An interpreter without one
-of them rejects the script before running it, naming the feature, rather than failing at the first form that needs
-it. <code class="docutils literal notranslate"><span class="pre">mata</span> <span class="pre">formats</span></code> lists the features and whether the build implements them.</p></li>
+<code class="docutils literal notranslate"><span class="pre">loops-and-recursion</span></code>, <code class="docutils literal notranslate"><span class="pre">optimizer</span></code>, <code class="docutils literal notranslate"><span class="pre">trace</span></code>, <code class="docutils literal notranslate"><span class="pre">automaton</span></code>, <code class="docutils literal notranslate"><span class="pre">strings</span></code>, <code class="docutils literal notranslate"><span class="pre">intermediate</span></code> and <code class="docutils literal notranslate"><span class="pre">lazy</span></code>. An interpreter
+without one of them rejects the script before running it, naming the feature, rather than failing at the first form
+that needs it. <code class="docutils literal notranslate"><span class="pre">mata</span> <span class="pre">formats</span></code> lists the features and whether the build implements them.</p></li>
 <li><p><strong><code class="docutils literal notranslate"><span class="pre">:profile</span></code></strong> selects a <a class="reference internal" href="#portable-core">profile</a>; <code class="docutils literal notranslate"><span class="pre">core</span></code> is the only one, and any other name is an error.</p></li>
 <li><p><strong>A script without a header</strong> is read as the version of the interpreter that runs it. That suits a one-line
 <code class="docutils literal notranslate"><span class="pre">--expression</span></code> and an interactive session, but a script kept in a file should name its version; <code class="docutils literal notranslate"><span class="pre">mata</span> <span class="pre">script</span> <span class="pre">check</span></code>

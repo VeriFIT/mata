@@ -516,12 +516,16 @@ interpreter, so a direct command and a one-line script cannot disagree.</p></li>
 <li><p>Every operation of the catalogue records the language version that added it. A script sees the operations of the
 version its header declares, and the names of all of them are reserved, so an operation added later can never clash
 with a name a script defined.</p></li>
-<li><p>The interpreter implements 162 operations: the portable core of the language, the script forms that a direct command
-needs, and the NFA, NFT, string-solving, automaton and intermediate-automaton operations <code class="docutils literal notranslate"><span class="pre">bindings/rust/mata</span></code> covers,
+<li><p>The interpreter implements 178 operations: the portable core of the language, the script forms that a direct command
+needs, the NFA, NFT, string-solving, automaton and intermediate-automaton operations <code class="docutils literal notranslate"><span class="pre">bindings/rust/mata</span></code> covers,
+and the 15 <a class="reference internal" href="script-language.html#script-lazy"><span class="std std-ref">lazy: operations</span></a> of <code class="docutils literal notranslate"><span class="pre">mata::lazy</span></code> (with the special form <code class="docutils literal notranslate"><span class="pre">lazy:stats</span></code>),
 so every operation of the <a class="reference internal" href="script-language.html"><span class="doc std std-doc">script language</span></a> page runs. An operation outside that table is rejected
 by name and never approximated: a script reports <code class="docutils literal notranslate"><span class="pre">unknown</span> <span class="pre">name</span> <span class="pre">'nft:minimize'</span></code> and a direct command reports
 <code class="docutils literal notranslate"><span class="pre">unknown</span> <span class="pre">operation</span> <span class="pre">'nft:minimize'</span></code>, both exiting <code class="docutils literal notranslate"><span class="pre">2</span></code>. <code class="docutils literal notranslate"><span class="pre">nft:minimize</span></code> is the one operation name of the page that is
 rejected: the library declares it only under <code class="docutils literal notranslate"><span class="pre">MATA_NFT_NOT_IMPLEMENTED</span></code>.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">lazy:</span></code> operations are script-only: <code class="docutils literal notranslate"><span class="pre">mata</span> <span class="pre">lazy</span></code> is not a direct command yet. One <code class="docutils literal notranslate"><span class="pre">mata::lazy::Formula</span></code> lives
+for the whole run, held by the evaluator, so terms from different queries combine; leaves are imported once per
+automaton value and <code class="docutils literal notranslate"><span class="pre">:alphabet</span></code>. <code class="docutils literal notranslate"><span class="pre">mata-cli</span></code> enables the <code class="docutils literal notranslate"><span class="pre">lazy</span></code> feature of the <code class="docutils literal notranslate"><span class="pre">mata</span></code> crate for it.</p></li>
 <li><p>The interpreter limits how deeply a script may nest, as an error instead of a crash of the process: a function
 call chain deeper than 1000 calls, and a source nesting deeper than 1000 levels, are reported where they stand.
 The whole interpreter runs on a thread with a large stack, so a script that stays inside the limits never
