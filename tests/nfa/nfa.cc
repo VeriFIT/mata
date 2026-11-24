@@ -6855,6 +6855,58 @@ TEST_CASE("mata::nfa::Nfa::get_word()") {
 	}
 }
 
+TEST_CASE("mata::nfa::Nfa::get_shortest_word()") {
+	SECTION("empty language") { CHECK(Nfa{}.get_shortest_word() == std::nullopt); }
+
+	SECTION("initial state is final") {
+		const Nfa aut{1, {0}, {0}};
+		CHECK(aut.get_shortest_word() == Word{});
+	}
+
+	SECTION("a longer epsilon path spells fewer letters") {
+		Nfa aut{6, {0}, {4}};
+		aut.delta.add(0, 'a', 5);
+		aut.delta.add(0, EPSILON, 1);
+		aut.delta.add(1, EPSILON, 2);
+		aut.delta.add(2, EPSILON, 3);
+		aut.delta.add(3, 'a', 4);
+		aut.delta.add(5, 'b', 4);
+		const auto word{aut.get_shortest_word()};
+		REQUIRE(word.has_value());
+		CHECK(*word == Word{'a'});
+		CHECK(aut.is_in_lang(*word, true));
+	}
+
+	SECTION("an epsilon final beats a one-letter final") {
+		Nfa aut{3, {0}, {1, 2}};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, EPSILON, 2);
+		CHECK(aut.get_shortest_word() == Word{});
+	}
+
+	SECTION("an epsilon-only path backtracks to the initial state") {
+		Nfa aut{3, {0}, {2}};
+		aut.delta.add(0, EPSILON, 1);
+		aut.delta.add(1, EPSILON, 2);
+		CHECK(aut.get_shortest_word() == Word{});
+	}
+
+	SECTION("a custom first epsilon has zero cost") {
+		Nfa aut{3, {0}, {1, 2}};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, 'b', 2);
+		CHECK(aut.get_shortest_word('b') == Word{});
+	}
+
+	SECTION("without an epsilon boundary all symbols cost one") {
+		Nfa aut{3, {0}, {2}};
+		aut.delta.add(0, EPSILON, 1);
+		aut.delta.add(1, 'a', 2);
+		CHECK(aut.get_shortest_word() == Word{'a'});
+		CHECK(aut.get_shortest_word(std::nullopt) == Word{EPSILON, 'a'});
+	}
+}
+
 TEST_CASE("mata::nfa::Nfa::add_transition()") {
 	SECTION("uses the automaton's own alphabet") {
 		Nfa aut(2);

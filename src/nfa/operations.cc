@@ -2289,57 +2289,55 @@ std::optional<mata::Word> Nfa::get_shortest_word(const std::optional<Symbol> fir
 	// Resulting word
 	const size_t num_of_states = this->num_of_states();
 
-	std::queue<mata::nfa::State> worklist;
+	std::deque<mata::nfa::State> worklist;
 	std::vector<int> dist(num_of_states, -1);
+	std::vector<bool> finalized(num_of_states, false);
 	std::vector<Predecessor> pred(num_of_states);
 
-	// Initialize BFS from all initial states
+	// Initialize 0-1 BFS from all initial states.
 	for (const mata::nfa::State init_state : this->initial) {
 		dist[init_state] = 0;
-		worklist.push(init_state);
+		pred[init_state] = {.prev = init_state, .sym = 0};
+		worklist.push_back(init_state);
 
 		if (this->final.contains(init_state)) {
 			return mata::Word{}; // empty word accepted
 		}
 	}
 
-	// Standard BFS loop
 	while (!worklist.empty()) {
-		// Get the next state in the queue and remove it
 		const mata::nfa::State curr_state = worklist.front();
-		worklist.pop();
+		worklist.pop_front();
+		if (finalized[curr_state]) { continue; }
+		finalized[curr_state] = true;
 
-		// Calculate the distance for any newly discovered states from this node
-		const int next_dist = dist[curr_state] + 1;
+		// Finalize rather than return on discovery: an epsilon path can still reach another final state for free.
+		if (this->final.contains(curr_state)) {
+			mata::Word res;
+			for (mata::nfa::State backtrack_state = curr_state; pred[backtrack_state].prev != backtrack_state;
+				 backtrack_state = pred[backtrack_state].prev) {
+				const Symbol next_symbol = pred[backtrack_state].sym;
+				if (!first_epsilon.has_value() || next_symbol < first_epsilon) { res.push_back(next_symbol); }
+			}
+			std::ranges::reverse(res);
+			return res;
+		}
 
-		// Iterate outgoing transitions
 		for (const auto& sym_post : this->delta[curr_state]) {
 			const mata::Symbol transition_sym = sym_post.symbol;
-
-			// Iterate over all destination states for this specific symbol
+			const bool is_epsilon{first_epsilon.has_value() && transition_sym >= *first_epsilon};
+			const int next_dist{dist[curr_state] + (is_epsilon ? 0 : 1)};
 			for (const mata::nfa::State target_state : sym_post.targets) {
-				// Skip if the state has already been visited
-				if (dist[target_state] != -1) { continue; }
-
-				dist[target_state] = next_dist; // Mark state as visited
-				pred[target_state] = {.prev = curr_state, .sym = transition_sym}; // Store made transition
-
-				// Check if the newly reached state is an accepting state
-				if (this->final.contains(target_state)) {
-					mata::Word res;
-					// reconstruct shortest word
-					for (mata::nfa::State backtrack_state = target_state; dist[backtrack_state] > 0;
-						 backtrack_state = pred[backtrack_state].prev) {
-						const Symbol next_symbol = pred[backtrack_state].sym;
-						if (!first_epsilon.has_value() || next_symbol < first_epsilon) { res.push_back(next_symbol); }
-					}
-					// Reverse the backtracked word
-					std::ranges::reverse(res);
-					return res;
+				if (finalized[target_state] || (dist[target_state] != -1 && dist[target_state] <= next_dist)) {
+					continue;
 				}
-
-				// If 'target_state' is not a final state, push it to the queue to explore its transitions later
-				worklist.push(target_state);
+				dist[target_state] = next_dist;
+				pred[target_state] = {.prev = curr_state, .sym = transition_sym};
+				if (is_epsilon) {
+					worklist.push_front(target_state);
+				} else {
+					worklist.push_back(target_state);
+				}
 			}
 		}
 	}
