@@ -211,6 +211,10 @@ pub(crate) const FEATURES: &[Feature] = &[
 		name: "intermediate",
 		implemented: true,
 	},
+	Feature {
+		name: "lazy",
+		implemented: true,
+	},
 ];
 
 /// Why a header's `:requires` cannot be met, or `None` when this interpreter has the feature.

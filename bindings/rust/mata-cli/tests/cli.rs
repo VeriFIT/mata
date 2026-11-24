@@ -3506,3 +3506,238 @@ fn the_optimizer_keeps_values_whose_uses_it_could_not_see() {
 	assert_eq!(status(&output), 0, "{}", stderr(&output));
 	assert_eq!(stdout(&output), "7\n7\n");
 }
+
+/// The `label: value` records of a run, by label.
+fn records(text: &str) -> std::collections::HashMap<String, String> {
+	text.lines()
+		.filter_map(|line| line.split_once(": "))
+		.map(|(label, value)| (label.to_owned(), value.to_owned()))
+		.collect()
+}
+
+#[test]
+fn lazy_decisions_on_regexes_agree_with_the_nfa_ones() {
+	use std::fmt::Write as _;
+
+	let regexes = [
+		"a*",
+		"(a|b)*",
+		"a(a|b)*b",
+		"(ab)*",
+		"a*b*",
+		"b*a*",
+		"(a|b)*b(a|b)",
+		"aa*|b",
+	];
+	let mut script = String::from(
+		"(mata-script \"0.1.0\" :requires (lazy))\n(set-option :alphabet \"bytes\")\n",
+	);
+	for (index, regex) in regexes.iter().enumerate() {
+		writeln!(
+			script,
+			"(define r{index} (nfa:create-from-regex \"{regex}\"))\n(define t{index} (lazy:leaf r{index}))"
+		)
+		.expect("writing to a String cannot fail");
+	}
+	for lhs in 0..regexes.len() {
+		for rhs in 0..regexes.len() {
+			write!(
+				script,
+				"(check \"included {lhs} {rhs} eager\" (nfa:included? r{lhs} r{rhs}))\n\
+				 (check \"included {lhs} {rhs} lazy\" (lazy:included? t{lhs} t{rhs}))\n\
+				 (check \"equivalent {lhs} {rhs} eager\" (nfa:equivalent? r{lhs} r{rhs}))\n\
+				 (check \"equivalent {lhs} {rhs} lazy\" (lazy:equivalent? t{lhs} t{rhs}))\n\
+				 (check \"disjoint {lhs} {rhs} eager\" (nfa:intersection-empty? r{lhs} r{rhs}))\n\
+				 (check \"disjoint {lhs} {rhs} lazy\" (lazy:empty? (lazy:intersection t{lhs} t{rhs})))\n"
+			)
+			.expect("writing to a String cannot fail");
+		}
+	}
+	let output = run_script(&script, true, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	let records = records(&stdout(&output));
+	let mut seen = std::collections::HashSet::new();
+	for lhs in 0..regexes.len() {
+		for rhs in 0..regexes.len() {
+			for decision in ["included", "equivalent", "disjoint"] {
+				let eager = &records[&format!("{decision} {lhs} {rhs} eager")];
+				let lazy = &records[&format!("{decision} {lhs} {rhs} lazy")];
+				assert_eq!(lazy, eager, "{decision} {} {}", regexes[lhs], regexes[rhs]);
+				seen.insert((decision, eager.clone()));
+			}
+		}
+	}
+	// Every decision is both true and false on some pair, so agreeing is not trivial.
+	assert_eq!(seen.len(), 6, "{seen:?}");
+}
+
+#[test]
+fn a_lazy_witness_is_a_word_the_eager_operations_confirm() {
+	let script = "(mata-script \"0.1.0\" :requires (lazy witnesses))\n\
+	              (set-option :alphabet \"bytes\")\n\
+	              (define smaller (nfa:create-from-regex \"a(a|b)*\"))\n\
+	              (define bigger (nfa:create-from-regex \"(a|b)*b\"))\n\
+	              (define counterexample (witness (lazy:included? (lazy:leaf smaller) (lazy:leaf bigger))))\n\
+	              (assert (nfa:in-language? smaller counterexample))\n\
+	              (assert (not (nfa:in-language? bigger counterexample)))\n\
+	              (assert (none? (witness (lazy:included? (lazy:leaf (nfa:create-from-regex \"ab\")) (lazy:leaf bigger)))))\n\
+	              (assert (none? (lazy:witness (lazy:intersection (lazy:leaf smaller) (lazy:leaf (nfa:create-from-regex \"b*\"))))))\n\
+	              (print (lazy:witness (lazy:leaf (nfa:create-from-regex \"ab\"))))";
+	let output = run_script(script, true, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "a b\n");
+}
+
+/// One step of token passing on a line of processes, `t` the process with the token and `n` one without:
+/// the token moves one place to the right.
+const TOKEN_STEP: &str = "@NFT-explicit\n%Alphabet-auto\n%Initial s0\n%Final s2\n\
+	%Levels s0:0 s1:0 s2:0 m0:1 m1:1 m2:1 m3:1\n%LevelsNum 2\n\
+	s0 n m0\nm0 n s0\ns0 t m1\nm1 n s1\ns1 n m2\nm2 t s2\ns2 n m3\nm3 n s2\n";
+
+/// A wrong step that copies the token to the right instead of passing it.
+const TOKEN_COPY: &str = "@NFT-explicit\n%Alphabet-auto\n%Initial s0\n%Final s2\n\
+	%Levels s0:0 s1:0 s2:0 m0:1 m1:1 m2:1 m3:1\n%LevelsNum 2\n\
+	s0 n m0\nm0 n s0\ns0 t m1\nm1 t s1\ns1 n m2\nm2 t s2\ns2 n m3\nm3 n s2\n";
+
+#[test]
+fn a_token_passing_step_checks_the_same_lazily_and_eagerly() {
+	// Regular model checking: "exactly one token" is an inductive invariant of the step and not of the copy.
+	let workspace = Workspace::new("lazy-token-passing");
+	let step = workspace.file("step.mata", TOKEN_STEP);
+	let copy = workspace.file("copy.mata", TOKEN_COPY);
+	let script = "(mata-script \"0.1.0\" :requires (lazy transducers witnesses))\n\
+	              (set-option :alphabet \"bytes\")\n\
+	              (declare-input step Nft)\n\
+	              (declare-input copy Nft)\n\
+	              (define one-token (nfa:create-from-regex \"n*tn*\"))\n\
+	              (define invariant (lazy:leaf one-token))\n\
+	              (define (lazy-post (relation Nft)) (lazy:post-image invariant (lazy:leaf relation)))\n\
+	              (define (eager-post (relation Nft)) (nft:to-nfa (nft:apply relation one-token)))\n\
+	              (check \"step lazy\" (lazy:included? (lazy-post step) invariant))\n\
+	              (check \"step eager\" (nfa:included? (eager-post step) one-token))\n\
+	              (check \"copy lazy\" (lazy:included? (lazy-post copy) invariant))\n\
+	              (check \"copy eager\" (nfa:included? (eager-post copy) one-token))\n\
+	              (check \"post\" (nfa:equivalent? (lazy:materialize (lazy-post copy)) (eager-post copy)))\n\
+	              (check \"two steps\" (lazy:included? \
+	                (lazy:post-image invariant (lazy:compose (lazy:leaf step) (lazy:leaf step))) invariant))\n\
+	              (check \"domain\" (lazy:equivalent? (lazy:project (lazy:leaf step) (list 0)) \
+	                (lazy:leaf (nft:to-nfa (nft:project-to step (list 0))))))\n\
+	              (check \"explicit\" (lazy:equivalent? (lazy:explicit (lazy-post step)) (lazy-post step)))\n\
+	              (define bad (witness (lazy:included? (lazy-post copy) invariant)))\n\
+	              (assert (nfa:in-language? (eager-post copy) bad))\n\
+	              (assert (not (nfa:in-language? one-token bad)))";
+	let output = run_script(script, true, &[&step, &copy]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(
+		stdout(&output),
+		"step lazy: true\nstep eager: true\ncopy lazy: false\ncopy eager: false\npost: true\n\
+		 two steps: true\ndomain: true\nexplicit: true\n"
+	);
+}
+
+#[test]
+fn a_lazy_complement_is_taken_over_the_alphabet_of_the_query() {
+	let script = "(mata-script \"0.1.0\" :requires (lazy))\n\
+	              (set-option :alphabet \"bytes\")\n\
+	              (define all (lazy:complement (lazy:leaf (nfa:create-from-regex \"(a|b)*\"))))\n\
+	              (check \"over a b\" (lazy:empty? all :alphabet \"a b\"))\n\
+	              (check \"over a b c\" (lazy:empty? all :alphabet \"a b c\"))\n\
+	              (check \"leaf over a b c\" (lazy:empty? (lazy:complement \
+	                (lazy:leaf (nfa:create-from-regex \"(a|b)*\") :alphabet \"a b c\"))))\n\
+	              (print (lazy:witness all :alphabet \"c\"))";
+	let output = run_script(script, true, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(
+		stdout(&output),
+		"over a b: true\nover a b c: false\nleaf over a b c: false\nc\n"
+	);
+}
+
+#[test]
+fn lazy_stats_prints_the_records_of_one_check() {
+	let script = "(mata-script \"0.1.0\" :requires (lazy))\n\
+	              (define a (lazy:leaf (nfa:create-from-regex \"a*\")))\n\
+	              (print (lazy:stats \"inclusion\" (lazy:included? a a)))";
+	let output = run_script(script, true, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	let text = stdout(&output);
+	let records = records(&text);
+	for name in [
+		"explored",
+		"pruned",
+		"macrostates",
+		"dropped",
+		"explicit",
+		"explicit-states",
+		"explicit-transitions",
+	] {
+		let value = &records[&format!("inclusion.{name}")];
+		assert!(value.parse::<usize>().is_ok(), "{name}: {value}");
+	}
+	assert_ne!(records["inclusion.explored"], "0", "{text}");
+	assert!(text.ends_with("true\n"), "{text}");
+}
+
+#[test]
+fn a_lazy_query_past_its_limit_is_an_error() {
+	// Words with an `a` three places before the end, intersected with the same for `b`: the subset
+	// construction needs more than two macrostates.
+	let script = "(lazy:empty? (lazy:intersection \
+	              (lazy:leaf (nfa:create-from-regex \"(a|b)*a(a|b)(a|b)\")) \
+	              (lazy:leaf (nfa:create-from-regex \"(a|b)*b(a|b)(a|b)\"))) :max-states 2)";
+	let output = run_script(script, true, &[]);
+	assert_eq!(status(&output), 2, "{}", stdout(&output));
+	assert!(
+		stderr(&output).contains("more than 2 macrostates"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
+fn lazy_operands_are_checked_before_the_script_runs() {
+	let script = "(mata-script \"0.1.0\" :requires (lazy))\n\
+	              (define a (nfa:create-from-regex \"a*\"))\n\
+	              (print \"ran\")\n\
+	              (define u (lazy:union (lazy:leaf a) a))\n\
+	              (lazy:stats \"x\" (nfa:included? a a))\n\
+	              (nfa:included? (lazy:leaf a) a)";
+	let output = run_script(script, true, &[]);
+	assert_eq!(status(&output), 2);
+	assert_eq!(stdout(&output), "");
+	let errors = stderr(&output);
+	for message in [
+		"argument 2 of 'lazy:union' must be Term, found Nfa",
+		"lazy:stats applies to an application of lazy:empty?",
+		"argument 1 of 'nfa:included?' must be Nfa, found Term",
+	] {
+		assert!(errors.contains(message), "{message}: {errors}");
+	}
+}
+
+#[test]
+fn lazy_operands_of_the_wrong_arity_are_an_error_at_run_time() {
+	let script = "(lazy:intersection (lazy:leaf (nfa:create-from-regex \"a\")) \
+	              (lazy:leaf (nft:create-sigma-star-nft 2)))";
+	let output = run_script(script, true, &[]);
+	assert_eq!(status(&output), 2);
+	assert!(
+		stderr(&output).contains("intersection expects arity 1, found 2"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
+fn formats_lists_the_lazy_feature_and_operations() {
+	let text = stdout(&mata(["formats"]));
+	assert!(text.contains("feature lazy implemented\n"), "{text}");
+	assert!(
+		text.contains("operation lazy:intersection (2 or more operands)\n"),
+		"{text}"
+	);
+	assert!(
+		text.contains("operation lazy:included? (2 operands)\n"),
+		"{text}"
+	);
+}

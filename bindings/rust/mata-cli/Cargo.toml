@@ -20,7 +20,8 @@ workspace = true
 web = []
 
 [dependencies]
-mata = { path = "../mata" }
+# `mata::lazy` (the `mata-lazy` crate) with the `Nfa`/`Nft` leaves of the `mata` crate's `lazy` feature.
+mata = { path = "../mata", features = ["lazy"] }
 
 [[bin]]
 name = "mata"

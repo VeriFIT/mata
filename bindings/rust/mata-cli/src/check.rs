@@ -17,8 +17,21 @@ pub(crate) struct Report {
 
 /// Special forms a call may name, besides the operations of `ops::OPERATIONS`.
 const SPECIAL_FORMS: &[&str] = &[
-	"->", "and", "as", "cond", "do", "else", "if", "lambda", "let", "loop", "or", "recur", "time",
+	"->",
+	"and",
+	"as",
+	"cond",
+	"do",
+	"else",
+	"if",
+	"lambda",
+	"let",
+	"loop",
+	"or",
+	"recur",
+	"time",
 	"witness",
+	"lazy:stats",
 ];
 
 /// Names a script cannot define: the special forms, the directives, and the predefined names.
@@ -112,6 +125,7 @@ pub(crate) const SIMPLE_SORTS: &[&str] = &[
 	"Int",
 	"String",
 	"Function",
+	"Term",
 ];
 
 /// How deeply a checked expression may nest inside another; deeper is an error rather than an
@@ -1340,6 +1354,7 @@ impl<'a> Checker<'a> {
 			"->" => Special::Form(self.pipeline(arguments, expression, self_name)),
 			"as" => self.special_as(arguments, expression, self_name),
 			"time" => self.special_time(arguments, expression, self_name),
+			"lazy:stats" => self.special_lazy_stats(arguments, expression, self_name),
 			"witness" => self.special_witness(arguments, expression, self_name),
 			"recur" => {
 				self.special_recur(arguments, expression, self_name);
@@ -1499,6 +1514,35 @@ impl<'a> Checker<'a> {
 		Special::Form(self.sequence(&arguments[1..], self_name))
 	}
 
+	/// Checks `lazy:stats`: a String label and an application of a lazy check, whose sort it has.
+	fn special_lazy_stats(
+		&mut self,
+		arguments: &[Expr],
+		expression: &Expr,
+		self_name: Option<&str>,
+	) -> Special {
+		if arguments.len() != 2 {
+			self.reject(
+				expression,
+				"lazy:stats needs a label and an application of a lazy check".into(),
+			);
+			return Special::Form(None);
+		}
+		if let Some(sort) = self.expression(&arguments[0], self_name)
+			&& !accepts("String", &sort)
+		{
+			self.reject(
+				&arguments[0],
+				format!("the lazy:stats label must be a String, found {sort}"),
+			);
+		}
+		let sort = self.expression(&arguments[1], self_name);
+		if !crate::lazy::applies_check(&arguments[1]) {
+			self.reject(&arguments[1], crate::lazy::stats_message());
+		}
+		Special::Form(sort)
+	}
+
 	/// Checks `witness`: an application of an operation that stores a witness, a counterexample word.
 	fn special_witness(
 		&mut self,
@@ -1514,7 +1558,10 @@ impl<'a> Checker<'a> {
 		if !crate::eval::applies_witness_operation(&arguments[0]) {
 			self.reject(&arguments[0], crate::eval::witness_message());
 		}
-		Special::Form(Some("(Option Word)".into()))
+		// The witness of a lazy check of a relation is a list of words, one per tape.
+		let lazy = matches!(&arguments[0].node, Kind::Call { function, .. }
+			if matches!(&function.node, Kind::Name(name) if name.starts_with("lazy:")));
+		Special::Form((!lazy).then(|| "(Option Word)".into()))
 	}
 
 	fn pipeline(

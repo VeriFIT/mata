@@ -246,6 +246,91 @@ pub(crate) const OPTIONAL_PARAMETERS: &[OptionalParameter] = &[
 		name: "end-marker",
 		sort: "Symbol",
 	},
+	OptionalParameter {
+		operation: "lazy:leaf",
+		name: "alphabet",
+		sort: "String",
+	},
+	OptionalParameter {
+		operation: "lazy:explicit",
+		name: "max-states",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:empty?",
+		name: "time-limit",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:empty?",
+		name: "max-states",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:empty?",
+		name: "alphabet",
+		sort: "String",
+	},
+	OptionalParameter {
+		operation: "lazy:witness",
+		name: "time-limit",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:witness",
+		name: "max-states",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:witness",
+		name: "alphabet",
+		sort: "String",
+	},
+	OptionalParameter {
+		operation: "lazy:included?",
+		name: "time-limit",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:included?",
+		name: "max-states",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:included?",
+		name: "alphabet",
+		sort: "String",
+	},
+	OptionalParameter {
+		operation: "lazy:equivalent?",
+		name: "time-limit",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:equivalent?",
+		name: "max-states",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:equivalent?",
+		name: "alphabet",
+		sort: "String",
+	},
+	OptionalParameter {
+		operation: "lazy:materialize",
+		name: "time-limit",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:materialize",
+		name: "max-states",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:materialize",
+		name: "alphabet",
+		sort: "String",
+	},
 ];
 
 /// The optional parameter `name` of `operation`, if it takes one.
@@ -392,6 +477,8 @@ pub(crate) fn folds(name: &str) -> bool {
 			| "nft:intersection"
 			| "nft:concatenate"
 			| "nft:compose"
+			| "lazy:union"
+			| "lazy:intersection"
 	)
 }
 
@@ -1371,6 +1458,84 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 		Some(1),
 		"IntermediateAutomaton",
 		"Nft",
+	),
+	op("lazy:leaf", "lazy_leaf", 1, Some(1), "Automaton", "Term"),
+	op("lazy:union", "lazy_union", 2, None, "Term,Term*", "Term"),
+	op(
+		"lazy:intersection",
+		"lazy_intersection",
+		2,
+		None,
+		"Term,Term*",
+		"Term",
+	),
+	op(
+		"lazy:complement",
+		"lazy_complement",
+		1,
+		Some(1),
+		"Term",
+		"Term",
+	),
+	op("lazy:identity", "lazy_identity", 1, Some(1), "Term", "Term"),
+	op(
+		"lazy:project",
+		"lazy_project",
+		2,
+		Some(2),
+		"Term,(List Int)",
+		"Term",
+	),
+	op(
+		"lazy:compose",
+		"lazy_compose",
+		2,
+		Some(2),
+		"Term,Term",
+		"Term",
+	),
+	op(
+		"lazy:post-image",
+		"lazy_post_image",
+		2,
+		Some(2),
+		"Term,Term",
+		"Term",
+	),
+	op(
+		"lazy:pre-image",
+		"lazy_pre_image",
+		2,
+		Some(2),
+		"Term,Term",
+		"Term",
+	),
+	op("lazy:explicit", "lazy_explicit", 1, Some(1), "Term", "Term"),
+	op("lazy:empty?", "lazy_empty", 1, Some(1), "Term", "Bool"),
+	op("lazy:witness", "lazy_witness", 1, Some(1), "Term", ""),
+	op(
+		"lazy:included?",
+		"lazy_included",
+		2,
+		Some(2),
+		"Term,Term",
+		"Bool",
+	),
+	op(
+		"lazy:equivalent?",
+		"lazy_equivalent",
+		2,
+		Some(2),
+		"Term,Term",
+		"Bool",
+	),
+	op(
+		"lazy:materialize",
+		"lazy_materialize",
+		1,
+		Some(1),
+		"Term",
+		"",
 	),
 ];
 
@@ -3116,6 +3281,9 @@ fn dispatch_automaton(
 				.map_err(|e| Error::plain(e.to_string()))?;
 			Ok(Value::Nft(Rc::new(nft)))
 		}
+		_ if handler.starts_with("lazy_") => {
+			crate::lazy::dispatch(handler, name, arguments, engine)
+		}
 		_ => Err(Error::plain(format!(
 			"operation '{name}' is not available in the Rust bindings"
 		))),
@@ -3197,7 +3365,7 @@ fn intermediate_of(value: &Value) -> Result<&IntermediateAutomaton, String> {
 	}
 }
 
-fn take<const N: usize>(values: Vec<Value>, name: &str) -> Result<[Value; N], Error> {
+pub(crate) fn take<const N: usize>(values: Vec<Value>, name: &str) -> Result<[Value; N], Error> {
 	values.try_into().map_err(|values: Vec<Value>| {
 		Error::plain(format!(
 			"'{name}' takes {} arguments, {} given",
@@ -3309,11 +3477,14 @@ fn values_equal(lhs: &Value, rhs: &Value) -> Result<bool, String> {
 			(Value::String(lhs), Value::String(rhs)) if lhs != rhs => return Ok(false),
 			(Value::Word(lhs), Value::Word(rhs)) if lhs != rhs => return Ok(false),
 			(Value::Symbol(lhs), Value::Symbol(rhs)) if lhs != rhs => return Ok(false),
+			// The same node of the formula, as a leaf of one value is; not the same relation.
+			(Value::Term(lhs), Value::Term(rhs)) if lhs != rhs => return Ok(false),
 			(Value::Bool(_), Value::Bool(_))
 			| (Value::Int(_), Value::Int(_))
 			| (Value::String(_), Value::String(_))
 			| (Value::Word(_), Value::Word(_))
 			| (Value::Symbol(_), Value::Symbol(_))
+			| (Value::Term(_), Value::Term(_))
 			| (Value::None, Value::None) => {}
 			_ => return Ok(false),
 		}
