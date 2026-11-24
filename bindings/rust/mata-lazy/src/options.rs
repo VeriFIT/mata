@@ -154,7 +154,8 @@ impl Options {
 	/// Keeps the successors that the query caches within `bytes` (by default it keeps all). Over the budget, it
 	/// drops those that took the least time to compute per byte, weighted by their reads, and were not read again
 	/// since (GreedyDual-Size with frequency). It computes a dropped successor again when it needs it, so only the
-	/// time and [`dropped`](Stats::dropped) change, not the answer or the other statistics.
+	/// time, [`dropped`](Stats::dropped) and the [`posts`](NodeStats::posts) of the nodes change, not the answer or
+	/// the other statistics.
 	#[must_use]
 	pub fn cache_budget(mut self, bytes: usize) -> Options {
 		self.cache_budget = Some(bytes);
@@ -271,6 +272,26 @@ pub struct Stats {
 	pub explicit: Vec<Materialized>,
 	/// Cached successors dropped to stay within [`cache_budget`](Options::cache_budget).
 	pub dropped: usize,
+	/// The terms of the query that it evaluates in a node of their own, by [`id`](Term::id).
+	pub nodes: Vec<NodeStats>,
+}
+
+/// The counters of one term of a query.
+///
+/// The query rewrites the formula first (complements pushed down, projections folded, structurally equal terms
+/// merged), so a term is counted in the node that evaluates it. Terms merged into one node, or that share its
+/// macrostates (an identity, a projection), report the same counts, so a sum over the terms can count some
+/// twice. A term that becomes part of a larger node, such as a union flattened into the union above it, is not
+/// listed.
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct NodeStats {
+	/// The term.
+	pub term: Term,
+	/// Macrostates created in its node; 0 for a leaf or a term built explicitly.
+	pub macrostates: usize,
+	/// Successors of its macrostates computed, again after [`cache_budget`](Options::cache_budget) dropped them.
+	pub posts: usize,
 }
 
 /// One explicit node of a query.

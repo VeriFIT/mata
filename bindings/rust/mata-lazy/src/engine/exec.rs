@@ -122,6 +122,8 @@ pub(crate) struct Exec<'f> {
 	pub(crate) nodes: TiVec<ExecId, ExecNode<'f>>,
 	pub(crate) root: ExecId,
 	pub(crate) reachable: TiVec<ExecId, bool>,
+	/// The node of each source node that has one, by source node.
+	pub(crate) sources: Vec<(NodeId, ExecId)>,
 }
 
 impl Exec<'_> {
@@ -743,11 +745,18 @@ pub(crate) fn build<'f>(formula: &'f Formula, root: NodeId, annotations: &Annota
 	let mut nodes = emitter.nodes;
 	nodes.truncate(root.index() + 1);
 	let reachable = reachable(&nodes, root);
+	let mut sources: Vec<(NodeId, ExecId)> = built
+		.into_iter()
+		.filter(|&((_, form), id)| form == Form::Plain && id <= root && reachable[id])
+		.map(|((node, _), id)| (node, id))
+		.collect();
+	sources.sort_unstable();
 
 	Exec {
 		nodes,
 		root,
 		reachable,
+		sources,
 	}
 }
 

@@ -88,7 +88,7 @@ pub use automaton::Automaton;
 pub use error::Error;
 pub use explicit::ExplicitAutomaton;
 pub use formula::{Formula, Pad, Tape, Term};
-pub use options::{ExplicitOptions, Materialized, Options, Outcome, Stats};
+pub use options::{ExplicitOptions, Materialized, NodeStats, Options, Outcome, Stats};
 pub use plan::{Annotation, Eval, Order, Plan};
 pub use policy::{AllEager, AllLazy, External, Heuristic, Policy};
 pub use symbol::Symbol;

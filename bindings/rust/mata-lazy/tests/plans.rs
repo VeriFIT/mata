@@ -1,5 +1,5 @@
-//! Plans and policies: random formulas under random plans against a brute-force evaluator, the plan view and
-//! the annotations.
+//! Plans and policies: random formulas under random plans against a brute-force evaluator, the plan view, the
+//! annotations and per-node statistics.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -601,6 +601,50 @@ fn an_operand_order_needs_a_product() -> Result<(), Error> {
 	let other = Formula::new().leaf(&one_at(0, 0))?;
 	let foreign = Options::new().plan(Plan::new().annotate(other, Annotation::lazy()));
 	assert_eq!(formula.check(abc, &foreign), Err(Error::ForeignTerm));
+
+	Ok(())
+}
+
+#[test]
+fn node_statistics_count_the_macrostates_and_posts_of_each_term() -> Result<(), Error> {
+	let (formula, [a, _, c, ab, abc]) = two_intersections()?;
+	let options = Options::new().subsumption(false);
+	let lazy = formula.check(abc, &options)?;
+	let node = |outcome: &Outcome, term| {
+		outcome
+			.stats
+			.nodes
+			.iter()
+			.find(|node| node.term == term)
+			.map(|node| (node.macrostates, node.posts))
+	};
+
+	// The root's macrostates are pairs of `a ∩ b` and `c`; its successors are computed once per explored one.
+	let (root_states, root_posts) = node(&lazy, abc).expect("the root has a node");
+	assert_eq!(root_posts, lazy.stats.explored);
+	assert!(root_states >= root_posts);
+	let (ab_states, ab_posts) = node(&lazy, ab).expect("a ∩ b has a node");
+	assert!(ab_states > 0 && ab_posts > 0);
+	// Leaves create no macrostates.
+	assert_eq!(node(&lazy, a).map(|(states, _)| states), Some(0));
+	assert_eq!(node(&lazy, c).map(|(states, _)| states), Some(0));
+	let total: usize = lazy.stats.nodes.iter().map(|node| node.macrostates).sum();
+	assert_eq!(total, lazy.stats.macrostates);
+
+	// Built eagerly, `a ∩ b` is a leaf of the query.
+	let eager = formula.check(
+		abc,
+		&options
+			.clone()
+			.plan(Plan::new().annotate(ab, Annotation::eager())),
+	)?;
+	assert_eq!(node(&eager, ab).map(|(states, _)| states), Some(0));
+
+	// Without a cache, the successors of `a ∩ b` are computed again; the macrostates stay.
+	let uncached = formula.check(abc, &options.cache_budget(0))?;
+	let (uncached_states, uncached_posts) = node(&uncached, ab).expect("a ∩ b has a node");
+	assert_eq!(uncached_states, ab_states);
+	assert!(uncached_posts > ab_posts, "{uncached_posts} > {ab_posts}");
 
 	Ok(())
 }

@@ -120,7 +120,7 @@ Queries:
   a plan (below), limits on states and time (their errors carry the statistics so far), a memory budget for cached
   results, subsumption and the antichain on or off, a search bounded to words of at most `max_length` steps (the
   outcome is then `bounded` when the search stopped there without a witness), and a breadth-first search (`shortest`)
-  whose witness has the fewest steps.
+  whose witness has the fewest steps. The statistics also count macrostates and computed successors per term.
 - `materialize`: the whole relation as an `ExplicitAutomaton`, which other libraries copy (into a Mata `Nft` with
   `Nft::try_from`) and which can be a leaf again.
 

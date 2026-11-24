@@ -93,7 +93,7 @@ use self::subsumption::{Antichain, Subsumption};
 use crate::formula::Formula;
 use crate::ids::{ExecId, Id, NodeId, StateId};
 use crate::leaf::{Leaf, Raw};
-use crate::options::{ExplicitOptions, Materialized, Stats, Tapes};
+use crate::options::{ExplicitOptions, Materialized, NodeStats, Stats, Tapes};
 use crate::plan::Annotations;
 use crate::{Error, Options, Symbol, Witness};
 
@@ -231,6 +231,8 @@ pub(crate) struct Engine<'f> {
 	pad_steps: TiVec<ExecId, pad::PadSteps>,
 	budget: Budget,
 	stats: Stats,
+	/// The posts computed per node, for [`NodeStats`].
+	post_counts: TiVec<ExecId, usize>,
 }
 
 impl<'f> Engine<'f> {
@@ -315,6 +317,7 @@ impl<'f> Engine<'f> {
 			pad_steps: (0..num_nodes).map(|_| pad::PadSteps::default()).collect(),
 			budget,
 			stats: Stats::default(),
+			post_counts: vec![0; num_nodes].into(),
 		};
 
 		engine
@@ -750,12 +753,24 @@ impl<'f> Engine<'f> {
 	}
 
 	pub(crate) fn stats(&self) -> Stats {
+		let nodes = self
+			.exec
+			.sources
+			.iter()
+			.map(|&(node, id)| NodeStats {
+				term: self.formula.term(node),
+				macrostates: self.stores[self.exec.owner(id)].len(),
+				posts: self.post_counts[id],
+			})
+			.collect();
+
 		Stats {
 			macrostates: self.stores.iter().map(Store::len).sum(),
 			dropped: self
 				.cache_budget
 				.as_ref()
 				.map_or(0, |budget| budget.dropped),
+			nodes,
 			..self.stats.clone()
 		}
 	}
