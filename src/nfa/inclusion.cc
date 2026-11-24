@@ -319,9 +319,11 @@ const Nfa& epsilon_free(const Nfa& nfa, Nfa& storage) {
 	return storage;
 }
 
-/// Keep a null alphabet and borrow one without EPSILON; use @p storage only when EPSILON has to be removed.
-const Alphabet* epsilon_free(const Alphabet* const alphabet, EnumAlphabet& storage) {
-	if (alphabet == nullptr) { return nullptr; }
+/// Keep a null alphabet and borrow one without EPSILON; use @p storage only when EPSILON has to be removed. Only the
+///  naive algorithm reads the symbols of the alphabet, and alphabets such as @c IntAlphabet cannot enumerate them, so
+///  @p alphabet is borrowed unread unless @p naive.
+const Alphabet* epsilon_free(const Alphabet* const alphabet, EnumAlphabet& storage, const bool naive) {
+	if (alphabet == nullptr || !naive) { return alphabet; }
 	OrdVector<Symbol> symbols{alphabet->get_alphabet_symbols()};
 	if (symbols.empty() || symbols.back() != EPSILON) { return alphabet; }
 	symbols.pop_back();
@@ -363,7 +365,7 @@ bool mata::nfa::is_included(
 	EnumAlphabet alphabet_storage{};
 	return algo(
 		epsilon_free(smaller, smaller_storage), epsilon_free(bigger, bigger_storage),
-		epsilon_free(alphabet, alphabet_storage), cex
+		epsilon_free(alphabet, alphabet_storage, algo == algorithms::is_included_naive), cex
 	);
 } // is_included }}}
 
@@ -373,8 +375,10 @@ bool mata::nfa::are_equivalent(
 	Nfa lhs_storage{};
 	Nfa rhs_storage{};
 	EnumAlphabet alphabet_storage{};
+	// A missing or unknown "algorithm" is reported by are_equivalent_epsilon_as_symbol().
+	const bool naive{haskey(params, "algorithm") && params.at("algorithm") == "naive"};
 	return algorithms::are_equivalent_epsilon_as_symbol(
-		epsilon_free(lhs, lhs_storage), epsilon_free(rhs, rhs_storage), epsilon_free(alphabet, alphabet_storage),
+		epsilon_free(lhs, lhs_storage), epsilon_free(rhs, rhs_storage), epsilon_free(alphabet, alphabet_storage, naive),
 		params, cex
 	);
 }

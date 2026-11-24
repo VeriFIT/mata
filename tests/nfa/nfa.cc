@@ -3649,6 +3649,29 @@ TEST_CASE("mata::nfa direct naive inclusion and equivalence read EPSILON as a sy
 	CHECK(!empty_word_only.is_in_lang(default_alphabet_cex.word));
 }
 
+TEST_CASE("mata::nfa inclusion and equivalence accept an IntAlphabet for algorithms that do not enumerate it") {
+	// IntAlphabet throws on get_alphabet_symbols(); only the naive algorithm reads the symbols of an alphabet.
+	Nfa a_word{2, {0}, {1}};
+	a_word.delta.add(0, 'a', 1);
+	Nfa epsilon_then_a{3, {0}, {2}};
+	epsilon_then_a.delta.add(0, EPSILON, 1);
+	epsilon_then_a.delta.add(1, 'a', 2);
+	Nfa b_word{2, {0}, {1}};
+	b_word.delta.add(0, 'b', 1);
+	const IntAlphabet int_alphabet{};
+	for (const char* const algorithm : {"antichains", "hkc"}) {
+		SECTION(algorithm) {
+			const ParameterMap params{{"algorithm", algorithm}};
+			CHECK(is_included(a_word, a_word, nullptr, &int_alphabet, params));
+			CHECK(is_included(epsilon_then_a, a_word, nullptr, &int_alphabet, params));
+			CHECK(!is_included(a_word, b_word, nullptr, &int_alphabet, params));
+			CHECK(are_equivalent(a_word, a_word, &int_alphabet, params));
+			CHECK(are_equivalent(epsilon_then_a, a_word, &int_alphabet, params));
+			CHECK(!are_equivalent(a_word, b_word, &int_alphabet, params));
+		}
+	}
+}
+
 TEST_CASE("mata::nfa::are_equivalent") {
 	Nfa smaller(10);
 	Nfa bigger(16);

@@ -1903,11 +1903,16 @@ TEST_CASE("mata::nft::are_equivalent") {
 		CHECK_NOTHROW(are_equivalent(smaller, bigger));
 	}
 
-	SECTION("naive self-equivalence keeps EPSILON as a per-level letter") {
+	SECTION("naive equivalence keeps EPSILON as a per-level letter") {
 		Nft nft{Nft::with_levels(2, 2, {0}, {1})};
 		nft.insert_word(0, {'a', EPSILON}, 1);
 		params["algorithm"] = "naive";
 		CHECK(are_equivalent(nft, nft, JumpMode::RepeatSymbol, params));
+		// `a` on the input tape with nothing on the output differs from the reverse; eliminating EPSILON from the
+		//  unwound automata would read both as the single word `a`.
+		Nft reversed{Nft::with_levels(2, 2, {0}, {1})};
+		reversed.insert_word(0, {EPSILON, 'a'}, 1);
+		CHECK(!are_equivalent(nft, reversed, JumpMode::RepeatSymbol, params));
 	}
 }
 
