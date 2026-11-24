@@ -1,0 +1,105 @@
+From 4619695bebd1967450ebeb033ec9e288be3a635c Mon Sep 17 00:00:00 2001
+From: David Chocholaty <chocholaty.david@protonmail.com>
+Date: Tue, 24 Nov 2026 09:45:03 +0100
+Subject: [PATCH] nft: +test Evaluate vector lookups for NFT quotient mapping
+
+Part of #803.
+- Reproduce an NFT quotient-remapping candidate with a multi-level dominance regression.
+- Old/new results agree, but one-second pinned benchmarks show only 0.3% median reduction in this candidate, so it is not proposed for production.
+---
+ src/nft/operations.cc | 22 ++++++++++++----------
+ tests/nft/nft.cc      | 25 +++++++++++++++++++++++++
+ 2 files changed, 37 insertions(+), 10 deletions(-)
+
+diff --git a/src/nft/operations.cc b/src/nft/operations.cc
+index a72efae6b..273283084 100644
+--- a/src/nft/operations.cc
++++ b/src/nft/operations.cc
+@@ -101,21 +101,20 @@ Nft reduce_size_by_simulation(const Nft& aut, StateRenaming& state_renaming) {
+ 
+ 	const size_t num_of_states = aut.num_of_states();
+ 
+-	// map each state q of aut to the state of the reduced automaton representing the simulation class of q
++	// Dense state-indexed class IDs avoid rehashing every state while the quotient is constructed.
++	std::vector<State> class_of_state(num_of_states, Limits::max_state);
+ 	for (State q = 0; q < num_of_states; ++q) {
+-		if (const auto q_repr_state{static_cast<State>(quot_proj[q])}; !state_renaming.contains(q_repr_state)) {
+-			// we need to map q's class to a new state in reducedAut
++		const State q_repr_state{static_cast<State>(quot_proj[q])};
++		State& repr_class{class_of_state[q_repr_state]};
++		if (repr_class == Limits::max_state) {
+ 			MATA_ASSERT(aut.levels[q] == aut.levels[q_repr_state]);
+-			const State q_class = result.add_state_with_level(aut.levels[q_repr_state]);
+-			state_renaming[q_repr_state] = q_class;
+-			state_renaming[q] = q_class;
+-		} else {
+-			state_renaming[q] = state_renaming[q_repr_state];
++			repr_class = result.add_state_with_level(aut.levels[q_repr_state]);
+ 		}
++		class_of_state[q] = repr_class;
+ 	}
+ 
+ 	for (State q = 0; q < num_of_states; ++q) {
+-		const State q_class_state = state_renaming.at(q);
++		const State q_class_state = class_of_state[q];
+ 
+ 		if (aut.initial[q]) { // if a symmetric class contains initial state, then the whole class should be initial
+ 			result.initial.insert(q_class_state);
+@@ -148,7 +147,7 @@ Nft reduce_size_by_simulation(const Nft& aut, StateRenaming& state_renaming) {
+ 							break;
+ 						}
+ 					}
+-					if (is_state_important) { representatives_class_states.insert(state_renaming.at(s)); }
++					if (is_state_important) { representatives_class_states.insert(class_of_state[s]); }
+ 				}
+ 
+ 				// q_trans.symbol is larger than the symbols added so far, as the state post of q is ordered.
+@@ -162,6 +161,9 @@ Nft reduce_size_by_simulation(const Nft& aut, StateRenaming& state_renaming) {
+ 		}
+ 	}
+ 
++	state_renaming.clear();
++	state_renaming.reserve(num_of_states);
++	for (State q{0}; q < num_of_states; ++q) { state_renaming.emplace(q, class_of_state[q]); }
+ 	return result;
+ }
+ 
+diff --git a/tests/nft/nft.cc b/tests/nft/nft.cc
+index abb2e99b3..530628f27 100644
+--- a/tests/nft/nft.cc
++++ b/tests/nft/nft.cc
+@@ -3470,6 +3470,31 @@ TEST_CASE("mata::nft::reduce_size_by_simulation()") {
+ 		CHECK(are_equivalent(nft, reduced));
+ 	}
+ 
++	SECTION("quotient mapping keeps dominance pruning and levels exact") {
++		Nft nft{Nft::with_levels(Levels{2, {0, 0, 1, 1, 0}}, 5, {0}, {4})};
++		nft.delta.add(0, 'a', 2);
++		nft.delta.add(0, 'a', 3);
++		nft.delta.add(1, 'a', 2);
++		nft.delta.add(1, 'a', 3);
++		nft.delta.add(2, 'b', 4);
++		nft.delta.add(2, 'c', 4);
++		nft.delta.add(3, 'b', 4);
++		state_renaming = StateRenaming{{999, 999}, {0, 999}};
++
++		const Nft reduced{reduce(nft, &state_renaming)};
++		CHECK(state_renaming == StateRenaming{{0, 0}, {1, 0}, {2, 1}, {3, 2}, {4, 3}});
++		CHECK(reduced.levels == Levels{2, {0, 1, 1, 0}});
++		CHECK(reduced.levels.num_of_levels == 2);
++		CHECK(reduced.initial == SparseSet<State>{0});
++		CHECK(reduced.final == SparseSet<State>{3});
++		CHECK(reduced.delta.contains(0, 'a', 1));
++		CHECK(!reduced.delta.contains(0, 'a', 2));
++		CHECK(reduced.delta.contains(1, 'b', 3));
++		CHECK(reduced.delta.contains(1, 'c', 3));
++		CHECK(reduced.delta.contains(2, 'b', 3));
++		CHECK(are_equivalent(nft, reduced));
++	}
++
+ 	// The marker self-loops that encoded "final" and "level" were derived from the largest used symbol
+ 	//  in `Symbol` arithmetic. EPSILON is the largest `Symbol`, so an NFT using it wrapped the final
+ 	//  marker onto symbol 0 and the level markers onto 1 + level; with DONT_CARE (EPSILON - 1) as the
+-- 
+2.56.0
+
