@@ -401,11 +401,16 @@ void check_nfa_properties(
 	//  counterexample is a word the automaton rejects.
 	Run naive_cex{};
 	const bool naive_universal{algorithms::is_universal_naive(nfa, *alphabet, &naive_cex)};
+	Run antichain_cex{};
+	const bool antichain_universal{algorithms::is_universal_antichains(nfa, *alphabet, &antichain_cex)};
+	CHECK(naive_universal == antichain_universal);
 	CHECK(naive_universal == algorithms::is_universal_antichains(nfa, *alphabet, nullptr));
 	CHECK(naive_universal == complement(nfa, *alphabet, CLASSICAL).is_lang_empty());
 	if (!naive_universal) {
 		CHECK(!reference_accepts(nfa, naive_cex.word));
+		CHECK(!reference_accepts(nfa, antichain_cex.word));
 		CHECK(naive_cex.path.empty());
+		CHECK(antichain_cex.path.empty());
 	}
 
 	// Direct calls read EPSILON as a letter, so its counterexample keeps EPSILON.
