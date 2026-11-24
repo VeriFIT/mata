@@ -1,15 +1,5 @@
 /** @file
  * @brief @c SuccessorCursor at every arity, cross-checked against the recursive walk.
- *
- * The cursor is flat and carries between posts explicitly: hand-written at arity 1, generic above.
- *  **A wrong carry skips targets silently** — no compile error, no crash, just a wrong answer from
- *  `get_useful_states()`, `is_acyclic()` or `is_lang_empty()`, all of which reach the relation
- *  through the cursor.
- *
- * So both are checked against @c visit_targets, which is independently recursive and has no carry
- *  to get wrong. The relations here are built to hit the cases a carry actually breaks on: empty
- *  posts at every depth, empty target sets, a single target, and several posts exhausting at once so
- *  the carry has to cascade.
  */
 
 #include <catch2/catch_test_macros.hpp>
@@ -28,25 +18,25 @@ using namespace mata;
 
 namespace {
 
-/// Arity 2: state -> key -> key -> targets.
+// Arity 2: state -> key -> key -> targets.
 using Targets = utils::OrdVector<State>;
 using Inner2 = posts::PostChain<Symbol, Targets>;
 using Post2 = posts::PostChain<Symbol, Symbol, Targets>;
-/// Arity 3: one level deeper.
+// Arity 3.
 using Inner3a = posts::PostChain<Symbol, Targets>;
 using Inner3b = posts::PostChain<Symbol, Symbol, Targets>;
 using Post3 = posts::PostChain<Symbol, Symbol, Symbol, Targets>;
-/// Arity 4.
+// Arity 4.
 using Post4 = posts::PostChain<Symbol, Symbol, Symbol, Symbol, Targets>;
 
-/// What the cursor should yield, derived independently by the recursive walk.
+// What the recursive walk yields.
 template <typename Post> std::vector<State> expected(const Post& post) {
 	std::vector<State> out;
 	posts::visit_targets(post, [&out](const State t) { out.push_back(t); });
 	return out;
 }
 
-/// What the cursor actually yields.
+// What the cursor yields.
 template <typename Post> std::vector<State> from_cursor(const Post& post) {
 	std::vector<State> out;
 	const posts::SuccessorCursor<Post> cursor{post};
@@ -54,9 +44,7 @@ template <typename Post> std::vector<State> from_cursor(const Post& post) {
 	return out;
 }
 
-/// Also check the cursor can be *suspended and resumed*, which is its whole reason to exist:
-///  Tarjan stores a position, returns to it, and continues. A carry that only works when run
-///  straight through would pass the comparison above and still break Tarjan.
+// The cursor stopped and resumed after every step, as Tarjan uses it.
 template <typename Post> std::vector<State> from_resumed_cursor(const Post& post) {
 	std::vector<State> out;
 	const posts::SuccessorCursor<Post> cursor{post};
@@ -243,24 +231,13 @@ TEST_CASE("mata::SuccessorCursor and the walks agree on counts") {
 	}
 }
 
-/**
- * @brief An automaton over a relation deeper than two.
- *
- * `DeltaLike` admits any `key_arity`, because every read is generic.
- *  This checks that claim rather than trusting it — a deeper relation must satisfy the contract and
- *  give the structural operations, and the three members that still cannot must be *absent* rather
- *  than wrong.
- */
+// An automaton over a relation deeper than two.
 namespace {
 
 using Delta2 = posts::DeltaBase<Post2>;
 using Delta3 = posts::DeltaBase<Post3>;
 using Delta4 = posts::DeltaBase<Post4>;
 
-// Note: there is deliberately no concept probing `reverted()` itself. It is *protected*, so any
-//  such concept is unsatisfiable from outside the class and would report false whatever the arity —
-//  a check that looks like it verifies the constraint while actually verifying inaccessibility.
-//  `AnswersBackwards` tests the two public members that reverting exists to serve.
 template <typename A> concept AnswersBackwards = requires(const A a) {
 	a.get_terminating_states();
 	a.distances_to_final();
@@ -279,15 +256,12 @@ static_assert(DeltaLike<Delta3>, "a depth-4 relation must satisfy the contract")
 static_assert(DeltaLike<Delta4>, "a depth-5 relation must satisfy the contract");
 static_assert(Delta2::key_arity == 2 && Delta3::key_arity == 3 && Delta4::key_arity == 4);
 
-// The whole class instantiates over each, which is what catches a member that quietly needs more
-//  than the concept asks for -- ordinary use instantiates one member at a time.
+// Instantiates every member, so a member needing more than DeltaLike fails here.
 template class mata::AutomatonBase<Delta2>;
 template class mata::AutomatonBase<Delta3>;
 template class mata::AutomatonBase<Delta4>;
 
-// Every structural operation is available at every arity, reverting included: walking a move out
-//  yields `(keys..., target)` and `insert_target` writes it back with the source and target
-//  exchanged and the keys in the same order, so nothing about it is depth-2 shaped.
+// Forward and backward operations, reverting included, exist at every arity.
 static_assert(AnswersForwards<mata::AutomatonBase<Delta2>>);
 static_assert(AnswersForwards<mata::AutomatonBase<Delta3>>);
 static_assert(AnswersForwards<mata::AutomatonBase<Delta4>>);
@@ -335,9 +309,6 @@ TEST_CASE("mata::AutomatonBase over an arity-2 relation") {
 	}
 
 	SECTION("reverting works at arity 2, observed through what it serves") {
-		// 0 --(1,1)--> 1 --(2,2)--> 2 with 2 final, so every one of 0, 1, 2 reaches a final state and
-		//  the distances back to it are 2, 1, 0. Both answers come from reverting the relation, which
-		//  at this arity walks out `(k0, k1, target)` and writes back `(k0, k1, source)`.
 		CHECK(aut.get_terminating_states() == mata::StateSet{0, 1, 2});
 		const std::vector<State> to_final{aut.distances_to_final()};
 		CHECK(to_final[0] == 2);
@@ -363,14 +334,6 @@ TEST_CASE("mata::AutomatonBase over an arity-2 relation") {
 	SECTION("structural equality descends past the key") {
 		mata::AutomatonBase<Delta2> same{aut};
 		CHECK(aut.is_identical(same));
-		// A differing *target* under identical keys must not compare equal -- the entry's own
-		//  operator== only looks at the key, which is why posts_equal() exists.
-		//
-		// Written through @c Delta::add rather than by reaching into `.targets` twice: @c add takes
-		//  one key per level at every arity, so a two-key relation is written with
-		//  two keys and the natural `(source, keys..., target)` order. The keys here are the ones
-		//  the relation was built with above, so this deepens an existing path rather than adding a
-		//  new one.
 		same.delta.add(1, 2, 2, 99);
 		CHECK(!aut.is_identical(same));
 	}

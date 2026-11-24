@@ -20,15 +20,14 @@
 
 using namespace mata;
 
-/// Not in an anonymous namespace: an explicit instantiation over an internal-linkage type trips
-///  `-Werror=unused-function` on every member the test does not call.
+// Not in an anonymous namespace: explicitly instantiating over it would warn about every unused member.
 struct Weighted {
 	State to{};
 	int weight{};
-	auto operator<=>(const Weighted&) const = default; ///< The innermost post is an ordered vector.
+	auto operator<=>(const Weighted&) const = default;
 };
 
-/// The whole of what a payload has to supply.
+// All a payload has to supply.
 template <> struct mata::TargetTraits<Weighted> {
 	using State = mata::State;
 	static State state_of(const Weighted& target) { return target.to; }
@@ -43,11 +42,10 @@ static_assert(std::same_as<WeightedDelta::Target, Weighted>);
 static_assert(std::same_as<WeightedDelta::State, State>, "the state is read off the target through the traits");
 static_assert(WeightedDelta::key_arity == 1);
 
-/// The identity traits stay the identity: a bare state renamed is just the new state.
 static_assert(TargetTraits<State>::state_of(5) == 5);
 static_assert(TargetTraits<State>::with_state(5, 7) == 7);
 
-/// A small payload is passed by value, one that owns memory by reference (type-level check only).
+// A small payload is passed by value, one that owns memory by reference.
 static_assert(std::same_as<WeightedDelta::TargetArg, const Weighted>);
 struct Heavy {
 	State to{};
@@ -63,12 +61,10 @@ static_assert(std::same_as<posts::RelationOf<Symbol, utils::OrdVector<Heavy>>::T
 
 struct WeightedAutomaton : AutomatonBase<WeightedDelta> {
 	using Run = mata::Run;
-	WeightedAutomaton() = default; ///< So `aut{}` is not aggregate-init through the explicit base ctor.
-	/// What a path reads is not structural; this automaton reads nothing.
+	WeightedAutomaton() = default; // So that `aut{}` is not aggregate initialisation.
 	std::pair<Run, bool> get_word_for_path(const Run& run) const { return {run, true}; }
 };
 
-/// Every member has to instantiate over a payload target, not only the ones a test happens to call.
 template class mata::AutomatonBase<WeightedDelta>;
 
 TEST_CASE("mata::AutomatonBase over a relation whose targets carry a payload") {

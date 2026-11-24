@@ -1,6 +1,4 @@
-/** @file
- * @brief Tests for @c mata::nft::complement().
- */
+// Tests for mata::nft::complement().
 
 #include <algorithm>
 #include <unordered_set>

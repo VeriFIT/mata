@@ -1,22 +1,5 @@
 /** @file
- * @brief The key vocabulary: where a level's reserved keys start, and how a relation reaches its key members.
- *
- * Both halves are here because both are **silent** when wrong, and in the same way: they decide
- *  what a *default argument* means and what a *member returns*, so a mistake in either produces a
- *  plausible answer rather than a diagnostic.
- *
- * Before @c mata::ReservedKeys, `moves_epsilons()`, `moves_symbols()` and
- *  `epsilon_symbol_posts()` defaulted to whichever `EPSILON` was in scope in
- *  @c mata/core/delta.hh — core's constant, always, for every instantiation. Nothing was wrong
- *  while every module shared one epsilon, and nothing would have gone wrong loudly once one did
- *  not: an NFT reserving a wider tail would simply have got core's threshold back, and
- *  `moves_symbols()` would have iterated over its reserved keys as if they were ordinary symbols.
- *  So the tests below are all built on relations whose descriptor **disagrees** with
- *  @c mata::EPSILON, which is the only way to tell a per-instantiation default from a baked-in one.
- *
- * The key members are the same problem one level along: they report the *keys* in use, for any
- *  ordered key, and only @c mata::Delta calls them symbols. They are protected, so a relation
- *  re-exports the ones it wants under names that fit its keys.
+ * @brief The key vocabulary: where a key position's reserved keys start, and how a relation reaches its key members.
  */
 
 #include <catch2/catch_test_macros.hpp>
@@ -42,17 +25,17 @@ using namespace mata;
 
 namespace {
 
-/// A key that is not a symbol: ordered, so the relation and its key members work.
+// A key that is not a symbol.
 struct Interval {
 	Symbol lo{};
 	Symbol hi{};
 	auto operator<=>(const Interval& other) const = default;
 	bool operator==(const Interval& other) const = default;
-	/// So Catch2 can print a failed comparison.
+	// For Catch2's failure messages.
 	friend std::ostream& operator<<(std::ostream& os, const Interval& i) { return os << '[' << i.lo << ',' << i.hi << ']'; }
 };
 
-/// Another non-integral key, for the same reason.
+// A key that is not a symbol and can be printed.
 struct Weight {
 	unsigned centi{};
 	auto operator<=>(const Weight& other) const = default;
@@ -62,7 +45,7 @@ struct Weight {
 
 } // namespace.
 
-/// A weight can print itself, so it can *name* symbols for an alphabet; an interval here cannot.
+// Weight is printable, so it can name alphabet symbols; Interval is not.
 template <> struct std::formatter<Weight> {
 	constexpr auto parse(std::format_parse_context& ctx) { return ctx.begin(); }
 	template <typename Ctx> auto format(const Weight& w, Ctx& ctx) const {
@@ -72,22 +55,15 @@ template <> struct std::formatter<Weight> {
 
 namespace {
 
-/// The threshold this file's relations use. Deliberately nowhere near @c mata::EPSILON, so that a
-///  default resolving to core's constant instead of the descriptor's cannot pass by coincidence.
+// Far from mata::EPSILON, so a default using mata::EPSILON instead of the descriptor's cannot pass.
 constexpr Symbol OUR_EPSILON{100};
 
-/// Epsilon alone is reserved, as for an NFA — but at 100 rather than at the top of the key range.
+// Only epsilon is reserved, as in an NFA.
 using NarrowTail = ReservedKeys<Symbol, OUR_EPSILON>;
-/// A *wider* reserved tail, as an NFT's `DONT_CARE` would need: 90..99 are neither ordinary symbols
-///  nor epsilons. This is the shape a traits keyed on the key type could not express,
-///  because the key type is @c Symbol either way.
+// A wider reserved tail, as for an NFT's DONT_CARE: 90..99 are neither ordinary symbols nor epsilons.
 using WideTail = ReservedKeys<Symbol, OUR_EPSILON, OUR_EPSILON - 11>;
 
-/// Spelled by hand rather than with @c posts::PostChain, because the negative tests below
-///  instantiate it over a *deliberately invalid* descriptor. @c PostChain dispatches on
-///  @c ReservedKeysLike, so an invalid descriptor falls through to its key-type branch and is taken
-///  for a key — the builder is right to refuse it, which is exactly why the witness needs the long
-///  form.
+// Not PostChain: PostChain would take the invalid descriptor below for a key type.
 template <typename Reserved>
 using PostOver = posts::Post<posts::PostEntry<Symbol, StateSet, Reserved>>;
 template <typename Reserved> using DeltaOver = posts::DeltaBase<PostOver<Reserved>>;
@@ -102,27 +78,24 @@ using IntervalDelta = posts::RelationOf<IntervalReserved, StateSet>;
 using WeightReserved = ReservedKeys<Weight, Weight{100}, Weight{99}>;
 using WeightDelta = posts::RelationOf<WeightReserved, StateSet>;
 
-/// An alphabet that is not @c mata::Alphabet: its own wider symbol type, and able to grow.
+// An alphabet that is not mata::Alphabet, with a wider symbol type.
 struct WideAlphabet {
 	using Symbol = unsigned long long;
 	void update_next_symbol_value(Symbol) {}
 	void try_add_new_symbol(const std::string&, Symbol) {}
 };
 
-/// …and one that cannot grow, so @c ExtensibleAlphabet must reject it.
 struct FixedAlphabet {
 	using Symbol = mata::Symbol;
 };
 
-/// …one dealing in intervals, which no relation here can feed: an @c Interval has no printed form,
-///  so it cannot name the symbols it would add…
+
 struct IntervalAlphabet {
 	using Symbol = Interval;
 	void update_next_symbol_value(Symbol) {}
 	void try_add_new_symbol(const std::string&, Symbol) {}
 };
 
-/// …and one dealing in weights, which a weight relation can, recording what it is told.
 struct WeightAlphabet {
 	using Symbol = Weight;
 	std::vector<std::pair<std::string, Weight>> received{};
@@ -130,8 +103,7 @@ struct WeightAlphabet {
 	void try_add_new_symbol(const std::string& name, const Symbol symbol) { received.emplace_back(name, symbol); }
 };
 
-/// The intended way to reach the protected key members: derive and re-export. A using-declaration
-///  of a constrained member is fine even where the constraint fails; the call is what is rejected.
+// Re-exports the protected key members. A using-declaration compiles even where the member's constraint fails.
 template <typename D> struct Exposing : D {
 	using D::D;
 	using D::add_keys_to;
@@ -144,11 +116,7 @@ template <typename D> struct Exposing : D {
 	using D::get_max_key;
 };
 
-/// A descriptor with the two thresholds the wrong way round: it says the ordinary keys run *past*
-///  where the reserved ones start. Hand-rolled rather than an instantiation of @c ReservedKeys,
-///  because @c ReservedKeys carries its own @c static_assert and would refuse to exist at all —
-///  which is the right behaviour, and also why the concept needs a separate witness to be tested
-///  against.
+// Ordinary keys run past the reserved ones. Not a ReservedKeys, whose static_assert would reject it.
 struct InvertedTail {
 	using Key = Symbol;
 	static constexpr Symbol epsilon{100};
@@ -156,33 +124,31 @@ struct InvertedTail {
 	static constexpr bool epsilon_is_greatest{false};
 };
 
-/// The symbol-named members: only @c mata::Delta has them.
+// Only mata::Delta has the symbol-named members.
 template <typename D>
 concept HasSymbolMembers = requires(const D d) {
 	d.get_used_symbols();
 	d.get_max_symbol();
 };
-/// The key members any ordered key gets…
+// Any ordered key has these.
 template <typename D>
 concept HasKeyMembers = requires(const D d) {
 	d.get_used_keys();
 	d.get_used_keys_set();
 	d.get_max_key();
 };
-/// …and the three that index by the key's value, which only an integral key gets.
+// Only an integral key has these.
 template <typename D>
 concept HasIndexedKeyMembers = requires(const D d) {
 	d.get_used_keys_sps();
 	d.get_used_keys_bv();
 	d.get_used_keys_chv();
 };
-/// Can this relation feed that alphabet?
 template <typename D, typename A>
 concept CanAddKeysTo = requires(const D d, A& a) { d.add_keys_to(a); };
 template <typename D, typename A>
 concept CanAddSymbolsTo = requires(const D d, A& a) { d.add_symbols_to(a); };
 
-/// Collect the keys a @c Moves range yields, so the epsilon/symbol split can be compared directly.
 template <typename Moves> std::vector<Symbol> keys_of(const Moves& moves) {
 	std::vector<Symbol> keys{};
 	for (const auto& move : moves) { keys.push_back(move.symbol); }
@@ -191,22 +157,16 @@ template <typename Moves> std::vector<Symbol> keys_of(const Moves& moves) {
 
 } // namespace.
 
-/// @name Contract checks
-///@{
 static_assert(ReservedKeysLike<NarrowTail>);
 static_assert(ReservedKeysLike<WideTail>);
 static_assert(SortedWithReservedKeys<PostOver<NarrowTail>>);
 static_assert(PostLike<PostOver<WideTail>>);
 
-/// A descriptor whose bands are inverted is rejected by @c ReservedKeysLike itself -- that is where
-///  `max_ordinary < min_epsilon` is required -- and so by everything built on it.
 static_assert(!ReservedKeysLike<InvertedTail>);
 static_assert(!SortedWithReservedKeys<PostOver<InvertedTail>>);
 static_assert(!PostLike<PostOver<InvertedTail>>);
 
-/// The key members are protected on the base and reached by deriving; any ordered key has
-///  them, only an integral key has the indexed variants, and only @c mata::Delta calls them symbols.
-static_assert(!HasKeyMembers<IntervalDelta>); ///< protected: a bare relation does not expose them
+static_assert(!HasKeyMembers<IntervalDelta>); // protected
 static_assert(HasKeyMembers<Exposing<IntervalDelta>>);
 static_assert(HasKeyMembers<Exposing<WeightDelta>>);
 static_assert(HasKeyMembers<Exposing<NarrowDelta>>);
@@ -218,34 +178,23 @@ static_assert(!HasSymbolMembers<Exposing<IntervalDelta>>);
 static_assert(std::same_as<decltype(std::declval<const Exposing<IntervalDelta>&>().get_used_keys()), utils::OrdVector<Interval>>);
 static_assert(std::same_as<decltype(std::declval<const Exposing<IntervalDelta>&>().get_max_key()), std::optional<Interval>>);
 
-/// An alphabet is fed only by a relation whose keys are its symbols *and can name them*. The name
-///  is a value the alphabet keeps, so an unprintable key is refused rather than every symbol being
-///  called "<unprintable>" -- unlike a message on a throw path, where the placeholder is fine.
+// A relation feeds an alphabet only if its keys are the alphabet's symbols and are printable.
 static_assert(Printable<Symbol> && Printable<Weight> && !Printable<Interval>);
 static_assert(CanAddKeysTo<Exposing<WeightDelta>, WeightAlphabet>);
-static_assert(!CanAddKeysTo<Exposing<IntervalDelta>, IntervalAlphabet>); ///< right type, no name
+static_assert(!CanAddKeysTo<Exposing<IntervalDelta>, IntervalAlphabet>); // right type, not printable
 static_assert(!CanAddKeysTo<Exposing<IntervalDelta>, WideAlphabet>);
 static_assert(!CanAddKeysTo<Exposing<WeightDelta>, WideAlphabet>);
-static_assert(!CanAddKeysTo<Exposing<NarrowDelta>, WideAlphabet>); ///< wider symbols would truncate
+static_assert(!CanAddKeysTo<Exposing<NarrowDelta>, WideAlphabet>); // would truncate
 static_assert(!CanAddSymbolsTo<Delta, WideAlphabet>);
 
-/// @name An alphabet need not be mata's
-///
-/// @c mata::Alphabet cannot be specialised by inheritance — its symbol type is baked into its
-///  virtual signatures, so a derived class redefining the alias overrides nothing. A third party
-///  therefore brings their *own* class declaring its own @c Symbol, and everything that asks about
-///  symbols has to work against that with no @c mata::Alphabet involved.
-///@{
 static_assert(std::same_as<WideAlphabet::Symbol, unsigned long long>);
-static_assert(ExtensibleAlphabet<WideAlphabet>); ///< it can grow…
-static_assert(!ExtensibleAlphabet<FixedAlphabet>); ///< …and a fixed one cannot, which is not an error
-///@}
+static_assert(ExtensibleAlphabet<WideAlphabet>);
+static_assert(!ExtensibleAlphabet<FixedAlphabet>);
 
-TEST_CASE("mata::ReservedKeys — the defaults follow the relation, not core's constant") {
+TEST_CASE("mata::ReservedKeys - the defaults follow the relation, not core's constant") {
 	SECTION("epsilon_symbol_posts() defaults to the relation's own epsilon") {
 		NarrowDelta delta{};
-		// Both a key the descriptor calls epsilon and the one core does. A default that had baked in
-		//  mata::EPSILON would find the second; the descriptor says the first.
+		// The descriptor's epsilon and mata::EPSILON; the default must find the first.
 		delta.add(0, OUR_EPSILON, 1);
 		delta.add(0, EPSILON, 2);
 		delta.add(0, 7, 3);
@@ -255,22 +204,17 @@ TEST_CASE("mata::ReservedKeys — the defaults follow the relation, not core's c
 		CHECK(epsilon_post->symbol == OUR_EPSILON);
 		CHECK(epsilon_post->symbol != EPSILON);
 
-		// The explicit form still addresses exactly the key asked for.
 		const auto core_epsilon_post{delta.epsilon_symbol_posts(0, EPSILON)};
 		REQUIRE(core_epsilon_post != delta.state_post(0).end());
 		CHECK(core_epsilon_post->symbol == EPSILON);
 
-		// A threshold no key carries is absent, not the nearest one above: the lookup is by exact
-		//  key, which is what the member has always documented.
+		// The lookup is by exact key.
 		CHECK(delta.epsilon_symbol_posts(0, OUR_EPSILON + 1) == delta.state_post(0).end());
 	}
 
 	SECTION("the O(1) back() path is only taken when nothing can sort above epsilon") {
-		// mata::Delta's epsilon is the greatest key there is, so an epsilon entry can only be the
-		//  last one and the answer is a look at the back.
 		static_assert(Delta::Reserved<0>::epsilon_is_greatest);
-		// Ours is not, so entries can and do sort above it, and the back is the wrong entry. Taking
-		//  the fast path here would answer "no epsilons" for a relation that has one.
+		// Here keys sort above epsilon, so the last entry is not the epsilon one.
 		static_assert(!NarrowDelta::Reserved<0>::epsilon_is_greatest);
 
 		NarrowDelta delta{};
@@ -290,10 +234,8 @@ TEST_CASE("mata::ReservedKeys — the defaults follow the relation, not core's c
 		}
 		const auto& state_post{delta.state_post(0)};
 
-		// Ordinary: everything at or below max_ordinary, which is 99 — so 98 but not 100.
+		// Ordinary keys are those up to max_ordinary, 99.
 		CHECK(keys_of(state_post.moves_symbols()) == std::vector<Symbol>{3, 98});
-		// Reserved: everything from epsilon up. A default that had baked in mata::EPSILON would
-		//  have yielded only the last of these.
 		CHECK(keys_of(state_post.moves_epsilons())
 		      == std::vector<Symbol>{OUR_EPSILON, OUR_EPSILON + 5, EPSILON});
 	}
@@ -302,10 +244,6 @@ TEST_CASE("mata::ReservedKeys — the defaults follow the relation, not core's c
 		WideDelta delta{};
 		for (const Symbol symbol : {Symbol{3}, Symbol{89}, Symbol{95}, OUR_EPSILON}) { delta.add(0, symbol, 1); }
 		const auto& state_post{delta.state_post(0)};
-
-		// 90..99 are reserved but are not epsilons — an NFT's DONT_CARE band. They are excluded from
-		//  the ordinary symbols without being counted as epsilons, which is the whole reason
-		//  max_ordinary is a separate parameter rather than epsilon minus one.
 		static_assert(WideTail::max_ordinary == 89);
 		CHECK(keys_of(state_post.moves_symbols()) == std::vector<Symbol>{3, 89});
 		CHECK(keys_of(state_post.moves_epsilons()) == std::vector<Symbol>{OUR_EPSILON});
@@ -316,8 +254,7 @@ TEST_CASE("mata::ReservedKeys — the defaults follow the relation, not core's c
 		delta.add(0, 3, 1);
 		const auto& state_post{delta.state_post(0)};
 		CHECK_NOTHROW(state_post.moves_symbols(WideTail::max_ordinary));
-		// Not just epsilon itself: anything in the reserved band, since the range would otherwise
-		//  have to run past where the ordinary keys stop.
+		// Anything in the reserved band, not only epsilon.
 		CHECK_THROWS(state_post.moves_symbols(WideTail::max_ordinary + 1));
 		CHECK_THROWS(state_post.moves_symbols(OUR_EPSILON));
 		CHECK_THROWS(state_post.moves_symbols(EPSILON));
@@ -380,7 +317,6 @@ TEST_CASE("an interval-keyed relation reports the intervals it uses") {
 	delta.add(1, Interval{3, 4}, 2);
 
 	SECTION("as keys, in the key's own order") {
-		// Three keys, three intervals. What the intervals *stand for* is not the relation's business.
 		CHECK(delta.get_used_keys() == utils::OrdVector<Interval>{{1, 3}, {3, 4}, {7, 8}});
 		CHECK(delta.get_used_keys_set() == std::set<Interval>{{1, 3}, {3, 4}, {7, 8}});
 		CHECK(delta.get_max_key() == Interval{7, 8});
@@ -409,8 +345,6 @@ TEST_CASE("a relation feeds an alphabet with its keys, named by their printed fo
 }
 
 TEST_CASE("a key that is not a symbol still gets a working relation") {
-	// The relation instantiates, stores transitions, walks them and reports its keys. Only the
-	// members that index by a key's value are missing — see the static_asserts above.
 	Exposing<WeightDelta> delta{};
 	delta.add(0, Weight{50}, 1);
 	delta.add(0, Weight{75}, 2);
@@ -423,16 +357,12 @@ TEST_CASE("a key that is not a symbol still gets a working relation") {
 	delta.for_each_successor(0, [&successors](const State target) { successors.push_back(target); });
 	CHECK(successors == std::vector<State>{1, 2});
 
-	// Its epsilon members work too: a reserved-key convention is meaningful for any ordered key,
-	// even where a *symbol* is not.
 	size_t epsilon_moves{0};
 	for ([[maybe_unused]] const auto& move : delta.state_post(0).moves_epsilons()) { ++epsilon_moves; }
 	CHECK(epsilon_moves == 0);
 }
 
 TEST_CASE("a failed remove() names the transition, whatever the key type") {
-	// The message used to be built with std::to_string, which only exists for arithmetic types, so
-	// an interval-keyed relation could add and query but could not instantiate remove() at all.
 	SECTION("a key std::to_string cannot print is still removable") {
 		IntervalDelta delta{};
 		delta.add(0, Interval{1, 3}, 1);
@@ -451,8 +381,7 @@ TEST_CASE("a failed remove() names the transition, whatever the key type") {
 			delta.remove(0, Interval{20, 20}, 1);
 			CHECK(false); // Unreachable: the transition is not there.
 		} catch (const std::invalid_argument& error) {
-			// Interval specialises no std::formatter, so the key reads as the placeholder. Specialising
-			// one would put "[20,20]" here instead, which is the whole opt-in.
+			// Interval has no std::formatter.
 			CHECK(std::string{error.what()}.find("<unprintable>") != std::string::npos);
 		}
 	}

@@ -1,15 +1,5 @@
 /** @file
  * @brief The extensibility contract, exercised by a relation defined outside @c mata.
- *
- * @c TinyDelta below shares nothing with @c mata::Delta: its own posts, its own storage, its own
- *  cursor. It is here so that the concepts in @c mata/core/concepts.hh are checked against a second
- *  implementation rather than only against the one they were extracted from -- a concept satisfied
- *  by exactly one type says very little.
- *
- * @c TinyDelta implements the whole of @c mata::DeltaLike and nothing more, so what is exercised
- *  here is exactly the claim the concept makes: satisfy this much, and every structural operation
- *  works. Anything @c mata::AutomatonBase needs that the concept does not ask for turns up as a
- *  compile error in this file.
  */
 
 #include <algorithm>
@@ -25,7 +15,7 @@
 
 namespace tiny_delta {
 
-/// The innermost post: the targets reachable once the key has been supplied.
+// The innermost post: the targets under one key.
 struct TinyTargets {
 	using Target = mata::State;
 	static constexpr size_t key_arity{0};
@@ -39,26 +29,22 @@ struct TinyTargets {
 	bool empty() const { return targets.empty(); }
 	size_t size() const { return targets.size(); }
 	bool is_sorted() const { return std::ranges::is_sorted(targets); }
-	/// Required by @c mata::TargetSetLike: trimming and renumbering rebuild a post by appending
-	///  rather than filtering it in place.
+	// Used by trim and renumbering.
 	void push_back(const Target& target) { targets.push_back(target); }
-	/// Also required: reverting writes a target down a key path and lands at the innermost post.
+	// Used by revert.
 	void insert(const Target& target) {
 		const auto it{std::ranges::lower_bound(targets, target)};
 		if (it == targets.end() || *it != target) { targets.insert(it, target); }
 	}
-	/// Required by @c mata::TargetSetLike: removing a transition bottoms out here, and the level
-	///  above needs @c empty() afterwards to decide whether to drop the key that led here.
-	///  @see mata::posts::erase_target.
+	// Used by remove; the post above then drops the key if this became empty.
 	void erase(const Target& target) {
 		const auto it{std::ranges::lower_bound(targets, target)};
 		if (it != targets.end() && *it == target) { targets.erase(it); }
 	}
-	/// Required by @c mata::TargetSetLike. @see mata::posts::has_target_at.
 	bool contains(const Target& target) const { return std::ranges::binary_search(targets, target); }
 };
 
-/// One entry of a post: a single key, and the targets under it.
+// One entry of a post: a key and the targets under it.
 struct TinyEntry {
 	using Key = unsigned;
 	using Nested = TinyTargets;
@@ -69,11 +55,11 @@ struct TinyEntry {
 	bool operator==(const TinyEntry& other) const = default;
 	Key key() const { return stored_key; }
 	const Nested& nested() const { return stored_nested; }
-	/// Required by @c mata::PostEntryLike: writing a key path descends through the entries.
+	// Used to write a key path.
 	Nested& nested() { return stored_nested; }
 };
 
-/// One post: the ordered map from a key to the targets under it.
+// One post: sorted entries by key.
 struct TinyPost {
 	using Entry = TinyEntry;
 	using Key = TinyEntry::Key;
@@ -81,10 +67,7 @@ struct TinyPost {
 	using Target = TinyTargets::Target;
 	static constexpr size_t key_arity{Nested::key_arity + 1};
 	static constexpr bool sorted_by_key{true};
-	/// Required by @c mata::SortedWithReservedKeys, and through it by @c mata::PostLike: the epsilon
-	///  lookups walk back from the end, so a post has to say where its ordinary keys stop. Declared
-	///  on the post rather than on the entry -- @c mata::posts::PostEntry carries it because that
-	///  is where the key type is named, but that is mata's own arrangement and not the contract.
+	// Where the ordinary keys stop; the contract asks it of the post, not of the entry.
 	using Reserved = mata::ReservedKeys<Key>;
 
 	std::vector<Entry> entries{};
@@ -97,16 +80,11 @@ struct TinyPost {
 	bool is_sorted() const {
 		return std::ranges::is_sorted(entries, {}, [](const Entry& e) { return e.key(); });
 	}
-	/// Required by @c mata::PostLike, for the same reason as the leaf's.
 	void push_back(const Entry& entry) { entries.push_back(entry); }
-	/// Also required: writing a key path looks up the level it needs and creates it when absent.
-	/// Required by @c mata::PostLike: a *query* must not need a mutable post.
-	///  @see mata::posts::has_target_at.
+	// A query must not need a mutable post.
 	auto find(const Key& key) const {
 		return std::ranges::find_if(entries, [&key](const Entry& e) { return e.stored_key == key; });
 	}
-	/// Required by @c mata::PostLike: erasing the last target under a key drops the key too.
-	///  @see mata::posts::erase_target.
 	void erase(const Entry& entry) {
 		std::erase_if(entries, [&entry](const Entry& e) { return e.stored_key == entry.stored_key; });
 	}
@@ -123,8 +101,7 @@ struct TinyPost {
 	}
 };
 
-/// A resumable cursor over the successors of one state. Holds no reference to the cursor that
-///  produced it, so a temporary cursor may be discarded once @c begin() has been called.
+// A cursor over the successors of one state. Its iterator outlives the cursor.
 class TinyCursor {
   public:
 	class const_iterator {
@@ -138,7 +115,7 @@ class TinyCursor {
 			target_it = t.data();
 			target_end = target_it + t.size();
 		}
-		/// Restore the invariant "positioned on a target, or exhausted".
+		// Positions on a target, or at the end.
 		void seek() {
 			while (target_it == target_end) {
 				if (++entry_it == entry_end) {
@@ -173,7 +150,7 @@ class TinyCursor {
 	const TinyPost* post_;
 };
 
-/// A transition relation: state -> key -> targets. Shares no code with @c mata::Delta.
+// A relation: state -> key -> targets.
 class TinyDelta {
   public:
 	using PostType = TinyPost;
@@ -185,8 +162,6 @@ class TinyDelta {
 	static State state_of(const Target& target) { return mata::TargetTraits<Target>::state_of(target); }
 
 	TinyDelta() = default;
-	/// Presized in one step, which is why @c mata::DeltaLike asks for a constructor rather than
-	///  routing the presizing through @c allocate().
 	explicit TinyDelta(const size_t num_of_states) : posts_(num_of_states) {}
 
 	bool operator==(const TinyDelta& other) const = default;
@@ -214,7 +189,7 @@ class TinyDelta {
 
 	TinyCursor successor_cursor(const State source) const { return TinyCursor{post_of(source)}; }
 
-	/// Required by @c mata::DeltaLike: reverting writes through this into a fresh relation.
+	// Used by revert.
 	TinyPost& mutable_state_post(const State source) {
 		allocate(source + 1);
 		return posts_[source];
@@ -226,7 +201,6 @@ class TinyDelta {
 		return found;
 	}
 
-	/// Keeps the keys of a post, and the targets under each, sorted.
 	void add(const State source, const Key key, const State target) {
 		allocate(std::max(source, target) + 1);
 		std::vector<TinyEntry>& entries{posts_[source].entries};
@@ -237,7 +211,6 @@ class TinyDelta {
 		if (target_it == targets.end() || *target_it != target) { targets.insert(target_it, target); }
 	}
 
-	/// Drop the states @p is_staying rejects and renumber the rest through @p renaming.
 	TinyDelta& defragment(const mata::BoolVector& is_staying, const std::vector<State>& renaming) {
 		const auto stays = [&](const State q) { return q < is_staying.size() && is_staying[q] != 0; };
 		TinyDelta result{};
@@ -268,14 +241,12 @@ class TinyDelta {
 
 using namespace tiny_delta;
 
-// The post protocol, checked against an implementation that is not mata::Delta's.
 static_assert(mata::TargetSetLike<TinyTargets>, "TinyTargets must be the innermost post.");
 static_assert(mata::PostEntryLike<TinyEntry>, "TinyEntry must be TinyPost's entry type.");
 static_assert(mata::PostLike<TinyPost>, "TinyPost must be one post of the relation.");
 
 static_assert(mata::DeltaLike<TinyDelta>, "A relation written outside mata must be able to satisfy the contract.");
 
-/// The deliverable: a third party's relation gets the structural operations unchanged.
 using TinyAutomaton = mata::AutomatonBase<TinyDelta>;
 
 static_assert(std::same_as<TinyAutomaton::State, mata::State>);
@@ -283,17 +254,7 @@ static_assert(std::same_as<TinyAutomaton::Target, mata::State>);
 static_assert(std::same_as<TinyAutomaton::DeltaType, TinyDelta>);
 static_assert(TinyAutomaton::key_arity == 1);
 
-/**
- * @brief The whole class instantiated at once over a relation that offers only the contract.
- *
- * This is the check that @c mata::DeltaLike is the *complete* floor and not merely a plausible one.
- *  Ordinary use instantiates a member at a time, so a requirement that only one unused member
- *  imposes stays invisible; an explicit instantiation instantiates every member and so fails if any
- *  of them quietly needs more than the concept asks for. This is what caught
- *  @c AutomatonBase(size_t, ...) needing a `D(size_t)` constructor, which nothing else had
- *  surfaced -- neither review nor the whole passing test suite -- because ordinary use never
- *  instantiated that constructor over a relation lacking one.
- */
+// Instantiates every member, so a member needing more than DeltaLike fails here.
 template class mata::AutomatonBase<TinyDelta>;
 
 TEST_CASE("mata::AutomatonBase over a relation defined outside mata") {
