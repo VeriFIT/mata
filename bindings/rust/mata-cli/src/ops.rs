@@ -217,6 +217,16 @@ pub(crate) const OPTIONAL_PARAMETERS: &[OptionalParameter] = &[
 		sort: "Symbol",
 	},
 	OptionalParameter {
+		operation: "nfa:collapse-by-length",
+		name: "languages",
+		sort: "String",
+	},
+	OptionalParameter {
+		operation: "nfa:collapse-by-length",
+		name: "direction",
+		sort: "String",
+	},
+	OptionalParameter {
 		operation: "nfa:create-random-nfa-tabakov-vardi",
 		name: "seed",
 		sort: "Int",
@@ -1276,6 +1286,14 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 		1,
 		Some(1),
 		"Nfa",
+		"Nfa",
+	),
+	op(
+		"nfa:collapse-by-length",
+		"nfa_collapse_by_length",
+		2,
+		Some(2),
+		"Nfa,Int",
 		"Nfa",
 	),
 	op("nfa:flat?", "nfa_flat", 1, Some(1), "Nfa", "Bool"),
@@ -2656,8 +2674,41 @@ fn dispatch_nfa_bridge_transformations(
 				expect_nfa(&value)?.one_letter_automaton(abstract_symbol),
 			)))
 		}
+		"nfa_collapse_by_length" => {
+			let [value, bound] = take(arguments, name)?;
+			collapse_by_length(&value, &bound, engine)
+		}
 		_ => dispatch_nfa_predicates(handler, name, arguments, engine),
 	}
+}
+
+/// `nfa:collapse-by-length` with its `:languages` and `:direction` keywords.
+fn collapse_by_length(value: &Value, bound: &Value, engine: &Engine) -> Result<Value, Error> {
+	let bound = length(
+		as_int(bound)?,
+		"nfa:collapse-by-length needs a non-negative length".into(),
+	)?;
+	let traces = match optional::<String>(engine, "languages").as_deref() {
+		None | Some("words") => false,
+		Some("traces") => true,
+		Some(other) => {
+			return Err(Error::plain(format!(
+				"nfa:collapse-by-length: :languages is \"words\" or \"traces\", not \"{other}\""
+			)));
+		}
+	};
+	let direction = match optional::<String>(engine, "direction").as_deref() {
+		None | Some("forward") => Direction::Forward,
+		Some("backward") => Direction::Backward,
+		Some(other) => {
+			return Err(Error::plain(format!(
+				"nfa:collapse-by-length: :direction is \"forward\" or \"backward\", not \"{other}\""
+			)));
+		}
+	};
+	Ok(Value::Nfa(Rc::new(
+		expect_nfa(value)?.collapse_by_length(bound, traces, direction),
+	)))
 }
 
 /// The verdict of a decision that `holds` makes without a counterexample, or, when the script asks for

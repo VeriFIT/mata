@@ -3635,6 +3635,39 @@ fn a_token_passing_step_checks_the_same_lazily_and_eagerly() {
 	);
 }
 
+/// Abstract regular model checking of token passing: the reachable configurations, abstracted by
+/// `nfa:collapse-by-length`, saturate to an invariant that excludes the bad ones for the step; for the copy, the
+/// abstraction meets a bad configuration that a lazy chain of pre-images confirms reachable.
+const ARMC_SCRIPT: &str = "(mata-script \"0.1.0\" :requires (lazy transducers))\n\
+	(set-option :alphabet \"bytes\")\n\
+	(set-option :loops-and-recursion true)\n\
+	(declare-input step Nft)\n\
+	(define initial (nfa:create-from-regex \"tn*\"))\n\
+	(define bad (lazy:complement (lazy:leaf (nfa:create-from-regex \"n*tn*\"))))\n\
+	(define (abstract (a Nfa)) (nfa:collapse-by-length a 1))\n\
+	(define (post (r Nfa)) (nft:to-nfa (nft:apply step r)))\n\
+	(define (real-error? (rounds Int))\n\
+	  (not (lazy:empty? (lazy:intersection (lazy:leaf initial)\n\
+	    (loop ((pre bad) (i 0)) (if (< i rounds) (recur (lazy:pre-image pre (lazy:leaf step)) (+ i 1)) pre))))))\n\
+	(echo (loop ((reached (abstract initial)) (round 0))\n\
+	  (if (not (lazy:empty? (lazy:intersection (lazy:leaf reached) bad) :alphabet \"n t\"))\n\
+	    (if (real-error? round) (concat \"unsafe after \" (to-string round)) \"spurious\")\n\
+	    (let ((next (abstract (nfa:union-nondeterministic reached (post reached)))))\n\
+	      (if (nfa:included? next reached) \"safe\" (recur next (+ round 1)))))))";
+
+#[test]
+fn abstract_regular_model_checking_proves_token_passing_and_finds_the_copy_bug() {
+	let workspace = Workspace::new("armc-token-passing");
+	let step = workspace.file("step.mata", TOKEN_STEP);
+	let copy = workspace.file("copy.mata", TOKEN_COPY);
+	let output = run_script(ARMC_SCRIPT, false, &[&step]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "safe\n");
+	let output = run_script(ARMC_SCRIPT, false, &[&copy]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "unsafe after 1\n");
+}
+
 #[test]
 fn a_lazy_complement_is_taken_over_the_alphabet_of_the_query() {
 	let script = "(mata-script \"0.1.0\" :requires (lazy))\n\

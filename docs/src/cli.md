@@ -476,8 +476,9 @@ language page specifies but this build does not have are listed in the
   library default. `mata nfa --help`, `mata nft --help` and `mata strings --help` list them with their sorts. The
   parameters this build takes are `:use-epsilon` of `nfa:concatenate` and of `nfa:in-language-prefix?`,
   `:final-condition` (`"and"` or `"or"`) and `:first-epsilon` of `nfa:product`, `:first-epsilon` of
-  `nfa:left-quotient` and of `nfa:right-quotient`, `:abstract-symbol` of `nfa:get-one-letter-automaton`, `:seed` of
-  `nfa:create-random-nfa-tabakov-vardi`, `:match-prefix` and `:has-epsilon-cycles` of `nft:in-language?`, and
+  `nfa:left-quotient` and of `nfa:right-quotient`, `:abstract-symbol` of `nfa:get-one-letter-automaton`,
+  `:languages` (`"words"` or `"traces"`) and `:direction` (`"forward"` or `"backward"`) of `nfa:collapse-by-length`,
+  `:seed` of `nfa:create-random-nfa-tabakov-vardi`, `:match-prefix` and `:has-epsilon-cycles` of `nft:in-language?`, and
   `:num-of-levels` of `strings:create-identity` (2 when omitted), `:begin-marker` of
   `strings:replace-reluctant-regex` and `:end-marker` of `strings:replace-reluctant-literal`. `:has-epsilon-cycles`
   defaults to `true`, which only allows a transducer that has such a cycle; `false` on one that has it is the error
