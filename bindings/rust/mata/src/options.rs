@@ -1,0 +1,181 @@
+//! Algorithm choices of the operations that Mata implements in more than one way.
+//!
+//! Each enum's default is the algorithm Mata uses by default.
+
+use mata_sys::ffi;
+
+/// How [`Nfa::determinize_with`](crate::Nfa::determinize_with) determinizes.
+/// Both give the same DFA, but they may number its states differently.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum Determinization {
+	/// The "Four Russians" subset construction: the post of each part of a macrostate inside a block of
+	/// states is computed once and kept in a table. Usually much faster on large automata.
+	#[default]
+	FourRussians,
+	/// The classical subset construction.
+	Classical,
+}
+
+/// How [`Nfa::minimize_with`](crate::Nfa::minimize_with) minimizes. The minimizing strategies give a trimmed DFA.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum Minimization {
+	/// Brzozowski's algorithm: determinize the reversal twice. Works on any automaton, but can blow up
+	/// exponentially even on a DFA.
+	Brzozowski,
+	/// Hopcroft's partition refinement on a trimmed DFA, without input normalization.
+	Hopcroft,
+	/// Normalize an arbitrary automaton, then apply Hopcroft's partition refinement.
+	#[default]
+	HopcroftNondet,
+}
+
+/// How [`Nfa::complement_with`](crate::Nfa::complement_with) complements.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum Complementation {
+	/// Determinize, complete with a sink state, and swap final and non-final states.
+	#[default]
+	Classical,
+	/// Minimize with Brzozowski's algorithm, complete, and swap final and non-final states.
+	Brzozowski,
+}
+
+/// How [`Nfa::reduce_with`](crate::Nfa::reduce_with) shrinks an automaton. The result keeps the language
+/// and may stay nondeterministic.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum Reduction {
+	/// Merge states related by forward simulation.
+	#[default]
+	Simulation,
+	/// Build the residual automaton (the canonical RFSA).
+	Residual {
+		/// When the residual states are computed.
+		construction: ResidualConstruction,
+		/// Forward or backward residuals.
+		direction: Direction,
+	},
+}
+
+/// When a residual reduction computes the residual states.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum ResidualConstruction {
+	/// After a full determinization (Mata's `"after"`).
+	#[default]
+	After,
+	/// During the determinization (Mata's `"with"`).
+	During,
+}
+
+/// Direction of a residual reduction.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum Direction {
+	/// Residuals of the automaton.
+	#[default]
+	Forward,
+	/// Residuals of the reversed automaton.
+	Backward,
+}
+
+/// Algorithm of the universality, inclusion and equivalence checks.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum CheckAlgorithm {
+	/// Complement one side and search the product for an accepted word.
+	Naive,
+	/// Search the subset construction lazily, pruned by antichains. Usually much faster.
+	#[default]
+	Antichains,
+}
+
+/// What [`Nfa::regex`](crate::Nfa::regex) optimizes for.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[non_exhaustive]
+pub enum RegexPrintMode {
+	/// Conversion speed: a regex for a program to read.
+	#[default]
+	Fast,
+	/// The length and the legibility of the regex: a regex for a human to read. Takes longer, and the
+	/// result is never longer than the [`Fast`](RegexPrintMode::Fast) one.
+	Readable,
+}
+
+impl From<Determinization> for ffi::Determinization {
+	fn from(algorithm: Determinization) -> ffi::Determinization {
+		match algorithm {
+			Determinization::FourRussians => ffi::Determinization::FourRussians,
+			Determinization::Classical => ffi::Determinization::Classical,
+		}
+	}
+}
+
+impl From<Minimization> for ffi::Minimization {
+	fn from(algorithm: Minimization) -> ffi::Minimization {
+		match algorithm {
+			Minimization::Brzozowski => ffi::Minimization::Brzozowski,
+			Minimization::Hopcroft => ffi::Minimization::Hopcroft,
+			Minimization::HopcroftNondet => ffi::Minimization::HopcroftNondet,
+		}
+	}
+}
+
+impl From<Complementation> for ffi::Complementation {
+	fn from(algorithm: Complementation) -> ffi::Complementation {
+		match algorithm {
+			Complementation::Classical => ffi::Complementation::Classical,
+			Complementation::Brzozowski => ffi::Complementation::Brzozowski,
+		}
+	}
+}
+
+impl From<ResidualConstruction> for ffi::ResidualConstruction {
+	fn from(construction: ResidualConstruction) -> ffi::ResidualConstruction {
+		match construction {
+			ResidualConstruction::After => ffi::ResidualConstruction::After,
+			ResidualConstruction::During => ffi::ResidualConstruction::With,
+		}
+	}
+}
+
+impl From<Direction> for ffi::Direction {
+	fn from(direction: Direction) -> ffi::Direction {
+		match direction {
+			Direction::Forward => ffi::Direction::Forward,
+			Direction::Backward => ffi::Direction::Backward,
+		}
+	}
+}
+
+impl From<CheckAlgorithm> for ffi::CheckAlgorithm {
+	fn from(algorithm: CheckAlgorithm) -> ffi::CheckAlgorithm {
+		match algorithm {
+			CheckAlgorithm::Naive => ffi::CheckAlgorithm::Naive,
+			CheckAlgorithm::Antichains => ffi::CheckAlgorithm::Antichains,
+		}
+	}
+}
+
+impl From<RegexPrintMode> for ffi::RegexPrintMode {
+	fn from(mode: RegexPrintMode) -> ffi::RegexPrintMode {
+		match mode {
+			RegexPrintMode::Fast => ffi::RegexPrintMode::Fast,
+			RegexPrintMode::Readable => ffi::RegexPrintMode::Readable,
+		}
+	}
+}
+
+/// When [`Nfa::product`](crate::Nfa::product) makes a pair of states final (Mata's
+/// `ProductFinalStateCondition`).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum ProductFinalCondition {
+	/// Both states are final: the intersection.
+	#[default]
+	And,
+	/// Either state is final. The product is guaranteed to be the union when both automata have an
+	/// initial state and are complete over the symbols either uses, and may lose words otherwise; see
+	/// [`Nfa::product`](crate::Nfa::product).
+	Or,
+}

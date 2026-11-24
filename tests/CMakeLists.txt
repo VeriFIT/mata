@@ -1,4 +1,4 @@
-file (GLOB_RECURSE MATA_TEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
+file (GLOB_RECURSE MATA_TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
 
 # Every core header has to compile on its own.
 #  A header that leans on another being included first fails here
@@ -15,14 +15,22 @@ add_executable (tests ${MATA_TEST_SOURCES})
 
 target_link_libraries (tests PRIVATE libmata Catch2::Catch2WithMain)
 
-# Add common compile warnings.
-target_compile_options (tests PRIVATE "$<$<CONFIG:DEBUG>:${MATA_COMMON_WARNINGS}>")
-target_compile_options (tests PRIVATE "$<$<CONFIG:RELEASE>:${MATA_COMMON_WARNINGS}>")
+# Add Mata's compile warnings.
+mata_add_warnings (tests)
 
-# Optionally, also add Clang-specific warnings.
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang") # Using regular Clang or AppleClang.
-	target_compile_options (tests PRIVATE "$<$<CONFIG:DEBUG>:${MATA_CLANG_WARNINGS}>")
-	target_compile_options (tests PRIVATE "$<$<CONFIG:RELEASE>:${MATA_CLANG_WARNINGS}>")
-endif ()
+# The unit tests are the default PGO training workload, so they follow the same optimization
+#  settings as the library.
+mata_add_optimizations (tests)
 
 catch_discover_tests (tests)
+
+# The Delta backend is fixed per process, so each one gets a process of its own, whatever the build default is.
+foreach (backend std pool)
+	add_test (NAME "delta-allocator-${backend}" COMMAND tests "[delta-allocator]")
+	set_tests_properties ("delta-allocator-${backend}" PROPERTIES ENVIRONMENT "MATA_DELTA_ALLOCATOR=${backend}")
+endforeach ()
+add_test (NAME delta-allocator-invalid COMMAND tests "mata::utils::DeltaAllocator returns aligned*")
+set_tests_properties (
+	delta-allocator-invalid PROPERTIES ENVIRONMENT "MATA_DELTA_ALLOCATOR=bogus" PASS_REGULAR_EXPRESSION
+									   "MATA_DELTA_ALLOCATOR must be 'std' or 'pool'; got 'bogus'"
+)

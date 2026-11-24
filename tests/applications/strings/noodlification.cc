@@ -1,5 +1,12 @@
 // TODO: some header
 
+#include <algorithm>
+#include <array>
+#include <functional>
+#include <memory>
+#include <random>
+#include <ranges>
+#include <set>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
@@ -72,12 +79,12 @@ TEST_CASE("mata::nfa::SegNfa::noodlify()") {
 		auto result{seg_nfa::noodlify(aut, 'c')};
 		REQUIRE(result.size() == 1);
 		REQUIRE(result[0].size() == 1);
-		CHECK(are_equivalent(*result[0][0], noodle));
+		CHECK(are_equivalent(result[0][0].to_nfa(), noodle));
 
 		auto result_segments{seg_nfa::noodlify_for_equation({aut}, aut)};
 		REQUIRE(result_segments.size() == 1);
 		REQUIRE(result_segments[0].size() == 1);
-		CHECK(are_equivalent(*result_segments[0][0], noodle));
+		CHECK(are_equivalent(result_segments[0][0].to_nfa(), noodle));
 	}
 
 	SECTION("1-2-3 epsilon transitions") {
@@ -143,6 +150,108 @@ TEST_CASE("mata::nfa::SegNfa::noodlify()") {
 		auto noodles{seg_nfa::noodlify(aut, 'e')};
 
 		CHECK(noodles.size() == 3);
+	}
+}
+
+TEST_CASE("mata::nfa::seg_nfa::segs_one_initial_final() keeps the language of reduce(trim()) per pair") {
+	// Reference: one automaton per (initial, final) pair. The implementation shares one automaton per final state and
+	//  gives each pair its state in it, so every pair must still have the language of its reference automaton.
+	const State unused_state{1'000};
+	const auto expected_segments = [&](const std::vector<Nfa>& segments, const bool include_empty) {
+		std::map<std::pair<State, State>, Nfa> expected;
+		// std::nullopt for init or fin stands for all initial or final states of the segment, with key unused_state.
+		const auto add = [&](const Nfa& segment, const std::optional<State> init, const std::optional<State> fin) {
+			const SparseSet<State> inits{init.value_or(0)};
+			const SparseSet<State> fins{fin.value_or(0)};
+			std::optional<std::reference_wrapper<const SparseSet<State>>> inits_ref, fins_ref;
+			if (init) { inits_ref = inits; }
+			if (fin) { fins_ref = fins; }
+			if (Nfa reduced = reduce(trim(segment, nullptr, inits_ref, fins_ref));
+				reduced.num_of_states() > 0 || include_empty) {
+				expected[{init.value_or(unused_state), fin.value_or(unused_state)}] = std::move(reduced);
+			}
+		};
+		for (size_t i{0}; i < segments.size(); ++i) {
+			const Nfa& segment{segments[i]};
+			if (i == 0) {
+				for (const State fin : segment.final) { add(segment, std::nullopt, fin); }
+			} else if (i + 1 == segments.size()) {
+				for (const State init : segment.initial) { add(segment, init, std::nullopt); }
+			} else {
+				for (const State init : segment.initial) {
+					for (const State fin : segment.final) { add(segment, init, fin); }
+				}
+			}
+		}
+		return expected;
+	};
+
+	for (unsigned seed{0}; seed < 40; ++seed) {
+		std::mt19937 rng{seed};
+		std::vector<Nfa> segments;
+		for (size_t i{0}; i < 4; ++i) {
+			Nfa segment{create_random_nfa_tabakov_vardi(15, 2, 1.5, 0.3, seed * 4 + static_cast<unsigned>(i))};
+			segment.initial.clear();
+			segment.final.clear();
+			for (State q{0}; q < 15; ++q) {
+				if (rng() % 3 == 0) { segment.initial.insert(q); }
+				if (rng() % 3 == 0) { segment.final.insert(q); }
+			}
+			// Twins are simulation-equivalent to a smaller state, which a pair may reach without reaching the twin's
+			//  original: the class representative of the shared simulation then lies outside of the pair.
+			for (size_t twins{0}; twins < 4; ++twins) {
+				const State original{static_cast<State>(rng() % 15)};
+				const State twin{segment.add_state()};
+				const StatePost original_post{segment.delta[original]};
+				for (const SymbolPost& symbol_post : original_post) {
+					for (const State target : symbol_post.targets) {
+						segment.delta.add(twin, symbol_post.symbol, target);
+					}
+				}
+				if (segment.final.contains(original)) { segment.final.insert(twin); }
+				segment.delta.add(static_cast<State>(rng() % 15), static_cast<mata::Symbol>(rng() % 2), twin);
+				if (rng() % 2 == 0) { segment.initial.insert(twin); }
+			}
+			segments.push_back(std::move(segment));
+		}
+
+		for (const bool include_empty : {false, true}) {
+			const std::map<std::pair<State, State>, Nfa> expected{expected_segments(segments, include_empty)};
+			std::map<std::pair<State, State>, seg_nfa::NoodleSegment> actual;
+			seg_nfa::segs_one_initial_final(segments, include_empty, unused_state, actual);
+
+			REQUIRE(actual.size() == expected.size());
+			for (const auto& [key, expected_nfa] : expected) {
+				INFO("seed " << seed << ", pair (" << key.first << ", " << key.second << ")");
+				REQUIRE(actual.contains(key));
+				const seg_nfa::NoodleSegment& segment{actual.at(key)};
+				const Nfa segment_nfa{segment.to_nfa()};
+				CHECK(segment_nfa.initial.size() == (expected_nfa.num_of_states() > 0 ? 1 : 0));
+				CHECK(are_equivalent(segment_nfa, expected_nfa));
+				CHECK(segment.is_epsilon_only() == (expected_nfa.num_of_states() > 0 && is_lang_eps(expected_nfa)));
+				// Equal sizes too. For a pair of an inner or the last segment, its part P (the states reachable from
+				//  init) is closed under successors, so its simulation is the shared one restricted to P, and a class
+				//  has the same maximal successor classes from any of its states: the part of the shared quotient
+				//  reachable from the class of init is isomorphic to the part of the reference reachable from its
+				//  initial state. reduce() alone does not trim that part. The first segment unifies the initial states
+				//  of the reference itself.
+				Nfa trimmed_expected{expected_nfa};
+				if (key.first == unused_state) { trimmed_expected.unify_initial(); }
+				trimmed_expected.trim();
+				CHECK(segment_nfa.num_of_states() == trimmed_expected.num_of_states());
+				CHECK(segment_nfa.delta.num_of_transitions() == trimmed_expected.delta.num_of_transitions());
+			}
+
+			// One automaton per final state of the first and the inner segments, one for the last segment and one
+			//  for the empty pairs, instead of one per pair.
+			std::unordered_set<const Nfa*> automata;
+			for (const seg_nfa::NoodleSegment& segment : actual | std::views::values) {
+				automata.insert(segment.automaton.get());
+			}
+			size_t num_of_finals{0};
+			for (size_t i{0}; i + 1 < segments.size(); ++i) { num_of_finals += segments[i].final.size(); }
+			CHECK(automata.size() <= num_of_finals + 2);
+		}
 	}
 }
 
@@ -251,7 +360,7 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation()") {
 		auto result{seg_nfa::noodlify_for_equation({left}, right_side)};
 		REQUIRE(result.size() == 1);
 		REQUIRE(result[0].size() == 1);
-		CHECK(are_equivalent(*result[0][0], left));
+		CHECK(are_equivalent(result[0][0].to_nfa(), left));
 	}
 
 	SECTION("Larger automata with separate noodles") {
@@ -320,18 +429,18 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation()") {
 				std::make_shared<Nfa>(noodle2_segment3)
 			};
 
-			std::vector<seg_nfa::Noodle> expected{noodle1_segments, noodle2_segments};
+			std::vector<std::vector<std::shared_ptr<Nfa>>> expected{noodle1_segments, noodle2_segments};
 
 			auto result{seg_nfa::noodlify_for_equation({left1, left2, left3}, right_side)};
 			REQUIRE(result.size() == 2);
 
-			CHECK(are_equivalent(*result[0][0], *expected[0][0]));
-			CHECK(are_equivalent(*result[0][1], *expected[0][1]));
-			CHECK(are_equivalent(*result[0][2], *expected[0][2]));
+			CHECK(are_equivalent(result[0][0].to_nfa(), *expected[0][0]));
+			CHECK(are_equivalent(result[0][1].to_nfa(), *expected[0][1]));
+			CHECK(are_equivalent(result[0][2].to_nfa(), *expected[0][2]));
 
-			CHECK(are_equivalent(*result[1][0], *expected[1][0]));
-			CHECK(are_equivalent(*result[1][1], *expected[1][1]));
-			CHECK(are_equivalent(*result[1][2], *expected[1][2]));
+			CHECK(are_equivalent(result[1][0].to_nfa(), *expected[1][0]));
+			CHECK(are_equivalent(result[1][1].to_nfa(), *expected[1][1]));
+			CHECK(are_equivalent(result[1][2].to_nfa(), *expected[1][2]));
 		}
 
 		SECTION("Partial intersection") {
@@ -347,10 +456,121 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation()") {
 
 			auto result{seg_nfa::noodlify_for_equation({left1, left2, left3}, right_side)};
 			REQUIRE(result.size() == 1);
-			CHECK(are_equivalent(*result[0][0], *noodle1_segments[0]));
-			CHECK(are_equivalent(*result[0][1], *noodle1_segments[1]));
-			CHECK(are_equivalent(*result[0][2], *noodle1_segments[2]));
+			CHECK(are_equivalent(result[0][0].to_nfa(), *noodle1_segments[0]));
+			CHECK(are_equivalent(result[0][1].to_nfa(), *noodle1_segments[1]));
+			CHECK(are_equivalent(result[0][2].to_nfa(), *noodle1_segments[2]));
 		}
+	}
+}
+
+// The one-sided equation concatenates the left side over EPSILON before the product, one ε between each two parts.
+TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() with more than two left parts") {
+	const auto choice = [](const mata::Symbol first, const mata::Symbol second) {
+		Nfa part{4};
+		part.initial = {0, 1};
+		part.final = {2, 3};
+		part.delta.add(0, first, 2);
+		part.delta.add(1, second, 3);
+		return part;
+	};
+	const auto single_symbol = [](const mata::Symbol symbol) {
+		Nfa part{2};
+		part.initial.insert(0);
+		part.final.insert(1);
+		part.delta.add(0, symbol, 1);
+		return part;
+	};
+	const auto same_noodle = [](const seg_nfa::Noodle& actual, const std::vector<Nfa>& expected) {
+		if (actual.size() != expected.size()) { return false; }
+		for (size_t segment{0}; segment < expected.size(); ++segment) {
+			if (!are_equivalent(actual[segment].to_nfa(), expected[segment])) { return false; }
+		}
+		return true;
+	};
+
+	Nfa right_side{10};
+	right_side.initial = {0, 5};
+	right_side.delta.add(0, 'a', 1);
+	right_side.delta.add(1, 'c', 2);
+	right_side.delta.add(2, 'e', 3);
+	right_side.delta.add(3, 'g', 4);
+	right_side.final.insert(4);
+	right_side.delta.add(5, 'b', 6);
+	right_side.delta.add(6, 'd', 7);
+	right_side.delta.add(7, 'f', 8);
+	right_side.delta.add(8, 'h', 9);
+	right_side.final.insert(9);
+
+	SECTION("keeps the order of the parts and their delimiters") {
+		std::vector<Nfa> left{choice('a', 'b'), choice('c', 'd'), choice('e', 'f'), choice('g', 'h')};
+		const std::vector<std::vector<Nfa>> expected{
+			{single_symbol('a'), single_symbol('c'), single_symbol('e'), single_symbol('g')},
+			{single_symbol('b'), single_symbol('d'), single_symbol('f'), single_symbol('h')}
+		};
+		std::vector<std::reference_wrapper<Nfa>> left_refs(left.begin(), left.end());
+		const std::vector<seg_nfa::Noodle> result{seg_nfa::noodlify_for_equation(left_refs, right_side)};
+		REQUIRE(result.size() == expected.size());
+
+		for (size_t noodle_index{0}; noodle_index < expected.size(); ++noodle_index) {
+			CHECK(same_noodle(result[noodle_index], expected[noodle_index]));
+		}
+	}
+
+	SECTION("returns no noodles for an empty middle part") {
+		std::vector<Nfa> left{choice('a', 'b'), Nfa{2}, choice('e', 'f'), choice('g', 'h')};
+		std::vector<std::reference_wrapper<Nfa>> left_refs(left.begin(), left.end());
+		CHECK(seg_nfa::noodlify_for_equation(left_refs, right_side).empty());
+	}
+}
+
+TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() unifies the left side as documented") {
+	// x1 . x2 = y with x1 = a | b through two initial and two final states, x2 = a, y = (a | b) a.
+	const auto make_left = [] {
+		Nfa x1{4};
+		x1.initial = {0, 1};
+		x1.final = {2, 3};
+		x1.delta.add(0, 'a', 2);
+		x1.delta.add(1, 'b', 3);
+		Nfa x2{2};
+		x2.initial = {0};
+		x2.final = {1};
+		x2.delta.add(0, 'a', 1);
+		return std::vector<Nfa>{x1, x2};
+	};
+	Nfa right{3};
+	right.initial = {0};
+	right.final = {2};
+	right.delta.add(0, 'a', 1);
+	right.delta.add(0, 'b', 1);
+	right.delta.add(1, 'a', 2);
+	const Nfa right_before{right};
+
+	SECTION("std::reference_wrapper always unifies the left side automata in place") {
+		std::vector<Nfa> left{make_left()};
+		const std::vector<std::reference_wrapper<Nfa>> left_refs(left.begin(), left.end());
+		CHECK(seg_nfa::noodlify_for_equation(left_refs, right).size() == 1);
+		CHECK(left[0].initial.size() == 1);
+		CHECK(left[0].final.size() == 1);
+		CHECK(right.is_identical(right_before));
+	}
+
+	SECTION("Nfa* leaves the left side automata as they are without reduce") {
+		std::vector<Nfa> left{make_left()};
+		const std::vector<Nfa> left_before{left};
+		const std::vector<Nfa*> left_ptrs{&left[0], &left[1]};
+		// One noodle per final state of x1, unlike the std::reference_wrapper overload.
+		CHECK(seg_nfa::noodlify_for_equation(left_ptrs, right).size() == 2);
+		CHECK(left[0].is_identical(left_before[0]));
+		CHECK(left[1].is_identical(left_before[1]));
+		CHECK(right.is_identical(right_before));
+	}
+
+	SECTION("Nfa* unifies the left side automata in place with reduce") {
+		std::vector<Nfa> left{make_left()};
+		const std::vector<Nfa*> left_ptrs{&left[0], &left[1]};
+		CHECK(seg_nfa::noodlify_for_equation(left_ptrs, right, false, {{"reduce", "forward"}}).size() == 1);
+		CHECK(left[0].initial.size() == 1);
+		CHECK(left[0].final.size() == 1);
 	}
 }
 
@@ -379,8 +599,8 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() both sides") {
 		for (size_t i = 0; i < noodles.size(); i++) {
 			for (size_t j = 0; j < noodles[i].size(); j++) {
 				CHECK(noodles[i][j].second == res[i][j].second);
-				CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
-				auto used_symbols{noodles[i][j].first->delta.get_used_symbols()};
+				CHECK(are_equivalent(noodles[i][j].first.to_nfa(), res[i][j].first, nullptr));
+				auto used_symbols{noodles[i][j].first.to_nfa().delta.get_used_symbols()};
 				CHECK(used_symbols.find(EPSILON) == used_symbols.end());
 			}
 		}
@@ -407,8 +627,8 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() both sides") {
 		for (size_t i = 0; i < noodles.size(); i++) {
 			for (size_t j = 0; j < noodles[i].size(); j++) {
 				CHECK(noodles[i][j].second == res[i][j].second);
-				CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
-				auto used_symbols{noodles[i][j].first->delta.get_used_symbols()};
+				CHECK(are_equivalent(noodles[i][j].first.to_nfa(), res[i][j].first, nullptr));
+				auto used_symbols{noodles[i][j].first.to_nfa().delta.get_used_symbols()};
 				CHECK(used_symbols.find(EPSILON) == used_symbols.end());
 			}
 		}
@@ -432,8 +652,8 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() both sides") {
 		for (size_t i = 0; i < noodles.size(); i++) {
 			for (size_t j = 0; j < noodles[i].size(); j++) {
 				CHECK(noodles[i][j].second == res[i][j].second);
-				CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
-				auto used_symbols{noodles[i][j].first->delta.get_used_symbols()};
+				CHECK(are_equivalent(noodles[i][j].first.to_nfa(), res[i][j].first, nullptr));
+				auto used_symbols{noodles[i][j].first.to_nfa().delta.get_used_symbols()};
 				CHECK(used_symbols.find(EPSILON) == used_symbols.end());
 			}
 		}
@@ -458,8 +678,8 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() both sides") {
 		for (size_t i = 0; i < noodles.size(); i++) {
 			for (size_t j = 0; j < noodles[i].size(); j++) {
 				CHECK(noodles[i][j].second == res[i][j].second);
-				CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
-				auto used_symbols{noodles[i][j].first->delta.get_used_symbols()};
+				CHECK(are_equivalent(noodles[i][j].first.to_nfa(), res[i][j].first, nullptr));
+				auto used_symbols{noodles[i][j].first.to_nfa().delta.get_used_symbols()};
 				CHECK(used_symbols.find(EPSILON) == used_symbols.end());
 			}
 		}
@@ -483,8 +703,8 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() both sides") {
 		for (size_t i = 0; i < noodles.size(); i++) {
 			for (size_t j = 0; j < noodles[i].size(); j++) {
 				CHECK(noodles[i][j].second == res[i][j].second);
-				CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
-				auto used_symbols{noodles[i][j].first->delta.get_used_symbols()};
+				CHECK(are_equivalent(noodles[i][j].first.to_nfa(), res[i][j].first, nullptr));
+				auto used_symbols{noodles[i][j].first.to_nfa().delta.get_used_symbols()};
 				CHECK(used_symbols.find(EPSILON) == used_symbols.end());
 			}
 		}
@@ -539,8 +759,88 @@ q3 0 q4
 		);
 		CHECK(noodles.size() == 1);
 		mata::Word word{0, 0};
-		CHECK(noodles[0][0].first->get_word().value() == word);
-		CHECK(noodles[0][1].first->get_word().value() == word);
+		CHECK(noodles[0][0].first.to_nfa().get_word().value() == word);
+		CHECK(noodles[0][1].first.to_nfa().get_word().value() == word);
+	}
+}
+
+TEST_CASE("mata::nfa::SegNfa::noodlify_mult_eps() reports each noodle once") {
+	// Shapes that finish the same noodle more than once. The result is one noodle per shape, in completion order.
+	const auto segment_shapes = [](const std::vector<seg_nfa::NoodleWithEpsilonsCounter>& noodles) {
+		std::vector<std::vector<std::pair<size_t, seg_nfa::VisitedEpsilonsCounterVector>>> shapes{};
+		for (const auto& noodle : noodles) {
+			auto& shape{shapes.emplace_back()};
+			for (const auto& [segment, counters] : noodle) {
+				shape.emplace_back(segment.to_nfa().delta.num_of_transitions(), counters);
+			}
+		}
+		return shapes;
+	};
+
+	SECTION("two epsilon transitions with different symbols between the same states") {
+		Nfa aut{4};
+		aut.initial.insert(0);
+		aut.final.insert(3);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, EPSILON, 2);
+		aut.delta.add(1, EPSILON - 1, 2);
+		aut.delta.add(2, 'b', 3);
+
+		const auto noodles{seg_nfa::noodlify_mult_eps(aut, {EPSILON, EPSILON - 1}, false)};
+		REQUIRE(noodles.size() == 1);
+		CHECK(
+			segment_shapes(noodles) ==
+			std::vector<std::vector<std::pair<size_t, seg_nfa::VisitedEpsilonsCounterVector>>>{
+				{{1, {0, 0}}, {1, {1, 0}}}
+			}
+		);
+	}
+
+	SECTION("two routes through segments whose language is {epsilon}") {
+		// The segments { 2 } and { 3 } accept only epsilon and are left out of the noodle, so both routes from
+		// state 1 to state 4 finish the same two-segment noodle.
+		Nfa aut{6};
+		aut.initial.insert(0);
+		aut.final.insert(5);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, EPSILON, 2);
+		aut.delta.add(1, EPSILON, 3);
+		aut.delta.add(2, EPSILON, 4);
+		aut.delta.add(3, EPSILON, 4);
+		aut.delta.add(4, 'b', 5);
+
+		const auto noodles{seg_nfa::noodlify_mult_eps(aut, {EPSILON}, false)};
+		REQUIRE(noodles.size() == 1);
+		CHECK(
+			segment_shapes(noodles) ==
+			std::vector<std::vector<std::pair<size_t, seg_nfa::VisitedEpsilonsCounterVector>>>{{{1, {0}}, {1, {2}}}}
+		);
+	}
+
+	SECTION("distinct noodles are all reported, in completion order") {
+		// Two branches that stay distinct: both noodles survive the deduplication.
+		Nfa aut{6};
+		aut.initial.insert(0);
+		aut.final.insert(5);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, 'b', 2);
+		aut.delta.add(1, EPSILON, 3);
+		aut.delta.add(2, EPSILON, 3);
+		aut.delta.add(3, 'c', 5);
+
+		const auto noodles{seg_nfa::noodlify_mult_eps(aut, {EPSILON}, false)};
+		REQUIRE(noodles.size() == 2);
+		// The 'a' branch completes first, then the 'b' branch; each noodle keeps its own branch.
+		const std::vector<std::pair<mata::Word, mata::Word>> branches{{{'a'}, {'b'}}, {{'b'}, {'a'}}};
+		for (size_t i{0}; i < noodles.size(); ++i) {
+			const auto& [taken, other] = branches[i];
+			REQUIRE(noodles[i].size() == 2);
+			CHECK(noodles[i][0].first.to_nfa().is_in_lang(taken));
+			CHECK(!noodles[i][0].first.to_nfa().is_in_lang(other));
+			CHECK(noodles[i][0].second == seg_nfa::VisitedEpsilonsCounterVector{0});
+			CHECK(noodles[i][1].first.to_nfa().is_in_lang(mata::Word{'c'}));
+			CHECK(noodles[i][1].second == seg_nfa::VisitedEpsilonsCounterVector{1});
+		}
 	}
 }
 
@@ -762,3 +1062,718 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
 		CHECK(noodles.empty());
 	}
 }
+
+namespace {
+using mata::Symbol;
+using SegmentAndCounters = std::pair<Nfa, seg_nfa::VisitedEpsilonsCounterVector>;
+
+/// A random automaton of @p num_of_segments segments of 6 states, connected by ε-transitions over @p epsilons, some
+///  of them parallel with different symbols, trimmed.
+Nfa random_segment_automaton(const unsigned seed, const size_t num_of_segments, const std::vector<Symbol>& epsilons) {
+	std::mt19937 rng{seed};
+	constexpr State size{6};
+	const auto random_state = [&](const State base) { return static_cast<State>(base + rng() % size); };
+	Nfa aut{size * num_of_segments};
+	for (size_t seg_id{0}; seg_id < num_of_segments; ++seg_id) {
+		const State base{static_cast<State>(seg_id * size)};
+		for (State q{base}; q < base + size; ++q) {
+			for (const Symbol symbol : {Symbol{'a'}, Symbol{'b'}}) {
+				if (rng() % 2 == 0) { aut.delta.add(q, symbol, random_state(base)); }
+			}
+			for (size_t i{0}; seg_id + 1 < num_of_segments && i < 2; ++i) {
+				if (rng() % 3 == 0) { continue; }
+				const State target{random_state(base + size)};
+				aut.delta.add(q, epsilons[rng() % epsilons.size()], target);
+				if (rng() % 4 == 0) { aut.delta.add(q, epsilons[rng() % epsilons.size()], target); }
+			}
+		}
+	}
+	aut.initial.insert(random_state(0));
+	aut.initial.insert(random_state(0));
+	const State last{static_cast<State>((num_of_segments - 1) * size)};
+	for (size_t i{0}; i < 3; ++i) { aut.final.insert(random_state(last)); }
+	aut.trim();
+	return aut;
+}
+
+/// The noodles of @p aut by brute force: every route through the segments in the order of the ε-transitions and the
+///  final states, one reduced automaton per (initial, final) pair, segments with the language {ε} left out, and of
+///  noodles with the same pairs only the first.
+std::vector<std::vector<SegmentAndCounters>> reference_noodles(const Nfa& aut, const std::set<Symbol>& epsilons) {
+	seg_nfa::Segmentation segmentation{aut, epsilons};
+	const std::vector<Nfa>& segments{segmentation.get_untrimmed_segments()};
+	const seg_nfa::VisitedEpsilonsCounterVector zeros(epsilons.size(), 0);
+	const State unused_state{static_cast<State>(aut.num_of_states())};
+
+	std::vector<std::vector<SegmentAndCounters>> result{};
+	if (segments.size() == 1) {
+		if (Nfa whole{trim(segments[0])}; whole.num_of_states() > 0) { result.push_back({{std::move(whole), zeros}}); }
+		return result;
+	}
+	std::set<std::vector<std::pair<State, State>>> seen{};
+	std::vector<SegmentAndCounters> noodle{};
+	std::vector<std::pair<State, State>> keys{};
+	const std::function<void(size_t, State)> visit = [&](const size_t seg_id, const State init) {
+		const Nfa& segment{segments[seg_id]};
+		const bool last{seg_id + 1 == segments.size()};
+		std::vector<State> finals{unused_state};
+		if (!last) { finals.assign(segment.final.begin(), segment.final.end()); }
+		for (const State fin : finals) {
+			const SparseSet<State> inits{init}, fins{fin};
+			std::optional<std::reference_wrapper<const SparseSet<State>>> inits_ref, fins_ref;
+			if (seg_id > 0) { inits_ref = inits; }
+			if (!last) { fins_ref = fins; }
+			Nfa part{reduce(trim(segment, nullptr, inits_ref, fins_ref))};
+			if (part.num_of_states() == 0) { continue; }
+			const bool kept{!is_lang_eps(part)};
+			if (kept) {
+				seg_nfa::VisitedEpsilonsCounterVector counters{zeros};
+				if (seg_id > 0) {
+					const auto visited{segmentation.get_visited_eps().find(init)};
+					counters = visited == segmentation.get_visited_eps().end()
+								   ? seg_nfa::VisitedEpsilonsCounterVector{}
+								   : seg_nfa::process_eps_map(visited->second);
+				}
+				noodle.emplace_back(std::move(part), std::move(counters));
+				keys.emplace_back(init, fin);
+			}
+			if (last) {
+				if (seen.insert(keys).second) { result.push_back(noodle); }
+			} else {
+				for (const Transition& transition : segmentation.get_epsilon_transitions(fin)) {
+					visit(seg_id + 1, transition.target);
+				}
+			}
+			if (kept) {
+				noodle.pop_back();
+				keys.pop_back();
+			}
+		}
+	};
+	visit(0, unused_state);
+	return result;
+}
+
+void check_noodles(
+	const std::vector<seg_nfa::NoodleWithEpsilonsCounter>& actual,
+	const std::vector<std::vector<SegmentAndCounters>>& expected
+) {
+	REQUIRE(actual.size() == expected.size());
+	for (size_t i{0}; i < actual.size(); ++i) {
+		INFO("noodle " << i);
+		REQUIRE(actual[i].size() == expected[i].size());
+		for (size_t j{0}; j < actual[i].size(); ++j) {
+			CHECK(actual[i][j].second == expected[i][j].second);
+			CHECK(are_equivalent(actual[i][j].first.to_nfa(), expected[i][j].first));
+		}
+	}
+}
+
+#if MATA_HAS_GENERATOR_SUPPORT
+/// Whether @p actual holds the noodles of @p expected in some order.
+bool same_noodles_in_any_order(
+	const std::vector<seg_nfa::NoodleWithEpsilonsCounter>& actual,
+	const std::vector<std::vector<SegmentAndCounters>>& expected
+) {
+	if (actual.size() != expected.size()) { return false; }
+	std::vector<bool> used(expected.size(), false);
+	for (const auto& noodle : actual) {
+		bool found{false};
+		for (size_t i{0}; i < expected.size() && !found; ++i) {
+			if (used[i] || expected[i].size() != noodle.size()) { continue; }
+			found = std::ranges::all_of(std::views::iota(size_t{0}, noodle.size()), [&](const size_t j) {
+				return noodle[j].second == expected[i][j].second &&
+					   are_equivalent(noodle[j].first.to_nfa(), expected[i][j].first);
+			});
+			used[i] = found;
+		}
+		if (!found) { return false; }
+	}
+	return true;
+}
+
+std::vector<seg_nfa::NoodleWithEpsilonsCounter>
+	lazy_noodles(const Nfa& aut, const std::set<Symbol>& epsilons, const seg_nfa::NoodleOrder order) {
+	std::vector<seg_nfa::NoodleWithEpsilonsCounter> noodles{};
+	for (auto&& noodle : seg_nfa::noodlify_mult_eps_lazy(aut, epsilons, false, order)) {
+		noodles.push_back(std::move(noodle));
+	}
+	return noodles;
+}
+
+/// Whether @p lhs and @p rhs are the same noodles in the same order.
+bool same_noodles_in_order(
+	const std::vector<seg_nfa::NoodleWithEpsilonsCounter>& lhs,
+	const std::vector<seg_nfa::NoodleWithEpsilonsCounter>& rhs
+) {
+	return std::ranges::equal(lhs, rhs, [](const auto& lhs_noodle, const auto& rhs_noodle) {
+		return std::ranges::equal(lhs_noodle, rhs_noodle, [](const auto& lhs_segment, const auto& rhs_segment) {
+			return lhs_segment.second == rhs_segment.second &&
+				   are_equivalent(lhs_segment.first.to_nfa(), rhs_segment.first.to_nfa());
+		});
+	});
+}
+
+size_t num_of_reachable_states(const seg_nfa::NoodleSegment& segment) { return segment.to_nfa().num_of_states(); }
+#endif
+} // namespace
+
+TEST_CASE("mata::nfa::SegNfa::noodlify_mult_eps() matches a brute-force enumeration") {
+	const std::vector<Symbol> epsilons{EPSILON, EPSILON - 1};
+	const std::set<Symbol> epsilon_set{epsilons.begin(), epsilons.end()};
+	size_t num_of_noodles{0}, num_with_left_out{0};
+#if MATA_HAS_GENERATOR_SUPPORT
+	size_t num_of_shuffled{0};
+#endif
+	for (unsigned seed{0}; seed < 300; ++seed) {
+		const size_t num_of_segments{1 + seed % 4};
+		const Nfa aut{random_segment_automaton(seed, num_of_segments, epsilons)};
+		if (aut.num_of_states() == 0) { continue; }
+		INFO("seed " << seed);
+		const std::vector<std::vector<SegmentAndCounters>> expected{reference_noodles(aut, epsilon_set)};
+		const std::vector<seg_nfa::NoodleWithEpsilonsCounter> actual{seg_nfa::noodlify_mult_eps(aut, epsilon_set)};
+		check_noodles(actual, expected);
+		num_of_noodles += expected.size();
+		const bool has_left_out{std::ranges::any_of(expected, [&](const auto& noodle) {
+			return noodle.size() < seg_nfa::Segmentation{aut, epsilon_set}.get_untrimmed_segments().size();
+		})};
+		num_with_left_out += has_left_out;
+
+#if MATA_HAS_GENERATOR_SUPPORT
+		const std::vector<seg_nfa::NoodleWithEpsilonsCounter> forward{lazy_noodles(aut, epsilon_set, {})};
+		check_noodles(forward, expected);
+
+		using Kind = seg_nfa::NoodleOrder::Kind;
+		const std::vector<seg_nfa::NoodleWithEpsilonsCounter> reverse{
+			lazy_noodles(aut, epsilon_set, {.kind = Kind::Reverse})
+		};
+		if (has_left_out) {
+			CHECK(same_noodles_in_any_order(reverse, expected));
+		} else {
+			check_noodles(reverse, {expected.rbegin(), expected.rend()});
+		}
+
+		// The other orders permute the noodles; a noodle with a left out segment may be finished by another route.
+		for (const seg_nfa::NoodleOrder order :
+			 {seg_nfa::NoodleOrder{.kind = Kind::SmallestFirst}, seg_nfa::NoodleOrder{.kind = Kind::LargestFirst},
+			  seg_nfa::NoodleOrder{.kind = Kind::Random, .seed = seed}}) {
+			INFO("order " << static_cast<int>(order.kind));
+			const std::vector<seg_nfa::NoodleWithEpsilonsCounter> permuted{lazy_noodles(aut, epsilon_set, order)};
+			CHECK(permuted.size() == expected.size());
+			if (has_left_out) { continue; }
+			CHECK(same_noodles_in_any_order(permuted, expected));
+			if (permuted.empty() || order.kind == Kind::Random) { continue; }
+			// The search is greedy: the first noodle starts with a segment of extreme size among all noodles.
+			std::vector<size_t> first_sizes{};
+			for (const auto& noodle : permuted) {
+				first_sizes.push_back(num_of_reachable_states(noodle.front().first));
+			}
+			const auto [min, max]{std::ranges::minmax(first_sizes)};
+			CHECK(first_sizes.front() == (order.kind == Kind::SmallestFirst ? min : max));
+		}
+		// A seed gives one order, so that runs can be repeated.
+		const std::vector<seg_nfa::NoodleWithEpsilonsCounter> random{
+			lazy_noodles(aut, epsilon_set, {.kind = Kind::Random, .seed = seed})
+		};
+		CHECK(same_noodles_in_order(random, lazy_noodles(aut, epsilon_set, {.kind = Kind::Random, .seed = seed})));
+		num_of_shuffled += !same_noodles_in_order(random, forward);
+
+		// Stopping early leaves the rest of the search undone.
+		for (auto&& noodle : seg_nfa::noodlify_mult_eps_lazy(aut, epsilon_set)) {
+			check_noodles({std::move(noodle)}, {expected.front()});
+			break;
+		}
+#endif
+	}
+	// The automata exercise the search: many noodles, some with left out segments.
+	CHECK(num_of_noodles > 1'000);
+	CHECK(num_with_left_out > 10);
+#if MATA_HAS_GENERATOR_SUPPORT
+	CHECK(num_of_shuffled > 10);
+#endif
+}
+
+#if MATA_HAS_GENERATOR_SUPPORT
+TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer_lazy() emits the noodles of noodlify_for_transducer()") {
+	Nft t{Nft::with_levels(2, 1, {0}, {0})};
+	t.add_transition_by_levels(0, {'a', 'a'}, 0);
+	t.add_transition_by_levels(0, {'b', 'b'}, 0);
+	t.add_transition_by_levels(0, {'b', 'a'}, 0);
+	const auto inputs = [] {
+		return std::vector{
+			std::make_shared<Nfa>(create_from_regex("(a|b)*")), std::make_shared<Nfa>(create_from_regex("a*b"))
+		};
+	};
+	const auto outputs = [] {
+		return std::vector{
+			std::make_shared<Nfa>(create_from_regex("a*")), std::make_shared<Nfa>(create_from_regex("(a|b)*"))
+		};
+	};
+	const auto eager{seg_nfa::noodlify_for_transducer(std::make_shared<Nft>(t), inputs(), outputs())};
+	REQUIRE(eager.size() > 1);
+	using Kind = seg_nfa::NoodleOrder::Kind;
+	for (const Kind kind : {Kind::Forward, Kind::Reverse}) {
+		std::vector<seg_nfa::TransducerNoodle> lazy{};
+		for (auto&& noodle : seg_nfa::noodlify_for_transducer_lazy(
+				 std::make_shared<Nft>(t), inputs(), outputs(), true, true, {.kind = kind}
+			 )) {
+			lazy.push_back(std::move(noodle));
+		}
+		if (kind == Kind::Reverse) { std::ranges::reverse(lazy); }
+		REQUIRE(lazy.size() == eager.size());
+		for (size_t i{0}; i < lazy.size(); ++i) {
+			REQUIRE(lazy[i].size() == eager[i].size());
+			for (size_t j{0}; j < lazy[i].size(); ++j) {
+				CHECK(lazy[i][j].input_index == eager[i][j].input_index);
+				CHECK(lazy[i][j].output_index == eager[i][j].output_index);
+				CHECK(mata::nft::are_equivalent(*lazy[i][j].transducer, *eager[i][j].transducer));
+				CHECK(are_equivalent(*lazy[i][j].input_aut, *eager[i][j].input_aut));
+				CHECK(are_equivalent(*lazy[i][j].output_aut, *eager[i][j].output_aut));
+			}
+		}
+	}
+}
+
+TEST_CASE("mata::nfa::SegNfa::noodlify_mult_eps_lazy() orders the candidates of every node by size") {
+	// Three segments of single-word candidates, every candidate continuing to all candidates of the next segment.
+	//  Each segment has candidates of equal and of different sizes, the ties not adjacent in the forward order.
+	Nfa aut{25};
+	aut.initial.insert(0);
+	aut.final.insert({21, 24});
+	// Segment 0: a, bb, c.
+	aut.delta.add(0, 'a', 1);
+	aut.delta.add(0, 'b', 2);
+	aut.delta.add(2, 'b', 3);
+	aut.delta.add(0, 'c', 4);
+	for (const State fin : std::initializer_list<State>{1, 3, 4}) { aut.delta.add(fin, EPSILON, 10); }
+	// Segment 1: x, yyy, z.
+	aut.delta.add(10, 'x', 11);
+	aut.delta.add(10, 'y', 12);
+	aut.delta.add(12, 'y', 13);
+	aut.delta.add(13, 'y', 14);
+	aut.delta.add(10, 'z', 15);
+	for (const State fin : std::initializer_list<State>{11, 14, 15}) {
+		aut.delta.add(fin, EPSILON, 20);
+		aut.delta.add(fin, EPSILON, 22);
+	}
+	// Segment 2: e, ff.
+	aut.delta.add(20, 'e', 21);
+	aut.delta.add(22, 'f', 23);
+	aut.delta.add(23, 'f', 24);
+
+	using Kind = seg_nfa::NoodleOrder::Kind;
+	using Noodle = std::vector<mata::Word>;
+	const auto words_of = [](const std::vector<seg_nfa::NoodleWithEpsilonsCounter>& noodles) {
+		std::vector<Noodle> result{};
+		for (const auto& noodle : noodles) {
+			Noodle& words{result.emplace_back()};
+			for (const auto& [segment, counters] : noodle) {
+				const std::optional<mata::Word> word{segment.to_nfa().get_word()};
+				REQUIRE(word.has_value());
+				// The size the orders compare is the length of the word plus one.
+				CHECK(num_of_reachable_states(segment) == word->size() + 1);
+				words.push_back(*word);
+			}
+		}
+		return result;
+	};
+	const auto product = [](const std::vector<std::vector<mata::Word>>& candidates) {
+		std::vector<Noodle> result{};
+		for (const mata::Word& first : candidates[0]) {
+			for (const mata::Word& second : candidates[1]) {
+				for (const mata::Word& third : candidates[2]) { result.push_back({first, second, third}); }
+			}
+		}
+		return result;
+	};
+
+	const std::vector<Noodle> forward{words_of(lazy_noodles(aut, {EPSILON}, {}))};
+	// The candidates of each segment in the forward order: the order of their first occurrence.
+	std::vector<std::vector<mata::Word>> candidates(3);
+	for (const Noodle& noodle : forward) {
+		REQUIRE(noodle.size() == 3);
+		for (size_t seg_id{0}; seg_id < 3; ++seg_id) {
+			if (std::ranges::find(candidates[seg_id], noodle[seg_id]) == candidates[seg_id].end()) {
+				candidates[seg_id].push_back(noodle[seg_id]);
+			}
+		}
+	}
+	REQUIRE(product(candidates) == forward);
+	REQUIRE(forward.size() == 18);
+
+	for (const Kind kind : {Kind::SmallestFirst, Kind::LargestFirst}) {
+		INFO("order " << static_cast<int>(kind));
+		std::vector<std::vector<mata::Word>> sorted{candidates};
+		for (std::vector<mata::Word>& level : sorted) {
+			std::ranges::stable_sort(level, [&](const mata::Word& lhs, const mata::Word& rhs) {
+				return kind == Kind::SmallestFirst ? lhs.size() < rhs.size() : lhs.size() > rhs.size();
+			});
+		}
+		CHECK(words_of(lazy_noodles(aut, {EPSILON}, {.kind = kind})) == product(sorted));
+	}
+}
+#endif
+
+namespace {
+/// The noodles of noodlify() by brute force, in no particular order: one noodle per choice of one ε-transition of
+///  every depth, each segment the part of its segment from the target of the previous to the source of the next
+///  chosen ε-transition, and only the choices whose segments are all non-empty unless @p include_empty.
+std::vector<std::vector<Nfa>>
+	reference_single_epsilon_noodles(const Nfa& aut, const mata::Symbol epsilon, const bool include_empty) {
+	seg_nfa::Segmentation segmentation{aut, {epsilon}};
+	const std::vector<Nfa>& segments{segmentation.get_untrimmed_segments()};
+	if (segments.size() == 1) {
+		Nfa whole{trim(segments[0])};
+		if (whole.initial.empty() && !include_empty) { return {}; }
+		return {{std::move(whole)}};
+	}
+
+	const auto& depths{segmentation.get_epsilon_transitions_by_depth()};
+	std::vector<std::vector<Nfa>> result{};
+	std::vector<Transition> chosen{};
+	const std::function<void()> choose = [&] {
+		if (chosen.size() < depths.size()) {
+			for (const Transition& transition : depths[chosen.size()]) {
+				chosen.push_back(transition);
+				choose();
+				chosen.pop_back();
+			}
+			return;
+		}
+		std::vector<Nfa> noodle{};
+		for (size_t seg_id{0}; seg_id < segments.size(); ++seg_id) {
+			std::optional<SparseSet<State>> inits, fins;
+			if (seg_id > 0) { inits.emplace(SparseSet<State>{chosen[seg_id - 1].target}); }
+			if (seg_id < chosen.size()) { fins.emplace(SparseSet<State>{chosen[seg_id].source}); }
+			std::optional<std::reference_wrapper<const SparseSet<State>>> inits_ref, fins_ref;
+			if (inits) { inits_ref = *inits; }
+			if (fins) { fins_ref = *fins; }
+			Nfa part{trim(segments[seg_id], nullptr, inits_ref, fins_ref)};
+			if (part.initial.empty() && !include_empty) { return; }
+			noodle.push_back(std::move(part));
+		}
+		result.push_back(std::move(noodle));
+	};
+	choose();
+	return result;
+}
+
+bool same_segments(const seg_nfa::Noodle& actual, const std::vector<Nfa>& expected) {
+	return actual.size() == expected.size() &&
+		   std::ranges::all_of(std::views::iota(size_t{0}, actual.size()), [&](const size_t i) {
+			   return are_equivalent(actual[i].to_nfa(), expected[i]);
+		   });
+}
+
+/// Whether @p actual holds the noodles of @p expected, each as often, in some order.
+bool same_single_epsilon_noodles(
+	const std::vector<seg_nfa::Noodle>& actual, const std::vector<std::vector<Nfa>>& expected
+) {
+	if (actual.size() != expected.size()) { return false; }
+	std::vector<bool> used(expected.size(), false);
+	for (const seg_nfa::Noodle& noodle : actual) {
+		bool found{false};
+		for (size_t i{0}; i < expected.size() && !found; ++i) {
+			if (!used[i] && same_segments(noodle, expected[i])) { used[i] = found = true; }
+		}
+		if (!found) { return false; }
+	}
+	return true;
+}
+
+#if MATA_HAS_GENERATOR_SUPPORT
+// Only the lazy-enumeration checks use it; without std::generator it would be an unused function.
+std::vector<Nfa> segment_automata(const seg_nfa::Noodle& noodle) {
+	std::vector<Nfa> automata{};
+	for (const seg_nfa::NoodleSegment& segment : noodle) { automata.push_back(segment.to_nfa()); }
+	return automata;
+}
+
+template <class Noodles> std::vector<seg_nfa::Noodle> take_all(Noodles&& noodles) {
+	std::vector<seg_nfa::Noodle> result{};
+	for (auto&& noodle : noodles) { result.push_back(std::move(noodle)); }
+	return result;
+}
+
+bool same_noodles_in_order(const std::vector<seg_nfa::Noodle>& lhs, const std::vector<seg_nfa::Noodle>& rhs) {
+	return std::ranges::equal(lhs, rhs, [](const seg_nfa::Noodle& lhs_noodle, const seg_nfa::Noodle& rhs_noodle) {
+		return same_segments(lhs_noodle, segment_automata(rhs_noodle));
+	});
+}
+#endif
+} // namespace
+
+#if MATA_HAS_GENERATOR_SUPPORT
+	#include <memory>
+static_assert(MATA_HAS_GENERATOR_SUPPORT == 1, "the configured support and the library support must agree");
+	#include "mata/utils/lazy-generator.hh"
+
+TEST_CASE("mata::utils::LazyGenerator returns a reference generator's reference") {
+	int value = 42;
+	const auto values{[&]() -> std::generator<int&> { co_yield value; }};
+	mata::utils::LazyGenerator<int&> lazy{values()};
+	CHECK_FALSE(lazy.done());
+	int& taken = lazy.next();
+	CHECK(&taken == &value);
+	value = 7;
+	CHECK(taken == 7);
+	CHECK(lazy.done());
+}
+
+#endif
+
+TEST_CASE("mata::nfa::SegNfa::noodlify() matches a brute-force enumeration") {
+	size_t num_of_noodles{0};
+	for (unsigned seed{0}; seed < 200; ++seed) {
+		const size_t num_of_segments{1 + seed % 4};
+		const Nfa aut{random_segment_automaton(seed, num_of_segments, {EPSILON})};
+		if (aut.num_of_states() == 0) { continue; }
+		for (const bool include_empty : {false, true}) {
+			INFO("seed " << seed << ", include_empty " << include_empty);
+			const std::vector<std::vector<Nfa>> expected{reference_single_epsilon_noodles(aut, EPSILON, include_empty)};
+			const std::vector<seg_nfa::Noodle> actual{seg_nfa::noodlify(aut, EPSILON, include_empty)};
+			CHECK(same_single_epsilon_noodles(actual, expected));
+			num_of_noodles += expected.size();
+
+#if MATA_HAS_GENERATOR_SUPPORT
+			using Kind = seg_nfa::NoodleOrder::Kind;
+			const auto lazy = [&](const seg_nfa::NoodleOrder order) {
+				return take_all(seg_nfa::noodlify_lazy(aut, EPSILON, include_empty, order));
+			};
+			CHECK(same_noodles_in_order(lazy({}), actual));
+			std::vector<seg_nfa::Noodle> reverse{lazy({.kind = Kind::Reverse})};
+			std::ranges::reverse(reverse);
+			CHECK(same_noodles_in_order(reverse, actual));
+			for (const seg_nfa::NoodleOrder order :
+				 {seg_nfa::NoodleOrder{.kind = Kind::SmallestFirst}, seg_nfa::NoodleOrder{.kind = Kind::LargestFirst},
+				  seg_nfa::NoodleOrder{.kind = Kind::Random, .seed = seed}}) {
+				INFO("order " << static_cast<int>(order.kind));
+				CHECK(same_single_epsilon_noodles(lazy(order), expected));
+			}
+			// Stopping early leaves the rest of the search undone.
+			for (const seg_nfa::Noodle& noodle : seg_nfa::noodlify_lazy(aut, EPSILON, include_empty)) {
+				// The eager result may be empty after a regression the CHECKs above record; do not read past it.
+				REQUIRE_FALSE(actual.empty());
+				CHECK(same_segments(noodle, segment_automata(actual.front())));
+				break;
+			}
+#endif
+		}
+	}
+	// The automata exercise the search: many noodles over all seeds.
+	CHECK(num_of_noodles > 500);
+}
+
+#if MATA_HAS_GENERATOR_SUPPORT
+TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation_lazy() emits the noodles of noodlify_for_equation()") {
+	// Two noodles: (a, a, b) and (b, a, b).
+	const auto left_side = [] {
+		Nfa left1{3};
+		left1.initial.insert(0);
+		left1.final.insert({1, 2});
+		left1.delta.add(0, 'a', 1);
+		left1.delta.add(0, 'b', 2);
+		Nfa left2{2};
+		left2.initial.insert(0);
+		left2.final.insert(1);
+		left2.delta.add(0, 'a', 1);
+		Nfa left3{2};
+		left3.initial.insert(0);
+		left3.final.insert(1);
+		left3.delta.add(0, 'b', 1);
+		return std::vector<Nfa>{left1, left2, left3};
+	};
+	Nfa right_side{7};
+	right_side.initial.insert(0);
+	right_side.delta.add(0, 'a', 1);
+	right_side.delta.add(1, 'a', 2);
+	right_side.delta.add(2, 'b', 3);
+	right_side.delta.add(0, 'b', 4);
+	right_side.delta.add(4, 'a', 5);
+	right_side.delta.add(5, 'b', 6);
+	right_side.final.insert({3, 6});
+	const ParameterMap params{{"reduce", "false"}};
+
+	std::vector<Nfa> eager_left{left_side()};
+	const std::vector<seg_nfa::Noodle> eager{
+		seg_nfa::noodlify_for_equation({eager_left[0], eager_left[1], eager_left[2]}, right_side, false, params)
+	};
+	REQUIRE(eager.size() == 2);
+
+	using Kind = seg_nfa::NoodleOrder::Kind;
+	for (const Kind kind : {Kind::Forward, Kind::Reverse}) {
+		INFO("order " << static_cast<int>(kind));
+		std::vector<Nfa> by_reference{left_side()};
+		std::vector<seg_nfa::Noodle> lazy_by_reference{take_all(
+			seg_nfa::noodlify_for_equation_lazy(
+				{by_reference[0], by_reference[1], by_reference[2]}, right_side, false, params, {.kind = kind}
+			)
+		)};
+		std::vector<Nfa> by_pointer{left_side()};
+		std::vector<seg_nfa::Noodle> lazy_by_pointer{take_all(
+			seg_nfa::noodlify_for_equation_lazy(
+				std::vector<Nfa*>{&by_pointer[0], &by_pointer[1], &by_pointer[2]}, right_side, false, params,
+				{.kind = kind}
+			)
+		)};
+		if (kind == Kind::Reverse) {
+			std::ranges::reverse(lazy_by_reference);
+			std::ranges::reverse(lazy_by_pointer);
+		}
+		CHECK(same_noodles_in_order(lazy_by_reference, eager));
+		CHECK(same_noodles_in_order(lazy_by_pointer, eager));
+	}
+
+	std::vector<Nfa> empty_left{left_side()};
+	CHECK(take_all(seg_nfa::noodlify_for_equation_lazy({empty_left[0]}, Nfa{})).empty());
+}
+#endif
+
+TEST_CASE("mata::nfa::SegNfa::noodlify() changes the first epsilon choice fastest in Forward order") {
+	Nfa aut{12};
+	aut.initial.insert(0);
+	aut.final.insert(11);
+	aut.delta.add(0, 'a', 1);
+	aut.delta.add(0, 'b', 2);
+	for (const State source : std::initializer_list<State>{1, 2}) {
+		aut.delta.add(source, EPSILON, 3);
+		aut.delta.add(source, EPSILON, 4);
+	}
+	aut.delta.add(3, 'u', 5);
+	aut.delta.add(3, 'v', 6);
+	aut.delta.add(4, 'w', 7);
+	aut.delta.add(4, 'z', 8);
+	for (const State source : std::initializer_list<State>{5, 6}) { aut.delta.add(source, EPSILON, 9); }
+	for (const State source : std::initializer_list<State>{7, 8}) { aut.delta.add(source, EPSILON, 10); }
+	aut.delta.add(9, 'p', 11);
+	aut.delta.add(10, 'q', 11);
+
+	const auto words = [](const std::vector<seg_nfa::Noodle>& noodles) {
+		std::vector<std::vector<mata::Word>> result{};
+		for (const seg_nfa::Noodle& noodle : noodles) {
+			std::vector<mata::Word> noodle_words{};
+			for (const seg_nfa::NoodleSegment& segment : noodle) {
+				const Nfa segment_automaton{segment.to_nfa()};
+				const std::set<mata::Word> segment_words{
+					segment_automaton.get_words(segment_automaton.num_of_states())
+				};
+				REQUIRE(segment_words.size() == 1);
+				noodle_words.push_back(*segment_words.begin());
+			}
+			result.push_back(std::move(noodle_words));
+		}
+		return result;
+	};
+	const std::vector<std::vector<mata::Word>> expected{
+		{{'a'}, {'u'}, {'p'}}, {{'b'}, {'u'}, {'p'}}, {{'a'}, {'v'}, {'p'}}, {{'b'}, {'v'}, {'p'}},
+		{{'a'}, {'w'}, {'q'}}, {{'b'}, {'w'}, {'q'}}, {{'a'}, {'z'}, {'q'}}, {{'b'}, {'z'}, {'q'}},
+	};
+	CHECK(words(seg_nfa::noodlify(aut, EPSILON)) == expected);
+#if MATA_HAS_GENERATOR_SUPPORT
+	CHECK(words(take_all(seg_nfa::noodlify_lazy(aut, EPSILON))) == expected);
+#endif
+}
+
+TEST_CASE("mata::nfa::SegNfa::noodlify() enumerates two separate paths over many epsilon boundaries quickly") {
+	// Lane 'a' and lane 'b' each cross every ε-boundary, but never into each other: two noodles out of 2^40
+	//  combinations of the ε-transitions of the depths.
+	constexpr size_t num_of_boundaries{40};
+	const auto entry = [](const size_t segment, const size_t lane) {
+		return static_cast<State>(2 + 4 * segment + 2 * lane);
+	};
+	const std::array<mata::Symbol, 2> symbols{'a', 'b'};
+	Nfa aut{2 + 4 * (num_of_boundaries + 1)};
+	aut.initial.insert(0);
+	aut.final.insert(1);
+	for (size_t lane{0}; lane < symbols.size(); ++lane) {
+		aut.delta.add(0, symbols[lane], entry(0, lane) + 1);
+		for (size_t segment{1}; segment <= num_of_boundaries; ++segment) {
+			aut.delta.add(entry(segment - 1, lane) + 1, EPSILON, entry(segment, lane));
+			aut.delta.add(
+				entry(segment, lane), symbols[lane], segment == num_of_boundaries ? 1 : entry(segment, lane) + 1
+			);
+		}
+	}
+
+	const auto lanes = [&](const std::vector<seg_nfa::Noodle>& noodles) {
+		std::vector<mata::Symbol> result{};
+		for (const seg_nfa::Noodle& noodle : noodles) {
+			REQUIRE(noodle.size() == num_of_boundaries + 1);
+			const mata::Symbol symbol{noodle[0].to_nfa().get_words(2).begin()->front()};
+			for (const seg_nfa::NoodleSegment& segment : noodle) {
+				CHECK(segment.to_nfa().get_words(2) == std::set<mata::Word>{{symbol}});
+			}
+			result.push_back(symbol);
+		}
+		return result;
+	};
+	CHECK(lanes(seg_nfa::noodlify(aut, EPSILON)) == std::vector<mata::Symbol>{'a', 'b'});
+#if MATA_HAS_GENERATOR_SUPPORT
+	CHECK(lanes(take_all(seg_nfa::noodlify_lazy(aut, EPSILON))) == std::vector<mata::Symbol>{'a', 'b'});
+	CHECK(
+		lanes(take_all(seg_nfa::noodlify_lazy(aut, EPSILON, false, {.kind = seg_nfa::NoodleOrder::Kind::Reverse}))) ==
+		std::vector<mata::Symbol>{'b', 'a'}
+	);
+#endif
+}
+
+TEST_CASE("mata::nfa::SegNfa::noodlify() keeps the empty noodles of an automaton with no final state") {
+	// One ε-transition over two segments, no final state: with include_empty, the single noodle keeps its last
+	//  segment empty; without it, there is none.
+	Nfa aut{3};
+	aut.initial.insert(0);
+	aut.delta.add(0, 'a', 1);
+	aut.delta.add(1, EPSILON, 2);
+	aut.delta.add(2, 'b', 2);
+
+	CHECK(seg_nfa::noodlify(aut, EPSILON, false).empty());
+	const std::vector<seg_nfa::Noodle> with_empty{seg_nfa::noodlify(aut, EPSILON, true)};
+	REQUIRE(with_empty.size() == 1);
+	REQUIRE(with_empty[0].size() == 2);
+	CHECK(are_equivalent(with_empty[0][0].to_nfa(), [&] {
+		Nfa first{2};
+		first.initial.insert(0);
+		first.final.insert(1);
+		first.delta.add(0, 'a', 1);
+		return first;
+	}()));
+	CHECK(with_empty[0][1].to_nfa().is_lang_empty());
+
+#if MATA_HAS_GENERATOR_SUPPORT
+	std::vector<seg_nfa::Noodle> lazy{};
+	for (const seg_nfa::Noodle& noodle : seg_nfa::noodlify_lazy(aut, EPSILON, true)) { lazy.push_back(noodle); }
+	CHECK(same_noodles_in_order(lazy, with_empty));
+#endif
+}
+
+#if MATA_HAS_GENERATOR_SUPPORT
+TEST_CASE("mata::nfa::SegNfa::noodlify_mult_eps_lazy_ptr() does not search past the noodle it returns") {
+	// An 'a'-loop segment, 64 levels of two ε-only states each with an ε-transition from every state of the previous
+	//  level, and a final 'b'-loop segment: all 2^64 routes give the one noodle [a*, b*] (the ε-only segments are
+	//  left out), so the search past that noodle walks every route and would not end. The adaptor must resume the
+	//  generator only when the next value is asked for.
+	const size_t depth{64};
+	Nfa aut{};
+	const State first{aut.add_state()};
+	aut.initial.insert(first);
+	aut.delta.add(first, 'a', first);
+	std::vector<State> level{first};
+	for (size_t i{0}; i < depth; ++i) {
+		const std::vector<State> next_level{aut.add_state(), aut.add_state()};
+		for (const State source : level) {
+			for (const State target : next_level) { aut.delta.add(source, EPSILON, target); }
+		}
+		level = next_level;
+	}
+	const State last{aut.add_state()};
+	aut.delta.add(last, 'b', last);
+	aut.final.insert(last);
+	for (const State source : level) { aut.delta.add(source, EPSILON, last); }
+
+	std::unique_ptr<mata::utils::LazyGenerator<seg_nfa::NoodleWithEpsilonsCounter>> it{
+		seg_nfa::noodlify_mult_eps_lazy_ptr(aut, {EPSILON}, false, seg_nfa::NoodleOrder{})
+	};
+	REQUIRE(!it->done());
+	CHECK(it->next().size() == 2);
+}
+#endif

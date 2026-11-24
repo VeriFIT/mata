@@ -43,15 +43,18 @@ with open(os.path.join(src_dir, "README.md")) as readme_handle:
 
 project_includes = [
     os.path.join(src_dir, "include"),
+    # The generated `mata/config.hh`.
+    os.path.join(src_dir, mata_build_dir, "include"),
     os.path.join(src_dir, "3rdparty"),
     os.path.join(src_dir, "3rdparty", "re2"),
     os.path.join(src_dir, "3rdparty", "simlib", "include"),
     os.path.join(src_dir, "3rdparty", "cudd", "include"),
 ]
 
-extra_compile_args = ["-std=c++23", "-DNO_THROW_DISPATCHER"]
+extra_compile_args = ["-std=c++23"]
 if platform.system() == "Darwin":
     extra_compile_args.append("-mmacosx-version-min=10.15")
+
 
 extensions = [
     Extension(
@@ -63,7 +66,15 @@ extensions = [
         language="c++",
         extra_compile_args=extra_compile_args,
     )
-    for pkg in ("nfa.nfa", "nft.nft", "alphabets", "utils", "parser", "nfa.strings", "plotting")
+    for pkg in (
+        "nfa.nfa",
+        "nft.nft",
+        "alphabets",
+        "utils",
+        "parser",
+        "nfa.strings",
+        "plotting",
+    )
 ]
 
 
@@ -161,7 +172,11 @@ def get_version():
 
 
 def _build_mata():
-    """Builds mata library"""
+    """Builds mata library.
+
+    Building from an sdist needs `make` and `cmake` on the machine: `cmake` is declared in
+    `build-system.requires`, `make` cannot come from PyPI. Installing a wheel needs neither.
+    """
     with subprocess.Popen(
         shlex.split(f"make release-lib BUILD_DIR={mata_build_dir}"),
         cwd=src_dir,
@@ -242,6 +257,14 @@ def run_safely_external_command(cmd: str, check_results=True, quiet=True, timeou
 
 setup(
     version=get_version(),
-    ext_modules=cythonize(extensions, compiler_directives={"language_level": "3"}),
+    ext_modules=cythonize(
+        extensions,
+        # `allow_none_for_extension_args` defaults to True, which lets `def f(Nfa a)` dereference a
+        #  `None` argument and segfault the interpreter. With it off, Cython raises TypeError instead.
+        compiler_directives={
+            "language_level": "3",
+            "allow_none_for_extension_args": False,
+        },
+    ),
     cmdclass={"sdist": sdist, "build_ext": build_ext},
 )

@@ -5,10 +5,16 @@
 [![Python-Binding (build-&-test)](https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml/badge.svg?branch=master)](https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml)
 [![codecov](https://codecov.io/gh/VeriFIT/mata/branch/master/graph/badge.svg?token=9VAVD19N4D)](https://codecov.io/gh/VeriFIT/mata)
 
-Mata is an open source automata library that offers interface for different kinds of automata, e.g. (non-)deterministic finite automata (NFAs), (non-)deterministic finite transducers, etc. Currently, Mata offers two interfaces:
+Mata is an open source automata library that offers interface for different kinds of automata, e.g. (non-)deterministic finite automata (NFAs), (non-)deterministic finite transducers, etc. Currently, Mata offers three interfaces:
 
-1. An efficient library implemented in C/C++, and
-2. A flexible wrapper implemented in Python that uses the efficient library.
+1. An efficient library implemented in C/C++,
+2. A flexible wrapper implemented in Python that uses the efficient library, and
+3. Rust bindings with a safe API over the efficient library.
+
+The [website of Mata](https://verifit.github.io/mata/) gives an overview of the library, its
+[documentation](https://verifit.github.io/mata/master/docs/), and a
+[playground](https://verifit.github.io/mata/master/playground/) that runs Mata in the browser. The
+[development website](https://verifit.github.io/mata/devel/) tracks the `devel` branch.
 
 ## Installation
 
@@ -26,11 +32,23 @@ This repo also provides a flake (maintained by [@Adda0](https://github.com/Adda0
 nix build github:VeriFIT/mata
 ```
 
+The flake also packages the Rust bindings with their examples (`mataRust`) and the `mata` command-line interface
+(`mataCli`):
+
+```shell
+nix build github:VeriFIT/mata#mataRust
+nix run github:VeriFIT/mata#mataCli -- --help
+```
+
 For development:
 
 ```shell
 nix develop github:VeriFIT/mata
 ```
+
+The development shell includes Cargo, rustc, Clippy, and rustfmt from a lockfile-pinned stable Rust toolchain.
+The Python environment of the development shell is built from `uv.lock`, the same versions `uv sync` installs, with the
+bindings installed editable from the checkout. Build their extensions in place with `just bindings python build`.
 
 ### Download pre-built binaries from GitHub
 
@@ -38,7 +56,7 @@ You can download pre-built binaries from the [releases](https://github.com/VeriF
 
 ### Building and installing from sources
 
-For a successful installation of Mata, `cmake` of version `3.15.0` (or higher) and a C++ compiler with a support of C++-20 standard is required.
+For a successful installation of Mata, `cmake` of version `3.23.0` (or higher) and a C++ compiler with a support of C++-20 standard is required.
 From optional requirements, `doxygen` is required for a generation of the documentation and `catch2` is required for the unit testing (Mata can still be compiled without these optional dependencies).
 
 The Mata library further depends on the following libraries, included in the `./3rdparty/` directory:
@@ -47,6 +65,11 @@ The Mata library further depends on the following libraries, included in the `./
 - `re2` for regular expression parsing and the corresponding automata construction, and
 - `simlib` for a simulation computation.
 
+The experimental reduction of automata to automata with the minimum number of states (`reduce()` with the `"sat"` or `"qbf"` algorithm) runs an external SAT or QBF solver.
+Mata finds the solver in `PATH` (CaDiCaL, Kissat, CryptoMiniSat, or PicoSAT; DepQBF or CAQE), or uses the command in the environment variable `MATA_SAT_SOLVER` or `MATA_QBF_SOLVER`.
+For example, run `apt install cadical depqbf` or `brew install cadical depqbf`.
+The solvers are needed only for this reduction, not for building or using the rest of Mata.
+
 To build the library, run the following:
 
 ```shell
@@ -54,6 +77,39 @@ git clone https://github.com/VeriFIT/mata
 cd mata
 make release
 ```
+
+For C++ executables, **install [mimalloc](https://github.com/microsoft/mimalloc)** and build with `MATA_USE_MIMALLOC=ON`:
+
+```shell
+make release MATA_USE_MIMALLOC=ON
+```
+
+The option is off by default and `cmake` fails if mimalloc cannot be found. The Nix C++ package enables it.
+The allocator applies to the final executable, so consumers linking `libmata.a` without the exported CMake target must also link mimalloc themselves.
+A measurement over Mata operations on the automata-lib-bench TACAS'24 experiments and selected NFT programs reduced total runtime by 26.6%; the effect varies by workload.
+
+Independently of the global allocator, Mata chooses how it allocates the heap blocks of `Delta` (the transitions of
+automata), with `MATA_DELTA_ALLOCATOR`:
+
+- `std` (the default) takes them from the global `operator new`/`delete`, i.e., whatever allocator the executable uses.
+- `pool` carves them from thread-local 1 MiB chunks in allocation order, so a `Delta` built state by state lies in
+  consecutive memory. It is faster on composition-heavy workloads. The chunks are reused, but never returned to the
+  operating system before the process exits.
+
+Select it per process with the environment variable, without rebuilding:
+
+```shell
+MATA_DELTA_ALLOCATOR=pool ./my-program
+```
+
+The variable is read on the first allocation and fixed for the rest of the process; an unknown value throws
+`std::invalid_argument`. The CMake option of the same name sets the default used when the variable is unset:
+`make release MATA_DELTA_ALLOCATOR=pool`.
+
+mimalloc, in contrast, replaces the allocator of the whole process, so it is chosen when the executable is linked
+(`MATA_USE_MIMALLOC=ON`) or started (`LD_PRELOAD=/path/to/libmimalloc.so ./my-program`), never while it runs. The two
+combine freely. When the memory runs out, the system allocator makes Mata throw `std::bad_alloc`, while mimalloc may
+abort the process instead.
 
 In order to install the library, you can run
 
@@ -68,7 +124,7 @@ make test
 ```
 
 You might, need to install the dependencies to measure the coverage of the tests.
-Run the following to install the dependencies for MacOS:
+Run the following to install the dependencies for macOS:
 
 ```shell
 brew install lcov gcovr
@@ -82,12 +138,12 @@ sudo apt install -y build-essential lcov gcovr xdg-utils
 
 ## Python binding
 
-Mata offers binding of its efficient library to Python. You can install the binding as an Python
+Mata offers binding of its efficient library to Python. You can install the binding as a Python
 package on your system as follows.
 
 ### Installation from PyPI
 
-To install a latest version from the PyPI repository, run:
+To install the latest version from the PyPI repository, run:
 
 ```shell
 # Using uv:
@@ -107,6 +163,10 @@ Using `uv`:
 uv sync --python 3.13
 ```
 
+Besides the dependencies of the bindings, `uv sync` installs the `dev` dependency group: the tools to build the bindings
+in place, the packages the tests and the notebooks import, and the tools to sync the notebooks and to render the
+documentation.
+
 Or using `pip`:
 
 ```shell
@@ -116,6 +176,11 @@ make -C bindings/python init
 sudo apt -qq update
 sudo apt -qq install -y graphviz graphviz-dev
 ```
+
+`make init` installs the bindings with the `dev`, `pandas` and `plotting` extras: Cython, setuptools and CMake for the
+in-place build, pytest, and the packages the tests import. `pip install libmata` alone installs no runtime
+dependencies; building it from the sdist when no wheel fits still pulls its build dependencies into an isolated
+environment.
 
 Now, you can install the library.
 
@@ -127,6 +192,27 @@ Finally, you can verify the binding woks as expected by running the test suite:
 
 ```shell
 make -C bindings/python test
+```
+
+## Rust binding
+
+Mata offers bindings of its library to Rust in [`bindings/rust`](./bindings/rust/): the crate [`mata`](https://crates.io/crates/mata) with a safe API, and the crate [`mata-sys`](https://crates.io/crates/mata-sys), which builds the library. They need Rust 1.95 or newer besides the requirements of the library. The module `mata::lazy` (the crate [`mata-lazy`](./bindings/rust/mata-lazy/)) checks combinations of NFAs and NFTs for emptiness lazily, and the module `mata::logic` (the crate [`mata-logic`](./bindings/rust/mata-logic/)) decides formulas encoded in automata on top of it. The same workspace builds the [`mata` command](https://mata.pages.fit.vutbr.cz/), the command-line interpreter of Mata Script; see [`bindings/rust/README.md`](./bindings/rust/README.md).
+
+### Installation from crates.io
+
+To add the latest version to a Cargo project, run:
+
+```shell
+cargo add mata
+```
+
+### Building from sources
+
+To build the bindings and run their tests:
+
+```shell
+cd bindings/rust
+cargo test --workspace --all-features
 ```
 
 ## Getting started
@@ -146,9 +232,9 @@ This directory contains examples of various usage in form of:
 python3 examples/example01-python-binding.py
 ```
 
-4. Python jupyter notebooks. To run the jupyter notebook, one needs to have jupyter installed as
-   a prerequisite. The run the jupyter notebook, that creates an instance on your local server.
-   Navigate to generated link to see the available jupyter notebooks:
+4. Python Jupyter notebooks. To run the Jupyter notebook, one needs to have jupyter installed as
+   a prerequisite. The run the Jupyter notebook, that creates an instance on your local server.
+   Navigate to generated link to see the available Jupyter notebooks:
 
 ```shell
 pip3 install jupyter
@@ -209,7 +295,7 @@ We recommend `cmake` for building projects using Mata.
 Provided the Mata is installed in the system directories, the `CMakeLists.txt` file for the example may look like:
 
 ```cmake
-cmake_minimum_required (VERSION 3.15.0)
+cmake_minimum_required (VERSION 3.23.0)
 project (my-project)
 set (CMAKE_CXX_STANDARD 20)
 
@@ -230,7 +316,7 @@ endif()
 
 add_executable(my-project
     my-project-source.cc)
-target_link_libraries(my-project PUBLIC libmata)
+target_link_libraries(my-project PUBLIC mata::libmata)
 ```
 
 ### Using the Python binding
@@ -265,15 +351,37 @@ The usage of the binding copies (to certain levels) the usage of the C++ library
 
 You can either run your scripts directly using `python` or compile it using the `cython` project.
 
+### Using the Rust binding
+
+The API documentation of the Rust binding is on [docs.rs](https://docs.rs/mata). Its usage follows the C++ library:
+
+```rust
+use mata::{Error, Nfa, State, Symbol};
+
+fn main() -> Result<(), Error> {
+    let mut aut = Nfa::with_states(4);
+
+    aut.add_initial(State::new(0))?;
+    aut.add_initial(State::new(1))?;
+    aut.add_final(State::new(2))?;
+    aut.add_final(State::new(3))?;
+    aut.add_transition(State::new(0), Symbol::new(0), State::new(2))?;
+    aut.add_transition(State::new(1), Symbol::new(1), State::new(3))?;
+
+    println!("{}", aut.dot());
+    Ok(())
+}
+```
+
 ### Benchmarking, profiling
 
 For instructions on how to benchmark and profile Mata, see [BENCHMARKING.md](BENCHMARKING.md).
 
 ## Supported Automata Models
 
-While we try to keep the provided libray interface stable, Mata is still a project in its infancy.
+While we try to keep the provided library interface stable, Mata is still a project in its infancy.
 Hence, the interface is subject to change.
-For further information, see section [Versioning](README.md#Versioning).
+For further information, see section [Versioning](#versioning).
 
 Mata currently supports (non-)deterministic finite automata (NFAs), defined in `include/mata/nfa/`.
 
@@ -309,7 +417,9 @@ Please refer to our [contributing guidelines](CONTRIBUTING.md).
   - In case of some sensitive bugs (like security vulnerabilities),
     please contact us directly, instead of using issue tracker.
     We value your effort to improve the security and privacy of this project!
-- Project documentation: <https://verifit.github.io/mata>
+- Website: <https://verifit.github.io/mata/>
+- Project documentation: <https://verifit.github.io/mata/docs/>
+- Playground: <https://verifit.github.io/mata/playground/>
 - Jupyter notebooks demonstrating `mata` usage: <https://github.com/VeriFIT/mata/tree/devel/examples/notebooks>
   - [Example 01: WS1S Logic](https://github.com/VeriFIT/mata/tree/devel/examples/notebooks/example-01-ws1s-formulae.ipynb)
   - [Example 02: ReDoS Attacks](https://github.com/VeriFIT/mata/tree/devel/examples/notebooks/example-02-redos-attacks.ipynb)

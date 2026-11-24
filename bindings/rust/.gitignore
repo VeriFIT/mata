@@ -1,0 +1,3 @@
+/target
+# The Mata sources that the package of mata-sys carries, copied in only while packaging.
+/mata-sys/mata/

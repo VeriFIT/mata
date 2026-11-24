@@ -18,7 +18,7 @@ For information on contributing to the Python bindings, refer to [bindings/pytho
 
 3. Create a new feature branch.
 4. Build the project.
-   Refer to [README#Building and installing from sources](README#Building-and-installing-from-sources) for instructions
+   Refer to [README#Building and installing from sources](README.md#building-and-installing-from-sources) for instructions
    on how to build the project from sources.
 5. Commit the changes and push to your fork.
 6. Finally, [create a new pull request](https://github.com/VeriFIT/mata/compare).
@@ -26,7 +26,7 @@ For information on contributing to the Python bindings, refer to [bindings/pytho
    Open the PR against **`devel`** if the PR contains **breaking changes** or is a part of a **multi-PR effort** that
    needs longer to prepare before a new stable release.
    When opening a PR, either set its status to `Open` (the default behaviour) when you want the PR to be immediately
-   up for review, or set its status to `Draft` when the PR is work-in-progress and you do not want the PR to be
+   up for review, or set its status to `Draft` when the PR is work-in-progress, and you do not want the PR to be
    reviewed yet.
    When the draft PR is finished and ready for review, switch the status to `Open` to indicate we should review the PR.
    Optionally, you can tag `@Adda0` (and any other contributors you explicitly want to review the PR) to request the
@@ -68,10 +68,29 @@ This process helps ensure that:
 - We avoid duplicate work.
 - The implementation follows the project's patterns and conventions.
 
+Before working on a performance or design change, check [docs/experiments/](docs/experiments/README.md): it records
+experiments that did not make it into the code, with their results and when they would be worth revisiting. When your
+own experiment does not land, add a record there.
+
 ## Pull Request Process
 
-1. Ensure your code builds successfully. <!-- 2. If you have made a change to the dependencies then update the `nix/vendor-hash` file. -->
+1. Ensure your code builds successfully.
 2. (Optional) Submit your pull request with screenshots (if applicable).
+
+### Commit messages
+
+Commit subjects follow the format `scope[,scope...]: +tag [+tag...] Message`, e.g.,
+`nfa: +perf Store the element and set metadata of Hopcroft's refinable partition together`.
+
+- **scope**: the affected part of the project (e.g., `nfa`, `nft`, `alphabet`, `python`, `rust`, `docs`, `ci`).
+- **tag**: the kind of change: `+feat`, `+fix`, `+perf`, `+refactor`, `+test`, `+docs`, `+fmt`, `+lint`, `+chore`.
+- **Message**: an imperative sentence starting with a capital letter, without a trailing period.
+
+### Referencing issues
+
+In commit messages and pull request descriptions, use `Part of #<issue>` when the change resolves an issue only
+partially. Use a closing keyword (`Fixes #<issue>`, `Resolves #<issue>`, `Closes #<issue>`, etc.) only when the change
+resolves the whole issue completely, including all its optional tasks, as GitHub closes the issue on merge.
 
 ## Code and design style
 
@@ -181,7 +200,7 @@ The information in this section concerns only maintainers of the project.
 
 ### Versioning during PR merge
 
-By default (or using a tag `#minor`), each merge automatically increases the `minor` version of the library
+By default (or when using a tag `#minor`), each merge automatically increases the `minor` version of the library
 (i.e., `v0.0.0 -> v0.0.1` ).
 This can be overruled by using either tag `#major` (increasing the major version, i.e., `v0.1.0 -> v0.2.0`) or `#generation`
 (increasing the generation version, i.e., `v0.0.0 -> v1.0.0`).

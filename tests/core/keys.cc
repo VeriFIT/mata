@@ -338,10 +338,10 @@ TEST_CASE("a relation feeds an alphabet with its keys, named by their printed fo
 
 	WeightAlphabet alphabet{};
 	delta.add_keys_to(alphabet);
-	REQUIRE(alphabet.received.size() == 3); // Once per transition; deduplicating is the alphabet's job.
+	// Once per distinct key, in key order: a key used by many transitions is converted and named once.
+	REQUIRE(alphabet.received.size() == 2);
 	CHECK(alphabet.received[0] == std::pair<std::string, Weight>{"50c", Weight{50}});
 	CHECK(alphabet.received[1] == std::pair<std::string, Weight>{"75c", Weight{75}});
-	CHECK(alphabet.received[2] == std::pair<std::string, Weight>{"50c", Weight{50}});
 }
 
 TEST_CASE("a key that is not a symbol still gets a working relation") {
@@ -390,7 +390,8 @@ TEST_CASE("a failed remove() names the transition, whatever the key type") {
 		Delta delta{};
 		delta.add(0, 'a', 1);
 		try {
-			delta.remove(0, 'b', 1);
+			// The generic relation throws; the shipped mata::Delta::remove() reports a missing transition by false.
+			static_cast<Delta::Base&>(delta).remove(0, 'b', 1);
 			CHECK(false); // Unreachable.
 		} catch (const std::invalid_argument& error) {
 			const std::string message{error.what()};

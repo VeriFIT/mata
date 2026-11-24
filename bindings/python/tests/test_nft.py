@@ -1,5 +1,6 @@
 import libmata.nfa.nfa as mata_nfa
 import libmata.nft.nft as mata_nft
+import libmata.utils as mata_utils
 import pytest
 from libmata import alphabets
 
@@ -120,6 +121,67 @@ def test_nft_compose():
     assert composed.levels.num_of_levels == 2
 
 
+def test_nft_compose_normalization():
+    """The generated EPSILON rounds of the fast composition close without changing the relation."""
+    n = 8
+    lhs_levels = [0] * (n + 3)
+    lhs_levels[n + 1] = 1
+    lhs = mata_nft.Nft.with_levels(mata_nft.Levels(2, lhs_levels), n + 3)
+    lhs.make_initial_state(0)
+    lhs.make_final_state(n + 2)
+    for state in range(n):
+        lhs.delta.add(state, mata_nft.epsilon(), state + 1)
+    lhs.delta.add(n, 7, n + 1)
+    lhs.delta.add(n + 1, 7, n + 2)
+    rhs = mata_nft.Nft.with_levels(mata_nft.Levels(1, [0] * (n + 2)), n + 2)
+    rhs.make_initial_state(0)
+    rhs.make_final_state(n + 1)
+    for state in range(n):
+        rhs.delta.add(state, mata_nft.epsilon(), state + 1)
+    rhs.delta.add(n, 7, n + 1)
+
+    def compose(normalization):
+        return mata_nft.compose(
+            lhs,
+            rhs,
+            1,
+            0,
+            True,
+            mata_nft.JumpMode.NoJump,
+            mata_nft.CompositionMode.FastNoJump,
+            normalization,
+        )
+
+    raw = compose(mata_nft.CompositionNormalization.None_)
+    normalized = compose(mata_nft.CompositionNormalization.GeneratedOnly)
+    assert raw.num_of_states() == 2 * n + 2
+    assert normalized.num_of_states() == 2
+    assert normalized.is_in_lang([7])
+
+
+def test_nft_compose_rejects_invalid_requests():
+    """Invalid synchronization levels raise instead of exhausting memory or dividing by zero."""
+    lhs = mata_nft.Nft(1, num_of_levels=2)
+    lhs.make_initial_state(0)
+    lhs.make_final_state(lhs.insert_word(0, [10, 99]))
+    one_level = mata_nft.Nft(1, num_of_levels=1)
+    one_level.make_initial_state(0)
+    one_level.make_final_state(0)
+
+    with pytest.raises(ValueError):
+        mata_nft.compose(lhs, one_level, 2, 0)
+    with pytest.raises(ValueError):
+        mata_nft.compose(one_level, one_level, 1, 0)
+    with pytest.raises(ValueError):  # 1 + 1 - 2 == 0 levels left.
+        mata_nft.compose(one_level, one_level, 0, 0)
+    with pytest.raises(ValueError):
+        mata_nft.compose(lhs, lhs, [0, 1], [0])
+    with pytest.raises(ValueError):
+        mata_nft.compose_alphabets(lhs, one_level, 2, 0)
+    with pytest.raises(ValueError, match="composition mode"):
+        mata_nft.compose(lhs, lhs, 1, 0, composition_mode=3)
+
+
 def test_nft_is_included_and_are_equivalent():
     smaller = _make_word_nft([1, 2])
     bigger = mata_nft.union_nondet(smaller, _make_word_nft([3, 4]))
@@ -191,6 +253,24 @@ def test_nft_insert_identity():
     assert nft2.is_in_lang([6, 6])
 
 
+def test_nft_insert_identity_jump_mode():
+    jump = mata_nft.Nft(1, num_of_levels=3)
+    jump.insert_identity(0, [5, 6])
+    assert jump.num_of_states() == 1
+    assert jump.contains_jump_transitions()
+
+    loop = mata_nft.Nft(1, num_of_levels=3)
+    loop.insert_identity(0, [5, 6], mata_nft.JumpMode.NoJump)
+    assert loop.num_of_states() == 5
+    assert not loop.contains_jump_transitions()
+
+    for nft in (jump, loop):
+        nft.make_initial_state(0)
+        nft.make_final_state(0)
+        assert nft.is_in_lang([5, 5, 5, 6, 6, 6])
+        assert not nft.is_in_lang([5, 6, 5])
+
+
 def test_nft_make_complete():
     nft = mata_nft.Nft(1, num_of_levels=1)
     nft.make_initial_state(0)
@@ -227,6 +307,38 @@ def test_nft_get_words():
     assert nft.get_words() == {(7, 8)}
 
 
+@pytest.mark.skipif(
+    not mata_utils.HAS_GENERATOR_SUPPORT,
+    reason="get_words_lazy() needs a standard library implementing std::generator",
+)
+def test_nft_get_words_lazy():
+    nft = _make_word_nft([7, 8])
+    assert set(nft.get_words_lazy()) == nft.get_words()
+
+    # get_words_lazy() must stay usable (not hang) on an infinite language with the default unbounded max_length,
+    #  unlike get_words().
+    cyclic = mata_nft.Nft(1, num_of_levels=1)
+    cyclic.make_initial_state(0)
+    cyclic.make_final_state(0)
+    cyclic.delta.add(0, 0, 0)
+    first_words = []
+    for word in cyclic.get_words_lazy():
+        first_words.append(word)
+        if len(first_words) == 3:
+            break
+    assert first_words == [(), (0,), (0, 0)]
+
+
+@pytest.mark.skipif(
+    mata_utils.HAS_GENERATOR_SUPPORT,
+    reason="get_words_lazy() only fails without a standard library implementing std::generator",
+)
+def test_nft_get_words_lazy_without_generator_support():
+    nft = _make_word_nft([7, 8])
+    with pytest.raises(RuntimeError):
+        next(iter(nft.get_words_lazy()))
+
+
 def test_nft_builder_functions():
     word_nft = mata_nft.create_single_word_nft([1, 2])
     assert word_nft.is_in_lang([1, 2])
@@ -260,6 +372,18 @@ def test_levels_basic():
     assert mata_nft.Levels.can_follow(0, 1)
     assert mata_nft.Levels.can_follow(1, 0)  # target level 0 is always reachable
     assert not mata_nft.Levels.can_follow(1, 1)
+
+
+def test_levels_reject_values_outside_unsigned_range():
+    assert list(mata_nft.Levels(2, [2**32 - 1])) == [2**32 - 1]
+    with pytest.raises(OverflowError):
+        mata_nft.Levels(2, [2**32])
+    with pytest.raises(OverflowError):
+        mata_nft.Levels(2, count=1, value=2**32)
+    with pytest.raises(OverflowError):
+        mata_nft.Levels(2).set(0, 2**32)
+    with pytest.raises(OverflowError):
+        mata_nft.Levels(2)[0] = 2**32
 
 
 def test_levels_get_minimal_level_of():

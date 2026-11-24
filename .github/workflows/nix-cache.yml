@@ -1,0 +1,34 @@
+name: Nix cache
+# Fills the `mata` Cachix cache with the merged state of `devel`, which pull requests (`nix-flake-check`) pull from.
+# TODO(ci): Enable `push` and `schedule` once the Nix packages take only the files they build from, so that pull
+#  requests can reuse the cached builds of devel; any changed tracked file currently rebuilds every package.
+on:
+  # push:
+  #   branches: [devel]
+  # # Merges done with GITHUB_TOKEN (the Dependabot auto-merge) trigger no `push` run, so `devel` is also cached daily.
+  # schedule:
+  #   - cron: "0 4 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nix-cache
+  cancel-in-progress: true
+jobs:
+  push-to-cachix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: cachix/install-nix-action@v31
+      - uses: cachix/cachix-action@v17
+        with:
+          name: mata
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # Scheduled runs start on the default branch (master), so check out devel explicitly.
+      - uses: actions/checkout@v6
+        with:
+          ref: devel
+      - name: Build all packages and run the flake checks
+        run: nix flake check --print-build-logs
+      - name: Build the development shells
+        run: nix build --no-link --print-build-logs .#devShells.x86_64-linux.{default,clang,gcc}

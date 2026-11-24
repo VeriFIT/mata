@@ -1,0 +1,64 @@
+[package]
+name = "mata"
+version = "0.1.0"
+description = "Safe, idiomatic Rust bindings to Mata, the VeriFIT library for finite automata"
+readme = "README.md"
+license.workspace = true
+repository.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[features]
+default = ["lazy", "logic"]
+## `mata::lazy`: lazy emptiness checking of combinations of automata and transducers (the `mata-lazy` crate).
+lazy = ["dep:mata-lazy"]
+## `mata::logic`: decision procedures for logics encoded in automata, on `mata::lazy` (the `mata-logic` crate).
+logic = ["lazy", "dep:mata-logic"]
+## Serialize and deserialize automata, alphabets and the id types with serde.
+serde = ["dep:serde"]
+
+[dependencies]
+mata-sys.workspace = true
+thiserror.workspace = true
+mata-lazy = { workspace = true, optional = true }
+mata-logic = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+
+[package.metadata.docs.rs]
+all-features = true
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dev-dependencies]
+# The regex and rustfst leaves of `mata::lazy`, for the tests and examples that mix backends.
+mata-lazy = { workspace = true, features = ["regex", "rustfst"] }
+proptest.workspace = true
+rand.workspace = true
+rustfst.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true
+
+[[example]]
+name = "lazy_inclusion"
+required-features = ["lazy"]
+
+[[example]]
+name = "lazy_model_checking"
+required-features = ["lazy"]
+
+[[example]]
+name = "lazy_sat_solver"
+required-features = ["lazy"]
+
+[[example]]
+name = "lazy_mixed_backends"
+required-features = ["lazy"]
+
+[[test]]
+name = "lazy"
+path = "tests/lazy/main.rs"
+required-features = ["lazy"]

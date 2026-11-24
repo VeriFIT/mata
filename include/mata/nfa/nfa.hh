@@ -80,12 +80,11 @@
 #ifndef MATA_NFA_HH_
 #define MATA_NFA_HH_
 
-// Static data structures, such as search stack, in algorithms. Might have some effect on some algorithms (like
-//  fragile_revert).
+// Static data structures, such as search stack, in algorithms. Might have some effect on some algorithms (like trim).
 // #define _STATIC_STRUCTURES_
 
-#include <algorithm>
 #include <cassert>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <set>
@@ -96,10 +95,16 @@
 #include "delta.hh"
 #include "mata/alphabet.hh"
 #include "mata/parser/inter-aut.hh"
+#include "mata/utils/generator-support.hh"
 #include "mata/utils/ord-vector.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/utils/utils.hh"
 #include "types.hh"
+
+#if MATA_HAS_GENERATOR_SUPPORT
+	#include <generator>
+	#include <limits>
+#endif
 
 namespace mata::nfa {
 
@@ -155,13 +160,18 @@ class Nfa : public Automaton {
 	 */
 	Nfa(const Nfa& other) = default;
 
+	// Only the 'Automaton' base of 'other' is moved from before its own members are.
+	// NOLINTBEGIN(bugprone-use-after-move)
 	Nfa(Nfa&& other) noexcept
 		: Automaton{std::move(other)},
 		  alphabet{std::move(other.alphabet)},
 		  attributes{std::move(other.attributes)} {}
+	// NOLINTEND(bugprone-use-after-move)
 
 	Nfa& operator=(const Nfa& other) = default;
 	Nfa& operator=(Nfa&& other) noexcept;
+
+	~Nfa() = default;
 
 	/**
 	 * Add a new (fresh) state to the automaton.
@@ -226,7 +236,19 @@ class Nfa : public Automaton {
 	 * @param[in] force_new_state Whether to force creating a new state even when initial states are already unified.
 	 * @return @c this after unification.
 	 */
-	Nfa& unify_initial(bool force_new_state = false);
+	Nfa& unify_initial(bool force_new_state = false) &;
+	/**
+	 * @brief Unify initial states in place on an rvalue and return the unified automaton by value.
+	 *
+	 * Unlike the lvalue overload, the result is moved out of @c this, so initializing or returning it does not
+	 *  copy the automaton.
+	 * @param[in] force_new_state Whether to force creating a new state even when initial states are already unified.
+	 * @return @c this after unification, as a value.
+	 */
+	Nfa unify_initial(bool force_new_state = false) && {
+		unify_initial(force_new_state);
+		return std::move(*this);
+	}
 
 	/**
 	 * @brief Unify final states into a single new final state.
@@ -234,14 +256,35 @@ class Nfa : public Automaton {
 	 * @param[in] force_new_state Whether to force creating a new state even when final states are already unified.
 	 * @return @c this after unification.
 	 */
-	Nfa& unify_final(bool force_new_state = false);
+	Nfa& unify_final(bool force_new_state = false) &;
+	/**
+	 * @brief Unify final states in place on an rvalue and return the unified automaton by value.
+	 *
+	 * Unlike the lvalue overload, the result is moved out of @c this, so initializing or returning it does not
+	 *  copy the automaton.
+	 * @param[in] force_new_state Whether to force creating a new state even when final states are already unified.
+	 * @return @c this after unification, as a value.
+	 */
+	Nfa unify_final(bool force_new_state = false) && {
+		unify_final(force_new_state);
+		return std::move(*this);
+	}
 
 	/**
 	 * Swap final and non-final states in-place.
+	 * @return @c this with swapped final states.
 	 */
-	Nfa& swap_final_nonfinal() {
+	Nfa& swap_final_nonfinal() & {
 		final.complement(num_of_states());
 		return *this;
+	}
+	/**
+	 * Swap final and non-final states in place on an rvalue and return the automaton by value.
+	 * @return @c this with swapped final states, as a value.
+	 */
+	Nfa swap_final_nonfinal() && {
+		swap_final_nonfinal();
+		return std::move(*this);
 	}
 
 	/**
@@ -265,7 +308,19 @@ class Nfa : public Automaton {
 	 * @param[out] state_renaming Mapping of trimmed states to new states.
 	 * @return @c this after trimming.
 	 */
-	Nfa& trim(StateRenaming* state_renaming = nullptr) { return Automaton::trim(state_renaming); }
+	Nfa& trim(StateRenaming* state_renaming = nullptr) & { return Automaton::trim(state_renaming); }
+	/**
+	 * @brief Trim an rvalue automaton in place and return the trimmed automaton by value.
+	 *
+	 * Unlike the lvalue overload, the result is moved out of @c this, so `Nfa t{f().trim()}` or `return f().trim()`
+	 *  does not copy the automaton.
+	 * @param[out] state_renaming Mapping of trimmed states to new states.
+	 * @return @c this after trimming, as a value.
+	 */
+	Nfa trim(StateRenaming* state_renaming = nullptr) && {
+		trim(state_renaming);
+		return std::move(*this);
+	}
 
 	/**
 	 * @brief Decodes automaton from UTF-8 encoding. Method removes unreachable states from delta.
@@ -300,15 +355,69 @@ class Nfa : public Automaton {
 
 	/**
 	 * @brief In-place concatenation.
+	 * @return @c this after concatenation.
 	 */
-	Nfa& concatenate(const Nfa& aut);
+	Nfa& concatenate(const Nfa& aut) &;
+	/**
+	 * @brief In-place concatenation on an rvalue, returning the concatenated automaton by value.
+	 * @return @c this after concatenation, as a value.
+	 */
+	Nfa concatenate(const Nfa& aut) && {
+		concatenate(aut);
+		return std::move(*this);
+	}
+	/**
+	 * @brief In-place concatenation, consuming @p aut.
+	 *
+	 * The state posts of @p aut are moved into @c this. If @c this and @p aut are aliased,
+	 * a controlled snapshot is taken and the operation falls back to the lvalue path.
+	 * @p aut is left valid but empty after the operation.
+	 * @return @c this after concatenation.
+	 */
+	Nfa& concatenate(Nfa&& aut) &;
+	/**
+	 * @brief In-place concatenation on an rvalue, consuming @p aut and returning the result by value.
+	 * @return @c this after concatenation, as a value.
+	 */
+	Nfa concatenate(Nfa&& aut) && {
+		concatenate(std::move(aut));
+		return std::move(*this);
+	}
 
 	/**
 	 * @brief In-place nondeterministic union of @c this with @p nfa.
 	 *
 	 * Does not add epsilon transitions, just unites initial and final states.
+	 * @return @c this after uniting with @p nfa.
 	 */
-	Nfa& unite_nondet_with(const Nfa& nfa);
+	Nfa& unite_nondet_with(const Nfa& nfa) &;
+	/**
+	 * @brief In-place nondeterministic union on an rvalue, returning the result by value.
+	 * @return @c this after uniting with @p nfa, as a value.
+	 */
+	Nfa unite_nondet_with(const Nfa& nfa) && {
+		unite_nondet_with(nfa);
+		return std::move(*this);
+	}
+	/**
+	 * @brief In-place nondeterministic union of @c this with @p nfa, consuming @p nfa.
+	 *
+	 * Does not add epsilon transitions, just unites initial and final states.
+	 * The state posts of @p nfa are moved into @c this, so no deep copy of the operand occurs.
+	 * If @c this and @p nfa are aliased (which should not normally happen with rvalues),
+	 * a controlled snapshot is taken and the operation falls back to the lvalue path.
+	 * @p nfa is left valid but empty after the operation.
+	 * @return @c this after uniting with @p nfa.
+	 */
+	Nfa& unite_nondet_with(Nfa&& nfa) &;
+	/**
+	 * @brief In-place nondeterministic union on an rvalue, consuming @p nfa and returning the result by value.
+	 * @return @c this after uniting with @p nfa, as a value.
+	 */
+	Nfa unite_nondet_with(Nfa&& nfa) && {
+		unite_nondet_with(std::move(nfa));
+		return std::move(*this);
+	}
 
 	/**
 	 * Unify transitions to create a directed graph with at most a single transition between two states.
@@ -344,6 +453,7 @@ class Nfa : public Automaton {
 	 * @param[in] use_intervals Whether to use intervals (e.g. [1-3] instead of 1,2,3) for labels.
 	 * @param[in] max_label_length Maximum label length for the output (-1 means no limit, 0 means no labels).
 	 * If the label is longer than @p max_label_length, it will be truncated, with full label displayed on hover.
+	 * @param[in] alphabet If specified, translates the symbols to their symbol names in the @p alphabet.
 	 * @return automaton in DOT format
 	 */
 	std::string print_to_dot(
@@ -360,6 +470,7 @@ class Nfa : public Automaton {
 	 * @param[in] use_intervals Whether to use intervals (e.g. [1-3] instead of 1,2,3) for labels.
 	 * @param[in] max_label_length Maximum label length for the output (-1 means no limit, 0 means no labels).
 	 * If the label is longer than @p max_label_length, it will be truncated, with full label displayed on hover.
+	 * @param alphabet[in] If specified, translates the symbols to their symbol names in the @p alphabet.
 	 */
 	void print_to_dot(
 		std::ostream& output,
@@ -375,6 +486,7 @@ class Nfa : public Automaton {
 	 * @param[in] use_intervals Whether to use intervals (e.g. [1-3] instead of 1,2,3) for labels.
 	 * @param[in] max_label_length Maximum label length for the output (-1 means no limit, 0 means no labels).
 	 * If the label is longer than @p max_label_length, it will be truncated, with full label displayed on hover.
+	 * @param alphabet[in] If specified, translates the symbols to their symbol names in the @p alphabet.
 	 */
 	void print_to_dot(
 		const std::string& filename,
@@ -399,6 +511,10 @@ class Nfa : public Automaton {
 	 *
 	 * If you need to parse the automaton again, use IntAlphabet in construct()
 	 *
+	 * The whole automaton is written with '\n' line endings and @p output is flushed once before returning, so the
+	 *  automaton is on the stream when this returns. The numbers are plain decimals whatever the format flags of
+	 *  @p output.
+	 *
 	 * @param[out] output Output stream to print the automaton to.
 	 * @param[in] alphabet If specified, translates the symbols to their symbol names in the @p alphabet.
 	 */
@@ -413,6 +529,69 @@ class Nfa : public Automaton {
 	 * @param filename Name of the file to print the automaton to
 	 */
 	void print_to_mata(const std::string& filename, const Alphabet* alphabet = nullptr) const;
+
+	/**
+	 * @brief Prints the language of the automaton as a regular expression
+	 *
+	 * The automaton is converted by state elimination, see src/nfa/regex-writer.cc. @p mode chooses what the
+	 *  conversion optimizes for:
+	 *  - @c RegexPrintMode::Fast converts as fast as possible, for a regex read by a program.
+	 *  - @c RegexPrintMode::Readable looks for a short, legible regex, for a regex read by a human: it converts
+	 *    several automata of the same language (the reduced one, the minimal deterministic one, and the minimal one
+	 *    deterministic backwards) in several elimination orders, simplifies the regexes algebraically, and prints
+	 *    the shortest one, which is never longer than the regex of @c RegexPrintMode::Fast. Running these additional
+	 *    conversions takes considerably longer than @c RegexPrintMode::Fast.
+	 *
+	 * The length of the regex is exponential in the number of states in the worst case, in both modes.
+	 *
+	 * The regex is written in the syntax mata::nfa::builder::create_from_regex() reads (RE2), restricted to
+	 *  characters, escapes ('\\n', '\\x41', '\\x{17F}'), character classes ('[a-c]'), groups, '|', '*', '+', '?',
+	 *  and counted repetitions ('{2}', '{2,}', '{2,5}'). The empty word alone is '()', and the empty language is the
+	 *  empty character class '[^\\s\\S]'.
+	 *
+	 * A symbol is the Unicode scalar value of its value, so it has to be at most 0x10FFFF and must not be in the
+	 *  surrogate range 0xD800 to 0xDFFF. With symbols up to 0xFF, reading the regex back gives the same language; with
+	 *  larger ones, reading it back with @c Encoding::Utf8 gives the language encoded in UTF-8. With an alphabet,
+	 *  a symbol is the character its name consists of instead. @c EPSILON is the empty word.
+	 *
+	 * @param[in] mode What to optimize the conversion for.
+	 * @param[in] alphabet If specified, translates the symbols to their symbol names in the @p alphabet. Otherwise,
+	 *  the alphabet of the automaton is used, if it has one.
+	 * @return The regular expression.
+	 * @throws std::invalid_argument If a symbol is larger than 0x10FFFF or a surrogate, or its name in the alphabet is
+	 *  not a single character encoded in UTF-8.
+	 */
+	std::string print_to_regex(RegexPrintMode mode = RegexPrintMode::Fast, const Alphabet* alphabet = nullptr) const;
+
+	/**
+	 * @brief Prints the language of the automaton to the output stream as a regular expression
+	 *
+	 * The regex is written in blocks as it is printed, without a line ending, and @p output is flushed before
+	 *  returning.
+	 *
+	 * @see print_to_regex(RegexPrintMode, const Alphabet*) const for the conversion, the syntax and the symbols.
+	 *
+	 * @param[out] output Output stream to print the regular expression to.
+	 * @param[in] mode What to optimize the conversion for.
+	 * @param[in] alphabet If specified, translates the symbols to their symbol names in the @p alphabet.
+	 */
+	void print_to_regex(
+		std::ostream& output, RegexPrintMode mode = RegexPrintMode::Fast, const Alphabet* alphabet = nullptr
+	) const;
+
+	/**
+	 * @brief Prints the language of the automaton to the file as a regular expression
+	 *
+	 * @see print_to_regex(RegexPrintMode, const Alphabet*) const for the conversion, the syntax and the symbols.
+	 * @throws std::ios_base::failure If the file cannot be opened or output to it fails.
+	 *
+	 * @param filename Name of the file to print the regular expression to
+	 * @param[in] mode What to optimize the conversion for.
+	 * @param[in] alphabet If specified, translates the symbols to their symbol names in the @p alphabet.
+	 */
+	void print_to_regex(
+		const std::string& filename, RegexPrintMode mode = RegexPrintMode::Fast, const Alphabet* alphabet = nullptr
+	) const;
 
 	/**
 	 * @brief Get the set of states reachable from the given set of states over the given symbol.
@@ -450,23 +629,29 @@ class Nfa : public Automaton {
 	 * @param symbol Symbol to compute the post set for.
 	 * @return Set of states reachable from the given state over the given symbol.
 	 */
-	const StateSet& post(const State state, const Symbol symbol) const { return delta.get_successors(state, symbol); }
+	const SmallStateSet& post(const State state, const Symbol symbol) const {
+		return delta.get_successors(state, symbol);
+	}
 
 	/**
-	 * @brief Check whether the language of NFA is empty.
+	 * Check whether the language of NFA is empty.
 	 *
-	 * @note Uses Tarjan's SCC discover algorithm when @p cex is null, a breadth-first search for a
-	 *  shortest counter-example otherwise.
+	 * Without @p cex this is a reachability search that stops at the first reachable final state; with @p cex it is
+	 *  a BFS, so the witness is shortest in the number of transitions.
+	 *
 	 * @param[out] cex Counter-example path for a case the language is not empty.
 	 * @return True if the language is empty, false otherwise.
 	 */
 	bool is_lang_empty(Run* cex = nullptr) const { return Automaton::is_lang_empty(cex); }
 
-	/// @deprecated Use @c is_lang_empty() without a counter-example; it takes the same SCC path.
-	///  Kept because it shipped in v1.32.44.
-	[[deprecated("use is_lang_empty() without a counter-example; it takes the SCC path")]]
-	bool is_lang_empty_scc() const { return is_lang_empty(); }
-
+	/**
+	 * @brief Check if the language is empty.
+	 *
+	 * @deprecated Kept for source compatibility; the emptiness check no longer uses Tarjan's SCC discovery. Call
+	 *  @c is_lang_empty() instead.
+	 * @return Language empty <-> True
+	 */
+	bool is_lang_empty_scc() const { return has_no_accepting_path(); }
 
 	/**
 	 * @brief Test whether an automaton is deterministic.
@@ -476,6 +661,16 @@ class Nfa : public Automaton {
 	 * Checks the whole automaton, not only the reachable part
 	 */
 	bool is_deterministic() const;
+
+	/**
+	 * @brief Test whether the automaton is a minimal deterministic automaton of its language.
+	 *
+	 * Minimal in the sense of the result of 'minimize()': deterministic, trimmed (every state reachable and
+	 *  co-reachable, so the transition function may be partial and a sink state counts as redundant), and with no
+	 *  two equivalent states. The empty language is minimal only as a single non-final initial state without
+	 *  transitions. Runs in O(a*n*log(n)) by Hopcroft partition refinement.
+	 */
+	bool is_minimal() const;
 
 	/**
 	 * @brief Test for automaton completeness with regard to an alphabet.
@@ -502,7 +697,7 @@ class Nfa : public Automaton {
 	bool is_flat() const;
 
 	/**
-	 * Fill @p alphabet_to_fill with symbols from @p nfa.
+	 * Fill @p alphabet_to_fill with symbols from @p nfa; @c EPSILON is skipped.
 	 * @param[out] alphabet_to_fill Alphabet to be filled with symbols from @p nfa.
 	 */
 	void fill_alphabet(mata::OnTheFlyAlphabet& alphabet_to_fill) const;
@@ -532,11 +727,15 @@ class Nfa : public Automaton {
 	 * @brief Check whether the language of the automaton is universal.
 	 *
 	 * @param alphabet Alphabet to use for checking the universality.
-	 * @param cex Counterexample path for a case the language is not universal.
+	 * @param cex Counterexample word rejected by the automaton when the language is not universal. Its path is left
+	 *  empty.
 	 * @param params Optional parameters to control the universality check algorithm:
 	 * - "algorithm":
 	 *      - "antichains": The algorithm uses antichains to check the universality.
 	 *      - "naive": The algorithm uses the naive approach to check the universality.
+	 *
+	 * Epsilon transitions are removed from a copy of the automaton first. @c EPSILON is not a letter here: it is
+	 *  ignored if @p alphabet contains it. A non-null @p cex has its word and path cleared before the check.
 	 *
 	 * @return True if the language of the automaton is universal, false otherwise.
 	 */
@@ -552,6 +751,9 @@ class Nfa : public Automaton {
 	 * - "algorithm":
 	 *     - "antichains": The algorithm uses antichains to check the universality.
 	 *     - "naive": The algorithm uses the naive approach to check the universality.
+	 *
+	 * Epsilon transitions are removed from a copy of the automaton before the check, and @c EPSILON in @p alphabet is
+	 *  ignored.
 	 *
 	 * @return True if the language of the automaton is universal, false otherwise.
 	 */
@@ -578,7 +780,7 @@ class Nfa : public Automaton {
 	 * @return True if the word (or its prefix) is in the language of the automaton, false otherwise.
 	 */
 	bool is_in_lang(const Word& word, const bool use_epsilon = false, const bool match_prefix = false) const {
-		return is_in_lang(Run{word, {}}, use_epsilon, match_prefix);
+		return is_in_lang(Run{.word = word, .path = {}}, use_epsilon, match_prefix);
 	}
 
 	/**
@@ -606,7 +808,7 @@ class Nfa : public Automaton {
 	 *         Note: The returned set is empty if the word cannot be read.
 	 */
 	StateSet read_word(const Word& word, const bool use_epsilon = false) const {
-		return read_word(Run{word, {}}, use_epsilon);
+		return read_word(Run{.word = word, .path = {}}, use_epsilon);
 	}
 
 	/**
@@ -614,11 +816,11 @@ class Nfa : public Automaton {
 	 *
 	 * If the automaton is nondeterministic, the result is undefined.
 	 *
-	 * @param word The word to read.
+	 * @param run The run whose word is read.
 	 *
 	 * @return The reachable state after reading the word or std::nullopt if the word cannot be read.
 	 */
-	std::optional<State> read_word_det(const Run& word) const;
+	std::optional<State> read_word_det(const Run& run) const;
 
 	/**
 	 * @brief Read a word and return the state the deterministic automaton ends up in.
@@ -629,7 +831,7 @@ class Nfa : public Automaton {
 	 *
 	 * @return The reachable state after reading the word or std::nullopt if the word cannot be read.
 	 */
-	std::optional<State> read_word_det(const Word& word) const { return read_word_det(Run{word, {}}); }
+	std::optional<State> read_word_det(const Word& word) const { return read_word_det(Run{.word = word, .path = {}}); }
 
 	/**
 	 * @brief Check whether a prefix of a run is in the language of an automaton.
@@ -652,7 +854,7 @@ class Nfa : public Automaton {
 	 * @return True if the prefix of the word is in the language of the automaton, false otherwise.
 	 */
 	bool is_in_lang_prefix(const Word& word, const bool use_epsilon = false) const {
-		return is_in_lang_prefix(Run{word, {}}, use_epsilon);
+		return is_in_lang_prefix(Run{.word = word, .path = {}}, use_epsilon);
 	}
 
 	std::pair<Run, bool> get_word_for_path(const Run& run) const;
@@ -663,8 +865,40 @@ class Nfa : public Automaton {
 	 * If you have an automaton with finite language (can be checked using @c is_acyclic()),
 	 * you can get all words by calling
 	 *      get_words(aut.num_of_states())
+	 *
+	 * The search goes over words, not over paths: the states reachable by a word are kept together as one
+	 * macrostate, so the work is bounded by the number of distinct words of length <= @p max_length that have a
+	 * run in the automaton, no matter how many accepting paths each of them has.
 	 */
 	std::set<Word> get_words(size_t max_length) const;
+
+#if MATA_HAS_GENERATOR_SUPPORT
+	/**
+	 * @brief Lazily enumerate the words in the language of the automaton whose length is <= @p max_length.
+	 *
+	 * Equivalent to @ref get_words(), but yields each word as soon as it is found instead of computing the whole set
+	 * up front. Prefer this over @ref get_words() when the caller may stop after finding the first few words, or when
+	 * the language might be large (a big @p max_length on a highly branching automaton can make @ref get_words()
+	 * materialize a very large set before returning anything, whereas this can be iterated and stopped at will).
+	 *
+	 * Words are not deduplicated after the fact: the search goes over words rather than over paths, so each word
+	 * is reached exactly once even when several accepting paths spell it.
+	 *
+	 * Words are yielded in shortlex order: by increasing length, and words of the same length lexicographically.
+	 * Each length is searched in its own depth-first pass, which keeps only the current descent in memory and skips
+	 * the branches that cannot reach an accepted word of that length. Every word of an infinite language is thus
+	 * eventually yielded, and the generator finishes once no longer accepted word is possible, also for a finite
+	 * language with the default unbounded @p max_length. Searching each length anew repeats the shorter prefixes.
+	 *
+	 * Only available when @c MATA_HAS_GENERATOR_SUPPORT is set (i.e. the standard library actually implements
+	 * @c std::generator — some, like Apple's system libc++, do not, even under `-std=c++23`).
+	 *
+	 * @param max_length Maximum length of words to be returned. Default: "no limit"; will keep yielding forever if the
+	 * language is infinite.
+	 * @return Generator lazily yielding each word in the language of the automaton whose length is <= @p max_length.
+	 */
+	std::generator<Word> get_words_lazy(std::optional<size_t> max_length = std::nullopt) const;
+#endif // MATA_HAS_GENERATOR_SUPPORT
 
 	/**
 	 * @brief Get any arbitrary accepted word in the language of the automaton.
@@ -680,13 +914,14 @@ class Nfa : public Automaton {
 	/**
 	 * @brief Get any accepted shortest word in the language of the automaton.
 	 *
-	 * The automaton is searched using BFS, returning a word for the first reached final state.
+	 * The automaton is searched using 0-1 BFS. Transitions at or above @p first_epsilon cost zero; all other
+	 * transitions cost one, so the returned word has the fewest non-epsilon symbols.
 	 *
 	 * @param first_epsilon If defined, all symbols >=first_epsilon are assumed to be epsilon and therefore are not in
 	 * the returned word.
 	 * @return std::optional<Word> Some shortest word from the language. If the language is empty, returns std::nullopt.
 	 */
-	std::optional<mata::Word> get_shortest_word(const std::optional<Symbol> first_epsilon = EPSILON) const;
+	std::optional<mata::Word> get_shortest_word(std::optional<Symbol> first_epsilon = EPSILON) const;
 
 	/**
 	 * @brief Get any arbitrary accepted word in the language of the complement of the automaton.
@@ -697,6 +932,9 @@ class Nfa : public Automaton {
 	 *
 	 * @param[in] alphabet Alphabet to use for computing the complement. If @c nullptr, uses @c this->alphabet when
 	 *  defined, otherwise uses @c this->delta.get_used_symbols().
+	 *
+	 * Transitions over symbols outside of the chosen alphabet are ignored; the automaton is complemented only
+	 *  with respect to the symbols of @p alphabet and the returned word never contains any other symbol.
 	 *
 	 * @pre The automaton does not contain any epsilon transitions.
 	 * TODO: Support lazy epsilon closure?
@@ -747,7 +985,23 @@ class Nfa : public Automaton {
 	 */
 	Nfa& complement_deterministic(
 		const mata::utils::OrdVector<Symbol>& symbols, std::optional<State> sink_state = std::nullopt
-	);
+	) &;
+	/**
+	 * Complement a deterministic rvalue automaton in place and return the result by value.
+	 *
+	 * Unlike the lvalue overload, the result is moved out of @c this, so initializing or returning it does not
+	 *  copy the automaton.
+	 * @param[in] symbols Symbols needed to make the automaton complete.
+	 * @param[in] sink_state State to be used as a sink state. Adds a new sink state when not specified.
+	 * @return DFA complemented in-place, as a value.
+	 * @pre @c this is a deterministic automaton.
+	 */
+	Nfa complement_deterministic(
+		const mata::utils::OrdVector<Symbol>& symbols, std::optional<State> sink_state = std::nullopt
+	) && {
+		complement_deterministic(symbols, sink_state);
+		return std::move(*this);
+	}
 }; // class Nfa.
 
 // Allow variadic number of arguments of the same type.
@@ -813,11 +1067,34 @@ OnTheFlyAlphabet create_alphabet(const std::vector<const Nfa*>& nfas);
 Nfa union_nondet(const Nfa& lhs, const Nfa& rhs);
 
 /**
- * @brief Compute union of two complete deterministic NFAs. Perserves determinism.
+ * @brief Compute nondeterministic union of two NFAs, consuming @p lhs.
+ *
+ * The left operand's state posts are moved into the result, so no deep copy of @p lhs occurs.
+ * The right operand is copied normally. If @p lhs and @p rhs are aliased, a snapshot of @p rhs
+ * is taken before @p lhs is consumed, so the result holds both copies.
+ * @p lhs is left valid but empty after the operation.
+ * @return Non-deterministic union of @p lhs and @p rhs.
+ */
+Nfa union_nondet(Nfa&& lhs, const Nfa& rhs);
+
+/**
+ * @brief Compute nondeterministic union of two NFAs, consuming both operands.
+ *
+ * Both operands' state posts are moved into the result. If @p lhs and @p rhs are aliased,
+ * a snapshot of @p rhs is taken before @p lhs is consumed, so the result holds both copies.
+ * Both @p lhs and @p rhs are left valid but empty after the operation.
+ * @return Non-deterministic union of @p lhs and @p rhs.
+ */
+Nfa union_nondet(Nfa&& lhs, Nfa&& rhs);
+
+/**
+ * @brief Compute union of two complete deterministic NFAs. Preserves determinism.
  *
  * The union is computed by product construction with OR condition on the final states.
  * @param lhs First complete deterministic automaton.
  * @param rhs Second complete deterministic automaton.
+ * @throw std::invalid_argument when an input is not deterministic or not complete; previously only asserted in
+ *  Debug builds, so a Release build silently miscomputed.
  */
 Nfa union_det_complete(const Nfa& lhs, const Nfa& rhs);
 
@@ -894,20 +1171,135 @@ Nfa intersection(
 );
 
 /**
+ * @brief Check whether the language intersection of two NFAs is empty, without materializing the product.
+ *
+ * Explores reachable pairs `(state_of_lhs, state_of_rhs)` directly and stops at the first pair that is final in
+ *  both automata. The traversal moves on shared symbols in both automata at once and lets a symbol at or above
+ *  @p first_epsilon move one side only -- the same semantics that `intersection(lhs, rhs, first_epsilon)`
+ *  materializes, but only up to the first witness.
+ *
+ * @param[in] lhs First NFA.
+ * @param[in] rhs Second NFA.
+ * @param[out] witness When not null and the intersection is nonempty, receives a word accepted by both
+ *  automata (some valid word, not necessarily the shortest). One-sided epsilon moves (symbols at or above
+ *  @p first_epsilon) are stripped. With the default @p first_epsilon, the word replays in both automata with
+ *  `Nfa::is_in_lang(witness, use_epsilon = true)`; that replay follows only `EPSILON` transitions, so with a
+ *  custom @p first_epsilon, relabel the symbols at or above it to `EPSILON` before replaying.
+ * @param[in] first_epsilon Smallest symbol treated as a one-sided (epsilon) move.
+ * @return True iff there is no word accepted by both @p lhs and @p rhs.
+ */
+bool is_intersection_empty(const Nfa& lhs, const Nfa& rhs, Run* witness = nullptr, Symbol first_epsilon = EPSILON);
+
+/**
+ * @brief Compute the left quotient of the language of @p nfa by the language of @p prefixes.
+ *
+ * The left quotient (derivative by a language) is `{ w | there is u in L(prefixes) with u.w in L(nfa) }`: the words
+ *  of @p nfa with a prefix from @p prefixes removed. With @p prefixes accepting a single word `u`, this is the
+ *  Brzozowski derivative of @p nfa by `u`.
+ *
+ * The result is @p nfa with its initial states replaced by the states of @p nfa reachable by reading a word of
+ *  @p prefixes. These are found by exploring the reachable pairs `(state_of_prefixes, state_of_nfa)` directly,
+ *  without materializing the product, and pairs with a useless state of @p prefixes are never explored. The
+ *  result is not trimmed: call `Nfa::trim()` to remove the states no longer reachable.
+ *
+ * Symbols at or above @p first_epsilon move one side only, as in `intersection(lhs, rhs, first_epsilon)`, so
+ *  epsilon transitions of both automata are supported. The epsilon transitions of @p nfa are kept in the result.
+ *
+ * @param[in] nfa NFA whose language is quotiented.
+ * @param[in] prefixes NFA accepting the prefixes to remove.
+ * @param[in] first_epsilon Smallest symbol treated as a one-sided (epsilon) move.
+ * @return NFA for the left quotient of @p nfa by @p prefixes.
+ */
+Nfa left_quotient(const Nfa& nfa, const Nfa& prefixes, Symbol first_epsilon = EPSILON);
+
+/**
+ * @brief Compute the left quotient of the language of @p nfa by the language of @p prefixes, consuming @p nfa.
+ *
+ * The transitions of @p nfa are moved into the result instead of copied. @p nfa and @p prefixes may be the same
+ *  automaton. @p nfa is moved from.
+ * @see left_quotient(const Nfa&, const Nfa&, Symbol)
+ */
+Nfa left_quotient(Nfa&& nfa, const Nfa& prefixes, Symbol first_epsilon = EPSILON);
+
+/**
+ * @brief Compute the right quotient of the language of @p nfa by the language of @p suffixes.
+ *
+ * The right quotient is `{ u | there is w in L(suffixes) with u.w in L(nfa) }`: the words of @p nfa with a suffix
+ *  from @p suffixes removed.
+ *
+ * The result is @p nfa with its final states replaced by the states of @p nfa from which @p nfa accepts a word of
+ *  @p suffixes. These are found as in `left_quotient()`, but backward: pairs of a state of the reverted @p suffixes
+ *  and a state of @p nfa are explored from the final states of both, moving @p nfa against its transitions over an
+ *  index of predecessors, without reverting @p nfa or materializing the product. The result is not trimmed: call
+ *  `Nfa::trim()` to remove the states that no longer reach a final state.
+ *
+ * Symbols at or above @p first_epsilon move one side only, as in `intersection(lhs, rhs, first_epsilon)`, so
+ *  epsilon transitions of both automata are supported. The epsilon transitions of @p nfa are kept in the result.
+ *
+ * @param[in] nfa NFA whose language is quotiented.
+ * @param[in] suffixes NFA accepting the suffixes to remove.
+ * @param[in] first_epsilon Smallest symbol treated as a one-sided (epsilon) move.
+ * @return NFA for the right quotient of @p nfa by @p suffixes.
+ */
+Nfa right_quotient(const Nfa& nfa, const Nfa& suffixes, Symbol first_epsilon = EPSILON);
+
+/**
+ * @brief Compute the right quotient of the language of @p nfa by the language of @p suffixes, consuming @p nfa.
+ *
+ * The transitions of @p nfa are moved into the result instead of copied. @p nfa and @p suffixes may be the same
+ *  automaton. @p nfa is moved from.
+ * @see right_quotient(const Nfa&, const Nfa&, Symbol)
+ */
+Nfa right_quotient(Nfa&& nfa, const Nfa& suffixes, Symbol first_epsilon = EPSILON);
+
+/**
  * @brief Concatenate two NFAs.
  *
  * Supports epsilon symbols when @p use_epsilon is set to true.
  * @param[in] lhs First automaton to concatenate.
  * @param[in] rhs Second automaton to concatenate.
  * @param[in] use_epsilon Whether to concatenate over epsilon symbol.
- * @param[out] lhs_state_renaming Map mapping lhs states to result states.
- * @param[out] rhs_state_renaming Map mapping rhs states to result states.
+ * @param[out] lhs_state_renaming Map mapping lhs states to result states. Filled only when requested; it
+ *  describes the shift of the full concatenation even when the result is empty.
+ * @param[out] rhs_state_renaming Map mapping rhs states to result states. Filled only when requested; it
+ *  describes the shift of the full concatenation even when the result is empty.
  * @return Concatenated automaton.
  */
 // TODO: check how fast is using just concatenate over epsilon and then call remove_epsilon().
 Nfa concatenate(
 	const Nfa& lhs,
 	const Nfa& rhs,
+	bool use_epsilon = false,
+	StateRenaming* lhs_state_renaming = nullptr,
+	StateRenaming* rhs_state_renaming = nullptr
+);
+
+/**
+ * @brief Concatenate two NFAs, consuming the left operand.
+ *
+ * The left operand's state posts are moved into the result. The right operand is copied normally.
+ * If @p lhs and @p rhs are aliased, a controlled snapshot of @p rhs is taken and the operation
+ * falls back to the lvalue path.
+ * @p lhs is left valid but empty after the operation.
+ */
+Nfa concatenate(
+	Nfa&& lhs,
+	const Nfa& rhs,
+	bool use_epsilon = false,
+	StateRenaming* lhs_state_renaming = nullptr,
+	StateRenaming* rhs_state_renaming = nullptr
+);
+
+/**
+ * @brief Concatenate two NFAs, consuming both operands.
+ *
+ * The state posts of both operands are moved into the result. If @p lhs and @p rhs are aliased, a controlled
+ * snapshot of @p rhs is taken before @p lhs is consumed, so the result holds both copies.
+ * Both @p lhs and @p rhs are left valid but empty after the operation.
+ */
+Nfa concatenate(
+	Nfa&& lhs,
+	Nfa&& rhs,
 	bool use_epsilon = false,
 	StateRenaming* lhs_state_renaming = nullptr,
 	StateRenaming* rhs_state_renaming = nullptr
@@ -928,12 +1320,16 @@ Nfa concatenate_nth_power(Nfa nfa_to_concatenate, unsigned power);
 /**
  * @brief Compute automaton accepting complement of @p aut.
  *
+ * The complement is a language over @p alphabet only: transitions over symbols outside of @p alphabet are dropped
+ *  and the words of the result therefore never contain any other symbol.
+ *
  * @param[in] aut Automaton whose complement to compute.
  * @param[in] alphabet Alphabet used for complementation.
  * @param[in] params Optional parameters to control the complementation algorithm:
  * - "algorithm":
  *      - "classical": The classical algorithm determinizes the automaton, makes it complete, and swaps final and
- *                      non-final states.
+ *                      non-final states. An already deterministic automaton is complemented directly, without
+ *                      determinizing it first.
  *      - "brzozowski": The Brzozowski algorithm determinizes the automaton using Brzozowski minimization, makes it
  *                       complete, and swaps final and non-final states.
  * @return Complemented automaton.
@@ -949,11 +1345,13 @@ Nfa complement(const Nfa& aut, const Alphabet& alphabet, const ParameterMap& par
  *  the alphabet again (and for each automaton).
  *
  * @param[in] aut Automaton whose complement to compute.
- * @param[in] symbols Symbols to complement over.
+ * @param[in] symbols Symbols to complement over. Transitions over any other symbol are dropped, the complement is a
+ *  language over @p symbols only.
  * @param[in] params Optional parameters to control the complementation algorithm:
  * - "algorithm":
  *      - "classical": The classical algorithm determinizes the automaton, makes it complete, and swaps final and
- *                      non-final states.
+ *                      non-final states. An already deterministic automaton is complemented directly, without
+ *                      determinizing it first.
  *      - "brzozowski": The Brzozowski algorithm determinizes the automaton using Brzozowski minimization, makes it
  *                       complete, and swaps final and non-final states.
  * @return Complemented automaton.
@@ -963,14 +1361,40 @@ Nfa complement(
 );
 
 /**
+ * @brief Compute automaton accepting complement of @p aut.
+ *
+ * This overloaded version accepts an rvalue reference and complements in place when the input is deterministic and
+ *  the "classical" algorithm is requested, avoiding an unnecessary copy of a temporary automaton.
+ *
+ * @param[in] aut Automaton (rvalue) whose complement to compute.
+ * @param[in] symbols Symbols to complement over. Transitions over any other symbol are dropped, the complement is a
+ *  language over @p symbols only.
+ * @param[in] params Optional parameters to control the complementation algorithm. See @c complement(const Nfa&,
+ *  const utils::OrdVector<Symbol>&, const ParameterMap&).
+ * @return Complemented automaton.
+ */
+Nfa complement(
+	Nfa&& aut, const utils::OrdVector<Symbol>& symbols, const ParameterMap& params = {{"algorithm", "classical"}}
+);
+
+/**
  * @brief Compute minimal deterministic automaton.
  *
  * @param[in] aut Automaton whose minimal version to compute.
  * @param[in] params Optional parameters to control the minimization algorithm:
- * - "algorithm": "brzozowski"
+ * - "algorithm":
+ *   - "auto" (default): determinize the automaton if it is not deterministic, trim it, and run Hopcroft
+ *     minimization. An automaton with an empty language is returned as a single non-final initial state.
+ *   - "hopcroft": run @c algorithms::minimize_hopcroft() directly on a trimmed deterministic automaton. Throws
+ *     @c std::invalid_argument for a nondeterministic input (except a transition-free automaton without initial
+ *     states). Trimming is not checked, but is required to guarantee a minimal result.
+ *   - "hopcroft_nondet": run @c algorithms::minimize_hopcroft_nondet(), which performs the same normalization as
+ *     "auto" before Hopcroft minimization and accepts any automaton.
+ *   - "brzozowski": revert, determinize, revert, determinize. Accepts any automaton, but determinizes twice and
+ *     can therefore blow up exponentially, even on an input that already is a trimmed deterministic automaton.
  * @return Minimal deterministic automaton.
  */
-Nfa minimize(const Nfa& aut, const ParameterMap& params = {{"algorithm", "brzozowski"}});
+Nfa minimize(const Nfa& aut, const ParameterMap& params = {{"algorithm", "auto"}});
 
 /**
  * @brief Determinize automaton.
@@ -981,25 +1405,75 @@ Nfa minimize(const Nfa& aut, const ParameterMap& params = {{"algorithm", "brzozo
  *  parameters are the determinized NFA constructed so far, the current macrostate, and the set of the original states
  *  corresponding to the macrostate. Return @c true if the determinization should continue, and @c false if the
  *  determinization should stop and return only the determinized NFA constructed so far.
+ * @param[in] restrict_to_symbols When not @c nullptr, determinize over these symbols only. Transitions over any other
+ *  symbol are ignored, so the macrostates reachable only over such a transition are never constructed. The caller
+ *  gets the determinization of @p aut with its transitions restricted to @p restrict_to_symbols.
+ * @param[in] params Optional parameters to control the determinization algorithm:
+ * - "algorithm" (required in @p params, which is {"algorithm": "four_russians"} by default):
+ *      - "four_russians": The "Four Russians" subset construction, see @c algorithms::determinize_four_russians().
+ *      - "classical": The classical subset construction, see @c algorithms::determinize_classical().
+ * - "reduction":
+ *      - "none" (default): No reduction.
+ *      - "bisimulation", "simulation", "adaptive": A smaller DFA for the same language, not always minimal, see
+ *        @c algorithms::DeterminizationReduction. It is no longer the subset construction, so in @p subset_map, merged
+ *        states appear as one of them, and @p macrostate_discover is not allowed.
+ *
  * @return Determinized automaton.
+ * @note With the same reduction, both give the same DFA, but they may number its states differently.
  * @todo: TODO: Add support for specifying first epsilon symbol and compute epsilon closure during determinization.
  */
 Nfa determinize(
 	const Nfa& aut,
 	std::unordered_map<StateSet, State>* subset_map = nullptr,
-	std::optional<std::function<bool(const Nfa&, State, const StateSet&)>> macrostate_discover = std::nullopt
+	std::optional<std::function<bool(const Nfa&, State, const StateSet&)>> macrostate_discover = std::nullopt,
+	const utils::OrdVector<Symbol>* restrict_to_symbols = nullptr,
+	const ParameterMap& params = {{"algorithm", "four_russians"}}
 );
+
+/**
+ * @brief Determinize automaton by the algorithm of @p params.
+ *
+ * See @c determinize(const Nfa&, std::unordered_map<StateSet, State>*, std::optional<std::function<bool(const Nfa&,
+ *  State, const StateSet&)>>, const utils::OrdVector<Symbol>*, const ParameterMap&).
+ */
+inline Nfa determinize(const Nfa& aut, const ParameterMap& params) {
+	return determinize(aut, nullptr, std::nullopt, nullptr, params);
+}
+
+/**
+ * @brief Return a deterministic version of @p aut, avoiding the determinization machinery when possible.
+ *
+ * For language-only callers (complement, minimization, marker construction) that need a deterministic
+ *  automaton but do not care about the state numbering. Determinizing an already deterministic automaton is
+ *  needlessly expensive; `as_dfa` returns a copy (or moves the rvalue) unchanged in that case.
+ *
+ * @param[in] aut Automaton to obtain a deterministic copy of.
+ * @return @p aut itself (copied or moved) when @p aut is deterministic, otherwise `determinize(aut)`.
+ */
+Nfa as_dfa(const Nfa& aut);
+Nfa as_dfa(Nfa&& aut);
 
 /**
  * @brief Reduce the size of the automaton.
  *
  * @param[in] aut Automaton to reduce.
- * @param[out] state_renaming Mapping of original states to reduced states.
+ * @param[out] state_renaming Mapping of original states to reduced states. Left empty by "sat", "qbf", and
+ *  "residual"; for "residual", state_renaming must be nullptr. Call reduce() without requesting a state_renaming,
+ *  or use algorithm="simulation" instead.
  * @param[in] params Optional parameters to control the reduction algorithm:
- * - "algorithm": "simulation", "residual",
+ * - "algorithm": "simulation", "residual", "sat", "qbf",
  *      and options to parametrize residual reduction, not utilized in simulation
  * - "type": "after", "with",
  * - "direction": "forward", "backward".
+ *   "sat" and "qbf" compute an automaton with the minimum number of states using an external SAT or QBF solver; see
+ *    @c algorithms::reduce_sat() and @c algorithms::reduce_qbf(). They are experimental and practical only for small
+ *    automata. Their options are:
+ * - "type": "nfa" (default), "dfa" (only for "sat"): the kind of the resulting automaton,
+ * - "solver": the command running the solver (default: found automatically).
+ * - "epsilon": "letter" (default) treats EPSILON as an ordinary transition symbol, as in simulation and residual
+ *    reduction. "empty" runs remove_epsilon() on the input before minimizing with SAT/QBF. This affects only "sat"
+ *    and "qbf".
+ * @throw std::runtime_error if algorithm="residual" and state_renaming is not nullptr.
  * @return Reduced automaton.
  */
 Nfa reduce(
@@ -1011,13 +1485,18 @@ Nfa reduce(
 /**
  * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
  *
- * @param[in] smaller First automaton to concatenate.
- * @param[in] bigger Second automaton to concatenate.
+ * @param[in] smaller Automaton whose language should be included in the language of @p bigger.
+ * @param[in] bigger Automaton whose language should include the language of @p smaller.
  * @param[out] cex Counterexample for the inclusion.
  * @param[in] alphabet Alphabet of both NFAs to compute with.
- * @param[in] params Optional parameters to control the equivalence check algorithm:
- * - "algorithm": "naive", "antichains" (Default: "antichains")
+ * @param[in] params Optional parameters to control the inclusion check algorithm:
+ * - "algorithm": "naive", "antichains", "hkc" (bisimulation up to congruence, @c algorithms::is_included_hkc())
+ *   (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
+ *
+ * Epsilon transitions are removed from copies of the operands that have them, and @c EPSILON in @p alphabet is
+ *  ignored. Thus @p cex refers to the states of those epsilon-free copies. Use @c algorithms::is_included_naive()
+ *  or @c algorithms::is_included_antichains() directly to read @c EPSILON as an ordinary symbol.
  */
 bool is_included(
 	const Nfa& smaller,
@@ -1030,12 +1509,16 @@ bool is_included(
 /**
  * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
  *
- * @param[in] smaller First automaton to concatenate.
- * @param[in] bigger Second automaton to concatenate.
+ * @param[in] smaller Automaton whose language should be included in the language of @p bigger.
+ * @param[in] bigger Automaton whose language should include the language of @p smaller.
  * @param[in] alphabet Alphabet of both NFAs to compute with.
- * @param[in] params Optional parameters to control the equivalence check algorithm:
- * - "algorithm": "naive", "antichains" (Default: "antichains")
+ * @param[in] params Optional parameters to control the inclusion check algorithm:
+ * - "algorithm": "naive", "antichains", "hkc" (bisimulation up to congruence, @c algorithms::is_included_hkc())
+ *   (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
+ *
+ * Epsilon transitions are removed from copies of the operands that have them, and @c EPSILON in @p alphabet is
+ *  ignored.
  */
 inline bool is_included(
 	const Nfa& smaller,
@@ -1049,15 +1532,19 @@ inline bool is_included(
 /**
  * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
  *
- * @param[in] lhs First automaton to concatenate.
- * @param[in] rhs Second automaton to concatenate.
+ * @param[in] lhs First automaton to compare.
+ * @param[in] rhs Second automaton to compare.
  * @param[in] alphabet Alphabet of both NFAs to compute with.
- * @param[in] params[ Optional parameters to control the equivalence check algorithm:
- * - "algorithm": "naive", "antichains" (Default: "antichains")
+ * @param[in] params Optional parameters to control the equivalence check algorithm:
+ * - "algorithm": "naive", "antichains", "hkc" (the inclusion algorithm run in each direction) (Default: "antichains")
  * @param[out] cex If not null and @p lhs and @p rhs are not equivalent, filled with a witness word: a word in the
  *  language of one of @p lhs/@p rhs but not the other (as also produced by @c is_included() for whichever direction
- *  of inclusion fails first). Left untouched if @p lhs and @p rhs are equivalent.
+ *  of inclusion fails first). Cleared (empty word and path) if @p lhs and @p rhs are equivalent.
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
+ *
+ * Epsilon transitions are removed from copies of the operands that have them, and @c EPSILON in @p alphabet is
+ *  ignored. Thus @p cex refers to the states of those epsilon-free copies. Use
+ *  @c algorithms::are_equivalent_epsilon_as_symbol() to read @c EPSILON as a symbol.
  */
 bool are_equivalent(
 	const Nfa& lhs,
@@ -1078,37 +1565,31 @@ bool are_equivalent(
  * That way, alphabet has to be computed only once, as opposed to the current ad-hoc construction of the alphabet.
  * The use of the alternative with defined alphabet should be preferred.
  *
- * @param[in] lhs First automaton to concatenate.
- * @param[in] rhs Second automaton to concatenate.
+ * @param[in] lhs First automaton to compare.
+ * @param[in] rhs Second automaton to compare.
  * @param[in] params Optional parameters to control the equivalence check algorithm:
- * - "algorithm": "naive", "antichains" (Default: "antichains")
+ * - "algorithm": "naive", "antichains", "hkc" (the inclusion algorithm run in each direction) (Default: "antichains")
  * @param[out] cex If not null and @p lhs and @p rhs are not equivalent, filled with a witness word: a word in the
- *  language of one of @p lhs/@p rhs but not the other. Left untouched if @p lhs and @p rhs are equivalent.
+ *  language of one of @p lhs/@p rhs but not the other. Cleared (empty word and path) if @p lhs and @p rhs are
+ *  equivalent.
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
+ *
+ * Epsilon transitions are removed from copies of the operands that have them.
  */
 bool are_equivalent(
 	const Nfa& lhs, const Nfa& rhs, const ParameterMap& params = {{"algorithm", "antichains"}}, Run* cex = nullptr
 );
 
-/// Reverting the automaton by one of the three functions below,
-/// currently simple_revert seems best (however, not tested enough).
+/// Reverting the automaton by a counting sort (see @c Delta::reverted()).
 Nfa revert(const Nfa& aut);
 
-/// This revert algorithm is fragile, uses low level accesses to Nfa and static data structures, and is potentially
-///  dangerous when there are used symbols with large numbers (allocates an array indexed by symbols).
-/// It is asymptotically faster, however.
-/// For somewhat dense automata, the performance is the same or a little bit slower than simple_revert otherwise.
-/// Not affected by pre-reserving vectors.
+/// @deprecated Kept for source compatibility; forwards to @c revert(). Call @c revert() instead.
 Nfa fragile_revert(const Nfa& aut);
 
-/// Reverting the automaton by a simple algorithm, which does a lot of random access addition to Post and Move.
-/// Much affected by pre-reserving vectors.
+/// @deprecated Kept for source compatibility; forwards to @c revert(). Call @c revert() instead.
 Nfa simple_revert(const Nfa& aut);
 
-/// Reverting the automaton by a modification of the simple algorithm.
-/// It replaces random access addition to SymbolPost by push_back and sorting later, so far seems the slowest of all,
-///  except on dense automata, where it is almost as slow as simple_revert.
-/// Candidate for removal.
+/// @deprecated Kept for source compatibility; forwards to @c revert(). Call @c revert() instead.
 Nfa somewhat_simple_revert(const Nfa& aut);
 
 /// Removing epsilon transitions
@@ -1158,9 +1639,9 @@ std::optional<Word> get_word_from_lang_difference(const Nfa& nfa_included, const
  * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
  * the starting point of a path ending in a final state).
  *
- * The out-of-place trimming is faster than in-place trimming when you wish to keep the original NFA intact.
- * This is caused by the out-of-place trimming directly constructing the trimmed NFA, while the in-place trimming needs
- *  to meticulously find and remove states and transitions from the original NFA.
+ * The out-of-place trimming constructs the trimmed NFA directly from the useful states, so it does not copy the
+ *  transitions of the useless states only to discard them. When many states are useless, this is faster than copying
+ *  the NFA and trimming the copy in place. The alphabet and the attributes of @p nfa are carried over to the result.
  *
  * @note The states in the returned NFA are renumbered.
  *

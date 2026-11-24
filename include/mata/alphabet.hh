@@ -4,10 +4,14 @@
 #ifndef MATA_ALPHABET_HH
 #define MATA_ALPHABET_HH
 
-#include <limits>
+#include <algorithm>
+#include <atomic>
+#include <cstdint>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -16,6 +20,32 @@
 #include "utils/utils.hh"
 
 namespace mata {
+
+
+/// The name under which @c EPSILON is printed in the .mata format and in DOT, and which the .mata parser maps back to
+// @c EPSILON. The name is reserved: alphabets map it straight to @c EPSILON and never register it as an ordinary
+// symbol, so it cannot collide with a translated symbol.
+constexpr std::string_view EPSILON_NAME{"<eps>"};
+/// The name under which the NFT @c DONT_CARE symbol is printed in the .mata format and in DOT, and which the .mata
+/// parser
+// maps back to @c DONT_CARE. Reserved the same way as @c EPSILON_NAME.
+constexpr std::string_view DONT_CARE_NAME{"<dntcr>"};
+
+/// Whether @p name is a reserved special-symbol name (@c EPSILON_NAME or @c DONT_CARE_NAME) that
+/// alphabets must not register as an ordinary symbol.
+constexpr bool is_reserved_symbol_name(const std::string_view name) {
+	return name == EPSILON_NAME || name == DONT_CARE_NAME;
+}
+
+/**
+ * @brief Returns @p name written as a single token of the .mata format.
+ *
+ * Quotes the name when it is empty, contains white space, a quote, or a character the reader treats specially
+ * (@c "#@%()!&|\\"), writing an inner @c " as @c \", the only escape the reader knows.
+ * A name ending in @c \\ cannot be quoted this way, because the reader reads the closing @c \" as an escaped
+ * quote; such a name never reads back to the same symbol.
+ */
+std::string quote_symbol_name(const std::string_view name);
 
 /**
  * The abstract interface for NFA alphabets.
@@ -26,7 +56,7 @@ class Alphabet {
 	using Symbol = mata::Symbol;
 
 	/// translates a string into a symbol
-	virtual Symbol translate_symb(const std::string& symb) = 0;
+	virtual Symbol translate_symb(std::string_view symb) = 0;
 
 	/**
 	 * Translate sequence of symbol names to sequence of their respective values.
@@ -46,7 +76,7 @@ class Alphabet {
 	virtual std::string reverse_translate_symbol(Symbol symbol) const = 0;
 
 	/// also translates strings to symbols
-	Symbol operator[](const std::string& symb) { return this->translate_symb(symb); }
+	Symbol operator[](const std::string_view symb) { return this->translate_symb(symb); }
 
 	/**
 	 * @brief Get a set of all symbols in the alphabet.
@@ -61,6 +91,20 @@ class Alphabet {
 		throw std::runtime_error("Unimplemented");
 	} // }}}
 
+	/**
+	 * @brief Stream the contents of the alphabet into @p os.
+	 *
+	 * @c IntAlphabet prints a fixed tag, because asking it for its symbols throws.
+	 *  The other alphabets print their symbols.
+	 */
+	virtual std::ostream& print(std::ostream& /*os*/) const { throw std::runtime_error("Unimplemented"); }
+
+	Alphabet() = default;
+	Alphabet(const Alphabet&) = default;
+	Alphabet(Alphabet&&) = default;
+	Alphabet& operator=(const Alphabet&) = default;
+	Alphabet& operator=(Alphabet&&) = default;
+	/// Virtual: alphabets are owned and deleted through 'Alphabet*' (see 'Nfa::alphabet').
 	virtual ~Alphabet() = default;
 
 	/**
@@ -106,7 +150,11 @@ class IntAlphabet : public Alphabet {
   public:
 	IntAlphabet() : alphabet_instance_(IntAlphabetSingleton::get()) {}
 
-	Symbol translate_symb(const std::string& symb) override;
+	/// Parses @p symb as a decimal number; throws unless the whole of @p symb is one that fits a @c Symbol.
+	Symbol translate_symb(std::string_view symb) override;
+
+	/// Parses each name of @p word_name as @c translate_symb() does.
+	Word translate_word(const WordName& word_name) const override;
 
 	std::string reverse_translate_symbol(const Symbol symbol) const override { return std::to_string(symbol); }
 
@@ -114,14 +162,21 @@ class IntAlphabet : public Alphabet {
 		throw std::runtime_error("Nonsensical use of get_alphabet_symbols() on IntAlphabet.");
 	}
 
+	/// Prints a fixed tag; the integer alphabet has no enumerable symbols.
+	std::ostream& print(std::ostream& os) const override;
+
 	utils::OrdVector<Symbol> get_complement(const utils::OrdVector<Symbol>& symbols) const override {
 		(void) symbols;
 		throw std::runtime_error("Nonsensical use of get_complement() on IntAlphabet.");
 	}
 
 	IntAlphabet(const IntAlphabet&) = default;
+	IntAlphabet(IntAlphabet&&) = default;
 
 	IntAlphabet& operator=(const IntAlphabet& int_alphabet) = delete;
+	IntAlphabet& operator=(IntAlphabet&&) = delete;
+
+	~IntAlphabet() override = default;
 
 	bool empty() const override { return false; }
 
@@ -155,6 +210,8 @@ class IntAlphabet : public Alphabet {
 		IntAlphabetSingleton() = default;
 	}; // class IntAlphabetSingleton.
 
+	// A reference to the process-wide singleton: it blocks assignment of 'IntAlphabet', which is intended -- every
+	//  instance denotes the same alphabet.
 	IntAlphabetSingleton& alphabet_instance_;
 }; // class IntAlphabet.
 
@@ -185,6 +242,10 @@ class EnumAlphabet : public Alphabet {
 	EnumAlphabet(utils::OrdVector<Symbol> symbols) : symbols_(std::move(symbols)) {}
 
 	utils::OrdVector<Symbol> get_alphabet_symbols() const override { return symbols_; }
+
+	/// Prints the enumerated symbols.
+	std::ostream& print(std::ostream& os) const override;
+
 	utils::OrdVector<Symbol> get_complement(const utils::OrdVector<Symbol>& symbols) const override {
 		return symbols_.difference(symbols);
 	}
@@ -193,6 +254,8 @@ class EnumAlphabet : public Alphabet {
 
 	EnumAlphabet& operator=(const EnumAlphabet& rhs) = default;
 	EnumAlphabet& operator=(EnumAlphabet&& rhs) = default;
+
+	~EnumAlphabet() override = default;
 
 	/**
 	 * @brief Expand alphabet by symbols from the passed @p symbols.
@@ -211,15 +274,17 @@ class EnumAlphabet : public Alphabet {
 
 	EnumAlphabet(const std::initializer_list<Symbol> symbols) : EnumAlphabet(symbols.begin(), symbols.end()) {}
 	template <class InputIt> EnumAlphabet(InputIt first, InputIt last) : EnumAlphabet() {
-		for (; first != last; ++first) { add_new_symbol(*first); }
+		std::for_each(first, last, [&](const auto& symbol) { add_new_symbol(symbol); });
 	}
 	EnumAlphabet(const std::initializer_list<std::string> l) : EnumAlphabet(l.begin(), l.end()) {}
 
-	Symbol translate_symb(const std::string& str) override;
+	Symbol translate_symb(std::string_view str) override;
 	Word translate_word(const WordName& word_name) const override;
 
 	/**
 	 * @brief Add new symbol to the alphabet with the value identical to its string representation.
+	 *
+	 * Throws unless the whole of @p symbol is a decimal number that fits a @c Symbol.
 	 *
 	 * @param[in] symbol User-space representation of the symbol.
 	 * @return Result of the insertion as @c InsertionResult.
@@ -297,16 +362,16 @@ class EnumAlphabet : public Alphabet {
  */
 class OnTheFlyAlphabet : public Alphabet {
   public:
-	using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
+	using StringToSymbolMap = utils::StringMap<Symbol>;
 
 	/// Result of the insertion of a new symbol.
 	using InsertionResult = std::pair<StringToSymbolMap::const_iterator, bool>;
 
 	explicit OnTheFlyAlphabet(const Symbol init_symbol = 0) : next_symbol_value_(init_symbol) {};
-	OnTheFlyAlphabet(const OnTheFlyAlphabet& alphabet) = default;
+	OnTheFlyAlphabet(const OnTheFlyAlphabet& alphabet);
 	OnTheFlyAlphabet(OnTheFlyAlphabet&& alphabet) = default;
 	explicit OnTheFlyAlphabet(const OnTheFlyAlphabet* const alphabet) : OnTheFlyAlphabet(*alphabet) {}
-	explicit OnTheFlyAlphabet(StringToSymbolMap str_sym_map) : symbol_map_(std::move(str_sym_map)) {}
+	explicit OnTheFlyAlphabet(StringToSymbolMap str_sym_map);
 
 	/**
 	 * Create alphabet from a list of symbol names.
@@ -320,20 +385,36 @@ class OnTheFlyAlphabet : public Alphabet {
 	}
 
 	template <class InputIt> OnTheFlyAlphabet(InputIt first, InputIt last) {
-		for (; first != last; ++first) { add_new_symbol(*first, next_symbol_value_); }
+		std::for_each(first, last, [this](const auto& name) { add_new_symbol(name); });
 	}
 	OnTheFlyAlphabet(std::initializer_list<std::pair<std::string, Symbol>> name_symbol_map) : symbol_map_{} {
 		for (auto&& [name, symbol] : name_symbol_map) { add_new_symbol(name, symbol); }
 	}
 
 	utils::OrdVector<Symbol> get_alphabet_symbols() const override;
+
+	/**
+	 * @brief Get the symbols of the alphabet, as @c get_alphabet_symbols() does, without copying them.
+	 *
+	 * The sorted symbols are kept between calls and rebuilt only after the set of symbols changes. The reference
+	 *  stays valid until the alphabet is modified, moved from, or destroyed. Concurrent calls are safe as long as no
+	 *  thread modifies the alphabet.
+	 * @return Sorted symbols of the alphabet.
+	 */
+	const utils::OrdVector<Symbol>& get_alphabet_symbols_ref() const;
+
+	/// Prints the name to symbol pairs of the alphabet.
+	std::ostream& print(std::ostream& os) const override;
+
 	utils::OrdVector<Symbol> get_complement(const utils::OrdVector<Symbol>& symbols) const override;
 
 	std::string reverse_translate_symbol(Symbol symbol) const override;
 
   public:
-	OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs) = default;
+	OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
 	OnTheFlyAlphabet& operator=(OnTheFlyAlphabet&& rhs) = default;
+
+	~OnTheFlyAlphabet() override = default;
 
 	/**
 	 * @brief Expand alphabet by symbols from the passed @p symbol_names.
@@ -351,14 +432,14 @@ class OnTheFlyAlphabet : public Alphabet {
 	 */
 	void add_symbols_from(const StringToSymbolMap& new_symbol_map);
 
-	Symbol translate_symb(const std::string& str) override;
+	Symbol translate_symb(std::string_view str) override;
 
 	Word translate_word(const WordName& word_name) const override;
 
 	/**
 	 * @brief Add new symbol to the alphabet with the value of @c next_symbol_value.
 	 *
-	 * Throws an exception when the adding fails.
+	 * Throws an exception when the adding fails or when the next symbol value has reached @c EPSILON.
 	 *
 	 * @param[in] key User-space representation of the symbol.
 	 * @return Result of the insertion as @c InsertionResult.
@@ -379,14 +460,20 @@ class OnTheFlyAlphabet : public Alphabet {
 	/**
 	 * @brief Try to add symbol to the alphabet map.
 	 *
-	 * Does not throw an exception when the adding fails.
+	 * Does not throw an exception when the adding fails. Throws on a reserved special-symbol name (@c EPSILON_NAME or
+	 * @c DONT_CARE_NAME); those names belong to no alphabet.
 	 *
 	 * @param[in] key User-space representation of the symbol.
 	 * @param[in] value Number of the symbol to be used on transitions.
 	 * @return Result of the insertion as @c InsertionResult.
 	 */
 	InsertionResult try_add_new_symbol(const std::string& key, Symbol value) {
-		return symbol_map_.insert({key, value});
+		if (is_reserved_symbol_name(key)) {
+			throw std::runtime_error{"Cannot register the reserved special-symbol name '" + key + "'."};
+		}
+		const InsertionResult insertion_result{symbol_map_.try_emplace(key, value)};
+		if (insertion_result.second) { index_name(insertion_result.first); }
+		return insertion_result;
 	}
 
 	/**
@@ -396,10 +483,10 @@ class OnTheFlyAlphabet : public Alphabet {
 	Symbol get_next_value() const { return next_symbol_value_; }
 
 	/**
-	 * Get the number of existing symbols, epsilon symbols excluded.
-	 * @return The number of symbols.
+	 * Get the number of registered names, including aliases and explicit mappings (also ones with a reserved value).
+	 * @return The number of names in the symbol map.
 	 */
-	size_t get_number_of_symbols() const { return next_symbol_value_; }
+	size_t get_number_of_symbols() const { return symbol_map_.size(); }
 
 	/**
 	 * Get the symbol map used in the alphabet.
@@ -410,15 +497,69 @@ class OnTheFlyAlphabet : public Alphabet {
 	bool empty() const override { return symbol_map_.empty(); }
 
   private:
+	/// Name reported for a symbol and the number of names mapped to it.
+	struct SymbolNames {
+		const std::string* name{nullptr}; ///< Key of a node of @c symbol_map_; nodes are stable until erased.
+		size_t num_of_names{0}; ///< 0 for a symbol without a name.
+	};
+
+	/// Sorted symbols of @c symbol_map_, built on the first read after the set of symbols changes. Concurrent const
+	///  reads stay race-free: only a build takes @c mutex, and @c valid publishes the finished build to the readers.
+	struct SortedSymbols {
+		utils::OrdVector<Symbol> symbols{};
+		std::atomic<bool> valid{false};
+		std::mutex mutex{};
+
+		SortedSymbols() = default;
+		SortedSymbols(SortedSymbols&& other) noexcept
+			: symbols{std::move(other.symbols)},
+			  valid{other.valid.exchange(false, std::memory_order_relaxed)} {}
+		SortedSymbols& operator=(SortedSymbols&& other) noexcept {
+			if (this != &other) {
+				symbols = std::move(other.symbols);
+				valid.store(other.valid.exchange(false, std::memory_order_relaxed), std::memory_order_relaxed);
+			}
+			return *this;
+		}
+		~SortedSymbols() = default;
+		SortedSymbols(const SortedSymbols&) = delete;
+		SortedSymbols& operator=(const SortedSymbols&) = delete;
+
+		/// Called by every change of the set of symbols, which already excludes concurrent readers.
+		void invalidate() { valid.store(false, std::memory_order_relaxed); }
+	};
+
 	StringToSymbolMap symbol_map_{}; ///< Map of string transition symbols to symbol values.
+	/// Reverse index of @c symbol_map_, indexed by symbol; symbols are usually numbered densely from 0. When several
+	///  names share a symbol, the first one registered is reported.
+	std::vector<SymbolNames> dense_names_{};
+	/// Reverse index for symbols at or above @c dense_names_.size().
+	std::unordered_map<Symbol, SymbolNames> sparse_names_{};
+	size_t num_of_dense_symbols_{0}; ///< Number of named symbols in @c dense_names_.
 	Symbol next_symbol_value_{}; ///< Next value to be used for a newly added symbol.
+	/// Not copied: a copy rebuilds it on its first read.
+	mutable SortedSymbols sorted_symbols_{};
+
+	/// Collect the symbols of @c symbol_map_ in ascending order.
+	utils::OrdVector<Symbol> collect_symbols() const;
+	const SymbolNames* find_names(Symbol symbol) const;
+	/// The names of @p symbol, which has to be a symbol of @c symbol_map_.
+	SymbolNames& indexed_names(Symbol symbol);
+	void index_name(StringToSymbolMap::const_iterator name_it);
+	/// Remove @p name_it from the reverse index; call before erasing it from @c symbol_map_.
+	void unindex_name(StringToSymbolMap::const_iterator name_it);
+	/// Redirect the name pointers of the reverse index copied from another alphabet into our @c symbol_map_.
+	void redirect_copied_index();
+	/// Throw when no value below @c EPSILON is left for a new symbol named @p name.
+	void throw_if_symbol_space_exhausted(std::string_view name) const;
 
   public:
 	/**
 	 * @brief Update next symbol value when appropriate.
 	 *
 	 * When the newly inserted value is larger or equal to the current next symbol value, update the next symbol
-	 *  value to a value one larger than the new value.
+	 *  value to a value one larger than the new value. Values @c EPSILON and above are ignored, so the next symbol
+	 *  value never wraps and never exceeds @c EPSILON.
 	 * @param value The value of the newly added symbol.
 	 */
 	void update_next_symbol_value(Symbol value);
@@ -426,7 +567,7 @@ class OnTheFlyAlphabet : public Alphabet {
 	/**
 	 * @brief Remove a symbol name value pair specified by its @p symbol from the alphabet.
 	 *
-	 * @warning Complexity: O(n), where n is the number of symbols in the alphabet.
+	 * When several names share @p symbol, the one reported by @c reverse_translate_symbol() is removed.
 	 * @return Number of symbols removed (0 or 1).
 	 */
 	size_t erase(Symbol symbol);
@@ -440,17 +581,28 @@ class OnTheFlyAlphabet : public Alphabet {
 	/**
 	 * @brief Remove a symbol name value pair from the position @p pos from the alphabet.
 	 */
-	void erase(const StringToSymbolMap::const_iterator pos) { symbol_map_.erase(pos); }
+	void erase(const StringToSymbolMap::const_iterator pos) {
+		unindex_name(pos);
+		symbol_map_.erase(pos);
+	}
 
 	/**
 	 * @brief Remove a symbol name value pair from the positions between @p first and @p last from the alphabet.
 	 */
 	void erase(const StringToSymbolMap::const_iterator first, const StringToSymbolMap::const_iterator last) {
-		symbol_map_.erase(first, last);
+		// One by one: unindexing may promote another name of the same symbol, which may itself lie in the range.
+		for (auto it{first}; it != last;) {
+			unindex_name(it);
+			it = symbol_map_.erase(it);
+		}
 	}
 
 	void clear() override {
+		sorted_symbols_.invalidate();
 		symbol_map_.clear();
+		dense_names_.clear();
+		sparse_names_.clear();
+		num_of_dense_symbols_ = 0;
 		next_symbol_value_ = 0;
 	}
 }; // class OnTheFlyAlphabet.
@@ -471,7 +623,7 @@ class OnTheFlyAlphabet : public Alphabet {
 class AlphabetLevels {
   public:
 	/// Operating mode of the @c AlphabetLevels instance.
-	enum class Mode {
+	enum class Mode : std::uint8_t {
 		Global, ///< @c alphabets[0] is used for every level; level argument is ignored.
 		MultiLevel, ///< Each level uses its own alphabet from @c alphabets[level]; level argument is required.
 	};
@@ -513,6 +665,8 @@ class AlphabetLevels {
 	AlphabetLevels(AlphabetLevels&& other) noexcept = default;
 	AlphabetLevels& operator=(const AlphabetLevels& other) = default;
 	AlphabetLevels& operator=(AlphabetLevels&& other) noexcept = default;
+
+	~AlphabetLevels() = default;
 
 	/**
 	 * @brief Equality of two @c AlphabetLevels instances.
@@ -584,7 +738,7 @@ class AlphabetLevels {
 	 * When @p level is @c std::nullopt and the instance is in @c Global mode, the shared alphabet is used.
 	 * In @c MultiLevel mode @p level must have a value.
 	 */
-	Symbol translate_symb(const std::string& symb, std::optional<Level> level = std::nullopt);
+	Symbol translate_symb(std::string_view symb, std::optional<Level> level = std::nullopt);
 
 	/**
 	 * @brief Translate a symbol value back to its name using the alphabet for the given level.
@@ -626,31 +780,38 @@ class AlphabetLevels {
 	/**
 	 * @brief Get the alphabet assigned to a specific level.
 	 *
-	 * Validated accessor for the internal vector of @c Alphabet*.
+	 * Validated accessor for the internal vector of @c std::shared_ptr<Alphabet>.
 	 *
 	 * - In @c Global mode, @c alphabets[0] is returned regardless of @p level.
 	 * - In @c MultiLevel mode, @p level must have a value and be a valid index; the corresponding entry must be
 	 *   non-null.
 	 *
+	 * The stored shared ownership token is handed out (never null on return; missing alphabets throw instead), so
+	 *  that callers which need to keep the alphabet alive beyond the lifetime of this @c AlphabetLevels (or beyond
+	 *  the next mutation of its slots) can simply copy the returned @c std::shared_ptr. Callers which only read the
+	 *  alphabet should dereference the returned reference directly (@c *levels.for_level(level)), which costs no
+	 *  reference-count update. The non-const overload additionally allows replacing the alphabet stored for
+	 *  @p level.
+	 *
 	 * @param[in] level Level whose alphabet should be returned (required in @c MultiLevel mode).
-	 * @return Alphabet assigned to @p level.
+	 * @return Non-null @c std::shared_ptr to the alphabet assigned to @p level.
 	 * @throws std::runtime_error If @p level is missing in @c MultiLevel mode, out of range, or the entry is null.
 	 */
-	const Alphabet& for_level(std::optional<Level> level = std::nullopt) const;
-	Alphabet& for_level(std::optional<Level> level = std::nullopt);
+	const std::shared_ptr<Alphabet>& for_level(std::optional<Level> level = std::nullopt) const;
+	std::shared_ptr<Alphabet>& for_level(std::optional<Level> level = std::nullopt);
 
 	/**
 	 * @brief Alias for @c for_level.
 	 *
 	 * @see @c for_level.
 	 */
-	const Alphabet& operator[](std::optional<Level> level) const { return for_level(level); }
+	const std::shared_ptr<Alphabet>& operator[](std::optional<Level> level) const { return for_level(level); }
 	/**
 	 * @brief Alias for @c for_level.
 	 *
 	 * @see @c for_level.
 	 */
-	Alphabet& operator[](std::optional<Level> level) { return for_level(level); }
+	std::shared_ptr<Alphabet>& operator[](std::optional<Level> level) { return for_level(level); }
 
 	/**
 	 * @name Raw slot access (mode-agnostic).

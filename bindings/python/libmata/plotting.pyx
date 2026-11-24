@@ -1,9 +1,7 @@
-import networkx as nx
-import graphviz
-import IPython
 import sys
 
-from IPython.display import display, HTML
+# networkx, graphviz and IPython are imported inside the functions that need them: importing
+# libmata.plotting must not pull the whole plotting stack into every process.
 
 cimport libmata.alphabets as alph
 cimport libmata.nfa.nfa as mata_nfa
@@ -83,6 +81,12 @@ def plot_using_graphviz(
     :param alph.Alphabet alphabet: alphabet for reverse translation of symbols
     :return: automaton in graphviz
     """
+    try:
+        import graphviz
+    except ImportError as error:
+        raise ImportError(
+            "Plotting needs graphviz: install it with \"pip install libmata[plotting]\"."
+        ) from error
     # Configuration
     base_configuration = store()['node_style']
     edge_configuration = store()['edge_style']
@@ -97,6 +101,12 @@ def plot_using_graphviz(
         )
 
     if with_scc:
+        try:
+            import networkx as nx
+        except ImportError as error:
+            raise ImportError(
+                "Plotting with SCCs needs networkx: install it with \"pip install libmata[plotting]\"."
+            ) from error
         G = aut.to_networkx_graph()
         for i, scc in enumerate(nx.strongly_connected_components(G)):
             with dot.subgraph(name=f"cluster_{i}") as c:
@@ -119,18 +129,22 @@ def plot_using_graphviz(
     for state in aut.initial_states:
         dot.edge(f"q{state}", f"{state}", **edge_configuration)
     edges = {}
-    for trans in aut.iterate():
-        key = f"{trans.source},{trans.target}"
-        if key not in edges.keys():
+    sources, symbols, targets = aut.transitions_as_arrays()
+    # Rules are given a Transition; only build one when a rule may read it.
+    has_edge_rules = bool(edge_highlight)
+    for source, symbol, target in zip(sources, symbols, targets):
+        key = f"{source},{target}"
+        if key not in edges:
             edges[key] = []
-        symbol = "{}".format(
-            alphabet.reverse_translate_symbol(trans.symbol) if alphabet else trans.symbol
+        symbol_name = "{}".format(
+            alphabet.reverse_translate_symbol(symbol) if alphabet else symbol
         )
         edges[key].append((
-            f"{trans.source}", f"{trans.target}", symbol,
+            f"{source}", f"{target}", symbol_name,
             get_configuration_for(
-                edge_configuration, edge_highlight, aut, trans
-            )
+                edge_configuration, edge_highlight, aut,
+                mata_nfa.Transition(source, symbol, target)
+            ) if has_edge_rules else edge_configuration,
         ))
     for edge in edges.values():
         source = edge[0][0]
@@ -156,7 +170,7 @@ def get_interactive_mode() -> str:
     """
     if 'ipykernel' in sys.modules:
         return 'notebook'
-    elif 'IPython' in sys.modules:
+    elif 'IPython' in sys.modules and sys.modules['IPython'].get_ipython() is not None:
         return 'terminal'
     else:
         return 'none'
@@ -175,6 +189,12 @@ def display_inline(*args, per_row=None, show=None):
     If the `per_row` argument is given, at most `per_row` arguments are
     displayed on each row, each one taking 1/per_row of the line width.
     """
+    try:
+        from IPython.display import display, HTML
+    except ImportError as error:
+        raise ImportError(
+            "display_inline() needs IPython: install it with \"pip install libmata[plotting]\"."
+        ) from error
     width = res = ''
     if per_row:
         width = 'width:{}%;'.format(100//per_row)

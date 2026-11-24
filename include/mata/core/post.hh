@@ -57,8 +57,10 @@ namespace detail {
  */
 template <typename K, typename N, typename R> class PostEntryCore {
   protected:
-	K symbol{}; ///< The key. 
-	N targets{}; ///< The nested post, a target set only at @c key_arity 1.
+	// `targets` first: a small target set (such as @c mata::nfa::SmallStateSet) then leaves tail padding that
+	//  `symbol` fills, so an entry with a single inline target takes 16 bytes and no allocation.
+	[[no_unique_address]] N targets{}; ///< The nested post, a target set only at @c key_arity 1.
+	K symbol{}; ///< The key.
 
   public:
 	/// @name Post protocol
@@ -75,12 +77,18 @@ template <typename K, typename N, typename R> class PostEntryCore {
 
 	PostEntryCore() = default;
 	explicit PostEntryCore(const Key symbol) : symbol{symbol} {}
+	/// Parentheses, not braces: braces pick the @c initializer_list constructor, which sorts the one-element list.
 	PostEntryCore(const Key symbol, const Target state_to) requires(arity_of<N> == 0)
-		: symbol{symbol},
-		  targets{state_to} {}
-	PostEntryCore(const Key symbol, Nested states_to) : symbol{symbol}, targets{std::move(states_to)} {}
+		: targets(state_to),
+		  symbol{symbol} {}
+	/// @p states_to are sorted and duplicate-free, such as a @c StateSet or another entry's targets.
+	PostEntryCore(const Key symbol, const std::span<const Target> states_to)
+		requires(arity_of<N> == 0 && std::constructible_from<N, std::span<const Target>>)
+		: targets(states_to),
+		  symbol{symbol} {}
+	PostEntryCore(const Key symbol, Nested states_to) : targets{std::move(states_to)}, symbol{symbol} {}
 
-	PostEntryCore(PostEntryCore&& rhs) noexcept : symbol{rhs.symbol}, targets{std::move(rhs.targets)} {}
+	PostEntryCore(PostEntryCore&& rhs) noexcept : targets{std::move(rhs.targets)}, symbol{rhs.symbol} {}
 	PostEntryCore(const PostEntryCore& rhs) = default;
 	PostEntryCore& operator=(PostEntryCore&& rhs) noexcept;
 	PostEntryCore& operator=(const PostEntryCore& rhs) = default;
@@ -107,8 +115,12 @@ template <typename K, typename N, typename R> class PostEntryCore {
 		return targets.size();
 	}
 
-	void insert(Target s) requires(arity_of<N> == 0);
+	/// @return Whether @p s was inserted.
+	bool insert(Target s) requires(arity_of<N> == 0);
 	void insert(const Nested& states) requires(arity_of<N> == 0);
+	/// Insert the sorted, duplicate-free @p states, such as a @c StateSet or another entry's targets.
+	/// @return Number of states inserted.
+	size_t insert(std::span<const Target> states) requires(arity_of<N> == 0);
 
 	void push_back(const Target s) requires(arity_of<N> == 0) {
 		targets.push_back(s);
@@ -120,16 +132,13 @@ template <typename K, typename N, typename R> class PostEntryCore {
 		return targets.emplace_back(std::forward<Args>(args)...);
 	}
 
-	void erase(const Target s) requires(arity_of<N> == 0) {
-		targets.erase(s);
+	/// @return Whether @p s was erased.
+	bool erase(const Target s) requires(arity_of<N> == 0) {
+		return targets.erase(s) != 0;
 	}
 
-	typename std::vector<Target>::const_iterator find(const Target s) const requires(arity_of<N> == 0) {
-		return targets.find(s);
-	}
-	typename std::vector<Target>::iterator find(const Target s) requires(arity_of<N> == 0) {
-		return targets.find(s);
-	}
+	auto find(const Target s) const requires(arity_of<N> == 0) { return targets.find(s); }
+	auto find(const Target s) requires(arity_of<N> == 0) { return targets.find(s); }
 
 	/**
 	 * @brief Apply @p fn to every target of this entry.
@@ -149,7 +158,7 @@ template <typename K, typename N, typename R> class PostEntryCore {
 	 * @return True if @p target is among the targets of this entry, false otherwise.
 	 */
 	bool has_target(const Target target) const requires(arity_of<N> == 0) {
-		return targets.find(target) != targets.end();
+		return targets.contains(target);
 	}
 
 	/**
@@ -158,8 +167,12 @@ template <typename K, typename N, typename R> class PostEntryCore {
 	 * For iteration without exposing storage.
 	 */
 	std::span<const Target> target_span() const requires(arity_of<N> == 0) {
-		const std::vector<Target>& v{targets.to_vector()};
-		return {v.data(), v.size()};
+		if constexpr (requires { targets.span(); }) {
+			return targets.span();
+		} else {
+			const std::vector<Target>& v{targets.to_vector()};
+			return {v.data(), v.size()};
+		}
 	}
 	///@}
 }; // class mata::posts::detail::PostEntryCore.
@@ -275,6 +288,7 @@ template <typename E> class Post : utils::OrdVector<E> {
 	using super::begin, super::end, super::cbegin, super::cend;
 	using typename super::iterator;
 	using typename super::const_iterator;
+	using typename super::VectorType; ///< The underlying vector of entries.
 	using super::OrdVector;
 	using super::operator=;
 	using super::operator==;
@@ -282,7 +296,17 @@ template <typename E> class Post : utils::OrdVector<E> {
 	Post(Post&&) = default;
 	Post& operator=(const Post&) = default;
 	Post& operator=(Post&&) = default;
-	bool operator==(const Post&) const = default;
+	/// Compares the nested posts too: an entry alone compares only its key, which @c find() and @c erase() rely on.
+	bool operator==(const Post& other) const {
+		return std::ranges::equal(*this, other, [](const Entry& lhs, const Entry& rhs) {
+			if (lhs.key() != rhs.key()) { return false; }
+			if constexpr (arity_of<Nested> == 0) {
+				return std::ranges::equal(lhs.nested(), rhs.nested());
+			} else {
+				return lhs.nested() == rhs.nested();
+			}
+		});
+	}
 	using super::empty, super::size;
 	using super::insert;
 	using super::reserve;

@@ -133,7 +133,7 @@ template <DeltaLike D> class AutomatonBase {
 	 * @todo With the new get_useful_states, it might be useless now.
 	 * @return Set of terminating states.
 	 */
-	StateSet get_terminating_states() const; ///< Answered by reverting. @see @c reverted().
+	StateSet get_terminating_states() const; ///< Answered by a backward search over predecessor lists.
 
 	/**
 	 * @brief Get the useful states using a modified Tarjan's algorithm.
@@ -186,7 +186,7 @@ template <DeltaLike D> class AutomatonBase {
 	/**
 	 * @brief Returns vector ret where ret[q] is the length of the shortest path from q to any final state
 	 */
-	std::vector<State> distances_to_final() const; ///< Answered by reverting. @see @c reverted().
+	std::vector<State> distances_to_final() const; ///< Answered by a backward BFS over predecessor lists.
 
 
 	/**
@@ -202,7 +202,7 @@ template <DeltaLike D> class AutomatonBase {
 	 * @return true iff no accepting path exists.
 	 */
 	template <AutomatonWithRuns Self> bool is_lang_empty(this const Self& self, typename Self::Run* cex = nullptr) {
-		if (cex == nullptr) { return self.has_no_accepting_path_scc_(); }
+		if (cex == nullptr) { return self.has_no_accepting_path(); }
 		if (!self.find_accepting_path_(cex->path)) { return true; }
 		cex->word = self.get_word_for_path(*cex).first.word;
 		return false;
@@ -214,6 +214,17 @@ template <DeltaLike D> class AutomatonBase {
 	 * @return true iff Automaton graph is acyclic.
 	 */
 	bool is_acyclic() const;
+
+	/**
+	 * @brief Is no final state reachable from any initial state?
+	 *
+	 * A plain breadth-first search over a visited bit vector that stops at the first final state. This is a pure
+	 *  graph property; whether it coincides with the emptiness of the accepted language (or relation) is a fact
+	 *  about the concrete automaton class.
+	 *
+	 * @return true <-> no accepting path exists.
+	 */
+	bool has_no_accepting_path() const;
 
 	/**
 	 * @brief Check if @c this is structuralry identical to @p other.
@@ -242,62 +253,27 @@ template <DeltaLike D> class AutomatonBase {
 
 
   private:
-	/// Bool array indexed by state. Distinct from @c BoolVector, which is a @c std::vector<uint8_t>.
-	using StateBoolArray = std::vector<bool>;
-
-	/// The cursor @p D hands out over the successors of one state, and its iterator. Derived rather
-	///  than named, so that @c mata::DeltaLike does not have to require a particular spelling.
-	using SuccessorCursorType = decltype(std::declval<const D&>().successor_cursor(std::declval<State>()));
-	using SuccessorIterator = decltype(std::declval<const SuccessorCursorType&>().begin());
-
-	/**
-	 * @brief Metadata for one state during the computation of useful states.
-	 *
-	 * Tarjan's own per-node data, plus the position of the iteration through the state's successors,
-	 *  so that a simulated recursive call can be resumed where it left off.
-	 */
-	struct TarjanNodeData {
-		SuccessorIterator current_successor_it{};
-		// index of a node (corresponds to the time of discovery)
-		unsigned long index{0};
-		// index of a lower node in the same SCC
-		unsigned long lowlink{0};
-		// was the node already initialized (=the initial phase of the Tarjan's recursive call was executed)
-		bool initilized{false};
-		// is node on Tarjan's stack?
-		bool on_stack{false};
-
-		TarjanNodeData() = default;
-
-		TarjanNodeData(const State q, const D& delta, const unsigned long index)
-			: current_successor_it(delta.successor_cursor(q).begin()),
-			  index(index),
-			  lowlink(index),
-			  initilized(true),
-			  on_stack(true) {}
-	};
+	/// Bool array indexed by state: a byte per state, faster to test and set than the bits of @c std::vector<bool>.
+	using StateBoolArray = BoolVector;
 
 	/**
 	 * @brief Compute reachability of states considering only specified states.
 	 *
+	 * @param[in] initial_states States to start the traversal from.
 	 * @param[in] states_to_consider States to consider as potentially reachable. If @c std::nullopt is used, all
 	 *  states are considered as potentially reachable.
-	 * @return Bool array for reachable states (from initial states): true for reachable, false for unreachable states.
+	 * @return Bool array for reachable states (from @p initial_states): true for reachable, false for unreachable states.
 	 */
-	StateBoolArray reachable_states_(const std::optional<const StateBoolArray>& states_to_consider = std::nullopt
+	StateBoolArray reachable_states_(
+		const utils::SparseSet<State>& initial_states,
+		const std::optional<const StateBoolArray>& states_to_consider = std::nullopt
 	) const;
 
 	/**
-	 * @brief Check if @c this has no accepting path using Tarjan's SCC discover algorithm.
+	 * @brief Find a shortest accepting path by BFS.
 	 *
-	 * @return true iff no accepting path exists.
-	 */
-	bool has_no_accepting_path_scc_() const;
-
-	/**
-	 * @brief Check if @c this has no accepting path using BFS.
-	 *
-	 * @return true iff no accepting path exists.
+	 * @param[out] path The states of the path, from an initial to a final state, when one exists.
+	 * @return true iff an accepting path exists.
 	 */
 	bool find_accepting_path_(std::vector<State>& path) const;
 

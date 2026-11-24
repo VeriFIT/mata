@@ -1,12 +1,14 @@
 """Basic tests for utility package and sanity checks"""
 
 import os
+import shutil
+import threading
 
 import libmata.nfa.nfa as mata_nfa
 import libmata.nfa.strings as mata_strings
 import libmata.utils as mata_utils
 import pytest
-from libmata import alphabets
+from libmata import alphabets, parser
 
 __author__ = "Tomas Fiedor"
 
@@ -70,6 +72,28 @@ def test_adding_states():
 
     with pytest.raises(OverflowError):
         rhs.add_state(-10)
+
+
+def test_state_width():
+    """States are limited by the width Mata was built with; out-of-range values raise OverflowError."""
+    assert mata_nfa.STATE_BITS in (32, 64)
+    # The width requested from the build (the Makefile reads the same variable): a wide CI job must not test a narrow build.
+    if "MATA_STATE_BITS" in os.environ:
+        assert mata_nfa.STATE_BITS == int(os.environ["MATA_STATE_BITS"])
+    assert mata_nfa.MAX_STATE == 2**mata_nfa.STATE_BITS - 1
+
+    nfa = mata_nfa.Nfa()
+    # The largest state converts into the C++ type at the full width.
+    assert not nfa.has_final_state(mata_nfa.MAX_STATE - 1)
+    # Too large for the C++ type: rejected by the conversion, before any C++ code runs.
+    with pytest.raises(OverflowError):
+        nfa.add_state(mata_nfa.MAX_STATE + 1)
+    with pytest.raises(OverflowError):
+        nfa.delta.add(0, 0, 2**mata_nfa.STATE_BITS)
+    # The "no state" sentinel fits into the type, but Mata refuses to create it.
+    with pytest.raises(OverflowError):
+        nfa.add_state(mata_nfa.MAX_STATE)
+    assert nfa.num_of_states() == 0
 
 
 def test_making_initial_and_final_states():
@@ -196,6 +220,130 @@ def test_determinisation(nfa_two_states_uni, dfa_one_state_uni):
     assert sm_map == {(0,): 0, (0, 1): 1}
 
 
+def _check_subset_map(dfa, subset_map, macrostates):
+    """Checks that the subset map has the macrostates, one for each state of the DFA, in any numbering."""
+    assert set(subset_map) == macrostates
+    assert sorted(subset_map.values()) == list(range(dfa.num_of_states()))
+
+
+def _check_subset_map_languages(nfa, dfa, subset_map):
+    """Checks that every macrostate of the subset map has the language of its state of the DFA."""
+    for macrostate, state in subset_map.items():
+        from_macrostate = nfa.deepcopy()
+        from_macrostate.initial_states = list(macrostate)
+        from_state = dfa.deepcopy()
+        from_state.initial_states = [state]
+        assert mata_nfa.equivalence_check(from_macrostate, from_state)
+
+
+def test_determinize_four_russians(nfa_two_states_uni):
+    """Tests the "Four Russians" determinisation against the classical one."""
+    for block_size in (0, 1, 2, 64):
+        dfa, subset_map = mata_nfa.determinize_four_russians_with_subset_map(nfa_two_states_uni, block_size)
+        assert dfa.is_deterministic()
+        _check_subset_map(dfa, subset_map, {(0,), (0, 1)})
+
+    nfa = _nth_symbol_from_the_end_nfa(7)
+    classic = mata_nfa.determinize(nfa, {"algorithm": "classical"})
+    for block_size in (0, 1, 8):
+        dfa = mata_nfa.determinize_four_russians(nfa, block_size)
+        assert dfa.is_deterministic()
+        assert dfa.num_of_states() == classic.num_of_states() == 2**7
+        assert mata_nfa.equivalence_check(dfa, nfa)
+
+    for reduction in mata_nfa.DeterminizationReduction:
+        dfa = mata_nfa.determinize_four_russians(nfa, reduction=reduction)
+        assert dfa.is_deterministic()
+        assert mata_nfa.equivalence_check(dfa, nfa)
+        # With a reduction, the macrostates may be smaller, but each still has the language of its state.
+        dfa, subset_map = mata_nfa.determinize_four_russians_with_subset_map(nfa_two_states_uni, reduction=reduction)
+        _check_subset_map_languages(nfa_two_states_uni, dfa, subset_map)
+        assert mata_nfa.equivalence_check(dfa, nfa_two_states_uni)
+
+    with pytest.raises(ValueError):
+        mata_nfa.determinize_four_russians(nfa, block_size=3)
+    with pytest.raises(ValueError):
+        mata_nfa.determinize_four_russians(nfa, reduction=7)
+
+
+def _transitions(nfa):
+    return sorted((t.source, t.symbol, t.target) for t in nfa.get_trans_as_sequence())
+
+
+def test_determinize_algorithm(nfa_two_states_uni):
+    """Tests the choice of the algorithm and of the reduction in determinize()."""
+    for params in (
+        None,
+        {"algorithm": "four_russians"},
+        {"algorithm": "classical"},
+        {"algorithm": "four_russians", "reduction": "none"},
+        {"algorithm": "classical", "reduction": "none"},
+    ):
+        dfa, subset_map = mata_nfa.determinize_with_subset_map(nfa_two_states_uni, params)
+        assert dfa.is_deterministic()
+        _check_subset_map(dfa, subset_map, {(0,), (0, 1)})
+
+    # The same DFA up to the numbering of its states; the default is the Four Russians one.
+    nfa = _nth_symbol_from_the_end_nfa(7)
+    classical = mata_nfa.determinize(nfa, {"algorithm": "classical"})
+    four_russians = mata_nfa.determinize(nfa, {"algorithm": "four_russians"})
+    for dfa in (classical, four_russians):
+        assert dfa.is_deterministic()
+        assert dfa.num_of_states() == 2**7
+        assert mata_nfa.equivalence_check(dfa, nfa)
+    assert _transitions(mata_nfa.determinize(nfa)) == _transitions(four_russians)
+    # With every reduction too.
+    for reduction in mata_nfa.DeterminizationReduction:
+        params = {"reduction": reduction.name.lower()}
+        classical = mata_nfa.determinize(nfa, {"algorithm": "classical"} | params)
+        four_russians = mata_nfa.determinize(nfa, {"algorithm": "four_russians"} | params)
+        for dfa in (classical, four_russians):
+            assert dfa.is_deterministic()
+            assert mata_nfa.equivalence_check(dfa, nfa)
+        assert _transitions(four_russians) == _transitions(mata_nfa.determinize_four_russians(nfa, reduction=reduction))
+
+    # L(1) = a* is a subset of L(2) = (a|b)* (a = 0, b = 1, c = 2): the simulation prunes the state 1 from {1, 2};
+    #  there are no bisimilar states, and Adaptive keeps the cheap reduction far below its budget.
+    pruned = mata_nfa.Nfa(3)
+    pruned.make_initial_state(0)
+    pruned.make_final_state(1)
+    pruned.make_final_state(2)
+    for source, symbol, target in (
+        (0, 0, 1),
+        (0, 0, 2),
+        (0, 1, 1),
+        (0, 2, 0),
+        (1, 0, 1),
+        (2, 0, 2),
+        (2, 1, 2),
+    ):
+        pruned.add_transition(source, symbol, target)
+    expected_states = {"none": 4, "bisimulation": 4, "simulation": 3, "adaptive": 4}
+    for reduction, num_of_states in expected_states.items():
+        for algorithm in ("four_russians", "classical"):
+            dfa, subset_map = mata_nfa.determinize_with_subset_map(
+                pruned, {"algorithm": algorithm, "reduction": reduction}
+            )
+            assert dfa.num_of_states() == num_of_states
+            assert mata_nfa.equivalence_check(dfa, pruned)
+            _check_subset_map_languages(pruned, dfa, subset_map)
+            if algorithm == "four_russians" and reduction != "none":
+                _, expected_map = mata_nfa.determinize_four_russians_with_subset_map(
+                    pruned,
+                    reduction=mata_nfa.DeterminizationReduction[reduction.capitalize()],
+                )
+                assert subset_map == expected_map
+
+    with pytest.raises(RuntimeError):
+        mata_nfa.determinize(nfa, {"algorithm": "subset"})
+    with pytest.raises(RuntimeError):
+        mata_nfa.determinize_with_subset_map(nfa, {"type": "classical"})
+    with pytest.raises(RuntimeError):
+        mata_nfa.determinize(nfa, {"algorithm": "classical", "reduction": "minimal"})
+    with pytest.raises(RuntimeError):
+        mata_nfa.determinize(nfa, {"reduction": "simulation"})
+
+
 def test_forward_reach_states(fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight):
     assert fa_one_divisible_by_two.get_reachable_states() == set(range(3))
     assert fa_one_divisible_by_four.get_reachable_states() == set(range(5))
@@ -206,8 +354,14 @@ def test_get_word_for_path(fa_one_divisible_by_two, fa_one_divisible_by_four, fa
     assert fa_one_divisible_by_two.get_word_for_path([0, 1, 2]) == ([1, 1], True)
     assert fa_one_divisible_by_two.get_word_for_path([0, 1, 2, 0]) == ([], False)
     assert fa_one_divisible_by_two.get_word_for_path([0, 1, 2, 2]) == ([1, 1, 0], True)
-    assert fa_one_divisible_by_four.get_word_for_path([0, 1, 2, 3, 4]) == ([1, 1, 1, 1], True)
-    assert fa_one_divisible_by_eight.get_word_for_path([0, 1, 2, 3, 4, 5, 6, 7, 8]) == ([1, 1, 1, 1, 1, 1, 1, 1], True)
+    assert fa_one_divisible_by_four.get_word_for_path([0, 1, 2, 3, 4]) == (
+        [1, 1, 1, 1],
+        True,
+    )
+    assert fa_one_divisible_by_eight.get_word_for_path([0, 1, 2, 3, 4, 5, 6, 7, 8]) == (
+        [1, 1, 1, 1, 1, 1, 1, 1],
+        True,
+    )
 
 
 def test_encode_word():
@@ -217,6 +371,30 @@ def test_encode_word():
         0,
         1,
     ]
+
+
+def test_operation_errors_raise():
+    """A C++ exception thrown inside an operation must surface as a Python exception, not terminate the process.
+
+    All of these calls go through a `cdef extern` declaration: without `except +`, a C++ throw would call
+    `std::terminate` under Cython 3 and kill the interpreter instead of raising.
+    """
+    nfa = mata_nfa.Nfa(2)
+    nfa.make_initial_state(0)
+    nfa.make_final_state(1)
+    nfa.add_transition(0, 0, 1)
+
+    # encode_word -> translate_word throws on a symbol missing from the alphabet.
+    with pytest.raises(RuntimeError, match="Unknown symbol"):
+        mata_nfa.encode_word(alphabets.OnTheFlyAlphabet.from_symbol_map({"a": 1}), "b")
+
+    # minimize throws on an unknown algorithm.
+    with pytest.raises(RuntimeError, match="unknown value of the .algorithm. key"):
+        mata_nfa.minimize(nfa, {"algorithm": "unknown"})
+
+    # compute_relation throws on an unknown relation type.
+    with pytest.raises(RuntimeError, match="unknown value of the .relation. key"):
+        mata_nfa.compute_relation(nfa, {"relation": "unknown", "direction": "forward"})
 
 
 def test_language_emptiness(fa_one_divisible_by_two):
@@ -686,25 +864,36 @@ def test_minimize(fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divi
     lhs.make_final_state(10)
     assert lhs.get_num_of_transitions() == 11
 
+    assert not lhs.is_minimal()
     minimized = mata_nfa.minimize(lhs)
     assert minimized.get_num_of_transitions() == 1
+    assert minimized.is_minimal()
 
     lhs.trim()
     minimized_hopcroft = mata_nfa.minimize(lhs, {"algorithm": "hopcroft"})
     assert minimized_hopcroft.get_num_of_transitions() == 1
 
 
-def test_to_dot():
-    lhs = mata_nfa.Nfa()
-    expected = 'digraph finiteAutomaton {\nnode [shape=circle];\nnode [shape=none, label=""];\n}\n'
-    assert lhs.to_dot_str() == expected
+EXPECTED_DOT = 'digraph finiteAutomaton {\nnode [shape=circle];\nnode [shape=none, label=""];\n}\n'
 
+
+def test_to_dot_str():
+    """String serialization needs no graphviz installation."""
+    lhs = mata_nfa.Nfa()
+    assert lhs.to_dot_str() == EXPECTED_DOT
+
+
+def test_to_dot_file(tmp_path, monkeypatch):
+    if shutil.which("dot") is None:
+        pytest.skip("graphviz 'dot' is not installed")
+    monkeypatch.chdir(tmp_path)
+    lhs = mata_nfa.Nfa()
     lhs.to_dot_file("test.dot")
     assert "test.dot.pdf" in os.listdir(".")
     assert "test.dot" in os.listdir(".")
     with open("test.dot", "r") as test_handle:
         lines = test_handle.read()
-    assert lines == expected
+    assert lines == EXPECTED_DOT
 
 
 def test_to_str():
@@ -715,6 +904,70 @@ def test_to_str():
     lhs.add_transition(0, 1, 1)
     expected = "initial_states: [0]\nfinal_states: [1]\ntransitions:\n0-[0]→0\n0-[1]→1\n"
     assert str(lhs) == expected
+
+
+def test_to_mata_str():
+    lhs = mata_nfa.Nfa(2)
+    lhs.make_initial_state(0)
+    lhs.make_final_state(1)
+    lhs.add_transition(0, 0, 0)
+    lhs.add_transition(0, 1, 1)
+    header = "@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\n"
+    assert lhs.to_mata_str() == header + "q0 0 q0\nq0 1 q1\n"
+
+    alphabet = alphabets.OnTheFlyAlphabet.from_symbol_map({"a": 0, "b": 1})
+    assert lhs.to_mata_str(alphabet) == header + "q0 a q0\nq0 b q1\n"
+    named = mata_nfa.Nfa(2, alphabet=alphabet)
+    named.make_initial_state(0)
+    named.make_final_state(1)
+    named.add_transition(0, 1, 1)
+    assert named.to_mata_str() == header + "q0 b q1\n"
+
+
+def test_to_mata_str_quotes_symbol_names(tmp_path):
+    """A symbol name the reader would not read as one token prints quoted and reads back (#1021)."""
+    alphabet = alphabets.OnTheFlyAlphabet.for_symbol_names(["foo bar"])
+    named = mata_nfa.Nfa(2, alphabet=alphabet)
+    named.make_initial_state(0)
+    named.make_final_state(1)
+    named.add_transition(0, alphabet.translate_symbol("foo bar"), 1)
+
+    mata_str = named.to_mata_str()
+    assert 'q0 "foo bar" q1' in mata_str
+    # `from_mata` reads with `keep_quotes`, so the names come back in their quoted form.
+    mata_file = tmp_path / "quoted.mata"
+    mata_file.write_text(mata_str, encoding="utf-8")
+    read_alphabet = alphabets.OnTheFlyAlphabet()
+    read_back = parser.from_mata(str(mata_file), read_alphabet)
+    assert read_alphabet.get_symbol_map() == {'"foo bar"': alphabet.translate_symbol("foo bar")}
+    assert read_back.get_num_of_transitions() == named.get_num_of_transitions()
+    assert read_back.has_transition(0, alphabet.translate_symbol("foo bar"), 1)
+
+
+def test_copy_and_deepcopy(prepare_automaton_a):
+    """`copy.copy` and `copy.deepcopy` copy the automaton; only `deepcopy` copies the label as well."""
+    import copy
+
+    aut = prepare_automaton_a()
+    aut.label = ["original"]
+    shallow = copy.copy(aut)
+    deep = copy.deepcopy(aut)
+    for copied in (shallow, deep):
+        assert copied.num_of_states() == aut.num_of_states()
+        assert copied.initial_states == aut.initial_states
+        assert copied.final_states == aut.final_states
+        assert copied.delta == aut.delta
+    assert shallow.label is aut.label
+    assert deep.label == aut.label and deep.label is not aut.label
+
+    aut.add_transition(0, ord("z"), 0)
+    assert not shallow.has_transition(0, ord("z"), 0)
+    assert not deep.has_transition(0, ord("z"), 0)
+
+    # A label referring back to its automaton resolves to the copy through the memo.
+    aut.label = {"automaton": aut}
+    deep = copy.deepcopy(aut)
+    assert deep.label["automaton"] is deep
 
 
 def test_shortest(fa_one_divisible_by_two):
@@ -804,11 +1057,19 @@ def test_simulation(fa_one_divisible_by_four):
 def test_simulation_other_features(fa_one_divisible_by_two):
     lhs = fa_one_divisible_by_two
     rel = mata_nfa.compute_relation(lhs)
-    assert rel.to_matrix() == [[True, False, True], [False, True, False], [False, False, True]]
+    assert rel.to_matrix() == [
+        [True, False, True],
+        [False, True, False],
+        [False, False, True],
+    ]
 
     # Testing transposition
     trans_rel = rel.transpose()
-    assert trans_rel.to_matrix() == [[True, False, False], [False, True, False], [True, False, True]]
+    assert trans_rel.to_matrix() == [
+        [True, False, False],
+        [False, True, False],
+        [True, False, True],
+    ]
 
     assert not rel.is_symmetric_at(0, 2)
     assert not rel.is_symmetric_at(1, 2)
@@ -836,6 +1097,136 @@ def test_simulation_other_features(fa_one_divisible_by_two):
         for j in range(rel.size()):
             if rel.get(i, j) or rel.get(j, i):
                 assert rel.is_symmetric_at(i, j)
+
+
+def _build_threaded_nfa(seed=42, num_states=60, num_transitions=240, num_symbols=2):
+    """A fixed-seed automaton on which the operations below run long enough to interleave."""
+    import random
+
+    rng = random.Random(seed)
+    aut = mata_nfa.Nfa(num_states)
+    for _ in range(num_transitions):
+        aut.add_transition(
+            rng.randrange(num_states),
+            rng.randrange(num_symbols),
+            rng.randrange(num_states),
+        )
+    aut.make_initial_state(0)
+    aut.make_final_state(num_states - 1)
+    aut.make_final_state(num_states // 2)
+    return aut
+
+
+def test_threaded_determinize_matches_single_threaded_results():
+    """The GIL is released during determinize; concurrent results must not depend on interleaving."""
+    import concurrent.futures
+    import threading
+
+    aut = _build_threaded_nfa()
+    expected_result, expected_subset_map = mata_nfa.determinize_with_subset_map(aut)
+    expected_transitions = sorted((t.source, t.symbol, t.target) for t in expected_result.get_trans_as_sequence())
+
+    barrier = threading.Barrier(3)
+
+    def run():
+        barrier.wait()
+        result, subset_map = mata_nfa.determinize_with_subset_map(aut)
+        return sorted((t.source, t.symbol, t.target) for t in result.get_trans_as_sequence()), subset_map
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        results = [future.result() for future in [executor.submit(run) for _ in range(3)]]
+    for transitions, subset_map in results:
+        assert transitions == expected_transitions
+        assert subset_map == expected_subset_map
+
+
+def test_threaded_heavy_operations_match_single_threaded_results():
+    """Intersection, minimize and reduce agree with their single-threaded results when run concurrently."""
+    import concurrent.futures
+    import threading
+
+    lhs = _build_threaded_nfa(seed=1)
+    rhs = _build_threaded_nfa(seed=2, num_states=30)
+
+    expected_intersection = mata_nfa.intersection(lhs, rhs).get_trans_as_sequence()
+    expected_minimized = mata_nfa.minimize(lhs).get_trans_as_sequence()
+    expected_reduced = mata_nfa.reduce(lhs).get_trans_as_sequence()
+
+    barrier = threading.Barrier(3)
+
+    def run():
+        barrier.wait()
+        return (
+            mata_nfa.intersection(lhs, rhs).get_trans_as_sequence(),
+            mata_nfa.minimize(lhs).get_trans_as_sequence(),
+            mata_nfa.reduce(lhs).get_trans_as_sequence(),
+        )
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        results = [future.result() for future in [executor.submit(run) for _ in range(3)]]
+    for intersection_result, minimized, reduced in results:
+        assert intersection_result == expected_intersection
+        assert minimized == expected_minimized
+        assert reduced == expected_reduced
+
+
+def _nth_symbol_from_the_end_nfa(n):
+    """Accepts the words over {0, 1} with 0 at the n-th position from the end; its minimal DFA has 2^n states."""
+    aut = mata_nfa.Nfa(n + 1)
+    aut.make_initial_state(0)
+    aut.make_final_state(n)
+    aut.add_transition(0, 0, 0)
+    aut.add_transition(0, 1, 0)
+    aut.add_transition(0, 0, 1)
+    for state in range(1, n):
+        aut.add_transition(state, 0, state + 1)
+        aut.add_transition(state, 1, state + 1)
+    return aut
+
+
+# On macOS the shorter input sometimes completes before the observing thread is scheduled.
+GIL_OBSERVATION_NFA_STATES = 16
+
+
+@pytest.mark.parametrize(
+    "operation",
+    [
+        lambda aut, other, alphabet: mata_nfa.determinize(aut),
+        lambda aut, other, alphabet: mata_nfa.determinize_with_subset_map(aut),
+        lambda aut, other, alphabet: mata_nfa.determinize_four_russians(aut),
+        lambda aut, other, alphabet: mata_nfa.minimize(aut),
+        lambda aut, other, alphabet: mata_nfa.complement(aut, alphabet),
+        lambda aut, other, alphabet: mata_nfa.reduce(other),
+        lambda aut, other, alphabet: mata_nfa.compute_relation(other),
+        lambda aut, other, alphabet: mata_nfa.intersection(other, other),
+    ],
+    ids=[
+        "determinize",
+        "determinize_with_subset_map",
+        "determinize_four_russians",
+        "minimize",
+        "complement",
+        "reduce",
+        "compute_relation",
+        "intersection",
+    ],
+)
+def test_heavy_operations_let_other_threads_run(operation, runs_without_the_gil):
+    aut = _nth_symbol_from_the_end_nfa(GIL_OBSERVATION_NFA_STATES)
+    other = _build_threaded_nfa(num_states=600, num_transitions=2400)
+    alphabet = alphabets.OnTheFlyAlphabet()
+    alphabet.translate_symbol("a")
+    alphabet.translate_symbol("b")
+    assert runs_without_the_gil(lambda: operation(aut, other, alphabet))
+
+
+def test_gil_observation_has_a_negative_control(runs_without_the_gil):
+    """Do not report a GIL release before an operation has had a chance to run at all."""
+    assert not runs_without_the_gil(lambda: None)
+    assert not runs_without_the_gil(lambda: sum(range(100000)))
+    # Blocks until observed, so no scheduling delay can let it finish first.
+    gate = threading.Event()
+    assert runs_without_the_gil(gate.wait, release=gate.set)
 
 
 def test_simulation_equivalence():
@@ -1040,6 +1431,70 @@ def test_reduce():
     assert result.has_transition(state_map[2], ord("a"), state_map[2])
 
 
+def test_reduce_errors():
+    """Errors of the reduction raise exceptions."""
+    nfa = mata_nfa.Nfa(2)
+    nfa.make_initial_state(0)
+    nfa.make_final_state(1)
+    nfa.add_transition(0, 0, 1)
+    with pytest.raises(RuntimeError, match="unknown value"):
+        mata_nfa.reduce(nfa, {"algorithm": "unknown"})
+    for params in (
+        {"algorithm": "sat", "type": "after"},
+        {"algorithm": "qbf", "type": "after"},
+        {"algorithm": "qbf", "type": "dfa"},
+    ):
+        with pytest.raises(RuntimeError, match="unknown type") as error:
+            mata_nfa.reduce(nfa, params)
+        assert not isinstance(error.value, mata_nfa.ExternalSolverNotFound)
+    with pytest.raises(RuntimeError, match="does not support state_renaming"):
+        mata_nfa.reduce_with_state_map(nfa, {"algorithm": "residual", "type": "after", "direction": "forward"})
+
+    # A solver that cannot be found is reported by its own exception, a RuntimeError for callers not knowing it.
+    assert issubclass(mata_nfa.ExternalSolverNotFound, RuntimeError)
+    for params in (
+        {"algorithm": "sat", "solver": "/nonexistent/sat-solver"},
+        {"algorithm": "sat", "solver": "nonexistent-sat-solver"},
+        {"algorithm": "sat", "solver": "'unterminated"},
+        {"algorithm": "qbf", "solver": "/nonexistent/qbf-solver"},
+    ):
+        with pytest.raises(mata_nfa.ExternalSolverNotFound):
+            mata_nfa.reduce(nfa, params)
+    # Errors other than a missing solver stay plain RuntimeErrors.
+    with pytest.raises(RuntimeError) as error:
+        mata_nfa.reduce(nfa, {"algorithm": "unknown"})
+    assert not isinstance(error.value, mata_nfa.ExternalSolverNotFound)
+
+
+def test_reduce_sat():
+    """Test reducing the automaton to a minimal one with a SAT solver."""
+    # The second last symbol is 1, determinized to 4 states. The minimal NFA has 3 states.
+    nfa = mata_nfa.Nfa(3)
+    nfa.make_initial_state(0)
+    nfa.make_final_state(2)
+    nfa.add_transition(0, 0, 0)
+    nfa.add_transition(0, 1, 0)
+    nfa.add_transition(0, 1, 1)
+    nfa.add_transition(1, 0, 2)
+    nfa.add_transition(1, 1, 2)
+    nfa = mata_nfa.determinize(nfa)
+    assert nfa.num_of_states() == 4
+
+    try:
+        result = mata_nfa.reduce(nfa, {"algorithm": "sat"})
+    except mata_nfa.ExternalSolverNotFound as error:
+        if "MATA_TESTS_REQUIRE_SOLVERS" in os.environ:
+            raise
+        pytest.skip(str(error))
+    assert result.num_of_states() == 3
+    assert mata_nfa.equivalence_check(result, nfa)
+
+    result = mata_nfa.reduce(nfa, {"algorithm": "sat", "type": "dfa"})
+    assert result.num_of_states() == 4
+    assert result.is_deterministic()
+    assert mata_nfa.equivalence_check(result, nfa)
+
+
 def test_noodlify():
     """Test noodlification."""
     left1 = mata_nfa.Nfa(3)
@@ -1188,3 +1643,148 @@ def test_get_symbols_to_work_with():
 
     explicit_alphabet = alphabets.EnumAlphabet({5, 6, 7})
     assert nfa.get_symbols_to_work_with(explicit_alphabet) == {5, 6, 7}
+
+
+def test_get_words():
+    nfa = mata_nfa.Nfa(3)
+    nfa.make_initial_state(0)
+    nfa.make_final_state(2)
+    nfa.add_transition(0, 1, 1)
+    nfa.add_transition(1, 2, 2)
+    assert nfa.get_words(5) == {(1, 2)}
+
+
+@pytest.mark.skipif(
+    not mata_utils.HAS_GENERATOR_SUPPORT,
+    reason="get_words_lazy() needs a standard library implementing std::generator",
+)
+def test_get_words_lazy():
+    nfa = mata_nfa.Nfa(3)
+    nfa.make_initial_state(0)
+    nfa.make_final_state(2)
+    nfa.add_transition(0, 1, 1)
+    nfa.add_transition(1, 2, 2)
+    assert set(nfa.get_words_lazy(5)) == nfa.get_words(5)
+
+    # get_words_lazy() must stay usable (not hang) on an infinite language with the default unbounded max_length,
+    #  unlike get_words() with an unbounded max_length would.
+    cyclic = mata_nfa.Nfa(1)
+    cyclic.make_initial_state(0)
+    cyclic.make_final_state(0)
+    cyclic.add_transition(0, 0, 0)
+    first_words = []
+    for word in cyclic.get_words_lazy():
+        first_words.append(word)
+        if len(first_words) == 3:
+            break
+    assert first_words == [(), (0,), (0, 0)]
+
+
+@pytest.mark.skipif(
+    mata_utils.HAS_GENERATOR_SUPPORT,
+    reason="get_words_lazy() only fails without a standard library implementing std::generator",
+)
+def test_get_words_lazy_without_generator_support():
+    nfa = mata_nfa.Nfa(3)
+    nfa.make_initial_state(0)
+    nfa.make_final_state(2)
+    nfa.add_transition(0, 1, 1)
+    nfa.add_transition(1, 2, 2)
+    with pytest.raises(RuntimeError):
+        next(iter(nfa.get_words_lazy(5)))
+
+
+def test_transition_hashing():
+    """Tests that transitions can be used in sets and as dictionary keys."""
+    first = mata_nfa.Transition(1, 2, 3)
+    second = mata_nfa.Transition(1, 2, 3)
+    other = mata_nfa.Transition(1, 2, 4)
+
+    assert first == second
+    assert hash(first) == hash(second)
+    assert first != other
+    # Spelled out rather than as `first == second`: this checks the `__ne__` derived from `__eq__`.
+    assert (first != second) is False
+
+    assert len({first, second, other}) == 2
+
+    mapping = {first: "a", other: "b"}
+    mapping[second] = "c"
+    assert mapping[first] == "c"
+    assert mapping[other] == "b"
+    assert len(mapping) == 2
+
+
+def test_transitions_as_arrays_match_iterate(prepare_automaton_a):
+    """The columnar export holds exactly the transitions of `iterate()`, in the same order, as int64 arrays."""
+    aut = prepare_automaton_a()
+    sources, symbols, targets = aut.transitions_as_arrays()
+    assert (sources.typecode, symbols.typecode, targets.typecode) == ("q", "q", "q")
+    assert list(zip(sources, symbols, targets)) == [(t.source, t.symbol, t.target) for t in aut.iterate()]
+
+    empty_arrays = mata_nfa.Nfa(3).transitions_as_arrays()
+    assert [len(array) for array in empty_arrays] == [0, 0, 0]
+
+
+def test_to_dataframe_keeps_int64_columns(fa_one_divisible_by_two):
+    df = fa_one_divisible_by_two.to_dataframe()
+    assert list(df.columns) == ["source", "symbol", "target"]
+    assert [str(dtype) for dtype in df.dtypes] == ["int64", "int64", "int64"]
+
+
+def test_pickle_round_trip(prepare_automaton_a):
+    """Pickling keeps the states, the initial and final states, the transitions and the label."""
+    import pickle
+
+    aut = prepare_automaton_a()
+    aut.add_new_state()  # An isolated state must survive as well.
+    aut.label = ["automaton", "a"]
+    restored = pickle.loads(pickle.dumps(aut))
+    assert restored.num_of_states() == aut.num_of_states()
+    assert restored.initial_states == aut.initial_states
+    assert restored.final_states == aut.final_states
+    assert restored.delta == aut.delta
+    assert restored.label == aut.label
+    restored.add_transition(0, ord("z"), 0)
+    assert not aut.has_transition(0, ord("z"), 0)
+
+    empty = pickle.loads(pickle.dumps(mata_nfa.Nfa()))
+    assert empty.num_of_states() == 0 and empty.get_num_of_transitions() == 0
+
+
+def test_pickle_label_referring_to_the_automaton(prepare_automaton_a):
+    """A label that refers back to the automaton round-trips to the restored automaton."""
+    import pickle
+
+    aut = prepare_automaton_a()
+    aut.label = aut
+    restored = pickle.loads(pickle.dumps(aut))
+    assert restored.label is restored
+    assert restored.delta == aut.delta
+
+
+def test_pickle_refuses_an_unpicklable_alphabet():
+    """An attached alphabet is pickled with the automaton, so an alphabet that cannot be pickled raises."""
+    import pickle
+
+    aut = mata_nfa.Nfa(1, alphabet=alphabets.OnTheFlyAlphabet.from_symbol_map({"a": 0}))
+    with pytest.raises(TypeError):
+        pickle.dumps(aut)
+
+
+def _summarise_nfa(aut):
+    return (
+        aut.num_of_states(),
+        aut.get_num_of_transitions(),
+        aut.initial_states,
+        aut.final_states,
+    )
+
+
+def test_nfa_passes_to_a_multiprocessing_worker(prepare_automaton_a):
+    """`multiprocessing` pickles the automaton into the worker."""
+    import multiprocessing
+
+    aut = prepare_automaton_a()
+    with multiprocessing.get_context("spawn").Pool(processes=1) as pool:
+        assert pool.apply(_summarise_nfa, (aut,)) == _summarise_nfa(aut)

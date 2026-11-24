@@ -6,10 +6,13 @@
 #define MATA_NFT_TYPES_HH
 
 #include <concepts>
+#include <cstdint>
 #include <optional>
 #include <utility>
+#include <version>
 
 #include "mata/alphabet.hh"
+#include "mata/nfa/types.hh"
 #include "mata/types.hh"
 #include "mata/utils/sparse-set.hh"
 
@@ -22,6 +25,7 @@ using Level = mata::Level;
 // Types shared with the rest of Mata. Redefine any of these here to give NFTs their own.
 using State = mata::State;
 using StateSet = mata::StateSet;
+using SmallStateSet = mata::SmallStateSet;
 using Run = mata::Run;
 using EpsilonClosureOpt = mata::EpsilonClosureOpt;
 using StateRenaming = mata::StateRenaming;
@@ -53,16 +57,46 @@ using Limits = mata::Limits;
 
 class Nft; ///< A non-deterministic finite transducer.
 
-enum class JumpMode {
+enum class JumpMode : std::uint8_t {
 	RepeatSymbol, ///< Repeat the symbol on the jump.
 	AppendDontCares, ///< Append a sequence of DONT_CAREs to the symbol on the jump.
 	NoJump ///< No jumps are allowed.
 };
 
-enum class CompositionMode {
+enum class CompositionMode : std::uint8_t {
 	General, ///< General composition mode for arbitrary number or synchronization levels and jump modes.
 	FastNoJump, ///< Fast composition mode for a single synchronization level and no jumps.
 	Auto ///< Automatically select the best composition mode based on the parameters.
+};
+
+/**
+ * How @c compose() normalizes its result after the construction.
+ *
+ * Every mode keeps the relation and the level of every state; state numbering is not part of the contract, and
+ *  neither is the placement of EPSILON, which @c are_equivalent() reads as a letter.
+ */
+enum class CompositionNormalization : std::uint8_t {
+	None, ///< Return the result as constructed (trimmed when the synchronization levels are projected out).
+	/// Rewrite only the states the fast composer generated itself (EPSILON padding, bridges over a replaced
+	///  synchronization, and waiting states): close the whole-round EPSILON runs through generated states with exactly
+	///  one incoming and one outgoing transition, outside EPSILON cycles and where the result does not grow, then
+	///  merge generated states of the same level with the same outgoing transitions. Near-linear in the generated
+	///  states and their transitions. The general composition generates no such states and is left as constructed.
+	GeneratedOnly,
+	/// @c GeneratedOnly, then the generic @c remove_epsilon() (with @c JumpMode::NoJump only, as it reads every
+	///  transition as one level long), @c Nft::trim() and simulation-based @c reduce(). Far more expensive than the
+	///  composition itself; only for callers who want the smallest result.
+	Full,
+	/// @c None: @c GeneratedOnly costs more in the composition than it saves in a following composition on the
+	///  transducers of string constraints, whose results it shrinks by a few percent.
+	Auto,
+	/// @c None, then trimmed, also when the synchronization levels are kept. The fast composer then builds the result
+	///  forward and from the final states (by composing the reverted operands) in turns with a growing state budget
+	///  and keeps whichever finishes first: on the transducers of string constraints, either direction can build tens
+	///  of times more states that the trim removes than the other. Under @c None and @c Auto it builds forward only,
+	///  which is cheaper when the forward direction wins, as it does on most compositions. Operands it reads through
+	///  the cursors of their jump transitions are composed forward only.
+	Trim
 };
 
 using ProductFinalStateCondition = mata::ProductFinalStateCondition;
@@ -96,7 +130,11 @@ class Levels : std::vector<Level> {
 		 * This ordering is used when handling intermediate states (with non-zero levels) in NFTs for determining the
 		 * next lowest level of the next state.
 		 */
-		static bool Next(const Level lhs, const Level rhs) { return lhs == 0 ? false : rhs == 0 ? true : lhs < rhs; }
+		static bool Next(const Level lhs, const Level rhs) {
+			if (lhs == 0) { return false; }
+			if (rhs == 0) { return true; }
+			return lhs < rhs;
+		}
 	};
 
 	/**
@@ -127,6 +165,7 @@ class Levels : std::vector<Level> {
 	Levels(Levels&& other) = default;
 	Levels& operator=(const Levels& other) = default;
 	Levels& operator=(Levels&& other) = default;
+	~Levels() = default;
 	/**
 	 * @brief Assign levels from @p other to @c this.
 	 *
@@ -163,7 +202,9 @@ class Levels : std::vector<Level> {
 		super::const_reverse_iterator,
 		// Member functions.
 		super::assign,
-		// super::assign_range // TODO(C++23): Enable when switching to C++23.
+#if __cpp_lib_containers_ranges >= 202'202L
+		super::assign_range,
+#endif
 		super::get_allocator,
 		// - Element access.
 		super::at, super::operator[], super::front, super::back, super::data, super::begin, super::cbegin, super::end,
@@ -172,9 +213,13 @@ class Levels : std::vector<Level> {
 		super::empty, super::size, super::max_size, super::reserve, super::capacity, super::shrink_to_fit,
 		// - Modifiers.
 		super::clear, super::insert,
-		// super::insert_range, // TODO(C++23): Enable when switching to C++23.
+#if __cpp_lib_containers_ranges >= 202'202L
+		super::insert_range,
+#endif
 		super::emplace, super::erase, super::push_back, super::emplace_back,
-		// super::append_range, // TODO(C++23): Enable when switching to C++23.
+#if __cpp_lib_containers_ranges >= 202'202L
+		super::append_range,
+#endif
 		super::pop_back, super::resize, super::swap;
 
 	std::weak_ordering operator<=>(const Levels& other) const = default;

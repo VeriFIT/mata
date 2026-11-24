@@ -14,6 +14,7 @@
 #include <vector>
 
 #include <mata/simlib/util/binary_relation.hh>
+#include <mata/simlib/util/partition_relation.hh>
 #include <mata/simlib/util/smart_set.hh>
 
 
@@ -140,6 +141,18 @@ public:
 		size_t   outputSize);
 
 	Util::BinaryRelation compute_simulation();
+
+	/**
+	 * @brief  The same simulation as @c compute_simulation(), as the partition-relation pair the engine computes
+	 *
+	 * Unlike the Util::BinaryRelation, which takes a bit for every pair of the @p outputSize states, its memory is
+	 * linear in the states and the related pairs of blocks.
+	 */
+	Util::PartitionRelation compute_block_simulation(
+		const std::vector<std::vector<size_t>>&   partition,
+		const Util::BinaryRelation&               relation,
+		size_t                                    outputSize
+	);
 };
 
 #endif

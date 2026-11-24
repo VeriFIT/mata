@@ -1,6 +1,7 @@
 """Basic tests for utility package and sanity checks"""
 
 import libmata.nfa.nfa as mata_nfa
+import pytest
 
 __author__ = "Tomas Fiedor"
 
@@ -166,6 +167,24 @@ def test_delta_views(prepare_automaton_a):
     assert nfa.delta[1] == nfa.get_transitions_from_state(1)
 
 
+def test_delta_posts_of_states_without_transitions():
+    nfa = mata_nfa.Nfa(3)
+    nfa.delta.add(0, ord("a"), 1)
+    nfa.delta.add(0, ord("a"), 2)
+    nfa.delta.add(0, ord("b"), 2)
+    assert [(post.symbol, post.targets) for post in nfa.delta.state_post(0)] == [(ord("a"), [1, 2]), (ord("b"), [2])]
+    assert [(t.source, t.symbol, t.target) for t in nfa.delta.get_transitions_from(0)] == [
+        (0, ord("a"), 1),
+        (0, ord("a"), 2),
+        (0, ord("b"), 2),
+    ]
+    # A state with no outgoing transitions, and one past the states that Delta stores.
+    for state in (1, 100):
+        assert nfa.delta.state_post(state) == []
+        assert nfa.delta.get_transitions_from(state) == []
+        assert nfa.get_transitions_from_state(state) == []
+
+
 def test_delta_survives_nfa_deletion():
     """Tests that a kept Delta reference stays valid after the owning Nfa is garbage collected."""
     nfa = mata_nfa.Nfa(2)
@@ -185,3 +204,395 @@ def test_delta_equality():
     assert lhs.delta == rhs.delta
     rhs.delta.add(1, 1, 1)
     assert lhs.delta != rhs.delta
+
+
+"""Tests for bulk transition import (issue #796)."""
+
+
+def test_add_transitions_columnar_basic():
+    """Test basic columnar bulk import."""
+    nfa = mata_nfa.Nfa(5)
+    sources = [0, 1, 2, 1, 2]
+    symbols = [ord("a"), ord("b"), ord("c"), ord("d"), ord("e")]
+    targets = [1, 2, 3, 4, 0]
+
+    nfa.delta.add_transitions(sources, symbols, targets)
+
+    assert nfa.delta.num_of_transitions() == 5
+    assert nfa.delta.contains(0, ord("a"), 1)
+    assert nfa.delta.contains(1, ord("b"), 2)
+    assert nfa.delta.contains(2, ord("c"), 3)
+    assert nfa.delta.contains(1, ord("d"), 4)
+    assert nfa.delta.contains(2, ord("e"), 0)
+
+
+def test_add_transitions_from_triples():
+    """Test triple-iterable bulk import."""
+    nfa = mata_nfa.Nfa(5)
+    triples = [
+        (0, ord("a"), 1),
+        (1, ord("b"), 2),
+        (2, ord("c"), 3),
+    ]
+
+    nfa.delta.add_transitions_from(triples)
+
+    assert nfa.delta.num_of_transitions() == 3
+    assert nfa.delta.contains(0, ord("a"), 1)
+    assert nfa.delta.contains(1, ord("b"), 2)
+    assert nfa.delta.contains(2, ord("c"), 3)
+
+
+def test_add_transitions_duplicates_collapse():
+    """Test that duplicates are collapsed in bulk import."""
+    nfa = mata_nfa.Nfa(5)
+    sources = [0, 0, 0, 1, 1]
+    symbols = [ord("a"), ord("a"), ord("a"), ord("b"), ord("b")]
+    targets = [1, 1, 1, 2, 2]
+
+    nfa.delta.add_transitions(sources, symbols, targets)
+
+    # Duplicates should collapse to 2 unique transitions
+    assert nfa.delta.num_of_transitions() == 2
+    assert nfa.delta.contains(0, ord("a"), 1)
+    assert nfa.delta.contains(1, ord("b"), 2)
+
+
+def test_add_transitions_max_state_allocated():
+    """Test that states up to the largest ID are allocated."""
+    nfa = mata_nfa.Nfa(0)
+    sources = [0, 5, 3]
+    symbols = [ord("a"), ord("b"), ord("c")]
+    targets = [2, 7, 4]
+
+    nfa.delta.add_transitions(sources, symbols, targets)
+
+    # Should allocate up to state 7
+    assert nfa.delta.num_of_states() == 8
+
+
+def test_add_transitions_merges_nonempty_delta():
+    """Test that import into a non-empty delta merges."""
+    nfa = mata_nfa.Nfa(5)
+
+    # Add some transitions first
+    nfa.delta.add(0, ord("x"), 1)
+    assert nfa.delta.num_of_transitions() == 1
+
+    # Bulk add more
+    nfa.delta.add_transitions([1, 2], [ord("a"), ord("b")], [2, 3])
+
+    # Should merge to 3 total transitions
+    assert nfa.delta.num_of_transitions() == 3
+    assert nfa.delta.contains(0, ord("x"), 1)
+    assert nfa.delta.contains(1, ord("a"), 2)
+    assert nfa.delta.contains(2, ord("b"), 3)
+
+
+def test_add_transitions_length_mismatch_raises():
+    """Test that length mismatch raises without modifying automaton."""
+    nfa = mata_nfa.Nfa(5)
+    nfa.delta.add(0, ord("x"), 1)
+    initial_trans = list(nfa.delta)
+
+    with pytest.raises(ValueError, match="equal length"):
+        nfa.delta.add_transitions([0, 1], [ord("a")], [1, 2])
+
+    # Automaton should be unmodified
+    assert list(nfa.delta) == initial_trans
+
+
+def test_add_transitions_invalid_source_raises():
+    """Test that invalid source state raises without modifying automaton."""
+    nfa = mata_nfa.Nfa(5)
+    nfa.delta.add(0, ord("x"), 1)
+    initial_trans = list(nfa.delta)
+
+    with pytest.raises((TypeError, OverflowError)):
+        nfa.delta.add_transitions(["not_a_number", 1], [ord("a"), ord("b")], [1, 2])
+
+    # Automaton should be unmodified
+    assert list(nfa.delta) == initial_trans
+
+
+def test_add_transitions_invalid_symbol_raises():
+    """Test that invalid symbol raises without modifying automaton."""
+    nfa = mata_nfa.Nfa(5)
+    nfa.delta.add(0, ord("x"), 1)
+    initial_trans = list(nfa.delta)
+
+    with pytest.raises((TypeError, OverflowError)):
+        nfa.delta.add_transitions([0, 1], ["not_a_number", ord("b")], [1, 2])
+
+    # Automaton should be unmodified
+    assert list(nfa.delta) == initial_trans
+
+
+def test_add_transitions_invalid_target_raises():
+    """Test that invalid target state raises without modifying automaton."""
+    nfa = mata_nfa.Nfa(5)
+    nfa.delta.add(0, ord("x"), 1)
+    initial_trans = list(nfa.delta)
+
+    with pytest.raises((TypeError, OverflowError)):
+        nfa.delta.add_transitions([0, 1], [ord("a"), ord("b")], [1, "not_a_number"])
+
+    # Automaton should be unmodified
+    assert list(nfa.delta) == initial_trans
+
+
+def test_add_transitions_from_bad_triple_arity_raises():
+    """Test that bad triple arity raises without modifying automaton."""
+    nfa = mata_nfa.Nfa(5)
+    nfa.delta.add(0, ord("x"), 1)
+    initial_trans = list(nfa.delta)
+
+    with pytest.raises((ValueError, TypeError)):
+        nfa.delta.add_transitions_from([(0, ord("a")), (1, ord("b"), 2)])
+
+    # Automaton should be unmodified
+    assert list(nfa.delta) == initial_trans
+
+
+def test_add_transitions_from_invalid_value_raises():
+    """Test that invalid values in triples raise without modifying automaton."""
+    nfa = mata_nfa.Nfa(5)
+    nfa.delta.add(0, ord("x"), 1)
+    initial_trans = list(nfa.delta)
+
+    with pytest.raises((TypeError, OverflowError, ValueError)):
+        nfa.delta.add_transitions_from([(0, ord("a"), 1), ("bad", ord("b"), 2)])
+
+    # Automaton should be unmodified
+    assert list(nfa.delta) == initial_trans
+
+
+def test_iter_transitions_from_generator():
+    """Test that iter_transitions_from is a generator."""
+    nfa = mata_nfa.Nfa(5)
+    nfa.add_transition(0, ord("a"), 1)
+    nfa.add_transition(0, ord("b"), 2)
+    nfa.add_transition(0, ord("c"), 3)
+    nfa.add_transition(1, ord("d"), 2)
+
+    # iter_transitions_from should yield transitions for state 0
+    gen = nfa.iter_transitions_from(0)
+    trans = list(gen)
+
+    assert len(trans) == 3
+    assert all(t.source == 0 for t in trans)
+    assert {(t.symbol, t.target) for t in trans} == {(ord("a"), 1), (ord("b"), 2), (ord("c"), 3)}
+
+
+def test_get_trans_from_state_as_sequence_via_generator():
+    """Test that get_trans_from_state_as_sequence materializes iter_transitions_from."""
+    nfa = mata_nfa.Nfa(5)
+    nfa.add_transition(0, ord("a"), 1)
+    nfa.add_transition(0, ord("b"), 2)
+    nfa.add_transition(1, ord("c"), 3)
+
+    # Should return a list
+    result = nfa.get_trans_from_state_as_sequence(0)
+    assert isinstance(result, list)
+    assert len(result) == 2
+    assert all(t.source == 0 for t in result)
+
+
+def test_lifetime_iterate_survives_nfa_deletion():
+    """Test that an iterate generator keeps the automaton alive."""
+    nfa = mata_nfa.Nfa(3)
+    nfa.add_transition(0, ord("a"), 1)
+    nfa.add_transition(1, ord("b"), 2)
+
+    it = nfa.iterate()
+    del nfa  # Delete the owning NFA
+
+    # Generator should still be able to iterate
+    trans = list(it)
+    assert len(trans) == 2
+    assert trans[0].source == 0
+    assert trans[1].source == 1
+
+
+def test_lifetime_iter_transitions_from_survives_nfa_deletion():
+    """Test that an iter_transitions_from generator keeps the automaton alive."""
+    nfa = mata_nfa.Nfa(3)
+    nfa.add_transition(0, ord("a"), 1)
+    nfa.add_transition(0, ord("b"), 2)
+
+    it = nfa.iter_transitions_from(0)
+    del nfa  # Delete the owning NFA
+
+    # Generator should still be able to iterate
+    trans = list(it)
+    assert len(trans) == 2
+    assert all(t.source == 0 for t in trans)
+
+
+def test_lifetime_delta_survives_nfa_deletion_bulk_add():
+    """Test that a Delta view keeps automaton alive during bulk add."""
+    nfa = mata_nfa.Nfa(5)
+    delta = nfa.delta
+    del nfa  # Delete the owning NFA
+
+    # Delta should still work for bulk add
+    delta.add_transitions([0, 1], [ord("a"), ord("b")], [1, 2])
+
+    assert delta.num_of_transitions() == 2
+    assert delta.contains(0, ord("a"), 1)
+    assert delta.contains(1, ord("b"), 2)
+
+
+def test_lifetime_transition_survives_nfa_deletion():
+    """A Transition keeps its own value, even after every automaton is gone."""
+    import gc
+
+    nfa = mata_nfa.Nfa(3)
+    nfa.add_transition(0, ord("a"), 1)
+    trans = next(nfa.iterate())
+    del nfa
+    gc.collect()
+
+    assert trans == mata_nfa.Transition(0, ord("a"), 1)
+    assert (trans.source, trans.symbol, trans.target) == (0, ord("a"), 1)
+    assert str(trans) == f"0-[{ord('a')}]\u21921"
+
+
+def _nfa_with_three_transitions():
+    nfa = mata_nfa.Nfa(5)
+    nfa.add_transition(0, ord("a"), 1)
+    nfa.add_transition(0, ord("b"), 2)
+    nfa.add_transition(1, ord("a"), 2)
+    return nfa
+
+
+def _transitions_automaton(generator):
+    nfa = _nfa_with_three_transitions()
+    if generator == "iterate":
+        it = nfa.iterate()
+        expected = [(0, ord("a"), 1), (0, ord("b"), 2), (1, ord("a"), 2)]
+    elif generator == "delta":
+        it = iter(nfa.delta)
+        expected = [(0, ord("a"), 1), (0, ord("b"), 2), (1, ord("a"), 2)]
+    elif generator == "iter_transitions_from":
+        it = nfa.iter_transitions_from(0)
+        expected = [(0, ord("a"), 1), (0, ord("b"), 2)]
+    else:
+        it = nfa.delta.iter_transitions_from(0)
+        expected = [(0, ord("a"), 1), (0, ord("b"), 2)]
+    return nfa, it, expected
+
+
+@pytest.mark.parametrize("mutation", ["add", "remove", "delta_add"])
+@pytest.mark.parametrize("generator", ["iterate", "delta"])
+def test_all_transitions_generators_raise_on_mutation(generator, mutation):
+    """A generator notices that its automaton changed instead of walking dangling iterators."""
+    nfa, it, _ = _transitions_automaton(generator)
+    next(it)
+
+    if mutation == "add":
+        nfa.add_transition(2, ord("c"), 3)
+    elif mutation == "remove":
+        nfa.remove_trans_raw(1, ord("a"), 2)
+    else:
+        nfa.delta.add(mata_nfa.Transition(2, ord("c"), 3))
+
+    with pytest.raises(RuntimeError, match="modified during iteration"):
+        next(it)
+
+
+@pytest.mark.parametrize("mutation", ["add", "remove"])
+@pytest.mark.parametrize("generator", ["iter_transitions_from", "delta_from"])
+def test_iter_transitions_from_raises_on_mutation(generator, mutation):
+    nfa, it, _ = _transitions_automaton(generator)
+    next(it)
+
+    if mutation == "add":
+        nfa.add_transition(2, ord("c"), 3)
+    else:
+        nfa.remove_trans_raw(0, ord("a"), 1)
+
+    with pytest.raises(RuntimeError, match="modified during iteration"):
+        next(it)
+
+
+@pytest.mark.parametrize("generator", ["iterate", "delta", "iter_transitions_from", "delta_from"])
+def test_undisturbed_iteration_returns_all_transitions(generator):
+    """The mutation check never fires when the automaton is left alone."""
+    nfa, it, expected = _transitions_automaton(generator)
+    trans = list(it)
+    assert [(t.source, t.symbol, t.target) for t in trans] == expected
+    assert list(it) == []
+    assert nfa.get_num_of_transitions() == 3
+
+
+@pytest.mark.parametrize("generator", ["iterate", "delta", "iter_transitions_from", "delta_from"])
+def test_mutation_before_the_first_advance_is_seen(generator):
+    """The generator reads the automaton live from its first advance, not from its creation."""
+    nfa, it, _ = _transitions_automaton(generator)
+    nfa.add_transition(0, ord("c"), 3)
+
+    result = list(it)
+    assert (0, ord("c"), 3) in {(t.source, t.symbol, t.target) for t in result}
+    assert nfa.get_num_of_transitions() == 4
+
+
+def test_get_trans_as_sequence_matches_iteration():
+    nfa = _nfa_with_three_transitions()
+    streamed = list(nfa.iterate())
+    sequence = nfa.get_trans_as_sequence()
+    assert isinstance(sequence, list)
+    assert sequence == streamed
+    assert [(t.source, t.symbol, t.target) for t in sequence] == [(0, ord("a"), 1), (0, ord("b"), 2), (1, ord("a"), 2)]
+
+
+def test_bulk_equals_per_transition():
+    """Test that bulk import produces identical delta to per-transition add."""
+    # Build with per-transition
+    nfa1 = mata_nfa.Nfa(10)
+    trans_list = [
+        (0, ord("a"), 1),
+        (1, ord("b"), 2),
+        (2, ord("c"), 3),
+        (3, ord("d"), 4),
+        (0, ord("e"), 5),
+        (1, ord("f"), 6),
+        (0, ord("a"), 1),  # Duplicate
+    ]
+    for src, sym, tgt in trans_list:
+        nfa1.add_transition(src, sym, tgt)
+
+    # Build with bulk
+    nfa2 = mata_nfa.Nfa(10)
+    sources, symbols, targets = zip(*trans_list) if trans_list else ([], [], [])
+    nfa2.delta.add_transitions(sources, symbols, targets)
+
+    # Should be identical
+    assert nfa1.delta == nfa2.delta
+    assert list(nfa1.delta) == list(nfa2.delta)
+
+
+def test_bulk_with_out_of_order_sources():
+    """Test bulk import with out-of-order sources (batched import sorts)."""
+    nfa = mata_nfa.Nfa(10)
+
+    # Add in non-monotonic order
+    nfa.delta.add_transitions([3, 1, 2, 1], [ord("a"), ord("b"), ord("c"), ord("d")], [4, 2, 3, 5])
+
+    assert nfa.delta.num_of_transitions() == 4
+    assert nfa.delta.contains(1, ord("b"), 2)
+    assert nfa.delta.contains(1, ord("d"), 5)
+    assert nfa.delta.contains(2, ord("c"), 3)
+    assert nfa.delta.contains(3, ord("a"), 4)
+
+
+def test_delta_iter_transitions_from_consistency():
+    """Test that Delta.iter_transitions_from matches get_transitions_from."""
+    nfa = mata_nfa.Nfa(10)
+    nfa.delta.add_transitions([0, 0, 1, 1, 2], [ord("a"), ord("b"), ord("c"), ord("d"), ord("e")], [1, 2, 3, 4, 5])
+
+    # Compare streaming vs list for each state
+    for state in range(3):
+        streaming = list(nfa.delta.iter_transitions_from(state))
+        list_form = nfa.delta.get_transitions_from(state)
+        assert streaming == list_form

@@ -1,0 +1,1076 @@
+/* nfa-differential.cc -- Seeded randomized differential tests of the NFA algorithms.
+ *
+ * Every automaton is generated from raw std::mt19937 output (std::shuffle and the distributions
+ *  are implementation-defined and would differ between libstdc++ and libc++), and every property
+ *  is checked against a reference acceptor that uses no library algorithm.
+ */
+
+#include <catch2/catch_test_macros.hpp>
+
+#include <memory>
+#include <optional>
+#include <random>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "mata/alphabet.hh"
+#include "mata/applications/strings.hh"
+#include "mata/nfa/algorithms.hh"
+#include "mata/nfa/builder.hh"
+#include "mata/nfa/nfa.hh"
+
+using namespace mata::nfa;
+using mata::EnumAlphabet;
+using mata::Symbol;
+using mata::Word;
+using mata::nfa::ParameterMap;
+
+namespace {
+
+/// Draw a value in [0, bound) from the raw generator output, portably across standard libraries.
+size_t draw(std::mt19937& rng, const size_t bound) { return static_cast<size_t>(rng()) % bound; }
+
+/// A random NFA over the alphabet {0, ..., num_of_symbols - 1} with an explicit alphabet attached.
+///  With @p epsilon set, the automaton also gets epsilon transitions, both arbitrary ones and
+///  forward chains q -> q + 1, which the removal has to contract transitively.
+Nfa random_nfa(
+	std::mt19937& rng,
+	const size_t num_of_states,
+	const size_t num_of_symbols,
+	const std::shared_ptr<EnumAlphabet>& alphabet,
+	const std::optional<Symbol> epsilon = std::nullopt
+) {
+	Nfa nfa{num_of_states};
+	nfa.alphabet = alphabet;
+	nfa.initial.insert(static_cast<mata::nfa::State>(draw(rng, num_of_states)));
+	for (mata::nfa::State state{0}; state < num_of_states; ++state) {
+		if (draw(rng, 3) == 0) { nfa.final.insert(state); }
+		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) {
+			// Each (state, symbol) gets zero, one or two targets.
+			for (size_t transition{0}, transitions{draw(rng, 3)}; transition < transitions; ++transition) {
+				nfa.delta.add(state, symbol, static_cast<mata::nfa::State>(draw(rng, num_of_states)));
+			}
+		}
+		if (epsilon.has_value()) {
+			if (draw(rng, 4) == 0) {
+				nfa.delta.add(state, *epsilon, static_cast<mata::nfa::State>(draw(rng, num_of_states)));
+			}
+			if (state + 1 < num_of_states && draw(rng, 3) == 0) { nfa.delta.add(state, *epsilon, state + 1); }
+		}
+	}
+	return nfa;
+}
+
+/// A partial deterministic automaton over the alphabet {0, ..., num_of_symbols - 1}: every (state, symbol) has at
+///  most one target. A union of @c k such automata determinizes into at most the product of (|component| + 1)
+///  macrostates, which keeps the naive reference algorithms affordable, while the reachable macrostates still
+///  vary in cardinality between 0 and @c k.
+Nfa random_partial_dfa(
+	std::mt19937& rng,
+	const size_t num_of_states,
+	const size_t num_of_symbols,
+	const std::shared_ptr<EnumAlphabet>& alphabet
+) {
+	Nfa nfa{num_of_states};
+	nfa.alphabet = alphabet;
+	nfa.initial.insert(static_cast<mata::nfa::State>(draw(rng, num_of_states)));
+	for (mata::nfa::State state{0}; state < num_of_states; ++state) {
+		if (draw(rng, 2) == 0) { nfa.final.insert(state); }
+		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) {
+			if (draw(rng, 5) != 0) {
+				nfa.delta.add(state, symbol, static_cast<mata::nfa::State>(draw(rng, num_of_states)));
+			}
+		}
+	}
+	return nfa;
+}
+
+/// A dense random NFA: half of the states final and @c 1.75 * num_of_states transitions per symbol, placed
+///  uniformly at random. This is the shape that keeps the antichains of the inclusion check deep.
+Nfa random_dense_nfa(
+	std::mt19937& rng,
+	const size_t num_of_states,
+	const size_t num_of_symbols,
+	const std::shared_ptr<EnumAlphabet>& alphabet
+) {
+	Nfa nfa{num_of_states};
+	nfa.alphabet = alphabet;
+	nfa.initial.insert(static_cast<mata::nfa::State>(draw(rng, num_of_states)));
+	for (mata::nfa::State state{0}; state < num_of_states; ++state) {
+		if (draw(rng, 2) == 0) { nfa.final.insert(state); }
+	}
+	const size_t num_of_transitions{7 * num_of_states / 4};
+	for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) {
+		for (size_t transition{0}; transition < num_of_transitions; ++transition) {
+			nfa.delta.add(
+				static_cast<mata::nfa::State>(draw(rng, num_of_states)), symbol,
+				static_cast<mata::nfa::State>(draw(rng, num_of_states))
+			);
+		}
+	}
+	return nfa;
+}
+
+/// Every word over {0, ..., num_of_symbols - 1} of length at most @p max_length.
+std::vector<Word> all_words(const size_t num_of_symbols, const size_t max_length) {
+	std::vector<Word> words{Word{}};
+	size_t level_begin{0};
+	for (size_t length{0}; length < max_length; ++length) {
+		const size_t level_end{words.size()};
+		for (size_t index{level_begin}; index < level_end; ++index) {
+			for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) {
+				Word word{words[index]};
+				word.push_back(symbol);
+				words.push_back(std::move(word));
+			}
+		}
+		level_begin = level_end;
+	}
+	return words;
+}
+
+/// Reference acceptance: a subset simulation over the delta, with an epsilon closure, using no
+///  library algorithm beyond reading the transitions.
+bool reference_accepts(const Nfa& nfa, const Word& word, const Symbol epsilon = EPSILON) {
+	auto close = [&](std::set<mata::nfa::State>& states) {
+		std::vector<mata::nfa::State> worklist{states.begin(), states.end()};
+		while (!worklist.empty()) {
+			const mata::nfa::State state{worklist.back()};
+			worklist.pop_back();
+			for (const SymbolPost& symbol_post : nfa.delta[state]) {
+				if (symbol_post.symbol != epsilon) { continue; }
+				for (const mata::nfa::State target : symbol_post.targets) {
+					if (states.insert(target).second) { worklist.push_back(target); }
+				}
+			}
+		}
+	};
+
+	std::set<mata::nfa::State> current{nfa.initial.begin(), nfa.initial.end()};
+	close(current);
+	for (const Symbol symbol : word) {
+		std::set<mata::nfa::State> next{};
+		for (const mata::nfa::State state : current) {
+			for (const SymbolPost& symbol_post : nfa.delta[state]) {
+				if (symbol_post.symbol != symbol) { continue; }
+				next.insert(symbol_post.targets.begin(), symbol_post.targets.end());
+			}
+		}
+		close(next);
+		current = std::move(next);
+		if (current.empty()) { return false; }
+	}
+	for (const mata::nfa::State state : current) {
+		if (nfa.final.contains(state)) { return true; }
+	}
+	return false;
+}
+
+/// @p nfa with every symbol at or above @p first_epsilon relabeled to EPSILON. This is the automaton in which a
+///  witness returned by `is_intersection_empty()` replays after its one-sided moves were stripped.
+Nfa relabel_one_sided_as_epsilon(const Nfa& nfa, const Symbol first_epsilon) {
+	Nfa relabeled{nfa.num_of_states()};
+	relabeled.initial = nfa.initial;
+	relabeled.final = nfa.final;
+	relabeled.alphabet = nfa.alphabet;
+	for (const Transition& transition : nfa.delta.transitions()) {
+		relabeled.delta.add(
+			transition.source, transition.symbol < first_epsilon ? transition.symbol : EPSILON, transition.target
+		);
+	}
+	return relabeled;
+}
+
+/// The shortest nonempty-or-empty words accepted from exactly @p initial states, derived only by the reference
+///  acceptor. @p words must include every word up to the number of states minus one.
+std::set<Word> reference_shortest_words(Nfa nfa, const StateSet& initial, const std::vector<Word>& words) {
+	nfa.initial.clear();
+	for (const State state : initial) { nfa.initial.insert(state); }
+	std::set<Word> result{};
+	for (const Word& word : words) {
+		if (!word.empty() && !result.empty() && word.size() > result.begin()->size()) { break; }
+		if (!reference_accepts(nfa, word)) { continue; }
+		if (!result.empty() && word.size() < result.begin()->size()) { result.clear(); }
+		result.insert(word);
+	}
+	return result;
+}
+
+/// Do the two automata accept the same words among @p words, as judged by the reference acceptor?
+bool same_language_on(const Nfa& lhs, const Nfa& rhs, const std::vector<Word>& words, const Symbol epsilon = EPSILON) {
+	for (const Word& word : words) {
+		if (reference_accepts(lhs, word, epsilon) != reference_accepts(rhs, word, epsilon)) { return false; }
+	}
+	return true;
+}
+
+/// Is the language of @p lhs included in the language of @p rhs among @p words?
+bool included_on(const Nfa& lhs, const Nfa& rhs, const std::vector<Word>& words) {
+	for (const Word& word : words) {
+		if (reference_accepts(lhs, word) && !reference_accepts(rhs, word)) { return false; }
+	}
+	return true;
+}
+
+/// Is @p run an accepting run of @p nfa: a path from an initial to a final state that reads the word of @p run?
+bool is_accepting_run(const Nfa& nfa, const Run& run) {
+	if (run.path.size() != run.word.size() + 1) { return false; }
+	if (!nfa.initial.contains(run.path.front()) || !nfa.final.contains(run.path.back())) { return false; }
+	for (size_t i{0}; i < run.word.size(); ++i) {
+		if (!nfa.delta.contains(run.path[i], run.word[i], run.path[i + 1])) { return false; }
+	}
+	return true;
+}
+
+/// Dump the automaton without the alphabet: print_to_mata() rejects symbols outside the attached
+///  alphabet, and the generated automata use EPSILON.
+std::string describe(const unsigned seed, const Nfa& nfa) {
+	std::string description{"seed " + std::to_string(seed) + "\ninitial:"};
+	for (const mata::nfa::State state : nfa.initial) { description += " " + std::to_string(state); }
+	description += "\nfinal:";
+	for (const mata::nfa::State state : nfa.final) { description += " " + std::to_string(state); }
+	description += "\ntransitions:\n";
+	for (const Transition& transition : nfa.delta.transitions()) {
+		description += std::to_string(transition.source) + " " + std::to_string(transition.symbol) + " " +
+					   std::to_string(transition.target) + "\n";
+	}
+	return description;
+}
+
+std::shared_ptr<EnumAlphabet> alphabet_of(const size_t num_of_symbols) {
+	auto alphabet{std::make_shared<EnumAlphabet>()};
+	for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) { alphabet->add_new_symbol(std::to_string(symbol)); }
+	return alphabet;
+}
+
+/// The reversal of @p nfa built one reversed transition at a time, over the same state domain.
+Nfa reference_revert(const Nfa& nfa) {
+	Nfa reverted{nfa.num_of_states()};
+	reverted.initial = nfa.final;
+	reverted.final = nfa.initial;
+	for (const Transition& transition : nfa.delta.transitions()) {
+		reverted.delta.add(transition.target, transition.symbol, transition.source);
+	}
+	return reverted;
+}
+
+/// revert() builds the per-transition reversal, keeps the state domain, and reverting twice is the identity.
+void check_revert(const Nfa& nfa) {
+	const Nfa reverted{revert(nfa)};
+	CHECK(reverted.is_identical(reference_revert(nfa)));
+	CHECK(reverted.num_of_states() == nfa.num_of_states());
+	CHECK(revert(reverted).is_identical(nfa));
+}
+
+/// The member concatenation of @p lhs and @p rhs built one transition at a time: the rhs shifted by the lhs states,
+///  every lhs final state given each transition of each shifted rhs initial state, and kept final when an rhs
+///  initial state is final.
+Nfa reference_concatenate(const Nfa& lhs, const Nfa& rhs) {
+	const auto offset{static_cast<mata::nfa::State>(lhs.num_of_states())};
+	Nfa result{offset + rhs.num_of_states()};
+	result.initial = lhs.initial;
+	for (const Transition& transition : lhs.delta.transitions()) { result.delta.add(transition); }
+	for (const Transition& transition : rhs.delta.transitions()) {
+		result.delta.add(transition.source + offset, transition.symbol, transition.target + offset);
+	}
+	bool rhs_initial_is_final{false};
+	for (const mata::nfa::State rhs_initial : rhs.initial) {
+		rhs_initial_is_final = rhs_initial_is_final || rhs.final.contains(rhs_initial);
+		for (const mata::nfa::State lhs_final : lhs.final) {
+			for (const Move& move : rhs.delta[rhs_initial].moves()) {
+				result.delta.add(lhs_final, move.symbol, move.target + offset);
+			}
+		}
+	}
+	if (rhs_initial_is_final) {
+		for (const mata::nfa::State lhs_final : lhs.final) { result.final.insert(lhs_final); }
+	}
+	for (const mata::nfa::State rhs_final : rhs.final) { result.final.insert(rhs_final + offset); }
+	return result;
+}
+
+void check_shortest_words(const unsigned seed) {
+	std::mt19937 rng{seed};
+	const size_t num_of_states{2 + seed % 5};
+	const size_t num_of_symbols{1 + seed % 3};
+	const Nfa nfa{random_nfa(rng, num_of_states, num_of_symbols, alphabet_of(num_of_symbols))};
+	const std::vector<Word> words{all_words(num_of_symbols, num_of_states - 1)};
+	const mata::applications::strings::ShortestWordsMap shortest_words{nfa};
+	INFO(describe(seed, nfa));
+	CHECK(
+		mata::applications::strings::get_shortest_words(nfa) ==
+		reference_shortest_words(nfa, StateSet{nfa.initial}, words)
+	);
+
+	StateSet all_states{};
+	for (State state{0}; state < num_of_states; ++state) {
+		all_states.insert(state);
+		CHECK(shortest_words.get_shortest_words_from(state) == reference_shortest_words(nfa, {state}, words));
+		for (State other_state{state + 1}; other_state < num_of_states; ++other_state) {
+			CHECK(
+				shortest_words.get_shortest_words_from({state, other_state}) ==
+				reference_shortest_words(nfa, {state, other_state}, words)
+			);
+		}
+	}
+	CHECK(shortest_words.get_shortest_words_from(all_states) == reference_shortest_words(nfa, all_states, words));
+}
+
+constexpr size_t MAX_WORD_LENGTH{5};
+
+const ParameterMap SIMULATION{{"algorithm", "simulation"}, {"type", "after"}, {"direction", "forward"}};
+const ParameterMap RESIDUAL_AFTER{{"algorithm", "residual"}, {"type", "after"}, {"direction", "forward"}};
+const ParameterMap RESIDUAL_WITH{{"algorithm", "residual"}, {"type", "with"}, {"direction", "forward"}};
+const ParameterMap CLASSICAL{{"algorithm", "classical"}};
+const ParameterMap BRZOZOWSKI{{"algorithm", "brzozowski"}};
+const ParameterMap HOPCROFT_NONDET{{"algorithm", "hopcroft_nondet"}};
+const ParameterMap NAIVE{{"algorithm", "naive"}};
+const ParameterMap ANTICHAINS{{"algorithm", "antichains"}};
+const ParameterMap HKC{{"algorithm", "hkc"}};
+
+/// HKC agrees with the antichains on both inclusions and on the equivalence of @p lhs and @p rhs, and every
+///  counterexample it reports is an accepting run of one operand over a word the other one rejects.
+void check_hkc(const Nfa& lhs, const Nfa& rhs, const mata::Alphabet* const alphabet) {
+	for (const auto& [smaller, bigger] : {std::pair{&lhs, &rhs}, std::pair{&rhs, &lhs}}) {
+		Run cex{.word = {0}, .path = {0}};
+		const bool included{is_included(*smaller, *bigger, &cex, alphabet, HKC)};
+		CHECK(included == is_included(*smaller, *bigger, alphabet, ANTICHAINS));
+		if (included) {
+			CHECK(cex.word.empty());
+			CHECK(cex.path.empty());
+		} else {
+			CHECK(is_accepting_run(*smaller, cex));
+			CHECK(!reference_accepts(*bigger, cex.word));
+		}
+	}
+	Run cex{.word = {0}, .path = {0}};
+	const bool equivalent{are_equivalent(lhs, rhs, alphabet, HKC, &cex)};
+	CHECK(equivalent == are_equivalent(lhs, rhs, alphabet, ANTICHAINS));
+	if (equivalent) {
+		CHECK(cex.word.empty());
+		CHECK(cex.path.empty());
+	} else {
+		const bool in_lhs{reference_accepts(lhs, cex.word)};
+		CHECK(in_lhs != reference_accepts(rhs, cex.word));
+		CHECK(is_accepting_run(in_lhs ? lhs : rhs, cex));
+	}
+}
+
+/// Every property of one random automaton (and one random companion) that holds on the devel
+///  implementation, checked on all words up to @p max_word_length.
+void check_nfa_properties(
+	const unsigned seed, const size_t num_of_states, const size_t num_of_symbols, const size_t max_word_length
+) {
+	std::mt19937 rng{seed};
+	const std::shared_ptr<EnumAlphabet> alphabet{alphabet_of(num_of_symbols)};
+	const Nfa nfa{random_nfa(rng, num_of_states, num_of_symbols, alphabet)};
+	const std::vector<Word> words{all_words(num_of_symbols, max_word_length)};
+	INFO(describe(seed, nfa));
+
+	CHECK(same_language_on(determinize(nfa), nfa, words));
+	CHECK(same_language_on(Nfa{nfa}.trim(), nfa, words));
+
+	// Both reduction algorithms, and both ways the residual one can order its two phases, preserve
+	//  the language. The residual algorithm rejects a state renaming, so none is asked for.
+	CHECK(same_language_on(reduce(nfa, nullptr, SIMULATION), nfa, words));
+	CHECK(same_language_on(reduce(nfa, nullptr, RESIDUAL_AFTER), nfa, words));
+	CHECK(same_language_on(reduce(nfa, nullptr, RESIDUAL_WITH), nfa, words));
+
+	// Both algorithms accept the raw automaton: "hopcroft_nondet" normalizes its input first (#734), so it
+	//  has to agree with Brzozowski both in language and in state count.
+	const Nfa brzozowski{minimize(nfa, BRZOZOWSKI)};
+	CHECK(same_language_on(brzozowski, nfa, words));
+	const Nfa hopcroft{minimize(nfa, HOPCROFT_NONDET)};
+	CHECK(same_language_on(hopcroft, nfa, words));
+	// The language and the state count alone can also be met by an NFA, so require a DFA unconditionally.
+	CHECK(hopcroft.is_deterministic());
+	if (!brzozowski.final.empty()) { CHECK(hopcroft.num_of_states() == brzozowski.num_of_states()); }
+
+	// A deterministic copy is needed by the deterministic shortcut of the complement below.
+	Nfa deterministic{determinize(nfa)};
+	deterministic.trim();
+
+	check_revert(nfa);
+
+	// Intersection accepts exactly the words both operands accept.
+	std::mt19937 other_rng{seed + 1'000};
+	const Nfa other{random_nfa(other_rng, num_of_states, num_of_symbols, alphabet)};
+	const Nfa product{intersection(nfa, other)};
+	for (const Word& word : words) {
+		const bool in_both{reference_accepts(nfa, word) && reference_accepts(other, word)};
+		CHECK(reference_accepts(product, word) == in_both);
+	}
+
+	// Exactly one of the automaton and its complement accepts each word: for both algorithms, and for
+	//  the deterministic shortcuts of the classical one (on a copy, and in place on an rvalue).
+	for (const Nfa& complemented :
+		 {complement(nfa, *alphabet, CLASSICAL), complement(nfa, *alphabet, BRZOZOWSKI),
+		  complement(deterministic, *alphabet, CLASSICAL),
+		  complement(Nfa{deterministic}, alphabet->get_alphabet_symbols(), CLASSICAL)}) {
+		for (const Word& word : words) { CHECK(reference_accepts(complemented, word) != reference_accepts(nfa, word)); }
+	}
+
+	// The lazy naive universality agrees with the antichain algorithm and the materialized complement. A
+	//  counterexample is a word the automaton rejects.
+	Run naive_cex{};
+	const bool naive_universal{algorithms::is_universal_naive(nfa, *alphabet, &naive_cex)};
+	Run antichain_cex{};
+	const bool antichain_universal{algorithms::is_universal_antichains(nfa, *alphabet, &antichain_cex)};
+	CHECK(naive_universal == antichain_universal);
+	CHECK(naive_universal == algorithms::is_universal_antichains(nfa, *alphabet, nullptr));
+	CHECK(naive_universal == complement(nfa, *alphabet, CLASSICAL).is_lang_empty());
+	if (!naive_universal) {
+		CHECK(!reference_accepts(nfa, naive_cex.word));
+		CHECK(!reference_accepts(nfa, antichain_cex.word));
+		CHECK(naive_cex.path.empty());
+		CHECK(antichain_cex.path.empty());
+	}
+
+	// Direct calls read EPSILON as a letter, so its counterexample keeps EPSILON.
+	Nfa empty_word_only{1};
+	empty_word_only.initial.insert(0);
+	empty_word_only.final.insert(0);
+	Run epsilon_cex{};
+	CHECK(!algorithms::is_universal_naive(empty_word_only, EnumAlphabet{EPSILON}, &epsilon_cex));
+	CHECK(epsilon_cex.word == Word{EPSILON});
+
+	// Both inclusion algorithms agree with each other and, when they report inclusion, with the
+	//  bounded check.
+	const bool naive_inclusion{is_included(nfa, other, alphabet.get(), NAIVE)};
+	const bool antichain_inclusion{is_included(nfa, other, alphabet.get(), ANTICHAINS)};
+	CHECK(naive_inclusion == antichain_inclusion);
+	if (naive_inclusion) { CHECK(included_on(nfa, other, words)); }
+
+	// The same for both equivalence algorithms.
+	const bool naive_equivalence{are_equivalent(nfa, other, alphabet.get(), NAIVE)};
+	const bool antichain_equivalence{are_equivalent(nfa, other, alphabet.get(), ANTICHAINS)};
+	CHECK(naive_equivalence == antichain_equivalence);
+	if (naive_equivalence) { CHECK(same_language_on(nfa, other, words)); }
+
+	// HKC agrees with them on both, and its counterexamples are witnesses.
+	check_hkc(nfa, other, alphabet.get());
+}
+
+/// Removing @p epsilon keeps the language, also after determinization.
+void check_epsilon_removal(
+	const unsigned seed,
+	const size_t num_of_states,
+	const size_t num_of_symbols,
+	const size_t max_word_length,
+	const Symbol epsilon
+) {
+	std::mt19937 rng{seed};
+	const std::shared_ptr<EnumAlphabet> alphabet{alphabet_of(num_of_symbols)};
+	const Nfa nfa{random_nfa(rng, num_of_states, num_of_symbols, alphabet, epsilon)};
+	const std::vector<Word> words{all_words(num_of_symbols, max_word_length)};
+	INFO(describe(seed, nfa));
+
+	const Nfa without_epsilon{remove_epsilon(nfa, epsilon)};
+	CHECK(same_language_on(without_epsilon, nfa, words, epsilon));
+	CHECK(same_language_on(determinize(without_epsilon), nfa, words, epsilon));
+
+	// In place, the removal gives the same automaton.
+	Nfa in_place{nfa};
+	in_place.remove_epsilon(epsilon);
+	CHECK(in_place.delta == without_epsilon.delta);
+	CHECK(in_place.initial == without_epsilon.initial);
+	CHECK(in_place.final == without_epsilon.final);
+}
+
+/// The forward direct simulation as a naive greatest fixpoint: @c result[p][q] iff @c q simulates @c p. A final
+///  state is simulated only by a final state, and every transition p -a-> p' needs some q -a-> q' with q'
+///  simulating p'.
+std::vector<std::vector<bool>> reference_simulation(const Nfa& nfa, const size_t num_of_symbols) {
+	const size_t num_of_states{nfa.num_of_states()};
+	std::vector<std::vector<std::vector<mata::nfa::State>>> post(
+		num_of_states, std::vector<std::vector<mata::nfa::State>>(num_of_symbols)
+	);
+	for (const Transition& transition : nfa.delta.transitions()) {
+		post[transition.source][transition.symbol].push_back(transition.target);
+	}
+	std::vector<std::vector<bool>> simulated(num_of_states, std::vector<bool>(num_of_states));
+	for (mata::nfa::State p{0}; p < num_of_states; ++p) {
+		for (mata::nfa::State q{0}; q < num_of_states; ++q) { simulated[p][q] = !nfa.final[p] || nfa.final[q]; }
+	}
+	for (bool changed{true}; changed;) {
+		changed = false;
+		// matched[a][p'][q]: some q -a-> q' simulates p'.
+		std::vector<std::vector<std::vector<bool>>> matched(
+			num_of_symbols, std::vector<std::vector<bool>>(num_of_states, std::vector<bool>(num_of_states))
+		);
+		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) {
+			for (mata::nfa::State p_target{0}; p_target < num_of_states; ++p_target) {
+				for (mata::nfa::State q{0}; q < num_of_states; ++q) {
+					for (const mata::nfa::State q_target : post[q][symbol]) {
+						if (simulated[p_target][q_target]) {
+							matched[symbol][p_target][q] = true;
+							break;
+						}
+					}
+				}
+			}
+		}
+		for (mata::nfa::State p{0}; p < num_of_states; ++p) {
+			for (mata::nfa::State q{0}; q < num_of_states; ++q) {
+				if (!simulated[p][q]) { continue; }
+				for (Symbol symbol{0}; symbol < num_of_symbols && simulated[p][q]; ++symbol) {
+					for (const mata::nfa::State p_target : post[p][symbol]) {
+						if (!matched[symbol][p_target][q]) {
+							simulated[p][q] = false;
+							changed = true;
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+	return simulated;
+}
+
+/// compute_relation() gives the reference simulation on a random NFA whose density and share of final states
+///  vary with @p seed. The dense ones make the engine erase relation pairs through the columns of the removed
+///  blocks, the sparse ones through the rows of their predecessors (#964).
+void check_simulation(const unsigned seed) {
+	std::mt19937 rng{seed};
+	const size_t num_of_states{1 + seed % 29};
+	const size_t num_of_symbols{1 + seed % 3};
+	const size_t density{1 + (seed / 3) % 7}; // of 8, the chance of each transition
+	const size_t final_share{(seed / 2) % 5}; // of 4, the chance of each state to be final
+	Nfa nfa{num_of_states};
+	for (mata::nfa::State state{0}; state < num_of_states; ++state) {
+		if (draw(rng, 4) < final_share) { nfa.final.insert(state); }
+		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) {
+			for (mata::nfa::State target{0}; target < num_of_states; ++target) {
+				if (draw(rng, 8) < density) { nfa.delta.add(state, symbol, target); }
+			}
+		}
+	}
+	INFO(describe(seed, nfa));
+
+	const Simlib::Util::BinaryRelation relation{algorithms::compute_relation(nfa)};
+	const Simlib::Util::PartitionRelation blocks{algorithms::compute_partition_relation(nfa)};
+	const std::vector<std::vector<bool>> expected{reference_simulation(nfa, num_of_symbols)};
+	REQUIRE(relation.size() == num_of_states);
+	REQUIRE(blocks.size() == num_of_states);
+	std::string differences{};
+	std::string block_differences{};
+	for (mata::nfa::State p{0}; p < num_of_states; ++p) {
+		for (mata::nfa::State q{0}; q < num_of_states; ++q) {
+			if (relation.get(p, q) != expected[p][q]) {
+				differences += " (" + std::to_string(p) + ", " + std::to_string(q) + ")";
+			}
+			if (blocks.get(p, q) != expected[p][q]) {
+				block_differences += " (" + std::to_string(p) + ", " + std::to_string(q) + ")";
+			}
+		}
+	}
+	INFO("pairs the engine gets wrong:" << differences);
+	CHECK(differences.empty());
+	INFO("pairs the partition relation gets wrong:" << block_differences);
+	CHECK(block_differences.empty());
+
+	std::vector<size_t> projection;
+	relation.get_symmetric_quotient_projection(projection);
+	std::vector<size_t> block_projection;
+	blocks.get_symmetric_quotient_projection(block_projection);
+	CHECK(block_projection == projection);
+}
+
+/// reduce_simulation() gives the quotient by the simulation the engine computes, with the same numbering, on a
+///  random NFA of up to 300 states: rows of one to four bit words, and the engine from 257 states on (seeds 255 and
+///  256 give 256 and 257 states).
+void check_reduction(const unsigned seed) {
+	std::mt19937 rng{seed};
+	const size_t num_of_states{1 + seed % 300};
+	const size_t num_of_symbols{1 + seed % 3};
+	const size_t density{1 + (seed / 3) % 4}; // of 64, the chance of each transition
+	Nfa nfa{num_of_states};
+	nfa.initial.insert(static_cast<mata::nfa::State>(draw(rng, num_of_states)));
+	for (mata::nfa::State state{0}; state < num_of_states; ++state) {
+		if (draw(rng, 4) == 0) { nfa.final.insert(state); }
+		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) {
+			for (mata::nfa::State target{0}; target < num_of_states; ++target) {
+				if (draw(rng, 64) < density) { nfa.delta.add(state, symbol, target); }
+			}
+		}
+	}
+	INFO(describe(seed, nfa));
+
+	const Simlib::Util::BinaryRelation relation{algorithms::compute_relation(nfa)};
+	std::vector<size_t> projection;
+	relation.get_symmetric_quotient_projection(projection);
+	StateRenaming expected_renaming;
+	const Nfa expected{algorithms::quotient_by_simulation(nfa, relation, projection, nullptr, &expected_renaming)};
+	StateRenaming renaming;
+	const Nfa reduced{algorithms::reduce_simulation(nfa, renaming)};
+	CHECK(reduced.delta == expected.delta);
+	CHECK(reduced.initial == expected.initial);
+	CHECK(reduced.final == expected.final);
+	CHECK(renaming == expected_renaming);
+}
+
+/// The lazy emptiness agrees with the materialized product, and every nonempty answer carries a witness that
+///  replays in both operands once their one-sided symbols are read as epsilon.
+void check_intersection_emptiness(const unsigned seed, const Symbol first_epsilon, const bool with_epsilon) {
+	std::mt19937 rng{seed};
+	const size_t num_of_states{2 + seed % 5};
+	const size_t num_of_symbols{1 + seed % 3};
+	const std::shared_ptr<EnumAlphabet> alphabet{alphabet_of(num_of_symbols)};
+	const std::optional<Symbol> epsilon{with_epsilon ? std::optional<Symbol>{first_epsilon} : std::nullopt};
+	const Nfa lhs{random_nfa(rng, num_of_states, num_of_symbols, alphabet, epsilon)};
+	const Nfa rhs{random_nfa(rng, num_of_states, num_of_symbols, alphabet, epsilon)};
+	INFO(describe(seed, lhs));
+	INFO(describe(seed, rhs));
+
+	Run witness{};
+	const bool empty{is_intersection_empty(lhs, rhs, &witness, first_epsilon)};
+	CHECK(empty == intersection(lhs, rhs, first_epsilon).is_lang_empty());
+	CHECK(empty == is_intersection_empty(lhs, rhs, nullptr, first_epsilon));
+	if (empty) { return; }
+
+	// One-sided moves are stripped from the witness; all remaining symbols are shared, so replaying the witness
+	//  after reading the one-sided symbols as epsilon must accept in both operands.
+	const Nfa lhs_replay{relabel_one_sided_as_epsilon(lhs, first_epsilon)};
+	const Nfa rhs_replay{relabel_one_sided_as_epsilon(rhs, first_epsilon)};
+	CHECK(lhs_replay.is_in_lang(witness, true));
+	CHECK(rhs_replay.is_in_lang(witness, true));
+	for (const Symbol symbol : witness.word) { CHECK(symbol < first_epsilon); }
+}
+
+} // Anonymous namespace.
+
+TEST_CASE("mata::nfa differential: the algorithms agree with the reference acceptor", "[differential]") {
+	for (unsigned seed{0}; seed < 200; ++seed) {
+		check_nfa_properties(seed, 2 + seed % 5, 1 + seed % 3, MAX_WORD_LENGTH);
+	}
+}
+
+TEST_CASE("mata::nfa differential: shortest words agree with the reference acceptor", "[differential]") {
+	for (unsigned seed{0}; seed < 200; ++seed) { check_shortest_words(seed); }
+}
+
+TEST_CASE("mata::nfa differential: epsilon removal keeps the language", "[differential]") {
+	for (unsigned seed{0}; seed < 150; ++seed) {
+		check_epsilon_removal(seed, 2 + seed % 5, 1 + seed % 2, MAX_WORD_LENGTH, EPSILON);
+		// A non-default epsilon that is larger than every ordinary symbol: the removal must not
+		//  assume the default one, and the ordinary symbols must survive it.
+		check_epsilon_removal(seed, 2 + seed % 5, 1 + seed % 2, MAX_WORD_LENGTH, 100);
+	}
+}
+
+TEST_CASE("mata::nfa differential: lazy intersection emptiness agrees with the product", "[differential]") {
+	for (unsigned seed{0}; seed < 300; ++seed) {
+		// The default epsilon: every epsilon move is one-sided and is stripped from the witness.
+		check_intersection_emptiness(seed, EPSILON, seed % 2 == 0);
+		// A custom epsilon that also treats symbols at and above it as epsilon and leaves symbols below it shared.
+		check_intersection_emptiness(seed, 2, seed % 2 == 0);
+	}
+}
+
+TEST_CASE("mata::nfa differential: the forward simulation is the greatest fixpoint", "[differential]") {
+	for (unsigned seed{0}; seed < 400; ++seed) { check_simulation(seed); }
+}
+
+// minimize(nfa, "hopcroft_nondet") on the raw random NFA is checked above since #734 fixed its input normalization.
+
+// A hidden sweep over larger automata and longer words; the tagged-out default run stays fast.
+TEST_CASE("mata::nfa differential: larger sweep", "[.differential-sweep]") {
+	for (unsigned seed{0}; seed < 600; ++seed) {
+		check_nfa_properties(seed, 2 + seed % 7, 1 + seed % 3, 6);
+		check_epsilon_removal(seed, 2 + seed % 7, 1 + seed % 2, 6, EPSILON);
+		check_epsilon_removal(seed, 2 + seed % 7, 1 + seed % 2, 6, 100);
+	}
+}
+
+TEST_CASE(
+	"mata::nfa differential: the antichain filters stay sound on macrostates wider than 64 states", "[differential]"
+) {
+	// The antichain algorithms filter their subsumption tests with a 64-bit signature of the macrostate, so states
+	//  that are congruent modulo 64 share a bit and two different macrostates can carry the same signature. The
+	//  bigger automaton here is a union of three partial DFAs: that bounds determinization (and with it the naive
+	//  reference algorithms) by the product of the components, pushes the state indices past 64, and still makes
+	//  the reachable macrostates vary in cardinality, which is what reaches the strict-subset buckets of the
+	//  processed antichain.
+	constexpr size_t COMPONENT_STATES{23};
+	constexpr size_t COMPONENTS{3};
+	for (unsigned seed{0}; seed < 20; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_symbols{1 + seed % 2};
+		auto alphabet{std::make_shared<EnumAlphabet>()};
+		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) { alphabet->add_new_symbol(std::to_string(symbol)); }
+
+		Nfa bigger{random_partial_dfa(rng, COMPONENT_STATES, num_of_symbols, alphabet)};
+		for (size_t component{1}; component < COMPONENTS; ++component) {
+			bigger =
+				union_nondet(std::move(bigger), random_partial_dfa(rng, COMPONENT_STATES, num_of_symbols, alphabet));
+		}
+		bigger.alphabet = alphabet;
+		REQUIRE(bigger.num_of_states() == COMPONENTS * COMPONENT_STATES);
+		REQUIRE(bigger.num_of_states() > 64);
+		const Nfa smaller{random_nfa(rng, 2 + seed % 4, num_of_symbols, alphabet)};
+		INFO(describe(seed, bigger));
+		INFO(describe(seed, smaller));
+
+		// Macrostates of the bigger automaton drive the subsumption tests, so both directions are checked: the
+		//  one where the antichain runs over the wide automaton, and the one where the naive reference does.
+		CHECK(
+			is_included(smaller, bigger, alphabet.get(), {{"algorithm", "naive"}}) ==
+			is_included(smaller, bigger, alphabet.get(), {{"algorithm", "antichains"}})
+		);
+		CHECK(
+			is_included(bigger, smaller, alphabet.get(), {{"algorithm", "naive"}}) ==
+			is_included(bigger, smaller, alphabet.get(), {{"algorithm", "antichains"}})
+		);
+
+		CHECK(
+			bigger.is_universal(*alphabet, {{"algorithm", "naive"}}) ==
+			bigger.is_universal(*alphabet, {{"algorithm", "antichains"}})
+		);
+
+		// A pair whose inclusion holds, so the antichain runs to its fixpoint instead of stopping at the first
+		//  counterexample: an intersection with @c bigger accepts only words that @c bigger accepts.
+		const Nfa included{intersection(smaller, bigger)};
+		CHECK(is_included(included, bigger, alphabet.get(), {{"algorithm", "antichains"}}));
+		CHECK(
+			is_included(bigger, included, alphabet.get(), {{"algorithm", "naive"}}) ==
+			is_included(bigger, included, alphabet.get(), {{"algorithm", "antichains"}})
+		);
+
+		// A reported counterexample is a run of the smaller automaton over a word that the bigger one rejects.
+		Run cex{};
+		if (!is_included(smaller, bigger, &cex, alphabet.get(), {{"algorithm", "antichains"}})) {
+			CHECK(reference_accepts(smaller, cex.word));
+			CHECK(is_accepting_run(smaller, cex));
+			CHECK(!reference_accepts(bigger, cex.word));
+		}
+	}
+}
+
+TEST_CASE("mata::nfa differential: equal antichain signatures never prove a subset", "[differential]") {
+	// The states 0, 64 and 65 put {0} and {64} on the same signature, and the signature of {0} inside that of
+	//  {64, 65}, yet neither set is a subset of the other. Initial state 1 branches into a live and a dead one of
+	//  these sets; the dead one is the only way to a counterexample, so a filter that takes a signature match for a
+	//  subset drops it and reports success. Reaching the dead set first or second puts the collision into the
+	//  subsumption test of a new macrostate or into the pruning of the stored ones, respectively.
+	using SetPair = std::pair<std::vector<mata::nfa::State>, std::vector<mata::nfa::State>>;
+	const std::vector<SetPair> live_and_dead{{{0}, {64}}, {{64}, {0}}, {{0}, {64, 65}}, {{64, 65}, {0}}};
+	constexpr size_t NUM_OF_STATES{66};
+	for (const auto& [live, dead] : live_and_dead) {
+		for (const bool dead_first : {false, true}) {
+			const Symbol live_symbol{dead_first ? Symbol{1} : Symbol{0}};
+			const Symbol dead_symbol{dead_first ? Symbol{0} : Symbol{1}};
+			INFO("live " << live.size() << " state(s) from " << live.front() << ", dead_first " << dead_first);
+
+			// Inclusion: smaller accepts {0 2, 1 2}; bigger reads 2 from the live set only. Symbol 3 takes both sets
+			//  to the final state 2, so the distance bound does not short-cut the dead branch.
+			auto inclusion_alphabet{std::make_shared<EnumAlphabet>()};
+			for (Symbol symbol{0}; symbol < 4; ++symbol) { inclusion_alphabet->add_new_symbol(std::to_string(symbol)); }
+			Nfa smaller{3};
+			smaller.alphabet = inclusion_alphabet;
+			smaller.initial.insert(0);
+			smaller.final.insert(2);
+			smaller.delta.add(0, 0, 1);
+			smaller.delta.add(0, 1, 1);
+			smaller.delta.add(1, 2, 2);
+			Nfa bigger{NUM_OF_STATES};
+			bigger.alphabet = inclusion_alphabet;
+			bigger.initial.insert(1);
+			bigger.final.insert(2);
+			for (const mata::nfa::State state : live) {
+				bigger.delta.add(1, live_symbol, state);
+				bigger.delta.add(state, 2, 2);
+				bigger.delta.add(state, 3, 2);
+			}
+			for (const mata::nfa::State state : dead) {
+				bigger.delta.add(1, dead_symbol, state);
+				bigger.delta.add(state, 3, 2);
+			}
+			REQUIRE(!is_included(smaller, bigger, inclusion_alphabet.get(), NAIVE));
+			Run inclusion_cex{};
+			CHECK(!is_included(smaller, bigger, &inclusion_cex, inclusion_alphabet.get(), ANTICHAINS));
+			CHECK(inclusion_cex.word == Word{dead_symbol, 2});
+
+			// Universality over {0, 1}: every set is final, the live one loops on both symbols, the dead one on 0
+			//  only, so the dead set followed by 1 is the only rejected word.
+			auto universality_alphabet{std::make_shared<EnumAlphabet>()};
+			for (Symbol symbol{0}; symbol < 2; ++symbol) {
+				universality_alphabet->add_new_symbol(std::to_string(symbol));
+			}
+			Nfa aut{NUM_OF_STATES};
+			aut.alphabet = universality_alphabet;
+			aut.initial.insert(1);
+			aut.final.insert(1);
+			for (const mata::nfa::State state : live) {
+				aut.final.insert(state);
+				aut.delta.add(1, live_symbol, state);
+				aut.delta.add(state, 0, state);
+				aut.delta.add(state, 1, state);
+			}
+			for (const mata::nfa::State state : dead) {
+				aut.final.insert(state);
+				aut.delta.add(1, dead_symbol, state);
+				aut.delta.add(state, 0, state);
+			}
+			REQUIRE(!aut.is_universal(*universality_alphabet, NAIVE));
+			Run universality_cex{};
+			CHECK(!aut.is_universal(*universality_alphabet, &universality_cex, ANTICHAINS));
+			CHECK(!reference_accepts(aut, universality_cex.word));
+		}
+	}
+}
+
+TEST_CASE("mata::nfa differential: antichain inclusion on dense automata with more than 64 states", "[differential]") {
+	// Dense automata keep the processed antichains deep, which is where the cardinality buckets and the signature
+	//  filter of the subsumption test actually decide something. Complementing them is out of reach, so the
+	//  answers are pinned against a construction that fixes one of them and against the words of a bounded length.
+	constexpr size_t NUM_OF_SYMBOLS{2};
+	for (unsigned seed{0}; seed < 8; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_states{65 + seed % 6};
+		auto alphabet{std::make_shared<EnumAlphabet>()};
+		for (Symbol symbol{0}; symbol < NUM_OF_SYMBOLS; ++symbol) { alphabet->add_new_symbol(std::to_string(symbol)); }
+		const Nfa lhs{random_dense_nfa(rng, num_of_states, NUM_OF_SYMBOLS, alphabet)};
+		const Nfa rhs{random_dense_nfa(rng, num_of_states, NUM_OF_SYMBOLS, alphabet)};
+		const Nfa united{union_nondet(lhs, rhs)};
+		const std::vector<Word> words{all_words(NUM_OF_SYMBOLS, MAX_WORD_LENGTH)};
+		INFO(describe(seed, lhs));
+		INFO(describe(seed, rhs));
+
+		// L(lhs) is included in L(lhs) ∪ L(rhs) by construction, so this check runs the antichain to its fixpoint.
+		CHECK(is_included(lhs, united, alphabet.get(), {{"algorithm", "antichains"}}));
+
+		// The converse normally fails. Either answer has to agree with the words: a reported inclusion admits no
+		//  witness among them, a reported counterexample is one.
+		Run cex{};
+		if (is_included(united, lhs, &cex, alphabet.get(), {{"algorithm", "antichains"}})) {
+			CHECK(included_on(united, lhs, words));
+		} else {
+			CHECK(reference_accepts(united, cex.word));
+			CHECK(is_accepting_run(united, cex));
+			CHECK(!reference_accepts(lhs, cex.word));
+		}
+	}
+}
+
+TEST_CASE("mata::nfa differential: HKC agrees with the antichains on related automata", "[differential]") {
+	// Unrelated random automata are mostly told apart by the first pair of macrostates. Automata related by
+	//  construction run HKC to its fixpoint, where the congruence closure decides which pairs are skipped.
+	for (unsigned seed{0}; seed < 150; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_states{4 + seed % 20};
+		const size_t num_of_symbols{1 + seed % 3};
+		const std::shared_ptr<EnumAlphabet> alphabet{alphabet_of(num_of_symbols)};
+		const Nfa lhs{random_nfa(rng, num_of_states, num_of_symbols, alphabet)};
+		const Nfa rhs{random_nfa(rng, num_of_states, num_of_symbols, alphabet)};
+		INFO(describe(seed, lhs));
+		INFO(describe(seed, rhs));
+		const Nfa united{union_nondet(lhs, rhs)};
+		check_hkc(lhs, rhs, alphabet.get());
+		check_hkc(lhs, reduce(lhs), alphabet.get());
+		check_hkc(lhs, determinize(lhs), alphabet.get());
+		check_hkc(united, union_nondet(rhs, lhs), alphabet.get());
+		check_hkc(lhs, united, alphabet.get());
+		// The shape of the regular membership heuristics of z3-noodler.
+		check_hkc(intersection(lhs, rhs), united, alphabet.get());
+
+		// Universality as an equivalence with Σ*, on a universal automaton and on a nearly universal one.
+		Nfa sigma_star{1};
+		sigma_star.initial.insert(0);
+		sigma_star.final.insert(0);
+		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) { sigma_star.delta.add(0, symbol, 0); }
+		check_hkc(sigma_star, union_nondet(lhs, complement(lhs, *alphabet)), alphabet.get());
+		check_hkc(sigma_star, union_nondet(lhs, complement(rhs, *alphabet)), alphabet.get());
+	}
+}
+
+TEST_CASE("mata::nfa differential: HKC on dense automata with more than 64 states", "[differential]") {
+	// Inclusion in a union runs both inclusion algorithms to their fixpoint over wide macrostates.
+	constexpr size_t NUM_OF_SYMBOLS{2};
+	for (unsigned seed{0}; seed < 4; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_states{65 + seed % 6};
+		const std::shared_ptr<EnumAlphabet> alphabet{alphabet_of(NUM_OF_SYMBOLS)};
+		const Nfa lhs{random_dense_nfa(rng, num_of_states, NUM_OF_SYMBOLS, alphabet)};
+		const Nfa rhs{random_dense_nfa(rng, num_of_states, NUM_OF_SYMBOLS, alphabet)};
+		INFO(describe(seed, lhs));
+		INFO(describe(seed, rhs));
+		check_hkc(lhs, union_nondet(lhs, rhs), alphabet.get());
+	}
+}
+
+TEST_CASE("mata::nfa differential: inclusion agrees with epsilon removal", "[differential]") {
+	for (unsigned seed{0}; seed < 200; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_states{2 + seed % 7};
+		const size_t num_of_symbols{1 + seed % 2};
+		const std::shared_ptr<EnumAlphabet> alphabet{alphabet_of(num_of_symbols)};
+		alphabet->add_new_symbol(EPSILON);
+		auto ordinary_symbols{alphabet->get_alphabet_symbols()};
+		ordinary_symbols.pop_back();
+		const EnumAlphabet alphabet_without_epsilon{std::move(ordinary_symbols)};
+		Nfa lhs{random_nfa(rng, num_of_states, num_of_symbols, alphabet, EPSILON)};
+		Nfa rhs{random_nfa(rng, num_of_states, num_of_symbols, alphabet, EPSILON)};
+		// Guarantee a reachable epsilon transition in each operand, not just a chance of one from the generator.
+		lhs.delta.add(*lhs.initial.begin(), EPSILON, static_cast<State>((seed + 1) % num_of_states));
+		rhs.delta.add(*rhs.initial.begin(), EPSILON, static_cast<State>((seed + 2) % num_of_states));
+		const Nfa lhs_without_epsilon{remove_epsilon(lhs)};
+		const Nfa rhs_without_epsilon{remove_epsilon(rhs)};
+		INFO(describe(seed, lhs));
+		INFO(describe(seed, rhs));
+
+		for (const bool reverse : {false, true}) {
+			const Nfa& smaller{reverse ? rhs : lhs};
+			const Nfa& bigger{reverse ? lhs : rhs};
+			const Nfa& removed_smaller{reverse ? rhs_without_epsilon : lhs_without_epsilon};
+			const Nfa& removed_bigger{reverse ? lhs_without_epsilon : rhs_without_epsilon};
+			if (reverse) {
+				INFO("rhs <= lhs");
+			} else {
+				INFO("lhs <= rhs");
+			}
+
+			// A public counterexample is over ordinary symbols and its path belongs to the epsilon-free copy.
+			for (const ParameterMap* params : {&NAIVE, &ANTICHAINS}) {
+				INFO(params->at("algorithm"));
+				const bool expected{is_included(removed_smaller, removed_bigger, &alphabet_without_epsilon, *params)};
+				Run cex{};
+				const bool actual{is_included(smaller, bigger, &cex, alphabet.get(), *params)};
+				CHECK(actual == expected);
+				if (!actual) {
+					CHECK(reference_accepts(smaller, cex.word));
+					CHECK(!reference_accepts(bigger, cex.word));
+					CHECK(is_accepting_run(removed_smaller, cex));
+				}
+			}
+
+			// Direct algorithms instead synchronize EPSILON as a letter, including in the default naive alphabet.
+			Run naive_cex{};
+			Run antichain_cex{};
+			const bool naive{algorithms::is_included_naive(smaller, bigger, nullptr, &naive_cex)};
+			const bool antichain{algorithms::is_included_antichains(smaller, bigger, nullptr, &antichain_cex)};
+			CHECK(naive == antichain);
+			if (!naive) {
+				CHECK(smaller.is_in_lang(naive_cex));
+				CHECK(!bigger.is_in_lang(naive_cex.word));
+			}
+			if (!antichain) {
+				CHECK(smaller.is_in_lang(antichain_cex));
+				CHECK(!bigger.is_in_lang(antichain_cex.word));
+			}
+		}
+		CHECK(alphabet->get_alphabet_symbols().contains(EPSILON));
+	}
+}
+
+TEST_CASE("mata::nfa differential: HKC with epsilon transitions", "[differential]") {
+	for (unsigned seed{0}; seed < 200; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_states{2 + seed % 7};
+		const size_t num_of_symbols{1 + seed % 2};
+		const std::shared_ptr<EnumAlphabet> alphabet{alphabet_of(num_of_symbols)};
+		const Nfa lhs{random_nfa(rng, num_of_states, num_of_symbols, alphabet, EPSILON)};
+		const Nfa rhs{random_nfa(rng, num_of_states, num_of_symbols, alphabet, EPSILON)};
+		INFO(describe(seed, lhs));
+		INFO(describe(seed, rhs));
+
+		// The dispatchers remove epsilon first, so a counterexample is a word over the ordinary symbols.
+		for (const auto& [smaller, bigger] : {std::pair{&lhs, &rhs}, std::pair{&rhs, &lhs}}) {
+			Run cex{};
+			const bool included{is_included(*smaller, *bigger, &cex, alphabet.get(), HKC)};
+			CHECK(included == is_included(*smaller, *bigger, alphabet.get(), ANTICHAINS));
+			if (!included) {
+				CHECK(reference_accepts(*smaller, cex.word));
+				CHECK(!reference_accepts(*bigger, cex.word));
+			}
+		}
+		CHECK(are_equivalent(lhs, rhs, alphabet.get(), HKC) == are_equivalent(lhs, rhs, alphabet.get(), ANTICHAINS));
+		CHECK(are_equivalent(lhs, remove_epsilon(lhs), alphabet.get(), HKC));
+		CHECK(are_equivalent(remove_epsilon(rhs), rhs, alphabet.get(), HKC));
+
+		// Read as a letter, epsilon makes a counterexample like any other symbol. The reference acceptor then gets an
+		//  unused symbol as its epsilon.
+		Run cex{};
+		const bool equivalent{algorithms::are_equivalent_epsilon_as_symbol(lhs, rhs, alphabet.get(), HKC, &cex)};
+		CHECK(equivalent == algorithms::are_equivalent_epsilon_as_symbol(lhs, rhs, alphabet.get(), ANTICHAINS));
+		if (!equivalent) {
+			const Symbol no_epsilon{static_cast<Symbol>(num_of_symbols)};
+			const bool in_lhs{reference_accepts(lhs, cex.word, no_epsilon)};
+			CHECK(in_lhs != reference_accepts(rhs, cex.word, no_epsilon));
+			CHECK(is_accepting_run(in_lhs ? lhs : rhs, cex));
+		}
+	}
+}
+
+TEST_CASE("mata::nfa differential: revert with epsilon transitions", "[differential]") {
+	for (unsigned seed{0}; seed < 200; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_states{2 + seed % 5};
+		const size_t num_of_symbols{1 + seed % 3};
+		// Separate allocation avoids GCC 16.0.1's false array-bounds diagnostics in alphabet destruction.
+		auto alphabet{std::shared_ptr<EnumAlphabet>{new EnumAlphabet{}}};
+		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) { alphabet->add_new_symbol(std::to_string(symbol)); }
+		const Nfa nfa{random_nfa(rng, num_of_states, num_of_symbols, alphabet, EPSILON)};
+		INFO(describe(seed, nfa));
+		check_revert(nfa);
+	}
+}
+
+TEST_CASE("mata::nfa differential: revert with symbols near EPSILON", "[differential]") {
+	// The largest symbols cost revert() nothing extra: it allocates no symbol-indexed array.
+	for (unsigned seed{0}; seed < 200; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_states{2 + seed % 4};
+		Nfa nfa{num_of_states};
+		nfa.initial.insert(static_cast<mata::nfa::State>(draw(rng, num_of_states)));
+		for (mata::nfa::State state{0}; state < num_of_states; ++state) {
+			if (draw(rng, 3) == 0) { nfa.final.insert(state); }
+			// Symbols from {0, 1} and right below and at EPSILON, so both ordinary and special symbols mix
+			//  in one state post.
+			for (const Symbol symbol : {Symbol{0}, Symbol{1}, EPSILON - 2, EPSILON - 1, EPSILON}) {
+				for (size_t transition{0}, transitions{draw(rng, 3)}; transition < transitions; ++transition) {
+					nfa.delta.add(state, symbol, static_cast<mata::nfa::State>(draw(rng, num_of_states)));
+				}
+			}
+		}
+		INFO(describe(seed, nfa));
+
+		check_revert(nfa);
+	}
+}
+
+TEST_CASE("mata::nfa differential: member concatenation connects every final to every initial", "[differential]") {
+	for (unsigned seed{0}; seed < 200; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_states{2 + seed % 5};
+		const size_t num_of_symbols{1 + seed % 3};
+		const auto alphabet{alphabet_of(num_of_symbols)};
+		Nfa lhs{random_nfa(rng, num_of_states, num_of_symbols, alphabet)};
+		Nfa rhs{random_nfa(rng, num_of_states, num_of_symbols, alphabet, EPSILON)};
+		// Several rhs initial states, whose posts overlap, and initial and final states past the delta.
+		for (size_t extra{0}, extras{seed % 4}; extra < extras; ++extra) {
+			rhs.initial.insert(static_cast<mata::nfa::State>(draw(rng, num_of_states)));
+		}
+		if (seed % 3 == 0) {
+			lhs.final.insert(static_cast<mata::nfa::State>(num_of_states + 1));
+			rhs.initial.insert(static_cast<mata::nfa::State>(num_of_states + 2));
+		}
+		if (seed % 5 == 0) { rhs.final.insert(static_cast<mata::nfa::State>(num_of_states + 2)); }
+		INFO(describe(seed, lhs) + "\n---\n" + describe(seed, rhs));
+
+		const Nfa expected{reference_concatenate(lhs, rhs)};
+		Nfa result{lhs};
+		result.concatenate(rhs);
+		CHECK(result.is_identical(expected));
+		CHECK(result.num_of_states() == expected.num_of_states());
+		Nfa consumed{lhs};
+		consumed.concatenate(Nfa{rhs});
+		CHECK(consumed.is_identical(expected));
+	}
+}
+
+TEST_CASE("mata::nfa differential: the reduction is the quotient by the simulation", "[differential]") {
+	for (unsigned seed{0}; seed < 400; ++seed) { check_reduction(seed); }
+}

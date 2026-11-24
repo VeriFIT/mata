@@ -2,9 +2,13 @@
  * @brief Tests for Nondeterministic Finite Automata (NFAs).
  */
 
+#include <array>
+#include <random>
+#include <sstream>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "utils.hh"
@@ -15,6 +19,7 @@
 #include "mata/nfa/delta.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/plumbing.hh"
+#include "mata/simlib/util/splitting_relation.hh"
 #include "mata/utils/sparse-set.hh"
 
 using namespace mata;
@@ -78,6 +83,19 @@ TEST_CASE("mata::nfa::create_alphabet()") {
 	// create_alphabet(1, 3, 4); // Will not compile: '1', '3', '4' are not of the required type.
 	// create_alphabet(a, b, 4); // Will not compile: '4' is not of the required type.
 }
+
+TEST_CASE("mata::nfa::create_alphabet() handles a symbol used by many posts") { // {{{
+	// Regression guard for the fill_alphabet() path through Delta::get_used_symbols(): the alphabet must be built
+	//  from the distinct symbols over all posts, not one entry per symbol post.
+	Nfa a{16};
+	for (mata::nfa::State s{0}; s < 15; ++s) {
+		a.delta.add(s, 'a', (s + 1) % 15);
+		a.delta.add(s, 'b', (s + 1) % 15);
+	}
+	a.delta.add(15, EPSILON, 0);
+	const auto alphabet{create_alphabet(a)};
+	CHECK(alphabet.get_alphabet_symbols() == mata::utils::OrdVector<Symbol>{'b', 'a'});
+} // }}}
 
 TEST_CASE("mata::nfa::Nfa::delta.add()/delta.contains()") { // {{{
 	Nfa a(3);
@@ -242,6 +260,45 @@ TEST_CASE("mata::nfa::is_lang_empty()") { // {{{
 		REQUIRE(cex.path[1] == 4);
 		REQUIRE(cex.path[2] == 8);
 	}
+
+	SECTION("A final state reachable only over epsilon") {
+		aut.initial = {0};
+		aut.final = {2};
+		aut.delta.add(0, EPSILON, 1);
+		aut.delta.add(1, EPSILON, 2);
+		CHECK_FALSE(aut.is_lang_empty());
+		CHECK_FALSE(aut.is_lang_empty(&cex));
+		CHECK(cex.path == std::vector<State>{0, 1, 2});
+	}
+
+	SECTION("The witness is shortest in the number of transitions") {
+		aut.initial = {0};
+		aut.final = {4};
+		// A short path 0 -> 3 -> 4 and a longer one 0 -> 1 -> 2 -> 4 over the smaller-numbered states.
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(2, 'a', 4);
+		aut.delta.add(0, 'b', 3);
+		aut.delta.add(3, 'b', 4);
+		REQUIRE_FALSE(aut.is_lang_empty(&cex));
+		CHECK(cex.path == std::vector<State>{0, 3, 4});
+		CHECK(cex.word.size() == 2);
+	}
+
+	SECTION("The counterexample variant agrees with the plain one") {
+		aut.initial = {0};
+		aut.final = {5};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(2, 'a', 1); // Cycle that never reaches the final state.
+		CHECK(aut.is_lang_empty());
+		CHECK(aut.is_lang_empty(&cex));
+		CHECK(aut.is_lang_empty_scc());
+		aut.delta.add(2, 'b', 5);
+		CHECK_FALSE(aut.is_lang_empty());
+		CHECK_FALSE(aut.is_lang_empty(&cex));
+		CHECK_FALSE(aut.is_lang_empty_scc());
+	}
 } // }}}
 
 TEST_CASE("mata::nfa::is_acyclic") { // {{{
@@ -329,6 +386,36 @@ TEST_CASE("mata::nfa::is_flat") { // {{{
 		aut.delta.add(5, 'a', 4);
 		aut.delta.add(1, 'c', 2);
 		REQUIRE(!aut.is_flat());
+	}
+
+	SECTION("A self-loop is flat, two self-loops over different symbols are not") {
+		aut.initial = {0};
+		aut.final = {0};
+		aut.delta.add(0, 'a', 0);
+		CHECK(aut.is_flat());
+		aut.delta.add(0, 'b', 0);
+		CHECK_FALSE(aut.is_flat());
+	}
+
+	SECTION("Edges leaving the SCC do not make the automaton nonflat") {
+		aut.initial = {0};
+		aut.final = {3};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'a', 0); // The only cycle, one in-SCC edge per state.
+		aut.delta.add(0, 'b', 2);
+		aut.delta.add(0, 'c', 3);
+		aut.delta.add(1, 'b', 3);
+		CHECK(aut.is_flat());
+	}
+
+	SECTION("Two parallel in-SCC edges over one symbol are not flat") {
+		aut.initial = {0};
+		aut.final = {2};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, 'a', 2);
+		aut.delta.add(1, 'a', 0);
+		aut.delta.add(2, 'a', 0);
+		CHECK_FALSE(aut.is_flat());
 	}
 } // }}}
 
@@ -425,13 +512,55 @@ TEST_CASE("mata::nfa::is_lang_empty_cex()") {
 	}
 }
 
+// `is_lang_empty()`, `get_word_for_path()` and `is_complete()` used to guard their inner loop with
+//  `delta.empty()`, which walked state posts until it found a nonempty one. The guard was redundant:
+//  a state post that is empty, or not allocated at all, already yields nothing. Pin the answers on
+//  deltas whose low-numbered states carry no transitions.
+TEST_CASE("mata::nfa::Nfa queries on a delta with an empty prefix") {
+	SECTION("transitions only between the highest states") {
+		Nfa aut{10};
+		aut.initial = {7};
+		aut.final = {9};
+		aut.delta.add(7, 'a', 8);
+		aut.delta.add(8, 'b', 9);
+
+		Run cex;
+		CHECK(!aut.is_lang_empty(&cex));
+		CHECK(cex.word == Word{'a', 'b'});
+
+		const auto [word, found]{aut.get_word_for_path(Run{{}, {7, 8, 9}})};
+		CHECK(found);
+		CHECK(word.word == Word{'a', 'b'});
+		CHECK(!aut.get_word_for_path(Run{{}, {7, 9}}).second);
+
+		CHECK(!aut.is_complete(OrdVector<Symbol>{'a', 'b'}));
+	}
+
+	SECTION("no state post holds a transition") {
+		Nfa aut{5};
+		aut.initial = {0};
+		aut.final = {0};
+
+		Run cex;
+		CHECK(!aut.is_lang_empty(&cex));
+		CHECK(cex.word.empty());
+		CHECK(aut.get_word_for_path(Run{{}, {0}}).second);
+		CHECK(!aut.get_word_for_path(Run{{}, {0, 1}}).second);
+		CHECK(!aut.is_complete(OrdVector<Symbol>{'a'}));
+	}
+}
+
 TEST_CASE("mata::nfa::determinize()") {
+	// Both algorithms; they give the same DFA up to the numbering of its states, and the same numbering here.
+	const std::string algorithm = GENERATE("four_russians", "classical");
+	CAPTURE(algorithm);
+	const ParameterMap params{{"algorithm", algorithm}};
 	Nfa aut(3);
 	Nfa result;
 	std::unordered_map<StateSet, State> subset_map;
 
 	SECTION("empty automaton") {
-		result = determinize(aut);
+		result = determinize(aut, params);
 
 		REQUIRE(result.final.empty());
 		REQUIRE(result.delta.empty());
@@ -441,10 +570,10 @@ TEST_CASE("mata::nfa::determinize()") {
 	SECTION("simple automaton 1") {
 		aut.initial = {1};
 		aut.final = {1};
-		result = determinize(aut, &subset_map);
+		result = determinize(aut, &subset_map, std::nullopt, nullptr, params);
 
-		REQUIRE(result.initial[subset_map[{1}]]);
-		REQUIRE(result.final[subset_map[{1}]]);
+		REQUIRE(result.initial[subset_map.at({1})]);
+		REQUIRE(result.final[subset_map.at({1})]);
 		REQUIRE(result.delta.empty());
 	}
 
@@ -452,7 +581,7 @@ TEST_CASE("mata::nfa::determinize()") {
 		aut.initial = {1};
 		aut.final = {2};
 		aut.delta.add(1, 'a', 2);
-		result = determinize(aut, &subset_map);
+		result = determinize(aut, &subset_map, std::nullopt, nullptr, params);
 
 		REQUIRE(result.initial[subset_map[{1}]]);
 		REQUIRE(result.final[subset_map[{2}]]);
@@ -475,9 +604,246 @@ TEST_CASE("mata::nfa::determinize()") {
 		x.delta.add(2, 2, 2);
 		x.delta.add(2, 0, 4);
 		OnTheFlyAlphabet alphabet{};
-		auto complement_result{determinize(x)};
+		auto complement_result{determinize(x, params)};
+	}
+
+	SECTION("subset map and discovery callback see every macrostate exactly once") {
+		Nfa nfa(4);
+		nfa.initial = {0};
+		nfa.final = {3};
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(0, 'a', 2);
+		nfa.delta.add(1, 'b', 3);
+		nfa.delta.add(2, 'b', 3);
+		nfa.delta.add(3, 'a', 1);
+		nfa.delta.add(3, 'a', 2);
+		std::vector<StateSet> discovered;
+		result = determinize(
+			nfa, &subset_map,
+			[&](const Nfa&, const State state, const StateSet& macrostate) {
+				CHECK(subset_map.at(macrostate) == state);
+				discovered.push_back(macrostate);
+				return true;
+			},
+			nullptr, params
+		);
+		CHECK(result.num_of_states() == 3);
+		CHECK(subset_map == std::unordered_map<StateSet, State>{{{0}, 0}, {{1, 2}, 1}, {{3}, 2}});
+		CHECK(discovered == std::vector<StateSet>{{0}, {1, 2}, {3}});
+		CHECK(result.delta.contains(subset_map[{3}], 'a', subset_map[{1, 2}]));
+
+		subset_map.clear();
+		discovered.clear();
+		// Stopping on the first new macrostate leaves it in the result, without exploring it.
+		result = determinize(
+			nfa, &subset_map,
+			[&](const Nfa&, const State, const StateSet& macrostate) {
+				discovered.push_back(macrostate);
+				return discovered.size() < 2;
+			},
+			nullptr, params
+		);
+		CHECK(discovered == std::vector<StateSet>{{0}, {1, 2}});
+		CHECK(result.num_of_states() == 2);
+		CHECK(result.delta.num_of_transitions() == 1);
+	}
+
+	SECTION("restricted to symbols, nondeterministic input") {
+		// 'z' leads to a macrostate of its own, which must not be constructed when 'z' is outside of the symbols.
+		const OrdVector<Symbol> symbols{'a', 'b'};
+		Nfa nfa(4);
+		nfa.initial = {0};
+		nfa.final = {1};
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(0, 'a', 2);
+		nfa.delta.add(0, 'z', 3);
+		nfa.delta.add(3, 'a', 1);
+		REQUIRE(!nfa.is_deterministic());
+
+		result = determinize(nfa, nullptr, std::nullopt, &symbols, params);
+		CHECK(result.num_of_states() == 2);
+		CHECK(result.delta.get_used_symbols() == OrdVector<Symbol>{'a'});
+		CHECK(result.is_in_lang(Word{'a'}));
+		CHECK_FALSE(result.is_in_lang(Word{'z', 'a'}));
+	}
+
+	SECTION("restricted to symbols, deterministic input") {
+		const OrdVector<Symbol> symbols{'a', 'b'};
+		Nfa dfa(3);
+		dfa.initial = {0};
+		dfa.final = {1};
+		dfa.delta.add(0, 'a', 1);
+		dfa.delta.add(0, 'z', 2);
+		dfa.delta.add(2, 'a', 1);
+		REQUIRE(dfa.is_deterministic());
+
+		result = determinize(dfa, nullptr, std::nullopt, &symbols, params);
+		CHECK(result.num_of_states() == 2);
+		CHECK(result.delta.get_used_symbols() == OrdVector<Symbol>{'a'});
+		CHECK(result.is_in_lang(Word{'a'}));
+		CHECK_FALSE(result.is_in_lang(Word{'z', 'a'}));
+	}
+
+	SECTION("deterministic input: scalar renumbering, singleton subset map, discovery order") {
+		aut = Nfa(5);
+		aut.initial = {1};
+		aut.final = {2};
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(1, 'b', 3);
+		aut.delta.add(2, 'a', 2);
+		aut.delta.add(3, 'b', 2);
+		aut.delta.add(4, 'a', 4); // unreachable
+		REQUIRE(aut.is_deterministic());
+
+		std::vector<StateSet> discovered{};
+		result = determinize(
+			aut, &subset_map,
+			[&discovered](const Nfa&, const State, const StateSet& set) -> bool {
+				discovered.push_back(set);
+				return true;
+			},
+			nullptr, params
+		);
+
+		// Depth-first renumbering (breadth-first in the Four Russians construction, the same here): initial {1} -> 0,
+		//  first-seen a- and b-targets {2} -> 1, {3} -> 1's sibling 2; unreachable state 4 never appears.
+		CHECK(result.num_of_states() == 3);
+		CHECK(result.initial.contains(0));
+		CHECK(result.initial.size() == 1);
+		CHECK(result.final.contains(1));
+		CHECK(result.final.size() == 1);
+		CHECK(result.delta.contains(0, 'a', 1));
+		CHECK(result.delta.contains(0, 'b', 2));
+		CHECK(result.delta.contains(1, 'a', 1));
+		CHECK(result.delta.contains(2, 'b', 1));
+		CHECK(subset_map == std::unordered_map<StateSet, State>{{StateSet{1}, 0}, {StateSet{2}, 1}, {StateSet{3}, 2}});
+		CHECK(discovered == std::vector<StateSet>{StateSet{1}, StateSet{2}, StateSet{3}});
+	}
+
+	SECTION("macrostate_discover may stop a deterministic automaton early") {
+		aut = Nfa(3);
+		aut.initial = {0};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'a', 2);
+		aut.final = {2};
+		result = determinize(
+			aut, nullptr,
+			[](const Nfa&, const State, const StateSet& set) -> bool { return set.size() == 1 && set.front() == 0; },
+			nullptr, params
+		);
+		// The stop fires on discovering {1}: the state and the 0-a->1 edge were already emitted, but {1}
+		//  is never expanded and the final {2} is never reached.
+		CHECK(result.num_of_states() == 2);
+		CHECK(result.delta.contains(0, 'a', 1));
+		CHECK(!result.delta.contains(1, 'a', 2));
+		CHECK(result.final.empty());
 	}
 } // }}}
+
+TEST_CASE("mata::nfa::as_dfa()") {
+	SECTION("deterministic input is returned unchanged") {
+		Nfa dfa(2);
+		dfa.initial = {0};
+		dfa.final = {1};
+		dfa.delta.add(0, 'a', 1);
+		const Nfa result{as_dfa(dfa)};
+		CHECK(result.is_deterministic());
+		CHECK(result.delta.contains(0, 'a', 1));
+	}
+
+	SECTION("nondeterministic input is determinized") {
+		Nfa nfa(3);
+		nfa.initial = {0};
+		nfa.final = {2};
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(0, 'a', 2);
+		const Nfa result{as_dfa(nfa)};
+		CHECK(result.is_deterministic());
+		CHECK(result.is_in_lang(Run{{'a'}}));
+		CHECK(!result.is_in_lang(Run{{'b'}}));
+	}
+
+	SECTION("rvalue overload moves deterministic input") {
+		Nfa nfa(2);
+		nfa.initial = {0};
+		nfa.final = {1};
+		nfa.delta.add(0, 'a', 1);
+		const Nfa result{as_dfa(std::move(nfa))};
+		CHECK(result.is_deterministic());
+		CHECK(result.is_in_lang(Run{{'a'}}));
+		CHECK(result.final.contains(1));
+	}
+}
+
+TEST_CASE("mata::nfa::Nfa::is_in_lang() unique-run fast path") {
+	Nfa aut(3);
+	aut.initial = {0};
+	aut.final = {2};
+
+	SECTION("deterministic automaton accepts and rejects correctly") {
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		CHECK(aut.is_in_lang(Run{{'a', 'b'}}));
+		CHECK(!aut.is_in_lang(Run{{'a'}}));
+		CHECK(!aut.is_in_lang(Run{{'a', 'c'}}));
+		CHECK(!aut.is_in_lang(Run{{'b', 'b'}}));
+		CHECK(!aut.is_in_lang(Run{{}}));
+	}
+
+	SECTION("nondeterministic post falls back to the generic algorithm") {
+		aut = Nfa(4);
+		aut.initial = {0};
+		aut.final = {3};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, 'a', 2);
+		aut.delta.add(2, 'b', 3);
+		CHECK(aut.is_in_lang(Run{{'a', 'b'}}));
+		CHECK(!aut.is_in_lang(Run{{'a'}}));
+		CHECK(!aut.is_in_lang(Run{{'b'}}));
+		// Empty language.
+		aut.final = utils::SparseSet<State>{};
+		CHECK(!aut.is_in_lang(Run{{'a', 'b'}}));
+	}
+
+	SECTION("nondeterministic post after a unique prefix continues from the state reached") {
+		aut = Nfa(5);
+		aut.initial = {0};
+		aut.final = {4};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, 'b', 4);
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(1, 'a', 3);
+		aut.delta.add(3, 'b', 4);
+		CHECK(aut.is_in_lang(Run{{'a', 'a', 'b'}}));
+		CHECK(!aut.is_in_lang(Run{{'a', 'b'}}));
+		CHECK(!aut.is_in_lang(Run{{'a', 'a'}}));
+		CHECK(!aut.is_in_lang(Run{{'a', 'a', 'b', 'b'}}));
+	}
+
+	SECTION("several initial states use the generic algorithm") {
+		aut = Nfa(4);
+		aut.initial = {0, 1};
+		aut.final = {3};
+		aut.delta.add(0, 'a', 2);
+		aut.delta.add(1, 'a', 3);
+		CHECK(aut.is_in_lang(Run{{'a'}}));
+	}
+
+	SECTION("prefix matching keeps the generic algorithm") {
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		aut.delta.add(2, 'c', 2);
+		CHECK(aut.is_in_lang(Run{{'a', 'b', 'c'}}, false, true));
+		CHECK(!aut.is_in_lang(Run{{'b'}}, false, true));
+	}
+
+	SECTION("epsilon mode keeps the generic algorithm") {
+		aut.delta.add(0, EPSILON, 1);
+		aut.delta.add(1, 'a', 2);
+		CHECK(aut.is_in_lang(Run{{'a'}}, true));
+		CHECK(!aut.is_in_lang(Run{{'a'}}));
+	}
+}
 
 TEST_CASE("mata::nfa::Nfa::get_word_from_complement()") {
 	Nfa aut{};
@@ -512,6 +878,15 @@ TEST_CASE("mata::nfa::Nfa::get_word_from_complement()") {
 		result = aut.get_word_from_complement(alphabet.get());
 		REQUIRE(result.has_value());
 		CHECK(*result == Word{'a'});
+	}
+
+	SECTION("an explicit EPSILON letter stays in the witness") {
+		aut.initial = {0};
+		aut.final = {0};
+		const EnumAlphabet epsilon_alphabet{EPSILON};
+		result = aut.get_word_from_complement(&epsilon_alphabet);
+		REQUIRE(result.has_value());
+		CHECK(*result == Word{EPSILON});
 	}
 
 	SECTION("simple automaton 2") {
@@ -588,22 +963,62 @@ TEST_CASE("mata::nfa::Nfa::get_word_from_complement()") {
 	}
 
 	SECTION("smaller transition symbol") {
+		// The transition over the symbol 0 is outside of the alphabet {'a', 'b', 'c'} and is ignored.
 		aut.initial = {1};
 		aut.final = {1};
 		aut.delta.add(1, 'a', 1);
 		aut.delta.add(1, 0, 2);
 		result = aut.get_word_from_complement(alphabet.get());
 		REQUIRE(result.has_value());
-		CHECK(*result == Word{0});
+		CHECK(*result == Word{'b'});
 	}
 
 	SECTION("smaller transition symbol 2") {
+		// The only transition over the symbol 0 is outside of the alphabet {'a', 'b', 'c'} and is ignored.
 		aut.initial = {1};
 		aut.final = {1};
 		aut.delta.add(1, 0, 2);
 		result = aut.get_word_from_complement(alphabet.get());
 		REQUIRE(result.has_value());
-		CHECK(*result == Word{0});
+		CHECK(*result == Word{'a'});
+	}
+
+	SECTION("transitions over symbols outside of the alphabet are ignored - issue #757") {
+		// L = {0,5}* over alphabet {0}: universal over {0}; the out-of-alphabet symbol 5 must be ignored.
+		aut = Nfa{1};
+		aut.initial = {0};
+		aut.final = {0};
+		aut.delta.add(0, 0, 0);
+		aut.delta.add(0, 5, 0);
+		mata::EnumAlphabet alphabet_with_zero{0};
+		result = aut.get_word_from_complement(&alphabet_with_zero);
+		CHECK(!result.has_value());
+	}
+
+	SECTION("returned word never contains a symbol outside of the alphabet - issue #757") {
+		// L = 1* with a dead branch over 0, over alphabet {1}: universal over {1}; symbol 0 must not appear
+		//  in the complement at all and must not fool the determinization into reading past the alphabet symbols.
+		aut = Nfa{2};
+		aut.initial = {0};
+		aut.final = {0};
+		aut.delta.add(0, 1, 0);
+		aut.delta.add(0, 0, 1);
+		mata::EnumAlphabet alphabet_with_one{1};
+		result = aut.get_word_from_complement(&alphabet_with_one);
+		CHECK(!result.has_value());
+	}
+
+	SECTION("a returned word is never accepted and only uses alphabet symbols - issue #757") {
+		aut = Nfa{3};
+		aut.initial = {0};
+		aut.final = {2};
+		aut.delta.add(0, 1, 2);
+		aut.delta.add(0, 6, 1); // symbol 6 is outside of the alphabet below and has to be ignored
+		mata::EnumAlphabet alphabet_half{0, 1};
+		result = aut.get_word_from_complement(&alphabet_half);
+		REQUIRE(result.has_value());
+		CHECK(!aut.is_in_lang(*result));
+		for (const Symbol symbol : *result) { CHECK(symbol <= 1); }
 	}
 }
 
@@ -1334,7 +1749,7 @@ TEST_CASE("mata::nfa::construct() correct calls") { // {{{
 		parsec.type = nfa::TYPE_NFA;
 		parsec.dict.insert({"Initial", {"q1"}});
 		parsec.dict.insert({"Final", {"q2"}});
-		parsec.body = {{"q1", "a", "q2"}};
+		parsec.body = {mata::parser::BodyLine{{"q1", "a", "q2"}}};
 
 		aut = builder::construct(parsec, &alphabet);
 
@@ -1351,21 +1766,21 @@ TEST_CASE("mata::nfa::construct() correct calls") { // {{{
 		parsec.type = nfa::TYPE_NFA;
 		parsec.dict.insert({"Initial", {"q1", "q3"}});
 		parsec.dict.insert({"Final", {"q5"}});
-		parsec.body.push_back({"q1", "a", "q3"});
-		parsec.body.push_back({"q1", "a", "q10"});
-		parsec.body.push_back({"q1", "b", "q7"});
-		parsec.body.push_back({"q3", "a", "q7"});
-		parsec.body.push_back({"q3", "b", "q9"});
-		parsec.body.push_back({"q9", "a", "q9"});
-		parsec.body.push_back({"q7", "b", "q1"});
-		parsec.body.push_back({"q7", "a", "q3"});
-		parsec.body.push_back({"q7", "c", "q3"});
-		parsec.body.push_back({"q10", "a", "q7"});
-		parsec.body.push_back({"q10", "b", "q7"});
-		parsec.body.push_back({"q10", "c", "q7"});
-		parsec.body.push_back({"q7", "a", "q5"});
-		parsec.body.push_back({"q5", "a", "q5"});
-		parsec.body.push_back({"q5", "c", "q9"});
+		parsec.body.push_back(mata::parser::BodyLine{{"q1", "a", "q3"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q1", "a", "q10"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q1", "b", "q7"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q3", "a", "q7"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q3", "b", "q9"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q9", "a", "q9"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q7", "b", "q1"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q7", "a", "q3"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q7", "c", "q3"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q10", "a", "q7"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q10", "b", "q7"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q10", "c", "q7"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q7", "a", "q5"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q5", "a", "q5"}});
+		parsec.body.push_back(mata::parser::BodyLine{{"q5", "c", "q9"}});
 
 		aut = builder::construct(parsec, &alphabet);
 
@@ -1392,17 +1807,34 @@ TEST_CASE("mata::nfa::construct() invalid calls") { // {{{
 
 	SECTION("construct() call with an epsilon transition") {
 		parsec.type = nfa::TYPE_NFA;
-		parsec.body = {{"q1", "q2"}};
+		parsec.body = {mata::parser::BodyLine{{"q1"}, {"q2"}}};
 
 		CHECK_THROWS_WITH(builder::construct(parsec), Catch::Matchers::ContainsSubstring("Epsilon transition"));
 	}
 
 	SECTION("construct() call with a nonsense transition") {
 		parsec.type = nfa::TYPE_NFA;
-		parsec.body = {{"q1", "a", "q2", "q3"}};
+		parsec.body = {mata::parser::BodyLine{{"q1", "a", "q2", "q3"}}};
 
 		CHECK_THROWS_WITH(plumbing::construct(&aut, parsec), Catch::Matchers::ContainsSubstring("Invalid transition"));
 	}
+	SECTION("construct() call with IntAlphabet that throws on a non-numeric symbol") {
+		parsec.type = nfa::TYPE_NFA;
+		parsec.dict.clear();
+		parsec.body.clear();
+		parsec.dict.insert({"Initial", {"q0"}});
+		parsec.dict.insert({"Final", {"q1"}});
+		parsec.body = {mata::parser::BodyLine{{"q0", "x", "q1"}}}; // 'x' is not numeric
+		mata::IntAlphabet int_alphabet;
+
+		// The symbol translation throws; the temporary NameStateMap is a stack object, so it is released while the
+		//  exception propagates. Only the sanitizer builds can observe that release, this section pins the throw.
+		CHECK_THROWS_WITH(
+			builder::construct(parsec, &int_alphabet),
+			Catch::Matchers::ContainsSubstring("Cannot translate string 'x' to symbol")
+		);
+	}
+
 } // }}}
 
 TEST_CASE("mata::nfa::construct() from IntermediateAut correct calls") { // {{{
@@ -1613,6 +2045,39 @@ TEST_CASE("mata::nfa::construct() from IntermediateAut correct calls") { // {{{
 	}
 } // }}}
 
+TEST_CASE("mata::nfa::construct() with a partly filled state map") { // {{{
+	// The mapped names are first mentioned by transitions; a new name must still get an unused identifier.
+	//  The parser of IntermediateAut drops the prefix "q" of the state names.
+	OnTheFlyAlphabet alphabet;
+	nfa::builder::NameStateMap state_map{{"0", 0}, {"1", 1}, {"3", 3}};
+	Nfa aut;
+	SECTION("from ParsedSection") {
+		mata::parser::ParsedSection parsec;
+		parsec.type = nfa::TYPE_NFA;
+		parsec.body = {
+			mata::parser::BodyLine{{"0", "a", "1"}}, mata::parser::BodyLine{{"1", "b", "2"}},
+			mata::parser::BodyLine{{"3", "c", "4"}}
+		};
+		aut = builder::construct(parsec, &alphabet, &state_map);
+	}
+	SECTION("from IntermediateAut") {
+		const std::string file = "@NFA-explicit\n"
+								 "%Alphabet-auto\n"
+								 "q0 a q1\n"
+								 "q1 b q2\n"
+								 "q3 c q4\n";
+		aut = builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(file))[0], &alphabet, &state_map);
+	}
+
+	CHECK(state_map.at("2") == 2);
+	CHECK(state_map.at("4") == 4);
+	CHECK(aut.num_of_states() == 5);
+	CHECK(aut.delta.num_of_transitions() == 3);
+	CHECK(aut.delta.contains(0, alphabet.translate_symb("a"), 1));
+	CHECK(aut.delta.contains(1, alphabet.translate_symb("b"), 2));
+	CHECK(aut.delta.contains(3, alphabet.translate_symb("c"), 4));
+} // }}}
+
 TEST_CASE("mata::nfa::make_complete()") { // {{{
 	Nfa aut{};
 
@@ -1779,6 +2244,71 @@ TEST_CASE("mata::nfa::make_complete()") { // {{{
 		CHECK(aut.delta.contains(SINK, 'b', SINK));
 		CHECK(aut.delta.contains(SINK, 'c', SINK));
 	}
+
+	SECTION("posts with symbols outside the alphabet") {
+		constexpr Symbol OUT_OF_ALPHABET{'z'}; // Above every symbol of the alphabet, below EPSILON.
+		constexpr State SINK{4};
+		const OrdVector<Symbol> symbols{'a', 'b'};
+
+		aut.initial = {0};
+		aut.final = {3};
+		aut.delta.add(0, EPSILON, 1); // Only a foreign symbol: nothing of the alphabet is covered.
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(1, OUT_OF_ALPHABET, 3); // As many symbols as the alphabet has, yet 'b' is missing.
+		aut.delta.add(2, 'a', 2);
+		aut.delta.add(2, 'b', 3);
+		aut.delta.add(2, EPSILON, 0); // Complete over the alphabet, with a foreign symbol on top.
+		aut.delta.add(3, 'a', 3);
+		aut.delta.add(3, 'b', 3);
+
+		CHECK(aut.make_complete(symbols, SINK));
+
+		// The foreign symbols survive, complete nothing, and the posts stay sorted.
+		auto post_symbols = [&aut](const State state) {
+			std::vector<Symbol> symbols_of_post{};
+			for (const SymbolPost& symbol_post : aut.delta[state]) { symbols_of_post.push_back(symbol_post.symbol); }
+			return symbols_of_post;
+		};
+		CHECK(post_symbols(0) == std::vector<Symbol>{'a', 'b', EPSILON});
+		CHECK(post_symbols(1) == std::vector<Symbol>{'a', 'b', OUT_OF_ALPHABET});
+		CHECK(post_symbols(2) == std::vector<Symbol>{'a', 'b', EPSILON});
+		CHECK(post_symbols(3) == std::vector<Symbol>{'a', 'b'});
+		CHECK(post_symbols(SINK) == std::vector<Symbol>{'a', 'b'});
+
+		CHECK(aut.delta.contains(0, EPSILON, 1));
+		CHECK(aut.delta.contains(1, OUT_OF_ALPHABET, 3));
+		CHECK(aut.delta.contains(2, EPSILON, 0));
+		CHECK(aut.delta.contains(0, 'a', SINK));
+		CHECK(aut.delta.contains(0, 'b', SINK));
+		CHECK(aut.delta.contains(1, 'a', 2));
+		CHECK(aut.delta.contains(1, 'b', SINK));
+		CHECK(aut.delta.contains(2, 'a', 2));
+		CHECK(aut.delta.contains(2, 'b', 3));
+		CHECK(aut.delta.contains(SINK, 'a', SINK));
+		CHECK(aut.delta.contains(SINK, 'b', SINK));
+	}
+
+	SECTION("complete automaton is not modified") {
+		const OrdVector<Symbol> symbols{'a', 'b'};
+
+		aut.initial = {0};
+		aut.final = {1};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, 'b', 0);
+		aut.delta.add(1, 'a', 1);
+		aut.delta.add(1, 'b', 0);
+		aut.delta.add(1, EPSILON, 1);
+
+		const size_t num_of_states{aut.num_of_states()};
+		const size_t num_of_transitions{aut.delta.num_of_transitions()};
+		const Nfa original{aut};
+
+		CHECK(!aut.make_complete(symbols));
+
+		CHECK(aut.num_of_states() == num_of_states);
+		CHECK(aut.delta.num_of_transitions() == num_of_transitions);
+		CHECK(aut.is_identical(original));
+	}
 } // }}}
 
 TEST_CASE("mata::nfa::complement()") { // {{{
@@ -1898,6 +2428,326 @@ TEST_CASE("mata::nfa::complement()") { // {{{
 		CHECK(are_equivalent(cmpl, cmpl_min, &alph));
 		CHECK(cmpl_min.num_of_states() == 4);
 		CHECK(cmpl.num_of_states() == 5);
+	}
+
+} // }}}
+
+namespace {
+
+/**
+ * Complement computed independently of complement(): always determinize, keep only the transitions over @p symbols,
+ *  complete by hand into a fresh sink state, and swap the final and non-final states.
+ * Shares no code with the fast paths under test, so it catches a language error in them.
+ */
+Nfa reference_complement(const Nfa& aut, const OrdVector<Symbol>& symbols) {
+	const Nfa det{determinize(aut)};
+	const auto sink{static_cast<State>(det.num_of_states())};
+	Nfa result{sink + 1};
+	result.initial = det.initial;
+	for (const Transition& transition : det.delta.transitions()) {
+		if (symbols.contains(transition.symbol)) {
+			result.delta.add(transition.source, transition.symbol, transition.target);
+		}
+	}
+	for (State state{0}; state <= sink; ++state) {
+		for (const Symbol symbol : symbols) {
+			if (result.delta[state].find(symbol) == result.delta[state].end()) {
+				result.delta.add(state, symbol, sink);
+			}
+		}
+	}
+	for (State state{0}; state <= sink; ++state) {
+		if (!det.final.contains(state)) { result.final.insert(state); }
+	}
+	return result;
+}
+
+} // namespace
+
+TEST_CASE("mata::nfa::complement() - DFA fast path and foreign symbols") { // {{{
+	const std::shared_ptr<OnTheFlyAlphabet> alph_ptr{
+		std::make_shared<OnTheFlyAlphabet>(std::vector<std::string>{"a", "b"})
+	};
+	OnTheFlyAlphabet& alph{*alph_ptr};
+	const Symbol a{alph["a"]};
+	const Symbol b{alph["b"]};
+	const OrdVector<Symbol> symbols{a, b};
+	Nfa aut;
+	Nfa cmpl;
+
+	SECTION("complete DFA") {
+		// Words ending with 'a'.
+		aut = Nfa(2);
+		aut.initial = {0};
+		aut.final = {1};
+		aut.delta.add(0, a, 1);
+		aut.delta.add(0, b, 0);
+		aut.delta.add(1, a, 1);
+		aut.delta.add(1, b, 0);
+		REQUIRE(aut.is_deterministic());
+		REQUIRE(aut.is_complete(symbols));
+
+		cmpl = complement(aut, alph, {{"algorithm", "classical"}});
+		CHECK(cmpl.is_deterministic());
+		CHECK(cmpl.is_complete(symbols));
+		CHECK(are_equivalent(cmpl, reference_complement(aut, symbols), &alph));
+		CHECK(cmpl.is_in_lang(Word{}));
+		CHECK(cmpl.is_in_lang(Word{b}));
+		CHECK(cmpl.is_in_lang(Word{a, b}));
+		CHECK_FALSE(cmpl.is_in_lang(Word{a}));
+		CHECK_FALSE(cmpl.is_in_lang(Word{b, a}));
+	}
+
+	SECTION("partial DFA") {
+		// The single word "ab".
+		aut = Nfa(3);
+		aut.initial = {0};
+		aut.final = {2};
+		aut.delta.add(0, a, 1);
+		aut.delta.add(1, b, 2);
+		REQUIRE(aut.is_deterministic());
+		REQUIRE(!aut.is_complete(symbols));
+
+		cmpl = complement(aut, alph, {{"algorithm", "classical"}});
+		CHECK(cmpl.is_deterministic());
+		CHECK(cmpl.is_complete(symbols));
+		CHECK(are_equivalent(cmpl, reference_complement(aut, symbols), &alph));
+		CHECK_FALSE(cmpl.is_in_lang(Word{a, b}));
+		CHECK(cmpl.is_in_lang(Word{}));
+		CHECK(cmpl.is_in_lang(Word{a}));
+		CHECK(cmpl.is_in_lang(Word{b}));
+		CHECK(cmpl.is_in_lang(Word{a, a}));
+		CHECK(cmpl.is_in_lang(Word{a, b, a}));
+	}
+
+	SECTION("sparse alphabet") {
+		// Alphabet with gaps, the language '0 5*'.
+		const OrdVector<Symbol> sparse_symbols{0, 5, 100};
+		aut = Nfa(2);
+		aut.initial = {0};
+		aut.final = {1};
+		aut.delta.add(0, 0, 1);
+		aut.delta.add(1, 5, 1);
+		REQUIRE(aut.is_deterministic());
+
+		cmpl = complement(aut, sparse_symbols, {{"algorithm", "classical"}});
+		CHECK(cmpl.is_deterministic());
+		CHECK(cmpl.is_complete(sparse_symbols));
+		CHECK(are_equivalent(cmpl, reference_complement(aut, sparse_symbols)));
+		CHECK_FALSE(cmpl.is_in_lang(Word{0}));
+		CHECK_FALSE(cmpl.is_in_lang(Word{0, 5, 5}));
+		CHECK(cmpl.is_in_lang(Word{}));
+		CHECK(cmpl.is_in_lang(Word{100}));
+		CHECK(cmpl.is_in_lang(Word{0, 100}));
+	}
+
+	SECTION("foreign symbols are dropped, not complemented") {
+		// The single word "za", where 'z' lies outside of the complemented alphabet {a, b}.
+		constexpr Symbol z{25};
+		aut = Nfa(3);
+		aut.initial = {0};
+		aut.final = {2};
+		aut.delta.add(0, z, 1);
+		aut.delta.add(1, a, 2);
+		REQUIRE(aut.is_deterministic());
+		const Word za_word{z, a};
+		REQUIRE(aut.is_in_lang(za_word));
+
+		cmpl = complement(aut, symbols, {{"algorithm", "classical"}});
+		// Dropping 'z' empties the language, so the complement is the universal language over {a, b}.
+		CHECK(cmpl.delta.get_used_symbols() == symbols);
+		CHECK_FALSE(cmpl.is_in_lang(za_word));
+		CHECK_FALSE(cmpl.is_in_lang(Word{z}));
+		CHECK(cmpl.is_in_lang(Word{}));
+		CHECK(cmpl.is_in_lang(Word{a}));
+		CHECK(cmpl.is_in_lang(Word{a, b, b}));
+		CHECK(are_equivalent(cmpl, builder::create_sigma_star_nfa(alph_ptr), &alph));
+	}
+
+	SECTION("foreign symbols keep the rest of the language") {
+		// The words "a" and "z", only "a" survives the restriction to {a, b}.
+		constexpr Symbol z{25};
+		aut = Nfa(3);
+		aut.initial = {0};
+		aut.final = {1, 2};
+		aut.delta.add(0, a, 1);
+		aut.delta.add(0, z, 2);
+		REQUIRE(aut.is_deterministic());
+
+		cmpl = complement(aut, symbols, {{"algorithm", "classical"}});
+		CHECK(cmpl.delta.get_used_symbols() == symbols);
+		CHECK(are_equivalent(cmpl, reference_complement(aut, symbols), &alph));
+		CHECK_FALSE(cmpl.is_in_lang(Word{a}));
+		CHECK_FALSE(cmpl.is_in_lang(Word{z}));
+		CHECK(cmpl.is_in_lang(Word{}));
+		CHECK(cmpl.is_in_lang(Word{b}));
+		CHECK(cmpl.is_in_lang(Word{a, a}));
+	}
+
+	SECTION("empty alphabet drops every transition") {
+		// Complementing over no symbols leaves only the empty word to decide.
+		const OrdVector<Symbol> no_symbols{};
+		aut = Nfa(2);
+		aut.initial = {0};
+		aut.final = {1};
+		aut.delta.add(0, a, 1);
+		REQUIRE(aut.is_deterministic());
+
+		cmpl = complement(aut, no_symbols, {{"algorithm", "classical"}});
+		CHECK(cmpl.delta.num_of_transitions() == 0);
+		CHECK(cmpl.is_in_lang(Word{})); // The empty word is not accepted by 'aut'.
+		CHECK_FALSE(cmpl.is_in_lang(Word{a}));
+		CHECK_FALSE(cmpl.is_in_lang(Word{a, a}));
+
+		aut.final = {0}; // 'aut' now accepts the empty word, so its complement over no symbols is empty.
+		cmpl = complement(aut, no_symbols, {{"algorithm", "classical"}});
+		CHECK(cmpl.is_lang_empty());
+	}
+
+	SECTION("nondeterministic automaton") {
+		// The words "a" and "b".
+		aut = Nfa(3);
+		aut.initial = {0, 1};
+		aut.final = {2};
+		aut.delta.add(0, a, 2);
+		aut.delta.add(1, a, 2);
+		aut.delta.add(1, b, 2);
+		REQUIRE(!aut.is_deterministic());
+
+		cmpl = complement(aut, alph, {{"algorithm", "classical"}});
+		CHECK(cmpl.is_deterministic());
+		CHECK(cmpl.is_complete(symbols));
+		CHECK(are_equivalent(cmpl, reference_complement(aut, symbols), &alph));
+		CHECK(cmpl.is_in_lang(Word{}));
+		CHECK(cmpl.is_in_lang(Word{a, a}));
+		CHECK_FALSE(cmpl.is_in_lang(Word{a}));
+		CHECK_FALSE(cmpl.is_in_lang(Word{b}));
+	}
+
+	SECTION("nondeterministic automaton with foreign symbols") {
+		// Determinization has to ignore 'z' instead of building the macrostates behind it.
+		constexpr Symbol z{25};
+		aut = Nfa(4);
+		aut.initial = {0, 1};
+		aut.final = {3};
+		aut.delta.add(0, a, 2);
+		aut.delta.add(0, z, 2);
+		aut.delta.add(1, a, 3);
+		aut.delta.add(1, z, 3);
+		aut.delta.add(2, b, 3);
+		REQUIRE(!aut.is_deterministic());
+
+		cmpl = complement(aut, symbols, {{"algorithm", "classical"}});
+		CHECK(cmpl.delta.get_used_symbols() == symbols);
+		CHECK(are_equivalent(cmpl, reference_complement(aut, symbols), &alph));
+		CHECK_FALSE(cmpl.is_in_lang(Word{a}));
+		CHECK_FALSE(cmpl.is_in_lang(Word{a, b}));
+		CHECK_FALSE(cmpl.is_in_lang(Word{z}));
+		CHECK(cmpl.is_in_lang(Word{}));
+		CHECK(cmpl.is_in_lang(Word{b}));
+	}
+
+	SECTION("empty language") {
+		aut = Nfa(2);
+		aut.initial = {0};
+		aut.final = {};
+		aut.delta.add(0, a, 1);
+		aut.delta.add(1, b, 0);
+		REQUIRE(aut.is_deterministic());
+
+		cmpl = complement(aut, alph, {{"algorithm", "classical"}});
+		CHECK(cmpl.is_deterministic());
+		CHECK(are_equivalent(cmpl, builder::create_sigma_star_nfa(alph_ptr), &alph));
+
+		// Brzozowski reuses the single state of the minimized automaton as the sink instead of adding a second one.
+		const Nfa cmpl_brzozowski{complement(aut, alph, {{"algorithm", "brzozowski"}})};
+		CHECK(cmpl_brzozowski.num_of_states() == 1);
+		CHECK(are_equivalent(cmpl_brzozowski, builder::create_sigma_star_nfa(alph_ptr), &alph));
+	}
+
+	SECTION("universal language") {
+		aut = Nfa(2);
+		aut.initial = {0};
+		aut.final = {0, 1};
+		aut.delta.add(0, a, 1);
+		aut.delta.add(0, b, 0);
+		aut.delta.add(1, a, 0);
+		aut.delta.add(1, b, 1);
+		REQUIRE(aut.is_deterministic());
+
+		cmpl = complement(aut, alph, {{"algorithm", "classical"}});
+		CHECK(cmpl.is_deterministic());
+		CHECK(cmpl.is_lang_empty());
+	}
+
+	SECTION("no initial state") {
+		aut = Nfa(2);
+		aut.initial = {};
+		aut.final = {1};
+		aut.delta.add(0, a, 1);
+
+		cmpl = complement(aut, alph, {{"algorithm", "classical"}});
+		CHECK(cmpl.is_deterministic());
+		CHECK(are_equivalent(cmpl, builder::create_sigma_star_nfa(alph_ptr), &alph));
+	}
+
+	SECTION("a deterministic input still obeys the requested algorithm") {
+		// All nonempty words. The states 1 and 2 are equivalent, so only minimization collapses them.
+		aut = Nfa(3);
+		aut.initial = {0};
+		aut.final = {1, 2};
+		aut.delta.add(0, a, 1);
+		aut.delta.add(0, b, 2);
+		aut.delta.add(1, a, 1);
+		aut.delta.add(1, b, 1);
+		aut.delta.add(2, a, 2);
+		aut.delta.add(2, b, 2);
+		REQUIRE(aut.is_deterministic());
+
+		const Nfa cmpl_classical{complement(aut, alph, {{"algorithm", "classical"}})};
+		const Nfa cmpl_brzozowski{complement(aut, alph, {{"algorithm", "brzozowski"}})};
+		CHECK(are_equivalent(cmpl_classical, cmpl_brzozowski, &alph));
+		CHECK(cmpl_brzozowski.num_of_states() < cmpl_classical.num_of_states());
+		CHECK(cmpl_brzozowski.is_in_lang(Word{}));
+		CHECK_FALSE(cmpl_brzozowski.is_in_lang(Word{a}));
+
+		CHECK_THROWS_WITH(
+			complement(aut, alph, ParameterMap{}),
+			Catch::Matchers::ContainsSubstring("requires setting the \"algorithm\" key")
+		);
+		CHECK_THROWS_WITH(
+			complement(aut, alph, {{"algorithm", "unknown"}}),
+			Catch::Matchers::ContainsSubstring("unknown value of the \"algorithm\" key")
+		);
+	}
+
+	SECTION("rvalue overload") {
+		// Words ending with 'a'.
+		aut = Nfa(2);
+		aut.initial = {0};
+		aut.final = {1};
+		aut.delta.add(0, a, 1);
+		aut.delta.add(1, a, 1);
+		aut.delta.add(1, b, 0);
+		REQUIRE(aut.is_deterministic());
+
+		CHECK(are_equivalent(
+			complement(Nfa{aut}, symbols, {{"algorithm", "classical"}}),
+			complement(aut, symbols, {{"algorithm", "classical"}}), &alph
+		));
+		CHECK(are_equivalent(
+			complement(Nfa{aut}, symbols, {{"algorithm", "brzozowski"}}),
+			complement(aut, symbols, {{"algorithm", "brzozowski"}}), &alph
+		));
+		// The in-place fast path must not swallow the parameter validation either.
+		CHECK_THROWS_WITH(
+			complement(Nfa{aut}, symbols, ParameterMap{}),
+			Catch::Matchers::ContainsSubstring("requires setting the \"algorithm\" key")
+		);
+		CHECK_THROWS_WITH(
+			complement(Nfa{aut}, symbols, {{"algorithm", "unknown"}}),
+			Catch::Matchers::ContainsSubstring("unknown value of the \"algorithm\" key")
+		);
 	}
 
 } // }}}
@@ -2106,6 +2956,128 @@ TEST_CASE("mata::nfa::is_universal()") { // {{{
 			aut.is_universal(alph, params), Catch::Matchers::ContainsSubstring("received an unknown value")
 		);
 	}
+
+	SECTION("epsilon transitions do not decide universality") {
+		// 0 -eps-> 1, 1 -a-> 1 with final {1}: the language is a*, which is universal over {a}.
+		Nfa star{2, {0}, {1}};
+		star.delta.add(0, EPSILON, 1);
+		star.delta.add(1, 'a', 1);
+		const EnumAlphabet sigma{'a'};
+		for (const auto& algo : ALGORITHMS) {
+			params["algorithm"] = algo;
+			CHECK(star.is_universal(sigma, params));
+			// An alphabet read off the automaton itself intentionally excludes EPSILON.
+			CHECK(star.is_universal(create_alphabet(star), params));
+			Run cex;
+			CHECK(star.is_universal(create_alphabet(star), &cex, params));
+		}
+	}
+} // }}}
+
+TEST_CASE("mata::nfa::is_universal() clears reused counterexamples") {
+	const EnumAlphabet alphabet{'a', 'b'};
+	Nfa universal{1, {0}, {0}};
+	universal.delta.add(0, 'a', 0);
+	universal.delta.add(0, 'b', 0);
+	const Nfa non_universal{1, {0}, {}};
+
+	ParameterMap params;
+	for (const std::string algorithm : {"naive", "antichains"}) {
+		CAPTURE(algorithm);
+		params["algorithm"] = algorithm;
+		Run cex{.word = {'a', 'b'}, .path = {0, 1}};
+
+		CHECK(universal.is_universal(alphabet, &cex, params));
+		CHECK(cex.word.empty());
+		CHECK(cex.path.empty());
+
+		cex.word = {'a', 'b'};
+		cex.path = {0, 1};
+		REQUIRE(!non_universal.is_universal(alphabet, &cex, params));
+		CHECK(!non_universal.is_in_lang(cex.word));
+		CHECK(cex.path.empty());
+	}
+}
+
+TEST_CASE("mata::nfa::is_universal() and is_complete() with synchronized iterator (issue #788)") { // {{{
+	Nfa aut;
+	OnTheFlyAlphabet alph;
+	Run cex;
+	ParameterMap params;
+	params["algorithm"] = "antichains";
+
+	SECTION("is_universal: alphabet symbol at boundary, missing") {
+		aut = Nfa(2);
+		aut.initial = {0};
+		aut.final = {0, 1};
+		alph.translate_symb("a");
+		alph.translate_symb("b");
+		const Symbol b = alph["b"];
+		aut.delta.add(0, b, 1); // Only 'b', missing 'a'
+		REQUIRE(!aut.is_universal(alph, &cex, params));
+		REQUIRE(!aut.is_in_lang(cex.word));
+	}
+
+	SECTION("is_universal: all required symbols present") {
+		aut = Nfa(1);
+		aut.initial = {0};
+		aut.final = {0};
+		const Symbol a = alph.translate_symb("a");
+		const Symbol b = alph.translate_symb("b");
+		aut.delta.add(0, a, 0);
+		aut.delta.add(0, b, 0);
+		REQUIRE(aut.is_universal(alph, params));
+	}
+
+	SECTION("is_universal: antichain vs naive on random") {
+		ParameterMap params_naive;
+		params_naive["algorithm"] = "naive";
+
+		const Nfa test_aut = builder::create_random_nfa_tabakov_vardi(4, 2, 0.5, 0.5, 99);
+		OnTheFlyAlphabet test_alph;
+		test_aut.delta.add_symbols_to(test_alph);
+
+		Run antichain_cex;
+		const bool antichain_res = test_aut.is_universal(test_alph, &antichain_cex, params);
+		Run naive_cex;
+		const bool naive_res = test_aut.is_universal(test_alph, &naive_cex, params_naive);
+
+		REQUIRE(antichain_res == naive_res);
+		if (!antichain_res && antichain_cex.word.size() > 0) { REQUIRE(!test_aut.is_in_lang(antichain_cex.word)); }
+	}
+
+	SECTION("is_complete: all required symbols present") {
+		aut = Nfa(1);
+		aut.initial = {0};
+		alph.translate_symb("a");
+		alph.translate_symb("b");
+		const Symbol a = alph["a"];
+		const Symbol b = alph["b"];
+		aut.delta.add(0, a, 0);
+		aut.delta.add(0, b, 0);
+		REQUIRE(aut.is_complete(&alph));
+	}
+
+	SECTION("is_complete: missing required symbol") {
+		aut = Nfa(1);
+		aut.initial = {0};
+		alph.translate_symb("a");
+		alph.translate_symb("b");
+		const Symbol a = alph["a"];
+		aut.delta.add(0, a, 0); // Missing 'b'
+		REQUIRE(!aut.is_complete(&alph));
+	}
+
+	SECTION("is_complete: foreign symbol throws") {
+		aut = Nfa(1);
+		aut.initial = {0};
+		alph.translate_symb("a");
+		const Symbol foreign = 99'999;
+		aut.delta.add(0, foreign, 0);
+		CHECK_THROWS_WITH(
+			aut.is_complete(&alph), Catch::Matchers::ContainsSubstring("symbol that is not in the provided alphabet")
+		);
+	}
 } // }}}
 
 TEST_CASE("mata::nfa::is_included()") { // {{{
@@ -2117,6 +3089,7 @@ TEST_CASE("mata::nfa::is_included()") { // {{{
 	const std::unordered_set<std::string> ALGORITHMS = {
 		"naive",
 		"antichains",
+		"hkc",
 	};
 
 	SECTION("{} <= {}, empty alphabet") {
@@ -2243,10 +3216,9 @@ TEST_CASE("mata::nfa::is_included()") { // {{{
 
 				is_incl = is_included(bigger, smaller, &cex, &alph, params);
 				REQUIRE(is_incl);
-				const bool cex_word_is_ab_or_ba_2 =
-					cex.word == Word{alph["a"], alph["b"]} || cex.word == Word{alph["b"], alph["a"]};
-				REQUIRE(cex_word_is_ab_or_ba_2);
-				REQUIRE(cex.path == std::vector<State>{1, 1, 1});
+				// A reused Run must not keep the previous counterexample around.
+				CHECK(cex.word.empty());
+				CHECK(cex.path.empty());
 			}
 		}
 	}
@@ -2288,14 +3260,9 @@ TEST_CASE("mata::nfa::is_included()") { // {{{
 
 				is_incl = is_included(bigger, smaller, &cex, &alph, params);
 				REQUIRE(is_incl);
-
-				REQUIRE(cex.word.size() == 4);
-				for (size_t i = 0; i < 4; ++i) {
-					const bool cex_word_char_is_a_or_b = cex.word[i] == alph["a"] || cex.word[i] == alph["b"];
-					REQUIRE(cex_word_char_is_a_or_b);
-				}
-				REQUIRE(cex.word[2] != cex.word[3]);
-				REQUIRE(cex.path == std::vector<State>{1, 1, 1, 1, 1});
+				// A reused Run must not keep the previous counterexample around.
+				CHECK(cex.word.empty());
+				CHECK(cex.path.empty());
 			}
 		}
 	}
@@ -2432,7 +3399,278 @@ q10 67 q5
 		);
 		CHECK_NOTHROW(is_included(smaller, bigger, &alph));
 	}
+
+	SECTION("epsilon transitions do not decide inclusion") {
+		// smaller: 0 -eps-> 1 -a-> 2, L = {a}; bigger: 0 -a-> 1, L = {a}.
+		Nfa eps_smaller{3, {0}, {2}};
+		eps_smaller.delta.add(0, EPSILON, 1);
+		eps_smaller.delta.add(1, 'a', 2);
+		Nfa eps_bigger{2, {0}, {1}};
+		eps_bigger.delta.add(0, 'a', 1);
+		const EnumAlphabet alphabet_with_epsilon{'a', EPSILON};
+
+		for (const auto& algo : ALGORITHMS) {
+			SECTION(algo) {
+				params["algorithm"] = algo;
+				CHECK(is_included(eps_smaller, eps_bigger, nullptr, nullptr, params));
+				CHECK(is_included(eps_bigger, eps_smaller, nullptr, nullptr, params));
+				CHECK(is_included(eps_smaller, eps_smaller, nullptr, nullptr, params));
+				CHECK(is_included(eps_smaller, eps_bigger, nullptr, &alphabet_with_epsilon, params));
+				CHECK(is_included(eps_bigger, eps_smaller, nullptr, &alphabet_with_epsilon, params));
+				CHECK(is_included(eps_smaller, eps_smaller, nullptr, &alphabet_with_epsilon, params));
+				CHECK(is_included(eps_bigger, eps_bigger, nullptr, &alphabet_with_epsilon, params));
+			}
+		}
+		CHECK(alphabet_with_epsilon.get_alphabet_symbols() == OrdVector<Symbol>{'a', EPSILON});
+	}
+
+	SECTION("a prefilled Run is overwritten, not appended to") {
+		Nfa ab{3, {0}, {2}};
+		ab.delta.add(0, 'a', 1);
+		ab.delta.add(1, 'b', 2);
+		Nfa a{2, {0}, {1}};
+		a.delta.add(0, 'a', 1);
+
+		for (const auto& algo : ALGORITHMS) {
+			SECTION(algo) {
+				params["algorithm"] = algo;
+				Run reused{Run{Word{'z', 'z', 'z'}, std::vector<State>{7, 7}}};
+				CHECK(!is_included(ab, a, &reused, nullptr, params));
+				CHECK(ab.is_in_lang(reused.word));
+				CHECK(!is_included(ab, a, &reused, nullptr, params));
+				CHECK(ab.is_in_lang(reused.word));
+			}
+		}
+	}
 } // }}}
+
+TEST_CASE("mata::nfa::is_included() antichains agree with naive on random automata") {
+	// The antichain algorithm prunes a configuration only when a dominating one has already been stored. The
+	//  dominance direction is easy to reverse by accident, and a reversed one still answers correctly on the
+	//  hand-written cases above, because their antichains hold at most a few entries. Here both algorithms decide
+	//  the same randomly generated instances, half of which hold by construction.
+	constexpr size_t symbols{3};
+	std::mt19937 gen{42};
+
+	for (size_t iteration{0}; iteration < 60; ++iteration) {
+		std::uniform_int_distribution<size_t> size_dist{1, 8};
+		const size_t num_of_states{size_dist(gen)};
+		std::uniform_int_distribution<size_t> state_dist{0, num_of_states - 1};
+
+		Nfa bigger(num_of_states);
+		Nfa smaller(num_of_states);
+		bigger.initial.insert(0);
+		smaller.initial.insert(0);
+		// Every second instance keeps the transitions of the smaller automaton a subset of the bigger one's and
+		//  its final states a subset as well, which makes the inclusion hold.
+		const bool included_by_construction{iteration % 2 == 0};
+		for (State source{0}; source < num_of_states; ++source) {
+			for (Symbol symbol{0}; symbol < symbols; ++symbol) {
+				for (size_t edge{0}; edge < 2; ++edge) {
+					const State target{static_cast<State>(state_dist(gen))};
+					bigger.delta.add(source, symbol, target);
+					if (!included_by_construction || gen() % 2 == 0) { smaller.delta.add(source, symbol, target); }
+				}
+			}
+			if (gen() % 3 == 0) {
+				bigger.final.insert(source);
+				smaller.final.insert(source);
+			} else if (!included_by_construction && gen() % 3 == 0) {
+				smaller.final.insert(source);
+			}
+		}
+
+		const OnTheFlyAlphabet alphabet{std::vector<std::string>{"a", "b", "c"}};
+		const bool naive{algorithms::is_included_naive(smaller, bigger, &alphabet, nullptr)};
+		const bool antichains{algorithms::is_included_antichains(smaller, bigger, &alphabet, nullptr)};
+		INFO("iteration " << iteration);
+		CHECK(naive == antichains);
+		if (included_by_construction) { CHECK(antichains); }
+
+		// The opposite direction is decided on the same pair, which exercises instances that do not hold.
+		const bool naive_reverse{algorithms::is_included_naive(bigger, smaller, &alphabet, nullptr)};
+		const bool antichains_reverse{algorithms::is_included_antichains(bigger, smaller, &alphabet, nullptr)};
+		CHECK(naive_reverse == antichains_reverse);
+	}
+}
+
+TEST_CASE("mata::nfa naive inclusion uses lazy difference only for eligible Boolean queries") {
+	Nfa any_letter{1, {0}, {0}};
+	for (const Symbol symbol : {static_cast<Symbol>('a'), static_cast<Symbol>('b')}) {
+		any_letter.delta.add(0, symbol, 0);
+	}
+	Nfa only_a{1, {0}, {0}};
+	only_a.delta.add(0, static_cast<Symbol>('a'), 0);
+	const EnumAlphabet whole_alphabet{static_cast<Symbol>('a'), static_cast<Symbol>('b')};
+
+	CHECK(algorithms::is_included_naive(only_a, any_letter, nullptr, nullptr));
+
+	// This positive-inclusion family is exponential for a search that determinizes the nondeterministic left input.
+	Nfa nondeterministic{4, {0}, {3}};
+	nondeterministic.delta.add(0, static_cast<Symbol>('a'), 0);
+	nondeterministic.delta.add(0, static_cast<Symbol>('b'), 0);
+	nondeterministic.delta.add(0, static_cast<Symbol>('a'), 1);
+	for (State state{1}; state < 3; ++state) {
+		nondeterministic.delta.add(state, static_cast<Symbol>('a'), state + 1);
+		nondeterministic.delta.add(state, static_cast<Symbol>('b'), state + 1);
+	}
+	CHECK(!nondeterministic.is_deterministic());
+	CHECK(algorithms::is_included_naive(nondeterministic, any_letter, nullptr, nullptr));
+	Nfa only_b{2, {0}, {1}};
+	only_b.delta.add(0, 'b', 1);
+	CHECK(!algorithms::is_included_naive(only_a, only_b, nullptr, nullptr));
+	CHECK(algorithms::is_included_naive(only_a, only_a, nullptr, nullptr));
+
+	// A universal bigger automaton is answered without searching the pairs. Two all-final unary cycles of coprime
+	//  lengths have no common period, so a search keeps every pair of their states.
+	const auto all_final_cycle{[](const size_t length) {
+		Nfa cycle{length, {0}, {}};
+		for (State state{0}; state < length; ++state) {
+			cycle.final.insert(state);
+			cycle.delta.add(state, 'a', static_cast<State>((state + 1) % length));
+		}
+		return cycle;
+	}};
+	CHECK(algorithms::is_included_naive(all_final_cycle(7), all_final_cycle(11), nullptr, nullptr));
+	Nfa universal_nondeterministic{2, {0}, {0, 1}};
+	universal_nondeterministic.delta.add(0, 'a', 0);
+	universal_nondeterministic.delta.add(0, 'a', 1);
+	universal_nondeterministic.delta.add(1, 'a', 0);
+	CHECK(algorithms::is_included_naive(all_final_cycle(7), universal_nondeterministic, nullptr, nullptr));
+	// All states final is not enough: without an initial state the language is empty, and a letter missing at a
+	//  reachable state leaves the words through it out.
+	Nfa no_initial{all_final_cycle(3)};
+	no_initial.initial.clear();
+	CHECK(!algorithms::is_included_naive(all_final_cycle(7), no_initial, nullptr, nullptr));
+	CHECK(!algorithms::is_included_naive(any_letter, all_final_cycle(3), nullptr, nullptr));
+	// The left language is empty even though this automaton has an initial state and transitions.
+	Nfa non_accepting{all_final_cycle(7)};
+	non_accepting.final.clear();
+	CHECK(algorithms::is_included_naive(non_accepting, only_b, nullptr, nullptr));
+
+	// The supplied alphabet must be respected: words outside it cannot form a counterexample.
+	const EnumAlphabet just_a{static_cast<Symbol>('a')};
+	CHECK(algorithms::is_included_naive(any_letter, only_a, &just_a, nullptr));
+	CHECK(!algorithms::is_included_naive(any_letter, only_a, &whole_alphabet, nullptr));
+
+	// The lazy difference has an epsilon-free precondition; these cases retain the existing construction.
+	Nfa eps_left{2, {0}, {1}};
+	eps_left.delta.add(0, EPSILON, 1);
+	eps_left.delta.add(1, 'a', 1);
+	Nfa one_a{2, {0}, {1}};
+	one_a.delta.add(0, 'a', 1);
+	CHECK(!algorithms::is_included_naive(eps_left, one_a, nullptr, nullptr));
+	CHECK(is_included(one_a, eps_left, nullptr, nullptr, {{"algorithm", "naive"}}));
+
+	CHECK(algorithms::is_included_naive(Nfa{}, any_letter, nullptr, nullptr));
+	Run cex{};
+	REQUIRE(!algorithms::is_included_naive(any_letter, only_a, nullptr, &cex));
+	CHECK(cex.word == Word{'b'});
+	CHECK(!cex.path.empty());
+}
+
+TEST_CASE("mata::nfa naive inclusion and equivalence without an alphabet agree with antichains (#754)") {
+	// Without an alphabet, the naive algorithms complement over the letters of both operands. Each operand has a
+	//  letter of its own here, and epsilon transitions, which are no letter.
+	const ParameterMap naive{{"algorithm", "naive"}};
+	const ParameterMap antichains{{"algorithm", "antichains"}};
+	std::mt19937 gen{754};
+	for (size_t iteration{0}; iteration < 200; ++iteration) {
+		const size_t num_of_states{1 + (gen() % 5)};
+		const auto random_nfa{[&](const Symbol own_letter) {
+			Nfa nfa(num_of_states);
+			nfa.initial.insert(0);
+			const std::array<Symbol, 4> letters{0, 1, own_letter, EPSILON};
+			for (State source{0}; source < num_of_states; ++source) {
+				for (const Symbol letter : letters) {
+					if (gen() % 2 == 0) { nfa.delta.add(source, letter, static_cast<State>(gen() % num_of_states)); }
+				}
+				if (gen() % 3 == 0) { nfa.final.insert(source); }
+			}
+			return nfa;
+		}};
+		const Nfa lhs{random_nfa(7)};
+		// Every other instance uses the same letters in both operands.
+		const Nfa rhs{iteration % 2 == 0 ? random_nfa(7) : random_nfa(9)};
+		INFO("iteration " << iteration);
+		CHECK(is_included(lhs, rhs, nullptr, nullptr, naive) == is_included(lhs, rhs, nullptr, nullptr, antichains));
+		CHECK(is_included(rhs, lhs, nullptr, nullptr, naive) == is_included(rhs, lhs, nullptr, nullptr, antichains));
+		CHECK(are_equivalent(lhs, rhs, nullptr, naive) == are_equivalent(lhs, rhs, nullptr, antichains));
+	}
+}
+
+TEST_CASE("mata::nfa direct naive inclusion and equivalence read EPSILON as a symbol") {
+	Nfa epsilon_word{2, {0}, {1}};
+	epsilon_word.delta.add(0, EPSILON, 1);
+	Nfa a_word{2, {0}, {1}};
+	a_word.delta.add(0, 'a', 1);
+	const Nfa empty_word_only{1, {0}, {0}};
+	const EnumAlphabet alphabet{'a', EPSILON};
+	const ParameterMap naive{{"algorithm", "naive"}};
+
+	CHECK(algorithms::is_included_naive(epsilon_word, epsilon_word));
+	CHECK(algorithms::is_included_naive(epsilon_word, epsilon_word, &alphabet));
+	CHECK(algorithms::are_equivalent_epsilon_as_symbol(epsilon_word, epsilon_word, nullptr, naive));
+	CHECK(algorithms::are_equivalent_epsilon_as_symbol(epsilon_word, epsilon_word, &alphabet, naive));
+
+	const auto check_not_included = [&](const Nfa& smaller, const Nfa& bigger, const Symbol expected) {
+		Run cex{};
+		REQUIRE(!algorithms::is_included_naive(smaller, bigger, &alphabet, &cex));
+		CHECK(cex.word == Word{expected});
+		CHECK(smaller.is_in_lang(cex));
+		CHECK(!bigger.is_in_lang(cex.word));
+	};
+	// Each direction has a distinct literal-letter witness and an accepting path in the smaller operand.
+	check_not_included(epsilon_word, a_word, EPSILON);
+	check_not_included(a_word, epsilon_word, 'a');
+
+	Run equivalence_cex{.word = {'z'}, .path = {7}};
+	REQUIRE(!algorithms::are_equivalent_epsilon_as_symbol(epsilon_word, a_word, &alphabet, naive, &equivalence_cex));
+	CHECK(equivalence_cex.word == Word{EPSILON});
+	CHECK(epsilon_word.is_in_lang(equivalence_cex));
+	CHECK(!a_word.is_in_lang(equivalence_cex.word));
+
+	// The default alphabet must retain EPSILON: the empty word and the one-letter word differ in both directions.
+	for (const bool reverse : {false, true}) {
+		const Nfa& smaller{reverse ? empty_word_only : epsilon_word};
+		const Nfa& bigger{reverse ? epsilon_word : empty_word_only};
+		Run cex{};
+		REQUIRE(!algorithms::is_included_naive(smaller, bigger, nullptr, &cex));
+		CHECK(cex.word == (reverse ? Word{} : Word{EPSILON}));
+		CHECK(smaller.is_in_lang(cex));
+		CHECK(!bigger.is_in_lang(cex.word));
+	}
+	Run default_alphabet_cex{};
+	REQUIRE(!algorithms::are_equivalent_epsilon_as_symbol(
+		epsilon_word, empty_word_only, nullptr, naive, &default_alphabet_cex
+	));
+	CHECK(default_alphabet_cex.word == Word{EPSILON});
+	CHECK(epsilon_word.is_in_lang(default_alphabet_cex));
+	CHECK(!empty_word_only.is_in_lang(default_alphabet_cex.word));
+}
+
+TEST_CASE("mata::nfa inclusion and equivalence accept an IntAlphabet for algorithms that do not enumerate it") {
+	// IntAlphabet throws on get_alphabet_symbols(); only the naive algorithm reads the symbols of an alphabet.
+	Nfa a_word{2, {0}, {1}};
+	a_word.delta.add(0, 'a', 1);
+	Nfa epsilon_then_a{3, {0}, {2}};
+	epsilon_then_a.delta.add(0, EPSILON, 1);
+	epsilon_then_a.delta.add(1, 'a', 2);
+	Nfa b_word{2, {0}, {1}};
+	b_word.delta.add(0, 'b', 1);
+	const IntAlphabet int_alphabet{};
+	for (const char* const algorithm : {"antichains", "hkc"}) {
+		SECTION(algorithm) {
+			const ParameterMap params{{"algorithm", algorithm}};
+			CHECK(is_included(a_word, a_word, nullptr, &int_alphabet, params));
+			CHECK(is_included(epsilon_then_a, a_word, nullptr, &int_alphabet, params));
+			CHECK(!is_included(a_word, b_word, nullptr, &int_alphabet, params));
+			CHECK(are_equivalent(a_word, a_word, &int_alphabet, params));
+			CHECK(are_equivalent(epsilon_then_a, a_word, &int_alphabet, params));
+			CHECK(!are_equivalent(a_word, b_word, &int_alphabet, params));
+		}
+	}
+}
 
 TEST_CASE("mata::nfa::are_equivalent") {
 	Nfa smaller(10);
@@ -2443,6 +3681,7 @@ TEST_CASE("mata::nfa::are_equivalent") {
 	const std::unordered_set<std::string> ALGORITHMS = {
 		"naive",
 		"antichains",
+		"hkc",
 	};
 
 	SECTION("{} == {}, empty alphabet") {
@@ -2594,15 +3833,39 @@ TEST_CASE("mata::nfa::are_equivalent") {
 		);
 		CHECK_NOTHROW(are_equivalent(smaller, bigger));
 	}
+
+	SECTION("epsilon transitions do not decide equivalence") {
+		// 0 -eps-> 1 -a-> 2 and 0 -a-> 1 both accept {a}.
+		Nfa with_eps{3, {0}, {2}};
+		with_eps.delta.add(0, EPSILON, 1);
+		with_eps.delta.add(1, 'a', 2);
+		Nfa without_eps{2, {0}, {1}};
+		without_eps.delta.add(0, 'a', 1);
+		const EnumAlphabet alphabet_with_epsilon{'a', EPSILON};
+
+		for (const auto& algo : ALGORITHMS) {
+			SECTION(algo) {
+				params["algorithm"] = algo;
+				CHECK(are_equivalent(with_eps, without_eps, params));
+				CHECK(are_equivalent(without_eps, with_eps, params));
+				CHECK(are_equivalent(with_eps, with_eps, params));
+				CHECK(are_equivalent(with_eps, without_eps, &alphabet_with_epsilon, params));
+				CHECK(are_equivalent(without_eps, with_eps, &alphabet_with_epsilon, params));
+				CHECK(are_equivalent(with_eps, with_eps, &alphabet_with_epsilon, params));
+				CHECK(are_equivalent(without_eps, without_eps, &alphabet_with_epsilon, params));
+			}
+		}
+		CHECK(alphabet_with_epsilon.get_alphabet_symbols() == OrdVector<Symbol>{'a', EPSILON});
+	}
 }
 
 TEST_CASE("mata::nfa::are_equivalent() counterexample") {
 	OnTheFlyAlphabet alph{std::vector<std::string>{"a", "b"}};
 	ParameterMap params;
 
-	const std::unordered_set<std::string> ALGORITHMS = {"naive", "antichains"};
+	const std::unordered_set<std::string> ALGORITHMS = {"naive", "antichains", "hkc"};
 
-	SECTION("equivalent automata leave cex untouched") {
+	SECTION("equivalent automata clear a prefilled cex") {
 		Nfa aut1(1), aut2(2);
 		aut1.initial = {0};
 		aut1.final = {0};
@@ -2614,9 +3877,10 @@ TEST_CASE("mata::nfa::are_equivalent() counterexample") {
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algorithm"] = algo;
-			Run cex;
+			Run cex{Run{Word{alph["b"], alph["b"]}, std::vector<State>{7, 7, 7}}};
 			CHECK(are_equivalent(aut1, aut2, &alph, params, &cex));
 			CHECK(cex.word.empty());
+			CHECK(cex.path.empty());
 		}
 	}
 
@@ -2652,6 +3916,42 @@ TEST_CASE("mata::nfa::are_equivalent() counterexample") {
 			Run cex;
 			CHECK(!are_equivalent(lhs, rhs, &alph, params, &cex));
 			CHECK(lhs.is_in_lang(cex) != rhs.is_in_lang(cex));
+		}
+	}
+
+	SECTION("a difference found in the second inclusion direction still has a witness") {
+		// lhs: {a} is included in rhs: {a, b}, so the second direction has to search and report "b".
+		Nfa lhs{2, {0}, {1}};
+		Nfa rhs{2, {0}, {1}};
+		lhs.delta.add(0, alph["a"], 1);
+		rhs.delta.add(0, alph["a"], 1);
+		rhs.delta.add(0, alph["b"], 1);
+
+		for (const auto& algo : ALGORITHMS) {
+			params["algorithm"] = algo;
+			Run cex;
+			CHECK(!are_equivalent(lhs, rhs, &alph, params, &cex));
+			CHECK(rhs.is_in_lang(cex));
+			CHECK(!lhs.is_in_lang(cex));
+		}
+	}
+
+	SECTION("a Run reused across two failing checks is overwritten") {
+		Nfa ab{3, {0}, {2}};
+		ab.delta.add(0, alph["a"], 1);
+		ab.delta.add(1, alph["b"], 2);
+		Nfa a{2, {0}, {1}};
+		a.delta.add(0, alph["a"], 1);
+
+		for (const auto& algo : ALGORITHMS) {
+			params["algorithm"] = algo;
+			Run cex{.word = {'z'}, .path = {7}};
+			REQUIRE(!are_equivalent(ab, a, &alph, params, &cex));
+			CHECK(cex.word == Word{alph["a"], alph["b"]});
+			REQUIRE(!are_equivalent(ab, a, &alph, params, &cex));
+			CHECK(cex.word == Word{alph["a"], alph["b"]});
+			CHECK(ab.is_in_lang(cex));
+			CHECK(!a.is_in_lang(cex.word));
 		}
 	}
 
@@ -3030,6 +4330,124 @@ TEST_CASE("mata::nfa::fw-direct-simulation()") { // {{{
 	}
 } // }}
 
+TEST_CASE("Simlib::Util::BinaryRelation::get_symmetric_quotient_projection()") {
+	Nfa aut(9);
+	aut.initial = {1, 2};
+	aut.delta.add(1, 'a', 2);
+	aut.delta.add(1, 'a', 3);
+	aut.delta.add(1, 'b', 4);
+	aut.delta.add(2, 'a', 2);
+	aut.delta.add(2, 'b', 2);
+	aut.delta.add(2, 'a', 3);
+	aut.delta.add(2, 'b', 4);
+	aut.delta.add(3, 'b', 4);
+	aut.delta.add(3, 'c', 7);
+	aut.delta.add(3, 'b', 2);
+	aut.delta.add(5, 'c', 3);
+	aut.delta.add(6, 'c', 3);
+	aut.delta.add(7, 'a', 8);
+	aut.final = {3};
+	const Simlib::Util::BinaryRelation relation{compute_relation(aut)};
+
+	std::vector<size_t> projection;
+	relation.get_symmetric_quotient_projection(projection);
+	// The states without transitions, 0, 4 and 8, simulate each other, and so do 5 and 6.
+	CHECK(projection == std::vector<size_t>{0, 1, 2, 3, 0, 5, 5, 7, 0});
+
+	Simlib::Util::BinaryRelation symmetric{relation};
+	symmetric.restrict_to_symmetric();
+	std::vector<size_t> restricted_projection;
+	symmetric.get_quotient_projection(restricted_projection);
+	CHECK(projection == restricted_projection);
+
+	std::vector<size_t> block_projection;
+	compute_partition_relation(aut).get_symmetric_quotient_projection(block_projection);
+	CHECK(block_projection == projection);
+}
+
+TEST_CASE("Simlib::Util::SplittingRelation keeps its pairs across 64-bit words") {
+	// The relation stores each row and column as 64-bit words; the simulation tests above stay below 30 blocks,
+	//  inside one word. A reference matrix follows splits that cross the words at 64 and 128 and erasures that
+	//  empty whole words, and both directions are compared after every step.
+	constexpr size_t MAX_SIZE{200};
+	Simlib::Util::SplittingRelation relation{MAX_SIZE};
+	std::vector<std::vector<bool>> expected(MAX_SIZE, std::vector<bool>(MAX_SIZE, false));
+	const std::vector<std::vector<size_t>> index{{0, 1, 2}, {1}, {0, 2}};
+	relation.init(index);
+	for (size_t row{0}; row < index.size(); ++row) {
+		for (const size_t col : index[row]) { expected[row][col] = true; }
+	}
+
+	const auto check = [&]() {
+		const size_t size{relation.size()};
+		for (size_t i{0}; i < size; ++i) {
+			std::vector<size_t> row_expected, col_expected, row_actual, col_actual;
+			for (size_t j{0}; j < size; ++j) {
+				if (expected[i][j]) { row_expected.push_back(j); }
+				if (expected[j][i]) { col_expected.push_back(j); }
+			}
+			for (const size_t col : relation.row(i)) { row_actual.push_back(col); }
+			for (const size_t row : relation.column(i)) { col_actual.push_back(row); }
+			INFO("block " << i << " of " << size);
+			REQUIRE(row_actual == row_expected);
+			REQUIRE(col_actual == col_expected);
+			REQUIRE(relation.row_size(i) == row_expected.size());
+			REQUIRE(relation.column_size(i) == col_expected.size());
+		}
+	};
+	const auto split = [&](const size_t block) {
+		const size_t added{relation.split(block)};
+		REQUIRE(added == relation.size() - 1);
+		for (size_t other{0}; other < added; ++other) {
+			expected[other][added] = expected[other][block];
+			expected[added][other] = expected[block][other];
+		}
+		expected[added][added] = true;
+		check();
+	};
+	// Erases the off-diagonal pairs of row (column) @p block that @p erase selects, while iterating it.
+	const auto erase_row = [&](const size_t block, const auto& erase) {
+		const auto row{relation.row(block)};
+		for (auto it{row.begin()}; it != row.end(); ++it) {
+			if (*it != block && erase(*it)) {
+				expected[block][*it] = false;
+				relation.erase(it);
+			}
+		}
+		check();
+	};
+	const auto erase_column = [&](const size_t block, const auto& erase) {
+		const auto column{relation.column(block)};
+		for (auto it{column.begin()}; it != column.end(); ++it) {
+			if (*it != block && erase(*it)) {
+				expected[*it][block] = false;
+				relation.erase(it);
+			}
+		}
+		check();
+	};
+
+	std::mt19937 rng{7};
+	while (relation.size() < 140) {
+		split(rng() % relation.size());
+		if (relation.size() % 9 == 0) {
+			erase_row(rng() % relation.size(), [&](size_t) { return rng() % 3 == 0; });
+			erase_column(rng() % relation.size(), [&](size_t) { return rng() % 3 == 0; });
+		}
+	}
+	// Blocks on both sides of each word boundary.
+	for (const size_t block : std::vector<size_t>{63, 64, 127, 128}) { split(block); }
+	// Row 0 and column 0 lose their whole second word, then splits append past it.
+	erase_row(0, [](const size_t col) { return col / 64 == 1; });
+	erase_column(0, [](const size_t row) { return row / 64 == 1; });
+	for (const size_t block : std::vector<size_t>{0, 64, 100, 0}) { split(block); }
+	// Every pair except the diagonal: the lines keep only empty words around it.
+	for (size_t block{0}; block < relation.size(); ++block) {
+		erase_row(block, [](size_t) { return true; });
+	}
+	split(130);
+}
+
 TEST_CASE("mata::nfa::reduce_size_by_simulation()") {
 	Nfa aut;
 	StateRenaming state_renaming;
@@ -3111,6 +4529,150 @@ TEST_CASE("mata::nfa::reduce_size_by_simulation()") {
 		aut.initial = {0};
 		Nfa result = reduce(aut.trim(), &state_renaming);
 		CHECK(are_equivalent(result, aut));
+	}
+
+	SECTION("states with identical successors give the quotient by the simulation of the whole automaton") {
+		// Each automaton is a random part and a copy whose transitions lead into either part. Some copied states
+		//  merge before the simulation; others, such as copied cycles, may merge only in the simulation. The
+		//  result, its numbering, and the state renaming must still be those of the plain simulation quotient.
+		std::mt19937 gen{7};
+		constexpr State part_size{6};
+		std::uniform_int_distribution<State> state_dist{0, part_size - 1};
+		for (size_t iteration{0}; iteration < 50; ++iteration) {
+			Nfa nfa(2 * part_size);
+			for (State state{0}; state < part_size; ++state) {
+				if (gen() % 4 == 0) { nfa.initial.insert(state); }
+				if (gen() % 3 == 0) {
+					nfa.final.insert(state);
+					nfa.final.insert(state + part_size);
+				}
+				for (const Symbol symbol : {Symbol{'a'}, Symbol{'b'}}) {
+					for (size_t num_of_targets{gen() % 3}; num_of_targets > 0; --num_of_targets) {
+						const State target{state_dist(gen)};
+						nfa.delta.add(state, symbol, target);
+						nfa.delta.add(state + part_size, symbol, gen() % 2 == 0 ? target : target + part_size);
+					}
+				}
+			}
+			nfa.initial.insert(part_size + state_dist(gen));
+
+			const auto relation{algorithms::compute_relation(nfa)};
+			std::vector<size_t> quot_proj;
+			relation.get_symmetric_quotient_projection(quot_proj);
+			StateRenaming expected_renaming;
+			const Nfa expected{
+				algorithms::quotient_by_simulation(nfa, relation, quot_proj, nullptr, &expected_renaming)
+			};
+
+			INFO("iteration " << iteration);
+			const Nfa result{reduce(nfa, &state_renaming)};
+			CHECK(result.is_identical(expected));
+			CHECK(state_renaming == expected_renaming);
+			CHECK(result.num_of_states() <= part_size);
+		}
+	}
+
+	SECTION("two copies of a chain merge level by level into one chain") {
+		constexpr State length{200};
+		Nfa nfa(2 * length);
+		nfa.initial = {0, length};
+		nfa.final = {length - 1, 2 * length - 1};
+		for (State state{0}; state + 1 < length; ++state) {
+			nfa.delta.add(state, 'a', state + 1);
+			nfa.delta.add(length + state, 'a', length + state + 1);
+		}
+
+		const Nfa result{reduce(nfa, &state_renaming)};
+		CHECK(result.num_of_states() == length);
+		for (State state{0}; state < length; ++state) {
+			CHECK(state_renaming.at(state) == state);
+			CHECK(state_renaming.at(length + state) == state);
+		}
+		CHECK(are_equivalent(result, nfa));
+	}
+
+	SECTION("automata with one target per symbol post give the quotient by the simulation") {
+		// Partial, possibly with several initial states, dead and unreachable states: none of it may change the
+		//  result, its numbering, or the state renaming.
+		std::mt19937 gen{11};
+		for (size_t iteration{0}; iteration < 200; ++iteration) {
+			const State num_of_states{static_cast<State>(2 + gen() % 14)};
+			std::uniform_int_distribution<State> state_dist{0, num_of_states - 1};
+			Nfa nfa(num_of_states);
+			nfa.initial.insert(state_dist(gen));
+			if (gen() % 4 == 0) { nfa.initial.insert(state_dist(gen)); }
+			for (State state{0}; state < num_of_states; ++state) {
+				if (gen() % 3 == 0) { nfa.final.insert(state); }
+				for (const Symbol symbol : {Symbol{'a'}, Symbol{'b'}, Symbol{'c'}}) {
+					if (gen() % 3 != 0) { nfa.delta.add(state, symbol, state_dist(gen)); }
+				}
+			}
+
+			const auto relation{algorithms::compute_relation(nfa)};
+			std::vector<size_t> quot_proj;
+			relation.get_symmetric_quotient_projection(quot_proj);
+			StateRenaming expected_renaming;
+			const Nfa expected{
+				algorithms::quotient_by_simulation(nfa, relation, quot_proj, nullptr, &expected_renaming)
+			};
+
+			INFO("iteration " << iteration);
+			const Nfa result{reduce(nfa, &state_renaming)};
+			CHECK(result.is_identical(expected));
+			CHECK(state_renaming == expected_renaming);
+		}
+	}
+
+	SECTION("symbol posts without targets do not constrain the simulation") {
+		// States 0 and 1 are final without transitions; the empty 'a' post of 0 is no transition, so they simulate
+		//  each other. The post of 2 has two targets, so the simulation itself is computed.
+		Nfa nfa(3);
+		nfa.initial.insert(2);
+		nfa.final = {0, 1};
+		nfa.delta.mutable_state_post(0).emplace_back('a');
+		nfa.delta.add(2, 'b', 0);
+		nfa.delta.add(2, 'b', 1);
+
+		const Nfa result{reduce(nfa, &state_renaming)};
+		CHECK(result.num_of_states() == 2);
+		CHECK(state_renaming.at(0) == state_renaming.at(1));
+		CHECK(are_equivalent(result, nfa));
+	}
+
+	SECTION("automata over small and large alphabets give the quotient by the simulation") {
+		// More than 64 states, so the rows of the simulation take several words. Few transitions over many symbols
+		//  give rows of a-predecessors only to the a-targets; few symbols give rows to all states.
+		std::mt19937 gen{13};
+		for (size_t iteration{0}; iteration < 40; ++iteration) {
+			const Symbol num_of_symbols{iteration % 2 == 0 ? 4U : 200U};
+			const State num_of_states{static_cast<State>(65 + gen() % 190)};
+			std::uniform_int_distribution<State> state_dist{0, num_of_states - 1};
+			Nfa nfa(num_of_states);
+			nfa.initial.insert(state_dist(gen));
+			for (State state{0}; state < num_of_states; ++state) {
+				if (gen() % 3 == 0) { nfa.final.insert(state); }
+				for (size_t num_of_posts{1 + (gen() % 3)}; num_of_posts > 0; --num_of_posts) {
+					// Symbols far apart, up to 59'700.
+					const Symbol symbol{static_cast<Symbol>(gen() % num_of_symbols) * 300};
+					for (size_t num_of_targets{1 + (gen() % 2)}; num_of_targets > 0; --num_of_targets) {
+						nfa.delta.add(state, symbol, state_dist(gen));
+					}
+				}
+			}
+
+			const auto relation{algorithms::compute_relation(nfa)};
+			std::vector<size_t> quot_proj;
+			relation.get_symmetric_quotient_projection(quot_proj);
+			StateRenaming expected_renaming;
+			const Nfa expected{
+				algorithms::quotient_by_simulation(nfa, relation, quot_proj, nullptr, &expected_renaming)
+			};
+
+			INFO("iteration " << iteration);
+			const Nfa result{reduce(nfa, &state_renaming)};
+			CHECK(result.is_identical(expected));
+			CHECK(state_renaming == expected_renaming);
+		}
 	}
 }
 
@@ -3204,9 +4766,351 @@ TEST_CASE("mata::nfa::algorithms::minimize_hopcroft()") {
 	}
 }
 
+namespace {
+/**
+ * @brief Is @p dfa a minimal DFA of its language?
+ *
+ * Fills the table of distinguishable state pairs (Moore): a pair is distinguishable when exactly one of its
+ *  states is final, or when some symbol leads to an already distinguishable pair, where a missing transition
+ *  counts as a transition to an implicit dead state. A trimmed DFA is minimal when every pair of its states is
+ *  distinguishable. This is an oracle independent of the implementation; language equivalence alone would not
+ *  show that a result is minimal.
+ */
+bool is_minimal_dfa(const Nfa& dfa) {
+	const size_t num_of_states{dfa.num_of_states()};
+	if (num_of_states == 0) { return true; }
+	if (!dfa.is_deterministic()) { return false; }
+	// An automaton of the empty language is minimal exactly when it has one state: every one of its states is
+	//  equivalent to the implicit dead state, so the pairwise test below would reject even the canonical form.
+	if (dfa.final.empty()) { return num_of_states == 1; }
+
+	const OrdVector<Symbol> symbols{dfa.delta.get_used_symbols()};
+	// 'dead' is an implicit extra state standing for a missing transition.
+	const size_t dead{num_of_states};
+	const auto successor = [&](const size_t state, const Symbol symbol) -> size_t {
+		if (state == dead) { return dead; }
+		const StatePost& state_post{dfa.delta[static_cast<State>(state)]};
+		const auto symbol_post_it{state_post.find(symbol)};
+		if (symbol_post_it == state_post.end() || symbol_post_it->targets.empty()) { return dead; }
+		return *symbol_post_it->targets.begin();
+	};
+	const auto is_final = [&](const size_t state) { return state != dead && dfa.final[static_cast<State>(state)]; };
+
+	const size_t size{num_of_states + 1};
+	std::vector distinguishable(size, std::vector<bool>(size, false));
+	for (size_t lhs{0}; lhs < size; ++lhs) {
+		for (size_t rhs{lhs + 1}; rhs < size; ++rhs) {
+			if (is_final(lhs) != is_final(rhs)) { distinguishable[lhs][rhs] = true; }
+		}
+	}
+	for (bool changed{true}; changed;) {
+		changed = false;
+		for (size_t lhs{0}; lhs < size; ++lhs) {
+			for (size_t rhs{lhs + 1}; rhs < size; ++rhs) {
+				if (distinguishable[lhs][rhs]) { continue; }
+				for (const Symbol symbol : symbols) {
+					const size_t lhs_succ{successor(lhs, symbol)};
+					const size_t rhs_succ{successor(rhs, symbol)};
+					if (lhs_succ == rhs_succ) { continue; }
+					if (distinguishable[std::min(lhs_succ, rhs_succ)][std::max(lhs_succ, rhs_succ)]) {
+						distinguishable[lhs][rhs] = true;
+						changed = true;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	// Every pair of real states must be distinguishable, and no real state may be equivalent to the dead state:
+	//  'rhs' runs up to and including 'dead'.
+	for (size_t lhs{0}; lhs < num_of_states; ++lhs) {
+		for (size_t rhs{lhs + 1}; rhs < size; ++rhs) {
+			if (!distinguishable[lhs][rhs]) { return false; }
+		}
+	}
+	return true;
+}
+} // namespace
+
+TEST_CASE("mata::nfa::minimize() with the default \"auto\" strategy") {
+	SECTION("the minimality oracle rejects non-minimal DFAs") {
+		// A non-final state with no outgoing transitions is equivalent to the implicit dead state.
+		Nfa leftover_dead_state(2);
+		leftover_dead_state.initial.insert(0);
+		leftover_dead_state.final.insert(0);
+		leftover_dead_state.delta.add(0, 'a', 1);
+		CHECK(!is_minimal_dfa(leftover_dead_state));
+		CHECK(minimize(leftover_dead_state).num_of_states() == 1);
+
+		// States 1 and 2 are equivalent.
+		Nfa equivalent_states(3);
+		equivalent_states.initial.insert(0);
+		equivalent_states.final.insert(1);
+		equivalent_states.final.insert(2);
+		equivalent_states.delta.add(0, 'a', 1);
+		equivalent_states.delta.add(0, 'b', 2);
+		CHECK(!is_minimal_dfa(equivalent_states));
+		CHECK(is_minimal_dfa(minimize(equivalent_states)));
+	}
+
+	SECTION("the default no longer determinizes twice") {
+		// A trimmed, complete DFA: Brzozowski reverts and determinizes it twice, which is exponential in the
+		//  worst case, while "auto" sends it straight to Hopcroft.
+		Nfa dfa(4);
+		dfa.initial.insert(0);
+		dfa.final.insert(3);
+		for (State state{0}; state < 4; ++state) {
+			dfa.delta.add(state, 'a', (state + 1) % 4);
+			dfa.delta.add(state, 'b', state);
+		}
+		const Nfa minimized{minimize(dfa)};
+		CHECK(are_equivalent(dfa, minimized));
+		CHECK(is_minimal_dfa(minimized));
+		CHECK(minimized.num_of_states() == 4);
+	}
+
+	SECTION("a nondeterministic input is determinized first") {
+		Nfa nfa(3);
+		nfa.initial.insert(0);
+		nfa.final.insert(2);
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(0, 'a', 2);
+		nfa.delta.add(1, 'a', 2);
+		const Nfa minimized{minimize(nfa)};
+		CHECK(are_equivalent(nfa, minimized));
+		CHECK(minimized.is_deterministic());
+		CHECK(is_minimal_dfa(minimized));
+	}
+
+	SECTION("an empty language becomes one non-final initial state") {
+		Nfa empty_language(5);
+		empty_language.initial.insert(0);
+		empty_language.delta.add(0, 'a', 1);
+		empty_language.delta.add(1, 'a', 2);
+		const Nfa minimized{minimize(empty_language)};
+		CHECK(minimized.is_lang_empty());
+		CHECK(minimized.num_of_states() == 1);
+		CHECK(minimized.initial.size() == 1);
+		CHECK(minimized.final.empty());
+		CHECK(minimized.delta.num_of_transitions() == 0);
+
+		Nfa no_states;
+		CHECK(minimize(no_states).is_lang_empty());
+	}
+
+	SECTION("the explicit algorithms are still reachable and agree") {
+		Nfa nfa(3);
+		nfa.initial.insert(0);
+		nfa.final.insert(2);
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(1, 'b', 2);
+		nfa.delta.add(0, 'a', 2);
+		const Nfa automatic{minimize(nfa, {{"algorithm", "auto"}})};
+		const Nfa brzozowski{minimize(nfa, {{"algorithm", "brzozowski"}})};
+		CHECK(are_equivalent(automatic, brzozowski));
+		CHECK(automatic.num_of_states() == brzozowski.num_of_states());
+		CHECK_THROWS_WITH(minimize(nfa, {{"algorithm", "moore"}}), Catch::Matchers::ContainsSubstring("unknown value"));
+	}
+
+	SECTION("auto agrees with Brzozowski on random automata") {
+		std::mt19937 gen{7};
+		std::uniform_int_distribution<size_t> state_dist{0, 4};
+		for (size_t iteration{0}; iteration < 40; ++iteration) {
+			Nfa nfa(5);
+			nfa.initial.insert(0);
+			for (State state{0}; state < 5; ++state) {
+				for (const Symbol symbol : {Symbol{'a'}, Symbol{'b'}}) {
+					nfa.delta.add(state, symbol, static_cast<State>(state_dist(gen)));
+				}
+				if (gen() % 3 == 0) { nfa.final.insert(state); }
+			}
+			INFO("iteration " << iteration);
+			const Nfa automatic{minimize(nfa)};
+			CHECK(are_equivalent(nfa, automatic));
+			CHECK(is_minimal_dfa(automatic));
+			CHECK(automatic.num_of_states() == minimize(nfa, {{"algorithm", "brzozowski"}}).num_of_states());
+		}
+	}
+
+	SECTION("auto agrees with Brzozowski on random nondeterministic automata") {
+		// Several initial states, several targets per symbol, and missing transitions, so that "auto" takes the
+		//  determinize branch before trimming and Hopcroft.
+		std::mt19937 gen{11};
+		std::uniform_int_distribution<State> state_dist{0, 5};
+		std::uniform_int_distribution<size_t> num_of_targets_dist{0, 2};
+		size_t num_of_nondeterministic{0};
+		for (size_t iteration{0}; iteration < 40; ++iteration) {
+			Nfa nfa(6);
+			for (State state{0}; state < 6; ++state) {
+				if (gen() % 3 == 0) { nfa.initial.insert(state); }
+				if (gen() % 3 == 0) { nfa.final.insert(state); }
+				for (const Symbol symbol : {Symbol{'a'}, Symbol{'b'}}) {
+					for (size_t target_idx{num_of_targets_dist(gen)}; target_idx > 0; --target_idx) {
+						nfa.delta.add(state, symbol, state_dist(gen));
+					}
+				}
+			}
+			if (!nfa.is_deterministic()) { ++num_of_nondeterministic; }
+			INFO("iteration " << iteration);
+			const Nfa automatic{minimize(nfa)};
+			CHECK(are_equivalent(nfa, automatic));
+			CHECK(is_minimal_dfa(automatic));
+			if (nfa.is_lang_empty()) {
+				CHECK(automatic.num_of_states() == 1);
+			} else {
+				CHECK(automatic.num_of_states() == minimize(nfa, {{"algorithm", "brzozowski"}}).num_of_states());
+			}
+		}
+		CHECK(num_of_nondeterministic > 30);
+	}
+
+	SECTION("\"hopcroft_nondet\" normalizes its input - issue #734") {
+		// `minimize_hopcroft()` keeps one target per symbol post, so the old dispatcher could return a different
+		//  language on a nondeterministic input, and a nonminimal result on an untrimmed DFA. The explicit lean path
+		//  now rejects the former; the nondeterministic wrapper normalizes both.
+		Nfa nfa{3, {0}, {2}};
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(0, 'a', 2);
+		nfa.delta.add(1, 'b', 2);
+		CHECK_THROWS_AS(minimize(nfa, {{"algorithm", "hopcroft"}}), std::invalid_argument);
+		const Nfa minimized{algorithms::minimize_hopcroft_nondet(nfa)};
+		CHECK(are_equivalent(minimized, minimize(nfa, {{"algorithm", "hopcroft_nondet"}})));
+		CHECK(are_equivalent(minimized, nfa));
+		CHECK(minimized.is_in_lang(Word{'a'}));
+		CHECK(minimized.is_in_lang(Word{'a', 'b'}));
+		CHECK(is_minimal_dfa(minimized));
+
+		Nfa untrimmed{3, {0}, {1}};
+		untrimmed.delta.add(0, 'a', 1);
+		untrimmed.delta.add(0, 'b', 2);
+		untrimmed.delta.add(2, 'a', 2); // State 2 is useless.
+		const Nfa from_untrimmed{minimize(untrimmed, {{"algorithm", "hopcroft_nondet"}})};
+		CHECK(are_equivalent(from_untrimmed, untrimmed));
+		CHECK(from_untrimmed.num_of_states() == minimize(untrimmed, {{"algorithm", "brzozowski"}}).num_of_states());
+
+		Nfa two_initials{3, {0, 1}, {2}};
+		two_initials.delta.add(0, 'a', 2);
+		two_initials.delta.add(1, 'b', 2); // A different word: dropping either initial branch must be caught.
+		CHECK(are_equivalent(minimize(two_initials, {{"algorithm", "hopcroft_nondet"}}), two_initials));
+
+		const Nfa empty{minimize(Nfa{}, {{"algorithm", "hopcroft_nondet"}})};
+		// The canonical empty-language DFA: one initial state, no final states, no transitions.
+		CHECK(empty.is_lang_empty());
+		CHECK(empty.num_of_states() == 1);
+		CHECK(empty.initial.size() == 1);
+		CHECK(empty.initial.contains(0));
+		CHECK(empty.final.empty());
+		CHECK(empty.delta.empty());
+		CHECK(empty.is_minimal());
+
+		// The canonical result also keeps the attached alphabet, so make_complete() still sees the symbols.
+		Nfa letterless{1, {0}, {}};
+		auto alphabet{std::make_shared<OnTheFlyAlphabet>()};
+		alphabet->add_new_symbol("a", 'a');
+		letterless.alphabet = alphabet;
+		const Nfa minimized_letterless{minimize(letterless, {{"algorithm", "hopcroft_nondet"}})};
+		CHECK(minimized_letterless.is_lang_empty());
+		REQUIRE(minimized_letterless.alphabet != nullptr);
+		CHECK(minimized_letterless.alphabet->get_alphabet_symbols() == OrdVector<Symbol>{'a'});
+	}
+
+	SECTION("the Hopcroft core rejects a nondeterministic input - issue #734") {
+		Nfa nfa{3, {0}, {2}};
+		nfa.delta.add(0, 'a', 1);
+		nfa.delta.add(0, 'a', 2);
+		CHECK_THROWS_AS(algorithms::minimize_hopcroft(nfa), std::invalid_argument);
+
+		// Without transitions, the core used to return a copy of the input before checking determinism, so an
+		//  automaton with several initial states was handed back as "minimal" without an error.
+		CHECK_THROWS_AS(algorithms::minimize_hopcroft(Nfa{2, {0, 1}, {0, 1}}), std::invalid_argument);
+	}
+}
+
+TEST_CASE("mata::nfa::Nfa::is_minimal()") {
+	SECTION("fixed automata") {
+		Nfa minimal(2);
+		minimal.initial.insert(0);
+		minimal.final.insert(1);
+		minimal.delta.add(0, 'a', 1);
+		minimal.delta.add(1, 'a', 0);
+		CHECK(minimal.is_minimal());
+
+		Nfa nondeterministic{minimal};
+		nondeterministic.delta.add(0, 'a', 0);
+		CHECK(!nondeterministic.is_minimal());
+
+		Nfa unreachable{minimal};
+		unreachable.add_state(2);
+		unreachable.final.insert(2);
+		CHECK(!unreachable.is_minimal());
+
+		Nfa with_sink{minimal};
+		with_sink.add_state(2);
+		with_sink.delta.add(0, 'b', 2);
+		with_sink.delta.add(1, 'b', 2);
+		with_sink.delta.add(2, 'a', 2);
+		with_sink.delta.add(2, 'b', 2);
+		CHECK(!with_sink.is_minimal());
+
+		Nfa equivalent_states(3);
+		equivalent_states.initial.insert(0);
+		equivalent_states.final.insert(1);
+		equivalent_states.final.insert(2);
+		equivalent_states.delta.add(0, 'a', 1);
+		equivalent_states.delta.add(0, 'b', 2);
+		CHECK(!equivalent_states.is_minimal());
+	}
+
+	SECTION("the empty language and trivial automata") {
+		CHECK(!Nfa{}.is_minimal());
+
+		Nfa empty_language(1);
+		empty_language.initial.insert(0);
+		CHECK(empty_language.is_minimal());
+		empty_language.delta.add(0, 'a', 0);
+		CHECK(!empty_language.is_minimal());
+
+		Nfa epsilon_only(1);
+		epsilon_only.initial.insert(0);
+		epsilon_only.final.insert(0);
+		CHECK(epsilon_only.is_minimal());
+	}
+
+	SECTION("agrees with the table-filling oracle") {
+		std::mt19937 gen{13};
+		std::uniform_int_distribution<State> state_dist{0, 5};
+		std::uniform_int_distribution<size_t> num_of_targets_dist{0, 2};
+		size_t num_of_minimal{0};
+		size_t num_of_non_minimal{0};
+		for (size_t iteration{0}; iteration < 60; ++iteration) {
+			Nfa nfa(6);
+			for (State state{0}; state < 6; ++state) {
+				if (gen() % 4 == 0) { nfa.initial.insert(state); }
+				if (gen() % 3 == 0) { nfa.final.insert(state); }
+				for (const Symbol symbol : {Symbol{'a'}, Symbol{'b'}}) {
+					for (size_t target_idx{num_of_targets_dist(gen)}; target_idx > 0; --target_idx) {
+						nfa.delta.add(state, symbol, state_dist(gen));
+					}
+				}
+			}
+			INFO("iteration " << iteration);
+			// A trimmed determinization is usually not minimal; its minimization always is.
+			Nfa trimmed_dfa{determinize(nfa)};
+			trimmed_dfa.trim();
+			if (trimmed_dfa.num_of_states() > 0) {
+				CHECK(trimmed_dfa.is_minimal() == is_minimal_dfa(trimmed_dfa));
+				++(trimmed_dfa.is_minimal() ? num_of_minimal : num_of_non_minimal);
+			}
+			CHECK(minimize(nfa).is_minimal());
+		}
+		CHECK(num_of_minimal > 5);
+		CHECK(num_of_non_minimal > 5);
+	}
+}
+
 TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 	Nfa aut;
-	StateRenaming state_renaming;
 	ParameterMap params_after, params_with;
 	params_after["algorithm"] = "residual";
 	params_with["algorithm"] = "residual";
@@ -3217,8 +5121,8 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 		params_with["type"] = "with";
 		params_with["direction"] = "forward";
 
-		Nfa result_after = reduce(aut, &state_renaming, params_after);
-		Nfa result_with = reduce(aut, &state_renaming, params_with);
+		Nfa result_after = reduce(aut, nullptr, params_after);
+		Nfa result_with = reduce(aut, nullptr, params_with);
 
 		REQUIRE(result_after.delta.empty());
 		REQUIRE(result_after.initial.empty());
@@ -3236,8 +5140,8 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 		aut.initial.insert(1);
 
 		aut.final.insert(2);
-		Nfa result_after = reduce(aut, &state_renaming, params_after);
-		Nfa result_with = reduce(aut, &state_renaming, params_with);
+		Nfa result_after = reduce(aut, nullptr, params_after);
+		Nfa result_with = reduce(aut, nullptr, params_with);
 
 		REQUIRE(result_after.num_of_states() == 0);
 		REQUIRE(result_after.initial.empty());
@@ -3247,8 +5151,8 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 		REQUIRE(are_equivalent(aut, result_after));
 
 		aut.delta.add(1, 'a', 2);
-		result_after = reduce(aut, &state_renaming, params_after);
-		result_with = reduce(aut, &state_renaming, params_with);
+		result_after = reduce(aut, nullptr, params_after);
+		result_with = reduce(aut, nullptr, params_with);
 
 		REQUIRE(result_after.num_of_states() == 2);
 		REQUIRE(result_after.initial[0]);
@@ -3275,8 +5179,8 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 		aut.delta.add(3, 'a', 3);
 		aut.delta.add(2, 'a', 1);
 
-		Nfa result_after = reduce(aut, &state_renaming, params_after);
-		Nfa result_with = reduce(aut, &state_renaming, params_with);
+		Nfa result_after = reduce(aut, nullptr, params_after);
+		Nfa result_with = reduce(aut, nullptr, params_with);
 
 		REQUIRE(result_after.num_of_states() == 4);
 		REQUIRE(result_after.initial[0]);
@@ -3338,8 +5242,8 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 		aut.delta.add(6, 'c', 1);
 		aut.delta.add(6, 'd', 1);
 
-		Nfa result_after = reduce(aut, &state_renaming, params_after);
-		Nfa result_with = reduce(aut, &state_renaming, params_with);
+		Nfa result_after = reduce(aut, nullptr, params_after);
+		Nfa result_with = reduce(aut, nullptr, params_with);
 
 		REQUIRE(result_after.num_of_states() == 5);
 		REQUIRE(result_after.initial[0]);
@@ -3443,8 +5347,8 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 		aut.delta.add(6, 'c', 1);
 		aut.delta.add(6, 'd', 1);
 
-		Nfa result_after = reduce(aut, &state_renaming, params_after);
-		Nfa result_with = reduce(aut, &state_renaming, params_with);
+		Nfa result_after = reduce(aut, nullptr, params_after);
+		Nfa result_with = reduce(aut, nullptr, params_with);
 
 		REQUIRE(result_after.num_of_states() == 6);
 		REQUIRE(result_after.initial[0]);
@@ -3478,30 +5382,70 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 
 	SECTION("error checking") {
 		CHECK_THROWS_WITH(
-			reduce(aut, &state_renaming, params_after),
+			reduce(aut, nullptr, params_after),
 			Catch::Matchers::ContainsSubstring("requires setting the \"type\" key in the \"params\" argument;")
 		);
 
 		params_after["type"] = "bad_type";
 		CHECK_THROWS_WITH(
-			reduce(aut, &state_renaming, params_after),
+			reduce(aut, nullptr, params_after),
 			Catch::Matchers::ContainsSubstring("requires setting the \"direction\" key in the \"params\" argument;")
 		);
 
 		params_after["direction"] = "unknown_direction";
 		CHECK_THROWS_WITH(
-			reduce(aut, &state_renaming, params_after),
+			reduce(aut, nullptr, params_after),
 			Catch::Matchers::ContainsSubstring("received an unknown value of the \"direction\" key")
 		);
 
 		params_after["direction"] = "forward";
 		CHECK_THROWS_WITH(
-			reduce(aut, &state_renaming, params_after),
+			reduce(aut, nullptr, params_after),
 			Catch::Matchers::ContainsSubstring("received an unknown value of the \"type\" key")
 		);
 
 		params_after["type"] = "after";
-		CHECK_NOTHROW(reduce(aut, &state_renaming, params_after));
+		CHECK_NOTHROW(reduce(aut, nullptr, params_after));
+	}
+}
+
+TEST_CASE("mata::nfa::reduce_residual_state_renaming_error_and_ub_fix()") {
+	// Issue #767: reduce(aut, &renaming, {"algorithm": "residual", ...}) should throw
+	// because residual reduction returns prime residuals, not a mapping of original states.
+	// Also verify the invalidated-iterator fix by checking the function doesn't crash.
+
+	Nfa aut{2, {0}, {0}};
+	aut.delta.add(0, 1, 1);
+	aut.delta.add(1, 0, 0);
+	aut.delta.add(1, 0, 1);
+	aut.delta.add(1, 1, 1);
+
+	StateRenaming renaming;
+	ParameterMap params{{"algorithm", "residual"}, {"type", "after"}, {"direction", "forward"}};
+
+	SECTION("reduce with state_renaming should throw") {
+		CHECK_THROWS_WITH(
+			reduce(aut, &renaming, params), Catch::Matchers::ContainsSubstring("does not support state_renaming")
+		);
+	}
+
+	SECTION("reduce without state_renaming works and gives correct result") {
+		const Nfa res = reduce(aut, nullptr, params);
+		REQUIRE(are_equivalent(aut, res));
+		REQUIRE(res.num_of_states() > 0);
+	}
+
+	SECTION("all four type/direction combinations work without state_renaming") {
+		const auto test_variant = [&](const std::string& type, const std::string& direction) {
+			ParameterMap p{{"algorithm", "residual"}, {"type", type}, {"direction", direction}};
+			const Nfa res = reduce(aut, nullptr, p);
+			REQUIRE(are_equivalent(aut, res));
+		};
+
+		test_variant("after", "forward");
+		test_variant("after", "backward");
+		test_variant("with", "forward");
+		test_variant("with", "backward");
 	}
 }
 
@@ -3628,7 +5572,7 @@ TEST_CASE("mata::nfa::delta.remove()") {
 			REQUIRE(!aut.delta.contains(1, 3, 5));
 		}
 
-		SECTION("Remove missing transition") { REQUIRE_THROWS_AS(aut.delta.remove(1, 1, 5), std::invalid_argument); }
+		SECTION("Remove missing transition") { REQUIRE(!aut.delta.remove(1, 1, 5)); }
 
 		SECTION("Remove the last state_to from targets") {
 			REQUIRE(aut.delta.contains(6, 'a', 2));
@@ -3689,6 +5633,155 @@ TEST_CASE("mata::nfa::remove_epsilon()") {
 	REQUIRE(aut.delta.contains(5, 'a', 5));
 	REQUIRE(!aut.delta.contains(5, 'c', 9));
 	REQUIRE(aut.delta.contains(5, 'a', 9));
+}
+
+TEST_CASE("mata::nfa::remove_epsilon() merges the posts of whole epsilon closures") {
+	// SparseSet::operator== also compares the insertion order, which the result does not promise.
+	const auto sorted{[](const SparseSet<State>& states) { return StateSet{states.begin(), states.end()}; }};
+	SECTION("a non-default epsilon between ordinary symbols") {
+		// The symbols 1 and 3 surround the epsilon 2, so the posts on both sides of it are ordinary. Only the post of
+		//  state 1, which also holds the epsilon, reaches state 3.
+		Nfa aut{4};
+		aut.initial.insert(0);
+		aut.final.insert(3);
+		aut.delta.add(0, 1, 0);
+		aut.delta.add(0, 2, 1);
+		aut.delta.add(1, 1, 2);
+		aut.delta.add(1, 2, 2);
+		aut.delta.add(1, 3, 3);
+		aut.delta.add(2, 3, 0);
+		const Nfa result{remove_epsilon(aut, 2)};
+		const Delta::Transitions transitions{result.delta.transitions()};
+		CHECK(
+			std::vector<Transition>{transitions.begin(), transitions.end()} ==
+			std::vector<Transition>{
+				{0, 1, 0}, {0, 1, 2}, {0, 3, 0}, {0, 3, 3}, {1, 1, 2}, {1, 3, 0}, {1, 3, 3}, {2, 3, 0}
+			}
+		);
+		CHECK(sorted(result.final) == StateSet{3});
+		CHECK(sorted(result.initial) == StateSet{0});
+	}
+
+	SECTION("finality and posts spread around an epsilon cycle over several steps") {
+		Nfa aut{4};
+		aut.initial.insert(0);
+		aut.final.insert(2);
+		aut.delta.add(0, EPSILON, 1);
+		aut.delta.add(1, EPSILON, 2);
+		aut.delta.add(2, EPSILON, 0);
+		aut.delta.add(1, 'a', 3);
+		const Nfa result{remove_epsilon(aut)};
+		const Delta::Transitions transitions{result.delta.transitions()};
+		CHECK(
+			std::vector<Transition>{transitions.begin(), transitions.end()} ==
+			std::vector<Transition>{{0, 'a', 3}, {1, 'a', 3}, {2, 'a', 3}}
+		);
+		CHECK(sorted(result.final) == StateSet{0, 1, 2});
+	}
+
+	SECTION("a long forward epsilon chain") {
+		// Every state reaches all later ones over epsilon. A fixpoint over the states in index order needed a sweep
+		//  per state here (#240).
+		constexpr State num_of_states{1'000};
+		Nfa aut{num_of_states};
+		aut.initial.insert(0);
+		aut.final.insert(num_of_states - 1);
+		for (State state{0}; state < num_of_states; ++state) {
+			aut.delta.add(state, 'a', state);
+			if (state + 1 < num_of_states) { aut.delta.add(state, EPSILON, state + 1); }
+		}
+		const Nfa result{remove_epsilon(aut)};
+		CHECK(result.delta.num_of_transitions() == size_t{num_of_states} * (num_of_states + 1) / 2);
+		CHECK(result.delta.contains(0, 'a', num_of_states - 1));
+		CHECK(!result.delta.contains(num_of_states - 1, 'a', 0));
+		CHECK(result.final.size() == num_of_states);
+		CHECK(!result.delta.get_used_symbols().contains(EPSILON));
+	}
+}
+
+TEST_CASE("mata::nfa::Nfa::remove_epsilon() in place") {
+	// The result has the language of @p regex and equals the copying removal.
+	const auto check_in_place = [](Nfa aut, const Symbol epsilon, const std::string& regex) {
+		const Nfa copied = remove_epsilon(aut, epsilon);
+		aut.remove_epsilon(epsilon);
+
+		// Check copy === in-place removal.
+		CHECK(aut.delta == copied.delta);
+		CHECK(aut.initial == copied.initial);
+		CHECK(aut.final == copied.final);
+		CHECK(aut.num_of_states() == copied.num_of_states());
+		CHECK(!aut.delta.get_used_symbols().contains(epsilon));
+
+		CHECK(are_equivalent(aut, builder::create_from_regex(regex)));
+	};
+
+	SECTION("epsilon cycles, a final state reached by epsilon and an epsilon self-loop") {
+		Nfa aut(6);
+		aut.initial.insert(0);
+		aut.final.insert(4);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, EPSILON, 2);
+		aut.delta.add(2, EPSILON, 1);
+		aut.delta.add(2, 'b', 3);
+		aut.delta.add(3, EPSILON, 4);
+		aut.delta.add(4, 'c', 5);
+		aut.delta.add(5, EPSILON, 5);
+		check_in_place(aut, EPSILON, "ab");
+	}
+
+	SECTION("states that lose all transitions") {
+		Nfa aut(3);
+		aut.initial.insert(0);
+		aut.final.insert(0);
+		aut.delta.add(0, 'a', 0);
+		aut.delta.add(2, EPSILON, 1);
+		check_in_place(aut, EPSILON, "a*");
+	}
+
+	SECTION("a non-default epsilon between ordinary symbols") {
+		// The epsilon 'b' lies between the ordinary symbols 'a' and 'c'.
+		Nfa aut(4);
+		aut.initial.insert(0);
+		aut.final.insert(3);
+		aut.delta.add(0, 'a', 0);
+		aut.delta.add(0, 'b', 1);
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(1, 'b', 2);
+		aut.delta.add(1, 'c', 3);
+		aut.delta.add(2, 'c', 0);
+		check_in_place(aut, 'b', "[ac]*c");
+	}
+
+	SECTION("an unallocated final epsilon target") {
+		Nfa aut{};
+		aut.initial.insert(0);
+		aut.final.insert(2);
+		aut.delta.add(1, 'a', 0);
+		aut.delta.mutable_state_post(0).push_back(SymbolPost{EPSILON, 2});
+		REQUIRE(aut.delta.num_of_states() == 2);
+		check_in_place(aut, EPSILON, "");
+	}
+
+	SECTION("symbol posts without targets") {
+		// States 1 and 2 have no epsilon post and keep a symbol post without targets; state 3 is unused.
+		Nfa aut(4);
+		aut.initial.insert(0);
+		aut.final.insert(1);
+		aut.delta.add(0, EPSILON, 1);
+		aut.delta.add(1, 'a', 1);
+		aut.delta.mutable_state_post(1).emplace_back('b');
+		aut.delta.mutable_state_post(2).emplace_back('a');
+		check_in_place(aut, EPSILON, "a*");
+	}
+
+	SECTION("without epsilon transitions") {
+		Nfa aut(3);
+		aut.initial.insert(0);
+		aut.final.insert(2);
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		check_in_place(aut, EPSILON, "ab");
+	}
 }
 
 TEST_CASE("Profile mata::nfa::remove_epsilon()", "[.profiling]") {
@@ -3853,6 +5946,32 @@ TEST_CASE("mata::nfa::Nfa::trim()") {
 		CHECK(aut.num_of_states() == 0);
 		CHECK(state_map.empty());
 	}
+
+	SECTION("With state map, every state useful") {
+		Nfa aut{3};
+		aut.initial = {0};
+		aut.final = {2};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		aut.delta.add(2, 'a', 0);
+		const Nfa expected{aut};
+		// Stale entries from an earlier call must not survive.
+		StateRenaming state_map{{0, 7}, {5, 1}, {9, 9}};
+		aut.trim(&state_map);
+		CHECK(aut.num_of_states() == 3);
+		CHECK(aut.initial == expected.initial);
+		CHECK(aut.final == expected.final);
+		CHECK(aut.delta == expected.delta);
+		CHECK(state_map == StateRenaming{{0, 0}, {1, 1}, {2, 2}});
+	}
+
+	SECTION("With state map, no states") {
+		Nfa aut{};
+		StateRenaming state_map{{0, 3}, {4, 1}};
+		aut.trim(&state_map);
+		CHECK(aut.num_of_states() == 0);
+		CHECK(state_map.empty());
+	}
 }
 
 TEST_CASE("mata::nfa::trim()") {
@@ -3901,6 +6020,32 @@ TEST_CASE("mata::nfa::trim()") {
 		CHECK(aut.num_of_states() == 0);
 		CHECK(state_map.empty());
 	}
+}
+TEST_CASE("mata::nfa::trim() preserves alphabet") {
+	// Create an NFA with a concrete alphabet.
+	OnTheFlyAlphabet alph;
+	alph.translate_symb("a");
+	alph.translate_symb("b");
+	const Symbol a = alph["a"];
+	const Symbol b = alph["b"];
+
+	// State 2 is reachable but cannot reach a final state, so trimming removes it and its only incoming transition,
+	//  the only use of `b`.
+	Nfa nfa{3, {0}, {1}};
+	nfa.alphabet = std::make_shared<OnTheFlyAlphabet>(alph);
+	nfa.delta.add(0, a, 1);
+	nfa.delta.add(0, b, 2);
+
+	const Nfa trimmed = trim(nfa);
+
+	CHECK(trimmed.num_of_states() == 2);
+	CHECK(trimmed.delta.num_of_transitions() == 1);
+	CHECK(trimmed.delta.contains(0, a, 1));
+	// The alphabet is carried over, so `b` is still known although no transition uses it anymore.
+	CHECK(trimmed.alphabet == nfa.alphabet);
+	CHECK(trimmed.get_symbols_to_work_with() == utils::OrdVector<Symbol>{a, b});
+	CHECK(!trimmed.is_complete());
+	CHECK(trimmed.print_to_mata() == "@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q1\nq0 a q1\n");
 }
 
 TEST_CASE("mata::nfa::Nfa::delta.empty()") {
@@ -4077,6 +6222,153 @@ TEST_CASE("mata::nfa::Nfa::unify_(initial/final)()") {
 		CHECK(nfa.delta.contains(1, 'c', 1));
 	}
 
+	SECTION("Initial states sharing symbols") {
+		nfa.initial.insert(0);
+		nfa.initial.insert(1);
+		nfa.initial.insert(2);
+		nfa.delta.add(0, 'b', 5);
+		nfa.delta.add(0, 'a', 4);
+		nfa.delta.add(1, 'a', 3);
+		nfa.delta.add(1, 'a', 4);
+		nfa.delta.add(2, 'c', 2);
+		nfa.unify_initial();
+		REQUIRE(nfa.num_of_states() == 11);
+		CHECK(nfa.initial.size() == 1);
+		CHECK(nfa.initial[10]);
+		const StatePost& new_state_post{nfa.delta[10]};
+		REQUIRE(new_state_post.size() == 3);
+		std::vector<Symbol> new_state_symbols{};
+		for (const SymbolPost& symbol_post : new_state_post) { new_state_symbols.push_back(symbol_post.symbol); }
+		CHECK(new_state_symbols == std::vector<Symbol>{'a', 'b', 'c'});
+		CHECK(new_state_post.get_successors('a') == StateSet{3, 4});
+		CHECK(new_state_post.get_successors('b') == StateSet{5});
+		CHECK(new_state_post.get_successors('c') == StateSet{2});
+	}
+
+	SECTION("Forced new initial state with a single initial state") {
+		nfa.initial.insert(1);
+		nfa.delta.add(1, 'a', 2);
+		nfa.unify_initial(true);
+		REQUIRE(nfa.num_of_states() == 11);
+		CHECK(nfa.initial.size() == 1);
+		CHECK(nfa.initial[10]);
+		CHECK(nfa.delta[10].get_successors('a') == StateSet{2});
+		CHECK(nfa.delta[1].get_successors('a') == StateSet{2});
+	}
+
+	SECTION("Forced new initial state without any initial state") {
+		nfa.delta.add(1, 'a', 2);
+		nfa.unify_initial(true);
+		REQUIRE(nfa.num_of_states() == 11);
+		CHECK(nfa.initial.size() == 1);
+		CHECK(nfa.initial[10]);
+		CHECK(nfa.delta[10].empty());
+	}
+
+	SECTION("Multiple final targets in a single symbol post") {
+		nfa.final.insert(0);
+		nfa.final.insert(1);
+		nfa.delta.add(3, 'a', 0);
+		nfa.delta.add(3, 'a', 1);
+		nfa.delta.add(3, 'a', 2);
+		nfa.delta.add(3, 'b', 2);
+		nfa.unify_final();
+		REQUIRE(nfa.num_of_states() == 11);
+		CHECK(nfa.final.size() == 1);
+		CHECK(nfa.final[10]);
+		CHECK(nfa.delta[3].get_successors('a') == StateSet{0, 1, 2, 10});
+		CHECK(nfa.delta[3].get_successors('b') == StateSet{2});
+	}
+
+	SECTION("Final state with a self-loop") {
+		nfa.final.insert(1);
+		nfa.final.insert(2);
+		nfa.delta.add(1, 'a', 1);
+		nfa.unify_final();
+		REQUIRE(nfa.num_of_states() == 11);
+		CHECK(nfa.final.size() == 1);
+		CHECK(nfa.final[10]);
+		CHECK(nfa.delta[1].get_successors('a') == StateSet{1, 10});
+		CHECK(nfa.delta[10].empty());
+	}
+
+	SECTION("Forced new final state with a single final state") {
+		nfa.final.insert(1);
+		nfa.delta.add(0, 'a', 1);
+		nfa.unify_final(true);
+		REQUIRE(nfa.num_of_states() == 11);
+		CHECK(nfa.final.size() == 1);
+		CHECK(nfa.final[10]);
+		CHECK(nfa.delta[0].get_successors('a') == StateSet{1, 10});
+	}
+
+	SECTION("Forced new final state without any final state") {
+		nfa.delta.add(0, 'a', 1);
+		nfa.unify_final(true);
+		REQUIRE(nfa.num_of_states() == 11);
+		CHECK(nfa.final.size() == 1);
+		CHECK(nfa.final[10]);
+		CHECK(nfa.delta[0].get_successors('a') == StateSet{1});
+	}
+
+	SECTION("Random automata unified as by the naive one-state-at-a-time construction") {
+		// The naive constructions below define the semantics of the unification: every transition leading to an
+		//  original final state leads to the new final state as well, and the new initial state takes over the moves
+		//  of all the original initial states.
+		auto naive_unify_initial = [](Nfa aut) {
+			const State new_initial_state{aut.add_state()};
+			for (const State orig_initial_state : aut.initial) {
+				for (const auto& [symbol, target] : aut.delta.state_post(orig_initial_state).moves()) {
+					aut.delta.add(new_initial_state, symbol, target);
+				}
+				if (aut.final[orig_initial_state]) { aut.final.insert(new_initial_state); }
+			}
+			aut.initial.clear();
+			aut.initial.insert(new_initial_state);
+			return aut;
+		};
+		auto naive_unify_final = [](Nfa aut) {
+			const State new_final_state{aut.add_state()};
+			for (const State orig_final_state : aut.final) {
+				for (const Transition& transition : aut.delta.get_transitions_to(orig_final_state)) {
+					aut.delta.add(transition.source, transition.symbol, new_final_state);
+				}
+				if (aut.initial[orig_final_state]) { aut.initial.insert(new_final_state); }
+			}
+			aut.final.clear();
+			aut.final.insert(new_final_state);
+			return aut;
+		};
+
+		std::mt19937 random_generator{42};
+		constexpr size_t num_of_automata{100};
+		constexpr size_t num_of_states{12};
+		constexpr Symbol num_of_symbols{4};
+		std::uniform_int_distribution<State> state_distribution{0, num_of_states - 1};
+		std::uniform_int_distribution<Symbol> symbol_distribution{0, num_of_symbols - 1};
+		std::bernoulli_distribution coin_flip{0.4};
+		for (size_t automaton_idx{0}; automaton_idx < num_of_automata; ++automaton_idx) {
+			Nfa random_nfa{num_of_states};
+			for (State source{0}; source < num_of_states; ++source) {
+				if (coin_flip(random_generator)) { random_nfa.initial.insert(source); }
+				if (coin_flip(random_generator)) { random_nfa.final.insert(source); }
+				for (size_t move_idx{0}; move_idx < 5; ++move_idx) {
+					random_nfa.delta.add(
+						source, symbol_distribution(random_generator), state_distribution(random_generator)
+					);
+				}
+			}
+
+			Nfa unified_initial{random_nfa};
+			unified_initial.unify_initial(true);
+			CHECK(unified_initial.is_identical(naive_unify_initial(random_nfa)));
+
+			Nfa unified_final{random_nfa};
+			unified_final.unify_final(true);
+			CHECK(unified_final.is_identical(naive_unify_final(random_nfa)));
+		}
+	}
+
 	SECTION("Bug: NFA with empty string unifying initial/final repeatedly") {
 		Nfa aut = nfa::builder::create_from_regex("a*b*");
 		for (size_t i{0}; i < 8; ++i) {
@@ -4189,6 +6481,40 @@ TEST_CASE("mata::nfa:: print_to_mata") {
 	CHECK(are_equivalent(aut_big, aut_big_from_mata));
 }
 
+TEST_CASE("mata::nfa:: print_to_mata prints decimals to a stream set to another base") {
+	Nfa nfa{20, {10}, {15}};
+	nfa.delta.add(10, 12, 15);
+	std::ostringstream output;
+	output << std::hex;
+	nfa.print_to_mata(output);
+	CHECK(output.str() == "@NFA-explicit\n%Alphabet-auto\n%Initial q10\n%Final q15\nq10 12 q15\n");
+	CHECK(output.str() == nfa.print_to_mata());
+}
+
+TEST_CASE("mata::nfa:: print_to_mata with names that need quoting (#1021)") {
+	for (const std::string name :
+		 {"foo bar", "#", "a|b", "(x)", "x\"y", "@at", "%p", "!", "&", "|", "a@b", "a%b", "q5", "n5", ""}) {
+		// A name ending in a backslash cannot be quoted: the reader reads the closing \" as an escaped quote.
+		OnTheFlyAlphabet alphabet{};
+		std::string escaped_name{};
+		for (const char ch : name) {
+			if (ch == '"' || ch == '\\') { escaped_name += '\\'; }
+			escaped_name += ch;
+		}
+		const std::string input{"@NFA-explicit\n%Alphabet-auto\n%Initial s\n%Final f\ns \"" + escaped_name + "\" f\n"};
+		const Nfa nfa{builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(input))[0], &alphabet)};
+		const std::string printed{nfa.print_to_mata(&alphabet)};
+
+		OnTheFlyAlphabet read_alphabet{};
+		const Nfa read_back{
+			builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(printed))[0], &read_alphabet)
+		};
+		CHECK(are_equivalent(read_back, nfa));
+		// The name prints as one token and reads back as the same name.
+		CHECK(read_alphabet.get_symbol_map().contains(name));
+	}
+}
+
 TEST_CASE("mata::nfa::Nfa::trim() bug") {
 	Nfa aut(5, {0}, {4});
 	aut.delta.add(0, 122, 1);
@@ -4285,6 +6611,157 @@ TEST_CASE("mata::nfa::get_useful_states_tarjan") {
 	}
 }
 
+#if MATA_HAS_GENERATOR_SUPPORT
+TEST_CASE("mata::nfa::Nfa::get_words") {
+	// get_words_lazy() must agree with get_words() exactly for every (aut, max_length), just yielded one word at a
+	//  time instead of computed up front.
+	const auto CHECK_WORDS = [](const Nfa& aut, const size_t max_length, const std::set<mata::Word>& expected) {
+		CHECK(aut.get_words(max_length) == expected);
+		std::set<mata::Word> lazy_result;
+		for (mata::Word&& word : aut.get_words_lazy(max_length)) { lazy_result.insert(std::move(word)); }
+		CHECK(lazy_result == expected);
+	};
+
+	SECTION("empty") {
+		Nfa aut;
+		CHECK_WORDS(aut, 0, std::set<mata::Word>());
+		CHECK_WORDS(aut, 1, std::set<mata::Word>());
+		CHECK_WORDS(aut, 5, std::set<mata::Word>());
+	}
+
+	SECTION("empty word") {
+		Nfa aut(1, {0}, {0});
+		CHECK_WORDS(aut, 0, std::set<mata::Word>{{}});
+		CHECK_WORDS(aut, 1, std::set<mata::Word>{{}});
+		CHECK_WORDS(aut, 5, std::set<mata::Word>{{}});
+	}
+
+	SECTION("noodle - one final") {
+		Nfa aut(3, {0}, {2});
+		aut.delta.add(0, 0, 1);
+		aut.delta.add(1, 1, 2);
+		CHECK_WORDS(aut, 0, std::set<mata::Word>{});
+		CHECK_WORDS(aut, 1, std::set<mata::Word>{});
+		CHECK_WORDS(aut, 2, std::set<mata::Word>{{0, 1}});
+		CHECK_WORDS(aut, 3, std::set<mata::Word>{{0, 1}});
+		CHECK_WORDS(aut, 5, std::set<mata::Word>{{0, 1}});
+	}
+
+	SECTION("noodle - two finals") {
+		Nfa aut(3, {0}, {1, 2});
+		aut.delta.add(0, 0, 1);
+		aut.delta.add(1, 1, 2);
+		CHECK_WORDS(aut, 0, std::set<mata::Word>{});
+		CHECK_WORDS(aut, 1, std::set<mata::Word>{{0}});
+		CHECK_WORDS(aut, 2, std::set<mata::Word>{{0}, {0, 1}});
+		CHECK_WORDS(aut, 3, std::set<mata::Word>{{0}, {0, 1}});
+		CHECK_WORDS(aut, 5, std::set<mata::Word>{{0}, {0, 1}});
+	}
+
+	SECTION("noodle - three finals") {
+		Nfa aut(3, {0}, {0, 1, 2});
+		aut.delta.add(0, 0, 1);
+		aut.delta.add(1, 1, 2);
+		CHECK_WORDS(aut, 0, std::set<mata::Word>{{}});
+		CHECK_WORDS(aut, 1, std::set<mata::Word>{{}, {0}});
+		CHECK_WORDS(aut, 2, std::set<mata::Word>{{}, {0}, {0, 1}});
+		CHECK_WORDS(aut, 3, std::set<mata::Word>{{}, {0}, {0, 1}});
+		CHECK_WORDS(aut, 5, std::set<mata::Word>{{}, {0}, {0, 1}});
+	}
+
+	SECTION("more complex") {
+		Nfa aut(6, {0, 1}, {1, 3, 4, 5});
+		aut.delta.add(0, 0, 3);
+		aut.delta.add(3, 1, 4);
+		aut.delta.add(0, 2, 2);
+		aut.delta.add(3, 3, 2);
+		aut.delta.add(1, 4, 2);
+		aut.delta.add(2, 5, 5);
+		CHECK_WORDS(aut, 0, std::set<mata::Word>{{}});
+		CHECK_WORDS(aut, 1, std::set<mata::Word>{{}, {0}});
+		CHECK_WORDS(aut, 2, std::set<mata::Word>{{}, {0}, {0, 1}, {2, 5}, {4, 5}});
+		CHECK_WORDS(aut, 3, std::set<mata::Word>{{}, {0}, {0, 1}, {2, 5}, {4, 5}, {0, 3, 5}});
+		CHECK_WORDS(aut, 4, std::set<mata::Word>{{}, {0}, {0, 1}, {2, 5}, {4, 5}, {0, 3, 5}});
+		CHECK_WORDS(aut, 5, std::set<mata::Word>{{}, {0}, {0, 1}, {2, 5}, {4, 5}, {0, 3, 5}});
+	}
+
+	SECTION("cycle") {
+		Nfa aut(6, {0, 1}, {0, 1});
+		aut.delta.add(0, 0, 1);
+		aut.delta.add(1, 1, 0);
+		CHECK_WORDS(aut, 0, std::set<mata::Word>{{}});
+		CHECK_WORDS(aut, 1, std::set<mata::Word>{{}, {0}, {1}});
+		CHECK_WORDS(aut, 2, std::set<mata::Word>{{}, {0}, {1}, {0, 1}, {1, 0}});
+		CHECK_WORDS(aut, 3, std::set<mata::Word>{{}, {0}, {1}, {0, 1}, {1, 0}, {0, 1, 0}, {1, 0, 1}});
+		CHECK_WORDS(
+			aut, 4, std::set<mata::Word>{{}, {0}, {1}, {0, 1}, {1, 0}, {0, 1, 0}, {1, 0, 1}, {0, 1, 0, 1}, {1, 0, 1, 0}}
+		);
+		CHECK_WORDS(
+			aut, 5,
+			std::set<mata::Word>{
+				{},
+				{0},
+				{1},
+				{0, 1},
+				{1, 0},
+				{0, 1, 0},
+				{1, 0, 1},
+				{0, 1, 0, 1},
+				{1, 0, 1, 0},
+				{0, 1, 0, 1, 0},
+				{1, 0, 1, 0, 1}
+			}
+		);
+	}
+
+	// The cycle above makes the language infinite; get_words() with an unbounded max_length would never return,
+	//  but get_words_lazy() can still be iterated and stopped early.
+	SECTION("cycle - early exit on unbounded max_length") {
+		Nfa aut(6, {0, 1}, {0, 1});
+		aut.delta.add(0, 0, 1);
+		aut.delta.add(1, 1, 0);
+
+		// Words come in shortlex order, so the cycles do not hide the other words of the same length.
+		std::vector<mata::Word> first_words;
+		for (mata::Word&& word : aut.get_words_lazy()) {
+			first_words.push_back(std::move(word));
+			if (first_words.size() == 3) { break; }
+		}
+		CHECK(first_words == std::vector<mata::Word>{{}, {0}, {1}});
+	}
+}
+
+TEST_CASE("mata::nfa::Nfa::get_words_lazy() - infinite branches do not starve other words") {
+	constexpr mata::Symbol a{0}, b{1}, c{2};
+
+	SECTION("a branch that cannot be accepted") {
+		// The loop on state 1 is never accepted; the only word, b, must come out, and the generator must end.
+		Nfa aut(3, {0, 1}, {2});
+		aut.delta.add(0, b, 2);
+		aut.delta.add(1, a, 1);
+
+		std::vector<mata::Word> words;
+		for (mata::Word&& word : aut.get_words_lazy()) { words.push_back(std::move(word)); }
+		CHECK(words == std::vector<mata::Word>{{b}});
+	}
+
+	SECTION("an infinite branch that can be accepted") {
+		// Every branch reaches a final state, but a, aa, aaa, ... are never accepted themselves; b must still come
+		//  out before the infinite language a*c is explored.
+		Nfa aut(3, {0, 1}, {2});
+		aut.delta.add(0, b, 2);
+		aut.delta.add(1, a, 1);
+		aut.delta.add(1, c, 2);
+
+		std::vector<mata::Word> first_words;
+		for (mata::Word&& word : aut.get_words_lazy()) {
+			first_words.push_back(std::move(word));
+			if (first_words.size() == 4) { break; }
+		}
+		CHECK(first_words == std::vector<mata::Word>{{b}, {c}, {a, c}, {a, a, c}});
+	}
+}
+#else
 TEST_CASE("mata::nfa::Nfa::get_words") {
 	SECTION("empty") {
 		Nfa aut;
@@ -4377,6 +6854,36 @@ TEST_CASE("mata::nfa::Nfa::get_words") {
 								}
 		);
 	}
+}
+#endif // MATA_HAS_GENERATOR_SUPPORT
+
+TEST_CASE("mata::nfa::Nfa::get_words() - diamond chain") {
+	// A chain of k "diamonds": each diamond spells 'a' and then 'b' through one of two middle states, so the whole
+	//  automaton accepts the single word (ab)^k while having 2^k accepting paths. Enumerating paths (which is what
+	//  get_words() used to do) is exponential in k here; the search over words visits one macrostate per prefix.
+	constexpr size_t k{40};
+	Nfa aut{3 * k + 1, {0}, {3 * k}};
+	for (State i{0}; i < k; ++i) {
+		aut.delta.add(3 * i, 'a', 3 * i + 1);
+		aut.delta.add(3 * i, 'a', 3 * i + 2);
+		aut.delta.add(3 * i + 1, 'b', 3 * (i + 1));
+		aut.delta.add(3 * i + 2, 'b', 3 * (i + 1));
+	}
+
+	mata::Word word_expected;
+	for (size_t i{0}; i < k; ++i) {
+		word_expected.push_back('a');
+		word_expected.push_back('b');
+	}
+	const std::set<mata::Word> words_expected{word_expected};
+
+	CHECK(aut.get_words(2 * k) == words_expected);
+	CHECK(aut.get_words(aut.num_of_states()) == words_expected);
+#if MATA_HAS_GENERATOR_SUPPORT
+	std::set<mata::Word> words_lazy;
+	for (mata::Word&& word : aut.get_words_lazy(2 * k)) { words_lazy.insert(std::move(word)); }
+	CHECK(words_lazy == words_expected);
+#endif // MATA_HAS_GENERATOR_SUPPORT
 }
 
 TEST_CASE("mata::nfa::Nfa::get_word()") {
@@ -4550,6 +7057,58 @@ TEST_CASE("mata::nfa::Nfa::get_word()") {
 		aut.delta.add(3, 'c', 4);
 		aut.delta.add(4, 'a', 4);
 		CHECK(aut.get_word() == Word{'b'});
+	}
+}
+
+TEST_CASE("mata::nfa::Nfa::get_shortest_word()") {
+	SECTION("empty language") { CHECK(Nfa{}.get_shortest_word() == std::nullopt); }
+
+	SECTION("initial state is final") {
+		const Nfa aut{1, {0}, {0}};
+		CHECK(aut.get_shortest_word() == Word{});
+	}
+
+	SECTION("a longer epsilon path spells fewer letters") {
+		Nfa aut{6, {0}, {4}};
+		aut.delta.add(0, 'a', 5);
+		aut.delta.add(0, EPSILON, 1);
+		aut.delta.add(1, EPSILON, 2);
+		aut.delta.add(2, EPSILON, 3);
+		aut.delta.add(3, 'a', 4);
+		aut.delta.add(5, 'b', 4);
+		const auto word{aut.get_shortest_word()};
+		REQUIRE(word.has_value());
+		CHECK(*word == Word{'a'});
+		CHECK(aut.is_in_lang(*word, true));
+	}
+
+	SECTION("an epsilon final beats a one-letter final") {
+		Nfa aut{3, {0}, {1, 2}};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, EPSILON, 2);
+		CHECK(aut.get_shortest_word() == Word{});
+	}
+
+	SECTION("an epsilon-only path backtracks to the initial state") {
+		Nfa aut{3, {0}, {2}};
+		aut.delta.add(0, EPSILON, 1);
+		aut.delta.add(1, EPSILON, 2);
+		CHECK(aut.get_shortest_word() == Word{});
+	}
+
+	SECTION("a custom first epsilon has zero cost") {
+		Nfa aut{3, {0}, {1, 2}};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(0, 'b', 2);
+		CHECK(aut.get_shortest_word('b') == Word{});
+	}
+
+	SECTION("without an epsilon boundary all symbols cost one") {
+		Nfa aut{3, {0}, {2}};
+		aut.delta.add(0, EPSILON, 1);
+		aut.delta.add(1, 'a', 2);
+		CHECK(aut.get_shortest_word() == Word{'a'});
+		CHECK(aut.get_shortest_word(std::nullopt) == Word{EPSILON, 'a'});
 	}
 }
 
@@ -5078,4 +7637,589 @@ TEST_CASE("mata::nfa::Nfa::decode_utf8") {
 		result.final.insert(4);
 		CHECK(are_equivalent(result, aut.decode_utf8()));
 	}
+
+	SECTION("two byte paths decoding to the same two-byte code point") {
+		// 0xc8 0x80 == U+0200 along two distinct byte paths leaving state 0 with different targets.
+		Nfa aut;
+		aut.initial.insert(0);
+		aut.delta.add(0, 0xc8, 1);
+		aut.delta.add(0, 0xc8, 2);
+		aut.delta.add(1, 0x80, 3);
+		aut.delta.add(2, 0x80, 4);
+		aut.delta.add(3, 'a', 5);
+		aut.delta.add(4, 'b', 5);
+		aut.final.insert(5);
+
+		Nfa result;
+		result.initial.insert(0);
+		result.delta.add(0, 0x2'00, 1);
+		result.delta.add(1, 'a', 2);
+		result.delta.add(1, 'b', 2);
+		result.final.insert(2);
+		CHECK(are_equivalent(result, aut.decode_utf8()));
+	}
+
+	SECTION("two byte paths decoding to the same three-byte code point") {
+		// 0xe0 0xa4 0x80 == U+0900, nondeterministic already on the first byte.
+		Nfa aut;
+		aut.initial.insert(0);
+		aut.delta.add(0, 0xe0, 1);
+		aut.delta.add(0, 0xe0, 2);
+		aut.delta.add(1, 0xa4, 3);
+		aut.delta.add(2, 0xa4, 4);
+		aut.delta.add(3, 0x80, 5);
+		aut.delta.add(4, 0x80, 6);
+		aut.delta.add(5, 'a', 7);
+		aut.delta.add(6, 'b', 7);
+		aut.final.insert(7);
+
+		Nfa result;
+		result.initial.insert(0);
+		result.delta.add(0, 0x9'00, 1);
+		result.delta.add(1, 'a', 2);
+		result.delta.add(1, 'b', 2);
+		result.final.insert(2);
+		CHECK(are_equivalent(result, aut.decode_utf8()));
+	}
+
+	SECTION("two byte paths decoding to the same three-byte code point, nondeterministic on the second byte") {
+		Nfa aut;
+		aut.initial.insert(0);
+		aut.delta.add(0, 0xe0, 1);
+		aut.delta.add(1, 0xa4, 2);
+		aut.delta.add(1, 0xa4, 3);
+		aut.delta.add(2, 0x80, 4);
+		aut.delta.add(3, 0x80, 5);
+		aut.delta.add(4, 'a', 6);
+		aut.delta.add(5, 'b', 6);
+		aut.final.insert(6);
+
+		Nfa result;
+		result.initial.insert(0);
+		result.delta.add(0, 0x9'00, 1);
+		result.delta.add(1, 'a', 2);
+		result.delta.add(1, 'b', 2);
+		result.final.insert(2);
+		CHECK(are_equivalent(result, aut.decode_utf8()));
+	}
+
+	SECTION("two byte paths decoding to the same four-byte code point") {
+		// 0xf0 0x90 0x80 0x80 == U+10000, nondeterministic on the third byte.
+		Nfa aut;
+		aut.initial.insert(0);
+		aut.delta.add(0, 0xf0, 1);
+		aut.delta.add(1, 0x90, 2);
+		aut.delta.add(2, 0x80, 3);
+		aut.delta.add(2, 0x80, 4);
+		aut.delta.add(3, 0x80, 5);
+		aut.delta.add(4, 0x80, 6);
+		aut.delta.add(5, 'a', 7);
+		aut.delta.add(6, 'b', 7);
+		aut.final.insert(7);
+
+		Nfa result;
+		result.initial.insert(0);
+		result.delta.add(0, 0x1'00'00, 1);
+		result.delta.add(1, 'a', 2);
+		result.delta.add(1, 'b', 2);
+		result.final.insert(2);
+		CHECK(are_equivalent(result, aut.decode_utf8()));
+	}
+}
+
+TEST_CASE("mata::nfa::union_det_complete() validates preconditions instead of asserting") {
+	Nfa lhs(1);
+	lhs.initial = {0};
+	lhs.final = {0};
+	lhs.delta.add(0, 'a', 0);
+
+	SECTION("complete deterministic inputs are unioned") {
+		Nfa rhs(2);
+		rhs.initial = {0};
+		rhs.delta.add(0, 'a', 1);
+		rhs.delta.add(1, 'a', 1);
+		rhs.final = {1};
+		const Nfa result{union_det_complete(lhs, rhs)};
+		CHECK(result.is_in_lang(Run{mata::Word{'a'}}));
+	}
+
+	SECTION("a nondeterministic input throws in every build type") {
+		lhs.delta.add(0, 'a', 1);
+		lhs.add_state(1);
+		REQUIRE_THROWS_AS(union_det_complete(lhs, lhs), std::invalid_argument);
+	}
+
+	SECTION("an incomplete input throws in every build type") {
+		Nfa incomplete_dfa(2);
+		incomplete_dfa.initial = {0};
+		incomplete_dfa.delta.add(0, 'a', 1);
+		incomplete_dfa.final = {1};
+		REQUIRE_THROWS_AS(union_det_complete(incomplete_dfa, lhs), std::invalid_argument);
+	}
+}
+
+TEST_CASE("mata::nfa::Nfa::post() with epsilon closure options") {
+	// 0 -ε-> 1 -a-> 2 -ε-> 3, the example of the EpsilonClosureOpt truth table.
+	Nfa aut(4);
+	aut.initial.insert(0);
+	aut.final.insert(3);
+	aut.delta.add(0, EPSILON, 1);
+	aut.delta.add(1, 'a', 2);
+	aut.delta.add(2, EPSILON, 3);
+
+	SECTION("the four options differ as the truth table says") {
+		CHECK(aut.post(StateSet{0}, 'a', EpsilonClosureOpt::None) == StateSet{});
+		CHECK(aut.post(StateSet{0}, 'a', EpsilonClosureOpt::Before) == StateSet{2});
+		CHECK(aut.post(StateSet{0}, 'a', EpsilonClosureOpt::After) == StateSet{});
+		// Used to return {} because BeforeAndAfter is Before|After and was compared for equality.
+		CHECK(aut.post(StateSet{0}, 'a', EpsilonClosureOpt::BeforeAndAfter) == StateSet{2, 3});
+
+		CHECK(aut.post(StateSet{1}, 'a', EpsilonClosureOpt::After) == StateSet{2, 3});
+		CHECK(aut.post(StateSet{1}, 'a', EpsilonClosureOpt::BeforeAndAfter) == StateSet{2, 3});
+	}
+
+	SECTION("a step over epsilon keeps the source states when a closure is requested") {
+		CHECK(aut.post(StateSet{0}, EPSILON, EpsilonClosureOpt::None) == StateSet{1});
+		CHECK(aut.post(StateSet{0}, EPSILON, EpsilonClosureOpt::Before) == StateSet{0, 1});
+		CHECK(aut.post(StateSet{0}, EPSILON, EpsilonClosureOpt::BeforeAndAfter) == StateSet{0, 1});
+	}
+
+	SECTION("Delta::get_successors agrees with Nfa::post") {
+		// The three-argument overload was declared but never defined, so any call failed to link.
+		for (const EpsilonClosureOpt opt :
+			 {EpsilonClosureOpt::None, EpsilonClosureOpt::Before, EpsilonClosureOpt::After,
+			  EpsilonClosureOpt::BeforeAndAfter}) {
+			for (State state{0}; state < aut.num_of_states(); ++state) {
+				CHECK(aut.delta.get_successors(state, 'a', opt) == aut.post(StateSet{state}, 'a', opt));
+			}
+		}
+	}
+
+	SECTION("an epsilon cycle terminates and closes over every state of the cycle") {
+		Nfa cyclic(3);
+		cyclic.delta.add(0, EPSILON, 1);
+		cyclic.delta.add(1, EPSILON, 2);
+		cyclic.delta.add(2, EPSILON, 0);
+		cyclic.delta.add(1, 'a', 2);
+		CHECK(cyclic.mk_epsilon_closure(StateSet{0}) == StateSet{0, 1, 2});
+		CHECK(cyclic.post(StateSet{0}, 'a', EpsilonClosureOpt::Before) == StateSet{2});
+		CHECK(cyclic.post(StateSet{0}, 'a', EpsilonClosureOpt::BeforeAndAfter) == StateSet{0, 1, 2});
+	}
+
+	SECTION("closures over several epsilon symbols") {
+		Nfa multi(4);
+		multi.delta.add(0, EPSILON, 1);
+		multi.delta.add(1, EPSILON - 1, 2);
+		multi.delta.add(2, 'a', 3);
+		CHECK(multi.mk_epsilon_closure(StateSet{0}) == StateSet{0, 1});
+		CHECK(multi.mk_epsilon_closure(StateSet{0}, {EPSILON, EPSILON - 1}) == StateSet{0, 1, 2});
+	}
+
+	SECTION("a closure from several states follows every path and the cycles back into its sources") {
+		// 0 has no epsilon post; 4 -> 6 -> {1, 5} -> 7 -> {3, 4}, and 3 -> 6 closes a second cycle.
+		Nfa paths(8);
+		paths.delta.add(4, EPSILON, 6);
+		paths.delta.add(6, EPSILON, 1);
+		paths.delta.add(6, EPSILON, 5);
+		paths.delta.add(1, EPSILON, 7);
+		paths.delta.add(5, EPSILON, 7);
+		paths.delta.add(7, EPSILON, 3);
+		paths.delta.add(7, EPSILON, 4);
+		paths.delta.add(3, EPSILON, 6);
+		paths.delta.add(2, 'a', 4);
+		CHECK(paths.mk_epsilon_closure(StateSet{0, 4}) == StateSet{0, 1, 3, 4, 5, 6, 7});
+		CHECK(paths.post(StateSet{2}, 'a', EpsilonClosureOpt::After) == StateSet{1, 3, 4, 5, 6, 7});
+		CHECK(paths.post(StateSet{0, 4}, EPSILON, EpsilonClosureOpt::Before) == StateSet{0, 1, 3, 4, 5, 6, 7});
+	}
+
+	SECTION("a closure of many states with colliding identifiers") {
+		// The visited states are hashed into a table that grows with the closure; the stride makes states collide.
+		constexpr State num_of_cycle_states{100};
+		constexpr State stride{1'024};
+		Nfa cycle(num_of_cycle_states * stride);
+		StateSet expected{};
+		for (State i{0}; i < num_of_cycle_states; ++i) {
+			cycle.delta.add(i * stride, EPSILON, ((i + 1) % num_of_cycle_states) * stride);
+			expected.insert(i * stride);
+		}
+		CHECK(cycle.mk_epsilon_closure(StateSet{stride}) == expected);
+		CHECK(cycle.post(StateSet{0}, EPSILON, EpsilonClosureOpt::Before) == expected);
+	}
+
+	SECTION("an empty delta returns the source states only for an epsilon step with a closure") {
+		const Nfa empty_aut(3);
+		CHECK(empty_aut.post(StateSet{0}, 'a', EpsilonClosureOpt::BeforeAndAfter) == StateSet{});
+		CHECK(empty_aut.post(StateSet{0}, EPSILON, EpsilonClosureOpt::Before) == StateSet{0});
+		CHECK(empty_aut.post(StateSet{0}, EPSILON, EpsilonClosureOpt::None) == StateSet{});
+	}
+}
+
+TEST_CASE("mata::Automaton::distances_to_final matches the reverted BFS - #740") { // {{{
+	std::mt19937 gen{740};
+	for (size_t iteration{0}; iteration < 30; ++iteration) {
+		const size_t num_states{std::uniform_int_distribution<size_t>(2, 40)(gen)};
+		Nfa nfa{num_states};
+		const auto max_state{static_cast<State>(num_states - 1)};
+		for (State state{0}; state + 1 < num_states; ++state) {
+			const size_t out_degree{std::uniform_int_distribution<size_t>(0, 4)(gen)};
+			for (size_t i{0}; i < out_degree; ++i) {
+				nfa.delta.add(
+					state, std::uniform_int_distribution<mata::Symbol>(0, 3)(gen),
+					num_states > 1 ? std::uniform_int_distribution<mata::nfa::State>(0, max_state)(gen) : 0
+				);
+			}
+			if (std::uniform_int_distribution<int>(0, 2)(gen) == 0) { nfa.final.insert(state); }
+		}
+		// The slow oracle: revert the automaton completely and BFS over it, as distances_to_final() used to be
+		//  implemented.
+		CHECK(nfa.distances_to_final() == revert(nfa).distances_from_initial());
+	}
+} // }}}
+
+TEST_CASE("mata::Automaton::distances_to_final and get_terminating_states on edge cases - #740") { // {{{
+	SECTION("no final states") {
+		Nfa nfa{3};
+		nfa.delta.add(0, 0, 1);
+		nfa.delta.add(1, 1, 2);
+		nfa.initial = {0};
+		CHECK(
+			nfa.distances_to_final() ==
+			std::vector<State>{Limits::max_state, Limits::max_state, Limits::max_state, Limits::max_state}
+		);
+		CHECK(nfa.get_terminating_states() == StateSet{});
+	}
+
+	SECTION("several final states and a self-loop") {
+		Nfa nfa{4};
+		nfa.delta.add(0, 0, 1);
+		nfa.delta.add(0, 1, 2);
+		nfa.delta.add(1, 0, 3);
+		nfa.delta.add(2, 0, 2); // self-loop that cannot reach a final
+		nfa.final = {1, 3};
+		nfa.initial = {0};
+		CHECK(nfa.distances_to_final() == std::vector<State>{1, 0, Limits::max_state, 0, Limits::max_state});
+		CHECK(nfa.get_terminating_states() == StateSet{0, 1, 3});
+	}
+
+	SECTION("num_of_states() comes from initial/final rather than delta") {
+		Nfa nfa{};
+		nfa.initial = {2};
+		nfa.final = {5};
+		CHECK(nfa.num_of_states() == 6);
+		// Only the final state itself is terminating; distances keep one extra sentinel slot.
+		CHECK(nfa.get_terminating_states() == StateSet{5});
+		CHECK(
+			nfa.distances_to_final() == std::vector<State>{
+											Limits::max_state, Limits::max_state, Limits::max_state, Limits::max_state,
+											Limits::max_state, 0, Limits::max_state
+										}
+		);
+	}
+
+	SECTION("unreachable final state is still a distance-0 target") {
+		Nfa nfa{3};
+		nfa.initial = {0};
+		nfa.final = {2};
+		nfa.delta.add(0, 0, 1);
+		CHECK(nfa.get_terminating_states() == StateSet{2});
+		CHECK(
+			nfa.distances_to_final() == std::vector<State>{Limits::max_state, Limits::max_state, 0, Limits::max_state}
+		);
+	}
+} // }}}
+
+TEST_CASE("mata::Automaton::get_terminating_states matches the reverted reachability - #740") { // {{{
+	std::mt19937 gen{741};
+	for (size_t iteration{0}; iteration < 60; ++iteration) {
+		const size_t num_states{std::uniform_int_distribution<size_t>(0, 35)(gen)};
+		Nfa nfa{num_states};
+		if (num_states == 0) {
+			CHECK(nfa.get_terminating_states() == StateSet{});
+			continue;
+		}
+		const auto max_state{static_cast<State>(num_states - 1)};
+		for (State state{0}; state < num_states; ++state) {
+			const size_t out_degree{std::uniform_int_distribution<size_t>(0, 4)(gen)};
+			for (size_t i{0}; i < out_degree; ++i) {
+				nfa.delta.add(
+					state, std::uniform_int_distribution<mata::Symbol>(0, 3)(gen),
+					std::uniform_int_distribution<mata::nfa::State>(0, max_state)(gen)
+				);
+			}
+			if (std::uniform_int_distribution<int>(0, 2)(gen) == 0) { nfa.final.insert(state); }
+		}
+		// The slow oracle: revert the automaton and compute forward reachability, as get_terminating_states() used
+		//  to be implemented. The returned set orders states in ascending order, unlike SparseSet insertion order.
+		const StateSet oracle{revert(nfa).get_reachable_states()};
+		CHECK(nfa.get_terminating_states() == oracle);
+	}
+} // }}}
+
+TEST_CASE("mata::nfa::get_useful_states() with brute-force oracle") {
+	// Brute-force oracle: simple independent forward and backward reachability
+	auto oracle_useful_states = [](const Nfa& aut) -> mata::BoolVector {
+		const size_t num_states = aut.num_of_states();
+		mata::BoolVector useful(num_states, false);
+		if (num_states == 0) { return useful; }
+
+		// Forward reachability from initial states
+		mata::BoolVector forward(num_states, false);
+		std::vector<State> queue(aut.initial.begin(), aut.initial.end());
+		for (const State s : queue) { forward[s] = true; }
+		for (size_t i = 0; i < queue.size(); ++i) {
+			const State s = queue[i];
+			aut.delta.for_each_successor(s, [&](State t) {
+				if (!forward[t]) {
+					forward[t] = true;
+					queue.push_back(t);
+				}
+			});
+		}
+
+		// Backward reachability from final states (using explicit predecessor collection)
+		mata::BoolVector backward(num_states, false);
+		queue.clear();
+		for (const State s : aut.final) {
+			if (forward[s]) {
+				backward[s] = true;
+				queue.push_back(s);
+			}
+		}
+
+		// Build predecessor list by scanning all transitions
+		std::vector<std::vector<State>> predecessors(num_states);
+		for (State src = 0; src < num_states; ++src) {
+			aut.delta.for_each_successor(src, [&](State tgt) { predecessors[tgt].push_back(src); });
+		}
+
+		// Backward BFS using the predecessor list
+		for (size_t i = 0; i < queue.size(); ++i) {
+			const State t = queue[i];
+			for (const State pred : predecessors[t]) {
+				if (!backward[pred]) {
+					backward[pred] = true;
+					queue.push_back(pred);
+				}
+			}
+		}
+
+		// Useful = forward AND backward (intersection)
+		for (size_t i = 0; i < num_states; ++i) { useful[i] = forward[i] && backward[i]; }
+		return useful;
+	};
+
+	SECTION("Empty automaton") {
+		Nfa aut;
+		const auto result = aut.get_useful_states();
+		const auto oracle = oracle_useful_states(aut);
+		CHECK(result == oracle);
+		CHECK(result.empty());
+	}
+
+	SECTION("Single initial and final, linear path") {
+		Nfa aut(5, {0}, {4});
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		aut.delta.add(2, 'c', 3);
+		aut.delta.add(3, 'd', 4);
+
+		const auto result = aut.get_useful_states();
+		const auto oracle = oracle_useful_states(aut);
+		CHECK(result == oracle);
+		CHECK(result == mata::BoolVector{1, 1, 1, 1, 1});
+	}
+
+	SECTION("Dead ends (unreachable final)") {
+		Nfa aut(6, {0}, {5});
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		aut.delta.add(2, 'c', 3);
+		// States 4, 5 unreachable
+
+		const auto result = aut.get_useful_states();
+		const auto oracle = oracle_useful_states(aut);
+		CHECK(result == oracle);
+		// Only 0, 1, 2, 3 forward-reachable; 3 is not final
+		CHECK(result[4] == false);
+		CHECK(result[5] == false);
+	}
+
+	SECTION("Irrelevant initial/final (non-terminating)") {
+		Nfa aut(5, {0}, {3});
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+		aut.delta.add(2, 'c', 2); // Cycle, never reaches 3
+		// State 3 is final but unreachable
+
+		const auto result = aut.get_useful_states();
+		const auto oracle = oracle_useful_states(aut);
+		CHECK(result == oracle);
+		// No useful states since 3 is unreachable
+		CHECK(result.count() == 0);
+	}
+
+	SECTION("Isolated useful state (initial equals final)") {
+		Nfa aut(3, {0}, {0});
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 2);
+
+		const auto result = aut.get_useful_states();
+		const auto oracle = oracle_useful_states(aut);
+		CHECK(result == oracle);
+		// Only state 0 (reachable from itself and final)
+		CHECK(result == mata::BoolVector{1, 0, 0});
+	}
+
+	SECTION("Multiple initials and finals") {
+		Nfa aut(7, {0, 1}, {5, 6});
+		aut.delta.add(0, 'a', 2);
+		aut.delta.add(1, 'b', 3);
+		aut.delta.add(2, 'c', 5);
+		aut.delta.add(3, 'd', 6);
+		aut.delta.add(4, 'e', 5); // 4 unreachable
+
+		const auto result = aut.get_useful_states();
+		const auto oracle = oracle_useful_states(aut);
+		CHECK(result == oracle);
+		CHECK(result[4] == false); // Not reachable
+	}
+
+	SECTION("Randomized: 50 random graphs") {
+		std::mt19937 gen(42); // Deterministic seed
+		for (int test = 0; test < 50; ++test) {
+			const size_t num_states = std::uniform_int_distribution<size_t>(5, 50)(gen);
+			Nfa aut(num_states);
+
+			// Random initials and finals
+			const size_t num_init = std::max(size_t(1), num_states / 4);
+			const size_t num_final = std::max(size_t(1), num_states / 4);
+			const auto max_state{static_cast<State>(num_states - 1)};
+			for (size_t i = 0; i < num_init; ++i) {
+				aut.initial.insert(std::uniform_int_distribution<State>(0, max_state)(gen));
+			}
+			for (size_t i = 0; i < num_final; ++i) {
+				aut.final.insert(std::uniform_int_distribution<State>(0, max_state)(gen));
+			}
+
+			// Random edges (allow duplicates, the delta will ignore them)
+			const size_t num_edges{
+				num_states / 2 + std::uniform_int_distribution<size_t>(num_states, 2 * num_states)(gen)
+			};
+			for (size_t i = 0; i < num_edges; ++i) {
+				State src = std::uniform_int_distribution<State>(0, max_state)(gen);
+				State tgt = std::uniform_int_distribution<State>(0, max_state)(gen);
+				Symbol sym = std::uniform_int_distribution<Symbol>(0, 255)(gen);
+				aut.delta.add(src, sym, tgt);
+			}
+
+			const auto result = aut.get_useful_states();
+			const auto oracle = oracle_useful_states(aut);
+			CHECK(result == oracle); // Verify equality with oracle
+		}
+	}
+
+	SECTION("trim() preserves state renamings") {
+		Nfa aut(10, {0}, {9});
+		// Linear chain: all useful
+		for (State s = 0; s < 9; ++s) { aut.delta.add(s, 'a', s + 1); }
+
+		mata::nfa::StateRenaming renaming;
+		const Nfa trimmed = nfa::trim(aut, &renaming);
+
+		// All 10 states should be useful and mapped
+		CHECK(renaming.size() == 10);
+		for (State s = 0; s < 10; ++s) { CHECK(renaming.count(s) > 0); }
+		// Trimmed NFA should have 10 states
+		CHECK(trimmed.num_of_states() == 10);
+	}
+}
+
+TEST_CASE("mata::Automaton::tarjan_scc_discover keeps components and callback behavior - #224") {
+	Automaton aut{};
+	aut.initial.insert(0);
+	aut.delta.add(0, 'a', 1);
+	aut.delta.add(1, 'a', 0);
+	aut.delta.add(1, 'a', 2);
+	aut.delta.add(2, 'b', 3);
+	aut.delta.add(3, 'b', 2);
+	aut.delta.add(3, 'c', 4);
+
+	std::vector<std::vector<State>> components{};
+	std::set<State> all_states{};
+	size_t edge_callbacks{0};
+	Automaton::TarjanDiscoverCallback callbacks{};
+	callbacks.state_discover = [&all_states](const State state) {
+		all_states.insert(state);
+		return false;
+	};
+	callbacks.succ_state_discover = [&edge_callbacks](const State from, const State to) {
+		REQUIRE(from <= 3);
+		REQUIRE(to <= 4);
+		++edge_callbacks;
+	};
+	callbacks.scc_state_discover = [&all_states](const State state) { all_states.insert(state); };
+	callbacks.scc_discover = [&components](const std::vector<State>& scc, const std::vector<State>& remaining_stack) {
+		(void) remaining_stack;
+		components.push_back(scc);
+		return false;
+	};
+	aut.tarjan_scc_discover(callbacks);
+
+	for (std::vector<State>& component : components) { std::ranges::sort(component); }
+	std::ranges::sort(components);
+	CHECK(components == std::vector<std::vector<State>>{{0, 1}, {2, 3}, {4}});
+	CHECK(all_states == std::set<State>{0, 1, 2, 3, 4});
+	CHECK(edge_callbacks == 6); // Every reachable transition, once.
+
+	SECTION("state discovery can stop before any SCC is emitted") {
+		components.clear();
+		callbacks.state_discover = [](const State) { return true; };
+		aut.tarjan_scc_discover(callbacks);
+		CHECK(components.empty());
+	}
+
+	SECTION("an initial-state subset changes the starting point, not the callback contract") {
+		components.clear();
+		callbacks.state_discover = [&all_states](const State state) {
+			all_states.insert(state);
+			return false;
+		};
+		const SparseSet<State> starting_states{std::initializer_list<State>{2}};
+		aut.tarjan_scc_discover(callbacks, starting_states);
+		for (std::vector<State>& component : components) { std::ranges::sort(component); }
+		std::ranges::sort(components);
+		CHECK(components == std::vector<std::vector<State>>{{2, 3}, {4}});
+	}
+	SECTION("a stateful callback keeps its state across traversals") {
+		// The wrapper used to copy the std::functions, so the counter reset on every traversal.
+		unsigned discovered{0};
+		Automaton::TarjanDiscoverCallback stateful{};
+		stateful.state_discover = [&discovered](const State) {
+			++discovered;
+			return discovered == 2 || discovered == 4;
+		};
+		aut.tarjan_scc_discover(stateful);
+		CHECK(discovered == 2); // Stopped at the second state.
+		aut.tarjan_scc_discover(stateful);
+		CHECK(discovered == 4); // Continued counting, not restarted from the copy.
+	}
+}
+
+TEST_CASE("mata::nfa::Nfa::print_to_dot() prints the edges of a state in ascending target order (#749)") {
+	// Reproduces https://github.com/VeriFIT/mata/issues/749: hoisting the map grouping the symbols by target out of
+	//  the per-source loop (in #915) kept its bucket count across sources, so the edges of a state printed in an
+	//  order that depended on the states printed before it (state 1 printed 1 -> 14, 1 -> 2, 1 -> 1 here).
+	Nfa nfa{15};
+	for (State target{1}; target <= 14; ++target) { nfa.delta.add(0, 0, target); }
+	for (const State target : {1u, 2u, 14u}) { nfa.delta.add(1, 0, target); }
+
+	std::vector<std::string> edges_of_one;
+	std::istringstream dot_lines{nfa.print_to_dot()};
+	for (std::string line; std::getline(dot_lines, line);) {
+		if (line.starts_with("1 -> ")) { edges_of_one.push_back(line); }
+	}
+	CHECK(
+		edges_of_one ==
+		std::vector<std::string>{"1 -> 1 [label=\"0\"];", "1 -> 2 [label=\"0\"];", "1 -> 14 [label=\"0\"];"}
+	);
 }

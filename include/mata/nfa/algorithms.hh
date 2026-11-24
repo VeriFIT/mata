@@ -4,20 +4,97 @@
  * This is a separation of the implementation from the interface defined in @c mata::nfa.
  * @note In @c mata::nfa interface, there are particular dispatch functions calling these function according to
  *  parameters provided by a user. E.g., we can call the following function:
- * `is_universal(aut, alph, {{'algorithm', 'antichains'}})` to check for universality based on antichain-based
+ * `is_universal(nfa, alphabet, {{'algorithm', 'antichains'}})` to check for universality based on antichain-based
  * algorithm.
  */
 
 #ifndef MATA_NFA_INTERNALS_HH_
 #define MATA_NFA_INTERNALS_HH_
 
+#include <cstdint>
+#include <span>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
 #include "mata/simlib/util/binary_relation.hh"
+#include "mata/simlib/util/partition_relation.hh"
 #include "nfa.hh"
 
 /**
  * Concrete NFA implementations of algorithms, such as complement, inclusion, or universality checking.
  */
 namespace mata::nfa::algorithms {
+
+/// @brief Reduction of the DFA of @c determinize_four_russians() and @c determinize_classical() to a smaller DFA for
+/// the same language, not always minimal.
+/// There is no real winner, but based on benchmarks, @c Adaptive is the best choice for general use.
+enum class DeterminizationReduction : std::uint8_t {
+	None, ///< No reduction.
+	Bisimulation, ///< Merge bisimilar states. Fast.
+	Simulation, ///< Also use the simulation. Smaller DFAs, but memory quadratic in the number of states.
+	Adaptive, ///< Start with @c Bisimulation, and switch to @c Simulation if the DFA turns out large.
+};
+
+/// @brief Options of @c determinize_four_russians().
+struct FourRussiansOptions {
+	/// NFA states per block: 1 (no tables), 2, 4, ..., 64, or 0 (default) to choose automatically.
+	unsigned block_size = 0;
+	DeterminizationReduction reduction = DeterminizationReduction::None; ///< Reduction of the result.
+};
+
+/**
+ * @brief Determinize automaton by the "Four Russians" subset construction.
+ *
+ * This is the "Four Russians" technique of Arlazarov, Dinic, Kronrod and Faradzev (1970), applied lazily.
+ *
+ * Gives the DFA of @c determinize_classical() up to the numbering of the states, usually much faster on large
+ * automata. The default algorithm of @c determinize().
+ * The NFA states are cut into blocks, and the post of each combination of states of a block is computed once, when it
+ * first occurs, and kept in a table. The post of a macrostate is then a union over its blocks instead of its states.
+ *
+ * With a reduction, it gives a smaller DFA for the same language, not always minimal. A reduction usually lowers the
+ * memory usage. Its effect on the time varies: inputs whose DFA shrinks a lot are much faster, others may be slower.
+ *
+ * @code
+ *   const Nfa dfa = algorithms::determinize_four_russians(aut);
+ *   const Nfa smaller = algorithms::determinize_four_russians(aut, {.reduction = DeterminizationReduction::Adaptive});
+ * @endcode
+ *
+ * @param[in] aut Automaton to determinize.
+ * @param[in] options Block size and reduction.
+ * @param[out] subset_map Map that maps sets of states of input automaton to states of determinized automaton (with a
+ *  reduction, merged states appear as one of them).
+ * @param[in] macrostate_discover Callback event handler for discovering a new macrostate for the first time, as in
+ *  @c determinize(). Not allowed with a reduction.
+ * @param[in] restrict_to_symbols When not @c nullptr, determinize over these symbols only, as in @c determinize().
+ * @return Determinized automaton.
+ * @throws std::invalid_argument for an invalid block size, or for a reduction with @p macrostate_discover.
+ */
+Nfa determinize_four_russians(
+	const Nfa& aut,
+	const FourRussiansOptions& options = {},
+	std::unordered_map<StateSet, State>* subset_map = nullptr,
+	std::optional<std::function<bool(const Nfa&, State, const StateSet&)>> macrostate_discover = std::nullopt,
+	const utils::OrdVector<Symbol>* restrict_to_symbols = nullptr
+);
+
+/**
+ * @brief Determinize automaton by the classical subset construction.
+ *
+ * The other parameters are those of @c determinize().
+ * @param[in] reduction Reduction of the result, as in @c determinize_four_russians(), which then gives the same DFA up
+ *  to the numbering of the states. Not allowed with @p macrostate_discover.
+ * @return Determinized automaton.
+ * @throws std::invalid_argument for a reduction with @p macrostate_discover.
+ */
+Nfa determinize_classical(
+	const Nfa& aut,
+	std::unordered_map<StateSet, State>* subset_map = nullptr,
+	std::optional<std::function<bool(const Nfa&, State, const StateSet&)>> macrostate_discover = std::nullopt,
+	const utils::OrdVector<Symbol>* restrict_to_symbols = nullptr,
+	DeterminizationReduction reduction = DeterminizationReduction::None
+);
 
 /**
  * Brzozowski minimization of automata (revert -> determinize -> revert -> determinize).
@@ -31,14 +108,66 @@ Nfa minimize_brzozowski(const Nfa& aut);
  *  "Efficient Minimization of DFAs With Partial Transition Functions" by Antti Valmari and Petri Lehtinen.
  *  The algorithm works in O(a*n*log(n)) time and O(m+n+a) space, where: n is the number of states, a is the size
  *  of the alphabet, and m is the number of transitions. [https://dl.acm.org/doi/10.1016/j.ipl.2011.12.004]
- * @param[in] dfa_trimmed Deterministic automaton without useless states. Perform trimming before calling this function.
- * @return Minimized deterministic automaton.
+ * @param[in] dfa_trimmed Deterministic automaton without useless states, with no empty symbol posts. Trim it before
+ *  calling this function and drop empty posts from the delta first: an empty post is not a transition, but the core
+ *  validates and refines posts as stored, so it cannot be accepted. Skipping the trimming is not an error, it only
+ *  costs minimality.
+ * @throws std::invalid_argument If @p dfa_trimmed has a transition and is not deterministic, or has several
+ *  initial states. A transition-free automaton with at most one initial state is returned without refinement.
+ * @return Minimized deterministic automaton, refined from @p dfa_trimmed. A transition-free
+ *  automaton without an initial state is returned as it is, with no initial state: such a result is neither
+ *  deterministic nor minimal by @c Nfa::is_deterministic() / @c Nfa::is_minimal(). Callers that need the canonical
+ *  one-state empty-language DFA should use the public @c mata::nfa::minimize() dispatcher instead.
  */
 Nfa minimize_hopcroft(const Nfa& dfa_trimmed);
 
 /**
+ * Hopcroft minimization of an arbitrary automaton, with input normalization.
+ *
+ * Trims @p aut, determinizes it when necessary, trims the result, and runs @c minimize_hopcroft().
+ * An automaton with an empty language is returned as a single non-final initial state with no transitions.
+ * @param[in] aut Automaton to be minimized.
+ * @return Minimal deterministic automaton.
+ */
+Nfa minimize_hopcroft_nondet(const Nfa& aut);
+
+/**
+ * @brief Minimization that picks the algorithm from the shape of the input.
+ *
+ * Uses @c minimize_hopcroft_nondet(): determinizes @p aut when it is not deterministic already, trims it, and runs
+ * Hopcroft minimization on the result. Brzozowski minimization is never picked: it determinizes twice, so it can blow
+ * up exponentially even on an input that is already a trimmed DFA, where Hopcroft is O(a*n*log(n)).
+ * An automaton with an empty language is returned as a single non-final initial state with no transitions.
+ * @param[in] aut Automaton to be minimized.
+ * @return Minimal deterministic automaton.
+ */
+Nfa minimize_auto(const Nfa& aut);
+
+/**
+ * @brief Classes of states that have the same finality, the same level, and, over every symbol, successors in the
+ *  same classes.
+ *
+ * Starts from the identity and merges states with identical successors, then states whose successors became
+ *  identical by the merge, until nothing merges. Every merge joins classes with the same successors, so the
+ *  partition stays a bisimulation and the quotient keeps the forward simulation of every state. It is far cheaper
+ *  than the simulation itself: the first pass hashes each state post once, and after it only the classes of the
+ *  predecessors of the states of an absorbed class are hashed again. The classes are numbered in the order of
+ *  their smallest states.
+ *
+ * @param[in] aut Automaton whose states to classify.
+ * @param[in] num_of_states Number of states of @p aut.
+ * @param[in] levels Level of each state of a transducer. States past its end, and all states of an NFA, for which it
+ *  is empty, are on level 0.
+ * @return The class of each state; the number of classes is one past the largest class.
+ */
+std::vector<State>
+	identical_successor_classes(const Automaton& aut, size_t num_of_states, std::span<const Level> levels = {});
+
+/**
  * Complement implemented by determization, adding sink state and making automaton complete. Then it adds final states
- *  which were non-final in the original automaton.
+ *  which were non-final in the original automaton. An already deterministic @p aut is complemented directly, without
+ *  determinizing it first.
+ * Transitions over symbols outside of @p symbols are dropped: the complement is a language over @p symbols only.
  * @param[in] aut Automaton to be complemented.
  * @param[in] symbols Symbols needed to make the automaton complete.
  * @return Complemented automaton.
@@ -48,6 +177,7 @@ Nfa complement_classical(const Nfa& aut, const mata::utils::OrdVector<Symbol>& s
 /**
  * Complement implemented by determization using Brzozowski minimization, adding a sink state and making the automaton
  *  complete. Then it swaps final and non-final states.
+ * Transitions over symbols outside of @p symbols are dropped: the complement is a language over @p symbols only.
  * @param[in] aut Automaton to be complemented.
  * @param[in] symbols Symbols needed to make the automaton complete.
  * @return Complemented automaton.
@@ -56,7 +186,8 @@ Nfa complement_brzozowski(const Nfa& aut, const mata::utils::OrdVector<Symbol>& 
 
 /**
  * Inclusion implemented by complementation of bigger automaton, intersecting it with smaller and then it checks
- *  emptiness of intersection.
+ *  emptiness of intersection. @c EPSILON is read as an ordinary synchronized symbol, in transitions and in
+ *  @p alphabet.
  * @param[in] smaller Automaton which language should be included in the bigger one.
  * @param[in] bigger Automaton which language should include the smaller one.
  * @param[in] alphabet Alphabet of both automata (it is computed automatically, but it is more efficient to set it if
@@ -66,6 +197,20 @@ Nfa complement_brzozowski(const Nfa& aut, const mata::utils::OrdVector<Symbol>& 
  * empty.
  */
 bool is_included_naive(const Nfa& smaller, const Nfa& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr);
+
+/**
+ * @brief Signature of a macrostate: the OR of @c 1 << (q % 64) over its states @c q.
+ *
+ * A superset can only have more bits set, so a bit present in @c macrostate_signature(a) and absent from
+ *  @c macrostate_signature(b) exhibits a state of @c a that is missing from @c b and proves @c a ⊄ b. The converse
+ *  does not hold: states that are congruent modulo 64 share a bit, so equal signatures prove nothing. The filter
+ *  therefore only ever rejects, which is what the antichain subsumption tests need to stay sound.
+ */
+inline uint64_t macrostate_signature(const StateSet& macrostate) {
+	uint64_t signature{0};
+	for (const State state : macrostate) { signature |= UINT64_C(1) << (state & 63); }
+	return signature;
+}
 
 /**
  * @brief Inclusion implemented by antichain algorithms.
@@ -82,12 +227,59 @@ bool is_included_antichains(
 );
 
 /**
- * @brief Check universality by checking the emptiness of a complement of @p aut.
+ * @brief Inclusion by bisimulation up to congruence (HKC), after F. Bonchi and D. Pous, "Checking NFA equivalence
+ *  with bisimulations up to congruence", POPL 2013.
+ *
+ * Checks that the macrostates X ∪ Y and Y are equivalent for every pair of a macrostate X of @p smaller and Y of
+ *  @p bigger reached over the same word, starting from the initial states. Unlike @c is_included_antichains(), which
+ *  pairs single states of @p smaller with macrostates of @p bigger, it determinizes both automata on the fly. A pair
+ *  is skipped when it lies in the congruence closure of the pairs stored before, which for this shape of pairs means
+ *  that every state x of X lies in a stored pair whose macrostate of @p bigger is a subset of Y; a stored pair all of
+ *  whose states of @p smaller are covered this way by pairs with smaller macrostates is not expanded either.
+ *  @c EPSILON is an ordinary symbol here.
+ *
+ * @param[in] smaller Automaton which language should be included in the bigger one
+ * @param[in] bigger Automaton which language should include the smaller one
+ * @param[in] alphabet Alphabet of both automata (not needed by the algorithm)
+ * @param[out] cex A word of @p smaller rejected by @p bigger, with an accepting run of @p smaller over it, when the
+ *  inclusion does not hold; cleared otherwise.
+ * @return True if the language of @p smaller is included in the language of @p bigger.
+ */
+bool is_included_hkc(const Nfa& smaller, const Nfa& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr);
+
+/**
+ * @brief Check equivalence with @c EPSILON read as an ordinary symbol.
+ *
+ * This is what @c mata::nfa::are_equivalent() does once its operands have no epsilon transitions left. Callers that
+ *  mean epsilon as a letter, such as the unwound transducers of @c mata::nft, use this entry point directly.
+ *
+ * @param[in] lhs,rhs Automata to compare.
+ * @param[in] alphabet Alphabet of both automata (it is computed automatically, but it is more efficient to set it if
+ *  you have it).
+ * @param[in] params Algorithm to use, @c "naive", @c "antichains" or @c "hkc", for the inclusion in each direction.
+ * @param[out] cex A word of the symmetric difference, when the languages differ; cleared when they are equal.
+ * @return True if the languages are equal.
+ */
+bool are_equivalent_epsilon_as_symbol(
+	const Nfa& lhs,
+	const Nfa& rhs,
+	const Alphabet* alphabet = nullptr,
+	const ParameterMap& params = {{"algorithm", "antichains"}},
+	Run* cex = nullptr
+);
+
+/**
+ * @brief Check universality by searching the complement of @p aut for a word.
+ *
+ * The complement is determinized lazily and the search stops at the first word @p aut rejects, so a non-universal
+ *  automaton is decided without building its whole complement. @c EPSILON is read as an ordinary letter;
+ *  @c Nfa::is_universal() removes epsilon transitions first.
  *
  * @param[in] aut Automaton which universality is checked
  * @param[in] alphabet Alphabet of the automaton
- * @param[out] cex Counterexample word which eventually breaks the universality
- * @return True if the complemented automaton has non-empty language, i.e., the original one is not universal
+ * @param[out] cex Word that @p aut rejects, when it is not universal. Its path is cleared: the states would belong
+ *  to the complement, which is not built.
+ * @return True if @p aut accepts every word over @p alphabet.
  */
 bool is_universal_naive(const Nfa& aut, const Alphabet& alphabet, Run* cex);
 
@@ -96,12 +288,23 @@ bool is_universal_naive(const Nfa& aut, const Alphabet& alphabet, Run* cex);
  *
  * @param[in] aut Automaton which universality is checked
  * @param[in] alphabet Alphabet of the automaton
- * @param[out] cex Counterexample word which eventually breaks the universality
+ * @param[out] cex Counterexample word which eventually breaks the universality. The search is depth-first, so the
+ *  word is a valid counterexample but not necessarily a shortest one.
  * @return True if the automaton is universal, otherwise false.
  */
 bool is_universal_antichains(const Nfa& aut, const Alphabet& alphabet, Run* cex);
 
 Simlib::Util::BinaryRelation compute_relation(
+	const Nfa& aut, const ParameterMap& params = {{"relation", "simulation"}, {"direction", "forward"}}
+);
+
+/**
+ * @brief The relation of @c compute_relation() as the partition of the states and the relation on its blocks.
+ *
+ * Its memory is linear in the states and the related pairs of blocks, where @c compute_relation() takes a bit for
+ * every pair of states, so prefer it on large automata.
+ */
+Simlib::Util::PartitionRelation compute_partition_relation(
 	const Nfa& aut, const ParameterMap& params = {{"relation", "simulation"}, {"direction", "forward"}}
 );
 
@@ -121,7 +324,7 @@ Simlib::Util::BinaryRelation compute_relation(
 Nfa product(
 	const Nfa& lhs,
 	const Nfa& rhs,
-	const std::function<bool(State, State)>&& final_condition,
+	const std::function<bool(State, State)>& final_condition,
 	Symbol first_epsilon = EPSILON,
 	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>>* product_map = nullptr
 );
@@ -129,13 +332,20 @@ Nfa product(
 /**
  * @brief Concatenate two NFAs.
  *
- * Supports epsilon symbols when @p use_epsilon is set to true.
+ * Connects @p lhs and @p rhs by adding ε-transitions from each final state of @p lhs to each initial state of
+ * @p rhs. The ε is set to @p epsilon. If @p use_epsilon is false, @c remove_epsilon(@p epsilon) is run on the
+ * result, so every transition over @p epsilon disappears, including the operands' own transitions labelled with
+ * that symbol. Operand transitions over any other symbol are preserved; in particular, with @p epsilon !=
+ * @c EPSILON the operands' @c EPSILON transitions survive, which is not the case when @p epsilon == @c EPSILON.
+ *
  * @param[in] lhs First automaton to concatenate.
  * @param[in] rhs Second automaton to concatenate.
- * @param[in] epsilon Epsilon to be used for concatenation (provided @p use_epsilon is true)
- * @param[in] use_epsilon Whether to concatenate over epsilon symbol.
- * @param[out] lhs_state_renaming Map mapping lhs states to result states.
- * @param[out] rhs_state_renaming Map mapping rhs states to result states.
+ * @param[in] epsilon Symbol used for the connecting transitions between @p lhs and @p rhs.
+ * @param[in] use_epsilon Whether to keep the connecting epsilon transitions in the result.
+ * @param[out] lhs_state_renaming Map mapping lhs states to result states. Filled only when requested; it
+ *  describes the shift of the full concatenation even when the result is empty.
+ * @param[out] rhs_state_renaming Map mapping rhs states to result states. Filled only when requested; it
+ *  describes the shift of the full concatenation even when the result is empty.
  * @return Concatenated automaton.
  */
 Nfa concatenate_eps(
@@ -148,12 +358,78 @@ Nfa concatenate_eps(
 );
 
 /**
+ * @brief Concatenate two NFAs with epsilon transitions, consuming the left operand.
+ *
+ * The left operand's state posts are moved into the result. The right operand is copied normally.
+ * If @p lhs and @p rhs are aliased, a controlled snapshot of @p rhs is taken and the operation
+ * falls back to the lvalue path.
+ * @p lhs is left valid but empty after the operation.
+ */
+Nfa concatenate_eps(
+	Nfa&& lhs,
+	const Nfa& rhs,
+	const Symbol& epsilon,
+	bool use_epsilon = false,
+	StateRenaming* lhs_state_renaming = nullptr,
+	StateRenaming* rhs_state_renaming = nullptr
+);
+
+/**
+ * @brief Concatenate two NFAs with epsilon transitions, consuming both operands.
+ *
+ * The state posts of both operands are moved into the result. If @p lhs and @p rhs are aliased, a controlled
+ * snapshot of @p rhs is taken before @p lhs is consumed, so the result holds both copies.
+ * Both @p lhs and @p rhs are left valid but empty after the operation.
+ */
+Nfa concatenate_eps(
+	Nfa&& lhs,
+	Nfa&& rhs,
+	const Symbol& epsilon,
+	bool use_epsilon = false,
+	StateRenaming* lhs_state_renaming = nullptr,
+	StateRenaming* rhs_state_renaming = nullptr
+);
+
+/**
  * @brief Reduce NFA using (forward) simulation.
  *
- * @param[in] nfa NFA to reduce
+ * @param[in] aut NFA to reduce
  * @param[out] state_renaming Map mapping original states to the reduced states.
  */
-Nfa reduce_simulation(const Nfa& nfa, StateRenaming& state_renaming);
+Nfa reduce_simulation(const Nfa& aut, StateRenaming& state_renaming);
+
+/**
+ * @brief Quotient an NFA, or a successor-closed part of it, by its forward simulation.
+ *
+ * Each class of states equivalent under @p sim_relation becomes one state; its transitions are those of the class
+ * representative, without targets simulated by another target over the same symbol. With @p states set, only
+ * those states are kept and the representative of a class is its smallest kept state. Since forward simulation
+ * does not depend on the initial states, one relation then serves every part reachable from a single state.
+ *
+ * @param[in] nfa NFA to quotient.
+ * @param[in] sim_relation Forward simulation of @p nfa, as computed by @c compute_relation().
+ * @param[in] quot_proj Projection of each state of @p nfa to the smallest state of its class, as computed by
+ *  @c get_symmetric_quotient_projection() of @p sim_relation.
+ * @param[in] states States to keep; all states if @c nullptr. Must be closed under successors.
+ * @param[out] state_renaming Map mapping the kept states to the reduced states, if not @c nullptr.
+ * @return The quotient of @p nfa restricted to @p states.
+ */
+Nfa quotient_by_simulation(
+	const Nfa& nfa,
+	const Simlib::Util::BinaryRelation& sim_relation,
+	const std::vector<size_t>& quot_proj,
+	const BoolVector* states = nullptr,
+	StateRenaming* state_renaming = nullptr
+);
+
+/// The same quotient, with @p sim_relation and @p quot_proj computed by @c compute_partition_relation().
+Nfa quotient_by_simulation(
+	const Nfa& nfa,
+	const Simlib::Util::PartitionRelation& sim_relation,
+	const std::vector<size_t>& quot_proj,
+	const BoolVector* states = nullptr,
+	StateRenaming* state_renaming = nullptr
+);
 
 /**
  * @brief Reduce NFA using residual construction.
@@ -192,6 +468,73 @@ Nfa reduce_residual_with(const Nfa& nfa);
  *  types.
  */
 Nfa reduce_residual_after(const Nfa& nfa);
+
+/**
+ * @brief Exception thrown by @c reduce_sat() and @c reduce_qbf() when no external solver can be run.
+ */
+class ExternalSolverNotFound : public std::runtime_error {
+  public:
+	using std::runtime_error::runtime_error;
+};
+
+/**
+ * @brief Reduce NFA to an automaton with the minimum number of states using an external SAT solver.
+ *
+ * Experimental. A counterexample-guided search: for k = 1, 2, ..., a SAT solver looks for an automaton with k states
+ *  consistent with a set of sample words, the candidate is checked for equivalence with @p nfa, and a distinguishing
+ *  word is added to the samples until the candidate is equivalent or no k-state automaton exists. The search is
+ *  exponential in the worst case and is practical only for languages whose minimal automata have about ten states.
+ *
+ * By default, an @c EPSILON transition is treated as a transition over an ordinary letter, as in the other reduction
+ *  algorithms. Set @p epsilon to "empty" to run @c remove_epsilon() on the input first instead.
+ * The result uses the symbols and the alphabet of @p nfa.
+ *
+ * @param[in] nfa NFA to reduce.
+ * @param[in] type Kind of the resulting automaton (values: "nfa", "dfa"):
+ *  - "nfa": an NFA with the minimum number of states. It never has more states than @p nfa reduced by simulation.
+ *  - "dfa": a deterministic (not necessarily complete) automaton with the minimum number of states.
+ * @param[in] solver Command running a SAT solver, as the solver's executable followed by its arguments separated by
+ *  spaces. Parts containing spaces can be enclosed in single or double quotes; the command is not interpreted by a
+ *  shell otherwise. The solver is given a DIMACS CNF file as its last argument and has to print the result in the
+ *  format of the SAT competitions, that is, an "s SATISFIABLE" or "s UNSATISFIABLE" line and the model on "v" lines.
+ *  If empty, the value of the environment variable @c MATA_SAT_SOLVER is used and, if that is not set, the first of
+ *  @c cadical, @c kissat, @c cryptominisat5 and @c picosat found in @c PATH.
+ * @param[in] epsilon Whether to treat @c EPSILON as an ordinary letter ("letter", default) or remove it first as
+ *  the empty word ("empty").
+ * @return An automaton equivalent to @p nfa with the minimum number of states of the given @p type.
+ * @throws ExternalSolverNotFound If no SAT solver can be found or run.
+ * @throws std::runtime_error If @p epsilon has an invalid value, the solver fails, or its output cannot be understood.
+ */
+Nfa reduce_sat(
+	const Nfa& nfa,
+	const std::string& type = "nfa",
+	const std::string& solver = "",
+	const std::string& epsilon = "letter"
+);
+
+/**
+ * @brief Reduce NFA to an NFA with the minimum number of states using an external QBF solver.
+ *
+ * Experimental. The same search as @c reduce_sat() with @c type "nfa", but the sample words that the NFA has to
+ *  reject are encoded with universally quantified runs instead of the reachable states of their prefixes.
+ *
+ * @param[in] nfa NFA to reduce.
+ * @param[in] solver Command running a QBF solver, given as for @c reduce_sat(). The solver is given a QDIMACS file as
+ *  its last argument and has to print the result and the values of the outermost existential variables in the QDIMACS
+ *  output format ("s cnf 1 ..." or "s cnf 0 ..." and "V" lines). If empty, the value of the environment variable
+ *  @c MATA_QBF_SOLVER is used and, if that is not set, the first of @c depqbf and @c caqe found in @c PATH, run with
+ *  @c --qdo. A command whose executable is named exactly @c depqbf (whatever its directory) is also run with
+ *  @c --no-dynamic-nenofex when its @c --help lists the option: DepQBF built with Nenofex prints the values of the
+ *  variables only with it, while older versions reject it. The probe runs the executable alone, and a probe killed by
+ *  a signal leaves the command unchanged. A DepQBF reached under another name (e.g. a @c depqbf-6 symlink or a
+ *  wrapper script) is not probed: pass @c --no-dynamic-nenofex in @p solver when that version needs it.
+ * @param[in] epsilon Whether to treat @c EPSILON as an ordinary letter ("letter", default) or remove it first as
+ *  the empty word ("empty").
+ * @return An NFA equivalent to @p nfa with the minimum number of states.
+ * @throws ExternalSolverNotFound If no QBF solver can be found or run.
+ * @throws std::runtime_error If @p epsilon has an invalid value, the solver fails, or its output cannot be understood.
+ */
+Nfa reduce_qbf(const Nfa& nfa, const std::string& solver = "", const std::string& epsilon = "letter");
 
 } // Namespace mata::nfa::algorithms.
 

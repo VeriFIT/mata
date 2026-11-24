@@ -1,0 +1,22 @@
+From a97546033d0fef37a0647fb994c71c602abb162c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Wed, 18 Nov 2026 18:57:40 +0100
+Subject: [PATCH] EXPERIMENT cmake: default Delta allocator is the pool
+
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5beb8b1e5..494254f77 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -109,7 +109,7 @@ endif ()
+ #  it per process, without rebuilding.
+ set (
+ 	MATA_DELTA_ALLOCATOR
+-	"std"
++	"pool"
+ 	CACHE STRING "Default allocator of the Delta blocks: std or pool"
+ )
+ set_property (CACHE MATA_DELTA_ALLOCATOR PROPERTY STRINGS std pool)

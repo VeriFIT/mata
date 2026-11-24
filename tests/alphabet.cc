@@ -1,5 +1,10 @@
 // TODO: Some header.
 
+#include <array>
+#include <random>
+#include <ranges>
+#include <set>
+#include <sstream>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
@@ -8,18 +13,38 @@
 #include "mata/alphabet.hh"
 #include "mata/nfa/algorithms.hh"
 #include "mata/nfa/nfa.hh"
+#include "mata/nft/nft.hh"
 
 using namespace mata;
 using namespace mata::nfa::algorithms;
 using namespace mata::nfa;
 using namespace mata::utils;
-using namespace mata::parser;
 using IntAlphabet = mata::IntAlphabet;
 using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 
 using Word = std::vector<Symbol>;
 
 template <class T> void unused(const T&) {}
+
+namespace {
+class SingleSymbolAlphabet final : public OnTheFlyAlphabet {
+  public:
+	SingleSymbolAlphabet() : OnTheFlyAlphabet{{"zero", 0}, {"one", 1}, {"three", 3}} {}
+	utils::OrdVector<Symbol> get_alphabet_symbols() const override { return {1}; }
+};
+} // namespace
+
+TEST_CASE("mata::OnTheFlyAlphabet subclasses keep their own enumeration (#754)") {
+	const SingleSymbolAlphabet alphabet{};
+	CHECK(alphabet.get_complement({1}).empty());
+
+	Nfa aut{1};
+	aut.initial.insert(0);
+	aut.final.insert(0);
+	aut.delta.add(0, 1, 0);
+	CHECK(aut.is_complete(&alphabet));
+	CHECK(complement(aut, alphabet).is_lang_empty());
+}
 
 TEST_CASE("mata::IntAlphabet") {
 	auto alphabet1 = IntAlphabet();
@@ -82,6 +107,312 @@ TEST_CASE("mata::OnTheFlyAlphabet::add_symbols_from()") {
 
 	alphabet.clear();
 	CHECK(alphabet.get_number_of_symbols() == 0);
+}
+
+TEST_CASE("mata::OnTheFlyAlphabet::reverse_translate_symbol()") {
+	SECTION("follows insertions, erasures and clear") {
+		OnTheFlyAlphabet alphabet{{"a", 4}, {"b", 2}};
+		CHECK(alphabet.reverse_translate_symbol(4) == "a");
+		CHECK(alphabet.reverse_translate_symbol(alphabet.translate_symb("c")) == "c");
+		CHECK(alphabet.erase(Symbol{4}) == 1);
+		CHECK_THROWS(alphabet.reverse_translate_symbol(4));
+		CHECK(alphabet.get_symbol_map() == OnTheFlyAlphabet::StringToSymbolMap{{"b", 2}, {"c", 5}});
+		alphabet.erase(alphabet.get_symbol_map().find("b"));
+		CHECK_THROWS(alphabet.reverse_translate_symbol(2));
+		alphabet.erase(alphabet.get_symbol_map().begin(), alphabet.get_symbol_map().end());
+		CHECK(alphabet.get_alphabet_symbols().empty());
+		alphabet.add_new_symbol("d", 2);
+		CHECK(alphabet.reverse_translate_symbol(2) == "d");
+		alphabet.clear();
+		CHECK_THROWS(alphabet.reverse_translate_symbol(2));
+	}
+
+	SECTION("copies and moves own their index") {
+		OnTheFlyAlphabet copy{};
+		OnTheFlyAlphabet assigned{{"z", 0}};
+		{
+			OnTheFlyAlphabet original{{"a", 0}, {"b", 1}};
+			copy = OnTheFlyAlphabet{original};
+			assigned = original;
+			original.erase("a");
+			original.add_new_symbol("x", 0);
+		}
+		CHECK(copy.reverse_translate_symbol(0) == "a");
+		CHECK(assigned.reverse_translate_symbol(0) == "a");
+		CHECK(assigned.reverse_translate_symbol(1) == "b");
+		const OnTheFlyAlphabet moved{std::move(copy)};
+		CHECK(moved.reverse_translate_symbol(1) == "b");
+	}
+
+	SECTION("names sharing a symbol") {
+		OnTheFlyAlphabet alphabet{{"a", 3}, {"b", 3}, {"c", 3}};
+		CHECK(alphabet.get_alphabet_symbols() == OrdVector<Symbol>{3});
+		CHECK(alphabet.reverse_translate_symbol(3) == "a");
+		const OnTheFlyAlphabet copy{alphabet};
+		CHECK(copy.reverse_translate_symbol(3) == "a");
+		alphabet.erase("a");
+		const std::string promoted{alphabet.reverse_translate_symbol(3)};
+		const bool promoted_another_name{promoted == "b" || promoted == "c"};
+		CHECK(promoted_another_name);
+		CHECK(alphabet.erase(Symbol{3}) == 1);
+		CHECK(alphabet.get_symbol_map().size() == 1);
+		CHECK(alphabet.reverse_translate_symbol(3) != promoted);
+		alphabet.erase(Symbol{3});
+		CHECK_THROWS(alphabet.reverse_translate_symbol(3));
+		CHECK(alphabet.get_alphabet_symbols().empty());
+	}
+
+	SECTION("symbols far above the number of names") {
+		OnTheFlyAlphabet alphabet{};
+		alphabet.add_new_symbol("x", 1'000);
+		alphabet.add_new_symbol("far", 2'000);
+		OrdVector<Symbol> expected{};
+		for (Symbol symbol{0}; symbol < 500; ++symbol) {
+			alphabet.add_new_symbol("s" + std::to_string(symbol), symbol);
+			expected.push_back(symbol);
+		}
+		// Enough names now for the index to cover 1000 densely: "x" keeps being reported.
+		alphabet.add_new_symbol("y", 1'000);
+		CHECK(alphabet.reverse_translate_symbol(1'000) == "x");
+		CHECK(alphabet.reverse_translate_symbol(2'000) == "far");
+		expected.push_back(1'000);
+		expected.push_back(2'000);
+		CHECK(alphabet.get_alphabet_symbols() == expected);
+		alphabet.erase("x");
+		CHECK(alphabet.reverse_translate_symbol(1'000) == "y");
+		alphabet.erase(Symbol{1'000});
+		CHECK_THROWS(alphabet.reverse_translate_symbol(1'000));
+		expected.erase(1'000);
+		CHECK(alphabet.get_alphabet_symbols() == expected);
+	}
+}
+
+TEST_CASE("mata::OnTheFlyAlphabet::get_alphabet_symbols_ref() follows every change (#754)") {
+	// Recomputed from the symbol map, independently of the alphabet's own bookkeeping.
+	const auto symbols_of_map{[](const OnTheFlyAlphabet& alphabet) {
+		std::set<Symbol> symbols{};
+		for (const Symbol symbol : alphabet.get_symbol_map() | std::views::values) { symbols.insert(symbol); }
+		return OrdVector<Symbol>{symbols};
+	}};
+	// Small values land in the dense reverse index; the large ones start in the sparse one, and 100 and 150 move to
+	//  the dense one once there are enough names.
+	static constexpr std::array<Symbol, 15> VALUES{0,  1,  2,	3,	 5,		8,		 13,		  40,
+												   63, 64, 100, 150, 5'000, 100'000, nfa::EPSILON};
+	for (unsigned seed{0}; seed < 100; ++seed) {
+		std::mt19937 rng{seed};
+		const auto draw{[&rng](const size_t bound) { return static_cast<size_t>(rng()) % bound; }};
+		const auto name{[&draw] { return "n" + std::to_string(draw(64)); }};
+		const auto value{[&draw] { return VALUES[draw(VALUES.size())]; }};
+		std::array<OnTheFlyAlphabet, 2> alphabets{OnTheFlyAlphabet{}, OnTheFlyAlphabet{}};
+		for (size_t step{0}; step < 300; ++step) {
+			OnTheFlyAlphabet& alphabet{alphabets[draw(2)]};
+			OnTheFlyAlphabet& other{&alphabet == alphabets.data() ? alphabets[1] : alphabets[0]};
+			const OnTheFlyAlphabet::StringToSymbolMap& map{alphabet.get_symbol_map()};
+			// @p first advanced by a number drawn below @p bound.
+			const auto advance{[&draw](const auto first, const size_t bound) {
+				return std::next(first, static_cast<std::ptrdiff_t>(draw(bound)));
+			}};
+			const size_t operation{draw(40)};
+			INFO("seed " << seed << ", step " << step << ", operation " << operation);
+			if (operation == 0) {
+				alphabet.clear();
+			} else if (operation == 1) {
+				alphabet = other;
+			} else if (operation == 2) {
+				alphabet = OnTheFlyAlphabet{other};
+			} else if (operation == 3) {
+				std::swap(alphabets[0], alphabets[1]); // Move construction and move assignment.
+			} else if (operation == 4) {
+				const auto first{advance(map.begin(), map.size() + 1)};
+				alphabet.erase(first, advance(first, static_cast<size_t>(std::distance(first, map.end())) + 1));
+			} else if (operation < 9) {
+				const bool present{!map.empty() && draw(2) == 0};
+				alphabet.erase(present ? advance(map.begin(), map.size())->second : value());
+			} else if (operation < 13) {
+				alphabet.erase(name());
+			} else if (operation < 17) {
+				if (!map.empty()) { alphabet.erase(advance(map.begin(), map.size())); }
+			} else if (operation < 22) {
+				alphabet.translate_symb(name());
+			} else if (operation < 26) {
+				if (const std::string added{name()}; !map.contains(added)) { alphabet.add_new_symbol(added); }
+			} else if (operation < 30) {
+				if (const std::string added{name()}; !map.contains(added)) { alphabet.add_new_symbol(added, value()); }
+			} else if (operation < 34) {
+				alphabet.try_add_new_symbol(name(), value());
+			} else if (operation < 37) {
+				alphabet.add_symbols_from(OnTheFlyAlphabet::StringToSymbolMap{{name(), value()}, {name(), value()}});
+			} else {
+				std::vector<std::string> added{name(), name()};
+				std::erase_if(added, [&map](const std::string& added_name) { return map.contains(added_name); });
+				if (added.size() == 2 && added[0] == added[1]) { added.pop_back(); }
+				alphabet.add_symbols_from(added);
+			}
+			for (const OnTheFlyAlphabet& checked : alphabets) {
+				const OrdVector<Symbol> expected{symbols_of_map(checked)};
+				REQUIRE(checked.get_alphabet_symbols_ref() == expected);
+				REQUIRE(checked.get_alphabet_symbols() == expected);
+				const OrdVector<Symbol> removed{value(), value()};
+				REQUIRE(checked.get_complement(removed) == expected.difference(removed));
+			}
+		}
+	}
+}
+
+TEST_CASE("mata::OnTheFlyAlphabet reserved special-symbol names (#794)") {
+	OnTheFlyAlphabet alphabet{};
+	// The reserved names translate straight to the special symbols and are never registered, so a
+	//  printed automaton parses back with the same transition symbols.
+	CHECK(alphabet.translate_symb(EPSILON_NAME) == nfa::EPSILON);
+	CHECK(alphabet.translate_symb(DONT_CARE_NAME) == nft::DONT_CARE);
+	CHECK(alphabet.get_number_of_symbols() == 0);
+	CHECK(
+		alphabet.translate_word({std::string{EPSILON_NAME}, std::string{DONT_CARE_NAME}}) ==
+		Word{nfa::EPSILON, nft::DONT_CARE}
+	);
+
+	// The reserved names cannot be registered as ordinary symbols.
+	CHECK_THROWS(alphabet.add_new_symbol(std::string{EPSILON_NAME}));
+	CHECK_THROWS(alphabet.add_new_symbol(std::string{DONT_CARE_NAME}));
+	CHECK_THROWS(alphabet.add_new_symbol(std::string{EPSILON_NAME}, 13));
+	CHECK_THROWS(alphabet.try_add_new_symbol(std::string{DONT_CARE_NAME}, 13));
+	CHECK_THROWS(alphabet.add_symbols_from({std::string{EPSILON_NAME}}));
+	CHECK_THROWS(OnTheFlyAlphabet{{std::string{EPSILON_NAME}, 13}});
+	CHECK(alphabet.get_number_of_symbols() == 0);
+}
+
+TEST_CASE("mata::OnTheFlyAlphabet next symbol value (#759)") {
+	SECTION("the symbol map constructor updates the next symbol value") {
+		OnTheFlyAlphabet alphabet{OnTheFlyAlphabet::StringToSymbolMap{{"a", 0}, {"b", 1}}};
+		CHECK(alphabet.get_next_value() == 2);
+		CHECK(alphabet.translate_symb("a") == 0);
+		CHECK(alphabet.translate_symb("b") == 1);
+		CHECK(alphabet.translate_symb("c") == 2);
+		CHECK(alphabet.get_number_of_symbols() == 3);
+	}
+
+	SECTION("create_alphabet() does not turn EPSILON into a letter") {
+		Nfa aut{2};
+		aut.initial.insert(0);
+		aut.final.insert(1);
+		aut.delta.add(0, 5, 1);
+		aut.delta.add(0, nfa::EPSILON, 1);
+		OnTheFlyAlphabet alphabet{create_alphabet(aut)};
+		CHECK(alphabet.get_alphabet_symbols() == OrdVector<Symbol>{5});
+		CHECK(alphabet.get_number_of_symbols() == 1);
+		CHECK(alphabet.translate_symb("new") == 6);
+	}
+
+	SECTION("Nft::fill_alphabet() does not turn DONT_CARE into a letter") {
+		nft::Nft transducer{nft::Nft::with_levels(2, 3)};
+		transducer.initial.insert(0);
+		transducer.final.insert(2);
+		transducer.delta.add(0, 5, 1);
+		transducer.delta.add(1, nft::DONT_CARE, 2);
+		OnTheFlyAlphabet alphabet{};
+		transducer.fill_alphabet(alphabet);
+		CHECK(alphabet.get_alphabet_symbols() == OrdVector<Symbol>{5});
+		CHECK(alphabet.translate_symb("new") == 6);
+	}
+
+	SECTION("get_number_of_symbols() counts the symbols, not the counter") {
+		OnTheFlyAlphabet alphabet{100};
+		alphabet.add_new_symbol("x");
+		alphabet.add_new_symbol("y");
+		CHECK(alphabet.get_number_of_symbols() == 2);
+		CHECK(alphabet.get_next_value() == 102);
+		CHECK(alphabet.erase("x") == 1);
+		CHECK(alphabet.get_number_of_symbols() == 1);
+	}
+
+	SECTION("an exhausted symbol space is reported instead of handing out EPSILON") {
+		OnTheFlyAlphabet alphabet{};
+		alphabet.add_new_symbol("almost_epsilon", nfa::EPSILON - 1);
+		CHECK(alphabet.get_next_value() == nfa::EPSILON);
+		CHECK_THROWS_AS(alphabet.translate_symb("new"), std::runtime_error);
+		CHECK_THROWS_AS(alphabet.add_new_symbol("new"), std::runtime_error);
+		CHECK(alphabet.translate_symb("almost_epsilon") == nfa::EPSILON - 1);
+		CHECK(alphabet.get_number_of_symbols() == 1);
+	}
+
+	SECTION("an exhausted symbol space is reported instead of handing out DONT_CARE or EPSILON") {
+		// DONT_CARE (EPSILON - 1) and EPSILON are reserved, so an ordinary name must not get either value.
+		for (Symbol top : {Symbol{nft::DONT_CARE}, Symbol{nfa::EPSILON}}) {
+			OnTheFlyAlphabet alphabet{};
+			alphabet.add_new_symbol("top", top);
+			if (top == nft::DONT_CARE) {
+				// An explicit DONT_CARE advances the counter to EPSILON; EPSILON itself never advances it. Either way
+				//  no ordinary name may be allocated any more.
+				CHECK_THROWS_AS(alphabet.translate_symb("new"), std::runtime_error);
+				CHECK_THROWS_AS(alphabet.add_new_symbol("new"), std::runtime_error);
+				CHECK(alphabet.translate_symb("top") == top);
+				CHECK(alphabet.get_number_of_symbols() == 1);
+			} else {
+				// An explicitly bound EPSILON never advances the counter; the low values stay available.
+				CHECK(alphabet.translate_symb("new") == 0);
+			}
+		}
+	}
+
+	SECTION("erasing one of two names of a symbol does not hand its value out again") {
+		for (bool by_symbol : {false, true}) {
+			OnTheFlyAlphabet alphabet{};
+			alphabet.add_new_symbol("a", 5);
+			alphabet.add_new_symbol("b", 5);
+			CHECK(alphabet.get_next_value() == 6);
+			if (by_symbol) {
+				CHECK(alphabet.erase(Symbol{5}) == 1);
+			} else {
+				CHECK(alphabet.erase("a") == 1);
+			}
+			// The value 5 still belongs to the other name, so it must not be reused for a new letter.
+			CHECK(alphabet.get_next_value() == 6);
+			if (by_symbol) {
+				CHECK(alphabet.erase(Symbol{5}) == 1);
+			} else {
+				CHECK(alphabet.erase("b") == 1);
+			}
+			// The last name of the top value is gone, so its value is handed out again.
+			CHECK(alphabet.translate_symb("new") == 5);
+		}
+	}
+
+	SECTION("an exhausted symbol space at DONT_CARE itself is reported") {
+		OnTheFlyAlphabet alphabet{};
+		alphabet.add_new_symbol("last", nft::DONT_CARE - 1);
+		CHECK(alphabet.get_next_value() == nft::DONT_CARE);
+		CHECK_THROWS_AS(alphabet.translate_symb("new"), std::runtime_error);
+		CHECK_THROWS_AS(alphabet.add_new_symbol("new"), std::runtime_error);
+		CHECK(alphabet.translate_symb("last") == nft::DONT_CARE - 1);
+		CHECK(alphabet.get_number_of_symbols() == 1);
+	}
+
+	SECTION("a mapping the merge rejects does not advance the counter") {
+		OnTheFlyAlphabet alphabet{};
+		alphabet.add_new_symbol("a", 0);
+		alphabet.add_symbols_from(OnTheFlyAlphabet::StringToSymbolMap{{"a", nft::DONT_CARE - 1}});
+		CHECK(alphabet.translate_symb("a") == 0);
+		CHECK(alphabet.get_next_value() == 1);
+		CHECK(alphabet.translate_symb("b") == 1);
+	}
+
+	SECTION("an explicitly added EPSILON does not wrap the counter") {
+		OnTheFlyAlphabet alphabet{};
+		alphabet.add_new_symbol("a", 3);
+		alphabet.add_new_symbol("epsilon", nfa::EPSILON);
+		CHECK(alphabet.get_next_value() == 4);
+		CHECK(alphabet.translate_symb("new") == 4);
+	}
+
+	SECTION("erasing EPSILON from a fresh alphabet does not wrap the counter") {
+		OnTheFlyAlphabet alphabet{};
+		alphabet.add_new_symbol("epsilon", nfa::EPSILON);
+		CHECK(alphabet.erase("epsilon") == 1);
+		CHECK(alphabet.get_next_value() == 0);
+		alphabet.add_new_symbol("epsilon", nfa::EPSILON);
+		CHECK(alphabet.erase(nfa::EPSILON) == 1);
+		CHECK(alphabet.get_next_value() == 0);
+	}
 }
 
 TEST_CASE("mata::EnumAlphabet") {
@@ -172,5 +503,88 @@ TEST_CASE("UTF-8 encoding") {
 				  0x8'00,	 0x10'00,	0x20'00,   0x30'00,	  0x40'00,	 0x50'00,	0x60'00,   0x70'00,	  0xFF'FF,
 				  0x1'00'00, 0x2'00'01, 0x3'00'02, 0x4'00'03, 0x5'00'04, 0x6'00'05, 0x7'00'06, 0x8'00'07, 0x10'FF'FF};
 		CHECK(decode_word_utf8(encode_word_utf8(word)) == word);
+	}
+}
+
+TEST_CASE("mata::Alphabet streaming - #760") {
+	SECTION("OnTheFlyAlphabet prints its name to symbol pairs") {
+		OnTheFlyAlphabet alphabet{{"a", 0}, {"b", 1}};
+		std::ostringstream out;
+		out << alphabet;
+		CHECK(out.str() == "{a->0, b->1}");
+	}
+
+	SECTION("OnTheFlyAlphabet prints names sharing a value independently of the insertion order") {
+		const OnTheFlyAlphabet forward{{"a", 0}, {"b", 0}, {"c", 0}, {"d", 1}};
+		const OnTheFlyAlphabet backward{{"d", 1}, {"c", 0}, {"b", 0}, {"a", 0}};
+		std::ostringstream out_forward, out_backward;
+		out_forward << forward;
+		out_backward << backward;
+		CHECK(out_forward.str() == "{a->0, b->0, c->0, d->1}");
+		CHECK(out_backward.str() == "{a->0, b->0, c->0, d->1}");
+	}
+
+	SECTION("EnumAlphabet prints its symbols") {
+		EnumAlphabet alphabet{0, 1, 5};
+		std::ostringstream out;
+		out << alphabet;
+		CHECK(out.str() == "{0, 1, 5}");
+	}
+
+	SECTION("IntAlphabet prints a tag instead of recursing forever") {
+		IntAlphabet alphabet{};
+		std::ostringstream out;
+		out << alphabet;
+		CHECK(out.str() == "IntAlphabet");
+	}
+}
+
+TEST_CASE("mata::Alphabet numeric symbol parsing and translate_word (#758)") {
+	SECTION("EnumAlphabet::translate_word() parses every element independently") {
+		EnumAlphabet alphabet{1, 2, 3};
+		CHECK(alphabet.translate_word({"1", "2", "3"}) == Word{1, 2, 3});
+		CHECK(alphabet.translate_word({"3", "1"}) == Word{3, 1});
+		CHECK_THROWS(alphabet.translate_word({"1", "7"}));
+	}
+
+	SECTION("IntAlphabet::translate_word()") {
+		IntAlphabet alphabet{};
+		CHECK(alphabet.translate_word({"1", "2", "300", "1234567890"}) == Word{1, 2, 300, 1'234'567'890});
+		CHECK_THROWS_AS(alphabet.translate_word({"1", "-1"}), std::runtime_error);
+	}
+
+	SECTION("the numeric parsers accept exactly a whole decimal number that fits a Symbol") {
+		IntAlphabet int_alphabet{};
+		EnumAlphabet enum_alphabet{1, 2, 3, 5};
+		for (Alphabet* alphabet : {static_cast<Alphabet*>(&int_alphabet), static_cast<Alphabet*>(&enum_alphabet)}) {
+			CHECK(alphabet->translate_symb("5") == 5);
+			CHECK_THROWS_AS(alphabet->translate_symb("-1"), std::runtime_error);
+			CHECK_THROWS_AS(alphabet->translate_symb("+5"), std::runtime_error);
+			CHECK_THROWS_AS(alphabet->translate_symb(" 5"), std::runtime_error);
+			CHECK_THROWS_AS(alphabet->translate_symb("5 "), std::runtime_error);
+			CHECK_THROWS_AS(alphabet->translate_symb("abc"), std::runtime_error);
+			CHECK_THROWS_AS(alphabet->translate_symb(""), std::runtime_error);
+			CHECK_THROWS_AS(alphabet->translate_symb("4294967296"), std::runtime_error);
+		}
+	}
+
+	SECTION("EnumAlphabet::add_new_symbol() rejects a name that is no number") {
+		EnumAlphabet alphabet{};
+		CHECK_THROWS_AS(alphabet.add_new_symbol(std::string{"abc"}), std::runtime_error);
+		CHECK_THROWS_AS(alphabet.add_new_symbol(std::string{"-1"}), std::runtime_error);
+		CHECK(alphabet.empty());
+		alphabet.add_new_symbol(std::string{"7"});
+		CHECK(alphabet.get_alphabet_symbols() == OrdVector<Symbol>{7});
+	}
+
+	SECTION("encode_word() over an EnumAlphabet") {
+		Nfa nfa{3};
+		nfa.initial.insert(0);
+		nfa.delta.add(0, 1, 1);
+		nfa.delta.add(1, 2, 2);
+		nfa.final.insert(2);
+		EnumAlphabet alphabet{1, 2};
+		CHECK(nfa.is_in_lang(encode_word(&alphabet, {"1", "2"})));
+		CHECK(!nfa.is_in_lang(encode_word(&alphabet, {"2", "1"})));
 	}
 }

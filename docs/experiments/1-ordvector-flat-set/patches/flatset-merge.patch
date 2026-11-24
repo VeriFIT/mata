@@ -1,0 +1,34 @@
+From 971b3ead8be9d37a13f5dfff3fd4d106202fab47 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Wed, 18 Nov 2026 18:54:08 +0100
+Subject: [PATCH] EXPERIMENT utils: OrdVector range insert as std::flat_set
+ does it (append, inplace_merge, unique)
+
+---
+ include/mata/utils/ord-vector.hh | 13 ++++++-------
+ 1 file changed, 6 insertions(+), 7 deletions(-)
+
+diff --git a/include/mata/utils/ord-vector.hh b/include/mata/utils/ord-vector.hh
+index 3495bde31..679bc72bf 100644
+--- a/include/mata/utils/ord-vector.hh
++++ b/include/mata/utils/ord-vector.hh
+@@ -256,13 +256,12 @@ template <class Key, class Allocator> class OrdVector {
+ 			return true;
+ 		}
+ 
+-		// The merge buffer is local. It used to be a function-local `static` shared by every thread in
+-		//  the process, which corrupted the result of concurrent unions over unrelated containers.
+-		VectorType merged{};
+-		merged.reserve(vec_.size() + keys.size());
+-		std::ranges::set_union(vec_, keys, std::back_inserter(merged));
+-		const bool inserted{merged.size() > vec_.size()};
+-		vec_ = std::move(merged);
++		// EXPERIMENT: the libstdc++ std::flat_set strategy: append, merge in place, drop duplicates.
++		const size_t old_size{vec_.size()};
++		vec_.insert(vec_.end(), keys.begin(), keys.end());
++		std::inplace_merge(vec_.begin(), vec_.begin() + static_cast<std::ptrdiff_t>(old_size), vec_.end());
++		vec_.erase(std::unique(vec_.begin(), vec_.end()), vec_.end());
++		const bool inserted{vec_.size() > old_size};
+ 		MATA_EXPENSIVE_ASSERT(is_sorted());
+ 		return inserted;
+ 	}

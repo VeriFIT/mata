@@ -1,0 +1,39 @@
+[package]
+name = "mata-sys"
+version = "0.1.0"
+description = "Native build of the Mata automata library and a cxx bridge to it"
+readme = "README.md"
+links = "mata"
+# Mata is MIT; its copies of CUDD and RE2, which libmata contains, are BSD-3-Clause.
+license = "MIT AND BSD-3-Clause"
+repository.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+keywords.workspace = true
+categories = ["external-ffi-bindings"]
+# `mata/` holds the Mata sources that `just bindings rust package` and `publish` copy in.
+include = ["/build.rs", "/src/**", "/cxx/**", "/README.md", "/mata/**"]
+
+[dependencies]
+cxx.workspace = true
+
+[build-dependencies]
+cxx-build.workspace = true
+cmake.workspace = true
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+# The workspace lints without clippy's pedantic group, which does not fit generated bridge functions.
+[lints.rust]
+missing_docs = "warn"
+missing_debug_implementations = "warn"
+unreachable_pub = "warn"
+unsafe_op_in_unsafe_fn = "deny"
+
+[lints.clippy]
+undocumented_unsafe_blocks = "warn"
+
+[lints.rustdoc]
+broken_intra_doc_links = "deny"

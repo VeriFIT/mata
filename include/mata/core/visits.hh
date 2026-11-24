@@ -234,6 +234,41 @@ template <typename P, typename Fn> P renumbered(const P& post, Fn&& rename) {
 	return out;
 }
 
+template <typename P, typename Renaming>
+P defragmented(const P& post, const BoolVector& is_staying, const Renaming& renaming);
+
+/**
+ * @brief Keep in @p post only the targets @p is_staying admits, renaming their states, in place.
+ *
+ * The renaming is monotone on the staying states, so the sets stay sorted. Entries left without targets are erased.
+ *
+ * @param post The post to filter. @c mata::arity_of is used to recurse down to the innermost post.
+ * @param is_staying A boolean vector indicating which states are staying.
+ * @param renaming A vector indicating the new state for each staying state.
+ */
+template <typename P, typename Renaming>
+void defragment_in_place(P& post, const BoolVector& is_staying, const Renaming& renaming) {
+	if constexpr (arity_of<P> == 0) {
+		using Traits = TargetTraits<target_of<P>>;
+		const auto is_leaving{[&is_staying](const target_of<P>& target) { return !is_staying[Traits::state_of(target)]; }};
+		if constexpr (requires { post.erase_if(is_leaving); }) {
+			post.erase_if(is_leaving);
+			for (target_of<P>& target : post) { target = Traits::with_state(target, renaming[Traits::state_of(target)]); }
+		} else {
+			post = defragmented(post, is_staying, renaming);
+		}
+	} else {
+		for (auto entry_it{post.begin()}; entry_it != post.end();) {
+			defragment_in_place(entry_it->nested(), is_staying, renaming);
+			if (entry_it->nested().empty()) {
+				entry_it = post.erase(entry_it);
+			} else {
+				++entry_it;
+			}
+		}
+	}
+}
+
 /**
  * @brief Rebuild @p post keeping only the targets @p is_staying admits, and renaming their states.
  *

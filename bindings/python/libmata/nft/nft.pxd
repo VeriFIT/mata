@@ -8,7 +8,7 @@ from libcpp.string cimport string
 from libcpp.utility cimport pair
 
 from libmata.utils cimport CSparseSet, COrdVector, CBoolVector, CBinaryRelation, CPairHash
-from libmata.alphabets cimport CAlphabet, CConstAlphabet, CAlphabetLevels, Symbol, Level
+from libmata.alphabets cimport CAlphabet, CConstAlphabet, CAlphabetLevels, CLazyWordGenerator, Symbol, Level
 
 from libmata.nfa.nfa cimport (
     State, StateSet, StateRenaming, ParameterMap,
@@ -26,6 +26,13 @@ cdef extern from "mata/nft/types.hh" namespace "mata::nft":
         CompositionModeGeneral "mata::nft::CompositionMode::General"
         CompositionModeFastNoJump "mata::nft::CompositionMode::FastNoJump"
         CompositionModeAuto "mata::nft::CompositionMode::Auto"
+
+    cdef enum CCompositionNormalization "mata::nft::CompositionNormalization":
+        CompositionNormalizationNone "mata::nft::CompositionNormalization::None"
+        CompositionNormalizationGeneratedOnly "mata::nft::CompositionNormalization::GeneratedOnly"
+        CompositionNormalizationFull "mata::nft::CompositionNormalization::Full"
+        CompositionNormalizationAuto "mata::nft::CompositionNormalization::Auto"
+        CompositionNormalizationTrim "mata::nft::CompositionNormalization::Trim"
 
     cdef const Symbol CNFT_EPSILON "mata::nft::EPSILON"
     cdef const Symbol CDONT_CARE "mata::nft::DONT_CARE"
@@ -188,7 +195,8 @@ cdef extern from "mata/nft/nft.hh" namespace "mata::nft":
         CNft&, CNft&, umap[pair[State, State], State, CPairHash[State, State]]*, CJumpMode, State, State
     ) except +
     cdef CNft c_compose "mata::nft::compose" (
-        CNft&, CNft&, COrdVector[Level]&, COrdVector[Level]&, bool, CJumpMode, CCompositionMode
+        CNft&, CNft&, COrdVector[Level]&, COrdVector[Level]&, bool, CJumpMode, CCompositionMode,
+        CCompositionNormalization
     ) except +
     cdef shared_ptr[CAlphabetLevels] c_compose_alphabets "mata::nft::compose_alphabets" (
         CNft&, CNft&, COrdVector[Level]&, COrdVector[Level]&, bool
@@ -226,21 +234,24 @@ cdef extern from "mata/nft/nft.hh" namespace "mata::nft":
     cdef bool c_has_epsilon_cycle "mata::nft::has_epsilon_cycle" (CNft&)
 
 cdef extern from "mata/nft/algorithms.hh" namespace "mata::nft::algorithms":
-    cdef CBinaryRelation& c_nft_compute_relation "mata::nft::algorithms::compute_relation" (CNft&, ParameterMap&)
+    cdef CBinaryRelation c_nft_compute_relation "mata::nft::algorithms::compute_relation" (CNft&, ParameterMap&) except +
 
 cdef extern from "mata/nft/plumbing.hh" namespace "mata::nft::plumbing":
-    cdef void c_nft_union_nondet "mata::nft::plumbing::union_nondet" (CNft*, CNft&, CNft&)
+    cdef void c_nft_union_nondet "mata::nft::plumbing::union_nondet" (CNft*, CNft&, CNft&) except +
     cdef void c_nft_intersection "mata::nft::plumbing::intersection" (
         CNft*, CNft&, CNft&, umap[pair[State, State], State, CPairHash[State, State]]*, CJumpMode, State, State
-    )
+    ) except +
     cdef void c_nft_concatenate "mata::nft::plumbing::concatenate" (
         CNft*, CNft&, CNft&, bool, StateRenaming*, StateRenaming*
-    )
+    ) except +
     cdef void c_nft_complement "mata::nft::plumbing::complement" (CNft*, CNft&, CAlphabet&, ParameterMap&) except +
-    cdef void c_nft_determinize "mata::nft::plumbing::determinize" (CNft*, CNft&, umap[StateSet, State]*)
-    cdef void c_nft_reduce "mata::nft::plumbing::reduce" (CNft*, CNft&, StateRenaming*, ParameterMap&)
-    cdef void c_nft_revert "mata::nft::plumbing::revert" (CNft*, CNft&)
+    cdef void c_nft_determinize "mata::nft::plumbing::determinize" (CNft*, CNft&, umap[StateSet, State]*) except +
+    cdef void c_nft_reduce "mata::nft::plumbing::reduce" (CNft*, CNft&, StateRenaming*, ParameterMap&) except +
+    cdef void c_nft_revert "mata::nft::plumbing::revert" (CNft*, CNft&) except +
     cdef void c_nft_remove_epsilon "mata::nft::plumbing::remove_epsilon" (CNft*, CNft&, Symbol) except +
+    cdef CLazyWordGenerator* c_nft_get_words_lazy_ptr "mata::nft::plumbing::get_words_lazy_ptr" (
+        CNft&, size_t, CJumpMode
+    ) except +
 
 cdef extern from "mata/nft/builder.hh" namespace "mata::nft::builder":
     cdef CNft c_create_single_word_nft "mata::nft::builder::create_single_word_nft" (vector[Symbol]&) except +

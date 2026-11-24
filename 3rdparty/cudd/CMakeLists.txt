@@ -142,6 +142,14 @@ target_include_directories(cudd_headers
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
 )
+target_sources(cudd_headers
+    INTERFACE
+        FILE_SET HEADERS
+        BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
+        FILES
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/mata/cudd/cudd.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/mata/cudd/cuddObj.hh
+)
 target_link_libraries(cudd PUBLIC cudd_headers)
 
 target_include_directories(cudd

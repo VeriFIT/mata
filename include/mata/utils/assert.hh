@@ -9,7 +9,10 @@
 #define MATA_UTILS_ASSERT_HH
 
 #include <format>
+#include <print>
 
+// Macros, not functions: they stringize the condition, report the call site, and compile out together with their
+//  arguments.
 #ifdef NDEBUG
 	#define MATA_ASSERT(cond, ...) ((void) 0)
 #else
@@ -17,9 +20,9 @@ namespace mata::internal {
 [[noreturn]] inline void
 	assert_fail(const char* expr, const char* file, int line, const char* func, const std::string& msg) {
 	if (msg.empty()) {
-		std::fprintf(stderr, "%s:%d: %s: Assertion '%s' failed.\n", file, line, func, expr);
+		std::println(stderr, "{}:{}: {}: Assertion '{}' failed.", file, line, func, expr);
 	} else {
-		std::fprintf(stderr, "%s:%d: %s: Assertion '%s' failed: %s\n", file, line, func, expr, msg.c_str());
+		std::println(stderr, "{}:{}: {}: Assertion '{}' failed: {}", file, line, func, expr, msg);
 	}
 	std::abort();
 }
@@ -46,5 +49,18 @@ namespace mata::internal {
 					  ));                                                                                              \
 		}
 #endif // NDEBUG
+
+/**
+ * @brief Assert a condition whose check is not constant time, e.g. a scan of a whole container.
+ *
+ * Off by default even in Debug builds; enable with the CMake option @c MATA_EXPENSIVE_ASSERTS, which defines
+ *  the macro of the same name. Without it a Debug lookup keeps the complexity of a Release lookup instead of
+ *  paying an extra linear scan per call.
+ */
+#ifdef MATA_EXPENSIVE_ASSERTS
+	#define MATA_EXPENSIVE_ASSERT(cond, ...) MATA_ASSERT(cond __VA_OPT__(, ) __VA_ARGS__)
+#else
+	#define MATA_EXPENSIVE_ASSERT(cond, ...) ((void) 0)
+#endif
 
 #endif // MATA_UTILS_ASSERT_HH

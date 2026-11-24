@@ -1,0 +1,806 @@
+//! One query over a formula.
+//!
+//! # Steps
+//!
+//! 1. `exec` rewrites the formula into an execution DAG (its docs list the rewrites), builds equal nodes once
+//!    and puts the cheaper operand first. Rewrites do not look into explicit nodes.
+//! 2. `alphabet` groups the tapes into classes that read the same symbols and gives each class its alphabet.
+//! 3. Explicit nodes, children first, are explored completely, numbered densely, trimmed and replaced by the
+//!    leaf they give. The formula keeps that leaf for later queries, keyed by the node and the alphabets below
+//!    it. A node whose exploration passes its `max_states` stays lazy.
+//! 4. The search explores the root's macrostates depth first (breadth first for the fewest steps) until one
+//!    accepts, and returns the path to it. Under a length bound it expands no macrostate reached in that many
+//!    steps, and expands one again when it reaches it in fewer steps than before.
+//!
+//! | Node | Macrostate | Accepting | Successors |
+//! |---|---|---|---|
+//! | leaf, explicit | a state | final | its moves |
+//! | union (n-ary) | (branch, state) | that state | the branch's moves |
+//! | intersection, sync product, diagonal | (state, state) | both | pairs of moves whose tuples merge, once each when the product drops tapes |
+//! | complement | a minimized set of child states | no member | one move per tuple of the alphabets |
+//! | identity, projection | the child's | the child's | the child's moves, relabelled |
+//! | prefix closure | the child's | it reaches an accepting one (`prefixes`) | the child's moves |
+//!
+//! # Successors
+//!
+//! The successors of a macrostate (its post) are built from the children's posts when first needed (`post`)
+//! and cached per node, except for identities and along the root. A product joins each left move with the
+//! right moves that agree on the synchronized tapes. The post of a complement is a table of all tuples in a
+//! fixed order, so the matching moves follow from the letters. A sync product that drops its only synchronized
+//! pair, as in a composition or an image, joins groups of moves instead (`join`). A complement over at most 256
+//! child states builds its posts from bitset rows (`dense`). Every path gives the same posts and the same
+//! macrostate numbers.
+//!
+//! # Subsumption
+//!
+//! `s ⊑ t` implies that `s` accepts a subset of what `t` accepts (`subsumption`). Leaves use their maximal
+//! direct simulation (the `simulation` module), products compare componentwise, and complement sets
+//! `S ⊑ T` when every member of `T` is below a member of `S`. Complement sets drop the members below another
+//! member. Each node keeps the results it computed (`memo`), except a complement over a leaf, which compares
+//! sets through the closures of the transposed simulation (`closure`). The root keeps an antichain of the
+//! macrostates explored, grouped by the shape of the root so that a new macrostate is compared only with those
+//! it can be below.
+//!
+//! # Initial macrostates
+//!
+//! Intersected unions multiply their initial macrostates (`initial`). A node with at most 2¹⁶ lists them, and
+//! one with more numbers them on demand in the same order. The search then takes them one at a time, which can
+//! change the witness and the statistics but not the answer.
+//!
+//! # Memory and limits
+//!
+//! Most of the memory is cached posts. A post stores its tuples flat and each target as a `u32` with the
+//! accepting flag in the top bit, and the posts of one complement share their tuple table. Under a cache budget
+//! the query drops posts by GreedyDual-Size with frequency (`cache`) and computes them again when needed.
+//! `budget` counts macrostates and steps against the query's limits.
+//!
+//! Intersections stay binary, so `¬(A₁ ∪ … ∪ Aₙ)` builds quadratically many pair macrostates.
+
+mod alphabet;
+mod budget;
+mod cache;
+mod closure;
+mod dense;
+mod exec;
+mod initial;
+mod join;
+mod memo;
+mod pad;
+mod post;
+mod prefixes;
+mod store;
+mod subsumption;
+
+use std::collections::VecDeque;
+use std::collections::hash_map::Entry;
+use std::rc::Rc;
+use std::sync::Arc;
+
+use indexmap::IndexSet;
+use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
+use typed_index_collections::TiVec;
+
+use self::alphabet::Alphabets;
+use self::budget::{Budget, Limit};
+use self::cache::CacheBudget;
+use self::dense::Dense;
+use self::exec::{Exec, LeafRef, Op};
+use self::initial::{INITIAL_BATCH, batches};
+use self::join::{JoinPlan, Scratch};
+use self::post::{JoinBuffers, Post, Table, Target};
+use self::store::Store;
+use self::subsumption::{Antichain, Subsumption};
+use crate::formula::Formula;
+use crate::ids::{ExecId, Id, NodeId, StateId};
+use crate::leaf::{Leaf, Raw};
+use crate::options::{ExplicitOptions, Materialized, NodeStats, Stats, Tapes};
+use crate::plan::Annotations;
+use crate::{Error, Options, Symbol, Witness};
+
+/// Successors, initial macrostates and subsumption recurse once per level of the DAG; the stack grows by
+/// this much whenever less than [`RED_ZONE`] is left.
+const STACK_GROWTH: usize = 1 << 20;
+const RED_ZONE: usize = 64 << 10;
+
+fn deep<T>(work: impl FnOnce() -> T) -> T {
+	stacker::maybe_grow(RED_ZONE, STACK_GROWTH, work)
+}
+
+/// An explored node, or the number of macrostates at which it passed its budget.
+enum Explored {
+	Done(Raw),
+	OverBudget(usize),
+}
+
+/// What the automaton of an explicit node depends on, which is the alphabet of every tape below it and the keys
+/// of the explicit nodes below it.
+#[derive(Debug, PartialEq, Eq, Hash)]
+struct Signature {
+	/// The distinct alphabets, in the order the tapes first reach them.
+	universes: Vec<Box<[Symbol]>>,
+	/// The tapes and the explicit nodes below, in an order that only the subterm decides.
+	items: Vec<Item>,
+}
+
+/// One entry of a [`Signature`].
+#[derive(Debug, PartialEq, Eq, Hash)]
+enum Item {
+	/// A tape, by the index of its alphabet.
+	Tape(u32),
+	/// An explicit node below, by the number of its key, so that its own tapes are not copied again.
+	Explicit(u64),
+}
+
+/// The automata of the explicit nodes of a formula, kept for later queries.
+#[derive(Debug, Default)]
+pub(crate) struct ExplicitCache {
+	/// The number of every key, by which the keys of the explicit nodes above refer to it.
+	numbers: FxHashMap<(NodeId, Signature), u64>,
+	/// The automata built, by key number.
+	leaves: FxHashMap<u64, Arc<Leaf>>,
+	/// The next number. Clearing the cache does not reuse numbers, so a query running meanwhile cannot mix keys.
+	next: u64,
+}
+
+impl ExplicitCache {
+	/// The number of `key`, given now if the key is new.
+	fn number(&mut self, key: (NodeId, Signature)) -> u64 {
+		match self.numbers.entry(key) {
+			Entry::Occupied(entry) => *entry.get(),
+			Entry::Vacant(entry) => {
+				self.next += 1;
+
+				*entry.insert(self.next - 1)
+			}
+		}
+	}
+
+	pub(crate) fn clear(&mut self) {
+		self.numbers.clear();
+		self.leaves.clear();
+	}
+}
+
+/// How the search reached a macrostate, from `parent` by the tuple at `offset` in its tuple buffer.
+#[derive(Clone, Copy, Debug)]
+struct Step {
+	parent: StateId,
+	offset: usize,
+}
+
+/// How the search last reached a macrostate: in `depth` steps, by `step` unless it is initial.
+#[derive(Clone, Copy, Debug)]
+struct Reached {
+	step: Option<Step>,
+	depth: usize,
+}
+
+/// The state of the search of the root.
+#[derive(Debug)]
+struct Search<'f> {
+	antichain: Option<Antichain<'f>>,
+	reached: FxHashMap<StateId, Reached>,
+	/// The tuples of the steps, `arity` symbols each.
+	tuples: Vec<Symbol>,
+	/// The macrostates to expand and the steps that reached them; a stack, or a queue breadth first.
+	work: VecDeque<(StateId, usize)>,
+	/// Whether a macrostate was left unexpanded at the length bound.
+	bounded: bool,
+}
+
+#[derive(Debug)]
+pub(crate) struct Engine<'f> {
+	formula: &'f Formula,
+	exec: Exec<'f>,
+	alphabets: Alphabets,
+	stores: TiVec<ExecId, Store>,
+	posts: TiVec<ExecId, Vec<Option<Rc<Post>>>>,
+	/// The root and the nodes sharing its macrostates expand each macrostate once, so they keep no posts, down to a
+	/// prefix closure, which searches its child. An identity relabels its child's post, which is kept, as a copy
+	/// would double it.
+	cached: TiVec<ExecId, bool>,
+	/// The tuples of the posts of each complement node, and of each identity of one.
+	tables: TiVec<ExecId, Option<Rc<Table>>>,
+	cache_budget: Option<CacheBudget>,
+	/// The time spent computing the children's posts of the post being computed, under a cache budget.
+	nested_nanos: u64,
+	/// The number of initial macrostates of each node, once counted.
+	initial_counts: TiVec<ExecId, Option<usize>>,
+	/// The initial macrostates of the nodes that list them.
+	initials: TiVec<ExecId, Option<Rc<[Target]>>>,
+	/// Where each branch's initial macrostates start, for the unions numbered on demand.
+	union_starts: TiVec<ExecId, Option<Rc<[usize]>>>,
+	/// Per node, whether one of its initial macrostates accepts, once asked.
+	accepting_initials: TiVec<ExecId, Option<bool>>,
+	/// Per prefix closure, whether the macrostates of its child it asked about reach an accepting one.
+	live: TiVec<ExecId, FxHashMap<StateId, bool>>,
+	/// What each product's join may skip.
+	plans: TiVec<ExecId, JoinPlan>,
+	join_scratch: Scratch,
+	join_buffers: JoinBuffers,
+	subsumption: Subsumption,
+	/// Whether the search keeps an antichain of the root's macrostates.
+	antichain: bool,
+	/// The most steps of a witness.
+	max_length: Option<usize>,
+	/// Whether the search goes breadth first, for a witness of the fewest steps.
+	shortest: bool,
+	/// Whether the posts of each complement node use bitsets over its child's states.
+	dense: TiVec<ExecId, Option<Box<Dense>>>,
+	/// The steps and reachability that each pad closure remembers.
+	pad_steps: TiVec<ExecId, pad::PadSteps>,
+	budget: Budget,
+	stats: Stats,
+	/// The posts computed per node, for [`NodeStats`].
+	post_counts: TiVec<ExecId, usize>,
+}
+
+impl<'f> Engine<'f> {
+	/// Prepares the query of `root` and builds its explicit nodes.
+	pub(crate) fn new(
+		formula: &'f Formula,
+		root: NodeId,
+		options: &Options,
+	) -> Result<Engine<'f>, Error> {
+		let budget = Budget::new(options);
+		let annotations = Annotations::new(formula, options)?;
+		let exec = exec::build(formula, root, &annotations);
+		let alphabets = Alphabets::new(&exec, &root_symbols(options, exec.nodes[exec.root].arity)?);
+
+		for (id, node) in exec.nodes.iter_enumerated() {
+			if matches!(node.op, Op::Complement(_))
+				&& exec.reachable[id]
+				&& alphabets.tuple_count(id).is_none()
+			{
+				return Err(Error::ComplementTooLarge { arity: node.arity });
+			}
+		}
+
+		let num_nodes = exec.nodes.len();
+		let stores = exec
+			.nodes
+			.iter()
+			.map(|node| match node.op {
+				Op::Union(_) | Op::PadClosure(..) => Store::Tagged(IndexSet::default()),
+				Op::Intersection(..) | Op::Sync(..) | Op::Diagonal(..) => {
+					Store::Pair(IndexSet::default())
+				}
+				Op::Complement(_) => Store::Set(IndexSet::default()),
+				_ => Store::None,
+			})
+			.collect();
+		let mut cached: TiVec<ExecId, bool> = exec
+			.nodes
+			.iter()
+			.map(|node| !matches!(node.op, Op::Identity(_)))
+			.collect();
+		for node in exec.sharing(exec.root) {
+			cached[node] = false;
+			if matches!(exec.nodes[node].op, Op::Prefixes(_)) {
+				break;
+			}
+		}
+
+		let plans = join::plans(&exec);
+		let dense = exec
+			.nodes
+			.iter()
+			.map(|node| matches!(node.op, Op::Complement(_)).then(Box::default))
+			.collect();
+
+		let mut engine = Engine {
+			formula,
+			exec,
+			alphabets,
+			stores,
+			posts: vec![Vec::new(); num_nodes].into(),
+			cached,
+			tables: vec![None; num_nodes].into(),
+			// Rows of dense complements are keyed after the nodes.
+			cache_budget: options
+				.cache_budget
+				.map(|limit| CacheBudget::new(limit, 2 * num_nodes)),
+			nested_nanos: 0,
+			initial_counts: vec![None; num_nodes].into(),
+			initials: vec![None; num_nodes].into(),
+			union_starts: vec![None; num_nodes].into(),
+			accepting_initials: vec![None; num_nodes].into(),
+			live: vec![FxHashMap::default(); num_nodes].into(),
+			plans,
+			join_scratch: Scratch::default(),
+			join_buffers: JoinBuffers::default(),
+			subsumption: Subsumption::new(options.subsumption, num_nodes, budget.deadline()),
+			antichain: options.subsumption && options.antichain,
+			max_length: options.max_length,
+			shortest: options.shortest,
+			dense,
+			pad_steps: (0..num_nodes).map(|_| pad::PadSteps::default()).collect(),
+			budget,
+			stats: Stats::default(),
+			post_counts: vec![0; num_nodes].into(),
+		};
+
+		engine
+			.materialize_explicit()
+			.map_err(|limit| engine.limit_error(limit))?;
+
+		Ok(engine)
+	}
+
+	/// Builds every explicit node, children first.
+	fn materialize_explicit(&mut self) -> Result<(), Limit> {
+		let mut numbers: FxHashMap<ExecId, u64> = FxHashMap::default();
+		for node in self.exec.nodes.keys() {
+			if let Op::Explicit {
+				child,
+				options,
+				origin,
+			} = self.exec.nodes[node].op
+				&& self.exec.reachable[node]
+			{
+				let key = (origin, self.signature(node, &numbers));
+				let number = self.formula.explicit_cache.lock().number(key);
+				numbers.insert(node, number);
+				self.materialize_node(node, child, options, origin, number)?;
+			}
+		}
+
+		Ok(())
+	}
+
+	/// Replaces the explicit `node` by its automaton, or by its child once the exploration passes its budget.
+	fn materialize_node(
+		&mut self,
+		node: ExecId,
+		child: ExecId,
+		options: ExplicitOptions,
+		origin: NodeId,
+		number: u64,
+	) -> Result<(), Limit> {
+		let term = self.formula.term(origin);
+		// Looked up before the match, whose scrutinee would hold the lock through the insert.
+		let hit = self
+			.formula
+			.explicit_cache
+			.lock()
+			.leaves
+			.get(&number)
+			.cloned();
+
+		let (leaf, cached) = match hit {
+			Some(leaf) => (leaf, true),
+			None => match self.explore(child, options.max_states)? {
+				Explored::Done(raw) => {
+					let leaf = Arc::new(Leaf::build(&raw, Vec::new()));
+					self.formula
+						.explicit_cache
+						.lock()
+						.leaves
+						.insert(number, Arc::clone(&leaf));
+
+					(leaf, false)
+				}
+				Explored::OverBudget(states) => {
+					self.stats.explicit.push(Materialized {
+						term,
+						states,
+						transitions: 0,
+						cached: false,
+						lazy: true,
+					});
+					self.exec.nodes[node].op = Op::Transparent(child);
+
+					return Ok(());
+				}
+			},
+		};
+
+		self.stats.explicit.push(Materialized {
+			term,
+			states: leaf.num_states(),
+			transitions: leaf.num_moves(),
+			cached,
+			lazy: false,
+		});
+		self.exec.nodes[node].op = Op::Leaf(LeafRef::Shared(leaf));
+
+		Ok(())
+	}
+
+	/// The alphabets that the language of the explicit `node` depends on, tape by tape.
+	fn signature(&self, node: ExecId, numbers: &FxHashMap<ExecId, u64>) -> Signature {
+		let mut signature = Signature {
+			universes: Vec::new(),
+			items: Vec::new(),
+		};
+		let mut positions: FxHashMap<usize, u32> = FxHashMap::default();
+		let mut seen: FxHashSet<ExecId> = FxHashSet::default();
+		let mut stack = vec![node];
+		while let Some(below) = stack.pop() {
+			if !seen.insert(below) {
+				continue;
+			}
+
+			// An explicit node below, keyed before, stands for its own subterm.
+			if let Some(&number) = numbers.get(&below) {
+				signature.items.push(Item::Explicit(number));
+
+				continue;
+			}
+
+			for tape in 0..self.exec.nodes[below].arity {
+				let class = self.alphabets.class(below, tape);
+				let position = match positions.entry(class) {
+					Entry::Occupied(entry) => *entry.get(),
+					Entry::Vacant(entry) => {
+						let position = u32::try_from(signature.universes.len())
+							.expect("fewer than 2^32 alphabets");
+						signature
+							.universes
+							.push(self.alphabets.class_universe(class).into());
+
+						*entry.insert(position)
+					}
+				};
+
+				signature.items.push(Item::Tape(position));
+			}
+
+			stack.extend(self.exec.nodes[below].op.children());
+		}
+
+		signature
+	}
+
+	/// Visits every macrostate of `node` reachable from its initial ones.
+	fn explore(&mut self, node: ExecId, max_states: Option<usize>) -> Result<Explored, Limit> {
+		fn intern(
+			ids: &mut IndexSet<StateId, FxBuildHasher>,
+			raw: &mut Raw,
+			target: Target,
+		) -> StateId {
+			let (index, new) = ids.insert_full(target.state);
+			if new {
+				raw.finals.push(target.accepting);
+			}
+
+			StateId::new(index)
+		}
+
+		let mut ids = IndexSet::default();
+		let mut raw = Raw::new(self.exec.nodes[node].arity);
+		// The initial macrostates in batches, so that the node's budget stops a node with very many.
+		for batch in batches(0..self.initial_count(node), INITIAL_BATCH) {
+			if max_states.is_some_and(|max| ids.len() > max) {
+				return Ok(Explored::OverBudget(ids.len()));
+			}
+
+			for index in batch {
+				let target = self.initial_at(node, index)?;
+				let state = intern(&mut ids, &mut raw, target);
+				raw.initial.push(state);
+			}
+		}
+
+		let mut next = 0;
+		while next < ids.len() {
+			if max_states.is_some_and(|max| ids.len() > max) {
+				return Ok(Explored::OverBudget(ids.len()));
+			}
+
+			self.budget.step(0);
+			self.stopped()?;
+
+			let source = StateId::new(next);
+			let post = self.post(node, ids[next])?;
+			for (tuple, target) in post.iter() {
+				let state = intern(&mut ids, &mut raw, target);
+				raw.push(source, tuple, state);
+			}
+
+			next += 1;
+		}
+
+		Ok(Explored::Done(raw))
+	}
+
+	/// Searches the root for an accepting macrostate, skipping subsumed macrostates; returns the witness, or `None`
+	/// and whether a macrostate was left unexpanded at the length bound.
+	pub(crate) fn search(&mut self) -> Result<(Option<Witness>, bool), Error> {
+		self.find_accepting()
+			.map_err(|limit| self.limit_error(limit))
+	}
+
+	fn find_accepting(&mut self) -> Result<(Option<Witness>, bool), Limit> {
+		let root = self.exec.root;
+		let arity = self.exec.nodes[root].arity;
+		// Under a bound or for the fewest steps, a macrostate is only below one reached in at most as many steps.
+		let by_depth = self.max_length.is_some() || self.shortest;
+		let mut search = Search {
+			antichain: self.antichain.then(|| Antichain::new(&self.exec, by_depth)),
+			reached: FxHashMap::default(),
+			tuples: Vec::new(),
+			work: VecDeque::new(),
+			bounded: false,
+		};
+
+		// An accepting initial macrostate gives the witness ε; with more than are listed, it is asked for first.
+		if !self.is_listed(root) && self.has_accepting_initial(root)? {
+			return Ok((Some(Witness::new(arity, Vec::new())), false));
+		}
+
+		// The initial macrostates in batches, each searched depth first before the next is numbered; breadth first,
+		// they all start the first level.
+		for batch in self.search_order(root) {
+			for index in batch {
+				let target = self.initial_at(root, index)?;
+				if target.accepting {
+					return Ok((Some(Witness::new(arity, Vec::new())), false));
+				}
+
+				let initial = Reached {
+					step: None,
+					depth: 0,
+				};
+				match search.reached.entry(target.state) {
+					Entry::Vacant(entry) => {
+						entry.insert(initial);
+					}
+					// Reached from an earlier batch, in more steps.
+					Entry::Occupied(mut entry)
+						if self.max_length.is_some() && entry.get().depth > 0 =>
+					{
+						entry.insert(initial);
+					}
+					Entry::Occupied(_) => continue,
+				}
+
+				self.enqueue(&mut search, target.state, 0);
+				self.stopped()?;
+			}
+
+			if !self.shortest
+				&& let Some(witness) = self.expand(&mut search)?
+			{
+				return Ok((Some(witness), false));
+			}
+		}
+
+		let witness = self.expand(&mut search)?;
+		let bounded = witness.is_none() && search.bounded;
+
+		Ok((witness, bounded))
+	}
+
+	/// Expands the macrostates of the search's work until one has an accepting successor, which gives the witness.
+	fn expand(&mut self, search: &mut Search<'f>) -> Result<Option<Witness>, Limit> {
+		let root = self.exec.root;
+		loop {
+			let next = if self.shortest {
+				search.work.pop_front()
+			} else {
+				search.work.pop_back()
+			};
+			let Some((state, depth)) = next else {
+				return Ok(None);
+			};
+
+			// Reached again in fewer steps since it was pushed, or dropped from the antichain.
+			if search.reached[&state].depth < depth
+				|| search
+					.antichain
+					.as_ref()
+					.is_some_and(|antichain| antichain.is_pruned(state))
+			{
+				continue;
+			}
+
+			if self
+				.max_length
+				.is_some_and(|max_length| depth >= max_length)
+			{
+				search.bounded = true;
+				continue;
+			}
+
+			self.budget.step(0);
+			self.stopped()?;
+
+			let post = self.post(root, state)?;
+			self.stats.explored += 1;
+			for (tuple, target) in post.iter() {
+				if target.accepting {
+					return Ok(Some(self.witness(
+						&search.reached,
+						&search.tuples,
+						state,
+						tuple,
+					)));
+				}
+
+				let reached = Reached {
+					step: Some(Step {
+						parent: state,
+						offset: search.tuples.len(),
+					}),
+					depth: depth + 1,
+				};
+				match search.reached.entry(target.state) {
+					Entry::Vacant(entry) => {
+						entry.insert(reached);
+					}
+					// Depth first under a bound, a macrostate reached in fewer steps is expanded again, as more of its
+					// successors are within the bound. Breadth first, the first steps are the fewest.
+					Entry::Occupied(mut entry)
+						if self.max_length.is_some() && entry.get().depth > depth + 1 =>
+					{
+						entry.insert(reached);
+					}
+					Entry::Occupied(_) => continue,
+				}
+
+				search.tuples.extend_from_slice(tuple);
+				self.enqueue(search, target.state, depth + 1);
+				self.stopped()?;
+			}
+		}
+	}
+
+	/// Adds `state`, reached in `depth` steps, to the search's work unless the antichain prunes it.
+	fn enqueue(&mut self, search: &mut Search<'f>, state: StateId, depth: usize) {
+		let added = match &mut search.antichain {
+			Some(antichain) => {
+				self.budget.step(0);
+
+				antichain.insert(
+					&self.exec,
+					&self.stores,
+					&mut self.subsumption,
+					state,
+					depth,
+				)
+			}
+			None => true,
+		};
+
+		if added {
+			search.work.push_back((state, depth));
+		} else {
+			self.stats.pruned += 1;
+		}
+	}
+
+	/// The word to `state` and then `last`, with each wildcard as the first symbol of its tape.
+	fn witness(
+		&self,
+		reached: &FxHashMap<StateId, Reached>,
+		tuples: &[Symbol],
+		mut state: StateId,
+		last: &[Symbol],
+	) -> Witness {
+		let root = self.exec.root;
+		let arity = self.exec.nodes[root].arity;
+		let mut steps = vec![last];
+		// Each step leads to a macrostate reached in more steps than its parent, so the walk ends.
+		while let Some(&Reached {
+			step: Some(Step { parent, offset }),
+			..
+		}) = reached.get(&state)
+		{
+			steps.push(&tuples[offset..offset + arity]);
+			state = parent;
+		}
+
+		let symbols = steps
+			.into_iter()
+			.rev()
+			.flat_map(|step| step.iter().enumerate())
+			.map(|(tape, &symbol)| {
+				if symbol == Symbol::ANY {
+					let universe = self.alphabets.universe(root, tape);
+
+					universe.first().copied().unwrap_or(Symbol::ANY)
+				} else {
+					symbol
+				}
+			})
+			.collect();
+
+		Witness::new(arity, symbols)
+	}
+
+	/// Builds the root as an explicit automaton, over the alphabets of its tapes.
+	pub(crate) fn materialize_root(&mut self) -> Result<Leaf, Error> {
+		let explored = self
+			.explore(self.exec.root, None)
+			.map_err(|limit| self.limit_error(limit))?;
+		let Explored::Done(raw) = explored else {
+			unreachable!("exploration without a state budget finishes")
+		};
+
+		let root = self.exec.root;
+		let alphabets = (0..self.exec.nodes[root].arity)
+			.map(|tape| self.alphabets.universe(root, tape).to_vec())
+			.collect();
+
+		Ok(Leaf::build(&raw, alphabets))
+	}
+
+	/// The limit that the query passed, if it did. The posts and initial macrostates computed since may then
+	/// be partial, and the query stops.
+	fn stopped(&self) -> Result<(), Limit> {
+		if self.subsumption.is_late() {
+			return Err(Limit::Time);
+		}
+
+		self.budget.check()
+	}
+
+	/// The error of passing `limit`, with the statistics so far.
+	fn limit_error(&self, limit: Limit) -> Error {
+		let stats = Box::new(self.stats());
+
+		match limit {
+			Limit::States => Error::StateLimit {
+				max_states: self.budget.max_states.expect("only a state limit passes"),
+				stats,
+			},
+			Limit::Time => Error::TimeLimit {
+				limit: self.budget.time_limit().expect("only a time limit passes"),
+				stats,
+			},
+		}
+	}
+
+	pub(crate) fn stats(&self) -> Stats {
+		let nodes = self
+			.exec
+			.sources
+			.iter()
+			.map(|&(node, id)| {
+				let mut counted = id;
+				while let Op::Transparent(child) = self.exec.nodes[counted].op {
+					counted = child;
+				}
+
+				NodeStats {
+					term: self.formula.term(node),
+					macrostates: self.stores[self.exec.owner(id)].len(),
+					posts: self.post_counts[counted],
+				}
+			})
+			.collect();
+
+		Stats {
+			macrostates: self.stores.iter().map(Store::len).sum(),
+			dropped: self
+				.cache_budget
+				.as_ref()
+				.map_or(0, |budget| budget.dropped),
+			nodes,
+			..self.stats.clone()
+		}
+	}
+}
+
+/// The query's extra symbols of each tape of the root, whose arity is `arity`.
+fn root_symbols(options: &Options, arity: usize) -> Result<Vec<Vec<Symbol>>, Error> {
+	let mut root_symbols = vec![Vec::new(); arity];
+	for extra in &options.alphabets {
+		if let Some(&symbol) = extra.symbols.iter().find(|symbol| !symbol.is_concrete()) {
+			return Err(Error::ReservedSymbol { symbol });
+		}
+
+		let tapes = match extra.tapes {
+			Tapes::One(tape) if tape >= arity => return Err(Error::TapeOutOfRange { tape, arity }),
+			Tapes::One(tape) => tape..tape + 1,
+			Tapes::Every => 0..arity,
+		};
+
+		for tape in tapes {
+			root_symbols[tape].extend_from_slice(&extra.symbols);
+		}
+	}
+
+	Ok(root_symbols)
+}

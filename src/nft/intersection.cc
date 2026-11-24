@@ -7,8 +7,13 @@
 #include "mata/utils/assert.hh"
 #include "mata/utils/two-dimensional-map.hh"
 
+#include <algorithm>
 #include <fstream>
 #include <functional>
+#include <span>
+#include <stdexcept>
+#include <string>
+#include <vector>
 
 using namespace mata::nft;
 
@@ -29,21 +34,66 @@ Nft intersection(
 		return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);
 	};
 
-	if (lhs.final.empty() || lhs.initial.empty() || rhs.initial.empty() || rhs.final.empty()) { return Nft{}; }
+	if (lhs.levels.num_of_levels != rhs.levels.num_of_levels) {
+		throw std::invalid_argument{
+			"Cannot intersect NFTs with different numbers of levels: " + std::to_string(lhs.levels.num_of_levels) +
+			" != " + std::to_string(rhs.levels.num_of_levels) + "."
+		};
+	}
+	if (lhs.final.empty() || lhs.initial.empty() || rhs.initial.empty() || rhs.final.empty()) {
+		return Nft::with_levels(lhs.levels.num_of_levels);
+	}
 
 	return algorithms::product(lhs, rhs, both_final, prod_map, jump_mode, lhs_first_aux_state, rhs_first_aux_state);
 }
+
+static Nft product_impl(
+	const Nft& lhs,
+	const Nft& rhs,
+	const std::function<bool(State, State)>& final_condition,
+	ProductMap* product_map,
+	JumpMode jump_mode,
+	State lhs_first_aux_state,
+	State rhs_first_aux_state,
+	bool dont_care_matches_epsilon
+);
 
 // TODO: move this method to nft.hh? It is something one might want to use (e.g. for union, inclusion, equivalence of
 // DFAs).
 Nft mata::nft::algorithms::product(
 	const Nft& lhs,
 	const Nft& rhs,
-	const std::function<bool(State, State)>&& final_condition,
+	const std::function<bool(State, State)>& final_condition,
 	ProductMap* product_map,
 	const JumpMode jump_mode,
 	const State lhs_first_aux_state,
 	const State rhs_first_aux_state
+) {
+	return product_impl(
+		lhs, rhs, final_condition, product_map, jump_mode, lhs_first_aux_state, rhs_first_aux_state, false
+	);
+}
+
+Nft mata::nft::algorithms::composition_product(
+	const Nft& lhs,
+	const Nft& rhs,
+	const std::function<bool(State, State)>& final_condition,
+	const JumpMode jump_mode,
+	const State lhs_first_aux_state,
+	const State rhs_first_aux_state
+) {
+	return product_impl(lhs, rhs, final_condition, nullptr, jump_mode, lhs_first_aux_state, rhs_first_aux_state, true);
+}
+
+static Nft product_impl(
+	const Nft& lhs,
+	const Nft& rhs,
+	const std::function<bool(State, State)>& final_condition,
+	ProductMap* product_map,
+	const JumpMode jump_mode,
+	const State lhs_first_aux_state,
+	const State rhs_first_aux_state,
+	const bool dont_care_matches_epsilon
 ) {
 	MATA_ASSERT(lhs.levels.num_of_levels == rhs.levels.num_of_levels);
 
@@ -51,15 +101,19 @@ Nft mata::nft::algorithms::product(
 	product.levels.num_of_levels = lhs.levels.num_of_levels;
 	utils::TwoDimensionalMap<State> product_storage{lhs.num_of_states(), rhs.num_of_states()};
 	std::deque<State> worklist{}; // Set of product states to process.
+	// Targets of the symbol post being built, unsorted and possibly repeated. One buffer serves every symbol post: it
+	//  grows only with the targets actually appended, and each post receives an exact-size copy. Reserving |T1|*|T2|
+	//  per post instead would keep that capacity in the product even when the jump modes skip or merge most pairs.
+	std::vector<State> product_targets{};
 
 	/**
-	 * Create product state if it does not exist in storage yet and fill in its symbol_post from lhs and rhs targets.
+	 * Create product state if it does not exist in storage yet and append it to @c product_targets.
 	 * @param[in] lhs_target Target state in NFT @c lhs.
 	 * @param[in] rhs_target Target state in NFT @c rhs.
-	 * @param[out] product_symbol_post New SymbolPost of the product state.
 	 */
-	auto create_product_state_and_symbol_post = [&](const State lhs_target, const State rhs_target,
-													SymbolPost& product_symbol_post) {
+	auto create_product_state_and_symbol_post = [&] [[gnu::always_inline]] (
+													const State lhs_target, const State rhs_target
+												) {
 		// Two auxiliary states can not create a product state.
 		if (lhs_first_aux_state <= lhs_target && rhs_first_aux_state <= rhs_target) { return; }
 		State product_target = product_storage.get(lhs_target, rhs_target);
@@ -78,8 +132,9 @@ Nft mata::nft::algorithms::product(
 
 			if (final_condition(lhs_target, rhs_target)) { product.final.insert(product_target); }
 		}
-		// TODO: Push_back all of them and sort at the could be faster.
-		product_symbol_post.insert(product_target);
+		// The caller sorts @c product_targets once the symbol post is complete: inserting the targets in a sorted order
+		//  here would shift O(|targets|) elements per target, since the ids do not arrive in an increasing order.
+		product_targets.push_back(product_target);
 	};
 
 	// If DONT_CARE is not present in the given dont_care_state_post, no action is taken.
@@ -94,7 +149,8 @@ Nft mata::nft::algorithms::product(
 		const auto dont_care_symbol_post_it = dont_care_state_post.find(DONT_CARE);
 		if (dont_care_symbol_post_it == dont_care_state_post.end()) { return; }
 		for (const auto& specific_symbol_post : specific_state_post) {
-			SymbolPost product_symbol_post{specific_symbol_post.symbol};
+			if (!dont_care_matches_epsilon && specific_symbol_post.symbol == EPSILON) { continue; }
+			product_targets.clear();
 			for (const State dont_care_target : dont_care_symbol_post_it->targets) {
 				const Level dont_care_target_level =
 					dont_care_on_lhs ? lhs.levels[dont_care_target] : rhs.levels[dont_care_target];
@@ -119,7 +175,8 @@ Nft mata::nft::algorithms::product(
 
 					// If jump_mode is AppendDONT_CAREs, we should wait in the deeper state.
 					// If jump_mode is RepeatSymbol, we should wait in the source state that has a deeper target.
-					State lhs_target, rhs_target;
+					State lhs_target;
+					State rhs_target;
 					if (dont_care_on_lhs) {
 						lhs_target = (jump_mode == JumpMode::AppendDontCares || targets_are_on_the_same_level ||
 									  specific_target_is_deeper)
@@ -139,13 +196,18 @@ Nft mata::nft::algorithms::product(
 										 ? dont_care_target
 										 : dont_care_src;
 					}
-					create_product_state_and_symbol_post(lhs_target, rhs_target, product_symbol_post);
+					create_product_state_and_symbol_post(lhs_target, rhs_target);
 				}
 			}
-			if (product_symbol_post.empty()) { continue; }
+			// Unlike in the NFA product, a side can wait in its source state, so two combinations of targets can give
+			//  the same product state within one symbol post: deduplicate, do not only sort.
+			utils::sort_and_rmdupl(product_targets);
+			if (product_targets.empty()) { continue; }
 			StatePost& product_state_post{product.delta.mutable_state_post(product_source)};
-			const auto product_state_post_find_it = product_state_post.find(product_symbol_post.symbol);
+			const auto product_state_post_find_it = product_state_post.find(specific_symbol_post.symbol);
 			if (product_state_post_find_it == product_state_post.end()) {
+				// Only a missing symbol pays for the temporary post; on a hit, insert from the span instead.
+				SymbolPost product_symbol_post{specific_symbol_post.symbol, std::span<const State>{product_targets}};
 				if (product_state_post.empty() || product_state_post.back().symbol < product_symbol_post.symbol) {
 					// Optimization: If the new symbol is greater than the last one, we can simply push it back.
 					product_state_post.push_back(std::move(product_symbol_post));
@@ -154,7 +216,15 @@ Nft mata::nft::algorithms::product(
 					product_state_post.insert(std::move(product_symbol_post));
 				}
 			} else {
-				product_state_post_find_it->targets.insert(product_symbol_post.targets);
+				// Every incoming target follows the ones stored so far (they may be older product states read back
+				//  from product_storage, not just newly created ones), so the merge appends them in order. Reserve the
+				//  exact combined size first: SmallOrdVector would otherwise keep doubling the capacity on append.
+				if (product_state_post_find_it->targets.back() < product_targets.front()) {
+					product_state_post_find_it->targets.reserve(
+						product_state_post_find_it->targets.size() + product_targets.size()
+					);
+				}
+				product_state_post_find_it->targets.insert(std::span<const State>{product_targets});
 			}
 		}
 	};
@@ -175,7 +245,7 @@ Nft mata::nft::algorithms::product(
 	}
 
 	while (!worklist.empty()) {
-		State product_source = worklist.back();
+		const State product_source = worklist.back();
 		;
 		worklist.pop_back();
 		const State lhs_source = product_storage.get_first_inverted(product_source);
@@ -187,24 +257,29 @@ Nft mata::nft::algorithms::product(
 										  (lhs_source_level != 0 && rhs_source_level == 0);
 
 		if (sources_are_on_the_same_level || jump_mode != JumpMode::AppendDontCares) {
-			// Compute classic product for current state pair.
-			mata::utils::SynchronizedUniversalIterator<mata::utils::OrdVector<SymbolPost>::const_iterator>
-				sync_iterator(2);
-			mata::utils::push_back(sync_iterator, lhs.delta[lhs_source]);
-			mata::utils::push_back(sync_iterator, rhs.delta[rhs_source]);
-			while (sync_iterator.advance()) {
-				const std::vector<StatePost::const_iterator>& same_symbol_posts{sync_iterator.get_current()};
-				MATA_ASSERT(same_symbol_posts.size() == 2); // One move per state in the pair.
+			// Compute classic product for current state pair. Both state posts are sorted by symbol, so a single
+			//  two-pointer merge finds the symbols they share.
+			const StatePost& lhs_state_post{lhs.delta[lhs_source]};
+			const StatePost& rhs_state_post{rhs.delta[rhs_source]};
+			auto lhs_symbol_post{lhs_state_post.begin()};
+			auto rhs_symbol_post{rhs_state_post.begin()};
+			while (lhs_symbol_post != lhs_state_post.end() && rhs_symbol_post != rhs_state_post.end()) {
+				if (lhs_symbol_post->symbol < rhs_symbol_post->symbol) {
+					++lhs_symbol_post;
+					continue;
+				}
+				if (rhs_symbol_post->symbol < lhs_symbol_post->symbol) {
+					++rhs_symbol_post;
+					continue;
+				}
 
-				// Compute product for state transitions with same symbols.
-				// Find all transitions that have the same symbol for first and the second state in the pair_to_process.
-				// Create transition from the pair_to_process to all pairs between states to which first transition goes
-				//  and states to which second one goes.
-				Symbol symbol = same_symbol_posts[0]->symbol;
-				SymbolPost product_symbol_post{symbol};
-				for (const State lhs_target : same_symbol_posts[0]->targets) {
+				// Create a transition from the processed pair to every pair of a target of the first move and a
+				//  target of the second one.
+				const Symbol symbol{lhs_symbol_post->symbol};
+				product_targets.clear();
+				for (const State lhs_target : lhs_symbol_post->targets) {
 					const Level lhs_target_level = lhs.levels[lhs_target];
-					for (const State rhs_target : same_symbol_posts[1]->targets) {
+					for (const State rhs_target : rhs_symbol_post->targets) {
 						const Level rhs_target_level = rhs.levels[rhs_target];
 						// When using JumpMode::RepeatSymbol, we wait in the source state that has a deeper target.
 						// Because of this we need to, in the next iteration, forbid transitions that has been already
@@ -231,14 +306,19 @@ Nft mata::nft::algorithms::product(
 													? rhs_target
 													: rhs_source;
 
-						create_product_state_and_symbol_post(lhs_state, rhs_state, product_symbol_post);
+						create_product_state_and_symbol_post(lhs_state, rhs_state);
 					}
 				}
-				if (product_symbol_post.empty()) { continue; }
-				StatePost& product_state_post{product.delta.mutable_state_post(product_source)};
+				// Unlike in the NFA product, a side can wait in its source state, so two combinations of targets can
+				//  give the same product state within one symbol post: deduplicate, do not only sort.
+				utils::sort_and_rmdupl(product_targets);
+				++lhs_symbol_post;
+				++rhs_symbol_post;
+				if (product_targets.empty()) { continue; }
 				// Here we are sure that we are working with the largest symbol so far, since we iterate through
 				// the symbol posts of the lhs and rhs in order. So we can just push_back (not insert).
-				product_state_post.push_back(std::move(product_symbol_post));
+				product.delta.mutable_state_post(product_source)
+					.push_back(SymbolPost{symbol, std::span<const State>{product_targets}});
 			}
 
 			process_dont_care(lhs_source, rhs_source, true, product_source);
@@ -246,24 +326,26 @@ Nft mata::nft::algorithms::product(
 		} else if (rhs_source_is_deeper) {
 			// The second state (from rhs) is deeper, so it must wait.
 			for (const auto& symbol_post : lhs.delta[lhs_source]) {
-				SymbolPost product_symbol_post{symbol_post.symbol};
+				product_targets.clear();
 				for (const State target : symbol_post.targets) {
-					create_product_state_and_symbol_post(target, rhs_source, product_symbol_post);
+					create_product_state_and_symbol_post(target, rhs_source);
 				}
-				if (product_symbol_post.empty()) { continue; }
-				StatePost& product_state_post{product.delta.mutable_state_post(product_source)};
-				product_state_post.push_back(std::move(product_symbol_post));
+				utils::sort_and_rmdupl(product_targets);
+				if (product_targets.empty()) { continue; }
+				product.delta.mutable_state_post(product_source)
+					.push_back(SymbolPost{symbol_post.symbol, std::span<const State>{product_targets}});
 			}
 		} else {
 			// The first state (from lhs) is deeper, so it must wait.
 			for (const auto& symbol_post : rhs.delta[rhs_source]) {
-				SymbolPost product_symbol_post{symbol_post.symbol};
+				product_targets.clear();
 				for (const State target : symbol_post.targets) {
-					create_product_state_and_symbol_post(lhs_source, target, product_symbol_post);
+					create_product_state_and_symbol_post(lhs_source, target);
 				}
-				if (product_symbol_post.empty()) { continue; }
-				StatePost& product_state_post{product.delta.mutable_state_post(product_source)};
-				product_state_post.push_back(std::move(product_symbol_post));
+				utils::sort_and_rmdupl(product_targets);
+				if (product_targets.empty()) { continue; }
+				product.delta.mutable_state_post(product_source)
+					.push_back(SymbolPost{symbol_post.symbol, std::span<const State>{product_targets}});
 			}
 		}
 	}

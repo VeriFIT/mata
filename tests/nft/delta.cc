@@ -90,11 +90,19 @@ TEST_CASE("mata::nft::Delta::remove()") {
 
 	SECTION("Simple remove") {
 		nft.delta.add(0, 1, 0);
-		CHECK_NOTHROW(nft.delta.remove(3, 5, 6));
-		CHECK_NOTHROW(nft.delta.remove(0, 1, 0));
+		// Removing a transition that is not there reports false, whichever part of it is missing.
+		CHECK(!nft.delta.remove(3, 5, 6));
+		CHECK(nft.delta.remove(0, 1, 0));
 		CHECK(nft.delta.empty());
 		nft.delta.add(10, 1, 0);
-		CHECK_THROWS_AS(nft.delta.remove(3, 5, 6), std::invalid_argument);
+		CHECK(!nft.delta.remove(3, 5, 6));
+		CHECK(!nft.delta.remove(10, 5, 0));
+		CHECK(!nft.delta.remove(10, 0, 0));
+		CHECK(!nft.delta.remove(10, 1, 7));
+		CHECK(nft.delta.contains(10, 1, 0));
+		CHECK(nft.delta.remove(10, 1, 0));
+		CHECK(nft.delta.empty());
+		CHECK(!nft.delta.remove(10, 1, 0));
 	}
 }
 
@@ -270,12 +278,12 @@ TEST_CASE("mata::nft::StatePost iteration over moves") {
 
 		// Create custom moves iterator.
 		state_post = nft.delta[0];
-		moves = {state_post, state_post.cbegin(), state_post.cbegin() + 2};
+		moves = {state_post.cbegin(), state_post.cbegin() + 2};
 		iterated_moves = {moves.begin(), moves.end()};
 		CHECK(iterated_moves == std::vector<Move>{{1, 1}, {2, 1}});
 
 		state_post = nft.delta[20];
-		moves = {state_post, state_post.cbegin(), state_post.cend()};
+		moves = {state_post.cbegin(), state_post.cend()};
 		iterated_moves = {moves.begin(), moves.end()};
 		CHECK(iterated_moves.empty());
 	}
@@ -457,7 +465,6 @@ TEST_CASE("mata::nft::Delta::add_symbols_to()") {
 	delta.add_symbols_to(alphabet);
 	CHECK(alphabet.get_symbol_map().size() == 4);
 	CHECK(
-		alphabet.get_symbol_map() ==
-		std::unordered_map<std::string, mata::Symbol>{{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}}
+		alphabet.get_symbol_map() == mata::OnTheFlyAlphabet::StringToSymbolMap{{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}}
 	);
 }

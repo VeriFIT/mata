@@ -1,6 +1,10 @@
 name: Code Quality
 on:
   pull_request:
+# A new push to a pull request supersedes the run of the previous one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   warnings-base:
     runs-on: ${{ matrix.os }}
@@ -10,6 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
+        compiler: [gcc, clang]
     steps:
       - uses: actions/checkout@v6
         with:
@@ -20,15 +25,20 @@ jobs:
       - uses: ./.github/workflows/actions/setup
         with:
           os: ${{ matrix.os }}
+          compiler: ${{ matrix.compiler }}
       - uses: ./.github/workflows/actions/compile
+      - name: Cache file with warnings
+        uses: actions/cache@v5
         with:
-          build-log-output-file: "warnings-base"
+          path: ./build_log
+          key: build-log-warnings-base-${{ runner.os }}-${{ matrix.compiler }}-${{ github.sha }}
   warnings-new:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
+        compiler: [gcc, clang]
     steps:
       - uses: actions/checkout@v6
         with:
@@ -39,15 +49,20 @@ jobs:
       - uses: ./.github/workflows/actions/setup
         with:
           os: ${{ matrix.os }}
+          compiler: ${{ matrix.compiler }}
       - uses: ./.github/workflows/actions/compile
+      - name: Cache file with warnings
+        uses: actions/cache@v5
         with:
-          build-log-output-file: "warnings-new"
+          path: ./build_log
+          key: build-log-warnings-new-${{ runner.os }}-${{ matrix.compiler }}-${{ github.sha }}
   run-tests-cpp:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
+        compiler: [gcc, clang]
     steps:
       - uses: actions/checkout@v6
         with:
@@ -58,9 +73,22 @@ jobs:
       - uses: ./.github/workflows/actions/setup
         with:
           os: ${{ matrix.os }}
-      - uses: ./.github/workflows/actions/compile
+          compiler: ${{ matrix.compiler }}
+      - uses: ./.github/workflows/actions/install-solvers
         with:
-          build-log-output-file: "warnings-new"
+          os: ${{ matrix.os }}
+      # CMake uses ccache as the compiler launcher whenever it finds one (see `MATA_USE_CCACHE`). One cache per
+      #  leg: objects compiled by another compiler or on another OS would never hit.
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1
+        with:
+          key: run-tests-cpp-${{ matrix.os }}-${{ matrix.compiler }}
+          max-size: 500M
+      # warnings-new already builds everything on the same legs, so only the tests are built here.
+      - name: Configure
+        run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
+      - name: Build unit tests
+        run: cmake --build build --target tests --parallel 4
       - name: Test the library
         run: make test
   run-tests-python:
@@ -80,11 +108,16 @@ jobs:
       - uses: ./.github/workflows/actions/setup
         with:
           os: ${{ matrix.os }}
-      - name: Set up Python and its dependencies ${{ inputs.python-version }}
+      - uses: ./.github/workflows/actions/install-solvers
+        with:
+          os: ${{ matrix.os }}
+      - name: Set up Python and its dependencies ${{ matrix.python-version }}
         uses: ./.github/workflows/actions/setup-python
         with:
           os: ${{ matrix.os }}
           python-version: ${{ matrix.python-version }}
+          # Both legs build the binding below; the tests import the in-place build.
+          install-binding: "false"
       - name: Write the released version to VERSION file
         shell: bash
         run: |
@@ -97,6 +130,99 @@ jobs:
         uses: ./.github/workflows/actions/compile-python-tarball
       - name: Test the Python bindings
         uses: ./.github/workflows/actions/test-python
+  run-tests-rust:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    defaults:
+      run:
+        working-directory: bindings/rust
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/workflows/actions/setup
+        with:
+          os: ${{ matrix.os }}
+      # Rust links the C++ runtime itself, so it has to be pointed at Homebrew's libc++ as well.
+      - name: Link against Homebrew's libc++ (macOS)
+        if: ${{ matrix.os == 'macos-latest' }}
+        shell: sh
+        run: |
+          LLVM_PREFIX="$(brew --prefix llvm)"
+          echo "RUSTFLAGS=-L $LLVM_PREFIX/lib/c++ -C link-arg=-Wl,-rpath,$LLVM_PREFIX/lib/c++" >> "$GITHUB_ENV"
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: bindings/rust
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Check the formatting of the Rust bindings
+        run: cargo fmt --all --check
+      - name: Lint the Rust bindings
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - name: Test the Rust bindings
+        run: cargo test --workspace --all-features
+      - name: Build the documentation of the Rust bindings
+        run: cargo doc --workspace --all-features --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
+  check-msrv-rust:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: bindings/rust
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/workflows/actions/setup
+        with:
+          os: ubuntu-latest
+      - name: Read the minimum supported Rust version
+        run: echo "MSRV=$(sed -n 's/^rust-version *= *\"\(.*\)\"/\1/p' Cargo.toml)" >> "$GITHUB_ENV"
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.MSRV }}
+      - name: Check the Rust bindings on the minimum supported Rust version
+        run: cargo check --workspace --all-targets --all-features
+  run-tests-rust-wasm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      # Pinned to the release the bindings are tested with (mata-sys/README.md); 'latest' is a
+      # moving target that may not match Rust's prebuilt standard library for the target.
+      EMSCRIPTEN_VERSION: 6.0.13
+    defaults:
+      run:
+        working-directory: bindings/rust
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-emscripten
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: bindings/rust
+      - name: Install Emscripten
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$HOME/emsdk"
+          "$HOME/emsdk/emsdk" install "$EMSCRIPTEN_VERSION"
+          "$HOME/emsdk/emsdk" activate "$EMSCRIPTEN_VERSION"
+      # Runs the tests under Node (bindings/rust/.cargo/config.toml).
+      - name: Test the Rust bindings on WebAssembly
+        run: |
+          source "$HOME/emsdk/emsdk_env.sh"
+          cargo test --workspace --all-features --target wasm32-unknown-emscripten
   # run-test-performance-base:
   #   runs-on: ${{ matrix.os }}
   #   strategy:
@@ -110,6 +236,8 @@ jobs:
   #         # If PR, checkout the PR's repo (needed for PRs coming from forks).
   #         repository: ${{ github.event.pull_request.base.repo.full_name || github.repository }}
   #         ref: ${{ github.event.pull_request.base.sha || github.event.pull_request.base.ref || github.sha }}
+  #         # `make test-performance` runs the tools from the pycobench submodule.
+  #         submodules: recursive
   #     - uses: ./.github/workflows/actions/setup
   #       with:
   #         os: ${{ matrix.os }}
@@ -146,6 +274,8 @@ jobs:
   #         # If PR, checkout the PR's repo (needed for PRs coming from forks).
   #         repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
   #         ref: ${{ github.event.pull_request.head.sha || github.sha }}
+  #         # `make test-performance` runs the tools from the pycobench submodule.
+  #         submodules: recursive
   #     - uses: ./.github/workflows/actions/setup
   #       with:
   #         os: ${{ matrix.os }}
@@ -214,79 +344,269 @@ jobs:
   #         mv ./tests-integration/results/corr-single-param-jobs.csv single-param-baseline.csv
   #         mv ./tests-integration/results/corr-double-param-jobs.csv double-param-baseline.csv
   #     - name: LOOK HERE for Comparison of operations accepting single automaton as parameters
-  #       run: python3 tests-integration/scripts/compare_profiles.py single-param-target.csv single-param-baseline.csv
+  #       run: python3 tests-integration/pycobench/src/compare_profiles.py single-param-target.csv single-param-baseline.csv
   #     - name: LOOK HERE for Comparison of operations accepting two automata as parameters
-  #       run: python3 tests-integration/scripts/compare_profiles.py double-param-target.csv double-param-baseline.csv
+  #       run: python3 tests-integration/pycobench/src/compare_profiles.py double-param-target.csv double-param-baseline.csv
+  # Fails only on warnings this pull request introduces. Warnings the repository already has stay
+  #  the maintainers' business, and `-Werror` is never turned on here: it lives behind the
+  #  `*-werror` make targets for local use.
   compare-versions:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
+        compiler: [gcc, clang]
     needs: [warnings-base, warnings-new]
     steps:
       - name: Restore new cache
         uses: actions/cache/restore@v5
         with:
           path: ./build_log
-          key: build-log-warnings-new-${{ runner.os }}-${{ github.sha }}
-      - run: mv build_log new_warnings
+          key: build-log-warnings-new-${{ runner.os }}-${{ matrix.compiler }}-${{ github.sha }}
+      - run: mv build_log new_build_log
       - name: Restore base cache
         uses: actions/cache/restore@v5
         with:
           path: ./build_log
-          key: build-log-warnings-base-${{ runner.os }}-${{ github.sha }}
-      - run: mv build_log base_warnings
-      - name: Print base warnings
-        run: cat base_warnings
-      - name: Print new warnings
-        run: cat new_warnings
-      - name: Create comparison diff file
+          key: build-log-warnings-base-${{ runner.os }}-${{ matrix.compiler }}-${{ github.sha }}
+      - run: mv build_log base_build_log
+      # A plain `diff` of the two logs reports every warning whose line number moved, and misses a
+      #  new warning that happens to land on the line an old one left. Compare sets of
+      #  `<file>: warning: <message>` instead: line and column numbers are dropped, the checkout
+      #  path is stripped so the two runners' absolute paths cannot differ, warnings from the
+      #  vendored `3rdparty/` sources are not this repository's to fix, and parallel builds may
+      #  order the logs differently, so both sides are sorted.
+      - name: Collect the warnings of both versions
         run: |
-          diff base_warnings new_warnings | grep "^> *" | sed "s/^> //g" > comparison
-          cat comparison
-      - name: Count number of warnings
+          collect() {
+            grep -E 'warning:' "$1" \
+              | sed -E 's/:[0-9]+:[0-9]+:/:/' \
+              | sed -E "s#^$PWD/##; s#^.*/mata/mata/##" \
+              | grep -v '^3rdparty/' \
+              | sort -u
+          }
+          collect base_build_log > base_warnings
+          collect new_build_log > new_warnings
+          echo "::group::Warnings on the base branch ($(wc -l < base_warnings))"
+          cat base_warnings
+          echo "::endgroup::"
+          echo "::group::Warnings on this branch ($(wc -l < new_warnings))"
+          cat new_warnings
+          echo "::endgroup::"
+      - name: Report warnings introduced by this pull request
         run: |
-          number_of_warnings=`cat comparison | grep "warning:" | wc -l`
-          echo $number_of_warnings
-          if [ $number_of_warnings -gt 0 ]; then
+          comm -13 base_warnings new_warnings > introduced_warnings
+          number_of_warnings=$(wc -l < introduced_warnings)
+          if [ "$number_of_warnings" -gt 0 ]; then
+            echo "This pull request introduces $number_of_warnings new warning(s):"
+            cat introduced_warnings
             exit 1
           fi
-  format-check:
+          echo "This pull request introduces no new warnings."
+  # The only check of the Nix outputs and of uv.lock, which only the development shells are built from.
+  # Evaluates the flake and lists its checks; `nix-build` below builds one check per runner in parallel instead
+  #  of `nix flake check`'s serial loop over all of them on a single runner.
+  nix-list-checks:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    timeout-minutes: 15
+    outputs:
+      checks: ${{ steps.list.outputs.checks }}
     steps:
       - uses: cachix/install-nix-action@v31
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable
       - uses: actions/checkout@v6
         with:
-          # fetch-depth: 0
-          # If PR, checkout the PR's repo (needed for PRs coming from forks).
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      # `--no-build` still evaluates every check and package, so a broken Nix expression or a missing attribute
+      #  fails here.
+      - name: Evaluate the flake
+        run: nix flake check --no-build --print-build-logs
+      # `nix-build` consumes the check names from this output, so a check added to the flake later gets its own
+      #  runner without anyone remembering this workflow.
+      - name: List the checks
+        id: list
+        shell: bash
+        run: |
+          checks="$(nix eval --json .#checks.x86_64-linux --apply builtins.attrNames)"
+          echo "checks=$checks" >> "$GITHUB_OUTPUT"
+  # Builds and tests one check per runner; a failing one shows up as its own red job instead of a line in the
+  #  serial `nix flake check` output.
+  nix-build:
+    needs: nix-list-checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        check: ${{ fromJSON(needs.nix-list-checks.outputs.checks) }}
+    steps:
+      - uses: cachix/install-nix-action@v31
+      # Pull only: pull requests build unreviewed dependency updates, so they never get the write token. Merging to
+      #  `devel` does not refresh the cache either: `nix-cache.yml` only runs on `workflow_dispatch`, so a maintainer
+      #  has to dispatch it to push the new `devel` outputs.
+      - uses: cachix/cachix-action@v17
+        with:
+          name: mata
+          skipPush: true
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Build and test ${{ matrix.check }}
+        # The check name comes from the pull request's flake: pass it as data, not as shell source. The escaped quotes
+        #  make Nix select the whole name as one attribute, so a name containing a dot is not read as a nested path.
+        env:
+          CHECK: ${{ matrix.check }}
+        run: nix build --no-link --print-build-logs ".#checks.x86_64-linux.\"$CHECK\""
+  # The only check of uv.lock, which only the development shells are built from.
+  nix-devshells:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: cachix/install-nix-action@v31
+      # Pull only: pull requests build unreviewed dependency updates, so they never get the write token. Merging to
+      #  `devel` does not refresh the cache either: `nix-cache.yml` only runs on `workflow_dispatch`, so a maintainer
+      #  has to dispatch it to push the new `devel` outputs.
+      - uses: cachix/cachix-action@v17
+        with:
+          name: mata
+          skipPush: true
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Build the development shells
+        run: nix build --no-link --print-build-logs .#devShells.x86_64-linux.{default,clang,gcc}
+  # One check for the whole Nix side under the name pull requests merged on before. It runs even when a job it
+  #  needs failed and fails itself then: a skipped job would count as passed for a required status check.
+  nix-flake-check:
+    needs: [nix-build, nix-devshells]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every Nix job to pass
+        run: |
+          test "${{ needs.nix-build.result }}" = success
+          test "${{ needs.nix-devshells.result }}" = success
+  sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
           repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: ./.github/workflows/actions/setup
-      - name: Check .treefmt.toml is in sync with nix/treefmt.nix
+        with:
+          os: ubuntu-latest
+      - uses: ./.github/workflows/actions/install-solvers
+        with:
+          os: ubuntu-latest
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1
+        with:
+          key: sanitizers-ubuntu-latest
+          max-size: 500M
+      - name: Configure with sanitizers
         run: |
-          nix run .#write-treefmt-toml
-          if [ -n "$(git status --porcelain -- .treefmt.toml)" ]; then
-              echo "ERROR: .treefmt.toml is out of date with nix/treefmt.nix. Run 'nix run .#write-treefmt-toml' locally and commit the changes:"
-              git diff -- .treefmt.toml
-              exit 1
-          else
-              echo ".treefmt.toml is in sync with nix/treefmt.nix."
-          fi
-      - name: Check formatting using treefmt through Nix
+          cmake -B build -S . \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DMATA_SANITIZE=address,undefined \
+            -DMATA_BUILD_EXAMPLES=ON
+      # One example comes along to prove that a target linking the instrumented `libmata.a`
+      #  still links: the sanitizer runtime has to reach dependents, not just the library.
+      - name: Build unit tests and one example
+        run: cmake --build build --target tests example01-simple --parallel 4
+      - name: Run unit tests under sanitizers
+        env:
+          ASAN_OPTIONS: halt_on_error=1:detect_leaks=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+        run: ctest --test-dir build -j 4 --output-on-failure --no-tests=error
+      # The Rust bindings against the instrumented library: the FFI gets ASan/UBSan coverage too.
+      - name: Install the instrumented Mata for the Rust bindings
+        run: cmake --install build --prefix "$PWD/mata-install"
+      # `libmata.a` is instrumented but the Rust binaries are not, so the sanitizer runtimes are linked
+      #  explicitly, and ASan, which has to come first, is preloaded into the test binaries only (`--target`
+      #  keeps the build scripts, which cargo runs itself, out of it). Doctests get the same flags.
+      - name: Run the Rust bindings under sanitizers
+        working-directory: bindings/rust
+        env:
+          MATA_DIR: ${{ github.workspace }}/mata-install
+          RUSTFLAGS: -C link-arg=-Wl,--no-as-needed -C link-arg=-lasan -C link-arg=-lubsan
+          RUSTDOCFLAGS: -C link-arg=-Wl,--no-as-needed -C link-arg=-lasan -C link-arg=-lubsan
+          ASAN_OPTIONS: halt_on_error=1:detect_leaks=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
         run: |
-          nix fmt
-          if [ -n "$(git status --porcelain)" ]; then
-              echo "ERROR: Code is not properly formatted. Please run 'nix fmt' or 'treefmt' locally and commit the changes:"
-              git diff
-              exit 1
-          else
-              echo "Code is properly formatted."
-          fi
+          export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER="env LD_PRELOAD=$("$CXX" -print-file-name=libasan.so)"
+          cargo test --workspace --all-features --target x86_64-unknown-linux-gnu
+  # The default build has 32-bit states; the 64-bit escape hatch has to keep building and passing too.
+  state-bits-64:
+    runs-on: ubuntu-latest
+    env:
+      # Also read by the Makefile target that builds the library for the Python binding, and by its tests.
+      MATA_STATE_BITS: "64"
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/workflows/actions/setup
+        with:
+          os: ubuntu-latest
+      - uses: ./.github/workflows/actions/install-solvers
+        with:
+          os: ubuntu-latest
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1
+        with:
+          key: state-bits-64-ubuntu-latest
+          max-size: 500M
+      - name: Configure with 64-bit states
+        run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DMATA_STATE_BITS=64
+      - name: Build unit tests
+        run: cmake --build build --target tests --parallel 4
+      - name: Run unit tests
+        run: ctest --test-dir build -j 4 --output-on-failure --no-tests=error
+      - name: Set up Python and its dependencies
+        uses: ./.github/workflows/actions/setup-python
+        with:
+          os: ubuntu-latest
+          python-version: "3.13"
+          install-binding: "false"
+      - name: Compile the Python bindings from the source
+        uses: ./.github/workflows/actions/compile-python-src
+      - name: Test the Python bindings
+        run: make -C bindings/python test
+  expensive-asserts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: ./.github/workflows/actions/setup
+        with:
+          os: ubuntu-latest
+      - uses: ./.github/workflows/actions/install-solvers
+        with:
+          os: ubuntu-latest
+      - name: Set up ccache
+        uses: hendrikmuhs/ccache-action@v1
+        with:
+          key: expensive-asserts-ubuntu-latest
+          max-size: 500M
+      # The whole-container checks are off in every other job, so this is the one run that proves the
+      #  containers really keep their invariants instead of only being used as if they did.
+      - name: Configure with the whole-container assertions
+        run: |
+          cmake -B build -S . \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DMATA_EXPENSIVE_ASSERTS=ON \
+            -DMATA_BUILD_EXAMPLES=OFF
+      - name: Build unit tests
+        run: cmake --build build --target tests --parallel 4
+      - name: Run unit tests with the whole-container assertions
+        run: ctest --test-dir build -j 4 --output-on-failure --no-tests=error
   build-docs:
     runs-on: ${{ matrix.os }}
     strategy:

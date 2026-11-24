@@ -68,7 +68,7 @@ int load_intermediate_automaton(const std::string& filename, std::vector<mata::I
  * Use to create initial timer with user-defined prefix `timer`
 
  */
-#define TIME_BEGIN(timer) auto timer##_start = std::chrono::system_clock::now()
+#define TIME_BEGIN(timer) auto timer##_start = std::chrono::steady_clock::now()
 
 /*
  * Use to create final timer with user-defined prefix `timer`
@@ -77,7 +77,7 @@ int load_intermediate_automaton(const std::string& filename, std::vector<mata::I
  */
 #define TIME_END(timer)                                                                                                \
 	do {                                                                                                               \
-		auto timer##_end = std::chrono::system_clock::now();                                                           \
+		auto timer##_end = std::chrono::steady_clock::now();                                                           \
 		std::chrono::duration<double> timer##_elapsed = timer##_end - timer##_start;                                   \
 		TIME_PRINT(timer);                                                                                             \
 	} while (0)

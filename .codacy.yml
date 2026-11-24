@@ -1,0 +1,5 @@
+# Codacy's JavaScript, CSS and HTML rules (JSDoc on every function, no hex colours, ...) do not fit the website, whose
+#  style is checked by prettier in the format check instead.
+exclude_paths:
+  - "site/**"
+  - "bindings/wasm/smoke-test.mjs"

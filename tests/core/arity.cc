@@ -21,7 +21,7 @@ using namespace mata;
 
 namespace {
 
-using D1 = posts::RelationOf<Symbol, StateSet>;
+using D1 = posts::RelationOf<Symbol, SmallStateSet>;
 using D2 = posts::RelationOf<Symbol, Symbol, StateSet>;
 using D3 = posts::RelationOf<Symbol, Symbol, Symbol, StateSet>;
 using D4 = posts::RelationOf<Symbol, Symbol, Symbol, Symbol, StateSet>;
@@ -78,8 +78,8 @@ using Delta = posts::DeltaBase<StatePost, TransitionTraits>;
 } // namespace theirs.
 
 // RelationOf builds the same chain the library ships.
-static_assert(std::same_as<posts::PostChain<Symbol, StateSet>, StatePost>);
-static_assert(std::same_as<posts::PostChain<Symbol, StateSet>::Entry, SymbolPost>);
+static_assert(std::same_as<posts::PostChain<Symbol, SmallStateSet>, StatePost>);
+static_assert(std::same_as<posts::PostChain<Symbol, SmallStateSet>::Entry, SymbolPost>);
 static_assert(std::same_as<D1, Delta::Base>);
 static_assert(std::derived_from<Delta, D1>);
 static_assert(sizeof(Delta) == sizeof(Delta::Base)); // The wrapper adds no state, so base conversions do not slice.
@@ -102,7 +102,7 @@ static_assert(HasEntryFields<D1::Entry>);
 static_assert(!HasEntryFields<D2::Entry> && !HasEntryFields<D3::Entry>);
 static_assert(HasEntryFields<D2::Entry::Nested::Entry>);
 // No extra storage, and noexcept moves so that std::vector relocates by move.
-static_assert(sizeof(D1::Entry) == sizeof(posts::detail::PostEntryCore<Symbol, StateSet, ReservedKeys<Symbol>>));
+static_assert(sizeof(D1::Entry) == sizeof(posts::detail::PostEntryCore<Symbol, SmallStateSet, ReservedKeys<Symbol>>));
 static_assert(std::is_nothrow_move_constructible_v<D1::Entry> && std::is_nothrow_move_assignable_v<D1::Entry>);
 static_assert(std::is_nothrow_move_constructible_v<D2::Entry> && std::is_nothrow_move_assignable_v<D2::Entry>);
 
@@ -112,7 +112,7 @@ concept Decomposable = requires { std::tuple_size<E>::value; };
 static_assert(Decomposable<D1::Entry> && Decomposable<D2::Entry::Nested::Entry>);
 static_assert(!Decomposable<D2::Entry> && !Decomposable<D3::Entry>);
 static_assert(std::same_as<std::tuple_element_t<0, D1::Entry>, Symbol>);
-static_assert(std::same_as<std::tuple_element_t<1, D1::Entry>, StateSet>);
+static_assert(std::same_as<std::tuple_element_t<1, D1::Entry>, SmallStateSet>);
 
 // The target-set members exist at arity 1 and are absent above it.
 template <typename E>
@@ -152,8 +152,8 @@ static_assert(HasEntryProtocol<D1::Entry> && HasEntryProtocol<D2::Entry> && HasE
 static_assert(std::same_as<D3::PostAt<0>, D3::PostType>);
 static_assert(std::same_as<D3::PostAt<1>, typename D3::PostType::Nested>);
 static_assert(std::same_as<D3::PostAt<3>, StateSet>);
-static_assert(std::same_as<D3::TargetSet, StateSet> && std::same_as<D1::TargetSet, StateSet>);
-static_assert(std::same_as<D2::PostAt<1>, D1::PostType>);
+static_assert(std::same_as<D3::TargetSet, StateSet> && std::same_as<D1::TargetSet, SmallStateSet>);
+static_assert(std::same_as<D2::PostAt<1>, posts::RelationOf<Symbol, StateSet>::PostType>);
 
 static_assert(std::same_as<D3::Key<0>, Symbol> && std::same_as<D3::Key<2>, Symbol>);
 
@@ -173,9 +173,9 @@ static_assert(HasTransitionsBetween<D1> && HasTransitionsBetween<D2>);
 // The keyed get_successors returns a reference where the targets are stored together (arity 1) and a new set
 //  otherwise; Nfa::post() returns it as a const StateSet&.
 static_assert(HasKeyedSuccessors<D1> && HasKeyedSuccessors<D2> && HasKeyedSuccessors<D3>);
-static_assert(std::same_as<D1::KeyedSuccessors, const StateSet&>);
+static_assert(std::same_as<D1::KeyedSuccessors, const SmallStateSet&>);
 static_assert((std::same_as<D2::KeyedSuccessors, StateSet> && std::same_as<D3::KeyedSuccessors, StateSet>));
-static_assert(std::same_as<decltype(std::declval<const D1&>().get_successors(0)), StateSet>);
+static_assert(std::same_as<decltype(std::declval<const D1&>().get_successors(0)), SmallStateSet>);
 static_assert(std::same_as<decltype(std::declval<const D3&>().get_successors(0)), StateSet>);
 
 // add, remove and contains take exactly key_arity keys.
@@ -392,8 +392,10 @@ TEST_CASE("mata::posts::DeltaBase::remove / contains - a key path at any arity")
 		Delta arity1{};
 		arity1.add(0, 1, 7);
 		REQUIRE(arity1.num_of_states() == 8);
-		CHECK_NOTHROW(arity1.remove(99, 1, 7));
-		CHECK_THROWS_AS(arity1.remove(7, 1, 7), std::invalid_argument);
+		// The generic arity-1 member; the shipped mata::Delta::remove() answers a missing transition by false.
+		CHECK_NOTHROW(static_cast<Delta::Base&>(arity1).remove(99, 1, 7));
+		CHECK_THROWS_AS(static_cast<Delta::Base&>(arity1).remove(7, 1, 7), std::invalid_argument);
+		CHECK_FALSE(arity1.remove(7, 1, 7));
 
 		CHECK(delta.contains(0, 1, 2, 7));
 	}

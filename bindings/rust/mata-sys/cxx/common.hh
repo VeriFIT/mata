@@ -1,0 +1,151 @@
+// Helpers shared by the NFA and NFT parts of the shim. Not part of the bridge.
+#pragma once
+
+#include <algorithm>
+#include <cstddef>
+#include <mutex>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+#include "mata/alphabet.hh"
+#include "mata/automaton.hh"
+#include "mata/nft/types.hh"
+#include "mata/parser/inter-aut.hh"
+#include "rust/cxx.h"
+
+namespace mata_sys::detail {
+
+using mata::Symbol;
+using mata::Word;
+using mata::nfa::State;
+using SymbolSet = mata::utils::OrdVector<Symbol>;
+
+/// Views `size` elements at `data` as a Rust slice (whose pointer must not be null, even when empty).
+template <class T> rust::Slice<const T> slice_of(const T* data, const std::size_t size) {
+	static constexpr auto empty_slot = T();
+	return rust::Slice<const T>(size == 0 ? &empty_slot : data, size);
+}
+
+template <class T> rust::Slice<const T> slice_of(const std::vector<T>& values) {
+	return slice_of(values.data(), values.size());
+}
+
+inline Word to_word(const rust::Slice<const Symbol> word) { return Word(word.begin(), word.end()); }
+
+/// Throws on EPSILON and DONT_CARE, which read as moves, not letters, in every Mata call that takes
+/// a symbol set (complement, difference, make_complete, is_complete, sigma_star_nfa, to_nfa).
+inline SymbolSet to_symbol_set(const rust::Slice<const Symbol> symbols) {
+	if (std::ranges::any_of(symbols, [](const Symbol symbol) {
+			return symbol == mata::nft::EPSILON || symbol == mata::nft::DONT_CARE;
+		})) {
+		throw std::invalid_argument("a symbol set cannot contain epsilon or the don't-care symbol");
+	}
+	return SymbolSet(std::vector<Symbol>(symbols.begin(), symbols.end()));
+}
+
+template <class T, class Range> void assign(rust::Vec<T>& out, const Range& values) {
+	out.clear();
+	out.reserve(std::size(values));
+	for (const auto value : values) { out.push_back(value); }
+}
+
+/// Writes `words` as the bridge returns them: all symbols concatenated into `symbols`, and the length of each word
+///  into `lengths`.
+template <class Words>
+void assign_words(rust::Vec<Symbol>& symbols, rust::Vec<std::size_t>& lengths, const Words& words) {
+	symbols.clear();
+	lengths.clear();
+	lengths.reserve(std::size(words));
+	for (const Word& word : words) {
+		for (const Symbol symbol : word) { symbols.push_back(symbol); }
+		lengths.push_back(word.size());
+	}
+}
+
+/// Throws unless `state` is a state of `automaton` (Mata would grow the automaton instead).
+inline void check_state(const mata::Automaton& automaton, const State state) {
+	if (state >= automaton.num_of_states()) {
+		throw std::out_of_range(
+			"state " + std::to_string(state) + " does not exist (the automaton has " +
+			std::to_string(automaton.num_of_states()) + " states)"
+		);
+	}
+}
+
+/// Throws unless the transitions are kept as Mata keeps them: sorted by symbol, with sorted, unique targets
+/// that are states of `automaton`.
+void check_delta(const mata::Automaton& automaton);
+
+/// A Mata alphabet with the names of a Rust `Alphabet`, for printing.
+class NameTable final : public mata::Alphabet {
+  public:
+	NameTable(rust::Slice<const rust::String> names, rust::Slice<const Symbol> symbols);
+
+	Symbol translate_symb(std::string_view name) override;
+	std::string reverse_translate_symbol(Symbol symbol) const override;
+	SymbolSet get_alphabet_symbols() const override;
+	bool empty() const override { return by_symbol_.empty(); }
+
+  private:
+	std::unordered_map<Symbol, std::string> by_symbol_ = {};
+	mata::utils::StringMap<Symbol> by_name_ = {};
+};
+
+/// Serializes every CUDD entry point that swaps the process-wide out-of-memory handler.
+std::mutex& cudd_mutex();
+
+/// Mata's `Mintermization::mintermize()` of `automata` together, one thread at a time.
+std::vector<mata::IntermediateAut> mintermize(const std::vector<const mata::IntermediateAut*>& automata);
+
+/// Mata's on-the-fly alphabet, except that a new number without leading zeros is the symbol of that number when
+/// no name has it: the Rust side prints an unnamed symbol as its number, so a number reads back as itself
+/// in every parse, not as whatever symbol happens to be next.
+class NumberingAlphabet final : public mata::OnTheFlyAlphabet {
+  public:
+	using OnTheFlyAlphabet::OnTheFlyAlphabet;
+	Symbol translate_symb(std::string_view str) override;
+	/// Binds `name` to `symbol`; every name the parse starts with goes through here.
+	void bind(const std::string& name, Symbol symbol);
+
+  private:
+	/// The symbols some name holds, so a number checks its own symbol without scanning every name.
+	std::unordered_set<Symbol> taken_ = {};
+};
+/// The parser's alphabet: integers, or the names of a Rust `Alphabet`, extended on the fly.
+class ParseAlphabet {
+  public:
+	ParseAlphabet(
+		bool numeric_symbols,
+		rust::Slice<const rust::String> names,
+		rust::Slice<const Symbol> named_symbols,
+		Symbol next_symbol
+	);
+
+	mata::Alphabet* get() { return numeric_ ? static_cast<mata::Alphabet*>(&integers_) : &on_the_fly_; }
+
+	/// Writes the names that parsing added, ordered by symbol. Throws if no symbol below `DONT_CARE` was left.
+	void report_new_names(rust::Vec<rust::String>& new_names, rust::Vec<Symbol>& new_symbols) const;
+
+  private:
+	bool numeric_;
+	Symbol first_new_symbol_;
+	mata::IntAlphabet integers_ = {};
+	NumberingAlphabet on_the_fly_;
+	std::unordered_set<std::string> known_names_ = {};
+};
+
+/// One section of a `.mata` text, and the name of its type (empty if it does not start with a type line).
+struct Section {
+	std::string_view text;
+	std::string_view type;
+};
+
+/// Splits `text` where `parse_mf()` splits it into sections, so that each goes to the reader that takes it. Text
+/// without a type line, only blank lines and comments, is dropped, as `parse_mf()` drops it.
+std::vector<Section> split_sections(std::string_view text);
+
+} // namespace mata_sys::detail

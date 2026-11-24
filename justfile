@@ -8,15 +8,17 @@ import 'just/common.just'
 
 mod bench 'tests-integration/tests-integration.just'
 mod bindings 'bindings/bindings.just'
-mod cpp 'src/src.just'
+mod cpp 'src/cpp.just'
 mod docs 'docs/docs.just'
 mod examples 'examples/examples.just'
 mod nix 'nix/nix.just'
+mod site 'site/site.just'
 mod tests-cpp 'tests/tests.just'
 
 alias t := test
 alias tc := tests-cpp
 alias tp := bindings::python
+alias tr := bindings::rust
 alias ti := bench::performance
 alias b := cpp::build
 alias w := tests-cpp::wip
@@ -25,12 +27,17 @@ alias d := docs::build
 alias f := nix::fmt
 alias r := release
 alias rd := release-debuginfo
+alias l := lint
+alias u := update
 alias c := clean
 alias h := help
 
-# Run the whole test suite: C++ unit tests in debug and release mode, Python bindings, and notebooks.
+# Run the whole test suite: C++ unit tests in debug and release mode, Python and Rust bindings, and notebooks.
 [default]
 test *ARGS: (tests-cpp::check ARGS) bindings::test examples::notebooks::run
+
+# Build everything: the C++ project, all language bindings, and the documentation. MODE is 'debug', 'release', or 'release-debuginfo'.
+build MODE=BUILD_MODE: (cpp::build MODE) bindings::build (docs::doxygen MODE) docs::html
 
 # Build the whole project in release mode.
 release: (cpp::build "release")
@@ -38,8 +45,11 @@ release: (cpp::build "release")
 # Build the whole project in release mode with debug information.
 release-debuginfo: (cpp::build "release-debuginfo")
 
+# Run project linters.
+lint *ARGS: (cpp::lint BUILD_MODE ARGS)
+
 # Remove the build artifacts of the project, the bindings, and the documentation.
-clean: cpp::clean bindings::clean docs::clean
+clean: cpp::clean bindings::clean docs::clean site::clean
 
 # TODO: Implement.
 ci:
@@ -49,7 +59,15 @@ ci:
 help:
 	@just --list --list-submodules --justfile '{{ justfile() }}'
 
-# Update and synchronize the locked Python dependencies of the workspace.
+# Update everything that can be updated: flake inputs, Python dependencies, and Git submodules.
+update: nix::update uv-update submodules-update
+
+# Update the Git submodules to the current tip of their tracked upstream branch.
+submodules-update:
+	git submodule update --init --remote --recursive
+
+# Update and synchronize the locked Python dependencies of the workspace. The Nix development shell builds its
+# environment from uv.lock instead, so there, re-enter the shell.
 uv-update:
 	uv lock --upgrade
-	uv sync
+	{{ if env("UV_PROJECT_ENVIRONMENT", "") =~ '^/nix/store/' { "echo 'Re-enter the Nix development shell to install the updated uv.lock.'" } else { "uv sync" } }}

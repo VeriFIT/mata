@@ -7,5 +7,7 @@
     mataPy = inputs.self.packages.${final.stdenv.hostPlatform.system}.mataPy;
     mataPyGcc = inputs.self.packages.${final.stdenv.hostPlatform.system}.mataPyGcc;
     mataPyClang = inputs.self.packages.${final.stdenv.hostPlatform.system}.mataPyClang;
+    mataRust = inputs.self.packages.${final.stdenv.hostPlatform.system}.mataRust;
+    mataCli = inputs.self.packages.${final.stdenv.hostPlatform.system}.mataCli;
   };
 }

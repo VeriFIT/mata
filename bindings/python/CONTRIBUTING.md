@@ -209,7 +209,7 @@ extensions = [
         sources=[f"libmata{os.sep}{pkg.replace('.', os.sep)}.pyx"] + project_sources,
         include_dirs=project_includes,
         language="c++",
-        extra_compile_args=["-std=c++20", "-DNO_THROW_DISPATCHER"],
+        extra_compile_args=["-std=c++20"],
     ) for pkg in (
         'nfa.nfa', 'alphabets', 'utils', 'parser', 'nfa.strings', 'plotting', 'module'
     )
@@ -367,8 +367,8 @@ cdef cppclass COnTheFlyAlphabet "mata::OnTheFlyAlphabet" (CAlphabet):
 - You can then access the method from the C/C++ typed object in the `.pyx` file.
 
 ```cython
-cdef umap[string, Symbol] c_symbol_map = self.thisptr.get_symbol_map()
-#    ^-- unordered_map    ^-- C/C++ var  ^-- calling wrapper function through C/C++ object in thisptr
+cdef COnTheFlyAlphabet.StringToSymbolMap c_symbol_map = self.thisptr.get_symbol_map()
+#    ^-- C/C++ type                       ^-- C/C++ var  ^-- calling wrapper function through C/C++ object in thisptr
 ```
 
 - **Problem**: You want to declare some method as class function in Python.

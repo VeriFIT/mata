@@ -1,0 +1,18 @@
+; Email filter (b-regex): the results of CADE'23 for the email-filter benchmarks of
+; nfa-bench, as `bench-email-filter.cc` prints them, once with each inclusion algorithm.
+; Five inputs: the four filters and the specification. As the C++ benchmark does, each
+; timed call intersects the four filters and checks the inclusion, so that the two runs
+; measure the same work.
+(mata-script "0.1.0")
+
+(declare-inputs automata (List Nfa))
+
+(define (run-with label algorithm)
+  (time label
+    (nfa:included? (list:nth automata 4)
+      (nfa:intersection (list:nth automata 0) (list:nth automata 1)
+        (list:nth automata 2) (list:nth automata 3))
+      :algorithm algorithm)))
+
+(check (run-with "automata_inclusion_naive" "naive"))
+(check (run-with "automata_inclusion_antichain" "antichains"))

@@ -3,12 +3,23 @@
  */
 
 #include <algorithm>
+#include <bit>
+#include <cstdint>
+#include <deque>
+#include <iterator>
+#include <limits>
 #include <list>
+#include <numeric>
+#include <optional>
 #include <queue>
+#include <type_traits>
+#include <typeinfo>
 #include <unordered_set>
+#include <utility>
 
 // MATA headers
 #include <ranges>
+#include <span>
 
 #include "mata/nfa/algorithms.hh"
 #include "mata/nfa/delta.hh"
@@ -17,8 +28,6 @@
 #include <mata/simlib/explicit_lts.hh>
 #include <mata/utils/assert.hh>
 
-using std::tie;
-
 using namespace mata::utils;
 using namespace mata::nfa;
 using mata::Symbol;
@@ -26,56 +35,291 @@ using mata::Symbol;
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
 namespace {
-Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
-	OrdVector<mata::Symbol> used_symbols = aut.delta.get_used_symbols();
-	mata::Symbol unused_symbol = 0;
-	if (!used_symbols.empty() && *used_symbols.begin() == 0) {
-		auto it = used_symbols.begin();
-		unused_symbol = *it + 1;
-		++it;
-		const auto used_symbols_end = used_symbols.end();
-		while (it != used_symbols_end && unused_symbol == *it) {
-			unused_symbol = *it + 1;
-			++it;
-		}
-		if (unused_symbol == 0) { // sanity check to see if we did not use the full range of mata::Symbol
-			throw std::runtime_error("all symbols are used, we cannot compute simulation reduction");
-		}
-	}
-
+/**
+ * @brief Forward direct simulation: @c get(p, q) is true iff @c q simulates @c p.
+ *
+ * A final state may only be simulated by a final state. That used to be encoded by a self-loop over a
+ *  symbol the automaton does not use, which needed a search for such a symbol and threw when the whole
+ *  @c Symbol range was taken. The same constraint is the initial partition `{non-final, final}` with the
+ *  block relation `final(B) -> final(B')`, which the engine accepts directly and does not have to refine
+ *  the single block `{Q}` down to.
+ *
+ * @tparam Relation @c Simlib::Util::BinaryRelation, or @c Simlib::Util::PartitionRelation, which keeps the
+ *  partition-relation pair of the engine instead of expanding it to a bit for every pair of states.
+ */
+template <class Relation> Relation compute_fw_direct_simulation(const Nfa& aut) {
 	const size_t state_num{aut.num_of_states()};
 	Simlib::ExplicitLTS lts_for_simulation(state_num);
 
 	for (const Transition& transition : aut.delta.transitions()) {
 		lts_for_simulation.add_transition(transition.source, transition.symbol, transition.target);
 	}
+	lts_for_simulation.init();
 
-	// final states cannot be simulated by nonfinal -> we add new self-loops over final states with new symbol in LTS
-	for (const State final_state : aut.final) {
-		lts_for_simulation.add_transition(final_state, unused_symbol, final_state);
+	std::vector<size_t> non_final_states{};
+	std::vector<size_t> final_states{};
+	for (State state{0}; state < state_num; ++state) {
+		(aut.final[state] ? final_states : non_final_states).push_back(state);
 	}
 
-	lts_for_simulation.init();
-	return lts_for_simulation.compute_simulation();
+	// The engine rejects empty blocks, so a block only enters the partition when it has a state.
+	std::vector<std::vector<size_t>> partition{};
+	size_t non_final_block{0};
+	size_t final_block{0};
+	if (!non_final_states.empty()) {
+		non_final_block = partition.size();
+		partition.push_back(std::move(non_final_states));
+	}
+	if (!final_states.empty()) {
+		final_block = partition.size();
+		partition.push_back(std::move(final_states));
+	}
+
+	Simlib::Util::BinaryRelation relation{partition.size(), false};
+	for (size_t block{0}; block < partition.size(); ++block) { relation.set(block, block, true); }
+	if (partition.size() == 2) { relation.set(non_final_block, final_block, true); }
+
+	if constexpr (std::is_same_v<Relation, Simlib::Util::PartitionRelation>) {
+		return lts_for_simulation.compute_block_simulation(partition, relation, state_num);
+	} else {
+		return lts_for_simulation.compute_simulation(partition, relation, state_num);
+	}
 }
 
-void remove_covered_state(const StateSet& covering_set, const State remove, Nfa& nfa) {
-	// help set to store elements to remove
-	const auto delta_begin = nfa.delta[remove].begin();
-	const auto remove_size = nfa.delta[remove].size();
-	for (size_t i = 0; i < remove_size; i++) { // remove trans from covered state
-		for (StateSet tmp_targets{delta_begin->targets}; const State target : tmp_targets) {
-			nfa.delta.remove(remove, delta_begin->symbol, target);
+/// The symbols of @p alphabet: an @c OnTheFlyAlphabet lends its cached ones, the others are copied into @p storage.
+const OrdVector<Symbol>& borrow_symbols(const mata::Alphabet& alphabet, OrdVector<Symbol>& storage) {
+	if (typeid(alphabet) == typeid(mata::OnTheFlyAlphabet)) {
+		return static_cast<const mata::OnTheFlyAlphabet&>(alphabet).get_alphabet_symbols_ref();
+	}
+	storage = alphabet.get_alphabet_symbols();
+	return storage;
+}
+
+} // namespace
+
+std::vector<State> mata::nfa::algorithms::identical_successor_classes(
+	const Automaton& aut, const size_t num_of_states, const std::span<const Level> levels
+) {
+	const auto level_of = [&](const State q) -> size_t { return q < levels.size() ? levels[q] : 0; };
+	std::vector<State> class_of(num_of_states);
+	std::vector<State> next_class_of(num_of_states);
+	// Numbers the classes of the states equal by `equal` in the order of their smallest states into next_class_of.
+	const auto merge_round = [&](const auto& hash, const auto& equal) {
+		std::unordered_set<State, std::decay_t<decltype(hash)>, std::decay_t<decltype(equal)>> first_of_class{
+			num_of_states, hash, equal
+		};
+		size_t num_of_classes{0};
+		for (State q{0}; q < num_of_states; ++q) {
+			if (const auto [first, inserted]{first_of_class.insert(q)}; inserted) {
+				next_class_of[q] = static_cast<State>(num_of_classes++);
+			} else {
+				next_class_of[q] = next_class_of[*first];
+			}
+		}
+		return num_of_classes;
+	};
+
+	// A whole signature is hashed by one multiply per value and mixed once: the per-value finalizer of
+	//  `hash_combine()` made the hashing most of the cost of this function.
+	const auto hash_step = [](const size_t accum, const size_t value) {
+		constexpr size_t multiplier{
+			sizeof(size_t) == 8 ? static_cast<size_t>(0x9e'37'79'b9'7f'4a'7c'15ULL)
+								: static_cast<size_t>(0x9e'37'79'b9UL)
+		};
+		return (accum ^ value) * multiplier;
+	};
+
+	// In the first round every state is its own class, so the state posts themselves are compared. Most automata
+	//  merge nothing and are done after this round, without copying their transitions.
+	const size_t num_of_classes{merge_round(
+		[&](const State q) {
+			size_t accum{hash_step(hash_step(HASH_SEED, aut.final[q]), level_of(q))};
+			for (const SymbolPost& symbol_post : aut.delta[q]) {
+				accum = hash_step(accum, symbol_post.symbol);
+				for (const State target : symbol_post.targets) { accum = hash_step(accum, target); }
+			}
+			return hash_mix(accum);
+		},
+		[&](const State lhs, const State rhs) {
+			return aut.final[lhs] == aut.final[rhs] && level_of(lhs) == level_of(rhs) &&
+				   aut.delta[lhs] == aut.delta[rhs];
+		}
+	)};
+	class_of.swap(next_class_of);
+	if (num_of_classes == num_of_states) { return class_of; }
+
+	// Later merges come from a worklist: rescanning every state until nothing merges takes a round per level of
+	//  two copies of a chain. A class is absorbed into the larger one, so a state changes its class O(log n) times.
+	std::vector<size_t> pred_begin(num_of_states + 1, 0);
+	for (State q{0}; q < num_of_states; ++q) {
+		for (const SymbolPost& symbol_post : aut.delta[q]) {
+			for (const State target : symbol_post.targets) { ++pred_begin[target + 1]; }
+		}
+	}
+	std::partial_sum(pred_begin.begin(), pred_begin.end(), pred_begin.begin());
+	std::vector<State> preds(pred_begin[num_of_states]);
+	{
+		std::vector<size_t> pred_end(pred_begin.begin(), pred_begin.end() - 1);
+		for (State q{0}; q < num_of_states; ++q) {
+			for (const SymbolPost& symbol_post : aut.delta[q]) {
+				for (const State target : symbol_post.targets) { preds[pred_end[target]++] = q; }
+			}
 		}
 	}
 
-	for (const auto remove_transitions = nfa.delta.get_transitions_to(remove); const auto& move : remove_transitions) {
-		// transfer transitions from covered state to covering set
-		for (const State switch_target : covering_set) { nfa.delta.add(move.source, move.symbol, switch_target); }
-		nfa.delta.remove(move);
+	// The states of each class are linked through next_member.
+	constexpr State no_state{std::numeric_limits<State>::max()};
+	std::vector<State> next_member(num_of_states, no_state);
+	std::vector<State> first_member(num_of_classes, no_state);
+	std::vector<State> last_member(num_of_classes);
+	std::vector<size_t> class_size(num_of_classes, 0);
+	for (State q{0}; q < num_of_states; ++q) {
+		const State cls{class_of[q]};
+		if (first_member[cls] == no_state) {
+			first_member[cls] = q;
+		} else {
+			next_member[last_member[cls]] = q;
+		}
+		last_member[cls] = q;
+		++class_size[cls];
 	}
 
-	// check final  and initial states
+	// The signature of a class, shared by all its states: the finality, then for each symbol post the symbol, the
+	//  number of target classes and the sorted target classes. A stored signature is stale only while its class is
+	//  in the worklist; it then names an absorbed class, so it never equals a fresh one.
+	std::vector<std::vector<State>> signature(num_of_classes);
+	std::vector<State> targets;
+	const auto compute_signature = [&](const State cls) {
+		std::vector<State>& sig{signature[cls]};
+		sig.clear();
+		const State q{first_member[cls]};
+		sig.push_back(aut.final[q] ? 1 : 0);
+		sig.push_back(static_cast<State>(level_of(q)));
+		for (const SymbolPost& symbol_post : aut.delta[q]) {
+			targets.clear();
+			for (const State target : symbol_post.targets) { targets.push_back(class_of[target]); }
+			std::ranges::sort(targets);
+			targets.erase(std::ranges::unique(targets).begin(), targets.end());
+			sig.push_back(symbol_post.symbol);
+			sig.push_back(static_cast<State>(targets.size()));
+			sig.insert(sig.end(), targets.begin(), targets.end());
+		}
+	};
+	const auto signature_hash = [&](const State cls) {
+		size_t accum{HASH_SEED};
+		for (const State value : signature[cls]) { accum = hash_step(accum, value); }
+		return hash_mix(accum);
+	};
+	const auto signature_equal = [&](const State lhs, const State rhs) { return signature[lhs] == signature[rhs]; };
+	std::unordered_set<State, decltype(signature_hash), decltype(signature_equal)> class_of_signature{
+		num_of_classes, signature_hash, signature_equal
+	};
+
+	std::vector<bool> is_hashed(num_of_classes, false);
+	std::vector<bool> is_queued(num_of_classes, true);
+	std::vector<State> worklist(num_of_classes);
+	// 'std::ranges::iota' would read better, but it is unavailable in older libc++ releases, while CMake still
+	// supports Clang 18.
+	// NOLINTNEXTLINE(modernize-use-ranges)
+	std::iota(worklist.begin(), worklist.end(), State{0});
+	while (!worklist.empty()) {
+		const State cls{worklist.back()};
+		worklist.pop_back();
+		is_queued[cls] = false;
+		if (class_size[cls] == 0) { continue; } // Absorbed.
+		if (is_hashed[cls]) { class_of_signature.erase(cls); }
+		compute_signature(cls);
+		const auto [same_signature, inserted]{class_of_signature.insert(cls)};
+		if (inserted) {
+			is_hashed[cls] = true;
+			continue;
+		}
+
+		State kept{*same_signature};
+		State absorbed{cls};
+		if (class_size[absorbed] > class_size[kept]) {
+			std::swap(kept, absorbed);
+			class_of_signature.erase(same_signature);
+			class_of_signature.insert(kept);
+		}
+		is_hashed[kept] = true;
+		is_hashed[absorbed] = false;
+		signature[absorbed] = {};
+		for (State q{first_member[absorbed]}; q != no_state; q = next_member[q]) { class_of[q] = kept; }
+		// Relabel first, so that a predecessor inside the absorbed class queues the kept one.
+		for (State q{first_member[absorbed]}; q != no_state; q = next_member[q]) {
+			for (size_t pred{pred_begin[q]}; pred < pred_begin[q + 1]; ++pred) {
+				if (const State pred_class{class_of[preds[pred]]}; !is_queued[pred_class]) {
+					is_queued[pred_class] = true;
+					worklist.push_back(pred_class);
+				}
+			}
+		}
+		next_member[last_member[kept]] = first_member[absorbed];
+		last_member[kept] = last_member[absorbed];
+		class_size[kept] += class_size[absorbed];
+		class_size[absorbed] = 0;
+	}
+
+	// Renumber the classes in the order of their smallest states.
+	std::ranges::fill(next_class_of, no_state);
+	State next_number{0};
+	for (State q{0}; q < num_of_states; ++q) {
+		State& number{next_class_of[class_of[q]]};
+		if (number == no_state) { number = next_number++; }
+		class_of[q] = number;
+	}
+	return class_of;
+}
+
+namespace {
+
+/// Incoming transitions `(source, symbol)` of each state of the result of residual reduction "with", recorded when
+///  a transition is added. A removed transition leaves its entry behind, so users check the delta.
+class Predecessors {
+  public:
+	void add(Nfa& nfa, const State source, const Symbol symbol, const State target) {
+		nfa.delta.add(source, symbol, target);
+		record(source, symbol, target);
+	}
+
+	void record(const State source, const Symbol symbol, const State target) {
+		if (target >= predecessors_.size()) { predecessors_.resize(target + 1); }
+		predecessors_[target].emplace_back(source, symbol);
+	}
+
+	/// The transitions to @p target present in @p nfa, each once; forgets the recorded entries.
+	std::vector<std::pair<State, Symbol>> take_transitions_to(const Nfa& nfa, const State target) {
+		if (target >= predecessors_.size()) { return {}; }
+		std::vector<std::pair<State, Symbol>> transitions{std::move(predecessors_[target])};
+		predecessors_[target].clear();
+		std::ranges::sort(transitions);
+		const auto [first, last]{std::ranges::unique(transitions)};
+		transitions.erase(first, last);
+		std::erase_if(transitions, [&](const std::pair<State, Symbol>& transition) {
+			const StatePost& state_post{nfa.delta[transition.first]};
+			const auto symbol_post{state_post.find(transition.second)};
+			return symbol_post == state_post.end() || !symbol_post->targets.contains(target);
+		});
+		return transitions;
+	}
+
+  private:
+	std::vector<std::vector<std::pair<State, Symbol>>> predecessors_{};
+};
+
+void remove_covered_state(const StateSet& covering_set, const State remove, Nfa& nfa, Predecessors& predecessors) {
+	// Remove all transitions from the covered state.
+	nfa.delta.mutable_state_post(remove).clear();
+
+	// Redirect transitions to the covered state to the covering set instead.
+	for (const auto& [source, symbol] : predecessors.take_transitions_to(nfa, remove)) {
+		// transfer transitions from covered state to covering set
+		for (const State switch_target : covering_set) { predecessors.add(nfa, source, symbol, switch_target); }
+		nfa.delta.remove(source, symbol, remove);
+	}
+
+	// check final and initial states
 	nfa.final.erase(remove);
 	if (nfa.initial.contains(remove)) {
 		nfa.initial.erase(remove);
@@ -90,7 +334,8 @@ void check_covered_and_covering(
 	std::unordered_map<StateSet, State>& subset_map, // map of non-covered states
 	const State target_res,
 	const StateSet& targets_orig, // current state to check
-	Nfa& result
+	Nfa& result,
+	Predecessors& predecessors
 ) {
 	auto it = subset_map.begin();
 
@@ -119,7 +364,7 @@ void check_covered_and_covering(
 				//
 				// same applies for any covered state, if it contains newly turned state in theirs
 				// covering set, then it has to be updated
-				State erase_state = it->second; // covered state to remove
+				const State erase_state = it->second; // covered state to remove
 				for (const auto& state : covered | std::views::values) {
 					if (covering_indexes[state].contains(erase_state)) {
 						covering_indexes[state].erase(erase_state);
@@ -132,7 +377,7 @@ void check_covered_and_covering(
 				}
 
 				// remove covered state from the automaton, replace with covering set
-				remove_covered_state(covering_indexes[erase_state], erase_state, result);
+				remove_covered_state(covering_indexes[erase_state], erase_state, result, predecessors);
 
 				auto temp = it++;
 				// move state from subset_map to covered
@@ -145,337 +390,585 @@ void check_covered_and_covering(
 	}
 }
 
-void residual_recurse_coverable(
-	const std::vector<StateSet>& macrostate_vec, // vector of nfa macrostates
-	const std::vector<State>& covering_indexes, // sub-vector of macrostates indexes
-	std::vector<bool>& covered, // flags of covered states
-	std::vector<bool>& visited, // flags for visited states
-	const size_t start_index, // starting index for covering_indexes vec
-	std::unordered_map<StateSet, State>* subset_map, // mapping of indexes to macrostates
-	Nfa& nfa
-) {
-	const StateSet& check_state = macrostate_vec[covering_indexes[start_index]];
-	StateSet covering_set; // doesn't contain duplicates
-	std::vector<State> sub_covering_indexes; // // indexes of covering states
+/// Covered states of residual reduction "after" in removal order, with their covering states.
+struct CoveredStates {
+	std::vector<State> order{};
+	std::vector<StateSet> covering_sets{};
+};
 
-	for (auto i = covering_indexes.begin() + static_cast<long int>(start_index + 1), e = covering_indexes.end(); i != e;
-		 ++i) {
-		if (covered[*i]) { // was already processed
+/**
+ * Redirect all transitions and initial states from the covered states to their covering states and drop the covered
+ *  states' outgoing transitions and finality, as if remove_covered_state() was called for each in order.
+ *
+ * A covering set holds only states not covered at removal time, so states covered later are resolved first.
+ */
+void redirect_covered_states(const CoveredStates& covered_states, Nfa& nfa) {
+	const size_t num_of_covered{covered_states.order.size()};
+	if (num_of_covered == 0) { return; }
+	constexpr size_t not_covered{std::numeric_limits<size_t>::max()};
+	std::vector<size_t> covered_index(nfa.num_of_states(), not_covered);
+	for (size_t i{0}; i < num_of_covered; ++i) { covered_index[covered_states.order[i]] = i; }
+
+	std::vector<StateSet> resolved(num_of_covered);
+	for (size_t i{num_of_covered}; i-- > 0;) {
+		for (const State covering : covered_states.covering_sets[i]) {
+			const size_t covering_index{covered_index[covering]};
+			if (covering_index == not_covered) {
+				resolved[i].insert(covering);
+			} else {
+				resolved[i].insert(resolved[covering_index]);
+			}
+		}
+	}
+
+	const auto is_covered{[&](const State state) { return covered_index[state] != not_covered; }};
+	for (State source{0}; source < nfa.delta.num_of_states(); ++source) {
+		if (is_covered(source)) {
+			nfa.delta.mutable_state_post(source).clear();
 			continue;
 		}
-
-		if (macrostate_vec[*i].is_subset_of(check_state)) {
-			covering_set.insert(macrostate_vec[*i]); // is never covered
-			sub_covering_indexes.push_back(*i);
+		const StatePost& state_post{nfa.delta[source]};
+		if (std::ranges::none_of(state_post, [&](const SymbolPost& symbol_post) {
+				return std::ranges::any_of(symbol_post.targets, is_covered);
+			})) {
+			continue;
+		}
+		for (SymbolPost& symbol_post : nfa.delta.mutable_state_post(source)) {
+			if (std::ranges::none_of(symbol_post.targets, is_covered)) { continue; }
+			SmallStateSet targets{};
+			for (const State target : symbol_post.targets) {
+				if (!is_covered(target)) { targets.push_back(target); }
+			}
+			for (const State target : symbol_post.targets) {
+				if (is_covered(target)) { targets.insert(resolved[covered_index[target]]); }
+			}
+			symbol_post.targets = std::move(targets);
 		}
 	}
 
-	if (covering_set == check_state) { // can recurse even without covered :thinking:
-
-		const size_t covering_size = sub_covering_indexes.size() - 1;
-		for (size_t k = 0; k < covering_size; k++) {
-			if (macrostate_vec[sub_covering_indexes[k]].size() == 1) { // end on single-sized states
-				break;
-			}
-
-			if (visited[sub_covering_indexes[k]]) { // already processed
-				continue;
-			}
-
-			visited[sub_covering_indexes[k]] = true;
-
-			residual_recurse_coverable(macrostate_vec, sub_covering_indexes, covered, visited, k, subset_map, nfa);
+	for (size_t i{0}; i < num_of_covered; ++i) {
+		const State state{covered_states.order[i]};
+		nfa.final.erase(state);
+		if (nfa.initial.contains(state)) {
+			nfa.initial.erase(state);
+			for (const State covering : covered_states.covering_sets[i]) { nfa.initial.insert(covering); }
 		}
-
-		covering_set.clear(); // clear variable to store only needed macrostates
-		for (const auto index : sub_covering_indexes) {
-			if (covered[index] == 0) {
-				auto macrostate_ptr = subset_map->find(macrostate_vec[index]);
-				if (macrostate_ptr == subset_map->end()) { // should never happen
-					throw std::runtime_error(std::string{__func__} + " couldn't find expected element in a map.");
-				}
-
-				covering_set.insert(macrostate_ptr->second);
-			}
-		}
-
-		remove_covered_state(covering_set, subset_map->find(check_state)->second, nfa);
-		covered[covering_indexes[start_index]] = true;
 	}
 }
+
+/**
+ * Coverage analysis of residual reduction "after" over the macrostates ordered from the largest.
+ *
+ * A macrostate is covered when it is the union of the uncovered smaller macrostates it contains. Membership in the
+ *  tested macrostate and in the union so far is marked by stamps over the states of the determinized NFA, so a
+ *  subset test costs at most the size of the candidate and a union test the total size of the candidates.
+ */
+class ResidualCoverage {
+  public:
+	ResidualCoverage(
+		std::vector<const StateSet*> macrostates, std::vector<State> result_states, const size_t num_of_nfa_states
+	)
+		: macrostates_{std::move(macrostates)},
+		  result_states_{std::move(result_states)},
+		  covered_(macrostates_.size(), false),
+		  visited_(macrostates_.size(), false),
+		  member_stamp_(num_of_nfa_states),
+		  union_stamp_(num_of_nfa_states) {}
+
+	CoveredStates run() {
+		const size_t num_of_macrostates{macrostates_.size()};
+		for (size_t i{0}; i < num_of_macrostates - 1; ++i) {
+			if (macrostates_[i]->size() == 1) { break; } // Singletons are never covered.
+			if (visited_[i]) { continue; }
+			visited_[i] = true;
+			try_cover(i, std::views::iota(i + 1, num_of_macrostates));
+		}
+		return std::move(covered_states_);
+	}
+
+  private:
+	std::vector<const StateSet*> macrostates_;
+	std::vector<State> result_states_;
+	std::vector<bool> covered_;
+	std::vector<bool> visited_;
+	std::vector<size_t> member_stamp_;
+	std::vector<size_t> union_stamp_;
+	size_t stamp_{0};
+	CoveredStates covered_states_{};
+
+	/// Cover macrostate @p index by its uncovered subsets among @p candidates (ascending indexes after @p index),
+	///  first trying to cover each of them by its successors in that list.
+	template <class Candidates> void try_cover(const size_t index, const Candidates& candidates) {
+		std::vector<size_t> covering_indexes{};
+		if (!find_covering(index, candidates, covering_indexes)) { return; }
+		const size_t covering_size{covering_indexes.size() - 1};
+		for (size_t k{0}; k < covering_size; ++k) {
+			const size_t candidate{covering_indexes[k]};
+			if (macrostates_[candidate]->size() == 1) { break; }
+			if (visited_[candidate]) { continue; }
+			visited_[candidate] = true;
+			try_cover(candidate, std::span<const size_t>{covering_indexes}.subspan(k + 1));
+		}
+
+		StateSet covering_set{};
+		for (const size_t covering_index : covering_indexes) {
+			if (!covered_[covering_index]) { covering_set.insert(result_states_[covering_index]); }
+		}
+		covered_states_.order.push_back(result_states_[index]);
+		covered_states_.covering_sets.push_back(std::move(covering_set));
+		covered_[index] = true;
+	}
+
+	/// Collect the uncovered @p candidates which are subsets of macrostate @p index into @p covering_indexes and
+	///  return whether their union is the macrostate.
+	template <class Candidates>
+	bool find_covering(const size_t index, const Candidates& candidates, std::vector<size_t>& covering_indexes) {
+		++stamp_;
+		const StateSet& macrostate{*macrostates_[index]};
+		for (const State state : macrostate) { member_stamp_[state] = stamp_; }
+		size_t num_of_united{0};
+		for (const size_t candidate : candidates) {
+			if (covered_[candidate]) { continue; }
+			const StateSet& candidate_macrostate{*macrostates_[candidate]};
+			if (!std::ranges::all_of(candidate_macrostate, [&](const State state) {
+					return member_stamp_[state] == stamp_;
+				})) {
+				continue;
+			}
+			covering_indexes.push_back(candidate);
+			for (const State state : candidate_macrostate) {
+				if (union_stamp_[state] != stamp_) {
+					union_stamp_[state] = stamp_;
+					++num_of_united;
+				}
+			}
+		}
+		return num_of_united == macrostate.size();
+	}
+};
 } // namespace
 
 bool mata::nfa::Nfa::make_complete(const Alphabet* const alphabet, const std::optional<State> sink_state) {
-	return make_complete(get_symbols_to_work_with(alphabet), sink_state);
+	OrdVector<Symbol> copied_symbols{};
+	return make_complete(borrow_symbols(*resolve_alphabet(alphabet), copied_symbols), sink_state);
 }
 
 bool mata::nfa::Nfa::make_complete(const OrdVector<Symbol>& symbols, const std::optional<State> sink_state) {
+	if (symbols.empty()) { return false; }
+
 	bool transition_added{false};
 	const size_t num_of_states{this->num_of_states()};
 	const State sink_state_val{sink_state.value_or(num_of_states)};
+	const auto symbols_begin{symbols.begin()};
+	const auto symbols_end{symbols.end()};
 
-	OrdVector<Symbol> used_symbols{};
+	// Scratch buffer for merging an incomplete state post. The swap below hands its storage over to the state and
+	//  takes the storage of the state in exchange, so a later, larger state post can still reallocate. The win is
+	//  appending the merged state post instead of inserting every missing symbol into the middle of the old one.
+	StatePost completed_post{};
 	for (State state{0}; state < num_of_states; ++state) {
-		for (const SymbolPost& symbol_post : delta[state]) { used_symbols.insert(symbol_post.symbol); }
-		for (const OrdVector<Symbol> unused_symbols{symbols.difference(used_symbols)};
-			 const Symbol symbol : unused_symbols) {
-			delta.add(state, symbol, sink_state_val);
-			transition_added = true;
+		// Probed through the constant accessor: 'mutable_state_post()' allocates the posts of all states up to
+		//  'state' (the delta may be shorter than the automaton), so a state that turns out to be complete must
+		//  not reach it.
+		const StatePost& post{delta[state]};
+
+		// Both the state post and @p symbols are sorted by symbol, so a single merge decides whether the post
+		//  contains all of @p symbols. Comparing sizes would not decide it: a post may hold symbols outside
+		//  @p symbols (e.g., EPSILON), which complete nothing and are only skipped over here.
+		auto symbols_it{symbols_begin};
+		auto post_it{post.begin()};
+		const auto post_end{post.end()};
+		while (symbols_it != symbols_end) {
+			while (post_it != post_end && post_it->symbol < *symbols_it) { ++post_it; }
+			if (post_it == post_end || post_it->symbol != *symbols_it) { break; } // '*symbols_it' is missing.
+			++post_it;
+			++symbols_it;
 		}
-		used_symbols.clear();
+		if (symbols_it == symbols_end) { continue; } // The state is already complete.
+		transition_added = true;
+		// Upper bound on the missing symbols: everything from the first missing one on. 'post' dangles from here,
+		//  'mutable_state_post()' may reallocate the state posts.
+		const size_t num_of_missing_at_most{static_cast<size_t>(symbols_end - symbols_it)};
+
+		// Rebuild the state post as the merge of the original symbol posts with the missing symbols. Both sequences
+		//  are sorted, so the merged state post is created by appending only, with no sorted insert in the middle.
+		StatePost& state_post{delta.mutable_state_post(state)};
+		completed_post.clear();
+		completed_post.reserve(state_post.size() + num_of_missing_at_most);
+		symbols_it = symbols_begin;
+		for (SymbolPost& symbol_post : state_post) {
+			while (symbols_it != symbols_end && *symbols_it < symbol_post.symbol) {
+				completed_post.emplace_back(*symbols_it, sink_state_val);
+				++symbols_it;
+			}
+			if (symbols_it != symbols_end && *symbols_it == symbol_post.symbol) { ++symbols_it; }
+			completed_post.emplace_back(std::move(symbol_post));
+		}
+		for (; symbols_it != symbols_end; ++symbols_it) { completed_post.emplace_back(*symbols_it, sink_state_val); }
+		std::swap(state_post, completed_post);
 	}
 
 	if (transition_added && num_of_states <= sink_state_val) {
-		for (const Symbol symbol : symbols) { delta.add(sink_state_val, symbol, sink_state_val); }
+		// 'sink_state_val' is at least 'num_of_states', hence beyond every allocated state post: the sink post is
+		//  empty and the self-loops over the sorted @p symbols are appended in order, without the search and the
+		//  shifting that 'Delta::add()' pays per symbol.
+		StatePost& sink_post{delta.mutable_state_post(sink_state_val)};
+		MATA_ASSERT(sink_post.empty(), "Nfa::make_complete: the post of a fresh sink state must be empty.");
+		sink_post.reserve(symbols.size());
+		for (const Symbol symbol : symbols) { sink_post.emplace_back(symbol, sink_state_val); }
 	}
 
 	return transition_added;
 }
 
-// TODO: based on the comments inside, this function needs to be rewritten in a more optimal way.
-Nfa mata::nfa::remove_epsilon(const Nfa& aut, const Symbol epsilon) {
-	// cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
-	std::unordered_map<State, StateSet> epsilon_closure;
+namespace {
 
-	// TODO: grossly inefficient
-	// first we compute the epsilon closure
-	const size_t num_of_states{aut.num_of_states()};
-	for (size_t i{0}; i < num_of_states; ++i) {
-		for (const auto& trans : aut.delta[i]) {
-			const auto [it, inserted] = epsilon_closure.insert({i, {i}});
-			if (trans.symbol == epsilon) {
-				StateSet& closure = it->second;
-				// TODO: Fix possibly insert to OrdVector. Create list already ordered, then merge (do not need to
-				// resize each time);
-				closure.insert(trans.targets);
-			}
+/// Marks a state that is not in an epsilon component.
+constexpr uint32_t NO_COMPONENT = std::numeric_limits<uint32_t>::max();
+
+using PostRange = std::ranges::subrange<StatePost::const_iterator>;
+
+/// SCC of the epsilon graph with Tarjan's algorithm.
+struct EpsilonComponents {
+	std::vector<State> members{}; ///< States grouped by component.
+	std::vector<size_t> ends{}; ///< End of each component in @c members.
+	std::vector<uint32_t> component_of{}; ///< Component of each state with an epsilon post, else @c NO_COMPONENT.
+
+	size_t size() const { return ends.size(); }
+	std::span<const State> members_of(const size_t component) const {
+		const size_t begin = component == 0 ? 0 : ends[component - 1];
+		return {members.data() + begin, ends[component] - begin};
+	}
+};
+
+/// Iterative Tarjan's algorithm over the states with an epsilon post.
+/// Targets without one are left out as they are singleton components that need no work.
+EpsilonComponents find_epsilon_components(const Delta& delta, const Symbol epsilon) {
+	constexpr uint32_t unvisited = std::numeric_limits<uint32_t>::max();
+	const size_t num_of_states = delta.num_of_states();
+	std::vector<const SymbolPost*> epsilon_posts(num_of_states, nullptr);
+
+	for (State state = 0; state < num_of_states; ++state) {
+		const StatePost& post = delta[state];
+		if (const auto it = Delta::epsilon_symbol_posts(post, epsilon); it != post.end()) {
+			epsilon_posts[state] = &*it;
 		}
 	}
 
-	bool changed = true;
-	while (changed) { // Compute the fixpoint.
-		changed = false;
-		for (size_t i = 0; i < num_of_states; ++i) {
-			const StatePost& post{aut.delta[i]};
-			// TODO: make faster if default epsilon
-			if (const auto eps_move_it{post.find(epsilon)}; eps_move_it != post.end()) {
-				StateSet& src_eps_cl = epsilon_closure[i];
-				for (const State tgt : eps_move_it->targets) {
-					const StateSet& tgt_eps_cl = epsilon_closure[tgt];
-					for (const State st : tgt_eps_cl) {
-						if (src_eps_cl.count(st) == 0) {
-							changed = true;
-							break;
-						}
-					}
-					src_eps_cl.insert(tgt_eps_cl);
+	EpsilonComponents components;
+	components.component_of.assign(num_of_states, NO_COMPONENT);
+	std::vector<uint32_t> index(num_of_states, unvisited);
+	std::vector<uint32_t> low(num_of_states, 0);
+	std::vector<State> stack;
+
+	struct Frame {
+		State state;
+		size_t next_target;
+	};
+
+	std::vector<Frame> frames;
+	uint32_t next_index = 0;
+	const auto visit = [&](const State state) {
+		index[state] = next_index;
+		low[state] = next_index;
+		++next_index;
+		stack.push_back(state);
+		frames.push_back({.state = state, .next_target = 0});
+	};
+
+	for (State root = 0; root < num_of_states; ++root) {
+		if (epsilon_posts[root] == nullptr || index[root] != unvisited) { continue; }
+		visit(root);
+
+		while (!frames.empty()) {
+			Frame& frame = frames.back();
+			const SmallStateSet& targets = epsilon_posts[frame.state]->targets;
+
+			if (frame.next_target < targets.size()) {
+				const State target = targets[frame.next_target];
+				++frame.next_target;
+				if (target >= num_of_states || epsilon_posts[target] == nullptr) { continue; }
+				if (index[target] == unvisited) {
+					visit(target);
+				} else if (components.component_of[target] == NO_COMPONENT) {
+					low[frame.state] = std::min(low[frame.state], index[target]);
 				}
+				continue;
 			}
-		}
-	}
 
-	// Construct the automaton without epsilon transitions.
-	Nfa result{Delta{}, aut.initial, aut.final, aut.alphabet};
-	for (const auto& [state, closure_states] : epsilon_closure) {
-		for (const State eps_cl_state : closure_states) {
-			if (aut.final[eps_cl_state]) { result.final.insert(state); }
-			for (const SymbolPost& move : aut.delta[eps_cl_state]) {
-				if (move.symbol == epsilon) { continue; }
-				// TODO: this could be done more efficiently if we had a better add method
-				for (const State tgt_state : move.targets) { result.delta.add(state, move.symbol, tgt_state); }
-			}
+			const State state = frame.state;
+			frames.pop_back();
+
+			if (!frames.empty()) { low[frames.back().state] = std::min(low[frames.back().state], low[state]); }
+			if (low[state] != index[state]) { continue; }
+
+			const auto component = static_cast<uint32_t>(components.size());
+			State member;
+
+			do {
+				member = stack.back();
+				stack.pop_back();
+				components.component_of[member] = component;
+				components.members.push_back(member);
+			} while (member != state);
+
+			components.ends.push_back(components.members.size());
 		}
 	}
-	return result;
+	return components;
 }
 
-Nfa mata::nfa::fragile_revert(const Nfa& aut) {
-	const size_t num_of_states{aut.num_of_states()};
-
-	Nfa result(num_of_states);
-
-	result.initial = aut.final;
-	result.final = aut.initial;
-
-	// Compute non-epsilon symbols.
-	OrdVector<Symbol> symbols = aut.delta.get_used_symbols();
-	if (symbols.empty()) { return result; }
-	if (symbols.back() == EPSILON) { symbols.pop_back(); }
-	// size of the "used alphabet", i.e. max symbol+1 or 0
-	const Symbol alphabet_size = (symbols.empty()) ? 0 : (symbols.back() + 1);
-
-#ifdef _STATIC_STRUCTURES_
-	// STATIC DATA STRUCTURES:
-	//  Not sure that it works ideally, whether the space for the inner vectors stays there.
-	static std::vector<std::vector<State>> sources;
-	static std::vector<std::vector<State>> targets;
-	static std::vector<State> e_sources;
-	static std::vector<State> e_targets;
-	if (alphabet_size > sources.size()) {
-		sources.resize(alphabet_size);
-		targets.resize(alphabet_size);
+/// Appends the symbol posts of @p range that have a target.
+void append_nonempty(const PostRange range, StatePost& result) {
+	result.reserve(range.size());
+	for (const SymbolPost& symbol_post : range) {
+		if (!symbol_post.empty()) { result.push_back(symbol_post); }
 	}
+}
 
-	e_sources.clear();
-	e_targets.clear();
+/// Union of symbol-sorted ranges of symbol posts
+class PostUnion {
+  public:
+	/// Union of @p ranges in symbol order, without symbol posts that have no target.
+	StatePost unite(const std::span<const PostRange> ranges) {
+		StatePost result;
+		const PostRange* first = nullptr;
+		const PostRange* second = nullptr;
+		size_t num_of_nonempty = 0;
 
-	// WHEN ONLY MAX SYMBOL IS COMPUTED
-	//  for (int i = 0;i<alphasize;i++) {
-	//      for (int i = 0;i<alphasize;i++) {
-	//          if (!sources[i].empty())
-	//          {
-	//              sources[i].resize(0);
-	//              targets[i].resize(0);
-	//          }
-	//      }
-	//  }
+		for (const PostRange& range : ranges) {
+			if (range.empty()) { continue; }
+			++num_of_nonempty;
 
-	// WHEN ALL SYMBOLS ARE COMPUTED
-	for (Symbol symbol : symbols) {
-		if (!sources[symbol].empty()) {
-			sources[symbol].clear();
-			targets[symbol].clear();
+			if (first == nullptr) {
+				first = &range;
+			} else if (second == nullptr) {
+				second = &range;
+			}
 		}
-	}
-#else
-	// NORMAL, NON-STATIC DATA STRUCTURES:
-	// All transition of delta are to be copied here, into two arrays of transition sources and targets indexed by the
-	//  transition symbol.
-	// There is a special treatment for epsilon, since we want the arrays to be only as long as the largest symbol in
-	// the automaton, and epsilon is the maximum (so we don't want to have the maximum array length whenever epsilon is
-	// present).
-	std::vector<std::vector<State>> sources(alphabet_size);
-	std::vector<std::vector<State>> targets(alphabet_size);
-	std::vector<State> e_sources;
-	std::vector<State> e_targets;
-#endif
 
-	// Copy all transition with non-e symbols to the arrays of sources and targets indexed by symbols.
-	// Targets and sources of e-transitions go to the special place.
-	// Important: since we are going through delta in order of sources, the sources arrays are all ordered.
-	for (State source_state{0}; source_state < num_of_states; ++source_state) {
-		for (const SymbolPost& move : aut.delta[source_state]) {
-			if (move.symbol == EPSILON) {
-				for (const State target_state : move.targets) {
-					// reserve_on_insert(e_sources);
-					e_sources.push_back(source_state);
-					// reserve_on_insert(e_targets);
-					e_targets.push_back(target_state);
+		if (num_of_nonempty == 1) {
+			append_nonempty(*first, result);
+		} else if (num_of_nonempty == 2) {
+			merge_two(*first, *second, result);
+		} else if (num_of_nonempty > 2) {
+			// Synchronize the iterators over the ranges, so that the symbol posts of the same symbol are unified.
+			sync_iterator_.reset();
+
+			for (const PostRange& range : ranges) { sync_iterator_.push_back(range.begin(), range.end()); }
+
+			while (sync_iterator_.advance()) {
+				const StateSet targets = sync_iterator_.unify_targets();
+
+				if (!targets.empty()) {
+					result.emplace_back(sync_iterator_.get_current_minimum()->symbol, std::span<const State>{targets});
 				}
+			}
+		}
+
+		return result;
+	}
+
+  private:
+	SynchronizedExistentialSymbolPostIterator sync_iterator_{};
+	std::vector<State> targets_{};
+
+	/// Buffer for at least @p size targets, so that a target set is built in one copy.
+	State* target_buffer(const size_t size) {
+		if (targets_.size() < size) { targets_.resize(size); }
+		return targets_.data();
+	}
+
+	/// Appends the union of two symbol posts over the same symbol if it has a target.
+	void push_union(const SymbolPost& lhs, const SymbolPost& rhs, StatePost& result) {
+		if (lhs.empty() && rhs.empty()) { return; }
+		State* const first = target_buffer(lhs.targets.size() + rhs.targets.size());
+		State* const last = std::ranges::set_union(lhs.targets, rhs.targets, first).out;
+		result.emplace_back(lhs.symbol, std::span<const State>{first, last});
+	}
+
+	void merge_two(const PostRange lhs, const PostRange rhs, StatePost& result) {
+		result.reserve(lhs.size() + rhs.size());
+		auto lhs_it = lhs.begin();
+		auto rhs_it = rhs.begin();
+
+		while (lhs_it != lhs.end() && rhs_it != rhs.end()) {
+			if (lhs_it->symbol < rhs_it->symbol) {
+				if (!lhs_it->empty()) { result.push_back(*lhs_it); }
+				++lhs_it;
+			} else if (rhs_it->symbol < lhs_it->symbol) {
+				if (!rhs_it->empty()) { result.push_back(*rhs_it); }
+				++rhs_it;
 			} else {
-				for (const State target_state : move.targets) {
-					// reserve_on_insert(sources[move.symbol]);
-					sources[move.symbol].push_back(source_state);
-					// reserve_on_insert(targets[move.symbol]);
-					targets[move.symbol].push_back(target_state);
-				}
+				push_union(*lhs_it, *rhs_it, result);
+				++lhs_it;
+				++rhs_it;
 			}
 		}
+
+		append_nonempty({lhs_it, lhs.end()}, result);
+		append_nonempty({rhs_it, rhs.end()}, result);
+	}
+};
+
+/**
+ * @brief Writes to @p result the non-epsilon posts of the epsilon closure in @p source of every state with an epsilon
+ * post, and adds the state to @p final when its closure holds a final state.
+ *
+ * All states of a SCC of the epsilon graph have the same closure. The closure post of a component is the union of the
+ * posts of its members and of the closure posts of its successors, which Tarjan's algorithm finishes first, so every
+ * closure post is merged once. @p source may be @p result, so a post is read before it is written.
+ */
+void write_epsilon_closures(const Delta& source, Delta& result, SparseSet<State>& final, const Symbol epsilon) {
+	const EpsilonComponents components = find_epsilon_components(source, epsilon);
+
+	mata::BoolVector is_final(components.size(), false);
+	std::vector<uint32_t> merged_into(source.num_of_states(), NO_COMPONENT);
+	std::vector<PostRange> ranges;
+
+	PostUnion post_union;
+	for (size_t component = 0; component < components.size(); ++component) {
+		const auto marker = static_cast<uint32_t>(component);
+		const std::span<const State> members = components.members_of(component);
+		bool closure_is_final = false;
+		ranges.clear();
+
+		for (const State member : members) {
+			closure_is_final = closure_is_final || final.contains(member);
+			const StatePost& post = source[member];
+			const auto epsilon_it = Delta::epsilon_symbol_posts(post, epsilon);
+
+			ranges.emplace_back(post.begin(), epsilon_it);
+			ranges.emplace_back(std::next(epsilon_it), post.end());
+
+			for (const State target : epsilon_it->targets) {
+				if (target >= components.component_of.size()) {
+					// The target has no allocated post, but its finality is part of the closure.
+					closure_is_final = closure_is_final || final.contains(target);
+					continue;
+				}
+
+				const uint32_t target_component = components.component_of[target];
+				if (target_component == marker) { continue; }
+				// A component is marked by its first member, which already holds the closure post.
+				const bool in_component = target_component != NO_COMPONENT;
+				const State marked = in_component ? components.members_of(target_component).front() : target;
+
+				if (merged_into[marked] == marker) { continue; }
+
+				merged_into[marked] = marker;
+				const StatePost& target_post = in_component ? result[marked] : source[target];
+
+				ranges.emplace_back(target_post.begin(), target_post.end());
+				closure_is_final =
+					closure_is_final || (in_component ? is_final[target_component] != 0 : final.contains(target));
+			}
+		}
+
+		is_final[component] = closure_is_final;
+		StatePost closure_post = post_union.unite(ranges);
+
+		// The last member takes the post, the others copy it.
+		for (const State member : members.first(members.size() - 1)) {
+			result.mutable_state_post(member) = closure_post;
+		}
+
+		result.mutable_state_post(members.back()) = std::move(closure_post);
 	}
 
-	// Now make the delta of the reversed automaton.
-	// Important: since sources are ordered, when adding them as targets, we can just push them back.
-	result.delta.reserve(num_of_states);
-
-	// adding non-e transitions
-	for (const Symbol symbol : symbols) {
-		for (size_t i{0}; i < sources[symbol].size(); ++i) {
-			const State tgt_state = sources[symbol][i];
-			const State src_state = targets[symbol][i];
-			StatePost& src_post = result.delta.mutable_state_post(src_state);
-			if (src_post.empty() || src_post.back().symbol != symbol) { src_post.push_back(SymbolPost(symbol)); }
-			src_post.back().push_back(tgt_state);
+	// Final states are added in increasing order.
+	for (State state = 0; state < components.component_of.size(); ++state) {
+		if (const uint32_t component = components.component_of[state];
+			component != NO_COMPONENT && is_final[component] != 0) {
+			final.insert(state);
 		}
 	}
-
-	// adding e-transitions
-	for (size_t i{0}; i < e_sources.size(); ++i) {
-		const State tgt_state = e_sources[i];
-		const State src_state = e_targets[i];
-		StatePost& src_post = result.delta.mutable_state_post(src_state);
-		if (src_post.empty() || src_post.back().symbol != EPSILON) { src_post.push_back(SymbolPost(EPSILON)); }
-		src_post.back().push_back(tgt_state);
-	}
-
-	// sorting the targets
-	// Hm I don't know why I put this here, but it should not be needed ...
-	// for (State q = 0, states_num = result.delta.post_size(); q<states_num;++q) {
-	//     for (auto m = result.delta.get_mutable_post(q).begin(); m != result.delta.get_mutable_post(q).end(); ++m) {
-	//         sort_and_rmdupl(m->targets);
-	//     }
-	// }
-
-	return result;
 }
 
-Nfa mata::nfa::simple_revert(const Nfa& aut) {
-	Nfa result;
-	result.clear();
+/// Drops the trailing state posts after the last source or target state.
+void drop_unused_trailing_posts(Delta& delta) {
+	const size_t num_of_states = delta.num_of_states();
+	if (num_of_states == 0 || !delta[static_cast<State>(num_of_states - 1)].empty()) { return; }
 
-	const size_t num_of_states{aut.num_of_states()};
-	result.delta.allocate(num_of_states);
+	size_t used = 0;
+	for (State state = 0; state < num_of_states; ++state) {
+		const StatePost& post = delta[state];
+		if (post.empty()) { continue; }
+		used = std::max(used, size_t{state} + 1);
 
-	for (State source_state{0}; source_state < num_of_states; ++source_state) {
-		for (const SymbolPost& transition : aut.delta[source_state]) {
-			for (const State target_state : transition.targets) {
-				result.delta.add(target_state, transition.symbol, source_state);
-			}
-		}
+		for (const SymbolPost& symbol_post : post) { used = std::max(used, size_t{symbol_post.targets.back()} + 1); }
 	}
 
-	result.initial = aut.final;
-	result.final = aut.initial;
+	Delta shrunk;
+	shrunk.reserve(used);
 
-	return result;
+	for (State state = 0; state < used; ++state) { shrunk.emplace_back(std::move(delta.mutable_state_post(state))); }
+
+	delta = std::move(shrunk);
 }
 
-// not so great, can be removed
-Nfa mata::nfa::somewhat_simple_revert(const Nfa& aut) {
-	const size_t num_of_states{aut.num_of_states()};
+} // namespace
 
-	Nfa result(num_of_states);
-
-	result.initial = aut.final;
-	result.final = aut.initial;
-
-	for (State source_state{0}; source_state < num_of_states; ++source_state) {
-		for (const SymbolPost& transition : aut.delta[source_state]) {
-			for (const State target_state : transition.targets) {
-				StatePost& post = result.delta.mutable_state_post(target_state);
-				// auto move = std::find(post.begin(),post.end(),Move(transition.symbol));
-				if (auto move = post.find(SymbolPost(transition.symbol)); move == post.end()) {
-					// post.push_back(Move(transition.symbol,sourceState));
-					post.insert(SymbolPost(transition.symbol, source_state));
-				} else {
-					move->push_back(source_state);
-				}
-				// move->insert(sourceState);
-			}
+// In-place version
+void mata::nfa::Nfa::remove_epsilon(const Symbol epsilon) {
+	// As in the copying version, the symbol posts that have no target are dropped.
+	const size_t num_of_states = delta.num_of_states();
+	for (State state = 0; state < num_of_states; ++state) {
+		if (std::ranges::any_of(delta[state], &SymbolPost::empty)) {
+			delta.mutable_state_post(state).filter([](const SymbolPost& symbol_post) { return !symbol_post.empty(); });
 		}
 	}
 
-	// sorting the targets
-	for (State q = 0, states_num = result.delta.num_of_states(); q < states_num; ++q) {
-		// Post & post = result.delta.get_mutable_post(q);
-		// utils::sort_and_rmdupl(post);
-		for (SymbolPost& m : result.delta.mutable_state_post(q)) { sort_and_rmdupl(m.targets); }
+	write_epsilon_closures(delta, delta, final, epsilon);
+	drop_unused_trailing_posts(delta);
+}
+
+// Copying version
+Nfa mata::nfa::remove_epsilon(const Nfa& aut, const Symbol epsilon) {
+	// Copying the automaton without the epsilon posts, so that the result has no epsilon transitions.
+	// The states without an epsilon post keep their posts without the symbol posts that have no target.
+	Delta epsilon_free;
+	epsilon_free.reserve(aut.delta.num_of_states());
+	for (const StatePost& post : aut.delta) {
+		StatePost& post_copy = epsilon_free.emplace_back();
+
+		if (Delta::epsilon_symbol_posts(post, epsilon) != post.end()) { continue; }
+
+		if (std::ranges::none_of(post, &SymbolPost::empty)) {
+			post_copy = post;
+		} else {
+			append_nonempty({post.begin(), post.end()}, post_copy);
+		}
 	}
+
+	Nfa result{std::move(epsilon_free), aut.initial, aut.final, aut.alphabet};
+
+	write_epsilon_closures(aut.delta, result.delta, result.final, epsilon);
+	drop_unused_trailing_posts(result.delta);
 
 	return result;
 }
 
 Nfa mata::nfa::revert(const Nfa& aut) {
-	return simple_revert(aut);
-	// return fragile_revert(aut);
-	// return somewhat_simple_revert(aut);
+	Nfa result{};
+	result.delta = aut.delta.reverted(aut.num_of_states());
+	result.initial = aut.final;
+	result.final = aut.initial;
+	return result;
 }
+
+Nfa mata::nfa::fragile_revert(const Nfa& aut) { return revert(aut); }
+
+Nfa mata::nfa::simple_revert(const Nfa& aut) { return revert(aut); }
+
+Nfa mata::nfa::somewhat_simple_revert(const Nfa& aut) { return revert(aut); }
 
 bool mata::nfa::Nfa::is_deterministic() const {
 	if (initial.size() != 1) { return false; }
 	if (delta.empty()) { return true; }
 
 	const size_t aut_size{num_of_states()};
-	for (size_t i = 0; i < aut_size; ++i) {
+	for (State i = 0; i < aut_size; ++i) {
 		for (const auto& symbol_post : delta[i]) {
 			if (symbol_post.num_of_targets() != 1) { return false; }
 		}
@@ -483,36 +976,62 @@ bool mata::nfa::Nfa::is_deterministic() const {
 	return true;
 }
 
-bool Nfa::is_complete(const Alphabet* const alphabet) const { return is_complete(get_symbols_to_work_with(alphabet)); }
+bool mata::nfa::Nfa::is_minimal() const {
+	if (!is_deterministic()) { return false; }
+	if (final.empty()) { return num_of_states() == 1 && delta.num_of_transitions() == 0; }
+	if (get_useful_states().count() != num_of_states()) { return false; }
+	// Hopcroft merges exactly the equivalent states of a trimmed DFA.
+	return algorithms::minimize_hopcroft(*this).num_of_states() == num_of_states();
+}
+
+bool Nfa::is_complete(const Alphabet* const alphabet) const {
+	OrdVector<Symbol> copied_symbols{};
+	return is_complete(borrow_symbols(*resolve_alphabet(alphabet), copied_symbols));
+}
 
 bool mata::nfa::Nfa::is_complete(const OrdVector<Symbol>& symbols) const {
 	// TODO: make a general function for traversal over reachable states that can be shared by other functions?
-	std::list<State> worklist(initial.begin(), initial.end());
-	std::unordered_set<State> processed(initial.begin(), initial.end());
+	// Breadth-first search over the reachable states, with a vector used as a FIFO queue and a byte array in place
+	//  of a hash set of visited states. Both a state post and @p symbols are sorted by symbol, so a state is decided
+	//  by a single two-pointer merge instead of one binary search per outgoing symbol.
+	// No `delta.empty()` guard: `delta[state]` of an empty or unallocated state post already yields nothing.
+	std::vector<State> worklist(initial.begin(), initial.end());
+	std::vector<char> visited(num_of_states(), 0);
+	const auto visit = [&visited](const State state) -> bool {
+		if (state >= visited.size()) { visited.resize(state + 1, 0); }
+		if (visited[state] != 0) { return false; }
+		visited[state] = 1;
+		return true;
+	};
+	for (const State state : initial) { visit(state); }
 
-	while (!worklist.empty()) {
-		const State state = *worklist.begin();
-		worklist.pop_front();
-
-		size_t n = 0; // counter of symbols
-		if (!delta.empty()) {
-			for (const auto& symb_stateset : delta[state]) {
-				++n;
-				if (!haskey(symbols, symb_stateset.symbol)) {
-					throw std::runtime_error(
-						std::string{__func__} + ": encountered a symbol that is not in the provided alphabet"
-					);
-				}
-
-				for (const auto& tgt_state : symb_stateset.targets) {
-					bool inserted;
-					tie(std::ignore, inserted) = processed.insert(tgt_state);
-					if (inserted) { worklist.push_back(tgt_state); }
-				}
+	const auto symbols_end{symbols.end()};
+	for (size_t head{0}; head < worklist.size(); ++head) {
+		const StatePost& state_post{delta[worklist[head]]};
+		auto symbol_post_it{state_post.begin()};
+		const auto symbol_post_end{state_post.end()};
+		auto symbol_it{symbols.begin()};
+		// A transition symbol outside @p symbols throws, and the throw takes precedence over a symbol of @p symbols
+		//  missing in the same state. The whole state post is therefore scanned before `false` is returned.
+		bool is_symbol_missing{false};
+		while (symbol_post_it != symbol_post_end) {
+			if (symbol_it == symbols_end || symbol_post_it->symbol < *symbol_it) {
+				throw std::runtime_error(
+					std::string{__func__} + ": encountered a symbol that is not in the provided alphabet"
+				);
 			}
+			if (*symbol_it < symbol_post_it->symbol) { // The symbol has no transition from this state.
+				is_symbol_missing = true;
+				++symbol_it;
+				continue;
+			}
+			for (const State target : symbol_post_it->targets) {
+				if (visit(target)) { worklist.push_back(target); }
+			}
+			++symbol_post_it;
+			++symbol_it;
 		}
-
-		if (symbols.size() != n) { return false; }
+		if (is_symbol_missing || symbol_it != symbols_end) { return false; }
 	}
 
 	return true;
@@ -526,17 +1045,16 @@ std::pair<Run, bool> mata::nfa::Nfa::get_word_for_path(const Run& run) const {
 	for (size_t i = 1; i < run.path.size(); ++i) {
 		const State new_st = run.path[i];
 		bool found = false;
-		if (!this->delta.empty()) {
-			for (const auto& symbol_map : this->delta[cur]) {
-				for (const State st : symbol_map.targets) {
-					if (st == new_st) {
-						word.word.push_back(symbol_map.symbol);
-						found = true;
-						break;
-					}
+		// `delta[cur]` already yields nothing for an empty or unallocated state post, see `is_complete()`.
+		for (const auto& symbol_map : this->delta[cur]) {
+			for (const State st : symbol_map.targets) {
+				if (st == new_st) {
+					word.word.push_back(symbol_map.symbol);
+					found = true;
+					break;
 				}
-				if (found) { break; }
 			}
+			if (found) { break; }
 		}
 		if (!found) { return {{}, false}; }
 		cur = new_st; // update current state
@@ -567,7 +1085,7 @@ std::optional<State> mata::nfa::Nfa::read_word_det(const Run& run) const {
 	State current_post = *initial.begin();
 
 	for (const Symbol sym : run.word) {
-		const StateSet& successors = delta.get_successors(current_post, sym);
+		const SmallStateSet& successors = delta.get_successors(current_post, sym);
 		if (successors.empty()) { return std::nullopt; }
 		current_post = *successors.begin();
 	}
@@ -577,6 +1095,26 @@ std::optional<State> mata::nfa::Nfa::read_word_det(const Run& run) const {
 
 // TODO: this is not efficient
 bool Nfa::is_in_lang(const Run& run, const bool use_epsilon, const bool match_prefix) const {
+	if (!use_epsilon && !match_prefix && initial.size() == 1) {
+		// Scalar walk: while every visited symbol post has at most one target, the run is unique. On the first
+		//  nondeterministic post, the subset walk continues from the state reached, keeping the answer exact.
+		State state{*initial.begin()};
+		size_t prefix_len{0};
+		const size_t word_len{run.word.size()};
+		for (; prefix_len < word_len; ++prefix_len) {
+			const SmallStateSet& successors{delta.get_successors(state, run.word[prefix_len])};
+			if (successors.empty()) { return false; }
+			if (successors.size() > 1) { break; }
+			state = successors.front();
+		}
+		if (prefix_len == word_len) { return final.contains(state); }
+		StateSet current_post{state};
+		for (; prefix_len < word_len; ++prefix_len) {
+			current_post = post(current_post, run.word[prefix_len]);
+			if (current_post.empty()) { return false; }
+		}
+		return final.intersects_with(current_post);
+	}
 	if (match_prefix) {
 		StateSet current_post(this->initial);
 
@@ -603,10 +1141,34 @@ Nfa mata::nfa::algorithms::minimize_brzozowski(const Nfa& aut) {
 	return determinize(revert(determinize(revert(aut))));
 }
 
+Nfa mata::nfa::algorithms::minimize_hopcroft_nondet(const Nfa& aut) {
+	// Brzozowski determinizes twice, so it can blow up exponentially even on an input that already is a trimmed
+	//  DFA; Hopcroft is O(a*n*log(n)) on such an input and supports partial transition functions, so the
+	//  determinization is only needed when the input is not deterministic.
+	// Trim a nondeterministic input before the subset construction: states that cannot reach a final state would
+	//  otherwise generate reachable subsets which the trim can never remove again (every reachable subset still holds
+	//  some state reachable from the initial states, and only non-final ones). On a large non-accepting branch the
+	//  determinization can then blow up before any minimization runs. Trimming changes no accepted word.
+	Nfa deterministic{aut.is_deterministic() ? aut : determinize(trim(aut))};
+	deterministic.trim();
+	if (deterministic.num_of_states() == 0) {
+		// Trimming an automaton with an empty language removes every state. Return the canonical automaton of the
+		//  empty language instead, so that the result is a usable automaton with a single non-final initial state.
+		Nfa empty_language{1};
+		empty_language.initial.insert(0);
+		// Keep the attached alphabet: make_complete() on the result needs the symbols of the input.
+		empty_language.alphabet = deterministic.alphabet;
+		return empty_language;
+	}
+	return minimize_hopcroft(deterministic);
+}
+
+Nfa mata::nfa::algorithms::minimize_auto(const Nfa& aut) { return minimize_hopcroft_nondet(aut); }
+
 Nfa mata::nfa::minimize(const Nfa& aut, const ParameterMap& params) {
-	Nfa result;
-	// setting the default algorithm
-	decltype(algorithms::minimize_brzozowski)* algo = algorithms::minimize_brzozowski;
+	// 'algo' is reassigned in the 'else if' below, which 'misc-const-correctness' does not see.
+	// NOLINTNEXTLINE(misc-const-correctness)
+	decltype(algorithms::minimize_auto)* algo = algorithms::minimize_auto;
 	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(
 			std::string{__func__} +
@@ -616,9 +1178,13 @@ Nfa mata::nfa::minimize(const Nfa& aut, const ParameterMap& params) {
 		);
 	}
 
-	if (const std::string& str_algo = params.at("algorithm"); "brzozowski" == str_algo) { /* default */
+	if (const std::string& str_algo = params.at("algorithm"); "auto" == str_algo) { /* default */
+	} else if ("brzozowski" == str_algo) {
+		algo = algorithms::minimize_brzozowski;
 	} else if ("hopcroft" == str_algo) {
 		algo = algorithms::minimize_hopcroft;
+	} else if ("hopcroft_nondet" == str_algo) {
+		algo = algorithms::minimize_hopcroft_nondet;
 	} else {
 		throw std::runtime_error(
 			std::string{__func__} + " received an unknown value of the \"algorithm\" key: " + str_algo
@@ -633,8 +1199,8 @@ namespace {
 template <typename T>
 /**
  * A class for partitionable sets of elements. All elements are stored in a contiguous vector.
- * Elements from the same set are contiguous in the vector. Auxiliary data (indices, positions, etc.) are
- * stored in separate vectors.
+ * Elements from the same set are contiguous in the vector. The set and the location of an element, and the bounds of
+ *  a set, are each stored together, since every operation reads them together.
  */
 class RefinablePartition {
   public:
@@ -642,15 +1208,23 @@ class RefinablePartition {
 	static const T no_more_elements = std::numeric_limits<T>::max();
 	static constexpr size_t no_split = std::numeric_limits<size_t>::max();
 	size_t num_of_sets; ///< The number of sets in the partition.
-	std::vector<size_t> set_idx; ///< For each element, tells the index of the set it belongs to.
 
   private:
+	/// Where an element is: the index of its set and its location in the elements vector.
+	struct ElementInfo {
+		size_t set;
+		size_t location;
+	};
+	/// Indices into the elements vector: the first element of a set, the element after the first half of the set (the
+	///  marked elements), and the element after the last element of the set.
+	struct SetBounds {
+		size_t first;
+		size_t mid;
+		size_t end;
+	};
 	std::vector<T> elems_; ///< Contains all elements in an order such that the elements of the same set are contiguous.
-	std::vector<T> location_; ///< Contains the location of each element in the elements vector.
-	std::vector<size_t> first_; ///< Contains the index of the first element of each set in the elements vector.
-	std::vector<size_t> end_; ///< Contains the index after the last element of each set in the elements vector.
-	std::vector<size_t>
-		mid_; ///< Contains the index after the last element of the first half of the set in the elements vector.
+	std::vector<ElementInfo> info_; ///< The set and the location of each element.
+	std::vector<SetBounds> bounds_; ///< The bounds of each set.
 
   public:
 	/**
@@ -660,18 +1234,14 @@ class RefinablePartition {
 	 */
 	explicit RefinablePartition(const size_t num_of_states)
 		: num_of_sets(1),
-		  set_idx(num_of_states),
 		  elems_(num_of_states),
-		  location_(num_of_states),
-		  first_(num_of_states),
-		  end_(num_of_states),
-		  mid_(num_of_states) {
+		  info_(num_of_states),
+		  bounds_(num_of_states) {
 		// Initially, all states are in the same equivalence class.
-		first_[0] = mid_[0] = 0;
-		end_[0] = num_of_states;
+		bounds_[0] = {.first = 0, .mid = 0, .end = num_of_states};
 		for (State e = 0; e < num_of_states; ++e) {
-			elems_[e] = location_[e] = e;
-			set_idx[e] = 0;
+			elems_[e] = e;
+			info_[e] = {.set = 0, .location = e};
 		}
 	}
 
@@ -681,14 +1251,7 @@ class RefinablePartition {
 	 *
 	 * @param delta The transition function.
 	 */
-	explicit RefinablePartition(const Delta& delta)
-		: num_of_sets(0),
-		  set_idx(),
-		  elems_(),
-		  location_(),
-		  first_(),
-		  end_(),
-		  mid_() {
+	explicit RefinablePartition(const Delta& delta) : num_of_sets(0), elems_(), info_(), bounds_() {
 		size_t num_of_transitions = 0;
 		std::vector<size_t> counts;
 		std::unordered_map<Symbol, size_t> symbol_map;
@@ -707,88 +1270,43 @@ class RefinablePartition {
 
 		// Initialize data structures.
 		elems_.resize(num_of_transitions);
-		location_.resize(num_of_transitions);
-		set_idx.resize(num_of_transitions);
-		first_.resize(num_of_transitions);
-		end_.resize(num_of_transitions);
-		mid_.resize(num_of_transitions);
+		info_.resize(num_of_transitions);
+		bounds_.resize(num_of_transitions);
 
 		// Compute set indices.
 		// Use (mid - 1) as an index for the insertion.
-		first_[0] = 0;
-		end_[0] = counts[0];
-		mid_[0] = end_[0];
+		bounds_[0] = {.first = 0, .mid = counts[0], .end = counts[0]};
 		for (size_t i = 1; i < num_of_sets; ++i) {
-			first_[i] = end_[i - 1];
-			end_[i] = first_[i] + counts[i];
-			mid_[i] = end_[i];
+			const size_t first{bounds_[i - 1].end};
+			bounds_[i] = {.first = first, .mid = first + counts[i], .end = first + counts[i]};
 		}
 
 		// Fill the sets from the back.
 		// Mid, decremented before use, is used as an index for the next element.
 		size_t trans_idx = 0; // Index of the transition in the (flattened) delta.
 		for (const auto& trans : delta.transitions()) {
-			const Symbol a = trans.symbol;
-			const size_t a_idx = symbol_map[a];
-			const size_t trans_loc = mid_[a_idx] - 1;
-			mid_[a_idx] = trans_loc;
+			const size_t a_idx = symbol_map[trans.symbol];
+			const size_t trans_loc = --bounds_[a_idx].mid;
 			elems_[trans_loc] = trans_idx;
-			location_[trans_idx] = trans_loc;
-			set_idx[trans_idx] = a_idx;
+			info_[trans_idx] = {.set = a_idx, .location = trans_loc};
 			++trans_idx;
 		}
 	}
 
-	RefinablePartition(const RefinablePartition& other)
-		: num_of_sets(other.num_of_sets),
-		  set_idx(other.set_idx),
-		  elems_(other.elems_),
-		  location_(other.location_),
-		  first_(other.first_),
-		  end_(other.end_),
-		  mid_(other.mid_) {}
-
-	RefinablePartition(RefinablePartition&& other) noexcept
-		: num_of_sets(other.num_of_sets),
-		  set_idx(std::move(other.set_idx)),
-		  elems_(std::move(other.elems_)),
-		  location_(std::move(other.location_)),
-		  first_(std::move(other.first_)),
-		  end_(std::move(other.end_)),
-		  mid_(std::move(other.mid_)) {}
-
-	RefinablePartition& operator=(const RefinablePartition& other) {
-		if (this != &other) {
-			elems_ = other.elems_;
-			set_idx = other.set_idx;
-			location_ = other.location_;
-			first_ = other.first_;
-			end_ = other.end_;
-			mid_ = other.mid_;
-			num_of_sets = other.num_of_sets;
-		}
-		return *this;
-	}
-
-	RefinablePartition& operator=(RefinablePartition&& other) noexcept {
-		if (this != &other) {
-			elems_ = std::move(other.elems_);
-			set_idx = std::move(other.set_idx);
-			location_ = std::move(other.location_);
-			first_ = std::move(other.first_);
-			end_ = std::move(other.end_);
-			mid_ = std::move(other.mid_);
-			num_of_sets = other.num_of_sets;
-		}
-		return *this;
-	}
+	/**
+	 * @brief Get the index of the set the element belongs to.
+	 *
+	 * @param e The element.
+	 * @return The index of the set.
+	 */
+	size_t set_of(const T e) const { return info_[e].set; }
 
 	/**
 	 * @brief Get the number of elements across all sets.
 	 *
 	 * @return The number of elements.
 	 */
-	inline size_t size() const { return elems_.size(); }
+	size_t size() const { return elems_.size(); }
 
 	/**
 	 * @brief Get the size of the set.
@@ -796,7 +1314,7 @@ class RefinablePartition {
 	 * @param s The set index.
 	 * @return The size of the set.
 	 */
-	inline size_t size_of_set(const size_t s) const { return end_[s] - first_[s]; }
+	size_t size_of_set(const size_t s) const { return bounds_[s].end - bounds_[s].first; }
 
 	/**
 	 * @brief Get the first element of the set.
@@ -804,7 +1322,7 @@ class RefinablePartition {
 	 * @param s The set index.
 	 * @return The first element of the set.
 	 */
-	inline T get_first(const size_t s) const { return elems_[first_[s]]; }
+	T get_first(const size_t s) const { return elems_[bounds_[s].first]; }
 
 	/**
 	 * @brief Get the next element of the set.
@@ -812,9 +1330,10 @@ class RefinablePartition {
 	 * @param e The element.
 	 * @return The next element of the set or NO_MORE_ELEMENTS if there is no next element.
 	 */
-	inline T get_next(const T e) const {
-		if (location_[e] + 1 >= end_[set_idx[e]]) { return no_more_elements; }
-		return elems_[location_[e] + 1];
+	T get_next(const T e) const {
+		const ElementInfo& e_info{info_[e]};
+		if (e_info.location + 1 >= bounds_[e_info.set].end) { return no_more_elements; }
+		return elems_[e_info.location + 1];
 	}
 
 	/**
@@ -823,15 +1342,15 @@ class RefinablePartition {
 	 * @param e The element.
 	 */
 	void mark(const T e) {
-		const size_t e_set = set_idx[e];
-		const size_t e_loc = location_[e];
-		const size_t e_set_mid = mid_[e_set];
-		if (e_loc >= e_set_mid) {
-			elems_[e_loc] = elems_[e_set_mid];
-			location_[elems_[e_loc]] = e_loc;
+		ElementInfo& e_info{info_[e]};
+		size_t& e_set_mid{bounds_[e_info.set].mid};
+		if (const size_t e_loc{e_info.location}; e_loc >= e_set_mid) {
+			const T moved{elems_[e_set_mid]};
+			elems_[e_loc] = moved;
+			info_[moved].location = e_loc;
 			elems_[e_set_mid] = e;
-			location_[e] = e_set_mid;
-			mid_[e_set] = e_set_mid + 1;
+			e_info.location = e_set_mid;
+			++e_set_mid;
 		}
 	}
 
@@ -841,7 +1360,7 @@ class RefinablePartition {
 	 * @param s The set index.
 	 * @return True if the set has no marked elements, false otherwise.
 	 */
-	inline bool has_no_marks(const size_t s) const { return mid_[s] == first_[s]; }
+	bool has_no_marks(const size_t s) const { return bounds_[s].mid == bounds_[s].first; }
 
 	/**
 	 * @brief Split the set into two sets according to the marked elements (the mid).
@@ -851,40 +1370,39 @@ class RefinablePartition {
 	 * @return The new set index.
 	 */
 	size_t split(const size_t s) {
-		if (mid_[s] == end_[s]) {
+		SetBounds& s_bounds{bounds_[s]};
+		if (s_bounds.mid == s_bounds.end) {
 			// If no elements were marked, move the mid to the end (no split needed).
-			mid_[s] = first_[s];
+			s_bounds.mid = s_bounds.first;
 		}
-		if (mid_[s] == first_[s]) {
+		if (s_bounds.mid == s_bounds.first) {
 			// If all or no elements were marked, there is no need to split the set.
 			return no_split;
-		} else {
-			// Split the set according to the mid.
-			first_[num_of_sets] = first_[s];
-			mid_[num_of_sets] = first_[s];
-			end_[num_of_sets] = mid_[s];
-			first_[s] = mid_[s];
-			for (size_t l = first_[num_of_sets]; l < end_[num_of_sets]; ++l) { set_idx[elems_[l]] = num_of_sets; }
-			return num_of_sets++;
 		}
+		// Split the set according to the mid.
+		const SetBounds marked{.first = s_bounds.first, .mid = s_bounds.first, .end = s_bounds.mid};
+		s_bounds.first = s_bounds.mid;
+		bounds_[num_of_sets] = marked;
+		for (size_t l = marked.first; l < marked.end; ++l) { info_[elems_[l]].set = num_of_sets; }
+		return num_of_sets++;
 	}
 };
-} // namespace
 
-Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
-	if (dfa_trimmed.delta.num_of_transitions() == 0) {
-		// The automaton is trivially minimal.
-		return Nfa{dfa_trimmed};
-	}
-	MATA_ASSERT(dfa_trimmed.is_deterministic());
-	MATA_ASSERT(dfa_trimmed.get_useful_states().count() == dfa_trimmed.num_of_states());
-
+/**
+ * @brief Coarsest partition of the states of @p aut that separates the final states from the others and in which the
+ *  states of a block have, over every symbol, a transition to the same block or none.
+ *
+ * Hopcroft's algorithm with every splitter queued initially, which is correct on partial transition functions. On a
+ *  deterministic @p aut, the partition is the bisimulation equivalence.
+ * @pre Every symbol post of @p aut has at most one target, and @p aut has a transition.
+ */
+RefinablePartition<State> refine_by_hopcroft(const Nfa& aut) {
 	// Initialize equivalence classes. The initial partition is {Q}.
-	RefinablePartition<State> brp(dfa_trimmed.num_of_states());
+	RefinablePartition<State> brp(aut.num_of_states());
 	// Initialize splitters. A splitter is a set of transitions
 	// over a common symbol incoming to an equivalence class. Initially,
 	// the partition has m splitters, where m is the alphabet size.
-	RefinablePartition<size_t> trp(dfa_trimmed.delta);
+	RefinablePartition<size_t> trp(aut.delta);
 
 	// Initialize vector of incoming transitions for each state. Transitions
 	// are represented only by their indices in the (flattened) delta.
@@ -892,7 +1410,7 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
 	std::vector<State> trans_source_map(trp.size());
 	std::vector<std::vector<size_t>> incoming_trans_idxs(brp.size(), std::vector<size_t>());
 	size_t trans_idx = 0;
-	for (const auto& trans : dfa_trimmed.delta.transitions()) {
+	for (const auto& trans : aut.delta.transitions()) {
 		trans_source_map[trans_idx] = trans.source;
 		incoming_trans_idxs[trans.target].push_back(trans_idx);
 		++trans_idx;
@@ -923,7 +1441,7 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
 		// Transitions in one splitter must have the same symbol and go to the same block.
 		for (State q = brp.get_first(b_prime); q != RefinablePartition<State>::no_more_elements; q = brp.get_next(q)) {
 			for (const size_t trans_index : incoming_trans_idxs[q]) {
-				if (const size_t splitter_idx = trp.set_idx[trans_index]; trp.has_no_marks(splitter_idx)) {
+				if (const size_t splitter_idx = trp.set_of(trans_index); trp.has_no_marks(splitter_idx)) {
 					touched_splitters.push(splitter_idx);
 				}
 				// Mark the transition in the splitter and move it to the first half of the set.
@@ -948,7 +1466,7 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
 	}
 
 	// In the first refinement, we split the equivalence classes according to the final states.
-	for (const State q : dfa_trimmed.final) { brp.mark(q); }
+	for (const State q : aut.final) { brp.mark(q); }
 	split_block(0);
 
 	// Main loop of the Hopcroft's algorithm.
@@ -961,7 +1479,7 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
 		for (size_t trans_index = trp.get_first(splitter_idx);
 			 trans_index != RefinablePartition<size_t>::no_more_elements; trans_index = trp.get_next(trans_index)) {
 			const State q = trans_source_map[trans_index];
-			if (const size_t b_prime = brp.set_idx[q]; brp.has_no_marks(b_prime)) { touched_blocks.push(b_prime); }
+			if (const size_t b_prime = brp.set_of(q); brp.has_no_marks(b_prime)) { touched_blocks.push(b_prime); }
 			brp.mark(q);
 		}
 		// Try to split the blocks touched during the backpropagation.
@@ -972,18 +1490,276 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
 			split_block(b);
 		}
 	}
+	return brp;
+}
+
+/// The largest automaton whose simulation bit_row_fw_direct_simulation() computes instead of the simulation engine:
+///  its rows cost the square of the number of states, which outgrows the engine above a few hundred states.
+constexpr size_t BIT_ROW_SIMULATION_MAX_STATES{256};
+/// bit_row_fw_direct_simulation() keeps a row of a-predecessors for every symbol and state when the rows take at most
+///  this many words, or are at most BIT_ROW_SIMULATION_DENSE_ROWS_PER_TARGET times as many as the a-targets.
+constexpr size_t BIT_ROW_SIMULATION_DENSE_WORDS{size_t{1} << 15};
+/// See BIT_ROW_SIMULATION_DENSE_WORDS.
+constexpr size_t BIT_ROW_SIMULATION_DENSE_ROWS_PER_TARGET{4};
+
+/**
+ * @brief The forward direct simulation of @p aut, as compute_fw_direct_simulation() computes it.
+ *
+ * The greatest fixpoint on a row of bit words per state, refining the whole row of a state at once: q can match
+ *  the transition p -a-> t only if q is an a-predecessor of a state that simulates t.
+ * @return The relation where get(p, q) is whether q simulates p.
+ */
+Simlib::Util::BinaryRelation bit_row_fw_direct_simulation(const Nfa& aut) {
+	const size_t num_of_states{aut.num_of_states()};
+	const size_t num_of_words{(num_of_states + 63) / 64};
+	// The row @p index of a bit matrix with num_of_words words per row.
+	const auto row_of = [num_of_words](auto& matrix, const size_t index) {
+		return std::span{matrix}.subspan(index * num_of_words, num_of_words);
+	};
+	const auto set_bit = [](const std::span<std::uint64_t> row, const size_t q) {
+		row[q / 64] |= std::uint64_t{1} << (q % 64);
+	};
+	std::vector<Symbol> symbols;
+	for (State q{0}; q < num_of_states; ++q) {
+		for (const SymbolPost& symbol_post : aut.delta[q]) {
+			// A symbol post without targets is no transition: it neither needs a match nor matches one.
+			if (!symbol_post.empty()) { symbols.push_back(symbol_post.symbol); }
+		}
+	}
+	std::ranges::sort(symbols);
+	symbols.erase(std::ranges::unique(symbols).begin(), symbols.end());
+	const auto index_of = [&](const Symbol symbol) {
+		return static_cast<size_t>(std::ranges::lower_bound(symbols, symbol) - symbols.begin());
+	};
+	// The states with a transition to each state.
+	std::vector<std::vector<State>> predecessors(num_of_states);
+	// The index of the symbol of each non-empty symbol post of each state.
+	std::vector<std::vector<size_t>> symbol_indices(num_of_states);
+	std::vector<std::uint64_t> final_states(num_of_words, 0);
+	// The row index_of(a) holds the states with a transition over a.
+	std::vector<std::uint64_t> with_symbol(symbols.size() * num_of_words, 0);
+	// The row index_of(a) holds the states with a transition over a to them.
+	std::vector<std::uint64_t> a_targets(symbols.size() * num_of_words, 0);
+	for (State q{0}; q < num_of_states; ++q) {
+		if (aut.final[q]) { set_bit(final_states, q); }
+		symbol_indices[q].reserve(aut.delta[q].size());
+		for (const SymbolPost& symbol_post : aut.delta[q]) {
+			if (symbol_post.empty()) { continue; }
+			const size_t symbol_index{index_of(symbol_post.symbol)};
+			symbol_indices[q].push_back(symbol_index);
+			set_bit(row_of(with_symbol, symbol_index), q);
+			for (const State target : symbol_post.targets) {
+				set_bit(row_of(a_targets, symbol_index), target);
+				predecessors[target].push_back(q);
+			}
+		}
+	}
+	// The row p holds the states q that simulate p. It starts with the states that are final if p is and have a
+	//  transition over every symbol p has one over: the first refinement would remove the others anyway, at the cost
+	//  of matching every target against all states.
+	std::vector<std::uint64_t> simulators(num_of_states * num_of_words, 0);
+	for (State p{0}; p < num_of_states; ++p) {
+		const auto row{row_of(simulators, p)};
+		if (aut.final[p]) {
+			std::ranges::copy(final_states, row.begin());
+		} else {
+			for (State q{0}; q < num_of_states; ++q) { set_bit(row, q); }
+		}
+		for (const size_t symbol_index : symbol_indices[p]) {
+			const auto with_this_symbol{row_of(std::as_const(with_symbol), symbol_index)};
+			for (size_t word{0}; word < num_of_words; ++word) { row[word] &= with_this_symbol[word]; }
+		}
+	}
+
+	// Rows of a-predecessors for every symbol and state are indexed directly, but a large alphabet makes them huge.
+	//  Unless they are few (see BIT_ROW_SIMULATION_DENSE_WORDS), only the a-targets get a row, at most one per
+	//  transition.
+	size_t num_of_target_rows{0};
+	for (const std::uint64_t word : a_targets) { num_of_target_rows += static_cast<size_t>(std::popcount(word)); }
+	// Fills the a-predecessor rows and refines the simulators to the greatest fixpoint. @p a_predecessors_row_index
+	//  gives the row of the a-predecessors of the state at the bit `bit` of the word `word` of the row `symbol_row` of
+	//  a_targets; it is a template parameter, so the dense rows do not pay for the sparse ones in the innermost loop.
+	const auto refine = [&](const auto a_predecessors_row_index, const size_t num_of_rows) {
+		std::vector<std::uint64_t> a_predecessors(num_of_rows * num_of_words, 0);
+		for (State q{0}; q < num_of_states; ++q) {
+			auto symbol_index{symbol_indices[q].begin()};
+			for (const SymbolPost& symbol_post : aut.delta[q]) {
+				if (symbol_post.empty()) { continue; }
+				const size_t symbol_row{*symbol_index++};
+				for (const State target : symbol_post.targets) {
+					set_bit(row_of(a_predecessors, a_predecessors_row_index(symbol_row, target / 64, target % 64)), q);
+				}
+			}
+		}
+
+		// Only the row of a state whose successor lost a simulator can lose a simulator, so only those are rechecked.
+		std::vector<State> to_check(num_of_states);
+		// 'std::ranges::iota' would read better, but it is unavailable in older libc++ releases, while CMake still
+		// supports Clang 18.
+		// NOLINTNEXTLINE(modernize-use-ranges)
+		std::iota(to_check.begin(), to_check.end(), State{0});
+		std::vector<bool> is_to_check(num_of_states, true);
+		std::vector<std::uint64_t> row(num_of_words);
+		std::vector<std::uint64_t> matching(num_of_words);
+		while (!to_check.empty()) {
+			const State p{to_check.back()};
+			to_check.pop_back();
+			is_to_check[p] = false;
+			const auto p_row{row_of(simulators, p)};
+			std::ranges::copy(p_row, row.begin());
+			auto symbol_index{symbol_indices[p].begin()};
+			for (const SymbolPost& symbol_post : aut.delta[p]) {
+				if (symbol_post.empty()) { continue; }
+				const size_t symbol_row{*symbol_index++};
+				const auto a_targets_row{row_of(std::as_const(a_targets), symbol_row)};
+				for (const State target : symbol_post.targets) {
+					const auto target_row{row_of(std::as_const(simulators), target)};
+					std::ranges::fill(matching, 0);
+					for (size_t word{0}; word < num_of_words; ++word) {
+						// Only the simulators of the target that are a-targets have a-predecessors.
+						for (std::uint64_t bits{target_row[word] & a_targets_row[word]}; bits != 0; bits &= bits - 1) {
+							const auto a_predecessors_row{row_of(
+								std::as_const(a_predecessors),
+								a_predecessors_row_index(symbol_row, word, static_cast<size_t>(std::countr_zero(bits)))
+							)};
+							for (size_t w{0}; w < num_of_words; ++w) { matching[w] |= a_predecessors_row[w]; }
+						}
+					}
+					for (size_t w{0}; w < num_of_words; ++w) { row[w] &= matching[w]; }
+				}
+			}
+			if (!std::ranges::equal(row, p_row)) {
+				std::ranges::copy(row, p_row.begin());
+				for (const State predecessor : predecessors[p]) {
+					if (!is_to_check[predecessor]) {
+						is_to_check[predecessor] = true;
+						to_check.push_back(predecessor);
+					}
+				}
+			}
+		}
+	};
+	if (const size_t num_of_dense_rows{symbols.size() * num_of_states};
+		num_of_dense_rows * num_of_words <= BIT_ROW_SIMULATION_DENSE_WORDS ||
+		num_of_dense_rows <= BIT_ROW_SIMULATION_DENSE_ROWS_PER_TARGET * num_of_target_rows) {
+		refine(
+			[num_of_states](const size_t symbol_row, const size_t word, const size_t bit) {
+				return (symbol_row * num_of_states) + (word * 64) + bit;
+			},
+			num_of_dense_rows
+		);
+	} else {
+		// The rows of the states in the word w of the row index_of(a) of a_targets start at
+		//  first_row[index_of(a) * num_of_words + w], in the order of the states.
+		std::vector<size_t> first_row(a_targets.size());
+		for (size_t word{0}, row{0}; word < a_targets.size(); ++word) {
+			first_row[word] = row;
+			row += static_cast<size_t>(std::popcount(a_targets[word]));
+		}
+		refine(
+			[&](const size_t symbol_row, const size_t word, const size_t bit) {
+				const size_t symbol_word{(symbol_row * num_of_words) + word};
+				return first_row[symbol_word] +
+					   static_cast<size_t>(std::popcount(a_targets[symbol_word] & ((std::uint64_t{1} << bit) - 1)));
+			},
+			num_of_target_rows
+		);
+	}
+
+	Simlib::Util::BinaryRelation relation{num_of_states, false};
+	for (State p{0}; p < num_of_states; ++p) {
+		const auto p_row{row_of(std::as_const(simulators), p)};
+		for (State q{0}; q < num_of_states; ++q) { relation.set(p, q, ((p_row[q / 64] >> (q % 64)) & 1) != 0); }
+	}
+	return relation;
+}
+
+/// Every symbol post has exactly one target, and there is at least one transition.
+bool has_one_target_posts(const Nfa& aut) {
+	bool has_transition{false};
+	for (State q{0}, num_of_states{static_cast<State>(aut.num_of_states())}; q < num_of_states; ++q) {
+		for (const SymbolPost& symbol_post : aut.delta[q]) {
+			if (symbol_post.targets.size() != 1) { return false; }
+			has_transition = true;
+		}
+	}
+	return has_transition;
+}
+
+/**
+ * @brief Quotient of @p aut by the bisimulation, with the classes numbered in the order of their smallest states.
+ *
+ * When every symbol post has one target, mutual forward simulation is bisimulation, and no target of a symbol post
+ *  is subsumed by another, so this is exactly the result of the quotient by the simulation.
+ * @pre has_one_target_posts(aut)
+ */
+Nfa quotient_by_bisimulation(const Nfa& aut, StateRenaming& state_renaming) {
+	const RefinablePartition<State> brp{refine_by_hopcroft(aut)};
+	const size_t num_of_states{aut.num_of_states()};
+	std::vector<State> reduced_of_block(brp.num_of_sets, Limits::max_state);
+	std::vector<State> reduced(num_of_states);
+	Nfa result;
+	for (State q{0}; q < num_of_states; ++q) {
+		State& reduced_q{reduced_of_block[brp.set_of(q)]};
+		if (reduced_q == Limits::max_state) { reduced_q = result.add_state(); }
+		reduced[q] = reduced_q;
+	}
+
+	std::vector<bool> is_built(brp.num_of_sets, false);
+	state_renaming.clear();
+	state_renaming.reserve(num_of_states);
+	for (State q{0}; q < num_of_states; ++q) {
+		const State reduced_q{reduced[q]};
+		state_renaming[q] = reduced_q;
+		if (aut.initial[q]) { result.initial.insert(reduced_q); }
+		if (is_built[reduced_q]) { continue; }
+		is_built[reduced_q] = true;
+		if (aut.final[q]) { result.final.insert(reduced_q); }
+		const StatePost& q_post{aut.delta[q]};
+		StatePost& reduced_post{result.delta.mutable_state_post(reduced_q)};
+		reduced_post.reserve(q_post.size());
+		for (const SymbolPost& symbol_post : q_post) {
+			reduced_post.push_back(SymbolPost{symbol_post.symbol, reduced[*symbol_post.targets.begin()]});
+		}
+	}
+	return result;
+}
+
+[[noreturn]] void throw_nondeterministic_hopcroft_input() {
+	throw std::invalid_argument(
+		"mata::nfa::algorithms::minimize_hopcroft() requires a deterministic automaton; the refinement keeps "
+		"one target per symbol post, so a nondeterministic input yields a different language. Call "
+		"minimize_hopcroft_nondet(), use minimize() with algorithm=\"auto\" or \"hopcroft_nondet\", or "
+		"determinize() and trim() the automaton first."
+	);
+}
+} // namespace
+
+Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
+	if (dfa_trimmed.delta.empty()) {
+		// There is no symbol post to refine, so the language follows from the initial and final states only. A
+		//  transition-free automaton without an initial state is still accepted as the empty language, but
+		//  several initial states are nondeterministic and would be returned unminimized.
+		if (dfa_trimmed.initial.size() > 1) { throw_nondeterministic_hopcroft_input(); }
+		return Nfa{dfa_trimmed};
+	}
+	if (!dfa_trimmed.is_deterministic()) { throw_nondeterministic_hopcroft_input(); }
+	// Only minimality, not the language, depends on the input being trimmed. Trim the automaton first for a
+	//  minimal result; trimming is deliberately not checked, because it only costs minimality, not the language.
+
+	const RefinablePartition<State> brp{refine_by_hopcroft(dfa_trimmed)};
 
 	// Construct the minimized automaton using equivalence classes (BRP).
 	MATA_ASSERT(dfa_trimmed.initial.size() == 1);
-	Nfa result(brp.num_of_sets, {brp.set_idx[*dfa_trimmed.initial.begin()]}, {});
-	for (size_t block_idx = 0; block_idx < brp.num_of_sets; ++block_idx) {
+	Nfa result(brp.num_of_sets, {static_cast<State>(brp.set_of(*dfa_trimmed.initial.begin()))}, {});
+	for (State block_idx = 0; block_idx < brp.num_of_sets; ++block_idx) {
 		const State q = brp.get_first(block_idx);
 		if (dfa_trimmed.final.contains(q)) { result.final.insert(block_idx); }
 		StatePost& mut_state_post = result.delta.mutable_state_post(block_idx);
 		for (const SymbolPost& symbol_post : dfa_trimmed.delta[q]) {
 			MATA_ASSERT(symbol_post.targets.size() == 1);
-			const State target = brp.set_idx[*symbol_post.targets.begin()];
-			mut_state_post.push_back(SymbolPost{symbol_post.symbol, StateSet{target}});
+			const auto target{static_cast<State>(brp.set_of(*symbol_post.targets.begin()))};
+			mut_state_post.push_back(SymbolPost{symbol_post.symbol, target});
 		}
 	}
 
@@ -1014,7 +1790,7 @@ Nfa mata::nfa::product(
 		throw std::runtime_error(std::string{__func__} + " received an unknown value of the \"final_condition\"");
 	}
 
-	return algorithms::product(lhs, rhs, std::move(is_product_state_final_func), first_epsilon, prod_map);
+	return algorithms::product(lhs, rhs, is_product_state_final_func, first_epsilon, prod_map);
 }
 
 Nfa mata::nfa::intersection(
@@ -1026,20 +1802,45 @@ Nfa mata::nfa::intersection(
 	return product(lhs, rhs, ProductFinalStateCondition::And, first_epsilon, prod_map);
 }
 
-Nfa mata::nfa::union_nondet(const Nfa& lhs, const Nfa& rhs) { return Nfa{lhs}.unite_nondet_with(rhs); }
+Nfa mata::nfa::union_nondet(const Nfa& lhs, const Nfa& rhs) {
+	Nfa result{lhs};
+	result.unite_nondet_with(rhs);
+	return result;
+}
 
 Nfa mata::nfa::union_det_complete(const Nfa& lhs, const Nfa& rhs) {
-	MATA_ASSERT(lhs.is_deterministic());
-	MATA_ASSERT(rhs.is_deterministic());
-	MATA_ASSERT(lhs.is_complete());
-	MATA_ASSERT(rhs.is_complete());
+	if (!lhs.is_deterministic() || !rhs.is_deterministic()) {
+		throw std::invalid_argument{"union_det_complete requires deterministic automata."};
+	}
+	if (!lhs.is_complete() || !rhs.is_complete()) {
+		throw std::invalid_argument{"union_det_complete requires complete automata."};
+	}
 	return product(lhs, rhs, ProductFinalStateCondition::Or, EPSILON);
 }
 
-Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {
+Nfa mata::nfa::union_nondet(Nfa&& lhs, const Nfa& rhs) {
+	// Aliased operands: snapshot `rhs` before `lhs` is consumed.
+	if (&lhs == &rhs) { return union_nondet(std::move(lhs), Nfa{rhs}); }
+	Nfa result{std::move(lhs)};
+	result.unite_nondet_with(rhs);
+	return result;
+}
+
+Nfa mata::nfa::union_nondet(Nfa&& lhs, Nfa&& rhs) {
+	// Aliased operands: snapshot `rhs` before `lhs` is consumed.
+	if (&lhs == &rhs) { return union_nondet(std::move(lhs), Nfa{rhs}); }
+	Nfa result{std::move(lhs)};
+	result.unite_nondet_with(std::move(rhs));
+	return result;
+}
+
+namespace {
+/// compute_relation() as @p Relation; @p caller names the function in the errors.
+template <class Relation>
+Relation compute_relation_as(const Nfa& aut, const ParameterMap& params, const std::string& caller) {
 	if (!haskey(params, "relation")) {
 		throw std::runtime_error(
-			std::string{__func__} +
+			caller +
 			" requires setting the \"relation\" key in the \"params\" argument; "
 			"received: " +
 			mata::utils::to_string(params)
@@ -1047,7 +1848,7 @@ Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& 
 	}
 	if (!haskey(params, "direction")) {
 		throw std::runtime_error(
-			std::string{__func__} +
+			caller +
 			" requires setting the \"direction\" key in the \"params\" argument; "
 			"received: " +
 			mata::utils::to_string(params)
@@ -1056,12 +1857,19 @@ Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& 
 
 	const std::string& relation = params.at("relation");
 	if (const std::string& direction = params.at("direction"); "simulation" == relation && direction == "forward") {
-		return compute_fw_direct_simulation(aut);
-	} else {
-		throw std::runtime_error(
-			std::string{__func__} + " received an unknown value of the \"relation\" key: " + relation
-		);
+		return compute_fw_direct_simulation<Relation>(aut);
 	}
+	throw std::runtime_error(caller + " received an unknown value of the \"relation\" key: " + relation);
+}
+} // namespace
+
+Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {
+	return compute_relation_as<Simlib::Util::BinaryRelation>(aut, params, __func__);
+}
+
+Simlib::Util::PartitionRelation
+	mata::nfa::algorithms::compute_partition_relation(const Nfa& aut, const ParameterMap& params) {
+	return compute_relation_as<Simlib::Util::PartitionRelation>(aut, params, __func__);
 }
 
 Nfa mata::nfa::reduce(const Nfa& aut, StateRenaming* state_renaming, const ParameterMap& params) {
@@ -1079,6 +1887,16 @@ Nfa mata::nfa::reduce(const Nfa& aut, StateRenaming* state_renaming, const Param
 	if (const std::string& algorithm = params.at("algorithm"); "simulation" == algorithm) {
 		result = algorithms::reduce_simulation(aut, reduced_state_map);
 	} else if ("residual" == algorithm) {
+		// Throw early before any work if state_renaming is requested: residual reduces by prime residuals
+		// (double-determinized macrostates), not by equivalence classes, so no original→reduced mapping exists.
+		if (state_renaming != nullptr) {
+			throw std::runtime_error(
+				"mata::nfa::reduce() with algorithm=\"residual\" does not support state_renaming; "
+				"the result states are prime residuals, not equivalence classes of input states. "
+				"Call reduce() without requesting a state_renaming, or use algorithm=\"simulation\" instead."
+			);
+		}
+
 		// reduce type either 'after' or 'with' creation of residual automaton
 		if (!haskey(params, "type")) {
 			throw std::runtime_error(
@@ -1101,7 +1919,27 @@ Nfa mata::nfa::reduce(const Nfa& aut, StateRenaming* state_renaming, const Param
 		const std::string& residual_type = params.at("type");
 		const std::string& residual_direction = params.at("direction");
 
-		result = algorithms::reduce_residual(aut, reduced_state_map, residual_type, residual_direction);
+		// Use a dummy map since reduce_residual requires one but we won't use it.
+		std::unordered_map<State, State> dummy_map;
+		result = algorithms::reduce_residual(aut, dummy_map, residual_type, residual_direction);
+	} else if ("sat" == algorithm) {
+		// The result is constructed anew, its states do not correspond to the states of the original automaton.
+		result = algorithms::reduce_sat(
+			aut, haskey(params, "type") ? params.at("type") : "nfa",
+			haskey(params, "solver") ? params.at("solver") : "",
+			haskey(params, "epsilon") ? params.at("epsilon") : std::string{"letter"}
+		);
+	} else if ("qbf" == algorithm) {
+		// The result is constructed anew, its states do not correspond to the states of the original automaton.
+		if (const std::string type{haskey(params, "type") ? params.at("type") : "nfa"}; type != "nfa") {
+			throw std::runtime_error(
+				std::string{__func__} + " received an unknown type of automaton for the \"qbf\" algorithm: " + type
+			);
+		}
+		result = algorithms::reduce_qbf(
+			aut, haskey(params, "solver") ? params.at("solver") : "",
+			haskey(params, "epsilon") ? params.at("epsilon") : std::string{"letter"}
+		);
 	} else {
 		throw std::runtime_error(
 			std::string{__func__} + " received an unknown value of the \"algorithm\" key: " + algorithm
@@ -1110,73 +1948,16 @@ Nfa mata::nfa::reduce(const Nfa& aut, StateRenaming* state_renaming, const Param
 
 	if (state_renaming) {
 		state_renaming->clear();
-		*state_renaming = reduced_state_map;
+		*state_renaming = std::move(reduced_state_map);
 	}
 	return result;
 }
 
-Nfa mata::nfa::determinize(
-	const Nfa& aut,
-	std::unordered_map<StateSet, State>* subset_map,
-	std::optional<std::function<bool(const Nfa&, const State, const StateSet&)>> macrostate_discover
-) {
-	Nfa result{};
-	// assuming all sets targets are non-empty
-	std::vector<std::pair<State, StateSet>> worklist{};
-	std::unordered_map<StateSet, State> subset_map_local{};
-	if (subset_map == nullptr) { subset_map = &subset_map_local; }
+Nfa mata::nfa::as_dfa(const Nfa& aut) { return aut.is_deterministic() ? aut : determinize(aut); }
 
-	const StateSet initial_states_orig{aut.initial};
-	const State initial_state_res{result.add_state()};
-	result.initial.insert(initial_state_res);
-
-	if (aut.final.intersects_with(initial_states_orig)) { result.final.insert(initial_state_res); }
-	worklist.emplace_back(initial_state_res, initial_states_orig);
-	(*subset_map)[mata::utils::OrdVector<State>(initial_states_orig)] = initial_state_res;
-	if (aut.delta.empty()) { return result; }
-	if (macrostate_discover.has_value() && !(*macrostate_discover)(result, initial_state_res, initial_states_orig)) {
-		return result;
-	}
-
-	using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
-	SynchronizedExistentialSymbolPostIterator synchronized_iterator;
-
-	while (!worklist.empty()) {
-		const auto [state_res, states_orig]{std::move(worklist.back())};
-		worklist.pop_back();
-		if (states_orig.empty()) {
-			// This should not happen assuming all sets targets are non-empty.
-			break;
-		}
-
-		// add moves of S to the sync ex iterator
-		synchronized_iterator.reset();
-		for (State q : states_orig) { push_back(synchronized_iterator, aut.delta[q]); }
-
-		while (synchronized_iterator.advance()) {
-			// extract post from the synchronized_iterator iterator
-			const std::vector<Iterator>& symbol_posts = synchronized_iterator.get_current();
-			Symbol current_symbol = (*symbol_posts.begin())->symbol;
-			StateSet targets_orig = synchronized_iterator.unify_targets();
-
-			const auto existing_target_it = subset_map->find(targets_orig);
-			State target_res;
-			if (existing_target_it != subset_map->end()) {
-				target_res = existing_target_it->second;
-			} else {
-				target_res = result.add_state();
-				(*subset_map)[mata::utils::OrdVector<State>(targets_orig)] = target_res;
-				if (aut.final.intersects_with(targets_orig)) { result.final.insert(target_res); }
-				worklist.emplace_back(target_res, targets_orig);
-			}
-			result.delta.mutable_state_post(state_res).insert(SymbolPost(current_symbol, target_res));
-			if (macrostate_discover.has_value() && existing_target_it == subset_map->end() &&
-				!(*macrostate_discover)(result, target_res, targets_orig)) {
-				return result;
-			}
-		}
-	}
-	return result;
+Nfa mata::nfa::as_dfa(Nfa&& aut) {
+	if (aut.is_deterministic()) { return std::move(aut); }
+	return determinize(aut);
 }
 
 std::ostream& mata::nfa::operator<<(std::ostream& os, const Nfa& nfa) {
@@ -1185,12 +1966,7 @@ std::ostream& mata::nfa::operator<<(std::ostream& os, const Nfa& nfa) {
 }
 
 void mata::nfa::Nfa::fill_alphabet(OnTheFlyAlphabet& alphabet_to_fill) const {
-	for (const StatePost& state_post : this->delta) {
-		for (const SymbolPost& symbol_post : state_post) {
-			alphabet_to_fill.update_next_symbol_value(symbol_post.symbol);
-			alphabet_to_fill.try_add_new_symbol(std::to_string(symbol_post.symbol), symbol_post.symbol);
-		}
-	}
+	this->delta.add_symbols_to(alphabet_to_fill);
 }
 
 std::shared_ptr<const mata::Alphabet> mata::nfa::Nfa::resolve_alphabet(const Alphabet* const alphabet) const {
@@ -1198,7 +1974,7 @@ std::shared_ptr<const mata::Alphabet> mata::nfa::Nfa::resolve_alphabet(const Alp
 		// Non-owning: `alphabet` is borrowed from the caller (e.g., a stack-local object), so wrap it with a
 		//  no-op deleter instead of an owning shared_ptr, which would erroneously delete it once this shared_ptr's
 		//  refcount reaches zero.
-		return std::shared_ptr<const Alphabet>(alphabet, [](const Alphabet*) {});
+		return {alphabet, [](const Alphabet*) {}};
 	}
 	if (this->alphabet != nullptr) { return this->alphabet; }
 	return {std::make_shared<mata::EnumAlphabet>(EnumAlphabet{delta.get_used_symbols()})};
@@ -1236,39 +2012,180 @@ Run mata::nfa::encode_word(const Alphabet* alphabet, const std::vector<std::stri
 	return {.word = alphabet->translate_word(input)};
 }
 
-std::set<mata::Word> mata::nfa::Nfa::get_words(const size_t max_length) const {
-	std::set<mata::Word> result;
+namespace {
+/// Distance of a state from which no final state is reachable.
+constexpr size_t NO_FINAL_REACHABLE{std::numeric_limits<size_t>::max()};
 
-	// contains a pair: a state s and the word with which we got to the state s
-	std::vector<std::pair<State, mata::Word>> worklist;
-	// initializing worklist
-	for (State init_state : initial) {
-		worklist.push_back({init_state, {}});
-		if (final.contains(init_state)) { result.insert(mata::Word()); }
-	}
+/// How far every state is from acceptance, which lets the word search skip branches that cannot be accepted.
+struct FinalDistances {
+	/// The length of a shortest word leading from each state to a final state, or @c NO_FINAL_REACHABLE.
+	std::vector<size_t> distances;
+	/// Whether each state has a transition to a state from which a final state is reachable.
+	std::vector<bool> extendable;
+};
 
-	// will be used during the loop
-	std::vector<std::pair<State, mata::Word>> new_worklist;
-
-	unsigned cur_length = 0;
-	while (!worklist.empty() && cur_length < max_length) {
-		new_worklist.clear();
-		for (const auto& [state, word] : worklist) {
-			for (const SymbolPost& sp : delta[state]) {
-				mata::Word new_word = word;
-				new_word.push_back(sp.symbol);
-				for (State s_to : sp.targets) {
-					new_worklist.emplace_back(s_to, new_word);
-					if (final.contains(s_to)) { result.insert(new_word); }
-				}
-			}
+FinalDistances get_final_distances(const mata::nfa::Nfa& nfa) {
+	const size_t num_of_states{nfa.num_of_states()};
+	std::vector<std::vector<mata::nfa::State>> predecessors(num_of_states);
+	for (mata::nfa::State source{0}; source < num_of_states; ++source) {
+		for (const mata::nfa::SymbolPost& symbol_post : nfa.delta[source]) {
+			for (const mata::nfa::State target : symbol_post.targets) { predecessors[target].push_back(source); }
 		}
-		worklist.swap(new_worklist);
-		++cur_length;
 	}
 
+	FinalDistances result{
+		.distances = std::vector<size_t>(num_of_states, NO_FINAL_REACHABLE),
+		.extendable = std::vector<bool>(num_of_states, false)
+	};
+	std::deque<mata::nfa::State> queue;
+	for (const mata::nfa::State final_state : nfa.final) {
+		result.distances[final_state] = 0;
+		queue.push_back(final_state);
+	}
+	while (!queue.empty()) {
+		const mata::nfa::State state{queue.front()};
+		queue.pop_front();
+		for (const mata::nfa::State predecessor : predecessors[state]) {
+			// Every state reaching a final state is dequeued once, so this marks every extendable state.
+			result.extendable[predecessor] = true;
+			if (result.distances[predecessor] != NO_FINAL_REACHABLE) { continue; }
+			result.distances[predecessor] = result.distances[state] + 1;
+			queue.push_back(predecessor);
+		}
+	}
 	return result;
 }
+
+/// Collect the state posts of every state of @p macrostate into @p sync_iterator, which then yields the symbols
+///  enabled in @p macrostate in an increasing order, each together with the states it leads to.
+void sync_macrostate_posts(
+	const mata::nfa::Nfa& nfa,
+	const mata::nfa::StateSet& macrostate,
+	mata::nfa::SynchronizedExistentialSymbolPostIterator& sync_iterator
+) {
+	sync_iterator.reset(macrostate.size());
+	for (const mata::nfa::State state : macrostate) { mata::utils::push_back(sync_iterator, nfa.delta[state]); }
+}
+
+/// The search behind @c Nfa::get_words() and @c Nfa::get_words_lazy(). A search node is a macrostate (the set of
+///  states reachable by the current word), determinized on the fly, so every word is visited once however many
+///  accepting paths spell it, and states from which no final state is reachable are dropped from it. The search
+///  is depth-first in lexicographic order over one shared word, with one synchronized iterator per depth.
+/// With a @p length_bound, the search visits only the words that can still be completed to an accepted word of at
+///  most that length and reports only the accepted words of exactly that length, recording whether it cut off any
+///  longer word: a caller raising the bound one by one gets every word in shortlex order and knows when to stop.
+class WordSearch {
+  public:
+	WordSearch(
+		const mata::nfa::Nfa& nfa,
+		const FinalDistances& final_distances,
+		const size_t max_length,
+		const std::optional<size_t> length_bound
+	)
+		: nfa_{nfa},
+		  final_distances_{final_distances},
+		  max_length_{max_length},
+		  length_bound_{length_bound} {}
+
+	/// The next accepted word, or @c nullptr once the search is exhausted. Valid until the next call.
+	const mata::Word* next() {
+		if (!started_) {
+			started_ = true;
+			if (keep_live_states(mata::nfa::StateSet(nfa_.initial), 0) && enter()) { return &word_; }
+		}
+		while (num_of_frames_ > 0) {
+			mata::nfa::SynchronizedExistentialSymbolPostIterator& sync_iterator{sync_iterators_[num_of_frames_ - 1]};
+			word_.resize(num_of_frames_ - 1);
+			if (!sync_iterator.advance()) {
+				--num_of_frames_;
+				continue;
+			}
+			if (!keep_live_states(sync_iterator.unify_targets(), num_of_frames_)) { continue; }
+			word_.push_back(sync_iterator.get_current_minimum()->symbol);
+			if (enter()) { return &word_; }
+		}
+		return nullptr;
+	}
+
+	/// Whether a word longer than the length bound was cut off, so a larger bound can find more words.
+	bool cut_off() const { return cut_off_; }
+
+  private:
+	/// Keep in @c macrostate_ the states of @p states that can still lead to an accepted word within the length
+	///  bound after a word of @p length. Return whether any is left.
+	bool keep_live_states(const mata::nfa::StateSet& states, const size_t length) {
+		macrostate_.clear();
+		for (const mata::nfa::State state : states) {
+			const size_t distance{final_distances_.distances[state]};
+			if (distance == NO_FINAL_REACHABLE) { continue; }
+			if (length_bound_.has_value() && distance > length_bound_.value() - length) {
+				cut_off_ = true;
+				continue;
+			}
+			macrostate_.push_back(state);
+		}
+		return !macrostate_.empty();
+	}
+
+	/// Enter the search node of @c word_ and @c macrostate_. Return whether @c word_ is to be reported.
+	bool enter() {
+		const size_t length{word_.size()};
+		if (length < max_length_) {
+			if (length_bound_.has_value() && length == length_bound_.value()) {
+				// Every successor is longer than the bound; just record whether there is one.
+				for (const mata::nfa::State state : macrostate_) {
+					if (final_distances_.extendable[state]) { cut_off_ = true; }
+				}
+			} else {
+				// The deque keeps the references of the shallower frames valid while the deeper frames are appended.
+				if (sync_iterators_.size() <= num_of_frames_) { sync_iterators_.emplace_back(); }
+				sync_macrostate_posts(nfa_, macrostate_, sync_iterators_[num_of_frames_]);
+				++num_of_frames_;
+			}
+		}
+		return nfa_.final.intersects_with(macrostate_) &&
+			   (!length_bound_.has_value() || length == length_bound_.value());
+	}
+
+	const mata::nfa::Nfa& nfa_;
+	const FinalDistances& final_distances_;
+	const size_t max_length_;
+	const std::optional<size_t> length_bound_;
+	/// The word of the current search node; one symbol per transition, so its length is the depth of the node.
+	mata::Word word_{};
+	/// The macrostate of the node being entered.
+	mata::nfa::StateSet macrostate_{};
+	/// One synchronized iterator per depth, reused across sibling branches; the first @c num_of_frames_ are active.
+	std::deque<mata::nfa::SynchronizedExistentialSymbolPostIterator> sync_iterators_{};
+	size_t num_of_frames_{0};
+	bool started_{false};
+	bool cut_off_{false};
+};
+} // namespace
+
+std::set<mata::Word> mata::nfa::Nfa::get_words(const size_t max_length) const {
+	std::set<mata::Word> result;
+	const FinalDistances final_distances{get_final_distances(*this)};
+	WordSearch search{*this, final_distances, max_length, std::nullopt};
+	while (const Word* word{search.next()}) { result.insert(*word); }
+	return result;
+}
+
+#if MATA_HAS_GENERATOR_SUPPORT
+MATA_GENERATOR_COROUTINE_BEGIN
+std::generator<mata::Word> mata::nfa::Nfa::get_words_lazy(const std::optional<size_t> max_length) const {
+	// A plain depth-first search could descend into an infinite branch forever and never yield the words beside it,
+	//  so the words are searched by increasing length (iterative deepening), each length in its own bounded search.
+	const size_t length_max{max_length.value_or(std::numeric_limits<size_t>::max())};
+	const FinalDistances final_distances{get_final_distances(*this)};
+	for (size_t length{0};; ++length) {
+		WordSearch search{*this, final_distances, length_max, length};
+		while (const Word* word{search.next()}) { co_yield *word; }
+		if (!search.cut_off() || length >= length_max) { co_return; }
+	}
+}
+MATA_GENERATOR_COROUTINE_END
+#endif // MATA_HAS_GENERATOR_SUPPORT
 
 OrdVector<Symbol> mata::nfa::get_symbols_to_work_with(const Nfa& nfa, const mata::Alphabet* const shared_alphabet) {
 	return nfa.resolve_alphabet(shared_alphabet)->get_alphabet_symbols();
@@ -1279,7 +2196,8 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
 	if (initial.intersects_with(final)) { return Word{}; }
 
 	/// Current state state post iterator, its end iterator, and iterator in the current symbol post to target states.
-	std::vector<std::tuple<StatePost::const_iterator, StatePost::const_iterator, StateSet::const_iterator>> worklist{};
+	std::vector<std::tuple<StatePost::const_iterator, StatePost::const_iterator, SmallStateSet::const_iterator>>
+		worklist{};
 	std::vector<bool> searched(num_of_states(), false);
 	bool final_found{};
 	for (const State initial_state : initial) {
@@ -1291,10 +2209,10 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
 		auto initial_symbol_post_end{initial_state_post.cend()};
 		// Initialize the worklist for the given @p initial_state with the first valid transition.
 		while (worklist.empty() && initial_symbol_post_it != initial_state_post.cend()) {
-			auto initial_target_it{initial_symbol_post_it->targets.cbegin()};
+			const auto* initial_target_it{initial_symbol_post_it->targets.cbegin()};
 			do {
 				if (searched[*initial_target_it]) {
-					++initial_target_it;
+					initial_target_it = std::next(initial_target_it);
 				} else {
 					worklist.emplace_back(initial_symbol_post_it, initial_symbol_post_end, initial_target_it);
 					break;
@@ -1311,7 +2229,7 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
 			if (state_post_it != state_post_end) {
 				if (targets_it != state_post_it->targets.cend()) {
 					if (searched[*targets_it]) {
-						++targets_it;
+						targets_it = std::next(targets_it);
 						continue;
 					}
 					if (final.contains(*targets_it)) {
@@ -1322,10 +2240,10 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
 					const StatePost& state_post{delta[*targets_it]};
 					if (!state_post.empty()) {
 						auto new_state_post_it{state_post.cbegin()};
-						auto new_targets_it{new_state_post_it->cbegin()};
+						const auto* new_targets_it{new_state_post_it->cbegin()};
 						worklist.emplace_back(new_state_post_it, state_post.cend(), new_targets_it);
 					} else {
-						++targets_it;
+						targets_it = std::next(targets_it);
 					}
 				} else { // targets_it == state_post_it->targets.cend().
 					++state_post_it;
@@ -1335,7 +2253,7 @@ std::optional<mata::Word> Nfa::get_word(const std::optional<Symbol> first_epsilo
 				worklist.pop_back();
 				if (!worklist.empty()) {
 					auto& [_prev_state_post_it, _prev_state_post_end, prev_targets_it]{worklist.back()};
-					++prev_targets_it;
+					prev_targets_it = std::next(prev_targets_it);
 				}
 			}
 		}
@@ -1365,57 +2283,55 @@ std::optional<mata::Word> Nfa::get_shortest_word(const std::optional<Symbol> fir
 	// Resulting word
 	const size_t num_of_states = this->num_of_states();
 
-	std::queue<mata::nfa::State> worklist;
+	std::deque<mata::nfa::State> worklist;
 	std::vector<int> dist(num_of_states, -1);
+	std::vector<bool> finalized(num_of_states, false);
 	std::vector<Predecessor> pred(num_of_states);
 
-	// Initialize BFS from all initial states
-	for (mata::nfa::State init_state : this->initial) {
+	// Initialize 0-1 BFS from all initial states.
+	for (const mata::nfa::State init_state : this->initial) {
 		dist[init_state] = 0;
-		worklist.push(init_state);
+		pred[init_state] = {.prev = init_state, .sym = 0};
+		worklist.push_back(init_state);
 
 		if (this->final.contains(init_state)) {
 			return mata::Word{}; // empty word accepted
 		}
 	}
 
-	// Standard BFS loop
 	while (!worklist.empty()) {
-		// Get the next state in the queue and remove it
-		mata::nfa::State curr_state = worklist.front();
-		worklist.pop();
+		const mata::nfa::State curr_state = worklist.front();
+		worklist.pop_front();
+		if (finalized[curr_state]) { continue; }
+		finalized[curr_state] = true;
 
-		// Calculate the distance for any newly discovered states from this node
-		int next_dist = dist[curr_state] + 1;
+		// Finalize rather than return on discovery: an epsilon path can still reach another final state for free.
+		if (this->final.contains(curr_state)) {
+			mata::Word res;
+			for (mata::nfa::State backtrack_state = curr_state; pred[backtrack_state].prev != backtrack_state;
+				 backtrack_state = pred[backtrack_state].prev) {
+				const Symbol next_symbol = pred[backtrack_state].sym;
+				if (!first_epsilon.has_value() || next_symbol < first_epsilon) { res.push_back(next_symbol); }
+			}
+			std::ranges::reverse(res);
+			return res;
+		}
 
-		// Iterate outgoing transitions
 		for (const auto& sym_post : this->delta[curr_state]) {
-			mata::Symbol transition_sym = sym_post.symbol;
-
-			// Iterate over all destination states for this specific symbol
-			for (mata::nfa::State target_state : sym_post.targets) {
-				// Skip if the state has already been visited
-				if (dist[target_state] != -1) { continue; }
-
-				dist[target_state] = next_dist; // Mark state as visited
-				pred[target_state] = {curr_state, transition_sym}; // Store made transition
-
-				// Check if the newly reached state is an accepting state
-				if (this->final.contains(target_state)) {
-					mata::Word res;
-					// reconstruct shortest word
-					for (mata::nfa::State backtrack_state = target_state; dist[backtrack_state] > 0;
-						 backtrack_state = pred[backtrack_state].prev) {
-						Symbol next_symbol = pred[backtrack_state].sym;
-						if (!first_epsilon.has_value() || next_symbol < first_epsilon) { res.push_back(next_symbol); }
-					}
-					// Reverse the backtracked word
-					std::reverse(res.begin(), res.end());
-					return res;
+			const mata::Symbol transition_sym = sym_post.symbol;
+			const bool is_epsilon{first_epsilon.has_value() && transition_sym >= *first_epsilon};
+			const int next_dist{dist[curr_state] + (is_epsilon ? 0 : 1)};
+			for (const mata::nfa::State target_state : sym_post.targets) {
+				if (finalized[target_state] || (dist[target_state] != -1 && dist[target_state] <= next_dist)) {
+					continue;
 				}
-
-				// If 'target_state' is not a final state, push it to the queue to explore its transitions later
-				worklist.push(target_state);
+				dist[target_state] = next_dist;
+				pred[target_state] = {.prev = curr_state, .sym = transition_sym};
+				if (is_epsilon) {
+					worklist.push_front(target_state);
+				} else {
+					worklist.push_back(target_state);
+				}
 			}
 		}
 	}
@@ -1437,14 +2353,16 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
 	auto subset_map_it{subset_map.emplace(initial, new_initial).first};
 	worklist.emplace_back(subset_map_it.operator->());
 
-	using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
+	using Iterator = StatePost::const_iterator;
 	SynchronizedExistentialSymbolPostIterator synchronized_iterator{};
 
-	const utils::OrdVector<Symbol> symbols{get_symbols_to_work_with(alphabet)};
+	const std::shared_ptr<const Alphabet> resolved_alphabet{resolve_alphabet(alphabet)};
+	OrdVector<Symbol> copied_symbols{};
+	const utils::OrdVector<Symbol>& symbols{borrow_symbols(*resolved_alphabet, copied_symbols)};
 	const auto symbols_end{symbols.end()};
 	bool continue_complementation{true};
 	while (continue_complementation && !worklist.empty()) {
-		const auto curr_state_set_it{worklist.back()};
+		const auto* const curr_state_set_it{worklist.back()};
 		const State macrostate{curr_state_set_it->second};
 		const StateSet& curr_state_set{curr_state_set_it->first};
 		worklist.pop_back();
@@ -1470,7 +2388,7 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
 			const Symbol symbol_advanced_to{(*orig_symbol_posts.begin())->symbol};
 			StateSet orig_targets{synchronized_iterator.unify_targets()};
 
-			if (symbols_it == symbols_end || symbol_advanced_to <= *symbols_it) {
+			if (symbols_it != symbols_end && symbol_advanced_to == *symbols_it) {
 				State target_macrostate;
 				// Continue with the determinization of the NFA.
 				if (const auto target_macrostate_it = subset_map.find(orig_targets);
@@ -1486,6 +2404,11 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
 					worklist.emplace_back(subset_map_it.operator->());
 				}
 				nfa_complete.delta.add(macrostate, symbol_advanced_to, target_macrostate);
+				if (!continue_complementation) { break; }
+				++symbols_it;
+			} else if (symbols_it == symbols_end || symbol_advanced_to < *symbols_it) {
+				// The symbol on the transitions is not in the requested alphabet. The symbol does not belong to the
+				//  complemented language over the alphabet either way; skip it.
 			} else {
 				MATA_ASSERT(symbol_advanced_to > *symbols_it);
 				// There are more transitions from the 'orig_states', but there is a missing transition over
@@ -1496,12 +2419,11 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
 				break;
 			}
 
-			if (!continue_complementation) { break; }
-			if (symbol_advanced_to >= *symbols_it) { ++symbols_it; }
 			sync_it_advanced = synchronized_iterator.advance();
 		}
 	}
-	return nfa_complete.get_word();
+	// Every edge reads a symbol of the requested alphabet; none of them is an epsilon to omit from the witness.
+	return nfa_complete.get_word(std::nullopt);
 }
 
 Nfa mata::nfa::lang_difference(
@@ -1523,7 +2445,7 @@ Nfa mata::nfa::lang_difference(
 	std::vector<SubsetMacrostateMap::const_pointer> worklist{};
 
 	// '{}' represents a sink state that is always final in the complement.
-	const auto subset_set_excluded_sink_ptr{subset_set_excluded.insert(StateSet{}).first.operator->()};
+	const auto* const subset_set_excluded_sink_ptr{subset_set_excluded.insert(StateSet{}).first.operator->()};
 
 	Nfa nfa_lang_difference{};
 	const State new_initial{nfa_lang_difference.add_state()};
@@ -1532,9 +2454,9 @@ Nfa mata::nfa::lang_difference(
 		!nfa_excluded.final.intersects_with(nfa_excluded.initial)) {
 		nfa_lang_difference.final.insert(new_initial);
 	}
-	auto subset_set_included_ptr{subset_set_included.emplace(nfa_included.initial).first.operator->()};
-	auto subset_set_excluded_ptr{subset_set_excluded.emplace(nfa_excluded.initial).first.operator->()};
-	auto subset_macrostate_map_ptr{
+	const auto* subset_set_included_ptr{subset_set_included.emplace(nfa_included.initial).first.operator->()};
+	const auto* subset_set_excluded_ptr{subset_set_excluded.emplace(nfa_excluded.initial).first.operator->()};
+	auto* subset_macrostate_map_ptr{
 		subset_macrostate_map.emplace(std::make_pair(subset_set_included_ptr, subset_set_excluded_ptr), new_initial)
 			.first.operator->()
 	};
@@ -1546,15 +2468,15 @@ Nfa mata::nfa::lang_difference(
 		return nfa_lang_difference;
 	}
 
-	using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
+	using Iterator = StatePost::const_iterator;
 	SynchronizedExistentialSymbolPostIterator synchronized_iterator_included{};
 	SynchronizedExistentialSymbolPostIterator synchronized_iterator_excluded{};
 
 	while (!worklist.empty()) {
-		const auto curr_macrostate_ptr{worklist.back()};
+		const auto* const curr_macrostate_ptr{worklist.back()};
 		worklist.pop_back();
-		const auto curr_state_set_included_ptr{curr_macrostate_ptr->first.first};
-		const auto curr_state_set_excluded_ptr{curr_macrostate_ptr->first.second};
+		const auto* const curr_state_set_included_ptr{curr_macrostate_ptr->first.first};
+		const auto* const curr_state_set_excluded_ptr{curr_macrostate_ptr->first.second};
 		const StateSet& curr_state_set_included{*curr_state_set_included_ptr};
 		const StateSet& curr_state_set_excluded{*curr_state_set_excluded_ptr};
 		const State macrostate{curr_macrostate_ptr->second};
@@ -1629,51 +2551,117 @@ std::optional<mata::Word> mata::nfa::get_word_from_lang_difference(const Nfa& nf
 }
 
 Nfa mata::nfa::algorithms::reduce_simulation(const Nfa& aut, StateRenaming& state_renaming) {
-	Nfa result;
-	const auto sim_relation =
-		algorithms::compute_relation(aut, ParameterMap{{"relation", "simulation"}, {"direction", "forward"}});
+	const auto reduce_by_simulation = [](const Nfa& nfa, StateRenaming& renaming) {
+		// The simulation engine costs the product of the numbers of states and transitions even when it finds no
+		//  pair to merge; Hopcroft's refinement gives the same quotient in O(m log n) here.
+		if (has_one_target_posts(nfa)) { return quotient_by_bisimulation(nfa, renaming); }
+		std::vector<size_t> quot_proj;
+		if (nfa.num_of_states() <= BIT_ROW_SIMULATION_MAX_STATES) {
+			const Simlib::Util::BinaryRelation sim_relation{bit_row_fw_direct_simulation(nfa)};
+			sim_relation.get_symmetric_quotient_projection(quot_proj);
+			return quotient_by_simulation(nfa, sim_relation, quot_proj, nullptr, &renaming);
+		}
+		const auto sim_relation = algorithms::compute_partition_relation(
+			nfa, ParameterMap{{"relation", "simulation"}, {"direction", "forward"}}
+		);
+		sim_relation.get_symmetric_quotient_projection(quot_proj);
+		return quotient_by_simulation(nfa, sim_relation, quot_proj, nullptr, &renaming);
+	};
 
-	auto sim_relation_symmetric = sim_relation;
-	sim_relation_symmetric.restrict_to_symmetric();
+	// The simulation costs the product of the numbers of states and transitions, so the classes of states with
+	//  identical successors, often half of an automaton built by a union or a loop, are merged first. They are
+	//  simulation equivalent and numbered by their smallest states, so the quotient by the simulation of the
+	//  merged automaton is the quotient of `aut` itself, with the same numbering.
+	const std::vector<State> class_of{identical_successor_classes(aut, aut.num_of_states())};
+	const size_t num_of_states{aut.num_of_states()};
+	const size_t num_of_classes{num_of_states == 0 ? 0 : static_cast<size_t>(std::ranges::max(class_of)) + 1};
+	if (num_of_classes == num_of_states) { return reduce_by_simulation(aut, state_renaming); }
 
-	// for State q, quot_proj[q] should be the representative state representing the symmetric class of states in
-	// simulation
-	std::vector<size_t> quot_proj;
-	sim_relation_symmetric.get_quotient_projection(quot_proj);
+	Nfa merged{num_of_classes};
+	std::vector<bool> is_built(num_of_classes, false);
+	std::vector<State> targets;
+	for (State q{0}; q < num_of_states; ++q) {
+		const State merged_q{class_of[q]};
+		if (aut.initial[q]) { merged.initial.insert(merged_q); }
+		if (is_built[merged_q]) { continue; }
+		is_built[merged_q] = true;
+		if (aut.final[q]) { merged.final.insert(merged_q); }
+		StatePost& merged_post{merged.delta.mutable_state_post(merged_q)};
+		for (const SymbolPost& symbol_post : aut.delta[q]) {
+			targets.clear();
+			for (const State target : symbol_post.targets) { targets.push_back(class_of[target]); }
+			std::ranges::sort(targets);
+			targets.erase(std::ranges::unique(targets).begin(), targets.end());
+			merged_post.push_back(SymbolPost{symbol_post.symbol, std::span<const State>{targets}});
+		}
+	}
 
+	StateRenaming merged_renaming;
+	Nfa result{reduce_by_simulation(merged, merged_renaming)};
+	state_renaming.clear();
+	state_renaming.reserve(num_of_states);
+	for (State q{0}; q < num_of_states; ++q) { state_renaming[q] = merged_renaming.at(class_of[q]); }
+	return result;
+}
+
+namespace {
+template <class Relation>
+Nfa quotient_by(
+	const Nfa& aut,
+	const Relation& sim_relation,
+	const std::vector<size_t>& quot_proj,
+	const mata::BoolVector* states,
+	StateRenaming* state_renaming
+) {
 	const size_t num_of_states = aut.num_of_states();
+	const auto is_kept = [&](const State q) { return states == nullptr || (*states)[q]; };
 
-	// map each state q of aut to the state of the reduced automaton representing the simulation class of q
+	// Kept representative of each class, indexed by the class's smallest state quot_proj[q], which may itself be
+	//  outside of the kept states.
+	std::vector<State> representative(num_of_states, Limits::max_state);
+	// The reduced state of each kept state.
+	std::vector<State> reduced(num_of_states, Limits::max_state);
+
+	Nfa result;
+	// Number the classes in the order of their smallest kept states, as reduce_simulation() does on the part alone.
 	for (State q = 0; q < num_of_states; ++q) {
-		if (const State q_repr_state = quot_proj[q]; !state_renaming.contains(q_repr_state)) {
-			// we need to map q's class to a new state in reducedAut
-			const State q_class = result.add_state();
-			state_renaming[q_repr_state] = q_class;
-			state_renaming[q] = q_class;
+		if (!is_kept(q)) { continue; }
+		if (State& q_repr = representative[quot_proj[q]]; q_repr == Limits::max_state) {
+			q_repr = q;
+			reduced[q] = result.add_state();
 		} else {
-			state_renaming[q] = state_renaming[q_repr_state];
+			reduced[q] = reduced[q_repr];
 		}
 	}
 
 	for (State q = 0; q < num_of_states; ++q) {
-		const State q_class_state = state_renaming.at(q);
+		if (!is_kept(q)) { continue; }
+		const State q_class_state = reduced[q];
 
 		if (aut.initial[q]) { // if a symmetric class contains initial state, then the whole class should be initial
 			result.initial.insert(q_class_state);
 		}
 
-		if (quot_proj[q] ==
+		if (representative[quot_proj[q]] ==
 			q) { // we process only transitions starting from the representative state, this is enough for simulation
-			for (const auto& q_trans : aut.delta.state_post(q)) {
-				const StateSet representatives_of_states_to = [&] {
-					StateSet state_set;
-					for (const auto s : q_trans.targets) { state_set.insert(quot_proj[s]); }
+			const StatePost& q_post{aut.delta.state_post(q)};
+			// Sized exactly: every symbol post of q gives one symbol post of its class.
+			StatePost& q_class_post{result.delta.mutable_state_post(q_class_state)};
+			q_class_post.reserve(q_post.size());
+			for (const auto& q_trans : q_post) {
+				// Small sets, as the targets they come from: singletons stay inline and the result moves into the post.
+				const SmallStateSet representatives_of_states_to = [&] {
+					SmallStateSet state_set;
+					for (const auto s : q_trans.targets) {
+						MATA_ASSERT(is_kept(s));
+						state_set.insert(representative[quot_proj[s]]);
+					}
 					return state_set;
 				}();
 
 				// get the class states of those representatives that are not simulated by another representative in
 				// representatives_of_states_to
-				StateSet representatives_class_states;
+				SmallStateSet representatives_class_states;
 				for (const State s : representatives_of_states_to) {
 					bool is_state_important = true; // if true, we need to keep the transition from q to s
 					for (const State p : representatives_of_states_to) {
@@ -1683,14 +2671,12 @@ Nfa mata::nfa::algorithms::reduce_simulation(const Nfa& aut, StateRenaming& stat
 							break;
 						}
 					}
-					if (is_state_important) { representatives_class_states.insert(state_renaming.at(s)); }
+					if (is_state_important) { representatives_class_states.insert(reduced[s]); }
 				}
 
-				// add the transition 'q_class_state-q_trans.symbol->representatives_class_states' at the end of
-				// transition list of transitions starting from q_class_state as the q_trans.symbol should be the
-				// largest symbol we saw (as we iterate trough getTransitionsFromState(q) which is ordered)
-				result.delta.mutable_state_post(q_class_state)
-					.insert(SymbolPost(q_trans.symbol, representatives_class_states));
+				// q_trans.symbol is larger than the symbols added so far, as the state post of q is ordered.
+				MATA_ASSERT(q_class_post.empty() || q_class_post.back().symbol < q_trans.symbol);
+				q_class_post.push_back(SymbolPost(q_trans.symbol, std::move(representatives_class_states)));
 			}
 
 			if (aut.final[q]) { // if q is final, then all states in its class are final => we make q_class_state final
@@ -1699,11 +2685,42 @@ Nfa mata::nfa::algorithms::reduce_simulation(const Nfa& aut, StateRenaming& stat
 		}
 	}
 
+	if (state_renaming != nullptr) {
+		state_renaming->clear();
+		state_renaming->reserve(num_of_states);
+		for (State q = 0; q < num_of_states; ++q) {
+			if (is_kept(q)) { (*state_renaming)[q] = reduced[q]; }
+		}
+	}
 	return result;
+}
+} // namespace
+
+Nfa mata::nfa::algorithms::quotient_by_simulation(
+	const Nfa& nfa,
+	const Simlib::Util::BinaryRelation& sim_relation,
+	const std::vector<size_t>& quot_proj,
+	const BoolVector* states,
+	StateRenaming* state_renaming
+) {
+	return quotient_by(nfa, sim_relation, quot_proj, states, state_renaming);
+}
+
+Nfa mata::nfa::algorithms::quotient_by_simulation(
+	const Nfa& nfa,
+	const Simlib::Util::PartitionRelation& sim_relation,
+	const std::vector<size_t>& quot_proj,
+	const BoolVector* states,
+	StateRenaming* state_renaming
+) {
+	return quotient_by(nfa, sim_relation, quot_proj, states, state_renaming);
 }
 
 Nfa mata::nfa::algorithms::reduce_residual(
-	const Nfa& nfa, StateRenaming& state_renaming, const std::string& type, const std::string& direction
+	const Nfa& nfa,
+	[[maybe_unused]] StateRenaming& state_renaming,
+	const std::string& type,
+	const std::string& direction
 ) {
 	Nfa back_determinized = nfa;
 	Nfa result;
@@ -1721,8 +2738,8 @@ Nfa mata::nfa::algorithms::reduce_residual(
 	if (direction == "forward") { back_determinized = revert(back_determinized); }
 	back_determinized = revert(determinize(back_determinized)); // Backward determinization.
 
-	// TODO: Not really sure how to handle state_renaming.
-	(void) state_renaming;
+	// state_renaming is passed but not used: residual reduction is checked at the caller (reduce())
+	// to reject any state_renaming request before performing any work.
 
 	// two different implementations of the same algorithm, for type "after" the
 	// residual automaton and removal of covering states is done after the final
@@ -1740,7 +2757,8 @@ Nfa mata::nfa::algorithms::reduce_residual(
 
 	if (direction == "backward") { result = revert(result); }
 
-	return result.trim();
+	result.trim();
+	return result;
 }
 
 Nfa mata::nfa::algorithms::reduce_residual_with(const Nfa& nfa) {
@@ -1753,6 +2771,7 @@ Nfa mata::nfa::algorithms::reduce_residual_with(const Nfa& nfa) {
 	std::vector<StateSet> covering_states; // check covering set
 	std::vector<StateSet> covering_indexes; // indexes of covering macrostates
 	std::unordered_map<StateSet, State> covered; // map of covered states for transferring new transitions
+	Predecessors predecessors{};
 
 	result.clear();
 	const StateSet initials_orig = StateSet(nfa.initial);
@@ -1768,11 +2787,11 @@ Nfa mata::nfa::algorithms::reduce_residual_with(const Nfa& nfa) {
 
 	if (nfa.delta.empty()) { return result; }
 
-	using Iterator = OrdVector<SymbolPost>::const_iterator;
+	using Iterator = StatePost::const_iterator;
 	SynchronizedExistentialSymbolPostIterator synchronized_iterator;
 
 	while (!worklist.empty()) {
-		const auto [state_res, states_orig] = worklist.back();
+		const auto [state_res, states_orig] = std::move(worklist.back());
 		worklist.pop_back();
 		if (states_orig.empty()) {
 			// This should not happen assuming all sets targets are non-empty.
@@ -1781,15 +2800,15 @@ Nfa mata::nfa::algorithms::reduce_residual_with(const Nfa& nfa) {
 
 		// add moves of S to the sync ex iterator
 		synchronized_iterator.reset();
-		for (State q : states_orig) { mata::utils::push_back(synchronized_iterator, nfa.delta[q]); }
+		for (const State q : states_orig) { mata::utils::push_back(synchronized_iterator, nfa.delta[q]); }
 
 		while (synchronized_iterator.advance()) {
 			bool add = false; // check whether to add transitions
 
 			// extract post from the synchronized_iterator iterator
 			const std::vector<Iterator>& moves = synchronized_iterator.get_current();
-			Symbol current_symbol = (*moves.begin())->symbol;
-			StateSet targets = synchronized_iterator.unify_targets(); // new state unify
+			const Symbol current_symbol = (*moves.begin())->symbol;
+			const StateSet targets = synchronized_iterator.unify_targets(); // new state unify
 
 			auto existing_target_res = subset_map.find(targets); // check if state was already discovered
 			State target_res;
@@ -1801,7 +2820,7 @@ Nfa mata::nfa::algorithms::reduce_residual_with(const Nfa& nfa) {
 			} else { // add new state
 				target_res = result.add_state();
 				check_covered_and_covering(
-					covering_states, covering_indexes, covered, subset_map, target_res, targets, result
+					covering_states, covering_indexes, covered, subset_map, target_res, targets, result, predecessors
 				);
 
 				if (targets != covering_states[target_res]) { // new state is not covered, replace transitions
@@ -1825,9 +2844,10 @@ Nfa mata::nfa::algorithms::reduce_residual_with(const Nfa& nfa) {
 
 			if (add) {
 				result.delta.mutable_state_post(state_res).insert(SymbolPost(current_symbol, target_res));
+				predecessors.record(state_res, current_symbol, target_res);
 			} else {
-				for (State switch_target : covering_indexes[target_res]) {
-					result.delta.add(state_res, current_symbol, switch_target);
+				for (const State switch_target : covering_indexes[target_res]) {
+					predecessors.add(result, state_res, current_symbol, switch_target);
 				}
 			}
 		}
@@ -1841,84 +2861,25 @@ Nfa mata::nfa::algorithms::reduce_residual_after(const Nfa& nfa) {
 	Nfa result;
 	result = determinize(nfa, &subset_map);
 
-	std::vector<StateSet> macrostate_vec; // ordered vector of macrostates
-	macrostate_vec.reserve(subset_map.size());
-	for (const auto& state_set : subset_map | std::views::keys) {
-		// Ordered by size from largest to smallest.
-		macrostate_vec.insert(
-			std::ranges::upper_bound(
-				macrostate_vec, state_set, [](const StateSet& a, const StateSet& b) { return a.size() > b.size(); }
-			),
-			state_set
-		);
+	// Ordered by size from the largest; equal sizes keep the iteration order of the map.
+	std::vector<std::pair<const StateSet*, State>> macrostates{};
+	macrostates.reserve(subset_map.size());
+	for (const auto& [state_set, state] : subset_map) { macrostates.emplace_back(&state_set, state); }
+	std::ranges::stable_sort(macrostates, std::ranges::greater{}, [](const auto& macrostate) {
+		return macrostate.first->size();
+	});
+	std::vector<const StateSet*> macrostate_sets{};
+	std::vector<State> result_states{};
+	macrostate_sets.reserve(macrostates.size());
+	result_states.reserve(macrostates.size());
+	for (const auto& [state_set, state] : macrostates) {
+		macrostate_sets.push_back(state_set);
+		result_states.push_back(state);
 	}
 
-	std::vector<bool> covered(subset_map.size(), false); // flag of covered states, removed from nfa
-	std::vector<bool> visited(subset_map.size(), false); // flag of processed state
-
-	StateSet covering_set; // doesn't contain duplicates
-	std::vector<State> covering_indexes; // indexes of covering states
-	size_t macrostate_size = macrostate_vec.size();
-	for (size_t i = 0; i < macrostate_size - 1; i++) {
-		if (macrostate_vec[i].size() == 1) { // end searching on single-sized macrostates
-			break;
-		}
-
-		if (visited[i]) { // was already processed
-			continue;
-		}
-
-		covering_set.clear();
-		covering_indexes.clear();
-		visited[i] = true;
-
-		for (size_t j = i + 1; j < macrostate_size; j++) { // find covering macrostates
-			if (covered[j]) { // if covered there are smaller macrostates, skip
-				continue;
-			}
-
-			if (macrostate_vec[j].is_subset_of(macrostate_vec[i])) { // found covering state
-				covering_set.insert(macrostate_vec[j]); // is not covered
-				covering_indexes.push_back(j);
-			}
-		}
-
-		if (covering_set == macrostate_vec[i]) {
-			size_t covering_size = covering_indexes.size() - 1;
-			for (size_t k = 0; k < covering_size; k++) {
-				// check recurse coverability
-				if (macrostate_vec[covering_indexes[k]].size() == 1) {
-					// end on single-sized
-					break;
-				}
-
-				if (visited[covering_indexes[k]]) { // already processed
-					continue;
-				}
-
-				visited[covering_indexes[k]] = true;
-
-				residual_recurse_coverable(macrostate_vec, covering_indexes, covered, visited, k, &subset_map, result);
-			}
-
-			covering_set.clear(); // clear variable to store only needed macrostates
-			for (auto index : covering_indexes) {
-				if (covered[index] == 0) {
-					auto macrostate_ptr = subset_map.find(macrostate_vec[index]);
-					if (macrostate_ptr == subset_map.end()) { // should never happen
-						throw std::runtime_error(
-							std::string{__func__} + " couldn't find expected element in a map."
-						);
-					}
-
-					covering_set.insert(macrostate_ptr->second);
-				}
-			}
-
-			remove_covered_state(covering_set, subset_map.find(macrostate_vec[i])->second, result);
-			covered[i] = true;
-		}
-	}
-
+	// Coverage depends only on the macrostates; redirect all transitions in one pass at the end.
+	redirect_covered_states(
+		ResidualCoverage{std::move(macrostate_sets), std::move(result_states), nfa.num_of_states()}.run(), result
+	);
 	return result;
 }

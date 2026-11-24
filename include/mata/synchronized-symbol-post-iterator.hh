@@ -8,6 +8,9 @@
 #ifndef MATA_SYNCHRONIZED_SYMBOL_POST_ITERATOR_HH
 #define MATA_SYNCHRONIZED_SYMBOL_POST_ITERATOR_HH
 
+#include <cstdint>
+#include <vector>
+
 #include "mata/relation.hh"
 #include "mata/utils/ord-vector.hh"
 #include "mata/utils/synchronized-iterator.hh"
@@ -40,6 +43,11 @@ class SynchronizedExistentialSymbolPostIterator
 	 * @return True iff the synchronized iterator points to the same symbol as @p sync.
 	 */
 	bool synchronize_with(Symbol sync_symbol);
+
+  private:
+	/// Buffers of @c unify_targets(), reused across its calls.
+	mutable std::vector<State> unify_buffer_{};
+	mutable std::vector<uint64_t> unify_words_{};
 }; // class SynchronizedExistentialSymbolPostIterator.
 
 } // namespace mata.

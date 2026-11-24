@@ -8,11 +8,12 @@
 #include <algorithm>
 #include <concepts>
 #include <cstddef>
+#include <limits>
+#include <stdexcept>
 #include <format>
 #include <functional>
 #include <optional>
 #include <set>
-#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <type_traits>
@@ -219,7 +220,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	DeltaBase() : state_posts_{} {}
 	DeltaBase(const DeltaBase& other) = default;
 	DeltaBase(DeltaBase&& other) = default;
-	explicit DeltaBase(const size_t n) : state_posts_{n} {}
+	explicit DeltaBase(const size_t n) : state_posts_{} { allocate(n); }
 
 	DeltaBase& operator=(const DeltaBase& other) = default;
 	DeltaBase& operator=(DeltaBase&& other) = default;
@@ -290,6 +291,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	 */
 	void allocate(const size_t num_of_states) {
 		MATA_ASSERT(num_of_states >= this->num_of_states());
+		check_num_of_states_(num_of_states);
 		state_posts_.resize(num_of_states);
 	}
 
@@ -464,7 +466,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 		if constexpr (sizeof...(states) > 0) {
 			if (const State max_state{std::max({static_cast<State>(states)...})}; max_state >= num_of_states()) {
 				reserve_on_insert(state_posts_, max_state);
-				state_posts_.resize(max_state + 1);
+				state_posts_.resize(num_of_states_for_(max_state));
 			}
 		}
 		return *this;
@@ -574,6 +576,24 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 				}
 			});
 		}
+	}
+
+	/// The largest @c State is the "no state" sentinel: states are 0, ..., max - 1.
+	static constexpr State no_state_{std::numeric_limits<State>::max()};
+	/// Throws @c std::overflow_error unless @p num_of_states states can be numbered by @c State.
+	static void check_num_of_states_(const size_t num_of_states) {
+		if constexpr (sizeof(State) < sizeof(size_t)) {
+			if (num_of_states > static_cast<size_t>(no_state_)) [[unlikely]] {
+				throw std::overflow_error("mata: the number of states does not fit below the no-state sentinel");
+			}
+		}
+	}
+	/// The number of states needed to contain @p state, throwing @c std::overflow_error for the sentinel.
+	static size_t num_of_states_for_(const State state) {
+		if (state == no_state_) [[unlikely]] {
+			throw std::overflow_error("mata: the no-state sentinel cannot become a state");
+		}
+		return static_cast<size_t>(state) + 1;
 	}
 
 	std::vector<PostType> state_posts_;

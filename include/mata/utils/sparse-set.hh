@@ -16,8 +16,11 @@
 #ifndef LIBMATA_SPARSE_SET_HH
 #define LIBMATA_SPARSE_SET_HH
 
+#include <algorithm>
 #include <concepts>
+#include <cstdint>
 #include <iterator>
+#include <ranges>
 #include <type_traits>
 #include <vector>
 
@@ -27,9 +30,9 @@
 namespace mata::utils {
 
 template <typename T>
-concept Iterable = requires(T t) {
-	typename std::iterator_traits<decltype(begin(t))>::value_type;
-	{ begin(t) } -> std::same_as<decltype(end(t))>;
+concept Iterable = requires(const T& t) {
+	typename std::iterator_traits<decltype(std::ranges::begin(t))>::value_type;
+	{ std::ranges::begin(t) } -> std::same_as<decltype(std::ranges::end(t))>;
 };
 
 /**
@@ -40,7 +43,8 @@ concept Iterable = requires(T t) {
  * Importantly
  * - Insertion and removal are constant time.
  * - Iteration is linear in the number of stored elements.
- * - It takes a lot of space, the sparse and dense vectors allocate as many indexes as the maximal stored number.
+ * - Only the sparse index allocates as many indexes as the maximal stored number; the dense array grows with the
+ *   number of stored elements.
  *
  * @tparam  Number  Number type: type of numbers contained in the container.
  */
@@ -60,7 +64,7 @@ template <typename Number> class SparseSet {
 	///
 	/// `truncate()` will update the domain size to the current maximal Number + 1.
 	/// Constructor can preallocate the sparse set and set domain size to the requested value.
-	/// The structures are preallocated to at least @c domain_size_ size (can be more when maximal Number is removed).
+	/// The sparse index is preallocated to at least @c domain_size_ size; the dense array tracks @c size_ instead.
 	size_t domain_size_ = 0;
 
   public:
@@ -80,14 +84,16 @@ template <typename Number> class SparseSet {
 
 	bool empty() const { return size_ == 0; }
 
-	void clear() { size_ = 0; }
+	void clear() {
+		size_ = 0;
+		dense_.clear();
+	}
 
 	// TODO: maybe we could reserve space more efficiently, by something as doubling?
 	//  But we should not create havoc with domain_size, which is used outside, namely for determining the states of an
 	//  automaton.
 	void reserve(size_t u) {
 		if (u > domain_size_) {
-			dense_.resize(u, 0);
 			sparse_.resize(u, 0);
 			domain_size_ = u;
 		}
@@ -102,8 +108,8 @@ template <typename Number> class SparseSet {
 		MATA_ASSERT(consistent());
 
 		if (!contains(val)) {
-			if (static_cast<size_t>(val) >= domain_size_) { reserve(val + 1); }
-			dense_[size_] = val;
+			if (static_cast<size_t>(val) >= domain_size_) { reserve(static_cast<size_t>(val) + 1); }
+			dense_.push_back(val);
 			sparse_[val] = static_cast<Number>(size_);
 			++size_;
 		}
@@ -120,6 +126,7 @@ template <typename Number> class SparseSet {
 		dense_[sparse_[number]] = dense_[size_ - 1];
 		sparse_[dense_[size_ - 1]] = sparse_[number];
 		--size_;
+		dense_.pop_back();
 	}
 
 	void erase(const Number val) {
@@ -134,11 +141,7 @@ template <typename Number> class SparseSet {
 
 	SparseSet() = default;
 	/// Basic constructor where you may reserve a domain size.
-	explicit SparseSet(Number domain_size)
-		: dense_(domain_size),
-		  sparse_(domain_size, 0),
-		  size_(0),
-		  domain_size_(domain_size) {
+	explicit SparseSet(Number domain_size) : sparse_(domain_size, 0), domain_size_(domain_size) {
 		MATA_ASSERT(consistent());
 	};
 
@@ -152,8 +155,25 @@ template <typename Number> class SparseSet {
 		MATA_ASSERT(consistent());
 	}
 
-	template <class T> explicit SparseSet(T& container) {
-		insert(container.begin(), container.end());
+	/// Construct from any range of numbers convertible to @c Number.
+	///
+	/// A forwarding reference keeps ranges whose @c begin()/@c end() are callable
+	/// on a non-const object only (e.g. a named @c std::views::filter result) usable.
+	/// Elements are converted from the references the range yields, built-in arrays work through range access, and
+	/// the sentinel may differ from the iterator type.
+	/// @c SparseSet and @c BoolVector are excluded so that the copy/move and
+	/// bit-index constructors win over this greedy template.
+	template <class T>
+		requires std::ranges::input_range<T> && std::convertible_to<std::ranges::range_reference_t<T>, Number> &&
+				 (!std::same_as<std::remove_cvref_t<T>, SparseSet>) &&
+				 (!std::same_as<std::remove_cvref_t<T>, BoolVector>)
+	explicit SparseSet(T&& container) {
+		// The sentinel may have a type of its own: one combined declaration would require a common type.
+		const auto end{std::ranges::end(container)};
+		for (auto it{std::ranges::begin(container)}; it != end; ++it) {
+			const Number element = *it;
+			insert(element);
+		}
 		MATA_ASSERT(consistent());
 	}
 
@@ -190,17 +210,24 @@ template <typename Number> class SparseSet {
 		MATA_ASSERT(consistent());
 		return *this;
 	}
+	~SparseSet() = default;
 
-	// TODO: How do we want to define equality of sparse sets? The default one is member-wise, but maybe simply
-	//  comparing contained elements should be enough?
-	bool operator==(const SparseSet<Number>&) const = default;
+	/// Compare the contents: the sparse index keeps stale slots, and the order of the dense array and the domain size
+	///  depend on the insertion history, so equal sets may differ member-wise.
+	bool operator==(const SparseSet<Number>& other) const {
+		if (size_ != other.size_) { return false; }
+		for (size_t i{0}; i < size_; ++i) {
+			if (!other.contains(dense_[i])) { return false; }
+		}
+		return true;
+	}
 
 	// Things
 
 	// Tests the basic invariant of the sparse set.
-	bool consistent() {
+	bool consistent() const {
 		return domain_size_ >= size_ && (max() < domain_size_ || (size_ == 0 && domain_size_ == 0)) &&
-			   dense_.size() >= domain_size_ && sparse_.size() >= domain_size_;
+			   dense_.size() == size_ && sparse_.size() >= domain_size_;
 	}
 
 	/**
@@ -209,14 +236,11 @@ template <typename Number> class SparseSet {
 	bool operator[](Number q) const { return contains(q); }
 
 	template <class InputIterator> void insert(InputIterator first, InputIterator last) {
-		while (first != last) {
-			insert(*first);
-			++first;
-		}
+		std::for_each(first, last, [this](const Number element) { insert(element); });
 		MATA_ASSERT(consistent());
 	}
 
-	template <Iterable T> void insert(const T& set) { insert(set.begin(), set.end()); }
+	template <Iterable T> void insert(const T& set) { insert(std::ranges::begin(set), std::ranges::end(set)); }
 
 	void insert(const std::initializer_list<Number>& list) { insert(list.begin(), list.end()); }
 
@@ -228,38 +252,63 @@ template <typename Number> class SparseSet {
 		MATA_ASSERT(consistent());
 	}
 
-	template <Iterable T> void erase(const T& set) { erase(set.begin(), set.end()); }
+	// Ranges over our own dense array are erased back to front: erasing position i moves the last element into i, so
+	//  positions below i keep their elements while iterators into the popped tail would be invalidated.
+	template <Iterable T> void erase(const T& set) {
+		const auto first{std::ranges::begin(set)};
+		const auto last{std::ranges::end(set)};
+		const auto address = [](const auto& iterator) -> const void* {
+			if constexpr (std::contiguous_iterator<std::remove_cvref_t<decltype(iterator)>>) {
+				return std::to_address(iterator);
+			} else {
+				return nullptr;
+			}
+		};
+		const auto first_address{reinterpret_cast<std::uintptr_t>(address(first))};
+		const auto last_address{reinterpret_cast<std::uintptr_t>(address(last))};
+		const auto dense_begin{reinterpret_cast<std::uintptr_t>(dense_.data())};
+		const auto dense_end{reinterpret_cast<std::uintptr_t>(dense_.data() + dense_.size())};
+		if (first_address >= dense_begin && first_address <= dense_end && last_address >= dense_begin &&
+			last_address <= dense_end) {
+			const auto first_index{(first_address - dense_begin) / sizeof(Number)};
+			for (auto index{(last_address - dense_begin) / sizeof(Number)}; index > first_index;) {
+				--index;
+				erase_nocheck(dense_[index]);
+			}
+			MATA_ASSERT(consistent());
+		} else {
+			erase(first, last);
+		}
+	}
 
 	void erase(const std::initializer_list<Number>& list) { erase(list.begin(), list.end()); }
 
 	// call this (instead of the friend are_disjoint) if you want the other container to be iterated (e.g. if it does
 	// not have constant membership)
 	template <class T> bool intersects_with(const T& set) const {
-		for (auto i = set.begin(); i < set.end(); ++i) {
-			if (contains(*i)) { return true; }
-		}
-		return false;
+		return std::ranges::any_of(set, [this](const auto& element) { return contains(element); });
 	}
 
 	/*
 	 * Complements the set with respect to a given number of elements = the maximum number + 1.
 	 */
-	void complement(Number new_domain_size) {
-		Number old_domain_size = domain_size_;
-		for (Number i = 0; i < new_domain_size; ++i) {
-			if (contains(i)) {
-				erase_nocheck(i);
+	void complement(const size_t new_domain_size) {
+		const size_t old_domain_size = domain_size_;
+		for (size_t i = 0; i < new_domain_size; ++i) {
+			const auto number{static_cast<Number>(i)};
+			if (contains(number)) {
+				erase_nocheck(number);
 			} else {
-				insert(i);
+				insert(number);
 			}
 		}
-		for (Number i = new_domain_size; i < old_domain_size; ++i) { erase(i); }
+		for (size_t i = new_domain_size; i < old_domain_size; ++i) { erase(static_cast<Number>(i)); }
 
 		MATA_ASSERT(consistent());
 	}
 
-	template <typename F> void filter(F&& is_staying) {
-		for (Number i{0}; i < size_; ++i) {
+	template <typename F> void filter(F is_staying) {
+		for (size_t i{0}; i < size_; ++i) {
 			while (i < size_ && !is_staying(dense_[i])) { erase(dense_[i]); }
 		}
 
@@ -268,17 +317,17 @@ template <typename Number> class SparseSet {
 
 	void sort() {
 		std::sort(dense_.begin(), dense_.begin() + static_cast<long>(size_));
-		for (Number i = 0; i < size_; ++i) { sparse_[dense_[i]] = i; }
+		for (size_t i = 0; i < size_; ++i) { sparse_[dense_[i]] = static_cast<Number>(i); }
 
 		MATA_ASSERT(consistent());
 	}
 
-	template <typename F> void rename(F&& renaming) {
-		for (Number i = 0; i < size_; ++i) {
+	template <typename F> void rename(F renaming) {
+		for (size_t i = 0; i < size_; ++i) {
 			if (dense_[i] != renaming(dense_[i])) {
 				dense_[i] = renaming(dense_[i]);
-				if (dense_[i] >= domain_size_) { reserve(dense_[i] + 1); }
-				sparse_[dense_[i]] = i;
+				if (dense_[i] >= domain_size_) { reserve(static_cast<size_t>(dense_[i]) + 1); }
+				sparse_[dense_[i]] = static_cast<Number>(i);
 			}
 		}
 
@@ -287,10 +336,11 @@ template <typename Number> class SparseSet {
 
 	/// @brief Maximal Number in set.
 	///
-	/// Expensive operation as it has to compute the maximal Number in linear time.
-	Number max() {
+	/// Expensive operation as it has to compute the maximal Number in linear time. The index is a @c size_t: a full
+	///  @c SparseSet<uint8_t> holds 256 elements, which a @c Number index could never reach.
+	Number max() const {
 		Number max = 0;
-		for (Number i = 0; i < size_; ++i) {
+		for (size_t i = 0; i < size_; ++i) {
 			if (max < dense_[i]) { max = dense_[i]; }
 		}
 		return max;
@@ -308,14 +358,8 @@ template <typename Number> class SparseSet {
 
 	// This could be a template with types of A and B both as parameters, in utils?
 	friend bool are_disjoint(const SparseSet& a, const SparseSet& b) {
-		if (a.size() > b.size()) {
-			return are_disjoint(b, a);
-		} else {
-			for (auto i : a) {
-				if (b.contains(i)) { return false; }
-			}
-		}
-		return true;
+		if (a.size() > b.size()) { return are_disjoint(b, a); }
+		return !std::ranges::any_of(a, [&b](auto i) { return b.contains(i); });
 	}
 };
 } // namespace mata::utils

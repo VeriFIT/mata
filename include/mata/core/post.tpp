@@ -15,33 +15,56 @@ PostEntryCore<K, N, R>& PostEntryCore<K, N, R>::operator=(PostEntryCore&& rhs) n
 	// Self-assignment is checked by address: operator== compares only the key, so a by-value check
 	//  would also skip assigning an entry with the same key but different targets (std::sort does this).
 	if (this != &rhs) {
-		symbol = rhs.symbol;
 		targets = std::move(rhs.targets);
+		symbol = rhs.symbol;
 	}
 	return *this;
 }
 
 template <typename K, typename N, typename R>
-void PostEntryCore<K, N, R>::insert(const Target s)
+bool PostEntryCore<K, N, R>::insert(const Target s)
 	requires(arity_of<N> == 0)
 {
 	if (targets.empty() || targets.back() < s) {
 		targets.push_back(s);
-		return;
+		return true;
 	}
-	// Find the place where to put the element (if not present).
-	// Insert to OrdVector without the searching of a proper position inside insert(const Key&x).
-	if (const auto it = std::ranges::lower_bound(targets, s); it == targets.end() || *it != s) {
-		targets.insert(it, s);
+	if constexpr (requires { targets.insert(s).second; }) {
+		// The set appends at the back and searches otherwise.
+		return targets.insert(s).second;
+	} else {
+		// Find the place where to put the element (if not present).
+		if (const auto it = std::ranges::lower_bound(targets, s); it == targets.end() || *it != s) {
+			targets.insert(it, s);
+			return true;
+		}
+		return false;
 	}
 }
 
-// TODO: slow! This should be doing merge, not inserting one by one.
+template <typename K, typename N, typename R>
+size_t PostEntryCore<K, N, R>::insert(const std::span<const Target> states)
+	requires(arity_of<N> == 0)
+{
+	const size_t old_size{targets.size()};
+	if constexpr (requires { targets.insert(states); }) {
+		// A sorted merge in the set itself.
+		targets.insert(states);
+	} else {
+		for (const Target s : states) { insert(s); }
+	}
+	return targets.size() - old_size;
+}
+
 template <typename K, typename N, typename R>
 void PostEntryCore<K, N, R>::insert(const Nested& states)
 	requires(arity_of<N> == 0)
 {
-	for (const Target s : states) { insert(s); }
+	if constexpr (requires { std::span<const Target>{states.begin(), states.end()}; }) {
+		insert(std::span<const Target>{states.begin(), states.end()});
+	} else {
+		for (const Target s : states) { insert(s); }
+	}
 }
 
 } // namespace mata::posts::detail.

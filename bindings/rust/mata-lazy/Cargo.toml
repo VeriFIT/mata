@@ -1,0 +1,57 @@
+[package]
+name = "mata-lazy"
+version = "0.1.0"
+description = "Lazy emptiness checking on combinations of automata and transducers"
+readme = "README.md"
+license.workspace = true
+repository.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+keywords = [
+  "automata",
+  "transducers",
+  "emptiness",
+  "antichains",
+  "verification",
+]
+categories = ["algorithms", "mathematics"]
+# cargo-fuzz targets build with nightly and sanitizers on their own.
+exclude = ["/fuzz"]
+# Not on crates.io yet: the API is still settling. `mata` re-exports it as `mata::lazy`.
+publish = false
+
+[features]
+## Leaves from regex-automata DFAs (pure Rust).
+regex = ["dep:regex-automata"]
+## Leaves from rustfst transducers (pure Rust).
+rustfst = ["dep:rustfst"]
+## Plans, plan views and statistics as JSON (`Formula::plan_from_json`, `Plan::to_json`, `PlanView::to_json`).
+serde = ["dep:serde", "dep:serde_json"]
+
+[dependencies]
+hashbrown.workspace = true
+indexmap.workspace = true
+parking_lot.workspace = true
+rustc-hash.workspace = true
+stacker.workspace = true
+thiserror.workspace = true
+typed-index-collections.workspace = true
+regex-automata = { workspace = true, optional = true }
+rustfst = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+
+[dev-dependencies]
+rand.workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+targets = ["x86_64-unknown-linux-gnu"]
+
+[lints]
+workspace = true
+
+[[test]]
+name = "regex"
+required-features = ["regex"]

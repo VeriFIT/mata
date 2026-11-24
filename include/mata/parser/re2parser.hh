@@ -5,16 +5,40 @@
 #ifndef MATA_RE2_PARSER_HH
 #define MATA_RE2_PARSER_HH
 
+#include <cstdint>
 #include <string>
 
 #include "mata/nfa/nfa.hh"
 
 // Encoding for the regular expression
-// FIXME: Use enum class re2::Regexp::ParseFlags from re2/regexp.h instead. It is not possible to include it here. Need
-// to fix cmake.
-enum class Encoding { Utf8 = 0, Latin1 = 1 << 5 };
+// Encoding mirrors re2::Regexp::ParseFlags; enum class cannot be included in public header.
+enum class Encoding : std::uint8_t { Utf8 = 0, Latin1 = 1 << 5 };
 
 namespace mata::parser {
+/**
+ * @brief Options of the conversion of a regex to an NFA and of the post-processing of the result.
+ *
+ * The defaults reproduce the behaviour of the overloads taking the individual parameters: epsilon transitions removed,
+ *  the result trimmed and reduced by simulation reduction.
+ */
+struct Re2Options {
+	/// Translate every instruction of the regex program to a state, with an @c epsilon transition for each step that
+	///  consumes no symbol. Otherwise, the regex is converted directly to an NFA without epsilon transitions.
+	bool keep_epsilon{false};
+	Symbol epsilon{306}; ///< Symbol representing epsilon transitions.
+	Encoding encoding{Encoding::Latin1}; ///< Encoding of the regex.
+	/// Trim the created NFA. Without epsilon transitions, the conversion only creates states reachable from the initial
+	///  state, and only a branch that can never match, such as '[^\x00-\xff]' in Latin1, leaves useless states behind.
+	bool trim{true};
+	/// Reduce the created NFA by simulation reduction. The reduction costs seconds on regexes with a few thousand
+	///  states, where the conversion itself takes milliseconds; turn it off for large regexes and when the result is
+	///  determinized anyway.
+	bool reduce{true};
+	/// Approximate RE2 program memory budget in bytes. Positive values override RE2's default budget; non-positive
+	/// values preserve it. This applies to regex compilation, not to trimming or reduction.
+	std::int64_t max_mem{0};
+};
+
 /**
  * @brief Creates NFA from regular expression using RE2 parser
  *
@@ -28,15 +52,36 @@ namespace mata::parser {
  *  2) The created automaton represents the language of the regex and
  *     is not expected to be used in regex matching. Therefore, stuff
  *     like ^, $, \b, etc. are ignored in the regex.
+ *  3) Only the post-processing steps requested by @p options are run on the created automaton.
  *
  * @sa mata::nfa::builder::create_from_regex()
  *
  * @param pattern regex as a string
+ * @param options conversion and post-processing options
+ * @return Nfa corresponding to pattern
+ * @throw std::invalid_argument on a regex RE2 cannot parse.
+ * @throw std::invalid_argument on a regex RE2 cannot compile within its program memory budget.
+ * @throw std::runtime_error on a regex program containing an instruction the converter does not support.
+ */
+nfa::Nfa create_nfa(const std::string& pattern, const Re2Options& options);
+
+// version for python binding
+void create_nfa(nfa::Nfa* nfa, const std::string& pattern, const Re2Options& options);
+
+/**
+ * @brief Creates NFA from regular expression using RE2 parser
+ *
+ * Forwards to create_nfa(const std::string&, const Re2Options&) with a trimmed result.
+ *
+ * @param pattern regex as a string
  * @param use_epsilon whether to keep epsilon transitions in created NFA
  * @param epsilon_value symbol representing epsilon
- * @param use_reduce if set to true the result is trimmed and reduced using simulation reduction
+ * @param use_reduce whether to reduce the result using simulation reduction
  * @param encoding encoding of the regex, default is Latin1
  * @return Nfa corresponding to pattern
+ * @throw std::invalid_argument on a regex RE2 cannot parse.
+ * @throw std::invalid_argument on a regex RE2 cannot compile within its program memory budget.
+ * @throw std::runtime_error on a regex program containing an instruction the converter does not support.
  */
 nfa::Nfa create_nfa(
 	const std::string& pattern,

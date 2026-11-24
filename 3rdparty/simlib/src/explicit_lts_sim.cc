@@ -10,6 +10,7 @@
 
 // Standard library headers
 #include <cmath>
+#include <deque>
 #include <ostream>
 #include <vector>
 #include <algorithm>
@@ -20,6 +21,7 @@
 #include <mata/simlib/explicit_lts.hh>
 #include <mata/simlib/util/binary_relation.hh>
 #include <mata/simlib/util/convert.hh>
+#include <mata/simlib/util/partition_relation.hh>
 #include <mata/simlib/util/smart_set.hh>
 #include <mata/simlib/util/simlib.hh>
 
@@ -36,6 +38,7 @@ using Simlib::Util::CachingAllocator;
 using Simlib::Util::SharedList;
 using Simlib::Util::SharedCounter;
 using Simlib::Util::Convert;
+using Simlib::Util::PartitionRelation;
 
 typedef CachingAllocator<std::vector<size_t>> VectorAllocator;
 
@@ -77,7 +80,10 @@ typedef SharedList<std::vector<size_t>> RemoveList;
 typedef CachingAllocator<RemoveList, SharedListInitF> RemoveAllocator;
 
 typedef std::pair<struct Block*, size_t> RemoveQueueElement;
-typedef std::vector<RemoveQueueElement> RemoveQueue;
+// A new remove set waits at the back and keeps collecting states until it is processed; the copy of a set made
+//  for a block split off is processed first (see split()). Processed as a stack, the sets of a dense automaton
+//  were mostly processed with one state each (#964).
+typedef std::deque<RemoveQueueElement> RemoveQueue;
 
 struct Block
 {
@@ -307,13 +313,24 @@ protected:
 		}
 	}
 
+	/// Grow `mask` to `size`, never shrink it: a mask reused across the calls of one simulation is
+	///  allocated once and only grows, as the partition it indexes only ever appends blocks.
+	static void ensure_mask_size(std::vector<bool>& mask, size_t size)
+	{
+		if (mask.size() < size)
+		{
+			mask.resize(size, false);
+		}
+	}
+
 	template <class T>
 	void build_pre(
 		T&               pre,
 		StateListElem*   states,
-		size_t           label) const
+		size_t           label,
+		std::vector<bool>& blockMask) const
 	{
-		std::vector<bool> blockMask(this->partition_.size(), false);
+		ensure_mask_size(blockMask, this->partition_.size());
 
 		auto elem = states;
 
@@ -344,7 +361,8 @@ protected:
 	template <class T1, class T2>
 	void internal_split(T1& modifiedBlocks, const T2& remove)
 	{
-		std::vector<bool> blockMask(this->partition_.size(), false);
+		std::vector<bool>& blockMask = this->internal_split_mask_;
+		ensure_mask_size(blockMask, this->partition_.size());
 
 		for (auto& q : remove)
 		{
@@ -366,6 +384,11 @@ protected:
 
 			blockMask[block->index()] = true;
 			modifiedBlocks.push_back(block);
+		}
+
+		for (auto& block : modifiedBlocks)
+		{
+			blockMask[block->index()] = false;
 		}
 	}
 
@@ -397,8 +420,9 @@ protected:
 
 	template <class T>
 	void split(
-		std::vector<bool>&   removeMask,
-		const T&             remove)
+		std::vector<bool>&     removeMask,
+		std::vector<size_t>&   removedBlocks,
+		const T&               remove)
 	{
 		std::vector<Block*> modifiedBlocks;
         this->internal_split(modifiedBlocks, remove);
@@ -412,6 +436,7 @@ protected:
 			if (!p.first)
 			{
 				removeMask[block->index_] = true;
+				removedBlocks.push_back(block->index_);
 
 				continue;
 			}
@@ -423,6 +448,7 @@ protected:
 			this->partition_.push_back(newBlock);
 			this->relation_.split(block->index_);
 			removeMask[newBlock->index_] = true;
+			removedBlocks.push_back(newBlock->index_);
 			newBlock->counter_.copy_labels(newBlock->inset_, block->counter_);
 
 			for (auto& a : newBlock->inset_)
@@ -432,9 +458,53 @@ protected:
 					continue;
 				}
 
-				this->queue_.push_back(std::make_pair(newBlock, a));
+				// processed next, before the new block is split again and needs another copy
+				this->queue_.push_front(std::make_pair(newBlock, a));
 				newBlock->remove_[a] = block->remove_[a]->copy();
 			}
+		}
+	}
+
+	// erases (b1, b2) from the relation and decrements the counters of b1 for the predecessors of b2
+	template <class Iterator>
+	void erase_related(
+		Block*            b1,
+		Block*            b2,
+		const Iterator&   element)
+	{
+		assert(b1->index_ != b2->index_);
+		this->relation_.erase(element);
+
+		const auto& labels{
+			(b1->inset_.size() < b2->inset_.size()) ? b1->inset_ : b2->inset_
+		};
+		const auto& other_labels{
+			(b1->inset_.size() < b2->inset_.size()) ? b2->inset_ : b1->inset_
+		};
+
+		for (auto a : labels)
+		{
+			if (!other_labels.contains(a))
+			{
+				continue;
+			}
+
+			auto elem = b2->states_;
+
+			do
+			{
+				assert(elem);
+
+				for (auto& pre : this->lts_.pre(a)[elem->index_])
+				{
+					if (!b1->counter_.decr(a, pre))
+					{
+                        this->enqueue_to_remove(b1, a, pre);
+					}
+				}
+
+				elem = elem->next_;
+			} while (elem != b2->states_);
 		}
 	}
 
@@ -449,10 +519,27 @@ protected:
 
 		assert(remove);
 
-		std::vector<Block*> preList;
-		std::vector<bool> removeMask(this->lts_.states());
-		this->build_pre(preList, block->states_, label);
-		this->split(removeMask, *remove);
+		std::vector<Block*>& preList = this->pre_list_;
+		std::vector<bool>& removeMask = this->remove_mask_;
+		std::vector<size_t>& removedBlocks = this->removed_blocks_;
+		preList.clear();
+		removedBlocks.clear();
+		ensure_mask_size(removeMask, this->lts_.states());
+		this->build_pre(preList, block->states_, label, this->build_pre_mask_);
+		this->split(removeMask, removedBlocks, *remove);
+
+		// The masks are reused across the calls: clear the entries this call set.
+		const auto clear_scratch = [&] {
+			for (auto& b2 : removedBlocks)
+			{
+				removeMask[b2] = false;
+			}
+
+			for (auto& b1 : preList)
+			{
+				this->build_pre_mask_[b1->index_] = false;
+			}
+		};
 
 		remove->unsafe_release(
 		[this](RemoveList *list) {
@@ -461,47 +548,60 @@ protected:
 				 }
         );
 
+		// The pairs to erase are (b1, b2) with b1 in preList and b2 removed: walk the rows of preList or the
+		//  columns of the removed blocks, whichever is shorter. On a dense automaton, preList holds most
+		//  blocks while a remove set holds a few states.
+		size_t rowsSize = 0;
+		size_t columnsSize = 0;
+
+		for (auto& b1 : preList)
+		{
+			rowsSize += this->relation_.row_size(b1->index_);
+		}
+
+		for (auto& b2 : removedBlocks)
+		{
+			columnsSize += this->relation_.column_size(b2);
+		}
+
+		if (columnsSize < rowsSize)
+		{
+			// build_pre() marked exactly the blocks of preList; split() appended blocks after that.
+			std::vector<bool>& preMask = this->build_pre_mask_;
+			ensure_mask_size(preMask, this->partition_.size());
+
+			for (auto& b2 : removedBlocks)
+			{
+				SplittingRelation::Column column = this->relation_.column(b2);
+
+				for (auto row = column.begin(); row != column.end(); ++row)
+				{
+					if (preMask[*row])
+					{
+						this->erase_related(this->partition_[*row], this->partition_[b2], row);
+					}
+				}
+			}
+
+			clear_scratch();
+
+			return;
+		}
+
 		for (auto& b1 : preList)
 		{
 			SplittingRelation::Row row = this->relation_.row(b1->index_);
 
 			for (auto col = row.begin(); col != row.end(); ++col)
 			{
-				if (!removeMask[*col])
+				if (removeMask[*col])
 				{
-					continue;
-				}
-
-				assert(b1->index_ != *col);
-				this->relation_.erase(col);
-				auto b2 = this->partition_[*col];
-
-				for (auto a : b2->inset_)
-				{
-					if (!b1->inset_.contains(a))
-					{
-						continue;
-					}
-
-					auto elem = b2->states_;
-
-					do
-					{
-						assert(elem);
-
-						for (auto& pre : this->lts_.pre(a)[elem->index_])
-						{
-							if (!b1->counter_.decr(a, pre))
-							{
-                                this->enqueue_to_remove(b1, a, pre);
-							}
-						}
-
-						elem = elem->next_;
-					} while (elem != b2->states_);
+					this->erase_related(b1, this->partition_[*col], col);
 				}
 			}
 		}
+
+		clear_scratch();
 	}
 
 	static bool is_partition(
@@ -580,6 +680,15 @@ private:
 	std::vector<size_t> key_;
 	std::vector<std::pair<size_t, size_t>> label_map_;
 
+	// Scratch buffers reused across the calls of one simulation: a call allocates nothing and clears
+	//  only the entries it set, instead of zeroing a vector the size of the automaton or of the
+	//  partition per removal.
+	std::vector<bool> build_pre_mask_;
+	std::vector<bool> internal_split_mask_;
+	std::vector<bool> remove_mask_;
+	std::vector<Block*> pre_list_;
+	std::vector<size_t> removed_blocks_;
+
 	static size_t get_row_size(size_t states)
 	{
 		size_t treshold = static_cast<size_t>(std::sqrt(states)) >> 1;
@@ -645,7 +754,7 @@ public:
 
 			for (auto& q : delta1[a])
 			{
-				this->key_[a*this->lts_.states() + q] = x++;
+				this->key_[a*this->lts_.states() + q] = SharedCounter::key_of(x++, this->row_size_);
 			}
 		}
 
@@ -792,8 +901,8 @@ public:
 	{
 		while (!this->queue_.empty())
 		{
-			std::pair<Block*, size_t> tmp(this->queue_.back());
-			this->queue_.pop_back();
+			std::pair<Block*, size_t> tmp(this->queue_.front());
+			this->queue_.pop_front();
             this->process_remove(tmp.first, tmp.second);
 		}
 	}
@@ -839,6 +948,39 @@ public:
 		}
 	}
 
+	/// The result on the states below @p size, as the final partition and the relation on its blocks.
+	PartitionRelation build_partition_result(
+		size_t             size) const
+	{
+		std::vector<size_t> blockOf(size);
+
+		for (size_t i = 0; i < this->partition_.size(); ++i)
+		{
+			auto elem = this->partition_[i]->states_;
+
+			do
+			{
+				if (elem->index_ < size)
+				{
+					blockOf[elem->index_] = i;
+				}
+
+				elem = elem->next_;
+
+			} while (elem != this->partition_[i]->states_);
+		}
+
+		PartitionRelation result(std::move(blockOf));
+
+		for (size_t i = 0; i < this->relation_.size(); ++i)
+		{
+			auto row = const_cast<SplittingRelation*>(&this->relation_)->row(i);
+			result.add_row(row.begin(), row.end());
+		}
+
+		return result;
+	}
+
 	friend std::ostream& operator<<(
 		std::ostream&              os,
 		const SimulationEngine&    engine)
@@ -878,6 +1020,25 @@ BinaryRelation Simlib::ExplicitLTS::compute_simulation(
     engine.build_result(result, outputSize);
 
 	return result;
+}
+
+
+PartitionRelation Simlib::ExplicitLTS::compute_block_simulation(
+	const std::vector<std::vector<size_t>>&   partition,
+	const BinaryRelation&                     relation,
+	size_t                                    outputSize)
+{
+	if (0 == outputSize)
+	{
+		return PartitionRelation{};
+	}
+
+	SimulationEngine engine(*this);
+
+	engine.init(partition, relation);
+	engine.run();
+
+	return engine.build_partition_result(outputSize);
 }
 
 

@@ -4,14 +4,25 @@ from libcpp.vector cimport vector
 from libcpp.unordered_map cimport unordered_map as umap
 from libcpp.memory cimport shared_ptr
 from libcpp.optional cimport optional
-from libmata.utils cimport COrdVector
+from libmata.utils cimport COrdVector, CStringHash, CTransparentEqualTo
 
 
 cdef extern from "mata/alphabet.hh" namespace "mata":
-    ctypedef unsigned Symbol
-    ctypedef unsigned Level
+    ctypedef unsigned int Symbol
+    ctypedef unsigned int Level
 
     cdef cppclass CConstAlphabet "const mata::Alphabet"
+
+cdef extern from "mata/utils/lazy-generator.hh" namespace "mata::utils":
+    # Constructed only on the C++ side, via e.g. CNfa's/CNft's get_words_lazy_ptr() — never directly from
+    #  Cython, since std::generator (what it wraps) is move-only and not default-constructible, which
+    #  Cython's own code generation cannot accommodate as an intermediate value.
+    cdef cppclass CLazyWordGenerator "mata::utils::LazyWordGenerator":
+        bool done() except +
+        vector[Symbol] next() except +
+
+
+cdef extern from "mata/alphabet.hh" namespace "mata":
 
     cdef cppclass CAlphabet "mata::Alphabet":
         CAlphabet() except +
@@ -44,7 +55,7 @@ cdef extern from "mata/alphabet.hh" namespace "mata":
         void clear()
 
     cdef cppclass COnTheFlyAlphabet "mata::OnTheFlyAlphabet" (CAlphabet):
-        ctypedef umap[string, Symbol] StringToSymbolMap
+        ctypedef umap[string, Symbol, CStringHash, CTransparentEqualTo] StringToSymbolMap
 
         StringToSymbolMap symbol_map
 
@@ -89,6 +100,7 @@ cdef extern from "mata/alphabet.hh" namespace "mata":
         bool empty(optional[Level]) except +
         void clear(optional[Level]) except +
 
+        shared_ptr[CAlphabet]& for_level(optional[Level]) except +
         shared_ptr[CAlphabet]& at(size_t) except +
         size_t size()
 

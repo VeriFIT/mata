@@ -1,0 +1,10 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 442acd92b0f7ef4738be4f71dd834c026f8065c834bab718fd1cd6e9a7031cd2 # shrinks to m = Model { num_levels: 2, num_states: 1, transitions: [(0, [Symbol(0), Epsilon], 0)], jumps: [], initial: [0], accepting: [0] }
+cc 752a7cc7fa8ea38479327de008f3ae08cf5df53f591a73d3cac3ec3c6390a62c # shrinks to m = Model { num_levels: 1, num_states: 2, transitions: [(0, [Epsilon], 0), (0, [Symbol(0)], 1), (1, [Epsilon], 0)], jumps: [], initial: [0], accepting: [1] }
+cc b3c4d856e8537ec7c5c234e9733d430483827da2df02d67b1af1c58fd8163573 # shrinks to m = Model { num_levels: 2, num_states: 1, transitions: [(0, [Symbol(0), Epsilon], 0)], jumps: [(0, 0, 0)], initial: [0], accepting: [] }
+cc ec23875b34dc349c5a41c4cf9f1c4b29d28b30b9563395d9f87ad265314de971 # shrinks to (a, b) = (Model { num_levels: 1, num_states: 2, transitions: [(0, [Symbol(0)], 1), (0, [Any], 0)], jumps: [], initial: [0], accepting: [0] }, Model { num_levels: 1, num_states: 1, transitions: [], jumps: [], initial: [0], accepting: [] })

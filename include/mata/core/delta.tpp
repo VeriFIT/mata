@@ -44,7 +44,8 @@ typename DeltaBase<P, TT>::KeyedSuccessors DeltaBase<P, TT>::get_successors(cons
 template <typename P, typename TT>
 std::vector<typename DeltaBase<P, TT>::TransitionType> DeltaBase<P, TT>::get_transitions_to(const State state_to) const {
 	std::vector<TransitionType> transitions_to_state{};
-	for (State state_from{0}, num_of_states{this->num_of_states()}; state_from < num_of_states; ++state_from) {
+	const size_t num_of_states{this->num_of_states()};
+	for (State state_from{0}; state_from < num_of_states; ++state_from) {
 		collect_transitions_to_(state_from, state_to, transitions_to_state);
 	}
 	return transitions_to_state;
@@ -62,10 +63,9 @@ template <typename D, typename P>
 void KeyedAccess<D, P, std::index_sequence<0>>::add(const State source, Key symbol, TargetArg target) {
 	self().resize_for_states(source, D::state_of(target));
 
-	if (P& state_transitions{self().state_posts_[source]}; state_transitions.empty()) {
-		state_transitions.insert({symbol, target});
-	} else if (state_transitions.back().symbol < symbol) {
-		state_transitions.insert({symbol, target});
+	if (P& state_transitions{self().state_posts_[source]};
+		state_transitions.empty() || state_transitions.back().symbol < symbol) {
+		state_transitions.emplace_back(symbol, target);
 	} else {
 		// We need to insert into the middle of the vector.
 		if (const auto symbol_transitions{state_transitions.find(typename P::Entry{symbol})};
@@ -73,8 +73,7 @@ void KeyedAccess<D, P, std::index_sequence<0>>::add(const State source, Key symb
 			symbol_transitions->insert(target);
 		} else {
 			// Add transition to a new Move struct with symbol yet unused on transitions from state_from.
-			const typename P::Entry new_symbol_transitions{symbol, target};
-			state_transitions.insert(new_symbol_transitions);
+			state_transitions.insert(typename P::Entry{symbol, target});
 		}
 	}
 }
@@ -190,7 +189,7 @@ template <typename P, typename TT>
 typename DeltaBase<P, TT>::PostType& DeltaBase<P, TT>::mutable_state_post(const State q) {
 	if (q >= state_posts_.size()) {
 		utils::reserve_on_insert(state_posts_, q);
-		const size_t new_size{q + 1};
+		const size_t new_size{num_of_states_for_(q)};
 		state_posts_.resize(new_size);
 	}
 	return state_posts_[q];
@@ -198,8 +197,14 @@ typename DeltaBase<P, TT>::PostType& DeltaBase<P, TT>::mutable_state_post(const 
 
 template <typename P, typename TT>
 DeltaBase<P, TT> defragment(const DeltaBase<P, TT>& delta, const BoolVector& is_staying, const std::vector<typename DeltaBase<P, TT>::State>& renaming) {
-	DeltaBase<P, TT> result{delta};
-	result.defragment(is_staying, renaming);
+	// Built from the staying posts only, instead of copying the whole relation and then filtering the copy.
+	DeltaBase<P, TT> result{};
+	const size_t num_of_states{delta.num_of_states()};
+	result.reserve(static_cast<size_t>(std::count(is_staying.begin(), is_staying.begin() + static_cast<std::ptrdiff_t>(std::min(num_of_states, is_staying.size())), true)));
+	for (size_t source{0}; source < num_of_states; ++source) {
+		if (!is_staying[source]) { continue; }
+		result.emplace_back(defragmented(delta.state_post(static_cast<typename DeltaBase<P, TT>::State>(source)), is_staying, renaming));
+	}
 	return result;
 }
 
@@ -208,7 +213,9 @@ DeltaBase<P, TT>& DeltaBase<P, TT>::defragment(const BoolVector& is_staying, con
 	size_t source_new{0};
 	for (size_t source_orig{0}, num_of_states{this->num_of_states()}; source_orig < num_of_states; ++source_orig) {
 		if (!is_staying[source_orig]) { continue; }
-		state_posts_[source_new] = defragmented(state_posts_[source_orig], is_staying, renaming);
+		// Filtered and renamed in place: no post is rebuilt, so nothing is allocated.
+		defragment_in_place(state_posts_[source_orig], is_staying, renaming);
+		if (source_new != source_orig) { state_posts_[source_new] = std::move(state_posts_[source_orig]); }
 		++source_new;
 	}
 	state_posts_.resize(source_new);
@@ -218,7 +225,7 @@ DeltaBase<P, TT>& DeltaBase<P, TT>::defragment(const BoolVector& is_staying, con
 template <typename P, typename TT>
 bool DeltaBase<P, TT>::operator==(const DeltaBase& other) const {
 	const size_t states{std::max(num_of_states(), other.num_of_states())};
-	for (size_t source{0}; source < states; ++source) {
+	for (State source{0}; source < states; ++source) {
 		// Using posts_equal rather than operator== because the latter compares only keys, not targets.
 		// state_post on nonexistent states returns an empty post, so the relation comparison does not 
 		// require the same number of states, only the same transitions.

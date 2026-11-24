@@ -2,8 +2,17 @@
 
 # Repositories
 
+> [!IMPORTANT]
+> For proper benchmarking of Mata (and comparison with other automata libraries), use
+> **[VeriFIT/automata-lib-bench](https://github.com/VeriFIT/automata-lib-bench)**, the preferred benchmarking
+> infrastructure. The in-repository infrastructure in `./tests-integration/` described below is meant for quick local
+> measurements, profiling and integration testing.
+
 We have several repositories for all the NFA benchmarks and the benchmarking infrastructure:
 
+- **[VeriFIT/automata-lib-bench](https://github.com/VeriFIT/automata-lib-bench)**
+  - The preferred benchmarking infrastructure for Mata and other automata libraries
+  - Use it for proper benchmarking and for comparing Mata versions or libraries
 - **[VeriFIT/mata](https://github.com/VeriFIT/mata/)**
   - The main repository for Mata: A fast and simple automata library
   - `./tests-integration/`
@@ -14,7 +23,7 @@ We have several repositories for all the NFA benchmarks and the benchmarking inf
 - **[VeriFIT/nfa-program-parser](https://github.com/VeriFIT/nfa-program-parser/)**
   - parsers and interpreters for the .emp files
 - **[VeriFIT/mata-comparison](https://github.com/VeriFIT/mata-comparison)**
-  - Master repo for comparison of the libmata library
+  - Replication package for the comparison of the libmata library from the TACAS'24 paper; superseded by automata-lib-bench for new benchmarking
 - [automata-bench](https://github.com/VeriFIT/automata-bench)
   - Extensive benchmark for reasoning about regular properties
 - [automata-benchmarks](https://github.com/ondrik/automata-benchmarks)
@@ -65,13 +74,21 @@ We provide a benchmarking infrastructure directly in VeriFIT/mata repository.
   - `src/templates/template-with-cli.args.cc` contains a basic template that takes file as a command line argument, parses the automaton, and computes minterms.
   - `src/templates/template-with-list-of-automata.cc` contains a basic template that without arguments takes a hardcoded list of input automata taken from `automata` directory;
     in case it is run with arguments, it reads the input files that contain paths to source automata.
-- `./tests-integration/pycobench`: a performance testing script (see below or `./pycobench --help` for more info)
-- `./tests-integration/pyco_proc`: a parser of performance results (see below or `./pyco_proc --help` for more information)
+- `./tests-integration/pycobench`: the [pycobench](https://github.com/VeriFIT/pycobench) repository, included as a git submodule.
+  Fetch it together with the repository (`git clone --recurse-submodules` or `git submodule update --init` later on).
+  The benchmarking tools live in `./tests-integration/pycobench/src/`:
+  - `./tests-integration/pycobench/src/pycobench.py`: a performance testing script (see below or `pycobench.py --help` for more info)
+  - `./tests-integration/pycobench/src/pyco_proc.py`: a parser of performance results (see below or `pyco_proc.py --help` for more information)
 - `./tests-integration/scripts/`: helper scripts used for profiling or testing:
   - `./tests-integration/scripts/run_callgrind.sh` prints the top most time-consuming functions (in terms of exclusive time; outputs only functions with time greater than 1% of overall time spent in program)
   - `./tests-integration/scripts/run_massif.sh` prints the memory peak of the program in `[B]`
-- `./tests-integration/jobs/` definitions of jobs for `pycobench`; jobs specify binaries that are run in parallel using `pycobench`; jobs are passed to `pycobench` as `./pycobench -c job.yaml`.
-- `./tests-integration/inputs/` definitions of inputs for `pycobench`; inputs specify inputs that are passed to binaries run by `pycobench`; inputs are passed to `pycobench` as `./pycobench < input.input`.
+  - `./tests-integration/scripts/compare_ab.py` merges the job files of a base and a head build into one (`jobs`), so that `pycobench` runs both on each instance back to back, and compares several rounds of such runs (`compare`): per-instance medians, failed runs scored twice the timeout (PAR-2), and the geometric mean of the head/base ratios per metric, failing above `--threshold`; a run missing on one side, or no metric measured by both builds, is an error. The `performance` workflow (`.github/workflows/performance.yml`) runs it on pull requests labelled `performance`, nightly, and on demand. Its tests run with `python -m unittest discover --start-directory tests-integration/scripts`.
+- `./tests-integration/jobs/` definitions of jobs for `pycobench`; jobs specify binaries that are run in parallel using `pycobench`; jobs are passed to `pycobench` as `./pycobench/src/pycobench.py -c job.yaml`.
+- `./tests-integration/inputs/` definitions of inputs for `pycobench`; inputs specify inputs that are passed to binaries run by `pycobench`; inputs are passed to `pycobench` as `./pycobench/src/pycobench.py < input.input`.
+- Both directories hold only the `*.in` templates. `cmake` expands them into
+  `<BUILD_DIR>/tests-integration/jobs/` and `<BUILD_DIR>/tests-integration/inputs/`, so that the generated job files always
+  refer to the binaries of the build directory they belong to. Use the generated copies when invoking `pycobench`
+  directly.
 
 ### Creating new benchmarking tests
 
@@ -90,7 +107,7 @@ We provide a benchmarking infrastructure directly in VeriFIT/mata repository.
   1. Create a new `<YOUR-BENCHMARK-NAME>.yaml.in` YAML configuration file in `./tests-integration/jobs/`.
      The file has the following structure:
 
-     ```yaml
+     ```text
      <BENCHMARK_NAME>:
        cmd: @PATH@/<YOUR_FILENAME> [$1 $2 $3...]
      ```
@@ -129,13 +146,19 @@ To run the benchmarking on a single benchmark instance, we use custom binaries w
    ./build/tests-integration/bench-automata-inclusion ./tests-integration/automata/b-armc-incl-easiest/aut1.mata ./tests-integration/automata/b-armc-incl-easiest/aut2.mata
    ```
 
+   Every benchmark binary writes one `build: <configuration>` line to stderr before it measures
+   anything (`Release`, `Debug`, …, or `unspecified` when the build directory selects no
+   configuration), and adds `(assertions enabled; not comparable with a Release run)` when it was
+   built without `NDEBUG`. The measurements themselves go to stdout, so the line never reaches the
+   result CSV of `pycobench`; check it whenever a number looks surprising.
+
 ### Run multiple benchmarks through the benchmarking tool `pycobench`
 
-To run the benchmarks, we use our own benchmarking tool `pycobench`, from the main repository `VeriFIT/mata` in the folder `./tests-integration/`.
+To run the benchmarks, we use the benchmarking tool [pycobench](https://github.com/VeriFIT/pycobench), included as a submodule in `./tests-integration/pycobench`.
 
 We suggest using the benchmarks from `VeriFIT/nfa-bench` (added as a submodule to the main repository `VeriFIT/mata` inside `./tests-integration/` directory). The description of the benchmarks can be found in the repository README, and additional information in our [paper from TACAS'24 introducing Mata](https://doi.org/10.1007/978-3-031-57249-4_7).
 
-You can find the exact instances and operations used in the paper in the mata-comparison repository. There, we use a simple automata program format `.emp` (encoding automata operations) that is interpreted by each of the measured libraries on the automata instances passed (`.mata` files) as interpreter arguments. To find the exact instances used in the paper, see, e.g.,:
+You can find the exact instances and operations used in the paper in the mata-comparison repository. There, we use a simple automata program format `.emp` (encoding automata operations) that is interpreted by each of the measured libraries on the automata instances passed (`.mata` files) as interpreter arguments. To find the exact instances used in the paper, see, e.g.:
 
 - `/programs/email-filter.emp` and `/programs/automata-inclusion.emp`
   - `email-filter.emp` loads the automata in the order they were passed as the command line arguments, performs an intersection on the first 4, and checks inclusion of the resulting intersection automaton in the last loaded automaton from the command line.
@@ -156,62 +179,80 @@ The binaries take files with NFAs written in the `.mata` automata format as a co
   The format of the configuration file is:
 
   ```text
+  defaults:
+    return_codes:
+      0: finished
+      "*": error
+
   name_of_the_benchmark_test:
     cmd: <path/to/the/binary/to/execute> <INPUTS...>               `
   ```
 
   where `<INPUTS...>` is a sequence of `.mata` files to be loaded by the binary, passed as `$1` for the first automaton (in the first file), `$2` for the second automaton in the second file, etc.
 
+  `return_codes` maps the return code of a binary to the status of the run, with `"*"` matching every code without an entry of its own.
+  The statuses are `finished`, `error`, `timeout`, `memout` and `crash`; the results processed by `pyco_proc` show them as the measured values, `ERR`, `TO`, `MO` and `CRASH` respectively.
+  By default, `pycobench` treats both `0` and `1` as a successful run (solvers often return `1` for legitimate results).
+  The mata binaries return a nonzero code only on failure, so the mata job configurations map only `0` to `finished` globally in the top-level `defaults` section; an individual operation can override the mapping with its own `return_codes`.
+  A return code left to the catch-all entry is recognized as a `crash` when a signal killed the binary (e.g. a segfault), and as a `memout` when the run reached the limit given by `--memout`.
+
+- Some jobs run Mata Script programs through the `mata` command instead of a compiled binary: the `b-armc-incl-matasc` and `b-regex-matasc` jobs of `bench-cade-23.yaml` run `tests-integration/scripts/*.matasc` on the same inputs as `bench-automata-inclusion` and `bench-email-filter`, so a script run and a C++ run can be compared on one instance. CMake finds the command on the `PATH`, or takes `-DMATA_CLI_BIN=/path/to/mata`; without either, the `cmd` of those jobs names the missing command `MATA_CLI_BIN-NOTFOUND`, and only running such a job reports it. A script run prints one `label: seconds` record per timed call, six fractional digits, and the verdicts the C++ binary prints.
+
 - with specific options such as setting the timeout, number of parallel jobs, the identifier appended to the results file, etc.
 
 To run a set of benchmark instances on a set of operations through `pycobench`, use the utility script `run_pyco.sh` under `./tests-integration/scripts/`:
 
 ```sh
-./tests-integration/scripts/run_pyco.sh --config <./tests-integration/jobs/JOBS>.yaml --methods <method1;method2;...;methodn> --timeout <timeout_in_seconds> --jobs <number_of_parallel_jobs> [--suffix "<string_depicting_the_benchmarking_test>"] [<path/to/input_file>.input...]
+./tests-integration/scripts/run_pyco.sh --config <BUILD_DIR>/tests-integration/jobs/<JOBS>.yaml --methods <method1;method2;...;methodn> --timeout <timeout_in_seconds> --jobs <number_of_parallel_jobs> [--suffix "<string_depicting_the_benchmarking_test>"] [<path/to/input_file>.input...]
 ```
+
+`<BUILD_DIR>` defaults to `build/`; set `MATA_BUILD_DIR` to point the script at another build directory.
+The `just bench::pyco` recipe sets it to `build/<BUILD_MODE>/<CXX>`, the directory `just cpp::build`
+builds into, and `just bench::performance <MODE>` passes the same directory to `make test-performance`.
 
 You can specify the following parameters:
 
-1. `--config <jobs/JOBS.yaml>`: picks `YAML` file, where commands for measured binaries are specified.
+1. `--config <BUILD_DIR>/tests-integration/jobs/<JOBS>.yaml`: picks `YAML` file, where commands for measured binaries are specified.
 1. (optional) `--methods <method1;method2;...;methodn>`: list of commands specified in the `YAML` file, which will only be measured; by default, everything is measured.
 1. (optional) `--timeout <TIMEOUT>`: timeout in seconds for each binary run; (default = 60s).
 1. (optional) `--jobs <JOBS>`: number of parallel jobs that are run; (default = 6 jobs).
 1. (optional) ` --suffix <SUFFIX_TAG>`: adds suffix to the generated `.csv` file, for better organization; (default = empty).
-1. `<inputs/INPUT.input>`: any number of input files, where the list of automata that are fed into the binaries are listed.
+1. `<BUILD_DIR>/tests-integration/inputs/<INPUT>.input`: any number of input files, where the list of automata that are fed into the binaries are listed.
 
 E.g.:
 
 ```sh
-./tests-integration/scripts/run_pyco.sh --config ./tests-integration/jobs/corr-double-param-jobs.yaml --methods binary --timeout 15 --jobs 12 --suffix "-with_optimized_inclusion_checking" ./tests-integration/inputs/bench-double-automata-inclusion.input
+./tests-integration/scripts/run_pyco.sh --config build/tests-integration/jobs/corr-double-param-jobs.yaml --methods binary --timeout 15 --jobs 12 --suffix "-with_optimized_inclusion_checking" build/tests-integration/inputs/bench-double-automata-inclusion.input
 ```
 
 <!-- The results are saved in `results` directory in `csv` format. In addition, a short summary is printed at the end of the benchmarking process. -->
 
-<!-- When all tests are run, you can generate CSV files with all the raw results by running a pyco_proc processing tool through a script `tests-integration/scripts/process_pyco.sh` -->
+<!-- When all tests are run, you can generate CSV files with all the raw results by running a pyco_proc processing tool through a script `tests-integration/pycobench/src/process_pyco.sh` -->
 
 <!-- ```
-./tests-integration/process_pyco.sh ../results/<results_file>.csv
+./tests-integration/pycobench/src/process_pyco.sh ../results/<results_file>.csv
 ``` -->
 
 For additional details, see tests-integration README and our replication package for the TACAS'24 paper introducing Mata.
+For proper benchmarking, prefer [VeriFIT/automata-lib-bench](https://github.com/VeriFIT/automata-lib-bench).
 
-- Running pychobench manually
-  1. Run `./tests-integration/pycobench`:
+- Running pycobench manually
+  1. Run `./tests-integration/pycobench/src/pycobench.py`:
 
      ```sh
-     ./tests-integration/pycobench -c ./tests-integration/jobs/JOB.yaml -o some.output < tests-integration/inputs/INPUT.input
+     ./tests-integration/pycobench/src/pycobench.py -c build/tests-integration/jobs/<JOB>.yaml -o some.output < build/tests-integration/inputs/<INPUT>.input
      ```
 
      - Note, one can pass any shell command that returns list of automata, e.g. `< ls -1 ./automata/**/aut1.mata`
-     - `./tests-integration/pycobench` generates `some.output` file; this format is supported by `./tests-integration/pyco_proc` script that parses the output to `csv`/`html`/`text` format.
+     - `pycobench.py` generates `some.output` file; this format is supported by `./tests-integration/pycobench/src/pyco_proc.py` script that parses the output to `csv`/`html`/`text` format.
 
-  1. Run `./pyco_proc --csv some.output > some.csv` to generate the output `.csv` file (change `csv` to `html` or `text` to generate a different format).
+  1. Run `./tests-integration/pycobench/src/pyco_proc.py --csv some.output > some.csv` to generate the output `.csv` file (change `csv` to `html` or `text` to generate a different format).
 
 - Alternatively, run `make test-performance` from the project root directory
 
-- this will run selected jobs registered in `jobs/corr-single-param-jobs.yaml` (for binaries accepting single argument) and `jobs/corr-double-param-jobs.yaml` (for binaries accepting two arguments).
+- this will run selected jobs registered in `<BUILD_DIR>/tests-integration/jobs/corr-single-param-jobs.yaml` (for binaries accepting single argument) and `.../corr-double-param-jobs.yaml` (for binaries accepting two arguments).
 
-- This will generate CSV report of the measurement of binaries registered in `./tests-integration/jobs/*.yaml` files on automata listed in the `./tests-integration/input/*.input` files.
+- This will generate CSV report of the measurement of binaries registered in `<BUILD_DIR>/tests-integration/jobs/*.yaml` files on automata listed in the `<BUILD_DIR>/tests-integration/inputs/*.input` files.
 
 ### Additional benchmarking options
 
@@ -219,9 +260,118 @@ For additional details, see tests-integration README and our replication package
 
 - Use the [`hyperfine`](https://github.com/sharkdp/hyperfine) tool to manually measure the run time of a binary.
 
+## Optional optimization settings
+
+A Release build uses `-O3 -DNDEBUG` and nothing else. The following switches are off by default and
+have to be enabled explicitly; always report a measurement together with the configuration,
+compiler and compiler version it was taken with.
+
+| Option             | Values                                 | Effect                                                                                                |
+| ------------------ | -------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `MATA_ENABLE_IPO`  | `ON`/`OFF` (default `OFF`)             | Interprocedural (link-time) optimization of `libmata` and the integration benchmarks                  |
+| `MATA_ARCH_NATIVE` | `ON`/`OFF` (default `OFF`)             | `-march=native`, for local measurements only                                                          |
+| `MATA_PGO`         | `off`/`generate`/`use` (default `off`) | Profile-guided optimization stage                                                                     |
+| `MATA_USE_CCACHE`  | `ON`/`OFF` (default `ON`)              | Use `ccache` as the compiler launcher when it is installed; turn it off to measure cold compile times |
+
+Each is a `make` variable as well, so a build directory keeps a predictable configuration:
+
+```sh
+make release MATA_ENABLE_IPO=ON
+make release MATA_ARCH_NATIVE=ON
+```
+
+`MATA_ARCH_NATIVE` is attached privately, so it never reaches `mataTargets.cmake` and a consumer of
+an installed Mata never inherits it. A binary built with it may crash on an older CPU, so released
+packages must not use it.
+
+`MATA_DELTA_ALLOCATOR` (`std` or `pool`) is not a compiler switch: the CMake option only sets the default of the
+environment variable of the same name, which selects the backend of `Delta`'s heap blocks per process. An A/B
+comparison of the two backends therefore needs one build, run with `MATA_DELTA_ALLOCATOR=std` and
+`MATA_DELTA_ALLOCATOR=pool`. Compare global allocators by `LD_PRELOAD` of the same binaries.
+
+`MATA_ENABLE_IPO` adds `-ffat-lto-objects` on GCC. Without it, CMake's `-fno-fat-lto-objects` would
+leave `libmata.a` holding compiler bytecode only, and every consumer — the Python extension, an
+external `find_package(mata)` user, Z3-Noodler — would have to link with the matching compiler's
+LTO plugin.
+
+### Profile-guided optimization
+
+PGO is a two-stage build: an instrumented binary records which branches and functions are hot, and
+a second build is optimized for that behaviour. `just cpp::pgo` runs both stages and the training
+in between:
+
+```sh
+just cpp::pgo release './tests/tests'                 # train on the unit tests
+just cpp::pgo release './tests-integration/bench-automata-inclusion <args>'
+```
+
+The result is left in `build/<mode>/<compiler>-pgo`. The stages can also be driven directly:
+
+```sh
+make release BUILD_DIR=build-pgo MATA_PGO=generate
+( cd build-pgo && ./tests/tests )                     # the training run
+# Clang: merge raw profiles; GCC's .gcda files need no merge.
+llvm-profdata merge -output=build-pgo/pgo/mata.profdata build-pgo/pgo/*.profraw
+make release BUILD_DIR=build-pgo MATA_PGO=use
+```
+
+Rules for a PGO result that means anything:
+
+- Train and evaluate on **disjoint** inputs. Training and measuring on the same automata overfits
+  and the number does not reproduce on new data.
+- A profile belongs to one exact compiler version and source tree. It is never installed and never
+  committed; `MATA_PGO_DIR` (default `<build>/pgo`) holds it.
+- A `MATA_PGO=generate` build emits a configure-time warning: it produces an instrumented library
+  that writes profile data at runtime, and is not a deployable artefact. Install or package a
+  `MATA_PGO=use` or `MATA_PGO=off` build instead.
+- If the training command succeeds without running an instrumented binary (e.g. no `-fprofile-*`
+  in the generated flags, or the binary skips the hot code), the `just cpp::pgo` recipe detects
+  the missing profile data and errors out with the expected location, before starting the use stage.
+- Record compiler, flags, corpus revision and the profile hash next to the measurement.
+- GCC's `use` stage adds `-fprofile-partial-training`, so code the training run never reached is
+  still optimized for speed instead of size.
+- Keep a plain Release baseline and compare baseline, IPO, PGO and IPO+PGO; a flag change can
+  otherwise hide whether a source change really helped.
+
+## Instrumenting the benchmarks for gcov
+
+Two independent switches add `--coverage` (`-fprofile-arcs -ftest-coverage`) to a build. They
+instrument different sets of binaries, and the wider one already includes the benchmarks:
+
+| Option                 | Values                     | Instruments                                                                                   |
+| ---------------------- | -------------------------- | --------------------------------------------------------------------------------------------- |
+| `MATA_ENABLE_COVERAGE` | `ON`/`OFF` (default `OFF`) | Everything built in the directory: `libmata`, the unit tests, the examples and the benchmarks |
+| `MATA_BENCH_PROFILING` | `ON`/`OFF` (default `OFF`) | The benchmark binaries built from `./tests-integration/src/` only                             |
+
+`MATA_ENABLE_COVERAGE` appends `-g --coverage` to `CMAKE_CXX_FLAGS` before any subdirectory is
+added, so it reaches the benchmarks as well: with `-DMATA_ENABLE_COVERAGE=ON
+-DMATA_BENCH_PROFILING=OFF`, the `compile_commands.json` entry of
+`tests-integration/src/unary-operations.cc` carries `--coverage`. Use it whenever the library, the
+unit tests and the benchmarks should all produce `.gcda` data. Note that `make test-coverage`
+itself reports _library_ coverage only: `gcovr.cfg` filters the sources to `src/` and `include/`
+and scans just `$(BUILD_DIR)/src` and `$(BUILD_DIR)/tests`, so the benchmark sources under
+`tests-integration/src/` are instrumented but never summarized. A report over the benchmark
+sources would need its own gcovr invocation over `$(BUILD_DIR)/tests-integration`, which the
+Makefile does not provide.
+
+`MATA_BENCH_PROFILING` is the narrow case: gcov data for the benchmark binaries out of a build whose
+`libmata` stays uninstrumented, e.g. to see which benchmark branches a run takes while the library
+underneath keeps the code generation of a plain Release build:
+
+```sh
+make release MATA_BENCH_PROFILING=ON
+```
+
+Its default is `OFF` and is deliberately _not_ tied to `${MATA_ENABLE_COVERAGE}`: coverage already
+reaches the benchmark targets through `CMAKE_CXX_FLAGS`, so such a default would only append the
+same `--coverage` flags a second time to every benchmark target without making either switch
+unnecessary. Turn `MATA_BENCH_PROFILING` on only when the rest of the build must stay
+uninstrumented, and turn it off again before measuring: `--coverage` instruments every arc and the
+resulting times are not comparable to a normal Release build.
+
 ## Profiling
 
-We provide the following profiling infrastructure. The following instructions assume a Linux environment. If you are using MacOS, you will have to use a virtual environment or some other profiling tool (e.g., `instruments`).
+We provide the following profiling infrastructure. The following instructions assume a Linux environment. If you are using macOS, you will have to use a virtual environment or some other profiling tool (e.g., `instruments`).
 
 ### Heap and stack space profiling
 
@@ -241,7 +391,7 @@ We provide the following profiling infrastructure. The following instructions as
 
 ### Callgraph
 
-- Install `valgrind` and optionally a visualizer for its output files, e.g., `kcachegrind` for Linux, `qachegrind` for MacOS.
+- Install `valgrind` and optionally a visualizer for its output files, e.g., `kcachegrind` for Linux, `qachegrind` for macOS.
 - Run `valgrind`'s `callgrind` tool:
 
   ```sh

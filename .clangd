@@ -1,4 +1,9 @@
 # yaml-language-server: $schema=https://json.schemastore.org/clangd.json
+
+# 'build/compile_commands.json' serves both workflows: the root Makefile ('make debug') configures
+# CMake straight into 'build/' and CMake writes the database there, while 'just cpp::build' (which
+# builds into 'build/<MODE>/<CXX>') copies it there afterwards. Whichever build ran last is the one
+# the editor sees, and it matches what 'just lint' analysed.
 CompileFlags:
   CompilationDatabase: ./build/
   Add: ["--include-directory=./include/"]

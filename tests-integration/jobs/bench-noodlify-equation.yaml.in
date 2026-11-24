@@ -1,0 +1,11 @@
+# Noodlification of string equations x1 x2 = y given as three automata per input row:
+# `inputs/bench-triple-noodlify-z3-noodler.input`. nfa-bench has no equation inputs, so the rows take
+# the three automata of the Z3-Noodler intersection instances that have three; of those 1226, the
+# 485 that took at least 1 ms in a Release build. See `src/bench-noodlify.cc`.
+defaults:
+  return_codes:
+    0: finished
+    "*": error
+
+b-noodlify-equation:
+    cmd: @CMAKE_CURRENT_BINARY_DIR@/bench-noodlify $1 $2 -- $3

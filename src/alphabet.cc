@@ -2,36 +2,182 @@
  */
 
 #include <mata/alphabet.hh>
+#include <mata/nfa/types.hh>
+#include <mata/nft/types.hh>
 #include <mata/utils/assert.hh>
+
+#include <algorithm>
+#include <cctype>
+#include <charconv>
+#include <typeinfo>
 
 using mata::AlphabetLevels;
 using mata::OnTheFlyAlphabet;
 using mata::Symbol;
 
-mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_alphabet_symbols() const {
-	utils::OrdVector<Symbol> result;
-	for (const auto& symbol : symbol_map_ | std::views::values) { result.insert(symbol); }
-	return result;
-} // OnTheFlyAlphabet::get_alphabet_symbols.
+std::string mata::quote_symbol_name(const std::string_view name) {
+	const bool needs_quotes{name.empty() || name.back() == '\\' || std::ranges::any_of(name, [](const char ch) {
+								return std::isspace(static_cast<unsigned char>(ch)) != 0 ||
+									   std::string_view{"\"#()!&|\\@%"}.find(ch) != std::string_view::npos;
+							})};
+	if (!needs_quotes) { return std::string{name}; }
+	std::string output{'"'};
+	for (const char ch : name) {
+		if (ch == '"') { output += '\\'; }
+		output += ch;
+	}
+	output += '"';
+	return output;
+}
+
+OnTheFlyAlphabet::OnTheFlyAlphabet(const OnTheFlyAlphabet& alphabet)
+	: Alphabet(alphabet),
+	  symbol_map_(alphabet.symbol_map_),
+	  dense_names_(alphabet.dense_names_),
+	  sparse_names_(alphabet.sparse_names_),
+	  num_of_dense_symbols_(alphabet.num_of_dense_symbols_),
+	  next_symbol_value_(alphabet.next_symbol_value_) {
+	redirect_copied_index();
+}
+
+OnTheFlyAlphabet::OnTheFlyAlphabet(StringToSymbolMap str_sym_map) : symbol_map_(std::move(str_sym_map)) {
+	for (auto it{symbol_map_.cbegin()}, end{symbol_map_.cend()}; it != end; ++it) {
+		index_name(it);
+		update_next_symbol_value(it->second);
+	}
+}
+
+OnTheFlyAlphabet& OnTheFlyAlphabet::operator=(const OnTheFlyAlphabet& rhs) {
+	if (this != &rhs) {
+		Alphabet::operator=(rhs);
+		symbol_map_ = rhs.symbol_map_;
+		dense_names_ = rhs.dense_names_;
+		sparse_names_ = rhs.sparse_names_;
+		num_of_dense_symbols_ = rhs.num_of_dense_symbols_;
+		next_symbol_value_ = rhs.next_symbol_value_;
+		redirect_copied_index();
+		sorted_symbols_.invalidate();
+	}
+	return *this;
+}
+
+void OnTheFlyAlphabet::redirect_copied_index() {
+	// The copied pointers still point into the source map, whose names equal ours.
+	for (const auto& [name, symbol] : symbol_map_) {
+		auto& names{indexed_names(symbol)};
+		if (*names.name == name) { names.name = &name; }
+	}
+}
+
+const OnTheFlyAlphabet::SymbolNames* OnTheFlyAlphabet::find_names(const Symbol symbol) const {
+	if (symbol < dense_names_.size()) {
+		const SymbolNames& names{dense_names_[symbol]};
+		return names.num_of_names == 0 ? nullptr : &names;
+	}
+	const auto names_it{sparse_names_.find(symbol)};
+	return names_it == sparse_names_.end() ? nullptr : &names_it->second;
+}
+
+OnTheFlyAlphabet::SymbolNames& OnTheFlyAlphabet::indexed_names(const Symbol symbol) {
+	// Every symbol of 'symbol_map_' has its names indexed, so the lookup cannot fail; '*this' is non-const here.
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast, clang-analyzer-core.NullDereference)
+	return *const_cast<SymbolNames*>(find_names(symbol));
+}
+
+void OnTheFlyAlphabet::index_name(const StringToSymbolMap::const_iterator name_it) {
+	const Symbol symbol{name_it->second};
+	// Grow the dense index while it stays proportional to the number of names; a few huge symbols go to the sparse one.
+	if (symbol >= dense_names_.size() && symbol < (2 * symbol_map_.size()) + 64) {
+		Symbol covered{static_cast<Symbol>(dense_names_.size())};
+		dense_names_.resize(symbol + 1);
+		// Move the sparse symbols now covered by the dense index. Looking up the newly covered symbols rather than
+		//  scanning the sparse index keeps the cost proportional to the growth.
+		for (; covered <= symbol && !sparse_names_.empty(); ++covered) {
+			if (const auto names_it{sparse_names_.find(covered)}; names_it != sparse_names_.end()) {
+				dense_names_[covered] = names_it->second;
+				sparse_names_.erase(names_it);
+				++num_of_dense_symbols_;
+			}
+		}
+	}
+	const bool dense{symbol < dense_names_.size()};
+	SymbolNames& names{dense ? dense_names_[symbol] : sparse_names_[symbol]};
+	if (names.num_of_names++ == 0) {
+		names.name = &name_it->first;
+		if (dense) { ++num_of_dense_symbols_; }
+		sorted_symbols_.invalidate();
+	}
+}
+
+void OnTheFlyAlphabet::unindex_name(const StringToSymbolMap::const_iterator name_it) {
+	const Symbol symbol{name_it->second};
+	SymbolNames& names{indexed_names(symbol)};
+	if (--names.num_of_names == 0) {
+		sorted_symbols_.invalidate();
+		if (symbol < dense_names_.size()) {
+			names.name = nullptr;
+			--num_of_dense_symbols_;
+		} else {
+			sparse_names_.erase(symbol);
+		}
+		return;
+	}
+	if (names.name != &name_it->first) { return; }
+	// The reported name goes away; report another name of the same symbol. Only shared symbols pay for this scan.
+	for (auto it{symbol_map_.cbegin()}, end{symbol_map_.cend()}; it != end; ++it) {
+		if (it->second == symbol && it != name_it) {
+			names.name = &it->first;
+			return;
+		}
+	}
+}
+
+mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::collect_symbols() const {
+	utils::OrdVector<Symbol> symbols{};
+	symbols.reserve(num_of_dense_symbols_ + sparse_names_.size());
+	// Erased symbols leave their slots behind; stop at the last named one.
+	for (Symbol symbol{0}; symbols.size() < num_of_dense_symbols_ && symbol < dense_names_.size(); ++symbol) {
+		if (dense_names_[symbol].num_of_names != 0) { symbols.push_back(symbol); }
+	}
+	// Sparse symbols all lie above the dense ones.
+	std::vector<Symbol> sparse_symbols{};
+	sparse_symbols.reserve(sparse_names_.size());
+	for (const Symbol symbol : sparse_names_ | std::views::keys) { sparse_symbols.push_back(symbol); }
+	std::ranges::sort(sparse_symbols);
+	for (const Symbol symbol : sparse_symbols) { symbols.push_back(symbol); }
+	return symbols;
+} // OnTheFlyAlphabet::collect_symbols.
+
+const mata::utils::OrdVector<Symbol>& OnTheFlyAlphabet::get_alphabet_symbols_ref() const {
+	// Double-checked: once built, the symbols are only read, so concurrent readers lock only while one builds them.
+	if (!sorted_symbols_.valid.load(std::memory_order_acquire)) {
+		const std::lock_guard lock{sorted_symbols_.mutex};
+		if (!sorted_symbols_.valid.load(std::memory_order_relaxed)) {
+			sorted_symbols_.symbols = collect_symbols();
+			sorted_symbols_.valid.store(true, std::memory_order_release);
+		}
+	}
+	return sorted_symbols_.symbols;
+}
+
+mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_alphabet_symbols() const { return get_alphabet_symbols_ref(); }
 
 mata::utils::OrdVector<Symbol> OnTheFlyAlphabet::get_complement(const mata::utils::OrdVector<Symbol>& symbols) const {
-	mata::utils::OrdVector<Symbol> symbols_alphabet{};
-	symbols_alphabet.reserve(symbol_map_.size());
-	for (const auto& symbol : symbol_map_ | std::views::values) { symbols_alphabet.insert(symbol); }
-	return symbols_alphabet.difference(symbols);
+	// A derived alphabet may override the virtual enumeration; only the exact class owns the cache.
+	if (typeid(*this) != typeid(OnTheFlyAlphabet)) { return get_alphabet_symbols().difference(symbols); }
+	return get_alphabet_symbols_ref().difference(symbols);
 }
 
 void OnTheFlyAlphabet::add_symbols_from(const StringToSymbolMap& new_symbol_map) {
 	for (const auto& [symbol_name, symbol] : new_symbol_map) {
-		update_next_symbol_value(symbol);
-		try_add_new_symbol(symbol_name, symbol);
+		// Only an accepted mapping advances the counter: a name that was already bound differently leaves both the
+		//  name and the counter as they were, so values below the counter stay available.
+		if (try_add_new_symbol(symbol_name, symbol).second) { update_next_symbol_value(symbol); }
 	}
 }
 
 std::string mata::OnTheFlyAlphabet::reverse_translate_symbol(const Symbol symbol) const {
-	for (const auto& [symbol_name, symbol_val] : symbol_map_) {
-		if (symbol_val == symbol) { return symbol_name; }
-	}
+	if (const SymbolNames* const names{find_names(symbol)}; names != nullptr) { return *names->name; }
 	throw std::runtime_error("symbol '" + std::to_string(symbol) + "' is out of range of enumeration");
 }
 
@@ -39,20 +185,16 @@ void mata::OnTheFlyAlphabet::add_symbols_from(const std::vector<std::string>& sy
 	for (const std::string& symbol_name : symbol_names) { add_new_symbol(symbol_name); }
 }
 
-Symbol mata::OnTheFlyAlphabet::translate_symb(const std::string& str) {
-	const auto [it, inserted] = symbol_map_.insert({str, next_symbol_value_});
-	if (inserted) { return next_symbol_value_++; }
-	return it->second;
-
-	// TODO: How can the user specify to throw exceptions when we encounter an unknown symbol? How to specify that
-	//  the alphabet should have only the previously fixed symbols?
-	// auto it = symbol_map.find(str);
-	// if (symbol_map.end() == it)
-	//{
-	//    throw std::runtime_error("unknown symbol \'" + str + "\'");
-	//}
-
-	// return it->second;
+Symbol mata::OnTheFlyAlphabet::translate_symb(const std::string_view str) {
+	// The reserved special-symbol names translate straight to the special symbols and are never registered as ordinary
+	// symbols, so a printed name always parses back to the same symbol.
+	if (str == EPSILON_NAME) { return nfa::EPSILON; }
+	if (str == DONT_CARE_NAME) { return nft::DONT_CARE; }
+	// Found first, as try_emplace() would copy the name.
+	if (const auto it{symbol_map_.find(str)}; it != symbol_map_.end()) { return it->second; }
+	throw_if_symbol_space_exhausted(str);
+	index_name(symbol_map_.emplace(str, next_symbol_value_).first);
+	return next_symbol_value_++;
 }
 
 mata::Word mata::OnTheFlyAlphabet::translate_word(const mata::WordName& word_name) const {
@@ -60,6 +202,15 @@ mata::Word mata::OnTheFlyAlphabet::translate_word(const mata::WordName& word_nam
 	Word word;
 	word.reserve(word_size);
 	for (size_t i{0}; i < word_size; ++i) {
+		// The reserved special-symbol names are never registered and translate to the special symbols.
+		if (word_name[i] == EPSILON_NAME) {
+			word.push_back(nfa::EPSILON);
+			continue;
+		}
+		if (word_name[i] == DONT_CARE_NAME) {
+			word.push_back(nft::DONT_CARE);
+			continue;
+		}
 		const auto symbol_mapping_it = symbol_map_.find(word_name[i]);
 		if (symbol_mapping_it == symbol_map_.end()) {
 			throw std::runtime_error("Unknown symbol \'" + word_name[i] + "\'");
@@ -70,6 +221,7 @@ mata::Word mata::OnTheFlyAlphabet::translate_word(const mata::WordName& word_nam
 }
 
 OnTheFlyAlphabet::InsertionResult mata::OnTheFlyAlphabet::add_new_symbol(const std::string& key) {
+	throw_if_symbol_space_exhausted(key);
 	InsertionResult insertion_result{try_add_new_symbol(key, next_symbol_value_)};
 	if (!insertion_result.second) { // If the insertion of key-value pair failed.
 		throw std::runtime_error("multiple occurrences of the same symbol");
@@ -88,70 +240,101 @@ OnTheFlyAlphabet::InsertionResult mata::OnTheFlyAlphabet::add_new_symbol(const s
 }
 
 void mata::OnTheFlyAlphabet::update_next_symbol_value(const Symbol value) {
-	if (next_symbol_value_ <= value) { next_symbol_value_ = value + 1; }
+	// EPSILON (and anything above it) is never handed out, so it does not advance the counter; value + 1 would wrap.
+	if (value < nfa::EPSILON && next_symbol_value_ <= value) { next_symbol_value_ = value + 1; }
 }
 
-std::ostream& mata::operator<<(std::ostream& os, const Alphabet& alphabet) {
-	// Not `to_string(alphabet)`: with no overload for an Alphabet that reached the catch-all, which
-	//  streams its argument -- straight back into this operator. Print what an alphabet is: its symbols.
-	const auto symbols{alphabet.get_alphabet_symbols()};
-	return os << utils::to_string(std::vector<Symbol>(symbols.begin(), symbols.end()));
+void mata::OnTheFlyAlphabet::throw_if_symbol_space_exhausted(const std::string_view name) const {
+	// DONT_CARE (EPSILON - 1) is reserved as well: handing it to an ordinary name would make its NFT transitions
+	// wildcards.
+	if (next_symbol_value_ >= nft::DONT_CARE) {
+		throw std::runtime_error(
+			"the alphabet has no symbol left for the name '" + std::string{name} + "' (space exhausted below DONT_CARE)"
+		);
+	}
 }
 
-Symbol mata::IntAlphabet::translate_symb(const std::string& symb) {
-	Symbol symbol;
-	std::istringstream stream{symb};
-	stream >> symbol;
-	if (stream.fail() || !stream.eof()) {
-		throw std::runtime_error("Cannot translate string '" + symb + "' to symbol.");
+std::ostream& mata::OnTheFlyAlphabet::print(std::ostream& os) const {
+	// symbol_map_ is unordered and names may share a value; sort by (value, name) so that the output is deterministic.
+	std::vector<std::pair<std::string, Symbol>> pairs{symbol_map_.begin(), symbol_map_.end()};
+	std::ranges::sort(pairs, [](const auto& lhs, const auto& rhs) {
+		return std::tie(lhs.second, lhs.first) < std::tie(rhs.second, rhs.first);
+	});
+	os << '{';
+	bool first = true;
+	for (const auto& [name, symbol] : pairs) {
+		if (!first) { os << ", "; }
+		os << name << "->" << symbol;
+		first = false;
+	}
+	return os << '}';
+}
+
+std::ostream& mata::EnumAlphabet::print(std::ostream& os) const {
+	os << '{';
+	bool first = true;
+	for (const Symbol symbol : symbols_) {
+		if (!first) { os << ", "; }
+		os << symbol;
+		first = false;
+	}
+	return os << '}';
+}
+
+std::ostream& mata::IntAlphabet::print(std::ostream& os) const { return os << "IntAlphabet"; }
+
+std::ostream& mata::operator<<(std::ostream& os, const mata::Alphabet& alphabet) { return alphabet.print(os); }
+
+namespace {
+/// Parse the whole of @p text as a decimal Symbol; rejects empty input, signs, white space, trailing characters and
+///  out-of-range values.
+Symbol parse_symbol(const std::string_view text) {
+	Symbol symbol{};
+	const char* const end{text.data() + text.size()};
+	if (const auto [ptr, error]{std::from_chars(text.data(), end, symbol)}; error != std::errc{} || ptr != end) {
+		throw std::runtime_error("Cannot translate string '" + std::string{text} + "' to symbol.");
 	}
 	return symbol;
 }
+} // namespace
+
+Symbol mata::IntAlphabet::translate_symb(const std::string_view symb) { return parse_symbol(symb); }
+
+mata::Word mata::IntAlphabet::translate_word(const mata::WordName& word_name) const {
+	mata::Word word;
+	word.reserve(word_name.size());
+	for (const std::string& str_symbol : word_name) { word.push_back(parse_symbol(str_symbol)); }
+	return word;
+}
 
 std::string mata::EnumAlphabet::reverse_translate_symbol(const Symbol symbol) const {
-	if (symbols_.find(symbol) == symbols_.end()) {
+	if (!symbols_.contains(symbol)) {
 		throw std::runtime_error("Symbol '" + std::to_string(symbol) + "' is out of range of enumeration.");
 	}
 	return std::to_string(symbol);
 }
 
-Symbol mata::EnumAlphabet::translate_symb(const std::string& str) {
-	Symbol symbol;
-	std::istringstream stream{str};
-	stream >> symbol;
-	if (stream.fail() || !stream.eof()) {
-		throw std::runtime_error("Cannot translate string '" + str + "' to symbol.");
-	}
-	if (symbols_.find(symbol) == symbols_.end()) {
-		throw std::runtime_error("Unknown symbol'" + str + "' to be translated to Symbol.");
+Symbol mata::EnumAlphabet::translate_symb(const std::string_view symb) {
+	const Symbol symbol{parse_symbol(symb)};
+	if (!symbols_.contains(symbol)) {
+		throw std::runtime_error("Unknown symbol'" + std::string{symb} + "' to be translated to Symbol.");
 	}
 
 	return symbol;
 }
 
 mata::Word mata::EnumAlphabet::translate_word(const mata::WordName& word_name) const {
-	const size_t word_size{word_name.size()};
 	mata::Word word;
-	Symbol symbol;
-	std::stringstream stream;
-	word.reserve(word_size);
-	for (const auto& str_symbol : word_name) {
-		stream << str_symbol;
-		stream >> symbol;
-		if (symbols_.find(symbol) == symbols_.end()) {
-			throw std::runtime_error("Unknown symbol \'" + str_symbol + "\'");
-		}
+	word.reserve(word_name.size());
+	for (const std::string& str_symbol : word_name) {
+		const Symbol symbol{parse_symbol(str_symbol)};
+		if (!symbols_.contains(symbol)) { throw std::runtime_error("Unknown symbol \'" + str_symbol + "\'"); }
 		word.push_back(symbol);
 	}
 	return word;
 }
 
-void mata::EnumAlphabet::add_new_symbol(const std::string& symbol) {
-	std::istringstream str_stream{symbol};
-	Symbol converted_symbol;
-	str_stream >> converted_symbol;
-	add_new_symbol(converted_symbol);
-}
+void mata::EnumAlphabet::add_new_symbol(const std::string& symbol) { add_new_symbol(parse_symbol(symbol)); }
 
 void mata::EnumAlphabet::add_new_symbol(const Symbol symbol) {
 	symbols_.insert(symbol);
@@ -169,54 +352,59 @@ size_t mata::EnumAlphabet::erase(const Symbol symbol) {
 }
 
 size_t mata::OnTheFlyAlphabet::erase(const Symbol symbol) {
-	const auto symbol_map_end = symbol_map_.end();
-	for (auto it = symbol_map_.begin(); it != symbol_map_end; ++it) {
-		if (it->second == symbol) {
-			if (symbol == next_symbol_value_ - 1) { --next_symbol_value_; }
-			symbol_map_.erase(it);
-			return 1;
-		}
+	const SymbolNames* const names{find_names(symbol)};
+	if (names == nullptr) { return 0; }
+	// Reclaim the value only once its last name is gone; other names may still map to it.
+	if (names->num_of_names == 1 && next_symbol_value_ != 0 && symbol == next_symbol_value_ - 1) {
+		--next_symbol_value_;
 	}
-	return 0;
+	const auto name_it{symbol_map_.find(*names->name)};
+	unindex_name(name_it);
+	symbol_map_.erase(name_it);
+	return 1;
 }
 
 size_t mata::OnTheFlyAlphabet::erase(const std::string& symbol_name) {
 	if (const auto found_it{symbol_map_.find(symbol_name)}; found_it != symbol_map_.end()) {
-		if (found_it->second == next_symbol_value_ - 1) { --next_symbol_value_; }
+		const SymbolNames* const names{find_names(found_it->second)};
+		if (names != nullptr && names->num_of_names == 1 && next_symbol_value_ != 0 &&
+			found_it->second == next_symbol_value_ - 1) {
+			--next_symbol_value_;
+		}
+		unindex_name(found_it);
 		symbol_map_.erase(found_it);
 		return 1;
 	}
 	return 0;
 }
 
-Symbol AlphabetLevels::translate_symb(const std::string& symb, const std::optional<mata::Level> level) {
-	return for_level(level).translate_symb(symb);
+Symbol AlphabetLevels::translate_symb(const std::string_view symb, const std::optional<mata::Level> level) {
+	return for_level(level)->translate_symb(symb);
 }
 
 std::string
 	AlphabetLevels::reverse_translate_symbol(const Symbol symbol, const std::optional<mata::Level> level) const {
-	return for_level(level).reverse_translate_symbol(symbol);
+	return for_level(level)->reverse_translate_symbol(symbol);
 }
 
 mata::utils::OrdVector<Symbol> AlphabetLevels::get_alphabet_symbols(const std::optional<mata::Level> level) const {
-	return for_level(level).get_alphabet_symbols();
+	return for_level(level)->get_alphabet_symbols();
 }
 
 mata::utils::OrdVector<Symbol> AlphabetLevels::get_complement(
 	const mata::utils::OrdVector<Symbol>& symbols, const std::optional<mata::Level> level
 ) const {
-	return for_level(level).get_complement(symbols);
+	return for_level(level)->get_complement(symbols);
 }
 
 bool AlphabetLevels::empty(const std::optional<mata::Level> level) const {
 	if (mode_ == Mode::MultiLevel && !level.has_value()) {
 		// MultiLevel + nullopt: empty iff every underlying alphabet is empty.
-		for (const auto& alphabet : alphabets_) {
-			if (alphabet != nullptr && !alphabet->empty()) { return false; }
-		}
-		return true;
+		return std::ranges::all_of(alphabets_, [](const auto& alphabet) {
+			return alphabet == nullptr || alphabet->empty();
+		});
 	}
-	return for_level(level).empty();
+	return for_level(level)->empty();
 }
 
 void AlphabetLevels::clear(const std::optional<mata::Level> level) {
@@ -227,16 +415,16 @@ void AlphabetLevels::clear(const std::optional<mata::Level> level) {
 		}
 		return;
 	}
-	for_level(level).clear();
+	for_level(level)->clear();
 }
 
-const mata::Alphabet& AlphabetLevels::for_level(const std::optional<mata::Level> level) const {
+const std::shared_ptr<mata::Alphabet>& AlphabetLevels::for_level(const std::optional<mata::Level> level) const {
 	// Handle Mode::Global.
 	if (mode_ == Mode::Global) {
 		if (alphabets_.empty() || alphabets_[0] == nullptr) {
 			throw std::runtime_error("AlphabetLevels (Global) has no underlying alphabet.");
 		}
-		return *alphabets_[0];
+		return alphabets_[0];
 	}
 
 	// Handle Mode::MultiLevel.
@@ -255,11 +443,14 @@ const mata::Alphabet& AlphabetLevels::for_level(const std::optional<mata::Level>
 		);
 	}
 
-	return *alphabets_[*level];
+	return alphabets_[*level];
 }
 
-mata::Alphabet& AlphabetLevels::for_level(const std::optional<mata::Level> level) {
-	return const_cast<Alphabet&>(std::as_const(*this).for_level(level));
+std::shared_ptr<mata::Alphabet>& AlphabetLevels::for_level(const std::optional<mata::Level> level) {
+	// The const overload above does the lookup; '*this' is known to be non-const here, so casting its constness
+	//  away is safe.
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+	return const_cast<std::shared_ptr<Alphabet>&>(std::as_const(*this).for_level(level));
 }
 
 mata::Word mata::encode_word_utf8(const mata::Word& word) {
@@ -293,7 +484,7 @@ mata::Word mata::encode_word_utf8(const mata::Word& word) {
 mata::Word mata::decode_word_utf8(const mata::Word& word) {
 	mata::Word decoded_word;
 	for (size_t i = 0; i < word.size(); i++) {
-		if (Symbol symbol = word[i]; (symbol & 0x80) == 0) {
+		if (const Symbol symbol = word[i]; (symbol & 0x80) == 0) {
 			// U+0000   to U+007F  : 0xxxxxxx
 			decoded_word.push_back(symbol);
 		} else if ((symbol & 0xE0) == 0xC0) {

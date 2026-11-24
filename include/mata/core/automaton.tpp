@@ -9,15 +9,13 @@
 #include <deque>
 #include <iterator>
 #include <limits>
-#include <list>
-#include <map>
-#include <tuple>
+#include <span>
 #include <utility>
-#include <unordered_set>
 
 #include "mata/utils/assert.hh"
 #include "mata/utils/ord-vector.hh"
 #include "mata/utils/sparse-set.hh"
+#include "mata/core/tarjan.hh"
 
 namespace mata {
 
@@ -32,12 +30,13 @@ template <DeltaLike D> AutomatonBase<D>& AutomatonBase<D>::operator=(AutomatonBa
 
 template <DeltaLike D> typename AutomatonBase<D>::State AutomatonBase<D>::add_state() {
 	const size_t num_of_states{this->num_of_states()};
-	delta.allocate(num_of_states + 1);
-	return num_of_states;
+	delta.allocate(num_of_states + 1); // Throws when the new state would be the max_state sentinel.
+	return static_cast<State>(num_of_states);
 }
 
 template <DeltaLike D> typename AutomatonBase<D>::State AutomatonBase<D>::add_state(const State state) {
-	if (state >= delta.num_of_states()) { delta.allocate(state + 1); }
+	// Widened first: `state + 1` would wrap for the sentinel, which `allocate()` then rejects.
+	if (state >= delta.num_of_states()) { delta.allocate(static_cast<size_t>(state) + 1); }
 	return state;
 }
 
@@ -75,6 +74,13 @@ template <DeltaLike D>
 AutomatonBase<D> AutomatonBase<D>::reverted() const {
 	AutomatonBase result{};
 	const size_t num_of_states{this->num_of_states()};
+	if constexpr (requires { { delta.reverted(num_of_states) } -> std::convertible_to<D>; }) {
+		// The relation reverts itself, e.g. by a counting sort, cheaper than one sorted insert per transition.
+		result.delta = delta.reverted(num_of_states);
+		result.initial = final;
+		result.final = initial;
+		return result;
+	}
 	result.delta.allocate(num_of_states);
 
 	for (State source_state{0}; source_state < num_of_states; ++source_state) {
@@ -95,14 +101,16 @@ AutomatonBase<D> AutomatonBase<D>::reverted() const {
 }
 
 template <DeltaLike D>
-typename AutomatonBase<D>::StateBoolArray
-AutomatonBase<D>::reachable_states_(const std::optional<const StateBoolArray>& states_to_consider) const {
+typename AutomatonBase<D>::StateBoolArray AutomatonBase<D>::reachable_states_(
+	const utils::SparseSet<State>& initial_states, const std::optional<const StateBoolArray>& states_to_consider
+) const {
 	std::vector<State> worklist{};
-	StateBoolArray reachable(num_of_states(), false);
-	for (const State state : initial) {
-		if (!states_to_consider.has_value() || states_to_consider.value()[state]) {
+	const size_t num_of_states{this->num_of_states()};
+	StateBoolArray reachable(num_of_states, false);
+	for (const State state : initial_states) {
+		if (state < num_of_states && (!states_to_consider.has_value() || states_to_consider.value()[state])) {
 			worklist.push_back(state);
-			reachable.at(state) = true;
+			reachable[state] = true;
 		}
 	}
 
@@ -121,10 +129,73 @@ AutomatonBase<D>::reachable_states_(const std::optional<const StateBoolArray>& s
 	return reachable;
 }
 
+namespace detail {
+/**
+ * @brief Label-free predecessor lists of a relation in the CSR (compressed sparse row) layout.
+ *
+ * The predecessors of a state @c target are the slice `sources[offsets[target]..offsets[target + 1])`. Keys are
+ *  not stored: the backward traversals using the index only ask which states can reach a given state.
+ */
+template <typename State> struct PredecessorIndex {
+	/// Start of the predecessor slice of each state; one element longer than the number of indexed states.
+	///  The values count edges, which can exceed what a @c State holds, so this has to be @c size_t.
+	std::vector<size_t> offsets{};
+	/// Sources of all indexed transitions, grouped by their target state.
+	std::vector<State> sources{};
+};
+
+/**
+ * @brief Build the predecessor index of @p delta over @p num_of_states states.
+ *
+ * Only transitions leaving a state selected by @p source_filter are indexed (all of them without a filter); the others
+ *  are skipped both when counting and when filling, so the index costs exactly one entry per kept transition.
+ *
+ * @param[in] delta Transition relation to index. All its target states have to be smaller than @p num_of_states.
+ * @param[in] num_of_states Number of states to index.
+ * @param[in] source_filter Bool array selecting the sources whose outgoing transitions are indexed.
+ */
+template <DeltaLike D>
+PredecessorIndex<typename D::State> build_predecessor_index(
+	const D& delta, const size_t num_of_states, const BoolVector* const source_filter = nullptr
+) {
+	using State = typename D::State;
+	using Target = typename D::Target;
+	PredecessorIndex<State> index{};
+	index.offsets.assign(num_of_states + 1, 0);
+	const size_t num_of_delta_states{std::min(num_of_states, delta.num_of_states())};
+	const auto kept = [&](const State source) { return source_filter == nullptr || (*source_filter)[source]; };
+
+	// Count the kept incoming transitions of each state in the offset of the following state.
+	for (State source{0}; source < num_of_delta_states; ++source) {
+		if (!kept(source)) { continue; }
+		delta.for_each_successor(source, [&](const Target& target) {
+			MATA_ASSERT(D::state_of(target) < num_of_states);
+			++index.offsets[D::state_of(target) + 1];
+		});
+	}
+	// Prefix sums turn the counts into the start of the predecessor slice of each state.
+	for (size_t state{0}; state < num_of_states; ++state) { index.offsets[state + 1] += index.offsets[state]; }
+
+	index.sources.resize(index.offsets.back());
+	std::vector<size_t> fill_cursors{index.offsets.begin(), std::prev(index.offsets.end())};
+	for (State source{0}; source < num_of_delta_states; ++source) {
+		if (!kept(source)) { continue; }
+		delta.for_each_successor(source, [&](const Target& target) {
+			index.sources[fill_cursors[D::state_of(target)]++] = source;
+		});
+	}
+	// Each slice has to be filled exactly up to the start of the next one.
+	MATA_ASSERT(std::ranges::equal(
+		fill_cursors, std::span<const size_t>{index.offsets}.subspan(1)
+	));
+	return index;
+}
+} // namespace detail.
+
 template <DeltaLike D>
 typename AutomatonBase<D>::StateSet
 AutomatonBase<D>::get_reachable_states(const std::function<bool(State)>& filter) const {
-	const StateBoolArray reachable_bool_array{reachable_states_()};
+	const StateBoolArray reachable_bool_array{reachable_states_(initial)};
 
 	StateSet reachable_states{};
 	const size_t num_of_states{this->num_of_states()};
@@ -136,7 +207,36 @@ AutomatonBase<D>::get_reachable_states(const std::function<bool(State)>& filter)
 
 template <DeltaLike D>
 typename AutomatonBase<D>::StateSet AutomatonBase<D>::get_terminating_states() const {
-	return reverted().get_reachable_states();
+	// States that can reach a final state, by a backward search over predecessors. Building the reverted automaton
+	//  first costs one sorted insert per transition, while the traversal only needs the predecessor lists.
+	const size_t num_of_states{this->num_of_states()};
+	const auto pred_index{detail::build_predecessor_index(delta, num_of_states)};
+
+	BoolVector terminating(num_of_states, false);
+	std::vector<State> worklist{};
+	for (const State state : final) {
+		if (state < num_of_states && !terminating[state]) {
+			terminating[state] = true;
+			worklist.push_back(state);
+		}
+	}
+	while (!worklist.empty()) {
+		const State state{worklist.back()};
+		worklist.pop_back();
+		for (size_t i{pred_index.offsets[state]}; i < pred_index.offsets[state + 1]; ++i) {
+			const State predecessor{pred_index.sources[i]};
+			if (!terminating[predecessor]) {
+				terminating[predecessor] = true;
+				worklist.push_back(predecessor);
+			}
+		}
+	}
+
+	StateSet result{};
+	for (State state{0}; state < num_of_states; ++state) {
+		if (terminating[state]) { result.insert(state); }
+	}
+	return result;
 }
 
 template <DeltaLike D> std::vector<typename AutomatonBase<D>::State> AutomatonBase<D>::distances_from_initial() const {
@@ -145,7 +245,7 @@ template <DeltaLike D> std::vector<typename AutomatonBase<D>::State> AutomatonBa
 	BoolVector visited(num_of_states() + 1, false);
 	std::deque<State> que;
 
-	for (State qi : initial) {
+	for (const State qi : initial) {
 		visited[qi] = true;
 		distances[qi] = 0;
 		que.push_back(qi);
@@ -169,7 +269,29 @@ template <DeltaLike D> std::vector<typename AutomatonBase<D>::State> AutomatonBa
 
 template <DeltaLike D>
 std::vector<typename AutomatonBase<D>::State> AutomatonBase<D>::distances_to_final() const {
-	return reverted().distances_from_initial();
+	// A BFS from the final states over the predecessor lists, which is all the reverted automaton would be used for.
+	const size_t num_states{this->num_of_states()};
+	const auto pred_index{detail::build_predecessor_index(delta, num_states)};
+
+	constexpr State unreached{std::numeric_limits<State>::max()};
+	std::vector<State> distances(num_states + 1, unreached);
+	std::vector<State> queue;
+	queue.reserve(num_states);
+	for (const State target_final : final) {
+		distances[target_final] = 0;
+		queue.push_back(target_final);
+	}
+	for (size_t head{0}; head < queue.size(); ++head) {
+		const State target{queue[head]};
+		if (target >= num_states) { continue; }
+		for (size_t i{pred_index.offsets[target]}; i < pred_index.offsets[target + 1]; ++i) {
+			if (const State predecessor{pred_index.sources[i]}; distances[predecessor] == unreached) {
+				distances[predecessor] = distances[target] + 1;
+				queue.push_back(predecessor);
+			}
+		}
+	}
+	return distances;
 }
 
 /**
@@ -212,73 +334,31 @@ void AutomatonBase<D>::tarjan_scc_discover(
 	const TarjanDiscoverCallback& callback,
 	const std::optional<std::reference_wrapper<const utils::SparseSet<State>>> initial_states
 ) const {
-	std::vector<TarjanNodeData> node_info(this->num_of_states());
-	std::vector<State> program_stack;
-	std::vector<State> tarjan_stack;
-	unsigned long index_cnt = 0;
-
-	for (const State& q0 : (initial_states.value_or(this->initial)).get()) { program_stack.push_back(q0); }
-
-	while (!program_stack.empty()) {
-		State act_state = program_stack.back();
-		TarjanNodeData& act_state_data = node_info[act_state];
-
-		// if a node is initialized and is not on stack --> skip it; this state was
-		// already processed (=this state is initial and was reachable from another initial).
-		if (act_state_data.initilized && !act_state_data.on_stack) {
-			program_stack.pop_back();
-			continue;
-		}
-
-		// node has not been initialized yet --> corresponds to the first call of strongconnect(act_state)
-		if (!act_state_data.initilized) {
-			// initialize node
-			act_state_data = TarjanNodeData(act_state, this->delta, index_cnt++);
-			tarjan_stack.push_back(act_state);
-
-			if (callback.state_discover && callback.state_discover(act_state)) { return; }
-		} else { // return from the recursive call
-			const State act_succ = D::state_of(*act_state_data.current_successor_it);
-			act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[act_succ].lowlink);
-			// act_succ is the state that caused the recursive call. Move on to the next successor.
-			++act_state_data.current_successor_it;
-		}
-
-		// iterate through outgoing edges
-		State next_state;
-		// rec_call simulates call of the strongconnect. Since c++ cannot do continue over
-		// multiple loops, we use rec_call to jump to the main loop
-		bool rec_call = false;
-		for (; act_state_data.current_successor_it != std::default_sentinel; ++act_state_data.current_successor_it) {
-			next_state = D::state_of(*act_state_data.current_successor_it);
-			if (callback.succ_state_discover) { callback.succ_state_discover(act_state, next_state); }
-			if (!node_info[next_state].initilized) { // recursive call
-				program_stack.push_back(next_state);
-				rec_call = true;
-				break;
-			} else if (node_info[next_state].on_stack) {
-				act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[next_state].index);
-			}
-		}
-		if (rec_call) { continue; }
-
-		// check if we have the root of an SCC
-		if (act_state_data.lowlink == act_state_data.index) {
-			State st;
-			std::vector<State> scc;
-			do {
-				st = tarjan_stack.back();
-				tarjan_stack.pop_back();
-				node_info[st].on_stack = false;
-
-				if (callback.scc_state_discover) { callback.scc_state_discover(st); }
-				scc.push_back(st);
-			} while (st != act_state);
-			if (callback.scc_discover && callback.scc_discover(scc, tarjan_stack)) { return; }
-		}
-		// all successors have been processed, we can remove act_state from the program stack
-		program_stack.pop_back();
-	}
+	// A copy of a std::function copies its target, so a stateful callback would mutate the copy instead of the
+	//  caller's object. Wrap with lambdas that forward to the originals, and keep the old skips of empty functions.
+	auto state_discover = [&callback](const State state) {
+		if (!callback.state_discover) { return false; }
+		return callback.state_discover(state);
+	};
+	auto succ_state_discover = [&callback](const State from, const State to) {
+		if (callback.succ_state_discover) { callback.succ_state_discover(from, to); }
+	};
+	auto scc_discover = [&callback](const std::span<const State> scc, const std::span<const State> remaining_stack) {
+		if (!callback.scc_discover) { return false; }
+		// Keep the std::vector-based public interface and its pop order (top of the Tarjan stack first). Internal
+		//  callers take the spans directly and avoid these copies.
+		const std::vector<State> scc_vector{scc.rbegin(), scc.rend()};
+		const std::vector<State> stack_vector{remaining_stack.begin(), remaining_stack.end()};
+		return callback.scc_discover(scc_vector, stack_vector);
+	};
+	auto scc_state_discover = [&callback](const State state) {
+		if (callback.scc_state_discover) { callback.scc_state_discover(state); }
+	};
+	const internal::TarjanCallbacks callbacks{
+		std::move(state_discover), std::move(succ_state_discover), std::move(scc_discover),
+		std::move(scc_state_discover)
+	};
+	internal::tarjan_scc_discover(delta, this->num_of_states(), initial_states.value_or(this->initial), callbacks);
 }
 
 template <DeltaLike D>
@@ -286,118 +366,128 @@ BoolVector AutomatonBase<D>::get_useful_states(
 	const std::optional<std::reference_wrapper<const utils::SparseSet<State>>> initial_states,
 	const std::optional<std::reference_wrapper<const utils::SparseSet<State>>> final_states
 ) const {
-	BoolVector useful(this->num_of_states(), false);
-	bool final_scc = false;
-
+	const size_t num_of_states{this->num_of_states()};
 	const utils::SparseSet<State>& used_initial_states{initial_states.value_or(initial)};
 	const utils::SparseSet<State>& used_final_states{final_states.value_or(this->final)};
 
-	TarjanDiscoverCallback callback{};
-	callback.state_discover = [&](const State state) -> bool {
-		if (used_final_states.contains(state)) { useful[state] = true; }
-		return false;
-	};
-	callback.scc_discover = [&](const std::vector<State>& scc, const std::vector<State>& tarjan_stack) -> bool {
-		if (final_scc) {
-			// Propagate usefulness to the closed SCC.
-			for (const State& st : scc) { useful[st] = true; }
-			// Propagate usefulness to predecessors in @p tarjan_stack.
-			for (auto state_it{tarjan_stack.rbegin()}, state_it_end{tarjan_stack.rend()}; state_it != state_it_end;
-				 ++state_it) {
-				if (useful[*state_it]) { break; }
-				useful[*state_it] = true;
+	// Forward pass: find all states reachable from initial states.
+	const BoolVector reachable{reachable_states_(used_initial_states)};
+
+	// Build predecessor index for forward-reachable states.
+	const auto pred_index{detail::build_predecessor_index(delta, num_of_states, &reachable)};
+
+	// Backward pass: BFS from final states over the predecessor index.
+	// Mark only the final states that are forward-reachable.
+	BoolVector useful(num_of_states, false);
+	std::vector<State> worklist{};
+	for (const State state : used_final_states) {
+		if (state < num_of_states && reachable[state]) {
+			worklist.push_back(state);
+			useful[state] = true;
+		}
+	}
+
+	// BFS backward over predecessors.
+	while (!worklist.empty()) {
+		const State state{worklist.back()};
+		worklist.pop_back();
+
+		// Iterate over predecessors of state.
+		const size_t pred_start{pred_index.offsets[state]};
+		const size_t pred_end{pred_index.offsets[state + 1]};
+		for (size_t pred_idx{pred_start}; pred_idx < pred_end; ++pred_idx) {
+			const State pred_state{pred_index.sources[pred_idx]};
+			if (!useful[pred_state]) {
+				useful[pred_state] = true;
+				worklist.push_back(pred_state);
 			}
 		}
-		final_scc = false;
-		return false;
-	};
-	callback.scc_state_discover = [&](const State state) {
-		if (useful[state]) { final_scc = true; }
-	};
-	callback.succ_state_discover = [&](const State act_state, const State next_state) {
-		if (useful[next_state]) { useful[act_state] = true; }
-	};
+	}
 
-	tarjan_scc_discover(callback, used_initial_states);
 	return useful;
 }
 
 template <DeltaLike D> bool AutomatonBase<D>::find_accepting_path_(std::vector<State>& path) const {
-	std::list<State> worklist(initial.begin(), initial.end());
-	std::unordered_set<State> processed(initial.begin(), initial.end());
+	// BFS over a vector queue, so the witness is still shortest in the number of transitions.
+	// `predecessors[q] == unvisited` marks an unvisited state, an initial state is its own predecessor.
+	constexpr State unvisited{std::numeric_limits<State>::max()};
+	const size_t num_states{num_of_states()};
+	std::vector<State> worklist{};
+	std::vector<State> predecessors(num_states, unvisited);
+	for (const State state : initial) {
+		if (state < num_states && predecessors[state] == unvisited) {
+			predecessors[state] = state;
+			worklist.push_back(state);
+		}
+	}
 
-	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
-	// 'paths[s] == s' means that 's' is an initial state
-	std::map<State, State> paths;
-	for (const State s : worklist) { paths[s] = s; }
-
-	while (!worklist.empty()) {
-		State state{worklist.front()};
-		worklist.pop_front();
-
+	for (size_t head{0}; head < worklist.size(); ++head) {
+		State state{worklist[head]};
 		if (final[state]) {
 			path.clear();
 			path.push_back(state);
-			while (paths[state] != state) {
-				state = paths[state];
+			while (predecessors[state] != state) {
+				state = predecessors[state];
 				path.push_back(state);
 			}
 			std::ranges::reverse(path);
 			return true;
 		}
-
-		if (delta.empty()) { continue; }
-
+		// No `delta.empty()` guard: visiting the successors of an empty or unallocated state post does nothing.
 		delta.for_each_successor(state, [&](const Target& target) {
 			const State target_state{D::state_of(target)};
-			bool inserted;
-			std::tie(std::ignore, inserted) = processed.insert(target_state);
-			if (inserted) {
-				worklist.push_back(target_state);
-				paths[target_state] = state;
-			} else {
-				MATA_ASSERT(utils::haskey(paths, target_state)); /* Invariant. */
-			}
+			if (predecessors[target_state] != unvisited) { return; }
+			predecessors[target_state] = state;
+			worklist.push_back(target_state);
 		});
 	}
 	return false;
 }
 
-template <DeltaLike D> bool AutomatonBase<D>::has_no_accepting_path_scc_() const {
-	bool accepting_state = false;
-
-	TarjanDiscoverCallback callback{};
-	callback.state_discover = [&](const State state) -> bool {
-		if (this->final.contains(state)) {
-			accepting_state = true;
-			return true;
+template <DeltaLike D> bool AutomatonBase<D>::has_no_accepting_path() const {
+	// Reachability only: a breadth-first search that stops at the first final state. Tarjan's SCC discovery used to
+	//  answer this and pays for its per-state bookkeeping even when the whole reachable part has to be traversed.
+	//  The queue order also keeps the scan of `delta` close to ascending, which a LIFO worklist does not.
+	const size_t num_states{num_of_states()};
+	std::vector<State> worklist{};
+	BoolVector visited(num_states, false);
+	for (const State state : initial) {
+		if (state < num_states && !visited[state]) {
+			visited[state] = true;
+			worklist.push_back(state);
 		}
-		return false;
-	};
+	}
 
-	tarjan_scc_discover(callback);
-	return !accepting_state;
+	for (size_t head{0}; head < worklist.size(); ++head) {
+		const State state{worklist[head]};
+		// Once per visited state, not once per incoming transition: `final` is a sparse set, so every lookup is an
+		//  indirect read and there are more transitions than states.
+		if (final.contains(state)) { return false; }
+		delta.for_each_successor(state, [&](const Target& target) {
+			const State target_state{D::state_of(target)};
+			if (visited[target_state]) { return; }
+			visited[target_state] = true;
+			worklist.push_back(target_state);
+		});
+	}
+	return true;
 }
 
 template <DeltaLike D> bool AutomatonBase<D>::is_acyclic() const {
 	bool acyclic = true;
-
-	TarjanDiscoverCallback callback{};
-	callback.scc_discover = [&](const std::vector<State>& scc, const std::vector<State>& tarjan_stack) -> bool {
-		(void) tarjan_stack;
-		if (scc.size() > 1) {
-			acyclic = false;
-			return true;
-		} else { // check for self-loops
-			if (delta.has_self_loop(scc[0])) {
+	const internal::TarjanCallbacks callbacks{
+		std::nullptr_t{}, std::nullptr_t{},
+		[this, &acyclic](const std::span<const State> scc, const std::span<const State> remaining_stack) {
+			(void) remaining_stack;
+			if (scc.size() > 1 || delta.has_self_loop(scc[0])) {
 				acyclic = false;
 				return true;
 			}
-		}
-		return false;
+			return false;
+		},
+		std::nullptr_t{}
 	};
-
-	tarjan_scc_discover(callback);
+	internal::tarjan_scc_discover(delta, this->num_of_states(), this->initial, callbacks);
 	return acyclic;
 }
 
@@ -412,13 +502,7 @@ bool AutomatonBase<D>::is_identical(this const Self& self, const Self& other) {
 template <DeltaLike D>
 template <typename Self>
 Self& AutomatonBase<D>::trim(this Self& self, StateRenaming* state_renaming) {
-#ifdef _STATIC_STRUCTURES_
-	BoolVector useful_states{self.get_useful_states()};
-	useful_states.clear();
-	useful_states = self.get_useful_states();
-#else
 	const BoolVector useful_states{self.get_useful_states()};
-#endif
 	return self.trim_impl(useful_states, state_renaming);
 }
 
@@ -427,6 +511,15 @@ template <DeltaLike D>
 template <typename Self>
 Self& AutomatonBase<D>::trim_impl(this Self& self, const BoolVector& useful_states, StateRenaming* state_renaming) {
 	const size_t useful_states_size{useful_states.size()};
+	// Nothing to remove: the renaming would be the identity, so the transitions are left as they are.
+	if (std::ranges::all_of(useful_states, [](const auto is_useful) { return is_useful != 0; })) {
+		if (state_renaming != nullptr) {
+			state_renaming->clear();
+			state_renaming->reserve(useful_states_size);
+			for (State q{0}; q < useful_states_size; ++q) { (*state_renaming)[q] = q; }
+		}
+		return self;
+	}
 	std::vector<State> renaming(useful_states_size);
 	for (State new_state{0}, orig_state{0}; orig_state < useful_states_size; ++orig_state) {
 		if (useful_states[orig_state]) {

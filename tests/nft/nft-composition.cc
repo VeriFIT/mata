@@ -4,6 +4,12 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include <format>
+#include <random>
+#include <set>
+#include <utility>
+#include <vector>
+
 #include "mata/nft/algorithms.hh"
 #include "mata/nft/builder.hh"
 #include "mata/nft/nft.hh"
@@ -11,6 +17,49 @@
 
 using namespace mata::nft;
 using namespace mata::utils;
+
+namespace {
+/// The tuples of words, one word per level, of @p nft with no word longer than @p max_length, EPSILON erased: the
+///  relation of a composition, which leaves the placement of EPSILON open. A jump repeats its symbol on every level
+///  it covers, and DONT_CARE reads as a letter. Exact up to the bound, since a path never shortens a word.
+std::set<std::vector<mata::Word>> epsilon_free_tuples(const Nft& nft, const size_t max_length = 6) {
+	const size_t num_of_levels{nft.levels.num_of_levels};
+	using Configuration = std::pair<State, std::vector<mata::Word>>;
+	std::set<Configuration> visited{};
+	std::vector<Configuration> worklist{};
+	for (const State state : nft.initial) {
+		Configuration initial{state, std::vector<mata::Word>(num_of_levels)};
+		if (visited.insert(initial).second) { worklist.push_back(std::move(initial)); }
+	}
+	std::set<std::vector<mata::Word>> tuples{};
+	while (!worklist.empty()) {
+		const Configuration configuration{std::move(worklist.back())};
+		worklist.pop_back();
+		const auto& [source, words] = configuration;
+		if (nft.final.contains(source)) { tuples.insert(words); }
+		for (const SymbolPost& symbol_post : nft.delta[source]) {
+			for (const State target : symbol_post.targets) {
+				const size_t end_level{nft.levels[target] == 0 ? num_of_levels : nft.levels[target]};
+				Configuration next{target, words};
+				bool is_within_bound{true};
+				for (size_t level{nft.levels[source]}; symbol_post.symbol != EPSILON && level < end_level; ++level) {
+					next.second[level].push_back(symbol_post.symbol);
+					is_within_bound = is_within_bound && next.second[level].size() <= max_length;
+				}
+				if (is_within_bound && visited.insert(next).second) { worklist.push_back(std::move(next)); }
+			}
+		}
+	}
+	return tuples;
+}
+
+/// Whether @p lhs and @p rhs have the same levels and the same relation up to the placement of EPSILON, compared on
+///  the words up to @p max_length.
+bool same_epsilon_free_relation(const Nft& lhs, const Nft& rhs, const size_t max_length = 6) {
+	return lhs.levels.num_of_levels == rhs.levels.num_of_levels &&
+		   epsilon_free_tuples(lhs, max_length) == epsilon_free_tuples(rhs, max_length);
+}
+} // namespace
 
 TEST_CASE("Mata::nft::compose()") {
 	Nft lhs, rhs, expected, result;
@@ -149,7 +198,7 @@ TEST_CASE("Mata::nft::compose()") {
 
 				result = compose(lhs, rhs, OrdVector<Level>{1}, OrdVector<Level>{0});
 
-				CHECK(are_equivalent(result, expected));
+				CHECK(same_epsilon_free_relation(result, expected));
 			}
 		}
 
@@ -209,7 +258,7 @@ TEST_CASE("Mata::nft::compose()") {
 
 				result = compose(lhs, rhs);
 
-				CHECK(are_equivalent(result, expected));
+				CHECK(same_epsilon_free_relation(result, expected));
 			}
 
 			SECTION("Epsilon is even on non-synchronization levels") {
@@ -244,7 +293,7 @@ TEST_CASE("Mata::nft::compose()") {
 
 				result = compose(lhs, rhs);
 
-				CHECK(are_equivalent(result, expected));
+				CHECK(same_epsilon_free_relation(result, expected));
 			}
 		}
 	}
@@ -563,7 +612,7 @@ TEST_CASE("nft::compose(Nft&, Nft&, Level, Level, ...) - easy cases") {
 		expected_full.delta.add(3, 'c', 4);
 		expected_full.delta.add(4, 'd', 5);
 		expected_full.delta.add(5, 'f', 6);
-		Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+		Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 		Nft lhs(5, {0}, {4}, Levels({0, 1, 0, 1, 0}));
 		lhs.delta.add(0, 'a', 1);
@@ -626,7 +675,7 @@ TEST_CASE("nft::compose(Nft&, Nft&, Level, Level, ...) - easy cases") {
 		expected_full.delta.add(1, 'b', 2);
 		expected_full.delta.add(2, 'c', 3);
 		expected_full.delta.add(3, 'd', 4);
-		Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+		Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 		Nft lhs(5, {0}, {4}, Levels({0, 1, 0, 1, 0}));
 		lhs.delta.add(0, 'a', 1);
@@ -731,7 +780,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(3, 'd', 4);
 			expected_full.delta.add(4, 'e', 5);
 			expected_full.delta.add(5, 'f', 6);
-			Nft expected_proj = project_out(expected_full, {0}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 0, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 0, 0, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -761,7 +810,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(3, 'd', 4);
 			expected_full.delta.add(4, 'f', 5);
 			expected_full.delta.add(5, 'e', 6);
-			Nft expected_proj = project_out(expected_full, {0}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 0, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 0, 0, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -822,7 +871,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(9, 'f', 10);
 			expected_full.delta.add(10, 'j', 12);
 			expected_full.delta.add(11, 'y', 12);
-			Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 0, 1, false, JumpMode::NoJump).trim();
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -862,7 +911,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(4, 'y', 13);
 			expected_full.delta.add(13, 'b', 14);
 			expected_full.delta.add(14, 'z', 12);
-			Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 1, 0, false, JumpMode::NoJump).trim();
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -924,7 +973,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 		expected_full.delta.add(2, 'a', 14);
 		expected_full.delta.add(14, 'b', 13);
 		expected_full.delta.add(13, 'z', 12);
-		Nft expected_proj = project_out(expected_full, {2}, JumpMode::NoJump);
+		Nft expected_proj = project_out(expected_full, 2, JumpMode::NoJump);
 
 		SECTION("LHS | RHS") {
 			Nft result_full = compose(lhs, rhs, 0, 2, false, JumpMode::NoJump).trim();
@@ -1009,7 +1058,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(2, 'w', 13);
 			expected_full.delta.add(13, 'g', 14);
 			expected_full.delta.add(14, 'x', 0);
-			Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 1, 0, false, JumpMode::NoJump).trim();
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1048,7 +1097,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(3, 'y', 11);
 			expected_full.delta.add(3, 'x', 12);
 			expected_full.delta.add(12, 'w', 0);
-			Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 0, 1, false, JumpMode::NoJump).trim();
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1109,7 +1158,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(3, 'x', 12);
 			expected_full.delta.add(12, 'w', 0);
 			expected_full.delta.add(3, 'z', 11);
-			Nft expected_proj = project_out(expected_full, {2}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 2, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 1, 1, false, JumpMode::NoJump).trim();
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1147,7 +1196,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(3, 'y', 11);
 			expected_full.delta.add(3, 'w', 12);
 			expected_full.delta.add(12, 'x', 0);
-			Nft expected_proj = project_out(expected_full, {2}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 2, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 1, 1, false, JumpMode::NoJump).trim();
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1208,7 +1257,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(12, 'x', 0);
 			expected_full.delta.add(3, 'b', 11);
 			expected_full.delta.add(11, 'z', 10);
-			Nft expected_proj = project_out(expected_full, {3}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 3, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 1, 2, false, JumpMode::NoJump).trim();
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1246,7 +1295,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(12, 'x', 0);
 			expected_full.delta.add(3, 'b', 11);
 			expected_full.delta.add(11, 'z', 10);
-			Nft expected_proj = project_out(expected_full, {3}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 3, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 2, 1, false, JumpMode::NoJump).trim();
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1308,7 +1357,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 		expected_full.delta.add(2, 'c', 12);
 		expected_full.delta.add(12, 'g', 11);
 		expected_full.delta.add(11, 'y', 10);
-		Nft expected_proj = project_out(expected_full, {2}, JumpMode::NoJump);
+		Nft expected_proj = project_out(expected_full, 2, JumpMode::NoJump);
 
 		SECTION("LHS | RHS") {
 			Nft result_full = compose(lhs, rhs, 2, 0, false, JumpMode::NoJump).trim();
@@ -1391,7 +1440,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(12, 'x', 0);
 			expected_full.delta.add(3, 'c', 11);
 			expected_full.delta.add(11, 'y', 10);
-			Nft expected_proj = project_out(expected_full, {3}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 3, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 2, 1, false, JumpMode::NoJump).trim();
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1429,7 +1478,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding without epsilon") {
 			expected_full.delta.add(12, 'x', 0);
 			expected_full.delta.add(3, 'c', 11);
 			expected_full.delta.add(11, 'y', 10);
-			Nft expected_proj = project_out(expected_full, {3}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 3, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 1, 2, false, JumpMode::NoJump).trim();
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1602,7 +1651,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(2, 'c', 11);
 			expected_full.delta.add(11, EPSILON, 12);
 			expected_full.delta.add(12, EPSILON, 0);
-			Nft expected_proj = project_out(expected_full, {0}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 0, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 0, 0, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1637,7 +1686,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'e', 9);
 			expected_full.delta.add(9, 'f', 10);
 			expected_full.delta.add(4, 'c', 0);
-			Nft expected_proj = project_out(expected_full, {0}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 0, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 0, 0, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1690,7 +1739,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(9, 'h', 10);
 			expected_full.delta.add(3, 'c', 11);
 			expected_full.delta.add(11, EPSILON, 0);
-			Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 0, 1, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1725,7 +1774,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'e', 9);
 			expected_full.delta.add(9, 'f', 10);
 			expected_full.delta.add(4, 'c', 0);
-			Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 1, 0, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1776,7 +1825,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 		expected_full.delta.add(8, 'e', 9);
 		expected_full.delta.add(9, 'f', 10);
 		expected_full.delta.add(4, 'c', 0);
-		Nft expected_proj = project_out(expected_full, {2}, JumpMode::NoJump);
+		Nft expected_proj = project_out(expected_full, 2, JumpMode::NoJump);
 
 		SECTION("LHS | RHS") {
 			Nft result_full = compose(lhs, rhs, 0, 2, false, JumpMode::NoJump);
@@ -1852,7 +1901,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(2, 'c', 11);
 			expected_full.delta.add(11, EPSILON, 12);
 			expected_full.delta.add(12, EPSILON, 0);
-			Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 1, 0, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1887,7 +1936,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'h', 9);
 			expected_full.delta.add(9, 'f', 10);
 			expected_full.delta.add(4, 'c', 0);
-			Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 0, 1, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1940,7 +1989,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(9, 'h', 10);
 			expected_full.delta.add(3, 'c', 11);
 			expected_full.delta.add(11, EPSILON, 0);
-			Nft expected_proj = project_out(expected_full, {2}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 2, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 1, 1, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -1975,7 +2024,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'h', 9);
 			expected_full.delta.add(9, 'f', 10);
 			expected_full.delta.add(4, 'c', 0);
-			Nft expected_proj = project_out(expected_full, {2}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 2, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 1, 1, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -2027,7 +2076,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'e', 9);
 			expected_full.delta.add(9, 'f', 10);
 			expected_full.delta.add(4, 'c', 0);
-			Nft expected_proj = project_out(expected_full, {3}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 3, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 1, 2, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -2062,7 +2111,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'e', 9);
 			expected_full.delta.add(9, 'f', 10);
 			expected_full.delta.add(4, 'c', 0);
-			Nft expected_proj = project_out(expected_full, {3}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 3, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 2, 1, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -2114,7 +2163,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'g', 9);
 			expected_full.delta.add(9, 'h', 10);
 			expected_full.delta.add(4, EPSILON, 0);
-			Nft expected_proj = project_out(expected_full, {2}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 2, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 2, 0, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -2150,7 +2199,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'g', 9);
 			expected_full.delta.add(9, 'h', 10);
 			expected_full.delta.add(4, EPSILON, 0);
-			Nft expected_proj = project_out(expected_full, {2}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 2, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 0, 2, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -2202,7 +2251,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'f', 9);
 			expected_full.delta.add(9, 'h', 10);
 			expected_full.delta.add(4, EPSILON, 0);
-			Nft expected_proj = project_out(expected_full, {3}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 3, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 2, 1, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -2237,7 +2286,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'f', 9);
 			expected_full.delta.add(9, 'h', 10);
 			expected_full.delta.add(4, EPSILON, 0);
-			Nft expected_proj = project_out(expected_full, {3}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 3, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 1, 2, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -2289,7 +2338,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'h', 9);
 			expected_full.delta.add(9, 'f', 10);
 			expected_full.delta.add(4, EPSILON, 0);
-			Nft expected_proj = project_out(expected_full, {4}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 4, JumpMode::NoJump);
 
 			Nft result_full = compose(lhs, rhs, 2, 2, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -2324,7 +2373,7 @@ TEST_CASE("nft::compose(..., Level, Level, ...) - sliding with epsilon") {
 			expected_full.delta.add(8, 'e', 9);
 			expected_full.delta.add(9, 'f', 10);
 			expected_full.delta.add(4, EPSILON, 0);
-			Nft expected_proj = project_out(expected_full, {4}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 4, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 2, 2, false, JumpMode::NoJump);
 			CHECK(result_full.num_of_states() <= expected_full.num_of_states());
@@ -2395,7 +2444,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
 			expected_full.delta.add(25, 'a', 26);
 			expected_full.delta.add(26, 'b', 27);
 			expected_full.delta.add(27, EPSILON, 10);
-			Nft expected_proj = project_out(expected_full, {1}, JumpMode::RepeatSymbol);
+			Nft expected_proj = project_out(expected_full, 1, JumpMode::RepeatSymbol);
 
 			Nft result_full = compose(lhs, rhs, 0, 1, false, JumpMode::NoJump);
 
@@ -2453,7 +2502,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
 			expected_full.delta.add(25, EPSILON, 26);
 			expected_full.delta.add(26, 'a', 27);
 			expected_full.delta.add(27, 'b', 10);
-			Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+			Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 			Nft result_full = compose(rhs, lhs, 1, 0, false, JumpMode::NoJump);
 			CHECK(result_full.final.size() == expected_full.final.size());
@@ -2504,7 +2553,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
 		expected_full.delta.add(11, EPSILON, 12);
 		expected_full.delta.add(12, EPSILON, 13);
 		expected_full.delta.add(13, EPSILON, 3);
-		Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+		Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 		SECTION("LHS | RHS") {
 			Nft result_full = compose(lhs, rhs, 1, 0, false, JumpMode::NoJump);
@@ -2598,7 +2647,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - epsilon on both sides") {
 		expected_full.delta.add(21, EPSILON, 22);
 		expected_full.delta.add(22, EPSILON, 23);
 		expected_full.delta.add(23, EPSILON, 6);
-		Nft expected_proj = project_out(expected_full, {1}, JumpMode::NoJump);
+		Nft expected_proj = project_out(expected_full, 1, JumpMode::NoJump);
 
 		SECTION("LHS | RHS") {
 			Nft result_full = compose(lhs, rhs, 1, 0, false, JumpMode::NoJump);
@@ -2762,7 +2811,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - complex") {
 		expected_full.delta.add(60, 'y', 61);
 		expected_full.delta.add(61, 'r', 62);
 		expected_full.delta.add(62, 'b', 63);
-		Nft expected_proj = project_out(expected_full, {6}, JumpMode::NoJump);
+		Nft expected_proj = project_out(expected_full, 6, JumpMode::NoJump);
 
 		Nft result_full = compose(lhs, rhs, 3, 3, false, JumpMode::NoJump);
 		CHECK(result_full.final.size() == expected_full.final.size());
@@ -2868,7 +2917,7 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - complex") {
 		expected_full.delta.add(73, 'y', 74);
 		expected_full.delta.add(74, 'b', 75);
 		expected_full.delta.add(75, 'r', 76);
-		Nft expected_proj = project_out(expected_full, {6}, JumpMode::NoJump);
+		Nft expected_proj = project_out(expected_full, 6, JumpMode::NoJump);
 
 		Nft result_full = compose(rhs, lhs, 3, 3, false, JumpMode::NoJump);
 		CHECK(result_full.final.size() == expected_full.final.size());
@@ -2891,6 +2940,459 @@ TEST_CASE("nft::composition(..., Level, Level, ...) - complex") {
 		expected_proj.trim();
 		expected_proj.remove_epsilon();
 		CHECK(are_equivalent(result_proj, expected_proj));
+	}
+}
+
+TEST_CASE("mata::nft::algorithms::CompositionSchedule") {
+	using algorithms::CompositionSchedule;
+	using Owner = CompositionSchedule::Owner;
+
+	SECTION("two synchronization blocks and both kinds of one-sided levels") {
+		const CompositionSchedule schedule{5, 4, {2, 4}, {1, 2}};
+		CHECK(
+			schedule.positions == std::vector<CompositionSchedule::Position>{
+									  {Owner::Lhs, 0, 0},
+									  {Owner::Lhs, 1, 0},
+									  {Owner::Rhs, 2, 0},
+									  {Owner::Sync, 2, 1},
+									  {Owner::Lhs, 3, 2},
+									  {Owner::Sync, 4, 2},
+									  {Owner::Rhs, 0, 3},
+								  }
+		);
+		CHECK(schedule.lhs_new_levels_mask() == mata::BoolVector{0, 0, 1, 0, 0, 0, 1});
+		CHECK(schedule.rhs_new_levels_mask() == mata::BoolVector{1, 1, 0, 0, 1, 0, 0});
+		CHECK(schedule.sync_positions() == OrdVector<Level>{3, 5});
+	}
+
+	SECTION("the layout documented at compose_general()") {
+		const CompositionSchedule schedule{7, 8, {0, 2, 5}, {1, 4, 5}};
+		CHECK(
+			schedule.positions == std::vector<CompositionSchedule::Position>{
+									  {Owner::Rhs, 0, 0},
+									  {Owner::Sync, 0, 1},
+									  {Owner::Lhs, 1, 2},
+									  {Owner::Rhs, 2, 2},
+									  {Owner::Rhs, 2, 3},
+									  {Owner::Sync, 2, 4},
+									  {Owner::Lhs, 3, 5},
+									  {Owner::Lhs, 4, 5},
+									  {Owner::Sync, 5, 5},
+									  {Owner::Lhs, 6, 6},
+									  {Owner::Rhs, 0, 6},
+									  {Owner::Rhs, 0, 7},
+								  }
+		);
+		CHECK(schedule.sync_positions() == OrdVector<Level>{1, 5, 8});
+	}
+
+	SECTION("one-level operands and the layout of Nft::apply()") {
+		CHECK(
+			CompositionSchedule{1, 1, {0}, {0}}.positions ==
+			std::vector<CompositionSchedule::Position>{{Owner::Sync, 0, 0}}
+		);
+		const CompositionSchedule apply{1, 2, {0}, {0}};
+		CHECK(apply.positions == std::vector<CompositionSchedule::Position>{{Owner::Sync, 0, 0}, {Owner::Rhs, 0, 1}});
+		CHECK(apply.lhs_new_levels_mask() == mata::BoolVector{0, 1});
+		CHECK(apply.rhs_new_levels_mask() == mata::BoolVector{0, 0});
+		// An operand that has read its last level is at a zero-level state on the levels the other one reads after.
+		CHECK(
+			CompositionSchedule{2, 1, {0}, {0}}.positions ==
+			std::vector<CompositionSchedule::Position>{{Owner::Sync, 0, 0}, {Owner::Lhs, 1, 0}}
+		);
+	}
+}
+
+TEST_CASE("mata::nft::algorithms::compose_general_direct() - issue #814") {
+	constexpr mata::Symbol a{'a'}, b{'b'}, c{'c'}, d{'d'}, x{'x'}, y{'y'};
+	// Tracks [A, X, Y] composed with [X, B, Y] on X and Y: the aligned levels are A, X, B, Y.
+	// LHS: round (a, x, y), then optionally (c, EPSILON, EPSILON), which can also go along a waiting RHS.
+	Nft lhs{Nft::with_levels({3, {0, 1, 2, 0, 1, 2, 0}}, 7, {0}, {3, 6})};
+	lhs.delta.add(0, a, 1);
+	lhs.delta.add(1, x, 2);
+	lhs.delta.add(2, y, 3);
+	lhs.delta.add(3, c, 4);
+	lhs.delta.add(4, EPSILON, 5);
+	lhs.delta.add(5, EPSILON, 6);
+	// RHS: round (x, b, y), then optionally (EPSILON, d, EPSILON).
+	Nft rhs{Nft::with_levels({3, {0, 1, 2, 0, 1, 2, 0}}, 7, {0}, {3, 6})};
+	rhs.delta.add(0, x, 1);
+	rhs.delta.add(1, b, 2);
+	rhs.delta.add(2, y, 3);
+	rhs.delta.add(3, EPSILON, 4);
+	rhs.delta.add(4, d, 5);
+	rhs.delta.add(5, EPSILON, 6);
+
+	for (const JumpMode jump_mode : {JumpMode::NoJump, JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+		const std::optional<Nft> kept{algorithms::compose_general_direct(lhs, rhs, {1, 2}, {0, 2}, false, jump_mode)};
+		REQUIRE(kept.has_value());
+		CHECK(kept->levels.num_of_levels == 4);
+		CHECK(are_equivalent(
+			*kept, algorithms::compose_general_reference(lhs, rhs, {1, 2}, {0, 2}, false, jump_mode), jump_mode
+		));
+		CHECK(kept->is_in_lang_by_levels({{a}, {x}, {b}, {y}}));
+		CHECK(kept->is_in_lang_by_levels({{a, c}, {x}, {b, d}, {y}}));
+		CHECK(!kept->is_in_lang_by_levels({{a}, {x}, {b}, {}}));
+
+		const std::optional<Nft> projected{
+			algorithms::compose_general_direct(lhs, rhs, {1, 2}, {0, 2}, true, jump_mode)
+		};
+		REQUIRE(projected.has_value());
+		CHECK(projected->levels.num_of_levels == 2);
+		CHECK(are_equivalent(
+			*projected, algorithms::compose_general_reference(lhs, rhs, {1, 2}, {0, 2}, true, jump_mode), jump_mode
+		));
+		for (const std::vector<mata::Word>& accepted :
+			 {std::vector<mata::Word>{{a}, {b}}, {{a, c}, {b}}, {{a}, {b, d}}, {{a, c}, {b, d}}}) {
+			CHECK(projected->is_in_lang_by_levels(accepted));
+		}
+		for (const std::vector<mata::Word>& rejected :
+			 {std::vector<mata::Word>{{a}, {}}, {{c}, {d}}, {{a, c, c}, {b}}, {{a}, {b, b}}}) {
+			CHECK(!projected->is_in_lang_by_levels(rejected));
+		}
+	}
+
+	SECTION("three synchronization blocks with one-sided levels on both sides") {
+		// LHS tracks [X, A, Y, Z] synchronize X, Y, Z; RHS tracks [B, X, Y, Z] synchronize X, Y, Z.
+		Nft lhs3{Nft::with_levels({4, {0, 1, 2, 3, 0}}, 5, {0}, {4})};
+		lhs3.delta.add(0, x, 1);
+		lhs3.delta.add(0, EPSILON, 1);
+		lhs3.delta.add(1, a, 2);
+		lhs3.delta.add(2, y, 3);
+		lhs3.delta.add(2, EPSILON, 3);
+		lhs3.delta.add(3, EPSILON, 4);
+		lhs3.delta.add(4, x, 1);
+		Nft rhs3{Nft::with_levels({4, {0, 1, 2, 3, 0}}, 5, {0}, {0, 4})};
+		rhs3.delta.add(0, b, 1);
+		rhs3.delta.add(1, x, 2);
+		rhs3.delta.add(1, EPSILON, 2);
+		rhs3.delta.add(2, EPSILON, 3);
+		rhs3.delta.add(2, y, 3);
+		rhs3.delta.add(3, EPSILON, 4);
+		rhs3.delta.add(4, b, 1);
+		for (const bool project_out : {false, true}) {
+			const std::optional<Nft> direct{
+				algorithms::compose_general_direct(lhs3, rhs3, {0, 2, 3}, {1, 2, 3}, project_out)
+			};
+			REQUIRE(direct.has_value());
+			CHECK(are_equivalent(
+				*direct, algorithms::compose_general_reference(lhs3, rhs3, {0, 2, 3}, {1, 2, 3}, project_out)
+			));
+			if (project_out) {
+				CHECK(direct->levels.num_of_levels == 2);
+				// The result tracks are [B, A]. A synchronized round (x, a, y, EPSILON | b, x, y, EPSILON), rounds of
+				//  either operand alone on EPSILON synchronization levels, and the LHS reads A in each of its rounds.
+				CHECK(direct->is_in_lang_by_levels({{b}, {a}}));
+				CHECK(direct->is_in_lang_by_levels({{}, {a}}));
+				CHECK(direct->is_in_lang_by_levels({{b, b, b}, {a}}));
+				CHECK(direct->is_in_lang_by_levels({{b}, {a, a}}));
+				CHECK(!direct->is_in_lang_by_levels({{b}, {}}));
+				CHECK(!direct->is_in_lang_by_levels({{a}, {b}}));
+			}
+		}
+	}
+
+	SECTION("DONT_CARE matches every symbol of the other operand, EPSILON included (#561)") {
+		// LHS tracks [A, X]: the round (a, DONT_CARE). RHS tracks [X, B]: the rounds (x, b) and (EPSILON, d), or none.
+		Nft lhs_dont_care{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+		lhs_dont_care.delta.add(0, a, 1);
+		lhs_dont_care.delta.add(1, DONT_CARE, 2);
+		Nft rhs_epsilon{Nft::with_levels({2, {0, 1, 0, 1, 0}}, 5, {0}, {0, 2, 4})};
+		rhs_epsilon.delta.add(0, x, 1);
+		rhs_epsilon.delta.add(1, b, 2);
+		rhs_epsilon.delta.add(0, EPSILON, 3);
+		rhs_epsilon.delta.add(3, d, 4);
+		for (const bool project_out : {false, true}) {
+			const std::optional<Nft> direct{
+				algorithms::compose_general_direct(lhs_dont_care, rhs_epsilon, {1}, {0}, project_out)
+			};
+			REQUIRE(direct.has_value());
+			CHECK(are_equivalent(
+				*direct, algorithms::compose_general_reference(lhs_dont_care, rhs_epsilon, {1}, {0}, project_out)
+			));
+			if (project_out) {
+				// DONT_CARE synchronizes with x and with EPSILON, and a round of the LHS alone reads it as EPSILON.
+				CHECK(direct->is_in_lang_by_levels({{a}, {b}}));
+				CHECK(direct->is_in_lang_by_levels({{a}, {d}}));
+				CHECK(direct->is_in_lang_by_levels({{a}, {}}));
+				CHECK(!direct->is_in_lang_by_levels({{}, {b}}));
+			}
+		}
+	}
+
+	SECTION("jump transitions skipping a level and wrapping around") {
+		// LHS tracks [A, X, C], synchronizing X: the round (a, -, c) jumps over X, the round (y, -, -) over X and C.
+		Nft lhs_jumps{Nft::with_levels({3, {0, 2}}, 2, {0}, {0})};
+		lhs_jumps.delta.add(0, a, 1);
+		lhs_jumps.delta.add(1, c, 0);
+		lhs_jumps.delta.add(0, y, 0);
+		// RHS tracks [X, B]: the rounds (x, b), (a, b) and (EPSILON, d).
+		Nft rhs_plain{Nft::with_levels({2, {0, 1, 1, 1}}, 4, {0}, {0})};
+		rhs_plain.delta.add(0, x, 1);
+		rhs_plain.delta.add(1, b, 0);
+		rhs_plain.delta.add(0, a, 3);
+		rhs_plain.delta.add(3, b, 0);
+		rhs_plain.delta.add(0, EPSILON, 2);
+		rhs_plain.delta.add(2, d, 0);
+		for (const JumpMode jump_mode : {JumpMode::NoJump, JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+			for (const bool project_out : {false, true}) {
+				const std::optional<Nft> direct{
+					algorithms::compose_general_direct(lhs_jumps, rhs_plain, {1}, {0}, project_out, jump_mode)
+				};
+				REQUIRE(direct.has_value());
+				CHECK(are_equivalent(
+					*direct,
+					algorithms::compose_general_reference(lhs_jumps, rhs_plain, {1}, {0}, project_out, jump_mode),
+					jump_mode
+				));
+				if (!project_out) { continue; }
+				CHECK(direct->is_in_lang_by_levels({{a}, {c}, {b}}));
+				CHECK(!direct->is_in_lang_by_levels({{a}, {}, {b}}));
+				if (jump_mode == JumpMode::AppendDontCares) {
+					// The jump reads DONT_CARE on X, which matches x, EPSILON, and the EPSILON of a waiting RHS.
+					CHECK(direct->is_in_lang_by_levels({{a}, {c}, {d}}));
+					CHECK(direct->is_in_lang_by_levels({{a}, {c}, {}}));
+				} else {
+					// The jump reads a on X, which only the round (a, b) matches.
+					CHECK(!direct->is_in_lang_by_levels({{a}, {c}, {d}}));
+					CHECK(!direct->is_in_lang_by_levels({{a}, {c}, {}}));
+				}
+			}
+		}
+	}
+
+	SECTION("an operand reading every aligned level chooses its jump again") {
+		// LHS tracks [X, A], synchronizing X: the whole-round jumps (a, a) and (b, b). RHS tracks [X]: the round (a).
+		Nft lhs_jumps{Nft::with_levels({2, {0, 0, 0}}, 3, {0}, {1, 2})};
+		lhs_jumps.delta.add(0, a, 1);
+		lhs_jumps.delta.add(0, b, 2);
+		Nft rhs_one_level{Nft::with_levels({1, {0}}, 1, {0}, {0})};
+		rhs_one_level.delta.add(0, a, 0);
+		for (const JumpMode jump_mode : {JumpMode::NoJump, JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+			for (const bool project_out : {false, true}) {
+				const std::optional<Nft> direct{
+					algorithms::compose_general_direct(lhs_jumps, rhs_one_level, {0}, {0}, project_out, jump_mode)
+				};
+				REQUIRE(direct.has_value());
+				CHECK(are_equivalent(
+					*direct,
+					algorithms::compose_general_reference(lhs_jumps, rhs_one_level, {0}, {0}, project_out, jump_mode),
+					jump_mode
+				));
+				if (jump_mode == JumpMode::AppendDontCares || project_out) { continue; }
+				// The pipeline keeps the jumps of the LHS, into which it inserts no level, and product() lets the
+				//  LHS, waiting in the source state, take (b, b) on A after (a, a) has synchronized on X.
+				CHECK(direct->is_in_lang_by_levels({{a}, {a}}));
+				CHECK(direct->is_in_lang_by_levels({{a}, {b}}));
+				CHECK(!direct->is_in_lang_by_levels({{b}, {b}}));
+			}
+		}
+
+		// LHS tracks [X, Y, A, B], synchronizing X and Y: (EPSILON, EPSILON, EPSILON) into a dead end, or (b, b, b)
+		//  then (c). RHS tracks [X, Y] only wait. Going along the waiting RHS, the LHS reads EPSILON on X and Y, then
+		//  b on A: no single jump of it reads that, so the round lookahead must not prune the round.
+		Nft lhs_combined{Nft::with_levels({4, {0, 3, 3}}, 3, {0}, {0})};
+		lhs_combined.delta.add(0, EPSILON, 1);
+		lhs_combined.delta.add(0, b, 2);
+		lhs_combined.delta.add(2, c, 0);
+		const Nft rhs_waiting{Nft::with_levels({2, {0}}, 1, {0}, {0})};
+		for (const JumpMode jump_mode : {JumpMode::NoJump, JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+			const std::optional<Nft> direct{
+				algorithms::compose_general_direct(lhs_combined, rhs_waiting, {0, 1}, {0, 1}, false, jump_mode)
+			};
+			REQUIRE(direct.has_value());
+			CHECK(are_equivalent(
+				*direct,
+				algorithms::compose_general_reference(lhs_combined, rhs_waiting, {0, 1}, {0, 1}, false, jump_mode),
+				jump_mode
+			));
+			if (jump_mode != JumpMode::AppendDontCares) { CHECK(direct->is_in_lang_by_levels({{}, {}, {b}, {c}})); }
+		}
+	}
+
+	SECTION("paths through projected levels that meet are read once") {
+		// LHS tracks [A, X_1, ..., X_depth], RHS tracks [X_1, ..., X_depth], synchronized and projected out. Both read
+		//  x or y on each X_i into the same state, so 2^depth paths through the projected levels reach one
+		//  configuration.
+		const auto deep_operands{[&](const size_t depth) {
+			Nft deep_lhs{Nft::with_levels(depth + 1)};
+			Nft deep_rhs{Nft::with_levels(depth)};
+			for (size_t level{0}; level <= depth; ++level) { deep_lhs.add_state_with_level(static_cast<Level>(level)); }
+			for (size_t level{0}; level < depth; ++level) { deep_rhs.add_state_with_level(static_cast<Level>(level)); }
+			deep_lhs.initial.insert(0);
+			deep_lhs.final.insert(0);
+			deep_rhs.initial.insert(0);
+			deep_rhs.final.insert(0);
+			deep_lhs.delta.add(0, a, 1);
+			for (State state{1}; state <= depth; ++state) {
+				for (const mata::Symbol symbol : {x, y}) {
+					deep_lhs.delta.add(state, symbol, state == depth ? 0 : state + 1);
+					deep_rhs.delta.add(state - 1, symbol, state == depth ? 0 : state);
+				}
+			}
+			OrdVector<Level> lhs_sync_levels{};
+			OrdVector<Level> rhs_sync_levels{};
+			for (Level level{0}; level < depth; ++level) {
+				lhs_sync_levels.insert(level + 1);
+				rhs_sync_levels.insert(level);
+			}
+			return std::tuple{deep_lhs, deep_rhs, lhs_sync_levels, rhs_sync_levels};
+		}};
+		{
+			const auto [deep_lhs, deep_rhs, lhs_sync_levels, rhs_sync_levels]{deep_operands(12)};
+			const std::optional<Nft> direct{
+				algorithms::compose_general_direct(deep_lhs, deep_rhs, lhs_sync_levels, rhs_sync_levels, true)
+			};
+			REQUIRE(direct.has_value());
+			CHECK(are_equivalent(
+				*direct,
+				algorithms::compose_general_reference(deep_lhs, deep_rhs, lhs_sync_levels, rhs_sync_levels, true)
+			));
+		}
+		// Reading every path takes 2^30 steps; reading each level once takes a few.
+		const auto [deep_lhs, deep_rhs, lhs_sync_levels, rhs_sync_levels]{deep_operands(30)};
+		const std::optional<Nft> direct{
+			algorithms::compose_general_direct(deep_lhs, deep_rhs, lhs_sync_levels, rhs_sync_levels, true)
+		};
+		REQUIRE(direct.has_value());
+		CHECK(direct->num_of_states() == 1);
+		CHECK(direct->is_in_lang_by_levels({{a, a}}));
+	}
+
+	SECTION("a jump is chosen again for a round its earlier fixed jumps cannot cover") {
+		// LHS has four levels, RHS three, synchronized on {1,2,3} against {0,1,2}. The LHS starts on 'a' and can only
+		//  continue on 'x' at the first synchronization level, which the RHS labels 'x','a','a': the 'a' jump cannot
+		//  match that, so the all-bits fallback must let it choose its jumps again.
+		Nft jumps{Nft::with_levels(4)};
+		const State start = jumps.add_state_with_level(0);
+		const State accept = jumps.add_state_with_level(0);
+		const State dead = jumps.add_state_with_level(3);
+		jumps.initial.insert(start);
+		jumps.final.insert(accept);
+		jumps.delta.add(start, 'a', accept);
+		jumps.delta.add(start, 'x', dead);
+		Nft round{Nft::with_levels(3)};
+		const State q0 = round.add_state_with_level(0);
+		const State q1 = round.add_state_with_level(1);
+		const State q2 = round.add_state_with_level(2);
+		const State q3 = round.add_state_with_level(0);
+		round.initial.insert(q0);
+		round.final.insert(q3);
+		round.delta.add(q0, 'x', q1);
+		round.delta.add(q1, 'a', q2);
+		round.delta.add(q2, 'a', q3);
+
+		const std::optional<Nft> direct{algorithms::compose_general_direct(jumps, round, {1, 2, 3}, {0, 1, 2}, false)};
+		REQUIRE(direct.has_value());
+		CHECK(
+			are_equivalent(*direct, algorithms::compose_general_reference(jumps, round, {1, 2, 3}, {0, 1, 2}, false))
+		);
+		CHECK(direct->is_in_lang_by_levels({{'a'}, {'x'}, {'a'}, {'a'}}));
+	}
+
+	SECTION("outside the domain") {
+		// A transition back to the level it starts on.
+		Nft backwards{Nft::with_levels({2, {0, 1, 1}}, 3, {0}, {0})};
+		backwards.delta.add(0, a, 1);
+		backwards.delta.add(1, a, 2);
+		CHECK(!algorithms::compose_general_direct(backwards, rhs, {1}, {0}).has_value());
+		Nft one_level{Nft::with_levels({1, {0}}, 1, {0}, {0})};
+		one_level.delta.add(0, a, 0);
+		CHECK(!algorithms::compose_general_direct(one_level, one_level, {0}, {0}, false).has_value());
+	}
+}
+
+TEST_CASE("mata::nft::algorithms::compose_general_direct() looks ahead to synchronization symbols - issue #816") {
+	// Tracks [A, X, Y] compose with [X, Y]. The first synchronized symbol matches; the second one does not.
+	Nft lhs{Nft::with_levels({3, {0, 1, 2, 0}}, 4, {0}, {3})};
+	lhs.delta.add(0, 'a', 1);
+	lhs.delta.add(1, 'x', 2);
+	lhs.delta.add(2, 'y', 3);
+	Nft rhs{Nft::with_levels({2, {0, 1, 0}}, 3, {0}, {2})};
+	rhs.delta.add(0, 'x', 1);
+	rhs.delta.add(1, 'z', 2);
+	const auto check_reference = [&](const Nft& direct, const bool project_out) {
+		CHECK(are_equivalent(direct, algorithms::compose_general_reference(lhs, rhs, {1, 2}, {0, 1}, project_out)));
+	};
+
+	SECTION("Disjoint symbols on the first synchronization level stop at the initial pair") {
+		rhs.delta.remove(0, 'x', 1);
+		rhs.delta.add(0, 'w', 1);
+		const std::optional<Nft> direct{algorithms::compose_general_direct(lhs, rhs, {1, 2}, {0, 1}, false)};
+		REQUIRE(direct.has_value());
+		check_reference(*direct, false);
+		CHECK(direct->num_of_states() == 1);
+		CHECK(direct->final.empty());
+	}
+
+	SECTION("Disjoint synchronization symbols avoid the product of branch trees") {
+		constexpr size_t NUM_OF_BRANCHES{16};
+		Nft branching_lhs{Nft::with_levels(2)};
+		const State lhs_root{branching_lhs.add_state_with_level(0)};
+		const State lhs_final{branching_lhs.add_state_with_level(0)};
+		for (size_t i{0}; i < NUM_OF_BRANCHES; ++i) {
+			const State middle{branching_lhs.add_state_with_level(1)};
+			branching_lhs.delta.add(lhs_root, static_cast<mata::Symbol>(100 + i), middle);
+			branching_lhs.delta.add(middle, 'a', lhs_final);
+		}
+		branching_lhs.initial.insert(lhs_root);
+		branching_lhs.final.insert(lhs_final);
+		Nft branching_rhs{Nft::with_levels(3)};
+		const State rhs_root{branching_rhs.add_state_with_level(0)};
+		const State rhs_final{branching_rhs.add_state_with_level(0)};
+		for (size_t i{0}; i < NUM_OF_BRANCHES; ++i) {
+			const State first{branching_rhs.add_state_with_level(1)};
+			const State second{branching_rhs.add_state_with_level(2)};
+			branching_rhs.delta.add(rhs_root, static_cast<mata::Symbol>(200 + i), first);
+			branching_rhs.delta.add(first, 'b', second);
+			branching_rhs.delta.add(second, 'z', rhs_final);
+		}
+		branching_rhs.initial.insert(rhs_root);
+		branching_rhs.final.insert(rhs_final);
+		const std::optional<Nft> direct{
+			algorithms::compose_general_direct(branching_lhs, branching_rhs, {1}, {1}, false)
+		};
+		REQUIRE(direct.has_value());
+		CHECK(direct->num_of_states() == 1);
+		CHECK(direct->final.empty());
+		CHECK(are_equivalent(
+			*direct, algorithms::compose_general_reference(branching_lhs, branching_rhs, {1}, {1}, false)
+		));
+	}
+
+	SECTION("Disjoint symbols on a later synchronization level prune the round") {
+		for (const bool project_out : {false, true}) {
+			const std::optional<Nft> direct{algorithms::compose_general_direct(lhs, rhs, {1, 2}, {0, 1}, project_out)};
+			REQUIRE(direct.has_value());
+			check_reference(*direct, project_out);
+			if (!project_out) {
+				// The state keeps the prefix through the matching first synchronization level.
+				CHECK(direct->num_of_states() == 2);
+				CHECK(direct->final.empty());
+			}
+		}
+	}
+
+	SECTION("DONT_CARE on a later synchronization level keeps the matching path") {
+		rhs.delta.remove(1, 'z', 2);
+		rhs.delta.add(1, DONT_CARE, 2);
+		for (const bool project_out : {false, true}) {
+			const std::optional<Nft> direct{algorithms::compose_general_direct(lhs, rhs, {1, 2}, {0, 1}, project_out)};
+			REQUIRE(direct.has_value());
+			check_reference(*direct, project_out);
+			CHECK(direct->is_in_lang_by_levels(
+				project_out ? std::vector<mata::Word>{{'a'}} : std::vector<mata::Word>{{'a'}, {'x'}, {'y'}}
+			));
+		}
+	}
+
+	SECTION("EPSILON synchronization survives disjoint ordinary symbols") {
+		lhs.delta.add(2, EPSILON, 3);
+		rhs.delta.add(1, EPSILON, 2);
+		const std::optional<Nft> direct{algorithms::compose_general_direct(lhs, rhs, {1, 2}, {0, 1}, false)};
+		REQUIRE(direct.has_value());
+		check_reference(*direct, false);
+		CHECK(direct->is_in_lang_by_levels({{'a'}, {'x'}, {EPSILON}}));
 	}
 }
 
@@ -2948,6 +3450,533 @@ TEST_CASE("mata::nft::compose_fast_no_jump()") {
 		const Nft composed_fast_no_jump{algorithms::compose_fast_no_jump(lhs, rhs, 0, 1)};
 		CHECK(are_equivalent(composed_normal, composed_fast_no_jump));
 	}
+
+	// The LHS waits on its synchronization level, its last one, while the one-level RHS moves on EPSILON; with the
+	//  synchronization level projected out, the move replaces the synchronization by no EPSILON, and the composer
+	//  used to assert on that.
+	SECTION("a one-level RHS moves on EPSILON while the LHS waits on its projected last level") {
+		const mata::Symbol x{7};
+		Nft lhs{4, {0}, {3}, Levels(2, 4)};
+		lhs.levels[2] = 1;
+		lhs.delta.add(0, EPSILON, 1);
+		lhs.delta.add(1, x, 2);
+		lhs.delta.add(2, x, 3);
+		Nft rhs{3, {0}, {2}, Levels(1, 3)};
+		rhs.delta.add(0, EPSILON, 1);
+		rhs.delta.add(1, x, 2);
+		const Nft composed{algorithms::compose_fast_no_jump(lhs, rhs, 1, 0, true)};
+		CHECK(composed.levels.num_of_levels == 1);
+		CHECK(composed.is_in_lang_by_levels({mata::Word{x}}));
+		CHECK(!composed.is_in_lang_by_levels({mata::Word{}}));
+		CHECK(!composed.is_in_lang_by_levels({mata::Word{x, x}}));
+	}
+}
+
+TEST_CASE("mata::nft::algorithms::compose_fast() reads jump transitions") {
+	constexpr mata::Symbol a{'a'}, b{'b'}, c{'c'}, x{'x'};
+	const std::vector<mata::Symbol> symbols{a, b, c};
+	const OrdVector<mata::Symbol> keep_dont_care{DONT_CARE};
+
+	SECTION("an identity of whole-round jumps under RepeatSymbol is the explicit identity") {
+		// The identity of Nft::insert_identity() under RepeatSymbol: one whole-round self-loop jump per symbol.
+		Nft identity_jumps{Nft::with_levels({2, {0}}, 1, {0}, {0})};
+		for (const mata::Symbol symbol : symbols) { identity_jumps.delta.add(0, symbol, 0); }
+		Nft identity_explicit{Nft::with_levels({2, {0}}, 1, {0}, {0})};
+		identity_explicit.insert_identity(0, symbols, JumpMode::NoJump);
+		// Tracks [A, B]: the rounds (a, b), (b, a) and (c, c).
+		Nft replace{Nft::with_levels({2, {0, 1, 1, 1}}, 4, {0}, {0})};
+		replace.delta.add(0, a, 1);
+		replace.delta.add(1, b, 0);
+		replace.delta.add(0, b, 2);
+		replace.delta.add(2, a, 0);
+		replace.delta.add(0, c, 3);
+		replace.delta.add(3, c, 0);
+		for (const bool project_out : {false, true}) {
+			const Nft output_identity{
+				algorithms::compose_fast(replace, identity_jumps, 1, 0, project_out, JumpMode::RepeatSymbol)
+			};
+			CHECK(are_equivalent(
+				output_identity, algorithms::compose_fast_no_jump(replace, identity_explicit, 1, 0, project_out)
+			));
+			CHECK(are_equivalent(
+				output_identity,
+				algorithms::compose_general(replace, identity_jumps, {1}, {0}, project_out, JumpMode::RepeatSymbol),
+				JumpMode::RepeatSymbol
+			));
+			const Nft input_identity{
+				algorithms::compose_fast(identity_jumps, replace, 1, 0, project_out, JumpMode::RepeatSymbol)
+			};
+			CHECK(are_equivalent(
+				input_identity, algorithms::compose_fast_no_jump(identity_explicit, replace, 1, 0, project_out)
+			));
+			if (!project_out) { continue; }
+			CHECK(output_identity.is_in_lang_by_levels({{a}, {b}}));
+			CHECK(input_identity.is_in_lang_by_levels({{b}, {a}}));
+			CHECK(!output_identity.is_in_lang_by_levels({{a}, {a}}));
+		}
+
+		// With EPSILON, which compose() leaves to the general composition, compose_fast() reads the identity of jumps
+		//  as the explicit one all the same: the round (c, EPSILON).
+		replace.delta.add(3, EPSILON, 0);
+		CHECK(are_equivalent(
+			algorithms::compose_fast(replace, identity_jumps, 1, 0, true, JumpMode::RepeatSymbol),
+			algorithms::compose_fast_no_jump(replace, identity_explicit, 1, 0, true)
+		));
+	}
+
+	SECTION("a level inside a jump synchronizes on the symbol the jump reads there") {
+		// LHS tracks [A, X, C], synchronizing X: a whole-round jump on a, which reads (a, a, a) under RepeatSymbol and
+		//  (a, DONT_CARE, DONT_CARE) under AppendDontCares. RHS tracks [X, B]: the rounds (a, b) and (x, c). The
+		//  projected result tracks [A, C, B].
+		Nft lhs{Nft::with_levels({3, {0}}, 1, {0}, {0})};
+		lhs.delta.add(0, a, 0);
+		Nft rhs{Nft::with_levels({2, {0, 1, 1}}, 3, {0}, {0})};
+		rhs.delta.add(0, a, 1);
+		rhs.delta.add(1, b, 0);
+		rhs.delta.add(0, x, 2);
+		rhs.delta.add(2, c, 0);
+		for (const JumpMode jump_mode : {JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+			const Nft fast{algorithms::compose_fast(lhs, rhs, 1, 0, true, jump_mode)};
+			CHECK(are_equivalent(
+				fast, algorithms::compose_fast_no_jump(lhs.unwind_jumps(keep_dont_care, jump_mode), rhs, 1, 0, true)
+			));
+			if (jump_mode == JumpMode::RepeatSymbol) {
+				CHECK(
+					are_equivalent(fast, algorithms::compose_general(lhs, rhs, {1}, {0}, true, jump_mode), jump_mode)
+				);
+				CHECK(fast.is_in_lang_by_levels({{a}, {a}, {b}}));
+				CHECK(!fast.is_in_lang_by_levels({{a}, {x}, {c}}));
+				CHECK(!fast.is_in_lang_by_levels({{a}, {b}, {b}}));
+			} else {
+				// X reads DONT_CARE, which matches a and x, and C reads DONT_CARE.
+				CHECK(fast.is_in_lang_by_levels({{a}, {b}, {b}}));
+				CHECK(fast.is_in_lang_by_levels({{a}, {a}, {c}}));
+				CHECK(!fast.is_in_lang_by_levels({{b}, {a}, {b}}));
+			}
+		}
+	}
+
+	SECTION("jumps of one symbol post ending on different levels") {
+		// LHS tracks [A, X, C, D], synchronizing X. From state 0 on a: one level to state 2, a jump to state 1 on C,
+		//  and a whole-round jump back to 0. Then x from 2 to 1, and (b, c) from 1 back to 0. RHS tracks [X, B]: the
+		//  rounds (a, b) and (x, c).
+		Nft lhs{Nft::with_levels({4, {0, 2, 1, 3}}, 4, {0}, {0})};
+		lhs.delta.add(0, a, 0);
+		lhs.delta.add(0, a, 1);
+		lhs.delta.add(0, a, 2);
+		lhs.delta.add(2, x, 1);
+		lhs.delta.add(1, b, 3);
+		lhs.delta.add(3, c, 0);
+		Nft rhs{Nft::with_levels({2, {0, 1, 1}}, 3, {0}, {0})};
+		rhs.delta.add(0, a, 1);
+		rhs.delta.add(1, b, 0);
+		rhs.delta.add(0, x, 2);
+		rhs.delta.add(2, c, 0);
+		for (const JumpMode jump_mode : {JumpMode::RepeatSymbol, JumpMode::AppendDontCares}) {
+			for (const bool project_out : {false, true}) {
+				const Nft fast{algorithms::compose_fast(lhs, rhs, 1, 0, project_out, jump_mode)};
+				CHECK(are_equivalent(
+					fast, algorithms::compose_fast_no_jump(
+							  lhs.unwind_jumps(keep_dont_care, jump_mode), rhs, 1, 0, project_out
+						  )
+				));
+				if (jump_mode == JumpMode::RepeatSymbol) {
+					CHECK(are_equivalent(
+						fast, algorithms::compose_general(lhs, rhs, {1}, {0}, project_out, jump_mode), jump_mode
+					));
+				}
+				if (!project_out) { continue; }
+				// Projected tracks [A, C, D, B]. The jump to state 1 and the one-level transition, then b and c.
+				CHECK(fast.is_in_lang_by_levels({{a}, {b}, {c}, {b}}));
+				CHECK(fast.is_in_lang_by_levels({{a}, {b}, {c}, {c}}));
+				// The whole-round jump reads a on X under RepeatSymbol, DONT_CARE, which matches x, otherwise.
+				CHECK(fast.is_in_lang_by_levels({{a}, {a}, {a}, {b}}));
+				CHECK(fast.is_in_lang_by_levels({{a}, {a}, {a}, {c}}) == (jump_mode == JumpMode::AppendDontCares));
+			}
+		}
+	}
+
+	SECTION("a transition back to an earlier level is rejected") {
+		Nft backwards{Nft::with_levels({2, {0, 1, 1}}, 3, {0}, {0})};
+		backwards.delta.add(0, a, 1);
+		backwards.delta.add(1, a, 2);
+		CHECK_THROWS_AS(
+			algorithms::compose_fast(backwards, backwards, 1, 0, true, JumpMode::RepeatSymbol), std::invalid_argument
+		);
+	}
+}
+
+TEST_CASE("mata::nft::compose_fast_no_jump() EPSILON-composition filter (issue #812)") {
+	// The three operand shapes of the issue's table: n silent EPSILON moves on each side followed
+	// by one matching symbol X on the synchronization level, so the accepted relation is a single
+	// tuple. The EPSILON-composition filter must keep the raw result linear in n instead of
+	// quadratic while accepting that same tuple.
+	//
+	// The correctness reference is the relation the UNFILTERED composer accepts on these shapes:
+	// for each shape the unfiltered composer accepts exactly the single tuple built into the
+	// explicit reference NFTs below. Equivalence is checked after trim() + remove_epsilon().
+	// (Comparing the normalized filtered output against a normalized UNFILTERED output is not a
+	// usable criterion: remove_epsilon() cannot eliminate the cross-level EPSILON residue the
+	// unfiltered composer builds in shape B, although both accept the same relation; the filtered
+	// and unfiltered raw outputs of A and B are equivalent directly, and for C they only differ
+	// in the diagonal simultaneous-move paths the filter drops deliberately.)
+	const mata::Symbol x{7};
+	const mata::Symbol a{1};
+	const mata::Symbol b{2};
+
+	// 2-level NFT with the synchronization on level 0: n fast-EPSILON moves, then X (0 -> 1),
+	// then B back to a final zero-level state.
+	auto two_level_sync_at_0 = [&](const State n) {
+		Nft nft{n + 3, {0}, {n + 2}, Levels(2, n + 3)};
+		nft.levels[n + 1] = 1;
+		for (State i = 0; i < n; ++i) { nft.delta.add(i, EPSILON, i + 1); }
+		nft.delta.add(n, x, n + 1);
+		nft.delta.add(n + 1, b, n + 2);
+		return nft;
+	};
+	// 2-level NFT with the synchronization on level 1: n fast-EPSILON moves, then A (0 -> 1),
+	// then X back to a final zero-level state.
+	auto two_level_sync_at_1 = [&](const State n) {
+		Nft nft{n + 3, {0}, {n + 2}, Levels(2, n + 3)};
+		nft.levels[n + 1] = 1;
+		for (State i = 0; i < n; ++i) { nft.delta.add(i, EPSILON, i + 1); }
+		nft.delta.add(n, a, n + 1);
+		nft.delta.add(n + 1, x, n + 2);
+		return nft;
+	};
+	// 1-level NFT: n EPSILON moves, then X to a final state.
+	auto one_level = [&](const State n) {
+		Nft nft{n + 2, {0}, {n + 1}, Levels(1, n + 2)};
+		for (State i = 0; i < n; ++i) { nft.delta.add(i, EPSILON, i + 1); }
+		nft.delta.add(n, x, n + 1);
+		return nft;
+	};
+	// 1-level reference NFT accepting exactly the word {symbol}.
+	auto ref_1track = [](const mata::Symbol symbol) {
+		Nft nft{2, {0}, {1}, Levels(1, 2)};
+		nft.delta.add(0, symbol, 1);
+		return nft;
+	};
+	// 2-level reference NFT accepting exactly the tuple (first, second).
+	auto ref_2track = [](const mata::Symbol first, const mata::Symbol second) {
+		Nft nft{3, {0}, {2}, Levels(2, 3)};
+		nft.levels[1] = 1;
+		nft.delta.add(0, first, 1);
+		nft.delta.add(1, second, 2);
+		return nft;
+	};
+
+	auto check_shape = [&](const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Level rhs_sync_level,
+						   const bool project_out_sync_levels, const Nft& reference, const size_t expected_states,
+						   const size_t expected_transitions) {
+		const Nft result{
+			algorithms::compose_fast_no_jump(lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels)
+		};
+		CHECK(result.num_of_states() == expected_states);
+		CHECK(result.delta.num_of_transitions() == expected_transitions);
+
+		Nft result_normalized{result};
+		result_normalized.trim();
+		result_normalized.remove_epsilon();
+		CHECK(are_equivalent(result_normalized, reference));
+	};
+
+	SECTION("A: 2-level o 1-level, sync 0/0, projected") {
+		for (const State n : {State{16}, State{32}, State{64}}) {
+			check_shape(two_level_sync_at_0(n), one_level(n), 0, 0, true, ref_1track(b), 2 * n + 2, 2 * n + 1);
+		}
+	}
+	SECTION("B: 1-level o 2-level, sync 0/0, kept") {
+		for (const State n : {State{16}, State{32}, State{64}}) {
+			check_shape(one_level(n), two_level_sync_at_0(n), 0, 0, false, ref_2track(x, b), 4 * n + 3, 4 * n + 2);
+		}
+	}
+	SECTION("C: 2-level o 2-level, sync 1/0, projected") {
+		for (const State n : {State{16}, State{32}, State{64}}) {
+			check_shape(
+				two_level_sync_at_1(n), two_level_sync_at_0(n), 1, 0, true, ref_2track(a, b), 4 * n + 3, 4 * n + 2
+			);
+		}
+	}
+
+	// Shapes A-C never enter RhsMovedAlone: while the LHS can move silently it has no other
+	// move, so a silent RHS-only move is refused. Here the LHS branches in its initial state 0
+	// into a silent move and X, so the silent RHS move 0 -> 1 switches the filter. From (0, 1)
+	// the silent LHS move is refused (its canonical counterpart is the LHS-first route through
+	// (1, 0) to (1, 1)), and the only accepted tuple synchronizes on X from (0, 1) and needs the
+	// silent LHS move 2 -> 3 afterwards, so synchronization must reset the filter.
+	SECTION("D: 1-level o 1-level, sync 0/0, kept, filter switched and reset by synchronization") {
+		// Words: {b, x b}.
+		Nft lhs{5, {0}, {4}, Levels(1, 5)};
+		lhs.delta.add(0, EPSILON, 1);
+		lhs.delta.add(0, x, 2);
+		lhs.delta.add(1, b, 4);
+		lhs.delta.add(2, EPSILON, 3);
+		lhs.delta.add(3, b, 4);
+		// Words: {x b}.
+		Nft rhs{4, {0}, {3}, Levels(1, 4)};
+		rhs.delta.add(0, EPSILON, 1);
+		rhs.delta.add(1, x, 2);
+		rhs.delta.add(2, b, 3);
+		Nft reference{3, {0}, {2}, Levels(1, 3)};
+		reference.delta.add(0, x, 1);
+		reference.delta.add(1, b, 2);
+		check_shape(lhs, rhs, 0, 0, false, reference, 7, 6);
+	}
+	SECTION("E: 2-level o 2-level, sync 0/0, kept, filter switched and reset by synchronization") {
+		// The shape of D with fast EPSILON moves, kept so that trim() does not hide the dead
+		// configurations. Tuples: (x, a) (b, a) and (b, a).
+		Nft lhs{8, {0}, {4}, Levels(2, 8)};
+		for (const State s : {State{5}, State{6}, State{7}}) { lhs.levels[s] = 1; }
+		lhs.delta.add(0, EPSILON, 1);
+		lhs.delta.add(0, x, 5);
+		lhs.delta.add(5, a, 2);
+		lhs.delta.add(1, b, 6);
+		lhs.delta.add(6, a, 4);
+		lhs.delta.add(2, EPSILON, 3);
+		lhs.delta.add(3, b, 7);
+		lhs.delta.add(7, a, 4);
+		// (x, b) (b, b).
+		Nft rhs{6, {0}, {3}, Levels(2, 6)};
+		for (const State s : {State{4}, State{5}}) { rhs.levels[s] = 1; }
+		rhs.delta.add(0, EPSILON, 1);
+		rhs.delta.add(1, x, 4);
+		rhs.delta.add(4, b, 2);
+		rhs.delta.add(2, b, 5);
+		rhs.delta.add(5, b, 3);
+		Nft reference{7, {0}, {6}, Levels(3, 7)};
+		for (const State s : {State{1}, State{4}}) { reference.levels[s] = 1; }
+		for (const State s : {State{2}, State{5}}) { reference.levels[s] = 2; }
+		reference.delta.add(0, x, 1);
+		reference.delta.add(1, a, 2);
+		reference.delta.add(2, b, 3);
+		reference.delta.add(3, b, 4);
+		reference.delta.add(4, a, 5);
+		reference.delta.add(5, b, 6);
+		check_shape(lhs, rhs, 0, 0, false, reference, 17, 16);
+	}
+}
+
+TEST_CASE("mata::nft::compose() normalization of the generated states (issue #815)") {
+	const mata::Symbol a{1};
+	const mata::Symbol b{2};
+	const mata::Symbol c{3};
+	const mata::Symbol d{4};
+	const mata::Symbol x{7};
+
+	const auto compose_with = [](const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Level rhs_sync_level,
+								 const bool project_out_sync_levels, const CompositionNormalization normalization) {
+		return compose(
+			lhs, rhs, lhs_sync_level, rhs_sync_level, project_out_sync_levels, JumpMode::NoJump,
+			CompositionMode::FastNoJump, normalization
+		);
+	};
+	const auto check_same_relation = [](const Nft& raw, const Nft& normalized) {
+		REQUIRE(raw.levels.num_of_levels == normalized.levels.num_of_levels);
+		Nft raw_normalized{raw};
+		raw_normalized.trim();
+		raw_normalized.remove_epsilon();
+		Nft normalized_normalized{normalized};
+		normalized_normalized.trim();
+		normalized_normalized.remove_epsilon();
+		CHECK(are_equivalent(raw_normalized, normalized_normalized));
+	};
+
+	// The family of the issue: n fast EPSILON moves on both sides before the only tuple. The raw result is a
+	//  chain of whole-round EPSILON runs through padding states; closing them leaves the tuple alone.
+	SECTION("whole-round EPSILON runs of the EPSILON-prefix family close completely") {
+		const auto two_level = [](const State n, const mata::Symbol first, const mata::Symbol second) {
+			Nft nft{n + 3, {0}, {n + 2}, Levels(2, n + 3)};
+			nft.levels[n + 1] = 1;
+			for (State i = 0; i < n; ++i) { nft.delta.add(i, EPSILON, i + 1); }
+			nft.delta.add(n, first, n + 1);
+			nft.delta.add(n + 1, second, n + 2);
+			return nft;
+		};
+		const auto one_level = [](const State n, const mata::Symbol symbol) {
+			Nft nft{n + 2, {0}, {n + 1}, Levels(1, n + 2)};
+			for (State i = 0; i < n; ++i) { nft.delta.add(i, EPSILON, i + 1); }
+			nft.delta.add(n, symbol, n + 1);
+			return nft;
+		};
+		for (const State n : {State{16}, State{64}}) {
+			const Nft lhs{two_level(n, x, x)};
+			const Nft rhs{one_level(n, x)};
+			const Nft raw{compose_with(lhs, rhs, 1, 0, true, CompositionNormalization::None)};
+			CHECK(raw.num_of_states() == 2 * n + 2);
+			CHECK(raw.delta.num_of_transitions() == 2 * n + 1);
+			const Nft normalized{compose_with(lhs, rhs, 1, 0, true, CompositionNormalization::GeneratedOnly)};
+			CHECK(normalized.num_of_states() == 2);
+			CHECK(normalized.delta.num_of_transitions() == 1);
+			CHECK(normalized.is_in_lang_by_levels({mata::Word{x}}));
+			check_same_relation(raw, normalized);
+
+			// The 3-level variant keeps the synchronization level, so each run has two padding states. Without the
+			//  projection there is no trim either, but the LHS does not read x before the RHS has finished its
+			//  EPSILON moves: in those configurations the RHS cannot synchronize, so they are not built.
+			const Nft rhs_two_level{two_level(n, x, b)};
+			const Nft raw_kept{compose_with(lhs, rhs_two_level, 1, 0, false, CompositionNormalization::None)};
+			CHECK(raw_kept.num_of_states() == 6 * n + 4);
+			CHECK(raw_kept.delta.num_of_transitions() == 6 * n + 3);
+			const Nft normalized_kept{
+				compose_with(lhs, rhs_two_level, 1, 0, false, CompositionNormalization::GeneratedOnly)
+			};
+			CHECK(normalized_kept.num_of_states() == 4);
+			CHECK(normalized_kept.delta.num_of_transitions() == 3);
+			check_same_relation(raw_kept, normalized_kept);
+		}
+	}
+
+	// A forwarder into a final configuration: the source of the run takes over its finality.
+	SECTION("closing a run into a final state makes its source final") {
+		Nft lhs{2, {0}, {1}, Levels(2, 2)};
+		lhs.delta.add(0, EPSILON, 1);
+		const Nft rhs{1, {0}, {0}, Levels(1, 1)};
+		const Nft raw{compose_with(lhs, rhs, 1, 0, true, CompositionNormalization::None)};
+		CHECK(raw.num_of_states() == 2);
+		CHECK(raw.final.size() == 1);
+		CHECK(!raw.final.contains(*raw.initial.begin()));
+		const Nft normalized{compose_with(lhs, rhs, 1, 0, true, CompositionNormalization::GeneratedOnly)};
+		CHECK(normalized.num_of_states() == 1);
+		CHECK(normalized.delta.num_of_transitions() == 0);
+		CHECK(normalized.final.contains(*normalized.initial.begin()));
+		CHECK(normalized.is_in_lang_by_levels({mata::Word{}}));
+	}
+
+	// Negative: the run ends in the initial configuration, which stays initial; its source gets a copy of its
+	//  transitions, since the copy is smaller than the run it replaces.
+	SECTION("the end of a run stays when it is initial") {
+		Nft lhs{3, {0}, {0}, Levels(2, 3)};
+		lhs.levels[1] = 1;
+		lhs.delta.add(0, a, 1);
+		lhs.delta.add(1, x, 2);
+		lhs.delta.add(2, EPSILON, 0);
+		Nft rhs{2, {0}, {0}, Levels(2, 2)};
+		rhs.levels[1] = 1;
+		rhs.delta.add(0, x, 1);
+		rhs.delta.add(1, b, 0);
+		const Nft raw{compose_with(lhs, rhs, 1, 0, false, CompositionNormalization::None)};
+		CHECK(raw.num_of_states() == 6);
+		CHECK(raw.delta.num_of_transitions() == 6);
+		const Nft normalized{compose_with(lhs, rhs, 1, 0, false, CompositionNormalization::GeneratedOnly)};
+		CHECK(normalized.num_of_states() == 4);
+		CHECK(normalized.delta.num_of_transitions() == 4);
+		REQUIRE(normalized.initial.size() == 1);
+		const State initial{*normalized.initial.begin()};
+		CHECK(normalized.final.contains(initial));
+		CHECK(!normalized.delta[initial].empty());
+		CHECK(normalized.is_in_lang_by_levels({mata::Word{a, a}, mata::Word{x, x}, mata::Word{b, b}}));
+		check_same_relation(raw, normalized);
+	}
+
+	// Negative: the generated waiting state inside the run also reads b, so the run is not EPSILON on every
+	//  level and nothing is closed.
+	SECTION("a run whose inner state branches stays") {
+		Nft lhs{3, {0}, {2}, Levels(2, 3)};
+		lhs.levels[1] = 1;
+		lhs.delta.add(0, a, 1);
+		lhs.delta.add(1, x, 2);
+		Nft rhs{8, {0}, {5, 7}, Levels(2, 8)};
+		for (const State state : {State{1}, State{4}, State{6}}) { rhs.levels[state] = 1; }
+		rhs.delta.add(0, EPSILON, 1);
+		rhs.delta.add(1, b, 2);
+		rhs.delta.add(1, EPSILON, 3);
+		rhs.delta.add(2, x, 4);
+		rhs.delta.add(4, c, 5);
+		rhs.delta.add(3, x, 6);
+		rhs.delta.add(6, d, 7);
+		const Nft raw{compose_with(lhs, rhs, 1, 0, true, CompositionNormalization::None)};
+		CHECK(raw.num_of_states() == 8);
+		CHECK(raw.delta.num_of_transitions() == 7);
+		const Nft normalized{compose_with(lhs, rhs, 1, 0, true, CompositionNormalization::GeneratedOnly)};
+		CHECK(normalized.num_of_states() == 8);
+		CHECK(normalized.delta.num_of_transitions() == 7);
+		check_same_relation(raw, normalized);
+	}
+
+	// Negative: the runs of an EPSILON cycle are left alone, and the normalization terminates.
+	SECTION("runs on an EPSILON cycle stay") {
+		Nft lhs{4, {0}, {3}, Levels(2, 4)};
+		lhs.levels[2] = 1;
+		lhs.delta.add(0, EPSILON, 1);
+		lhs.delta.add(1, EPSILON, 0);
+		lhs.delta.add(1, x, 2);
+		lhs.delta.add(2, x, 3);
+		Nft rhs{2, {0}, {1}, Levels(1, 2)};
+		rhs.delta.add(0, x, 1);
+		const Nft raw{compose_with(lhs, rhs, 1, 0, false, CompositionNormalization::None)};
+		const Nft normalized{compose_with(lhs, rhs, 1, 0, false, CompositionNormalization::GeneratedOnly)};
+		CHECK(raw.num_of_states() == 6);
+		CHECK(raw.delta.num_of_transitions() == 6);
+		CHECK(normalized.num_of_states() == raw.num_of_states());
+		CHECK(normalized.delta.num_of_transitions() == raw.delta.num_of_transitions());
+		CHECK(normalized.is_in_lang_by_levels({mata::Word{x}, mata::Word{x}}));
+	}
+
+	// Two initial configurations wait the same LHS state through the same RHS state, so their generated waiting
+	//  states read the same continuation and become one. The two initial configurations have the same transitions
+	//  then too, but they are configurations of the operands and stay.
+	SECTION("identical generated states merge, identical semantic states stay") {
+		Nft lhs{3, {0}, {2}, Levels(2, 3)};
+		lhs.levels[1] = 1;
+		lhs.delta.add(0, a, 1);
+		lhs.delta.add(1, x, 2);
+		Nft rhs{6, {0, 1}, {5}, Levels(2, 6)};
+		for (const State state : {State{2}, State{4}}) { rhs.levels[state] = 1; }
+		rhs.delta.add(0, EPSILON, 2);
+		rhs.delta.add(1, EPSILON, 2);
+		rhs.delta.add(2, c, 3);
+		rhs.delta.add(3, x, 4);
+		rhs.delta.add(4, d, 5);
+		const Nft raw{compose_with(lhs, rhs, 1, 0, true, CompositionNormalization::None)};
+		CHECK(raw.num_of_states() == 7);
+		CHECK(raw.delta.num_of_transitions() == 6);
+		const Nft normalized{compose_with(lhs, rhs, 1, 0, true, CompositionNormalization::GeneratedOnly)};
+		CHECK(normalized.num_of_states() == 6);
+		CHECK(normalized.delta.num_of_transitions() == 5);
+		const std::vector<State> initial(normalized.initial.begin(), normalized.initial.end());
+		REQUIRE(initial.size() == 2);
+		CHECK(normalized.delta[initial[0]] == normalized.delta[initial[1]]);
+		check_same_relation(raw, normalized);
+	}
+
+	SECTION("Full also runs the generic reductions") {
+		Nft lhs{4, {0}, {3}, Levels(2, 4)};
+		lhs.levels[2] = 1;
+		lhs.delta.add(0, EPSILON, 1);
+		lhs.delta.add(1, x, 2);
+		lhs.delta.add(2, x, 3);
+		lhs.delta.add(0, x, 2);
+		Nft rhs{2, {0}, {1}, Levels(1, 2)};
+		rhs.delta.add(0, x, 1);
+		const Nft generated_only{compose_with(lhs, rhs, 1, 0, true, CompositionNormalization::GeneratedOnly)};
+		const Nft full{compose_with(lhs, rhs, 1, 0, true, CompositionNormalization::Full)};
+		CHECK(full.num_of_states() <= generated_only.num_of_states());
+		CHECK(full.delta.num_of_transitions() <= generated_only.delta.num_of_transitions());
+		check_same_relation(generated_only, full);
+		const Nft general_full{
+			compose(lhs, rhs, 1, 0, true, JumpMode::NoJump, CompositionMode::General, CompositionNormalization::Full)
+		};
+		check_same_relation(general_full, full);
+	}
+
+	// The general composition generates no states of its own.
+	SECTION("GeneratedOnly leaves the general composition as constructed") {
+		Nft lhs{4, {0}, {3}, Levels(2, 4)};
+		lhs.levels[2] = 1;
+		lhs.delta.add(0, EPSILON, 1);
+		lhs.delta.add(1, x, 2);
+		lhs.delta.add(2, x, 3);
+		Nft rhs{2, {0}, {1}, Levels(1, 2)};
+		rhs.delta.add(0, x, 1);
+		const Nft raw{
+			compose(lhs, rhs, 1, 0, true, JumpMode::NoJump, CompositionMode::General, CompositionNormalization::None)
+		};
+		const Nft normalized{compose(
+			lhs, rhs, 1, 0, true, JumpMode::NoJump, CompositionMode::General, CompositionNormalization::GeneratedOnly
+		)};
+		CHECK(raw.is_identical(normalized));
+	}
 }
 
 TEST_CASE("mata::nft::compose() keeps per-level alphabets in sync") {
@@ -2977,8 +4006,8 @@ TEST_CASE("mata::nft::compose() keeps per-level alphabets in sync") {
 			  algorithms::compose_general(lhs, rhs, {1}, {0}, true), compose(lhs, rhs, 1, 0, true)}) {
 			REQUIRE(result.alphabets != nullptr);
 			REQUIRE(result.alphabets->size() == 2);
-			CHECK(&result.alphabets->for_level(0) == lhs_alphabet.get());
-			CHECK(&result.alphabets->for_level(1) == rhs_alphabet.get());
+			CHECK(result.alphabets->for_level(0) == lhs_alphabet);
+			CHECK(result.alphabets->for_level(1) == rhs_alphabet);
 		}
 	}
 
@@ -2988,9 +4017,9 @@ TEST_CASE("mata::nft::compose() keeps per-level alphabets in sync") {
 			  algorithms::compose_general(lhs, rhs, {1}, {0}, false), compose(lhs, rhs, 1, 0, false)}) {
 			REQUIRE(result.alphabets != nullptr);
 			REQUIRE(result.alphabets->size() == 3);
-			CHECK(&result.alphabets->for_level(0) == lhs_alphabet.get());
-			CHECK(&result.alphabets->for_level(1) == sync_alphabet.get());
-			CHECK(&result.alphabets->for_level(2) == rhs_alphabet.get());
+			CHECK(result.alphabets->for_level(0) == lhs_alphabet);
+			CHECK(result.alphabets->for_level(1) == sync_alphabet);
+			CHECK(result.alphabets->for_level(2) == rhs_alphabet);
 		}
 	}
 
@@ -3024,7 +4053,7 @@ TEST_CASE("mata::nft::compose() keeps per-level alphabets in sync") {
 
 		const Nft result{compose(lhs_mut, rhs, 1, 0, true)};
 		REQUIRE(result.alphabets != nullptr);
-		CHECK(&result.alphabets->for_level(0) == mutable_alphabet.get());
+		CHECK(result.alphabets->for_level(0) == mutable_alphabet);
 
 		REQUIRE(mutable_alphabet->empty());
 		mutable_alphabet->add_new_symbol("x");
@@ -3032,4 +4061,488 @@ TEST_CASE("mata::nft::compose() keeps per-level alphabets in sync") {
 		CHECK_FALSE(result.alphabets->empty(0));
 		CHECK_FALSE(mutable_alphabet->empty());
 	}
+}
+
+TEST_CASE("mata::nft::compose() validates the synchronization level vectors - issue #763") {
+	const Nft lhs = mata::nft::builder::create_sigma_star_nft(size_t{3});
+	const Nft rhs = mata::nft::builder::create_sigma_star_nft(size_t{2});
+
+	// Mismatched sync-level vector sizes used to read past the vector and crash in compose_general.
+	CHECK_THROWS_AS(compose(lhs, rhs, {1, 2}, {0}), std::invalid_argument);
+	const OrdVector<Level> empty_levels{};
+	CHECK_THROWS_AS(compose(lhs, rhs, empty_levels, empty_levels), std::invalid_argument);
+}
+
+TEST_CASE("mata::nft::compose_fast_no_jump() expands each waiting state once - issue #813") {
+	// The LHS waits while the RHS runs through k diamonds to an EPSILON on its synchronization level. Every path
+	//  through the diamonds used to expand the shared waiting states again, doubling the result per diamond.
+	constexpr size_t NUM_OF_DIAMONDS{12};
+	Nft lhs{Nft::with_levels(3)};
+	const State lhs_root{lhs.add_state_with_level(0)};
+	const State lhs_x{lhs.add_state_with_level(1)};
+	const State lhs_y{lhs.add_state_with_level(2)};
+	const State lhs_final{lhs.add_state_with_level(0)};
+	lhs.delta.add(lhs_root, 'x', lhs_x);
+	lhs.delta.add(lhs_x, 'y', lhs_y);
+	lhs.delta.add(lhs_y, 'z', lhs_final);
+	lhs.initial.insert(lhs_root);
+	lhs.final.insert(lhs_final);
+
+	Nft rhs{Nft::with_levels(2 * NUM_OF_DIAMONDS + 1)};
+	State diamond_root{rhs.add_state_with_level(0)};
+	rhs.initial.insert(diamond_root);
+	for (size_t i{0}; i < NUM_OF_DIAMONDS; ++i) {
+		const State over_a{rhs.add_state_with_level(static_cast<Level>(2 * i + 1))};
+		const State over_b{rhs.add_state_with_level(static_cast<Level>(2 * i + 1))};
+		const State merge{rhs.add_state_with_level(static_cast<Level>(2 * i + 2))};
+		rhs.delta.add(diamond_root, 'a', over_a);
+		rhs.delta.add(over_a, 'a', merge);
+		rhs.delta.add(diamond_root, 'b', over_b);
+		rhs.delta.add(over_b, 'b', merge);
+		diamond_root = merge;
+	}
+	// The LHS waits on its first level through the diamond round, ended by the EPSILON; a second RHS round of 'c's then
+	//  reads its 'y', so every word of the relation passes through the shared waiting states.
+	State second_round{rhs.add_state_with_level(0)};
+	rhs.delta.add(diamond_root, EPSILON, second_round);
+	for (Level level{1}; level <= 2 * NUM_OF_DIAMONDS; ++level) {
+		const State next{rhs.add_state_with_level(level)};
+		rhs.delta.add(second_round, 'c', next);
+		second_round = next;
+	}
+	const State rhs_final{rhs.add_state_with_level(0)};
+	rhs.delta.add(second_round, 'y', rhs_final);
+	rhs.final.insert(rhs_final);
+
+	const Level rhs_sync_level{static_cast<Level>(2 * NUM_OF_DIAMONDS)};
+	const Nft fast{algorithms::compose_fast_no_jump(lhs, rhs, 1, rhs_sync_level, false)};
+	CHECK(fast.num_of_states() < 8 * NUM_OF_DIAMONDS);
+	std::set<mata::Word> expected_words{};
+	for (size_t branches{0}; branches < size_t{1} << NUM_OF_DIAMONDS; ++branches) {
+		mata::Word word{EPSILON};
+		for (size_t i{0}; i < NUM_OF_DIAMONDS; ++i) { word.insert(word.end(), 2, (branches >> i) & 1 ? 'b' : 'a'); }
+		word.insert(word.end(), {EPSILON, EPSILON, 'x'});
+		word.insert(word.end(), 2 * NUM_OF_DIAMONDS, 'c');
+		word.insert(word.end(), {'y', 'z'});
+		expected_words.insert(std::move(word));
+	}
+	CHECK(fast.get_words(2 * fast.levels.num_of_levels) == expected_words);
+}
+
+TEST_CASE("mata::nft::compose_fast_no_jump() skips the pairs whose synchronization symbols differ - issue #816") {
+	constexpr size_t NUM_OF_BRANCHES{16};
+	// The LHS reads one of the x_i and then 'a' on its synchronization level 1; the RHS reads one of the y_j, then
+	//  'b' on its synchronization level 1, and then 'z'.
+	const auto make_lhs = [&](const mata::Symbol sync_symbol) {
+		Nft lhs{Nft::with_levels(2)};
+		const State root{lhs.add_state_with_level(0)};
+		const State final{lhs.add_state_with_level(0)};
+		for (size_t i{0}; i < NUM_OF_BRANCHES; ++i) {
+			const State middle{lhs.add_state_with_level(1)};
+			lhs.delta.add(root, static_cast<mata::Symbol>(100 + i), middle);
+			lhs.delta.add(middle, sync_symbol, final);
+		}
+		lhs.initial.insert(root);
+		lhs.final.insert(final);
+		return lhs;
+	};
+	Nft rhs{Nft::with_levels(3)};
+	const State rhs_root{rhs.add_state_with_level(0)};
+	const State rhs_final{rhs.add_state_with_level(0)};
+	for (size_t j{0}; j < NUM_OF_BRANCHES; ++j) {
+		const State first{rhs.add_state_with_level(1)};
+		const State second{rhs.add_state_with_level(2)};
+		rhs.delta.add(rhs_root, static_cast<mata::Symbol>(200 + j), first);
+		rhs.delta.add(first, 'b', second);
+		rhs.delta.add(second, 'z', rhs_final);
+	}
+	rhs.initial.insert(rhs_root);
+	rhs.final.insert(rhs_final);
+
+	SECTION("Disjoint symbols stop at the initial pair") {
+		const Nft fast{algorithms::compose_fast_no_jump(make_lhs('a'), rhs, 1, 1, false)};
+		CHECK(fast.num_of_states() == 1);
+		CHECK(fast.final.empty());
+	}
+
+	SECTION("DONT_CARE shares every symbol") {
+		const Nft fast{algorithms::compose_fast_no_jump(make_lhs(DONT_CARE), rhs, 1, 1, false)};
+		CHECK(fast.get_words(fast.levels.num_of_levels).size() == NUM_OF_BRANCHES * NUM_OF_BRANCHES);
+	}
+
+	SECTION("A copied branch whose symbol the stationary state cannot read is skipped") {
+		// The root reads 'a' through x_0 and 'c' through the other x_i; the one-level RHS reads only 'a'.
+		Nft lhs{make_lhs('c')};
+		const State middle{*lhs.delta[0].find(100)->targets.begin()};
+		lhs.delta.remove(middle, 'c', 1);
+		lhs.delta.add(middle, 'a', 1);
+		Nft nfa{Nft::with_levels(1)};
+		nfa.add_state_with_level(0);
+		nfa.add_state_with_level(0);
+		nfa.delta.add(0, 'a', 1);
+		nfa.initial.insert(0);
+		nfa.final.insert(1);
+		const Nft fast{algorithms::compose_fast_no_jump(lhs, nfa, 1, 0, false)};
+		// The initial pair, the pair of x_0, and the final pair.
+		CHECK(fast.num_of_states() == 3);
+		CHECK(fast.get_words(fast.levels.num_of_levels) == std::set<mata::Word>{{100, 'a'}});
+	}
+}
+
+TEST_CASE("mata::nft::compose() validates the whole request - issue #818") {
+	const Nft three_levels{mata::nft::builder::create_sigma_star_nft(size_t{3})};
+	const Nft two_levels{mata::nft::builder::create_sigma_star_nft(size_t{2})};
+	const Nft one_level{mata::nft::builder::create_sigma_star_nft(size_t{1})};
+
+	SECTION("synchronization level out of range") {
+		// General counted the levels after the last synchronization level unsigned, so an out-of-range level wrapped
+		//  the count to about 4.29 billion and the level mask exhausted memory; the fast path returned an empty NFT.
+		CHECK_THROWS_AS(compose(one_level, one_level), std::invalid_argument);
+		CHECK_THROWS_AS(compose(three_levels, two_levels, {3}, {0}), std::invalid_argument);
+		CHECK_THROWS_AS(compose(three_levels, two_levels, {0}, {7}), std::invalid_argument);
+		CHECK_THROWS_AS(
+			compose(three_levels, two_levels, {5}, {0}, true, JumpMode::NoJump, CompositionMode::FastNoJump),
+			std::invalid_argument
+		);
+		CHECK_THROWS_AS(algorithms::compose_fast_no_jump(three_levels, two_levels, 5, 0), std::invalid_argument);
+		CHECK_THROWS_AS(algorithms::compose_general(one_level, one_level, {1}, {0}), std::invalid_argument);
+	}
+
+	SECTION("synchronization levels not strictly increasing") {
+		// `OrdVector`'s constructors sort and deduplicate, `push_back()` does not.
+		OrdVector<Level> unsorted{};
+		unsorted.push_back(1);
+		unsorted.push_back(0);
+		CHECK_THROWS_AS(compose(three_levels, three_levels, unsorted, {0, 1}), std::invalid_argument);
+		CHECK_THROWS_AS(compose(three_levels, three_levels, {0, 1}, unsorted), std::invalid_argument);
+		OrdVector<Level> repeated{};
+		repeated.push_back(1);
+		repeated.push_back(1);
+		CHECK_THROWS_AS(compose(three_levels, three_levels, repeated, {0, 1}), std::invalid_argument);
+	}
+
+	SECTION("no level left in the result") {
+		// Dividing by `result.levels.num_of_levels` raised SIGFPE on the fast path.
+		CHECK_THROWS_AS(
+			compose(one_level, one_level, {0}, {0}, true, JumpMode::NoJump, CompositionMode::FastNoJump),
+			std::invalid_argument
+		);
+		CHECK_THROWS_AS(algorithms::compose_fast_no_jump(one_level, one_level, 0, 0), std::invalid_argument);
+		CHECK_THROWS_AS(compose(one_level, one_level, {0}, {0}, true), std::invalid_argument);
+		// Keeping the synchronization level leaves exactly one level, so this request is valid.
+		CHECK_NOTHROW(compose(one_level, one_level, {0}, {0}, false, JumpMode::NoJump, CompositionMode::FastNoJump));
+	}
+
+	SECTION("unknown composition mode") {
+		using Catch::Matchers::ContainsSubstring;
+		const auto invalid_mode{static_cast<CompositionMode>(3)};
+		CHECK_THROWS_WITH(
+			compose(two_levels, two_levels, {1}, {0}, true, JumpMode::RepeatSymbol, invalid_mode),
+			ContainsSubstring("composition mode") && ContainsSubstring("3")
+		);
+	}
+
+	SECTION("kept synchronization levels with different alphabet instances") {
+		Nft lhs{two_levels};
+		Nft rhs{two_levels};
+		lhs.alphabets =
+			std::make_shared<mata::AlphabetLevels>(std::make_shared<mata::EnumAlphabet>(mata::EnumAlphabet{'a'}));
+		rhs.alphabets =
+			std::make_shared<mata::AlphabetLevels>(std::make_shared<mata::EnumAlphabet>(mata::EnumAlphabet{'b'}));
+		CHECK_THROWS_AS(compose_alphabets(lhs, rhs, {0}, {0}, false), std::invalid_argument);
+		// Projected out, the synchronization alphabets are not kept and need not match.
+		CHECK_NOTHROW(compose_alphabets(lhs, rhs, {0}, {0}, true));
+	}
+
+	SECTION("compose_alphabets() rejects the same requests as compose()") {
+		CHECK_THROWS_AS(compose_alphabets(one_level, one_level, {1}, {0}), std::invalid_argument);
+		const OrdVector<Level> empty_levels{};
+		CHECK_THROWS_AS(compose_alphabets(one_level, one_level, empty_levels, empty_levels), std::invalid_argument);
+		// Even without alphabets, where the result is `nullptr`.
+		CHECK(one_level.alphabets == nullptr);
+		CHECK_THROWS_AS(compose_alphabets(three_levels, two_levels, {0, 1}, {0}), std::invalid_argument);
+	}
+}
+
+TEST_CASE("mata::nft::compose() with FastNoJump and a dead end on the synchronization level") {
+	// 4 -DONT_CARE-> 2 ends on the synchronization level in state 2, which has no outgoing transitions.
+	Nft rhs = Nft::with_levels({2, {0, 1, 1, 0, 0, 0, 1, 1}}, 8, {0}, {});
+	rhs.delta.add(0, EPSILON, 6);
+	rhs.delta.add(6, EPSILON, 3);
+	rhs.delta.add(3, 2, 7);
+	rhs.delta.add(7, 2, 4);
+	rhs.delta.add(4, 2, 1);
+	rhs.delta.add(1, EPSILON, 5);
+	rhs.delta.add(4, DONT_CARE, 2);
+	Nft lhs = Nft::with_levels({1, {0}}, 1, {0}, {});
+	lhs.delta.add(0, 2, 0);
+
+	const Nft result = compose(lhs, rhs, 0, 1, false, JumpMode::NoJump, CompositionMode::FastNoJump);
+	CHECK(result.is_lang_empty());
+	const Nft projected = compose(lhs, rhs, 0, 1, true, JumpMode::NoJump, CompositionMode::FastNoJump);
+	CHECK(projected.is_lang_empty());
+}
+
+namespace {
+/// Checks that FastNoJump and General composition of level 1 of @p lhs with level 0 of @p rhs accept the same tuples
+///  of words over {0, 1} up to length 2, with and without the synchronization level.
+void check_composition_modes_agree(const Nft& lhs, const Nft& rhs) {
+	for (const bool project_out : {true, false}) {
+		INFO("project_out " << project_out);
+		const Nft general{compose(lhs, rhs, 1, 0, project_out, JumpMode::NoJump, CompositionMode::General)};
+		const Nft fast{compose(lhs, rhs, 1, 0, project_out, JumpMode::NoJump, CompositionMode::FastNoJump)};
+		REQUIRE(general.levels.num_of_levels == fast.levels.num_of_levels);
+		const std::vector<mata::Word> words{{}, {0}, {1}, {0, 0}, {0, 1}, {1, 0}, {1, 1}};
+		std::vector<mata::Word> tuple(fast.levels.num_of_levels);
+		std::vector<size_t> indices(tuple.size(), 0);
+		while (true) {
+			for (size_t level{0}; level < tuple.size(); ++level) { tuple[level] = words[indices[level]]; }
+			CHECK(general.is_in_lang_by_levels(tuple) == fast.is_in_lang_by_levels(tuple));
+			size_t level{0};
+			while (level < tuple.size() && ++indices[level] == words.size()) { indices[level++] = 0; }
+			if (level == tuple.size()) { break; }
+		}
+	}
+}
+} // namespace
+
+TEST_CASE("mata::nft::compose() with FastNoJump and a state that cannot synchronize - issue #902") {
+	// A state on or before its synchronization level from which no synchronization is reachable (a dead end, or an
+	//  RHS root without transitions) must not be taken for one that has passed the synchronization.
+
+	// The RHS relation {(ε, ε)}: one initial and final state without transitions.
+	Nft rhs{Nft::with_levels(2)};
+	const State r0{rhs.add_state_with_level(0)};
+	rhs.initial.insert(r0);
+	rhs.final.insert(r0);
+
+	SECTION("the EPSILON waiting round passes a dead sibling on the synchronization level") {
+		for (const bool is_q0_final : {true, false}) {
+			INFO("q0 final " << is_q0_final);
+			// q0 -0-> q1 -EPSILON-> q0 and q0 -0-> q2, with q2 a dead end on the synchronization level.
+			Nft lhs{Nft::with_levels(2)};
+			const State q0{lhs.add_state_with_level(0)}, q1{lhs.add_state_with_level(1)};
+			lhs.initial.insert(q0);
+			if (is_q0_final) { lhs.final.insert(q0); }
+			lhs.delta.add(q0, 0, q1);
+			lhs.delta.add(q1, EPSILON, q0);
+			lhs.delta.add(q0, 0, lhs.add_state_with_level(1));
+
+			const Nft fast{compose(lhs, rhs, 1, 0, true, JumpMode::NoJump, CompositionMode::FastNoJump)};
+			CHECK(fast.is_in_lang({0, EPSILON}) == is_q0_final);
+			CHECK(fast.is_in_lang_by_levels({{0, 0}, {}}) == is_q0_final);
+			check_composition_modes_agree(lhs, rhs);
+		}
+	}
+
+	SECTION("the synchronized round reaches an EPSILON-only state against an RHS root without transitions") {
+		// q0 -0-> q1 -EPSILON-> q0 and q0 -1-> q2 -1-> q0: the RHS root cannot synchronize at all, so the pair
+		//  (q1, r0) can be reached only by waiting in r0, never by the LHS moving on its own.
+		Nft lhs{Nft::with_levels(2)};
+		const State q0{lhs.add_state_with_level(0)}, q1{lhs.add_state_with_level(1)}, q2{lhs.add_state_with_level(1)};
+		lhs.initial.insert(q0);
+		lhs.final.insert(q0);
+		lhs.delta.add(q0, 0, q1);
+		lhs.delta.add(q1, EPSILON, q0);
+		lhs.delta.add(q0, 1, q2);
+		lhs.delta.add(q2, 1, q0);
+
+		const Nft fast{compose(lhs, rhs, 1, 0, true, JumpMode::NoJump, CompositionMode::FastNoJump)};
+		CHECK(fast.is_in_lang_by_levels({{}, {}}));
+		CHECK(fast.is_in_lang_by_levels({{0, 0}, {}}));
+		CHECK(!fast.is_in_lang_by_levels({{1}, {}}));
+		CHECK(!fast.is_in_lang_by_levels({{1}, {1}}));
+		check_composition_modes_agree(lhs, rhs);
+	}
+}
+
+TEST_CASE("mata::nft::compose_fast_no_jump() reaches a shared waiting state out of order - issue #902") {
+	// The RHS waits while the LHS runs through EPSILON on its synchronization level. A waiting state created for an
+	//  earlier transition is reached again next to a fresh one with a smaller LHS state; the targets must stay sorted.
+	Nft rhs{Nft::with_levels(2)};
+	const State r0{rhs.add_state_with_level(0)}, r1{rhs.add_state_with_level(1)};
+	rhs.initial.insert(r0);
+	rhs.final.insert(r0);
+	rhs.delta.add(r0, 0, r1);
+	rhs.delta.add(r1, 0, r0);
+
+	SECTION("on the copied transitions before the synchronization level") {
+		// q0 -0-> p and q0 -1-> {r, p}, with r < p, both reading EPSILON back to q0.
+		Nft lhs{Nft::with_levels(2)};
+		const State q0{lhs.add_state_with_level(0)}, r{lhs.add_state_with_level(1)}, p{lhs.add_state_with_level(1)};
+		lhs.initial.insert(q0);
+		lhs.final.insert(q0);
+		lhs.delta.add(q0, 0, p);
+		lhs.delta.add(q0, 1, r);
+		lhs.delta.add(q0, 1, p);
+		lhs.delta.add(r, EPSILON, q0);
+		lhs.delta.add(p, EPSILON, q0);
+
+		const Nft fast{compose(lhs, rhs, 1, 0, true, JumpMode::NoJump, CompositionMode::FastNoJump)};
+		CHECK(fast.is_in_lang_by_levels({{1, 0}, {}}));
+		check_composition_modes_agree(lhs, rhs);
+	}
+
+	SECTION("on the EPSILON synchronization kept in the result") {
+		// q0 -0-> {s1, s2}, s1 -EPSILON-> t2 and s2 -EPSILON-> {t1, t2}, with t1 < t2, on a 3-level LHS whose
+		//  synchronization level 1 is kept.
+		Nft lhs{Nft::with_levels(3)};
+		const State q0{lhs.add_state_with_level(0)};
+		const State s1{lhs.add_state_with_level(1)}, s2{lhs.add_state_with_level(1)};
+		const State t1{lhs.add_state_with_level(2)}, t2{lhs.add_state_with_level(2)};
+		lhs.initial.insert(q0);
+		lhs.final.insert(q0);
+		lhs.delta.add(q0, 0, s1);
+		lhs.delta.add(q0, 0, s2);
+		lhs.delta.add(s1, EPSILON, t2);
+		lhs.delta.add(s2, EPSILON, t1);
+		lhs.delta.add(s2, EPSILON, t2);
+		lhs.delta.add(t1, 0, q0);
+		lhs.delta.add(t2, 1, q0);
+
+		const Nft fast{compose(lhs, rhs, 1, 0, false, JumpMode::NoJump, CompositionMode::FastNoJump)};
+		CHECK(fast.is_in_lang_by_levels({{0}, {}, {0}, {}}));
+		CHECK(fast.is_in_lang_by_levels({{0}, {}, {1}, {}}));
+		check_composition_modes_agree(lhs, rhs);
+	}
+}
+
+TEST_CASE("mata::nft::compose() checks the no-jump shape under JumpMode::NoJump - issue #753") {
+	constexpr mata::Symbol a{'a'}, b{'b'}, c{'c'};
+	Nft plain{Nft::with_levels({2, {0, 1}}, 2, {0}, {0})};
+	plain.delta.add(0, a, 1);
+	plain.delta.add(1, b, 0);
+	// A whole-round jump over c.
+	Nft whole_round_jump{plain};
+	whole_round_jump.delta.add(0, c, 0);
+	// A jump from level 0 to level 2 of three.
+	Nft level_jump{Nft::with_levels({3, {0, 1, 2}}, 3, {0}, {0})};
+	level_jump.delta.add(0, a, 1);
+	level_jump.delta.add(1, b, 2);
+	level_jump.delta.add(2, c, 0);
+	level_jump.delta.add(0, c, 2);
+
+	SECTION("every fast entry point throws, in Release builds too") {
+		for (const Nft& jumping : {whole_round_jump, level_jump}) {
+			CHECK_THROWS_AS(algorithms::compose_fast_no_jump(jumping, plain), std::invalid_argument);
+			CHECK_THROWS_AS(algorithms::compose_fast_no_jump(plain, jumping), std::invalid_argument);
+			CHECK_THROWS_AS(
+				algorithms::compose_fast(jumping, plain, 1, 0, true, JumpMode::NoJump), std::invalid_argument
+			);
+			CHECK_THROWS_AS(compose(jumping, plain, 1, 0, true, JumpMode::NoJump), std::invalid_argument);
+			CHECK_THROWS_AS(
+				compose(plain, jumping, 1, 0, true, JumpMode::NoJump, CompositionMode::FastNoJump),
+				std::invalid_argument
+			);
+		}
+	}
+
+	SECTION("the error names the caller, the operand and the transition") {
+		using Catch::Matchers::ContainsSubstring;
+		CHECK_THROWS_WITH(
+			algorithms::compose_fast_no_jump(plain, level_jump), ContainsSubstring("compose_fast_no_jump") &&
+																	 ContainsSubstring("rhs") &&
+																	 ContainsSubstring(std::format("0 -{}-> 2", c))
+		);
+		CHECK_THROWS_WITH(
+			compose(whole_round_jump, plain, 1, 0, true, JumpMode::NoJump),
+			ContainsSubstring("compose:") && ContainsSubstring("lhs") && ContainsSubstring(std::format("0 -{}-> 0", c))
+		);
+	}
+
+	SECTION("fast EPSILON transitions and other jump modes are accepted") {
+		Nft fast_epsilon{plain};
+		fast_epsilon.delta.add(0, EPSILON, 0);
+		CHECK_NOTHROW(algorithms::compose_fast_no_jump(fast_epsilon, fast_epsilon));
+		// One level has no jumps: every transition goes to the next round.
+		Nft one_level{Nft::with_levels({1, {0, 0}}, 2, {0}, {1})};
+		one_level.delta.add(0, a, 1);
+		one_level.delta.add(1, EPSILON, 0);
+		CHECK_NOTHROW(compose(one_level, plain, 0, 0, true, JumpMode::NoJump));
+		// The default jump mode reads the whole-round jump as c on both levels.
+		const Nft composed{compose(whole_round_jump, whole_round_jump)};
+		CHECK(composed.is_in_lang_by_levels({{c}, {c}}));
+		CHECK_NOTHROW(algorithms::compose_fast(level_jump, plain, 1, 0, true, JumpMode::RepeatSymbol));
+	}
+}
+
+namespace {
+/// A random level-respecting NFT with @p num_of_levels levels over {0, 1} whose zero-level states have fast EPSILON
+///  transitions (to zero-level states), from raw std::mt19937 output.
+Nft random_nft_with_fast_epsilon(std::mt19937& rng, const size_t num_of_levels) {
+	const auto draw{[&](const size_t bound) { return static_cast<size_t>(rng()) % bound; }};
+	const size_t num_of_states_per_level{1 + draw(3)};
+	Nft nft{Nft::with_levels(num_of_levels)};
+	const auto state_on{[&](const size_t level, const size_t index) {
+		return static_cast<State>(level * num_of_states_per_level + index);
+	}};
+	for (size_t level{0}; level < num_of_levels; ++level) {
+		for (size_t index{0}; index < num_of_states_per_level; ++index) {
+			nft.add_state_with_level(static_cast<Level>(level));
+		}
+	}
+	nft.initial.insert(state_on(0, draw(num_of_states_per_level)));
+	for (size_t index{0}; index < num_of_states_per_level; ++index) {
+		if (draw(3) == 0) { nft.final.insert(state_on(0, index)); }
+	}
+	for (size_t level{0}; level < num_of_levels; ++level) {
+		for (size_t index{0}; index < num_of_states_per_level; ++index) {
+			const State source{state_on(level, index)};
+			for (mata::Symbol symbol{0}; symbol < 2; ++symbol) {
+				for (size_t transition{0}, transitions{draw(3)}; transition < transitions; ++transition) {
+					nft.delta.add(source, symbol, state_on((level + 1) % num_of_levels, draw(num_of_states_per_level)));
+				}
+			}
+			if (level == 0 && draw(2) == 0) {
+				nft.delta.add(source, EPSILON, state_on(0, draw(num_of_states_per_level)));
+			}
+		}
+	}
+	return nft;
+}
+} // namespace
+
+TEST_CASE(
+	"mata::nft::compose() takes the fast composition on fast EPSILON transitions - issue #753", "[differential]"
+) {
+	size_t num_of_nonempty{0};
+	for (unsigned seed{0}; seed < 150; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t lhs_num_of_levels{2 + seed % 2};
+		const size_t rhs_num_of_levels{2 + (seed / 2) % 2};
+		const Nft lhs{random_nft_with_fast_epsilon(rng, lhs_num_of_levels)};
+		const Nft rhs{random_nft_with_fast_epsilon(rng, rhs_num_of_levels)};
+		INFO("seed " << seed << "\n" << lhs.print_to_mata() << "---\n" << rhs.print_to_mata());
+		for (Level lhs_sync_level{0}; lhs_sync_level < lhs_num_of_levels; ++lhs_sync_level) {
+			for (Level rhs_sync_level{0}; rhs_sync_level < rhs_num_of_levels; ++rhs_sync_level) {
+				for (const bool project_out : {true, false}) {
+					INFO("sync " << lhs_sync_level << "," << rhs_sync_level << " project_out " << project_out);
+					const Nft by_default{compose(lhs, rhs, lhs_sync_level, rhs_sync_level, project_out)};
+					const Nft fast{compose(
+						lhs, rhs, lhs_sync_level, rhs_sync_level, project_out, JumpMode::NoJump,
+						CompositionMode::FastNoJump
+					)};
+					const Nft general{compose(
+						lhs, rhs, lhs_sync_level, rhs_sync_level, project_out, JumpMode::RepeatSymbol,
+						CompositionMode::General
+					)};
+					// Auto takes the fast composition, whose relation is the general one up to EPSILON placement.
+					CHECK(are_equivalent(by_default, fast));
+					CHECK(same_epsilon_free_relation(by_default, general, 3));
+					// AppendDontCares reads a fast EPSILON transition as EPSILON followed by DONT_CARE.
+					const Nft append_dont_cares{
+						compose(lhs, rhs, lhs_sync_level, rhs_sync_level, project_out, JumpMode::AppendDontCares)
+					};
+					CHECK(are_equivalent(
+						append_dont_cares, compose(
+											   lhs, rhs, lhs_sync_level, rhs_sync_level, project_out,
+											   JumpMode::AppendDontCares, CompositionMode::General
+										   )
+					));
+					if (!general.is_lang_empty()) { ++num_of_nonempty; }
+				}
+			}
+		}
+	}
+	CHECK(num_of_nonempty > 0);
 }

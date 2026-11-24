@@ -1,16 +1,17 @@
 /* tests-nfa-intersection.cc -- Tests for intersection of NFAs
  */
 
+#include <functional>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include "mata/nfa/algorithms.hh"
 #include "mata/nfa/nfa.hh"
 
 using namespace mata::nfa;
 using namespace mata::utils;
-using namespace mata::parser;
 
 // Some common automata {{{
 
@@ -264,6 +265,73 @@ TEST_CASE("mata::nfa::intersection() with preserving epsilon transitions") {
 	CHECK(result.delta.state_post(prod_map[{5, 8}]).empty());
 }
 
+TEST_CASE("mata::nfa::intersection() with product states revisited out of order") {
+	// The product states are numbered in the order in which the product first reaches them, so a symbol post can
+	//  reach an older (smaller) product state after a newer (greater) one. The targets of the resulting symbol post
+	//  still have to be sorted, otherwise lookups in it (binary search) miss transitions.
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> prod_map;
+
+	Nfa a{4};
+	a.initial.insert(0);
+	a.final.insert({1, 2, 3});
+	a.delta.add(0, 'a', 3);
+	a.delta.add(0, 'b', 1);
+	a.delta.add(0, 'b', 2);
+	a.delta.add(0, 'b', 3);
+
+	Nfa b{4};
+	b.initial.insert(0);
+	b.final.insert({1, 2, 3});
+	b.delta.add(0, 'a', 3);
+	b.delta.add(0, 'b', 1);
+	b.delta.add(0, 'b', 2);
+	b.delta.add(0, 'b', 3);
+
+	const Nfa result{intersection(a, b, EPSILON, &prod_map)};
+
+	// (3, 3) is created over 'a', hence it is the smallest of the product states reached over 'b', even though it is
+	//  the last target pair of 'b'.
+	const State source{prod_map[{0, 0}]};
+	CHECK(result.num_of_states() == 10);
+	CHECK(result.delta.num_of_transitions() == 10);
+	CHECK(result.delta.state_post(source).num_of_moves() == 10);
+	CHECK(result.delta.contains(source, 'a', prod_map[{3, 3}]));
+	for (const State lhs_target : {State{1}, State{2}, State{3}}) {
+		for (const State rhs_target : {State{1}, State{2}, State{3}}) {
+			CHECK(result.delta.contains(source, 'b', prod_map[{lhs_target, rhs_target}]));
+		}
+	}
+	CHECK(std::ranges::is_sorted(result.delta.state_post(source).find('b')->targets));
+}
+
+TEST_CASE("mata::nfa::intersection() with epsilon self-loops on both sides") {
+	// Both operands have an epsilon self-loop, so both epsilon posts of the product state contain the product state
+	//  itself: merging them must not duplicate it.
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> prod_map;
+
+	Nfa a{2};
+	a.initial.insert(0);
+	a.final.insert({0, 1});
+	a.delta.add(0, EPSILON, 0);
+	a.delta.add(0, EPSILON, 1);
+
+	Nfa b{2};
+	b.initial.insert(0);
+	b.final.insert({0, 1});
+	b.delta.add(0, EPSILON, 0);
+	b.delta.add(0, EPSILON, 1);
+
+	const Nfa result{intersection(a, b, EPSILON, &prod_map)};
+
+	const State source{prod_map[{0, 0}]};
+	CHECK(result.num_of_states() == 4);
+	CHECK(result.delta.state_post(source).num_of_moves() == 3);
+	CHECK(result.delta.contains(source, EPSILON, source));
+	CHECK(result.delta.contains(source, EPSILON, prod_map[{1, 0}]));
+	CHECK(result.delta.contains(source, EPSILON, prod_map[{0, 1}]));
+	CHECK(result.delta.num_of_transitions() == 7);
+}
+
 TEST_CASE("mata::nfa::intersection() for profiling", "[.profiling],[intersection]") {
 	Nfa a{6};
 	a.initial.insert(0);
@@ -313,4 +381,151 @@ TEST_CASE("Move semantics", "[.profiling][std::move]") {
 		a.initial.insert(1);
 		b = std::move(a);
 	}
+}
+
+TEST_CASE("mata::nfa::is_intersection_empty()") {
+	Nfa lhs{};
+	Nfa rhs{};
+
+	SECTION("automata with empty languages") {
+		CHECK(is_intersection_empty(lhs, rhs));
+		lhs.initial = {0};
+		CHECK(is_intersection_empty(lhs, rhs));
+		rhs.initial = {0};
+		rhs.final = {0};
+		// lhs has an initial state but no final state: the intersection stays empty.
+		CHECK(is_intersection_empty(lhs, rhs));
+		lhs.final = {0};
+		CHECK(!is_intersection_empty(lhs, rhs));
+	}
+
+	SECTION("a pair initial and final in both accepts the empty word") {
+		lhs.initial = {0};
+		lhs.final = {0};
+		rhs.initial = {0, 1};
+		rhs.final = {1};
+		Run witness{};
+		CHECK(!is_intersection_empty(lhs, rhs, &witness));
+		CHECK(witness.word.empty());
+	}
+
+	SECTION("shared multi-symbol word with a witness that replays in both automata") {
+		lhs = Nfa{3, {0}, {2}};
+		lhs.delta.add(0, 'a', 1);
+		lhs.delta.add(1, 'b', 2);
+		rhs = Nfa{4, {0}, {3}};
+		rhs.delta.add(0, 'a', 1);
+		rhs.delta.add(1, 'b', 3);
+		Run witness{};
+		CHECK(!is_intersection_empty(lhs, rhs, &witness));
+		CHECK(witness.word == mata::Word{'a', 'b'});
+		CHECK(lhs.is_in_lang(witness));
+		CHECK(rhs.is_in_lang(witness));
+	}
+
+	SECTION("disjoint alphabets stay disjoint") {
+		lhs = Nfa{2, {0}, {1}};
+		lhs.delta.add(0, 'a', 1);
+		rhs = Nfa{2, {0}, {1}};
+		rhs.delta.add(0, 'b', 1);
+		CHECK(is_intersection_empty(lhs, rhs));
+	}
+
+	SECTION("epsilon moves advance one side only") {
+		// lhs <EPSILON, 'a'> word, rhs <'a'> word share 'a' if the epsilon moves one side.
+		lhs = Nfa{3, {0}, {2}};
+		lhs.delta.add(0, EPSILON, 1);
+		lhs.delta.add(1, 'a', 2);
+		rhs = Nfa{2, {0}, {1}};
+		rhs.delta.add(0, 'a', 1);
+		Run witness{};
+		CHECK(!is_intersection_empty(lhs, rhs, &witness));
+		CHECK(witness.word == mata::Word{'a'});
+		CHECK(lhs.is_in_lang(witness, true));
+		CHECK(rhs.is_in_lang(witness, true));
+	}
+
+	SECTION("custom first_epsilon flips which moves are one-sided") {
+		lhs = Nfa{3, {0}, {2}};
+		lhs.delta.add(0, 100, 1);
+		lhs.delta.add(1, 97, 2);
+		rhs = Nfa{2, {0}, {1}};
+		rhs.delta.add(0, 97, 1);
+		// With the default epsilon, symbol 100 is an ordinary shared symbol absent from rhs: empty.
+		CHECK(is_intersection_empty(lhs, rhs));
+		// With first_epsilon = 100, the 100-move is one-sided: 'a' is shared and the witness is stripped.
+		Run witness{};
+		CHECK(!is_intersection_empty(lhs, rhs, &witness, 100));
+		CHECK(witness.word == mata::Word{'a'});
+	}
+
+	SECTION("agreement with the materialized product on branching automata") {
+		FILL_WITH_AUT_A(lhs);
+		FILL_WITH_AUT_B(rhs);
+		CHECK(is_intersection_empty(lhs, rhs) == intersection(lhs, rhs).is_lang_empty());
+		lhs.final = {7};
+		CHECK(is_intersection_empty(lhs, rhs) == intersection(lhs, rhs).is_lang_empty());
+	}
+
+	SECTION("a witness is required to prove nonempty, but is optional") {
+		lhs = Nfa{2, {0}, {1}};
+		lhs.delta.add(0, 'a', 1);
+		rhs = Nfa{2, {0}, {1}};
+		rhs.delta.add(0, 'a', 1);
+		CHECK(!is_intersection_empty(lhs, rhs));
+		CHECK(!is_intersection_empty(lhs, rhs, nullptr));
+	}
+
+	SECTION("several initial states on both sides") {
+		lhs = Nfa{4, {0, 1}, {3}};
+		lhs.delta.add(0, 'a', 2);
+		lhs.delta.add(1, 'b', 2);
+		lhs.delta.add(2, 'c', 3);
+		rhs = Nfa{4, {0, 1}, {3}};
+		rhs.delta.add(0, 'd', 2);
+		rhs.delta.add(1, 'b', 2);
+		rhs.delta.add(2, 'c', 3);
+		Run witness{};
+		CHECK(!is_intersection_empty(lhs, rhs, &witness));
+		CHECK(witness.word == mata::Word{'b', 'c'});
+	}
+
+	SECTION("cycles are visited once and do not hide a witness") {
+		lhs = Nfa{3, {0}, {2}};
+		lhs.delta.add(0, 'a', 1);
+		lhs.delta.add(1, 'a', 0);
+		lhs.delta.add(1, 'b', 2);
+		rhs = lhs;
+		Run witness{};
+		CHECK(!is_intersection_empty(lhs, rhs, &witness));
+		CHECK(lhs.is_in_lang(witness, true));
+		CHECK(rhs.is_in_lang(witness, true));
+	}
+
+	SECTION("sparse symbols are matched exactly") {
+		lhs = Nfa{3, {0}, {2}};
+		lhs.delta.add(0, 5, 1);
+		lhs.delta.add(1, 1'000'000, 2);
+		rhs = Nfa{4, {0}, {3}};
+		rhs.delta.add(0, 5, 1);
+		rhs.delta.add(1, 1'000'000, 3);
+		Run witness{};
+		CHECK(!is_intersection_empty(lhs, rhs, &witness));
+		CHECK(lhs.is_in_lang(witness, true));
+		CHECK(rhs.is_in_lang(witness, true));
+	}
+}
+
+TEST_CASE("mata::nfa::algorithms::product() takes a named final-state predicate - issue #769") {
+	Nfa lhs{2, {0}, {1}};
+	lhs.delta.add(0, 'a', 1);
+	Nfa rhs{2, {0}, {0, 1}};
+	rhs.delta.add(0, 'a', 1);
+
+	const std::function<bool(State, State)> both_final{[&](const State lhs_state, const State rhs_state) {
+		return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);
+	}};
+	const Nfa result{algorithms::product(lhs, rhs, both_final)};
+	CHECK(result.is_in_lang(Run{{'a'}, {}}));
+	CHECK(!result.is_in_lang(Run{{}, {}}));
 }

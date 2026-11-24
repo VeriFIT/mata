@@ -1,0 +1,87 @@
+name: performance
+# A/B performance comparison of the base branch against the head of a PR.
+# Unlike the old code-quality.yml jobs, the base and the head build and benchmark
+# in ONE job, interleaved per instance, so both run on the very same runner and
+# machine-to-machine variance does not leak into the comparison.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: "Base ref to compare the current ref against"
+        required: false
+        default: "devel"
+  schedule:
+    - cron: "0 3 * * *"
+permissions:
+  contents: read
+concurrency:
+  group: performance-${{ (github.event_name == 'pull_request' && github.event.pull_request.number) || github.ref }}
+  cancel-in-progress: true
+jobs:
+  a-b-comparison:
+    # For pull requests, run only when the PR carries the 'performance' label.
+    if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'performance') }}
+    runs-on: ubuntu-latest
+    env:
+      # The finished runs of the suite take at most about a second.
+      TIMEOUT_S: 10
+      ROUNDS: 5
+      THRESHOLD: "1.10"
+    steps:
+      - name: Check out head
+        uses: actions/checkout@v6
+        with:
+          path: head
+          submodules: recursive
+          # If PR, checkout the PR's repo (needed for PRs coming from forks).
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Check out base
+        uses: actions/checkout@v6
+        with:
+          path: base
+          submodules: recursive
+          repository: ${{ github.event.pull_request.base.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.base.sha || inputs.base_ref || github.base_ref || 'devel' }}
+      # Ubuntu's system Python is externally managed (PEP 668) and rejects `pip install`.
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential cmake ninja-build
+          python -m pip install --upgrade pip
+          pip install psutil pyyaml tabulate termcolor typing-extensions
+      - name: Test compare_ab.py
+        run: python -m unittest discover --start-directory head/tests-integration/scripts
+      - name: Build base
+        working-directory: base
+        run: make release JOBS=2
+      - name: Build head
+        working-directory: head
+        run: make release JOBS=2
+      # A curated, fast benchmark set: the single-parameter job suite. One merged job file runs the
+      # base and the head of every method on an instance right after each other, on the same
+      # input files; the rounds alternate which of the two goes first.
+      - name: Benchmark base and head
+        run: |
+          for round in $(seq 1 "$ROUNDS"); do
+            order=()
+            if (( round % 2 == 0 )); then order=(--head-first); fi
+            ./head/tests-integration/scripts/compare_ab.py jobs "${order[@]}" \
+              base/build/tests-integration/jobs/corr-single-param-jobs.yaml \
+              head/build/tests-integration/jobs/corr-single-param-jobs.yaml > ab-jobs.yaml
+            ./head/tests-integration/pycobench/src/pycobench.py -j 1 -t "$TIMEOUT_S" -c ab-jobs.yaml \
+              -o "ab-$round.out" < head/build/tests-integration/inputs/single-automata.input
+            ./head/tests-integration/pycobench/src/pyco_proc.py --csv "ab-$round.out" > "ab-$round.csv"
+          done
+      # Per-instance medians over the rounds; a timeout or an error costs twice the timeout (PAR-2)
+      # instead of vanishing. The job fails when the geometric mean of a metric's head/base ratios
+      # exceeds the threshold.
+      - name: Compare base against head
+        run: >-
+          ./head/tests-integration/scripts/compare_ab.py compare --timeout "$TIMEOUT_S" --threshold "$THRESHOLD" --summary "$GITHUB_STEP_SUMMARY" ab-*.csv

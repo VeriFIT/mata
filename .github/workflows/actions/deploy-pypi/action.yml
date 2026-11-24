@@ -1,41 +1,33 @@
 name: Python binding (deploy to PyPI)
-description: Build and upload the Python binding tarball to PyPI.
+description: Upload the already built Python binding sdist and wheels to PyPI.
 inputs:
-  os:
-    description: "Operating system to run the workflow on."
-    required: false
-    default: "ubuntu-latest"
+  dist-dir:
+    description: "Directory holding the sdist and every wheel to publish."
+    required: true
   python-version:
-    description: "Python version to use."
+    description: "Python version to run twine with."
     required: false
     default: "3.13"
-  version:
-    description: "Version tag to write to the VERSION file (e.g. v1.2.3)."
-    required: true
   pypi-token:
     description: "PyPI API token for uploading."
     required: true
 runs:
   using: "composite"
   steps:
-    - name: Set up environment
-      uses: ./.github/workflows/actions/setup
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v6
       with:
-        os: ${{ inputs.os }}
-    - name: Set up Python and its dependencies ${{ inputs.python-version }}
-      uses: ./.github/workflows/actions/setup-python
-      with:
-        os: ${{ inputs.os }}
         python-version: ${{ inputs.python-version }}
-        version: ${{ inputs.version }}
-    - name: Compile the Python bindings from the source
-      uses: ./.github/workflows/actions/compile-python-src
-    - name: Compile the Python bindings from the tarball
-      uses: ./.github/workflows/actions/compile-python-tarball
+    - name: Install twine
+      shell: bash
+      run: python3 -m pip install --upgrade twine
+    # --skip-existing lets a rerun of a partially failed upload publish the remaining files instead of stopping at
+    #  the first one PyPI already holds.
     - name: Upload to PyPI
       shell: bash
-      run: python3 -m twine upload bindings/python/dist/*.tar.gz
+      run: python3 -m twine upload --skip-existing "$DIST_DIR"/*.tar.gz "$DIST_DIR"/*.whl
       env:
+        DIST_DIR: ${{ inputs.dist-dir }}
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ inputs.pypi-token }}
         # TWINE_REPOSITORY: testpypi

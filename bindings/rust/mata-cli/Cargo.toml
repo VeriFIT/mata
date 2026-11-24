@@ -1,0 +1,40 @@
+[package]
+name = "mata-cli"
+version = "0.1.0"
+description = "Mata Script interpreter and Mata automata command-line interface"
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories = ["command-line-utilities"]
+publish = false
+
+[lints]
+workspace = true
+
+[features]
+## `mata_cli::web` and the `mata-playground-script` binary: the WebAssembly module of the website
+## playground's Script mode, built for `wasm32-unknown-emscripten` (`just site script`).
+web = []
+
+[dependencies]
+# `mata::lazy` (the `mata-lazy` crate) with the `Nfa`/`Nft` leaves of the `mata` crate's `lazy` feature.
+mata = { path = "../mata", features = ["lazy"] }
+# The `lazy:view`, `lazy:plan`, and `:plan` script interface reads and writes JSON plans.
+mata-lazy = { workspace = true, features = ["serde"] }
+
+[[bin]]
+name = "mata"
+path = "src/main.rs"
+# Its docs would overwrite those of the `mata` library at `target/doc/mata` (rust-lang/cargo#6313); `mata-cli`'s
+# library holds the documented code.
+doc = false
+
+[[bin]]
+name = "mata-playground-script"
+path = "src/bin/mata-playground-script.rs"
+required-features = ["web"]
+# It has no tests, and its link options (build.rs) keep a test harness from running.
+test = false

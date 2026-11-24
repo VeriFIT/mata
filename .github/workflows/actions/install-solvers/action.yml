@@ -1,0 +1,24 @@
+name: Install SAT and QBF solvers
+description: Install the external solvers used by reduce() with algorithms "sat" and "qbf", and make their tests required.
+inputs:
+  os:
+    description: "Operating system to run on"
+    required: false
+    default: ubuntu-latest
+runs:
+  using: "composite"
+  steps:
+    - name: Install solvers (macOS)
+      if: ${{ inputs.os == 'macos-latest' }}
+      shell: sh
+      run: brew install cadical depqbf
+    - name: Install solvers (Linux)
+      if: ${{ inputs.os == 'ubuntu-latest' }}
+      shell: sh
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cadical depqbf
+    # Without this, tests needing a solver are skipped when no solver is found.
+    - name: Require the solvers in tests
+      shell: sh
+      run: echo "MATA_TESTS_REQUIRE_SOLVERS=1" >> "$GITHUB_ENV"

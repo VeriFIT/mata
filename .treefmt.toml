@@ -15,6 +15,7 @@ excludes = [
   ".svnignore",
   "LICENSE",
   "3rdparty/*",
+  "tests-integration/pycobench/*",
 ]
 
 [formatter.clang-format]
@@ -36,6 +37,12 @@ includes = [
   ".comp",
 ]
 options = ["-i"]
+
+[formatter.cmake-format]
+command = "cmake-format"
+excludes = []
+includes = ["*.cmake", "CMakeLists.txt", "**/CMakeLists.txt"]
+options = ["--in-place"]
 
 [formatter.just]
 command = "bash"
@@ -82,6 +89,7 @@ includes = [
   "*.yml",
 ]
 options = ["--write"]
+stdin-options = ["--stdin-filepath", "$path"]
 
 [formatter.ruff-check]
 command = "ruff"
@@ -95,6 +103,12 @@ excludes = []
 includes = ["*.py", "*.pyi"]
 options = ["format", "--line-length", "120"]
 priority = 1
+
+[formatter.rustfmt]
+command = "rustfmt"
+excludes = []
+includes = ["*.rs"]
+options = ["--config", "skip_children=true", "--edition", "2024"]
 
 [formatter.taplo]
 command = "taplo"

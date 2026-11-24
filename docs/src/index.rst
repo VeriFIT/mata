@@ -13,6 +13,8 @@ Mata automata library
    introduction
    benchmarking
    automata-format
+   script-language
+   cli
    contributing
    core
    nfa
@@ -22,14 +24,15 @@ Mata automata library
    applications
    namespacelist
    classlist
-   filelist
    structlist
+   unionlist
 
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
-.. FIXME: The modindex currently does not work.
-.. * :ref:`modindex`
 * :ref:`search`
+
+.. FIXME: The modindex currently does not work.
+   * :ref:`modindex`

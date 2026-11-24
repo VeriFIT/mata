@@ -2,13 +2,169 @@
  * @brief Concatenation of NFAs.
  */
 
-#include <ranges>
+#include <algorithm>
+#include <span>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
+#include "concatenation-internal.hh"
 #include "mata/nfa/algorithms.hh"
 #include "mata/nfa/builder.hh"
 #include "mata/nfa/nfa.hh"
 
 namespace mata::nfa {
+
+namespace {
+
+/// Whether the concatenation of @p lhs and @p rhs has no state of either operand, i.e., is the empty automaton.
+bool concatenation_is_empty(const Nfa& lhs, const Nfa& rhs) {
+	return lhs.num_of_states() == 0 || rhs.num_of_states() == 0 || lhs.initial.empty() || lhs.final.empty() ||
+		   rhs.initial.empty() || rhs.final.empty();
+}
+
+/// Whether @p delta has a transition over @p epsilon.
+///  When it does, @c removing_epsilon() would propagate that transition into an epsilon closure and the direct
+///  construction below cannot replace it.
+bool delta_has_epsilon_post(const Delta& delta, const Symbol epsilon) {
+	return std::ranges::any_of(delta, [&epsilon](const StatePost& post) { return post.find(epsilon) != post.end(); });
+}
+
+/// Match the empty-post filtering and trailing-state handling of @c Nfa::remove_epsilon().
+void drop_unused_trailing_state_posts(Delta& delta) {
+	const size_t num_of_states{delta.num_of_states()};
+	for (State state{0}; state < num_of_states; ++state) {
+		StatePost& post{delta.mutable_state_post(state)};
+		if (std::ranges::any_of(post, &SymbolPost::empty)) {
+			post.filter([](const SymbolPost& symbol_post) { return !symbol_post.empty(); });
+		}
+	}
+	if (num_of_states == 0 || !delta[static_cast<State>(num_of_states - 1)].empty()) { return; }
+
+	size_t used{0};
+	for (State state{0}; state < num_of_states; ++state) {
+		const StatePost& post{delta[state]};
+		if (post.empty()) { continue; }
+		used = std::max(used, static_cast<size_t>(state) + 1);
+		for (const SymbolPost& symbol_post : post) {
+			used = std::max(used, static_cast<size_t>(symbol_post.targets.back()) + 1);
+		}
+	}
+	if (used >= num_of_states) { return; }
+
+	Delta shrunk{};
+	shrunk.reserve(used);
+	for (State state{0}; state < used; ++state) { shrunk.emplace_back(std::move(delta.mutable_state_post(state))); }
+	delta = std::move(shrunk);
+}
+
+/**
+ * Shared body of every @c algorithms::concatenate_eps() overload: consumes @p lhs, and consumes @p rhs only when it is
+ *  passed as an rvalue. The operands must not be aliased.
+ */
+template <typename RhsNfa>
+Nfa concatenate_eps_consuming(
+	Nfa&& lhs,
+	// A forwarding reference only to take a const operand or one to consume, which is used in place.
+	RhsNfa&& rhs,
+	// By value: `epsilon` may name an entry of a requested renaming map, which is cleared and refilled below.
+	const Symbol epsilon,
+	const bool use_epsilon,
+	StateRenaming* lhs_state_renaming,
+	StateRenaming* rhs_state_renaming
+) {
+	constexpr bool consume_rhs{!std::is_const_v<std::remove_reference_t<RhsNfa>>};
+	const size_t lhs_states_num{lhs.num_of_states()};
+	const size_t rhs_states_num{rhs.num_of_states()};
+
+	// The renamings are arithmetic: lhs states keep their indices, rhs states shift by the number of lhs states.
+	//  Computing the maps costs one entry per state, so they are filled only when the caller asked for them, and
+	//  also on the early return, where they keep describing the (empty) concatenation.
+	auto output_renamings = [&] {
+		if (lhs_state_renaming != nullptr) {
+			lhs_state_renaming->clear();
+			lhs_state_renaming->reserve(lhs_states_num);
+			for (State state{0}; state < lhs_states_num; ++state) { lhs_state_renaming->emplace(state, state); }
+		}
+		if (rhs_state_renaming != nullptr) {
+			rhs_state_renaming->clear();
+			rhs_state_renaming->reserve(rhs_states_num);
+			for (State state{0}; state < rhs_states_num; ++state) {
+				rhs_state_renaming->emplace(state, static_cast<State>(lhs_states_num) + state);
+			}
+		}
+	};
+
+	// The combined state count and rhs shift must be representable before construction, also on the empty return.
+	if (Limits::max_num_of_states - lhs_states_num < rhs_states_num) { throw_state_overflow(); }
+	if (concatenation_is_empty(lhs, rhs)) {
+		output_renamings();
+		lhs = Nfa{};
+		if constexpr (consume_rhs) { rhs = Nfa{}; }
+		return Nfa{};
+	}
+
+	const size_t result_num_of_states{lhs_states_num + rhs_states_num};
+
+	output_renamings();
+
+	// The lhs states keep their indices in the result, so its delta and initial states move in as they are.
+	// The final states of lhs do not survive the concatenation, so they are only read here.
+	const utils::SparseSet<State> lhs_final_states{std::move(lhs.final)};
+	Nfa result{}; // Concatenated automaton.
+	result.delta = std::move(lhs.delta);
+	result.initial = std::move(lhs.initial);
+	lhs = Nfa{};
+
+	// Append the rhs transitions, shifted by the number of lhs states, before any state beyond lhs is allocated.
+	result.delta.allocate(lhs_states_num);
+	if constexpr (consume_rhs) {
+		result.delta.append_shifted(std::move(rhs.delta), static_cast<State>(lhs_states_num));
+	} else {
+		result.delta.append_shifted(rhs.delta, static_cast<State>(lhs_states_num));
+	}
+	result.add_state(static_cast<State>(result_num_of_states - 1));
+
+	if (!use_epsilon) {
+		// When neither operand has an existing transition over the connecting epsilon, concatenate without ever
+		//  materialising the epsilon connector and feeding it to global epsilon removal. Otherwise the old global
+		//  removal path keeps its epsilon-closure contract, including the removal of the operands' own transitions
+		//  over that symbol.
+		if (!delta_has_epsilon_post(result.delta, epsilon)) {
+			// Shifted rhs initials are strictly past lhs originals: no target post aliasing during merging.
+			result.final = internal::connect_concatenation(
+				result.delta, lhs_final_states, rhs.initial, rhs.final, static_cast<State>(lhs_states_num),
+				result_num_of_states
+			);
+			if constexpr (consume_rhs) { rhs = Nfa{}; }
+			drop_unused_trailing_state_posts(result.delta);
+			return result;
+		}
+	}
+
+	// The epsilon transitions lead from lhs original finals to shifted rhs initials.
+	std::vector<State> shifted_rhs_initials{};
+	shifted_rhs_initials.reserve(rhs.initial.size());
+	for (const State rhs_initial_state : rhs.initial) {
+		shifted_rhs_initials.push_back(static_cast<State>(lhs_states_num) + rhs_initial_state);
+	}
+	std::ranges::sort(shifted_rhs_initials);
+
+	for (const State lhs_final_state : lhs_final_states) {
+		result.delta.add(lhs_final_state, epsilon, std::span<const State>{shifted_rhs_initials});
+	}
+
+	// Make result final states.
+	for (const State rhs_final_state : rhs.final) {
+		result.final.insert(static_cast<State>(lhs_states_num) + rhs_final_state);
+	}
+	if constexpr (consume_rhs) { rhs = Nfa{}; }
+
+	if (!use_epsilon) { result.remove_epsilon(epsilon); }
+	return result;
+}
+
+} // namespace
 
 Nfa concatenate(
 	const Nfa& lhs,
@@ -20,38 +176,60 @@ Nfa concatenate(
 	return algorithms::concatenate_eps(lhs, rhs, EPSILON, use_epsilon, lhs_state_renaming, rhs_state_renaming);
 }
 
-Nfa& Nfa::concatenate(const Nfa& aut) {
-	const size_t n = this->num_of_states();
-	auto upd_fnc = [&](const State st) { return st + n; };
+Nfa concatenate(
+	Nfa&& lhs,
+	const Nfa& rhs,
+	const bool use_epsilon,
+	StateRenaming* lhs_state_renaming,
+	StateRenaming* rhs_state_renaming
+) {
+	return algorithms::concatenate_eps(
+		std::move(lhs), rhs, EPSILON, use_epsilon, lhs_state_renaming, rhs_state_renaming
+	);
+}
 
-	// copy the information about aut to save the case when this is the same object as aut.
-	utils::SparseSet<mata::nfa::State> aut_initial = aut.initial;
-	utils::SparseSet<mata::nfa::State> aut_final = aut.final;
+Nfa concatenate(
+	Nfa&& lhs, Nfa&& rhs, const bool use_epsilon, StateRenaming* lhs_state_renaming, StateRenaming* rhs_state_renaming
+) {
+	return algorithms::concatenate_eps(
+		std::move(lhs), std::move(rhs), EPSILON, use_epsilon, lhs_state_renaming, rhs_state_renaming
+	);
+}
+
+Nfa& Nfa::concatenate(const Nfa& aut) & {
+	const size_t n = this->num_of_states();
 	const size_t aut_n = aut.num_of_states();
+	check_num_of_states(n + aut_n);
 
 	this->delta.allocate(n);
-	this->delta.append(aut.delta.renumber_targets(upd_fnc));
+	this->delta.append_shifted(aut.delta, static_cast<State>(n));
+	// `aut` may be `*this`: its initial and final states are only read until the final states are replaced.
+	this->final = internal::connect_concatenation(
+		this->delta, this->final, aut.initial, aut.final, static_cast<State>(n), n + aut_n
+	);
+	return *this;
+}
 
-	// set accepting states
-	utils::SparseSet<State> new_fin{};
-	new_fin.reserve(n + aut_n);
-	for (const State& aut_fin : aut_final) { new_fin.insert(upd_fnc(aut_fin)); }
-
-	// connect both parts
-	for (const State& ini : aut_initial) {
-		const StatePost& ini_post = this->delta[upd_fnc(ini)];
-		// is ini state also final?
-		const bool is_final = aut_final[ini];
-		for (const State& fin : this->final) {
-			if (is_final) { new_fin.insert(fin); }
-			for (const SymbolPost& ini_mv : ini_post) {
-				// TODO: this should be done efficiently in a delta method
-				// TODO: in fact it is not efficient for now
-				for (const State& dest : ini_mv.targets) { this->delta.add(fin, ini_mv.symbol, dest); }
-			}
-		}
+Nfa& Nfa::concatenate(Nfa&& aut) & {
+	if (this == &aut) {
+		// Self-concatenation: one controlled snapshot of the operand; `this` keeps its own content.
+		// NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
+		const Nfa snapshot{aut};
+		return concatenate(snapshot);
 	}
-	this->final = new_fin;
+
+	const size_t n = this->num_of_states();
+	const size_t aut_n = aut.num_of_states();
+	check_num_of_states(n + aut_n);
+
+	// Move the operand's state posts in; the shift by `n` is the renumbering the lvalue path copies for.
+	this->delta.append_shifted(std::move(aut.delta), static_cast<State>(n));
+	this->final = internal::connect_concatenation(
+		this->delta, this->final, aut.initial, aut.final, static_cast<State>(n), n + aut_n
+	);
+
+	// Reset `aut` to leave it valid and empty; `clear()` keeps the state domain of the sparse sets.
+	aut = Nfa{};
 	return *this;
 }
 
@@ -65,65 +243,68 @@ Nfa algorithms::concatenate_eps(
 ) {
 	// Compute concatenation of given automata.
 	// Concatenation will proceed in the order of the passed automata: Result is 'lhs . rhs'.
-
-	if (lhs.num_of_states() == 0 || rhs.num_of_states() == 0 || lhs.initial.empty() || lhs.final.empty() ||
-		rhs.initial.empty() || rhs.final.empty()) {
-		return Nfa{};
-	}
-
-	const unsigned long lhs_states_num{lhs.num_of_states()};
-	const unsigned long rhs_states_num{rhs.num_of_states()};
-	Nfa result{}; // Concatenated automaton.
-	StateRenaming lhs_states_renaming{}; // Map mapping rhs states to result states.
-	StateRenaming rhs_states_renaming{}; // Map mapping rhs states to result states.
-
-	const size_t result_num_of_states{lhs_states_num + rhs_states_num};
-	if (result_num_of_states == 0) { return Nfa{}; }
-
-	// Map lhs states to result states.
-	lhs_states_renaming.reserve(lhs_states_num);
-	Symbol result_state_index{0};
-	for (State lhs_state{0}; lhs_state < lhs_states_num; ++lhs_state) {
-		lhs_states_renaming.insert(std::make_pair(lhs_state, result_state_index));
-		++result_state_index;
-	}
-	// Map rhs states to result states.
-	rhs_states_renaming.reserve(rhs_states_num);
-	for (State rhs_state{0}; rhs_state < rhs_states_num; ++rhs_state) {
-		rhs_states_renaming.insert(std::make_pair(rhs_state, result_state_index));
-		++result_state_index;
-	}
-
-	result = Nfa();
-	result.delta = lhs.delta;
-	result.initial = lhs.initial;
-	result.add_state(result_num_of_states - 1);
-
-	// Add epsilon transitions connecting lhs and rhs automata.
-	// The epsilon transitions lead from lhs original final states to rhs original initial states.
-	for (const auto& lhs_final_state : lhs.final) {
-		for (const auto& rhs_initial_state : rhs.initial) {
-			result.delta.add(lhs_final_state, epsilon, rhs_states_renaming[rhs_initial_state]);
+	// The consuming path fills the requested renaming maps also for the empty result.
+	if (concatenation_is_empty(lhs, rhs)) {
+		// Do not clone a possibly large lhs only to throw it away: fill the requested maps from the original counts.
+		// The combined state count must be representable, as on the consuming path, whichever maps are requested.
+		if (Limits::max_num_of_states - lhs.num_of_states() < rhs.num_of_states()) { throw_state_overflow(); }
+		if (lhs_state_renaming != nullptr) {
+			lhs_state_renaming->clear();
+			lhs_state_renaming->reserve(lhs.num_of_states());
+			for (State state{0}; state < lhs.num_of_states(); ++state) { lhs_state_renaming->emplace(state, state); }
 		}
-	}
-
-	// Make result final states.
-	for (const auto& rhs_final_state : rhs.final) { result.final.insert(rhs_states_renaming[rhs_final_state]); }
-
-	// Add rhs transitions to the result.
-	for (State rhs_state{0}; rhs_state < rhs_states_num; ++rhs_state) {
-		for (const SymbolPost& rhs_move : rhs.delta.state_post(rhs_state)) {
-			for (const State& rhs_state_to : rhs_move.targets) {
-				result.delta.add(rhs_states_renaming[rhs_state], rhs_move.symbol, rhs_states_renaming[rhs_state_to]);
+		if (rhs_state_renaming != nullptr) {
+			rhs_state_renaming->clear();
+			rhs_state_renaming->reserve(rhs.num_of_states());
+			for (State state{0}; state < rhs.num_of_states(); ++state) {
+				rhs_state_renaming->emplace(state, static_cast<State>(lhs.num_of_states()) + state);
 			}
 		}
+		return Nfa{};
 	}
+	// The one intentional copy: the parts of lhs that the result is built on. The copy cannot alias rhs.
+	return concatenate_eps_consuming(
+		Nfa{lhs.delta, lhs.initial, lhs.final}, rhs, epsilon, use_epsilon, lhs_state_renaming, rhs_state_renaming
+	);
+}
 
-	if (!use_epsilon) { result.remove_epsilon(); }
-	if (lhs_state_renaming != nullptr) { *lhs_state_renaming = lhs_states_renaming; }
-	if (rhs_state_renaming != nullptr) { *rhs_state_renaming = rhs_states_renaming; }
-	return result;
-} // concatenate_eps().
+Nfa algorithms::concatenate_eps(
+	Nfa&& lhs,
+	const Nfa& rhs,
+	const Symbol& epsilon,
+	bool use_epsilon,
+	StateRenaming* lhs_state_renaming,
+	StateRenaming* rhs_state_renaming
+) {
+	if (&lhs == &rhs) {
+		// Self-concatenation: one controlled snapshot of the right operand, then the consuming path.
+		// NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
+		const Nfa rhs_snapshot{rhs};
+		return concatenate_eps_consuming(
+			std::move(lhs), rhs_snapshot, epsilon, use_epsilon, lhs_state_renaming, rhs_state_renaming
+		);
+	}
+	return concatenate_eps_consuming(std::move(lhs), rhs, epsilon, use_epsilon, lhs_state_renaming, rhs_state_renaming);
+}
+
+Nfa algorithms::concatenate_eps(
+	Nfa&& lhs,
+	Nfa&& rhs,
+	const Symbol& epsilon,
+	bool use_epsilon,
+	StateRenaming* lhs_state_renaming,
+	StateRenaming* rhs_state_renaming
+) {
+	// Aliased operands: the overload consuming only lhs snapshots rhs first.
+	if (&lhs == &rhs) {
+		return concatenate_eps(
+			std::move(lhs), std::as_const(rhs), epsilon, use_epsilon, lhs_state_renaming, rhs_state_renaming
+		);
+	}
+	return concatenate_eps_consuming(
+		std::move(lhs), std::move(rhs), epsilon, use_epsilon, lhs_state_renaming, rhs_state_renaming
+	);
+}
 
 Nfa concatenate_nth_power(Nfa nfa_to_concatenate, unsigned power) {
 	// If power is 0, return the NFA that accepts only the empty string.
@@ -140,7 +321,7 @@ Nfa concatenate_nth_power(Nfa nfa_to_concatenate, unsigned power) {
 	// Then square `base` for the next bit.
 	while (power > 0) {
 		// If current least-significant bit is set, append `base` to `result`.
-		if (power & 1u) { result.concatenate(base); }
+		if (power & 1U) { result.concatenate(base); }
 
 		// Shift to the next bit.
 		power >>= 1;

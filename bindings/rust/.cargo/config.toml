@@ -1,0 +1,12 @@
+# Runs this workspace's tests on WebAssembly: `cargo test --target wasm32-unknown-emscripten`, with
+# Emscripten's `emcc` on PATH (see the README).
+[target.wasm32-unknown-emscripten]
+runner = ["node", "--stack-size=4000"]
+# The walk of a chain nested at the parser's depth limit needs more than the default V8 stack
+# (~1 MiB) of the runner's engine, so the runner grows it; the linked Emscripten stack is 8 MiB.
+rustflags = [
+  "-C",
+  "link-arg=-sALLOW_MEMORY_GROWTH=1",
+  "-C",
+  "link-arg=-sSTACK_SIZE=8MB",
+]

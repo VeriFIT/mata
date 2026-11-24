@@ -16,12 +16,12 @@ template <typename P, typename TT>
 template <ExtensibleAlphabet A>
 	requires std::same_as<typename A::Symbol, typename P::Key> && Printable<typename P::Key>
 void DeltaBase<P, TT>::add_keys_to(A& target_alphabet) const {
-	const size_t aut_num_of_states{num_of_states()};
-	for (State state{0}; state < aut_num_of_states; ++state) {
-		for (const Entry& move : state_post(state)) {
-			target_alphabet.update_next_symbol_value(move.key());
-			target_alphabet.try_add_new_symbol(std::format("{}", move.key()), move.key());
-		}
+	// Distinct keys only: a key used by n posts would otherwise be converted and hashed n times.
+	for (const auto key : get_used_keys()) {
+		// The epsilons sort last and are no letters.
+		if (key >= Reserved<0>::min_epsilon) { break; }
+		target_alphabet.update_next_symbol_value(key);
+		target_alphabet.try_add_new_symbol(std::format("{}", key), key);
 	}
 }
 
@@ -86,25 +86,44 @@ utils::OrdVector<typename P::Key> DeltaBase<P, TT>::get_used_keys() const
 }
 
 // Other versions, maybe an interesting experiment with speed of data structures.
-// Returns symbols appearing in the relation, pushes back to vector and then sorts
+// Returns symbols appearing in the relation.
 template <typename P, typename TT>
 utils::OrdVector<typename P::Key> DeltaBase<P, TT>::get_used_keys_vec() const
 	requires std::totally_ordered<typename P::Key> {
-	using Symbols = typename P::Key;
-#ifdef _STATIC_STRUCTURES_
-	static std::vector<Symbols> symbols{};
-	symbols.clear();
-#else
-	std::vector<Symbols> symbols{};
-#endif
+	using Symbol = typename P::Key;
+	// Keep small alphabets sorted incrementally; retain the full sort/deduplicate for wider alphabets,
+	// so many distinct symbols cannot make insertion quadratic.
+	std::vector<Symbol> symbols{};
+	size_t num_distinct{0};
+	bool incremental{true};
 	for (const PostType& state_post : state_posts_) {
 		for (const Entry& symbol_post : state_post) {
-			utils::reserve_on_insert(symbols);
-			symbols.push_back(symbol_post.key());
+			const Symbol symbol{symbol_post.key()};
+			if (!incremental) {
+				symbols.push_back(symbol);
+			} else if (symbols.empty() || symbols.back() < symbol) {
+				if (num_distinct == 64) {
+					incremental = false;
+				} else {
+					++num_distinct;
+				}
+				symbols.push_back(symbol);
+			} else if (symbols.back() != symbol) {
+				if (num_distinct == 64) {
+					incremental = false;
+					symbols.push_back(symbol);
+				} else {
+					const auto position{std::ranges::lower_bound(symbols, symbol)};
+					if (position == symbols.end() || *position != symbol) {
+						symbols.insert(position, symbol);
+						++num_distinct;
+					}
+				}
+			}
 		}
 	}
-	utils::OrdVector<Symbols> sorted_symbols(symbols);
-	return sorted_symbols;
+	if (incremental) { return utils::OrdVector<Symbol>{utils::sorted_unique, std::move(symbols)}; }
+	return utils::OrdVector<Symbol>{std::move(symbols)};
 }
 
 // returns symbols appearing in the relation, inserts to a std::set

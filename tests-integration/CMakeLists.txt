@@ -1,24 +1,55 @@
-# Run cmake with `-CNO_PROFILING` to turn off the profiling options
-if (NOT NO_PROFILING)
-	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fprofile-arcs")
+# Instrument the integration benchmarks for gcov, and nothing else; `MATA_ENABLE_COVERAGE` already
+#  instruments them together with the library and the unit tests. BENCHMARKING.md explains which of
+#  the two to use. Off by default: the previous unconditional `-fprofile-arcs` was never paired with
+#  `-ftest-coverage`, so no `.gcno` files were produced and the `.gcda` files every run writes at
+#  exit were useless to gcov and only littered the build tree.
+option (MATA_BENCH_PROFILING "Instrument the integration benchmarks for gcov" OFF)
+
+file (GLOB JOBS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/jobs/*.yaml.in")
+file (GLOB INPUTS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/inputs/*.input.in")
+
+# The `mata` command runs the Mata Script versions of the benchmarks (jobs `b-*-matasc`);
+# found on the PATH, or pinned with `-DMATA_CLI_BIN=/path/to/mata`. When neither holds,
+# the jobs name the missing command, and pycobench reports them as failed commands only
+# when it runs them.
+set (
+	MATA_CLI_BIN
+	""
+	CACHE FILEPATH "The `mata` command that runs the Mata Script benchmarks; found on the PATH when unset"
+)
+find_program (MATA_CLI_BIN_FOUND mata DOC "The `mata` command that runs the Mata Script benchmarks")
+if (NOT MATA_CLI_BIN AND MATA_CLI_BIN_FOUND)
+	set (MATA_CLI_BIN "${MATA_CLI_BIN_FOUND}")
+endif ()
+# `configure_file()` replaces an empty `MATA_CLI_BIN` with nothing, which makes the generated job
+# run the unrelated `script` program. The marker keeps the command visibly missing instead, until
+# the cache variable or the PATH provides one; pycobench then reports the job as a failed command
+# only when it runs it. A YAML scalar cannot start with `@`, so the marker follows CMake's
+# `<VAR>-NOTFOUND` convention rather than leaving the variable unsubstituted.
+if (MATA_CLI_BIN)
+	set (MATA_CLI_CMD "${MATA_CLI_BIN}")
+else ()
+	set (MATA_CLI_CMD "MATA_CLI_BIN-NOTFOUND")
 endif ()
 
-file (GLOB JOBS "${CMAKE_CURRENT_SOURCE_DIR}/jobs/*.yaml.in")
-file (GLOB INPUTS "${CMAKE_CURRENT_SOURCE_DIR}/inputs/*.input.in")
+# Generate into the build directory. These files embed `CMAKE_CURRENT_BINARY_DIR`, so writing them
+#  into the source tree made every configured build directory overwrite the other's job files: after
+#  configuring a Debug build, `make test-performance` on the Release build measured the Debug
+#  binaries and said nothing about it. It also made configuring from a read-only source tree fail.
 foreach (JOB ${JOBS})
 	get_filename_component (TARGET_JOB ${JOB} NAME_WE)
-	configure_file ("${JOB}" "${CMAKE_CURRENT_SOURCE_DIR}/jobs/${TARGET_JOB}.yaml" @ONLY)
+	configure_file ("${JOB}" "${CMAKE_CURRENT_BINARY_DIR}/jobs/${TARGET_JOB}.yaml" @ONLY)
 endforeach ()
 foreach (INPUT ${INPUTS})
 	get_filename_component (TARGET_INPUT ${INPUT} NAME_WE)
-	configure_file ("${INPUT}" "${CMAKE_CURRENT_SOURCE_DIR}/inputs/${TARGET_INPUT}.input" @ONLY)
+	configure_file ("${INPUT}" "${CMAKE_CURRENT_BINARY_DIR}/inputs/${TARGET_INPUT}.input" @ONLY)
 endforeach ()
 
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/inputs/double-automata.input.in" "${CMAKE_CURRENT_SOURCE_DIR}/inputs/double-automata.input" @ONLY)
+configure_file (
+	"${CMAKE_CURRENT_SOURCE_DIR}/src/utils/config.hh.in" "${CMAKE_CURRENT_BINARY_DIR}/src/utils/config.hh" @ONLY
+)
 
-configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/src/utils/config.hh.in" "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/config.hh" @ONLY)
-
-file (GLOB_RECURSE SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
+file (GLOB_RECURSE SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
 
 list (FILTER SOURCES EXCLUDE REGEX ".*/tests-integration/src/utils/.*")
 foreach (SOURCE ${SOURCES})
@@ -28,16 +59,37 @@ foreach (SOURCE ${SOURCES})
 	file (RELATIVE_PATH TARGET_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src/" "${TARGET_PATH}")
 
 	add_executable (${TARGET} ${SOURCE} src/utils/utils.cc)
-	set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_PATH})
-	target_link_libraries (${TARGET} libmata)
+	# `CMAKE_RUNTIME_OUTPUT_DIRECTORY` is read when a target is created, so setting it after
+	#  `add_executable()` gave every target the directory computed for the previous source file of
+	#  the sorted glob, and the last target none at all.
+	set_target_properties (${TARGET} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/${TARGET_PATH}")
 
-	# Add common compile warnings.
-	target_compile_options (${TARGET} PRIVATE "$<$<CONFIG:DEBUG>:${MATA_COMMON_WARNINGS}>")
-	target_compile_options (${TARGET} PRIVATE "$<$<CONFIG:RELEASE>:${MATA_COMMON_WARNINGS}>")
-
-	# Optionally, also add Clang-specific warnings.
-	if (CMAKE_CXX_COMPILER_ID MATCHES "Clang") # Using regular Clang or AppleClang.
-		target_compile_options (${TARGET} PRIVATE "$<$<CONFIG:DEBUG>:${MATA_CLANG_WARNINGS}>")
-		target_compile_options (${TARGET} PRIVATE "$<$<CONFIG:RELEASE>:${MATA_CLANG_WARNINGS}>")
+	# The templates exist to be copied, not to be run: no job file refers to them, and each of them
+	#  compiles `src/utils/utils.cc` a second time. Keep them out of `all`; building one explicitly
+	#  (`cmake --build <dir> --target template-with-cli-args`) still works.
+	if (TARGET_PATH STREQUAL "templates")
+		set_target_properties (${TARGET} PROPERTIES EXCLUDE_FROM_ALL TRUE)
 	endif ()
+
+	target_link_libraries (${TARGET} libmata)
+	# For the generated `utils/config.hh`.
+	target_include_directories (${TARGET} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/src")
+	# The build type the binary announces at startup. `CMAKE_BUILD_TYPE` would be the obvious source
+	#  but it is empty under a multi-config generator (Ninja Multi-Config, Visual Studio, Xcode),
+	#  which picks the configuration at build time; `$<CONFIG>` is resolved then and equals
+	#  `CMAKE_BUILD_TYPE` for single-config generators.
+	target_compile_definitions (
+		${TARGET} PRIVATE "MATA_BENCH_BUILD_TYPE=\"$<IF:$<BOOL:$<CONFIG>>,$<CONFIG>,unspecified>\""
+	)
+
+	if (MATA_BENCH_PROFILING)
+		target_compile_options (${TARGET} PRIVATE -g --coverage)
+		target_link_options (${TARGET} PRIVATE --coverage)
+	endif ()
+
+	# Add Mata's compile warnings.
+	mata_add_warnings (${TARGET})
+
+	# The benchmarks measure the library, so they must be built with the same optimization settings.
+	mata_add_optimizations (${TARGET})
 endforeach ()

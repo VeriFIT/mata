@@ -7,6 +7,7 @@
 #include "assert.hh"
 
 #include <algorithm>
+#include <concepts>
 #include <cstdint>
 #include <format>
 #include <functional>
@@ -17,10 +18,13 @@
 #include <set>
 #include <sstream>
 #include <stack>
+#include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
-/// macro for debug outputs
+/// Macro for debug outputs. A macro, not a function: the arguments must stay unevaluated unless the verbosity level
+///  asks for the output.
 #define PRINT_VERBOSE_LVL(lvl, title, x)                                                                               \
 	{                                                                                                                  \
 		if (mata::LOG_VERBOSITY >= (lvl)) { std::cerr << (title) << ": " << x << "\n"; }                               \
@@ -65,7 +69,8 @@ template <typename T, typename Predicate> auto filter_indices(const std::vector<
 	return std::views::iota(size_t{0}, vec.size()) | std::views::filter([&](const size_t i) { return pred(vec[i]); });
 }
 
-/// Representation of a bool vector by a vector of uint8_t.
+/// Representation of a bool vector by a vector of uint8_t. Any nonzero byte is a set element, as for @c bool; every
+///  consumer (@c count(), @c get_elements(), @c SparseSet) applies this rule.
 class BoolVector : public std::vector<uint8_t> {
   public:
 	BoolVector(const size_t size, const bool value) : std::vector<uint8_t>(size, value ? 1 : 0) {}
@@ -77,33 +82,36 @@ class BoolVector : public std::vector<uint8_t> {
 
 	BoolVector& operator=(const BoolVector&) = default;
 	BoolVector& operator=(BoolVector&&) noexcept = default;
-
+	~BoolVector() = default;
 	/// Count the number of set elements.
 	size_t count() const {
 		size_t cnt{0};
 		for (const uint8_t value : *this) {
-			if (value == 1) { ++cnt; }
+			if (value != 0) { ++cnt; }
 		}
 		return cnt;
 	}
 
-	template <typename T> T& get_elements(T& element_set) {
-		element_set.clear();
-		element_set.resize(count());
-		for (size_t i{0}; i < size(); ++i) { element_set.push_back(i); }
+	/// Collect the indices of the set bits into @p element_set, replacing its contents.
+	template <typename T> T& get_elements(T& element_set) const {
+		get_elements(&element_set, *this);
 		return element_set;
 	}
 
+	/// Collect the indices of the set bits of @p bool_vec into @p element_set, replacing its contents. Outputs without
+	///  @c reserve() (e.g. @c std::deque) are filled without reserving.
 	template <typename T> static T* get_elements(T* element_set, const BoolVector& bool_vec) {
 		element_set->clear();
-		element_set->reserve(bool_vec.count());
-		for (size_t i{0}; i < bool_vec.size(); ++i) { element_set->push_back(i); }
+		if constexpr (requires { element_set->reserve(size_t{}); }) { element_set->reserve(bool_vec.count()); }
+		for (size_t i{0}; i < bool_vec.size(); ++i) {
+			if (bool_vec[i] != 0) { element_set->push_back(i); }
+		}
 		return element_set;
 	}
 
 }; // class BoolVector.
 
-/// log verbosity
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables): the log level is global state by design.
 extern unsigned LOG_VERBOSITY;
 
 /// git sha
@@ -143,9 +151,9 @@ template <class T> bool are_disjoint(const std::set<T>& lhs, const std::set<T>& 
 	auto it_lhs = lhs.begin();
 	auto it_rhs = rhs.begin();
 	while (it_lhs != lhs.end() && it_rhs != rhs.end()) {
-		if (*it_lhs == *it_rhs) {
-			return false;
-		} else if (*it_lhs < *it_rhs) {
+		if (*it_lhs == *it_rhs) { return false; }
+
+		if (*it_lhs < *it_rhs) {
 			++it_lhs;
 		} else {
 			++it_rhs;
@@ -153,25 +161,63 @@ template <class T> bool are_disjoint(const std::set<T>& lhs, const std::set<T>& 
 	}
 
 	return true;
-} // }}}
+}
 
 /** Is there an element in a container? */
-template <class T, class Cont> bool is_in(const T& elem, const Cont& cont) { // {{{
+template <class T, class Cont> bool is_in(const T& elem, const Cont& cont) {
 	return std::find(cont.begin(), cont.end(), elem) != cont.end();
-} // is_in }}}
+}
 
 /**
- * @brief  Combine two hash values
+ * @brief The seed every composite hash of mata starts from.
  *
- * Values taken from
- * http://www.boost.org/doc/libs/1_64_0/boost/functional/hash/hash.hpp
+ * Composite hashers must not start from the raw hash of their first element: @c std::hash of an integer is the
+ *  identity in libstdc++ and libc++, so an unmixed first element would survive into the result and make whole
+ *  families of keys collide.
+ */
+inline constexpr size_t HASH_SEED{
+	sizeof(size_t) == 8 ? static_cast<size_t>(0xcb'f2'9c'e4'84'22'23'25ULL) : static_cast<size_t>(0x81'1c'9d'c5UL)
+};
+
+/**
+ * @brief Spreads every input bit of @p value over all of its output bits.
  *
- * TODO: fix to be more suitable for 64b
+ * A multiply-xorshift finalizer: the 64-bit variant is the one Boost.ContainerHash uses since 1.81, the 32-bit
+ *  variant is Murmur3's @c fmix32. Without such a finalizer, nearby keys (which is what state identifiers are)
+ *  stay nearby in the hash space and share hash-table buckets.
+ */
+constexpr size_t hash_mix(size_t value) {
+	if constexpr (sizeof(size_t) == 8) {
+		uint64_t mixed{static_cast<uint64_t>(value)};
+		constexpr uint64_t multiplier{0x0e'98'46'af'9b'1a'61'5dULL};
+		mixed ^= mixed >> 32;
+		mixed *= multiplier;
+		mixed ^= mixed >> 32;
+		mixed *= multiplier;
+		mixed ^= mixed >> 28;
+		return static_cast<size_t>(mixed);
+	} else {
+		uint32_t mixed{static_cast<uint32_t>(value)};
+		mixed ^= mixed >> 16;
+		mixed *= 0x21'f0'aa'adUL;
+		mixed ^= mixed >> 15;
+		mixed *= 0x73'5a'2d'97UL;
+		mixed ^= mixed >> 15;
+		return static_cast<size_t>(mixed);
+	}
+}
+
+/**
+ * @brief Combines the hash of @p rhs into the running hash value @p lhs.
+ *
+ * @note The result depends on the order in which the elements are combined, which is what distinguishes the hash
+ *  of @c (a, b) from the hash of @c (b, a).
  */
 template <class T> inline size_t hash_combine(size_t lhs, const T& rhs) { // {{{
-	const size_t rhs_hash = std::hash<T>{}(rhs);
-	lhs ^= rhs_hash + 0x9e'37'79'b9 + (lhs << 6) + (lhs >> 2);
-	return lhs;
+	constexpr size_t golden_ratio{
+		sizeof(size_t) == 8 ? static_cast<size_t>(0x9e'37'79'b9'7f'4a'7c'15ULL) : static_cast<size_t>(0x9e'37'79'b9UL)
+	};
+	return hash_mix(lhs + golden_ratio + std::hash<T>{}(rhs));
 } // hash_combine }}}
 
 // Concept to check if all types in a parameter pack are the same as a specified type U
@@ -179,13 +225,12 @@ template <typename U, typename... Ts>
 concept AllOfType = (std::same_as<U, Ts> && ...);
 
 /**
- * @brief  Hashes a range
+ * @brief Hashes the range @p first to @p last.
  *
- * Inspired by
- * http://www.boost.org/doc/libs/1_64_0/boost/functional/hash/hash.hpp
+ * Every element is combined into a constant seed, so that a one-element range does not hash to its only element.
  */
 template <typename It> size_t hash_range(It first, It last) { // {{{
-	size_t accum = 0;
+	size_t accum{HASH_SEED};
 
 	for (; first != last; ++first) { accum = hash_combine(accum, *first); }
 
@@ -220,11 +265,28 @@ template <class A> struct VectorHash {
  */
 template <class A, class B> struct PairHash {
 	size_t operator()(const std::pair<A, B>& pair) const {
-		return hash_combine(std::hash<A>{}(pair.first), pair.second);
+		// Pack a unique unsigned 32-bit pair payload once instead of mixing it twice.
+		if constexpr (sizeof(size_t) == 8 && std::unsigned_integral<A> && std::unsigned_integral<B> &&
+					  sizeof(A) == sizeof(uint32_t) && sizeof(B) == sizeof(uint32_t)) {
+			return hash_mix((static_cast<uint64_t>(pair.first) << 32) | static_cast<uint64_t>(pair.second));
+		}
+		return hash_combine(hash_combine(HASH_SEED, pair.first), pair.second);
 	}
 };
 
+/// A hasher of strings given as any string type, so that a @c std::string_view finds a @c std::string key.
+struct StringHash {
+	using is_transparent = void;
+	size_t operator()(const std::string_view str) const { return std::hash<std::string_view>{}(str); }
+};
+
+/// A map from strings that @c find(), @c contains() and @c count() a @c std::string_view without copying it.
+template <class T> using StringMap = std::unordered_map<std::string, T, StringHash, std::equal_to<>>;
+
 /// checks whether a container with @p find contains a key
+// The decay warning fires for instantiations with a string-literal key, where decaying to 'const char*' is what the
+//  container lookup expects.
+// NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 template <class T, class K> inline bool haskey(const T& cont, const K& key) { return cont.find(key) != cont.cend(); }
 
 /// inverts a map (should work for std::map and std::unordered_map)
@@ -243,10 +305,8 @@ Map<T2, T1> invert_map(const Map<T1, T2>& mp) {
 
 // This reserves space in a vector, to be used before push_back or insert.
 // Assuming the doubling extension strategy, it only makes the first reserve large, after that it leaves it to the
-// doubling. Might be worth thinking about it.
-//  around 30% speedup for fragile revert,
-//  more than 50% for simple revert,
-// (when testing on a stupid test case)
+// doubling. The revert speed-ups that once justified it are gone: no revert calls it any more, and #179 measured the
+// default revert faster without it.
 template <class Vector> void inline reserve_on_insert(Vector& vec, size_t needed_capacity = 0, size_t extension = 32) {
 	// return; //Try this to see the effect of calling this. It should not affect functionality.
 	if (vec.capacity() < extension) // if the size is already large enough, leave it to the default doubling strategy.
@@ -275,12 +335,11 @@ template <class Vector, typename Index> void defragment(Vector& vec, const std::
 
 // In a vector of numbers, rename the numbers according to the renaming: renaming[old_name]=new_name
 template <class Vector, typename Index> void rename(Vector& vec, const std::vector<Index>& renaming) {
-	for (size_t i = 0, size = vec.size(); i < size; ++i) {
-		if (i != vec[i]) { vec[i] = renaming[vec[i]]; }
-	}
+	// Every element is renamed, also one that happens to equal its index.
+	for (size_t i = 0, size = vec.size(); i < size; ++i) { vec[i] = renaming[vec[i]]; }
 }
 
-template <class Vector, typename Fun> void filter_indexes(Vector& vec, const Fun&& is_staying) {
+template <class Vector, typename Fun> void filter_indexes(Vector& vec, Fun is_staying) {
 	// TODO: Rewrite with erase and remove_if.
 	size_t last = 0;
 	for (size_t i = 0, size = vec.size(); i < size; ++i) {
@@ -289,10 +348,11 @@ template <class Vector, typename Fun> void filter_indexes(Vector& vec, const Fun
 			last++;
 		}
 	}
-	vec.reserve(last);
+	// Only the first @c last elements stay: erase the rest. resize() would also demand a default constructor.
+	vec.erase(vec.begin() + static_cast<typename Vector::difference_type>(last), vec.end());
 }
 
-template <class Vector, typename Fun> void filter(Vector& vec, const Fun&& is_staying) {
+template <class Vector, typename Fun> void filter(Vector& vec, Fun is_staying) {
 	// TODO: Rewrite with erase and remove_if.
 	size_t last = 0;
 	for (size_t i = 0, size = vec.size(); i < size; ++i) {
@@ -301,19 +361,22 @@ template <class Vector, typename Fun> void filter(Vector& vec, const Fun&& is_st
 			last++;
 		}
 	}
-	vec.reserve(last);
+	// Only the first @c last elements stay: erase the rest. resize() would also demand a default constructor.
+	vec.erase(vec.begin() + static_cast<typename Vector::difference_type>(last), vec.end());
 }
 
+/**
+ * @brief Sorts @p vec and removes its duplicate elements.
+ *
+ * @c std::sort stays the sorting algorithm: it is the fastest of the ones measured on the mixed sizes mata
+ *  produces, and a specialized sort would have to be restricted to unsigned integral keys anyway, because
+ *  @c SymbolPost compares by symbol only and would lose targets under a comparison sort.
+ * Already-sorted input is common (ordered construction, conversion from an ordered container), and the linear
+ *  @c std::is_sorted check that detects it costs far less than the sort it avoids.
+ */
 template <class Vector> void inline sort_and_rmdupl(Vector& vec) {
-	// TODO: try this?
-	// if (vectorIsSorted()) return;//probably useless
-
-	// sort
-	// TODO: is this the best available sorting algo?
-	std::sort(vec.begin(), vec.end());
-
-	// remove duplicates
-	auto it = std::unique(vec.begin(), vec.end());
+	if (!std::is_sorted(vec.begin(), vec.end())) { std::sort(vec.begin(), vec.end()); }
+	const auto it = std::unique(vec.begin(), vec.end());
 	vec.resize(static_cast<size_t>(it - vec.begin()));
 }
 
@@ -374,7 +437,7 @@ inline std::string to_string(const std::string& str) { return str; }
 template <class A> std::string to_string(const std::vector<A>& vec) { // {{{
 	std::string result = "[";
 	bool first = true;
-	for (auto elem : vec) {
+	for (const auto& elem : vec) {
 		if (!first) { result += ", "; }
 		first = false;
 		result += to_string(elem);
@@ -388,7 +451,7 @@ template <class A> std::string to_string(const std::vector<A>& vec) { // {{{
 template <class A> std::string to_string(const std::list<A>& vec) { // {{{
 	std::string result = "[";
 	bool first = true;
-	for (auto elem : vec) {
+	for (const auto& elem : vec) {
 		if (!first) { result += ", "; }
 		first = false;
 		result += to_string(elem);
@@ -404,7 +467,7 @@ template <class A> std::string to_string(const std::list<A>& vec) { // {{{
 template <class A, class B> std::string to_string(const std::unordered_map<A, B>& unmap) { // {{{
 	std::string result = "{";
 	bool first = true;
-	for (auto key_val_pair : unmap) {
+	for (const auto& key_val_pair : unmap) {
 		if (!first) { result += ", "; }
 		first = false;
 		result += to_string(key_val_pair.first) + " -> " + to_string(key_val_pair.second);
@@ -418,7 +481,7 @@ template <class A, class B> std::string to_string(const std::unordered_map<A, B>
 template <class A, class B> std::string to_string(const std::map<A, B>& mp) { // {{{
 	std::string result = "{";
 	bool first = true;
-	for (auto key_val_pair : mp) {
+	for (const auto& key_val_pair : mp) {
 		if (!first) { result += ", "; }
 		first = false;
 		result += to_string(key_val_pair.first) + " -> " + to_string(key_val_pair.second);
@@ -432,7 +495,7 @@ template <class A, class B> std::string to_string(const std::map<A, B>& mp) { //
 template <class A, class B> std::string to_string(const std::unordered_multimap<A, B>& unmap) { // {{{
 	std::string result = "{";
 	bool first = true;
-	for (auto key_val_pair : unmap) {
+	for (const auto& key_val_pair : unmap) {
 		if (!first) { result += ", "; }
 		first = false;
 		result += to_string(key_val_pair.first) + " -> " + to_string(key_val_pair.second);
@@ -446,7 +509,7 @@ template <class A, class B> std::string to_string(const std::unordered_multimap<
 template <class A> std::string to_string(const std::set<A>& st) { // {{{
 	std::string result = "{";
 	bool first = true;
-	for (auto elem : st) {
+	for (const auto& elem : st) {
 		if (!first) { result += ", "; }
 		first = false;
 		result += to_string(elem);
@@ -504,6 +567,8 @@ template <class A, class B> std::string to_string(const std::pair<A, B>& p) { //
 /** arbitrary type with the << operator */
 template <class A> std::string to_string(const A& value) { // {{{
 	std::ostringstream os;
+	// Streaming a string literal decays it to 'const char*'; that is the only overload 'operator<<' offers for it.
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
 	os << value;
 	return os.str();
 } // to_string(T) }}}

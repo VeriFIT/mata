@@ -336,17 +336,19 @@ template <typename D> class DeltaTransitions {
 
 	  public:
 		using iterator_category = std::forward_iterator_tag;
+		using iterator_concept = std::forward_iterator_tag;
 		using value_type = TransitionType;
 		using difference_type = std::ptrdiff_t;
 		using pointer = const TransitionType*;
-		using reference = const TransitionType&;
+		/// By value: a reference into the iterator would dangle once the copy that produced it is destroyed.
+		using reference = TransitionType;
 
 		const_iterator() = default; ///< The end.
 		explicit const_iterator(const D& delta) : const_iterator{delta, 0} {}
 		/// The first transition leaving @p from or a later state.
 		const_iterator(const D& delta, const State from) : delta_{&delta}, source_{from} { seek(); }
 
-		const TransitionType& operator*() const { return transition_; }
+		TransitionType operator*() const { return transition_; }
 		const TransitionType* operator->() const { return &transition_; }
 
 		const_iterator& operator++() {

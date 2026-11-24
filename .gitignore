@@ -32,9 +32,6 @@
 *.exe~
 *.out
 *.app
-*.dll
-*.so
-*.dylib
 
 # the build directory
 build/
@@ -71,10 +68,10 @@ coverage.*
 profile.cov
 
 # Performance and profiling tests
+# The generated `jobs/*.yaml`, `inputs/*.input` and `src/utils/config.hh` now land in the build
+#  directory, so they no longer need an ignore rule here. In-source copies left by an older checkout
+#  are deleted by `tests-integration/CMakeLists.txt` at configure time.
 tests-integration/pycobench.tasks
-tests-integration/inputs/*.input
-tests-integration/jobs/*.yaml
-tests-integration/src/utils/config.hh
 tests-integration/results/*.csv
 tests-integration/results/*.out
 tests-integration/results/*.output
@@ -90,3 +87,10 @@ tests-integration/results/*.output
 # Environent files.
 .env.private
 .envrc.private
+
+# Generated files of the playground on the website (just site playground)
+site/playground/mata-playground.js
+site/playground/mata-playground.wasm
+site/playground/mata-playground-script.js
+site/playground/mata_playground_script.wasm
+site/playground/vendor/

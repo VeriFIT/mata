@@ -18,7 +18,7 @@ cimport libmata.alphabets as alph
 
 from libmata.nft.nft cimport (
     Symbol, State, StateSet, StateRenaming, Level,
-    CLevels, CNft, CJumpMode, CCompositionMode,
+    CLevels, CNft, CJumpMode, CCompositionMode, CCompositionNormalization,
     CAutomaton, CDelta, CRun, CTrans, CSymbolPost, CNfa,
     CAlphabet, CConstAlphabet, CAlphabetLevels,
 )
@@ -26,6 +26,7 @@ from libmata.nfa.nfa cimport CSparseSet, CBoolVector, CBinaryRelation
 from libmata.nfa.nfa cimport Transition
 from libmata.nfa.nfa cimport ostream, ofstream, stringstream
 from libmata.utils cimport COrdVector, BinaryRelation, CPairHash
+from libmata.alphabets cimport CLazyWordGenerator
 from libmata.nfa.nfa import Run, run_safely_external_command
 
 
@@ -68,12 +69,25 @@ class CompositionMode(IntEnum):
     Auto = <int>mata_nft.CompositionModeAuto
 
 
+class CompositionNormalization(IntEnum):
+    """How `compose()` normalizes its result; every mode keeps the relation and the level of every state."""
+    None_ = <int>mata_nft.CompositionNormalizationNone
+    GeneratedOnly = <int>mata_nft.CompositionNormalizationGeneratedOnly
+    Full = <int>mata_nft.CompositionNormalizationFull
+    Auto = <int>mata_nft.CompositionNormalizationAuto
+    Trim = <int>mata_nft.CompositionNormalizationTrim
+
+
 cdef CJumpMode _c_jump_mode(jump_mode):
     return <CJumpMode><int>jump_mode
 
 
 cdef CCompositionMode _c_composition_mode(composition_mode):
     return <CCompositionMode><int>composition_mode
+
+
+cdef CCompositionNormalization _c_composition_normalization(normalization):
+    return <CCompositionNormalization><int>normalization
 
 
 cdef StateSet _c_state_set(states):
@@ -312,11 +326,15 @@ cdef class Nft:
         return result
 
     @alphabets.setter
-    def alphabets(self, alph.AlphabetLevels value):
+    def alphabets(self, value):
+        # Untyped: with `allow_none_for_extension_args` off, a typed parameter would reject the `None`
+        #  that clears the alphabets.
         if value is None:
             self.thisptr.get().alphabets = shared_ptr[CAlphabetLevels]()
+        elif isinstance(value, alph.AlphabetLevels):
+            self.thisptr.get().alphabets = (<alph.AlphabetLevels>value).thisptr
         else:
-            self.thisptr.get().alphabets = value.thisptr
+            raise TypeError(f"expected AlphabetLevels or None, got {type(value).__name__}")
 
     @property
     def initial_states(self):
@@ -417,7 +435,7 @@ cdef class Nft:
         return mata_nfa.wrap_delta(static_pointer_cast[CAutomaton, CNft](self.thisptr))
 
     def add_transition_object(self, Transition tr):
-        self.thisptr.get().delta.add(dereference((<mata_nfa.Transition>tr).thisptr))
+        self.thisptr.get().delta.add((<mata_nfa.Transition>tr).thisptr)
 
     def add_transition(self, State source, symbols, target = None):
         """Add a single NFT transition creating new inner states for all tapes.
@@ -450,7 +468,7 @@ cdef class Nft:
         self.thisptr.get().add_transition_with_same_level_targets(source, symbol, c_targets, _c_jump_mode(jump_mode))
 
     def remove_trans(self, Transition tr):
-        self.thisptr.get().delta.remove(dereference((<mata_nfa.Transition>tr).thisptr))
+        self.thisptr.get().delta.remove((<mata_nfa.Transition>tr).thisptr)
 
     def remove_trans_raw(self, State source, Symbol symbol, State target):
         self.thisptr.get().delta.remove(source, symbol, target)
@@ -556,6 +574,9 @@ cdef class Nft:
         :param State state: The state where the identity transition will be inserted (both source and target).
         :param symbols_or_alphabet: Either a single symbol, a list of symbols, an `alph.Alphabet` (resolved via
           `resolve_alphabet`), or `None` (also resolved via `resolve_alphabet`).
+        :param JumpMode jump_mode: `RepeatSymbol` inserts one self-loop jump per symbol spanning all levels; `NoJump`
+          and `AppendDontCares` insert an explicit loop with one transition per level. Use `NoJump` for an NFT read
+          by jump-free algorithms such as `noodlify_for_transducer`.
         :return: Self with the identity transition(s) inserted.
         """
         cdef vector[Symbol] c_symbols
@@ -773,6 +794,28 @@ cdef class Nft:
         cdef cset[vector[Symbol]] result = self.thisptr.get().get_words(c_max_length, _c_jump_mode(jump_mode))
         return {tuple(word) for word in result}
 
+    def get_words_lazy(self, max_length = None, jump_mode = JumpMode.RepeatSymbol):
+        """Lazily enumerate the words in the language of the NFT whose length is <= `max_length`.
+
+        Unlike `get_words()`, this does not compute the whole set before returning anything: words are
+        produced one at a time, so the caller can stop early, or work with a language that would otherwise
+        be too large (or, with `max_length` left unbounded, infinite) to enumerate up front.
+
+        Raises `RuntimeError` when mata was built with a standard library that does not implement
+        `std::generator` (some, like Apple's system libc++ on macOS, do not, even under C++23).
+
+        :return: Generator of words, each as a tuple of symbols.
+        """
+        cdef size_t c_max_length = max_length if max_length is not None else <size_t>(-1)
+        cdef CLazyWordGenerator* it = c_nft_get_words_lazy_ptr(
+            dereference(self.thisptr.get()), c_max_length, _c_jump_mode(jump_mode)
+        )
+        try:
+            while not it.done():
+                yield tuple(it.next())
+        finally:
+            del it
+
     def apply(self, nfa_or_word, level_to_apply_on: Level = 0, project_out_applied_level = True, jump_mode = JumpMode.RepeatSymbol) -> Nft:
         """Apply `nfa_or_word` to `self`, intersecting it with `level_to_apply_on` of `self`."""
         cdef vector[Symbol] c_word
@@ -924,12 +967,16 @@ def intersection_with_product_map(
 
 def compose(
     Nft lhs, Nft rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels = True,
-    jump_mode = JumpMode.RepeatSymbol, composition_mode = CompositionMode.Auto
+    jump_mode = JumpMode.RepeatSymbol, composition_mode = CompositionMode.Auto,
+    normalization = CompositionNormalization.Auto
 ) -> Nft:
     """Compose `lhs` and `rhs` by aligning their synchronization levels.
 
     :param lhs_sync_levels: A single level, or an ordered iterable of synchronization levels of `lhs`.
     :param rhs_sync_levels: A single level, or an ordered iterable of synchronization levels of `rhs`.
+    :param normalization: How to normalize the result after the construction; see `CompositionNormalization`.
+    :raises ValueError: If the two level lists differ in size or are empty, if a level is not below its
+        transducer's `num_of_levels`, or if the composition would leave no levels.
     """
     if isinstance(lhs_sync_levels, int):
         lhs_sync_levels = [lhs_sync_levels]
@@ -941,7 +988,8 @@ def compose(
     result.thisptr = make_shared[CNft](
         mata_nft.c_compose(
             dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), c_lhs_sync_levels, c_rhs_sync_levels,
-            project_out_sync_levels, _c_jump_mode(jump_mode), _c_composition_mode(composition_mode)
+            project_out_sync_levels, _c_jump_mode(jump_mode), _c_composition_mode(composition_mode),
+            _c_composition_normalization(normalization)
         )
     )
     return result
@@ -950,6 +998,8 @@ def compose(
 def compose_alphabets(Nft lhs, Nft rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels = True):
     """Compose the per-level alphabets for NFTs to be composed via `compose`.
 
+    :raises ValueError: On the same invalid requests as `compose`, and if the kept synchronization levels of
+        `lhs` and `rhs` do not share one alphabet instance.
     :return: The composed `alph.AlphabetLevels`, or `None` if either `lhs.alphabets` or `rhs.alphabets` is `None`.
     """
     if isinstance(lhs_sync_levels, int):

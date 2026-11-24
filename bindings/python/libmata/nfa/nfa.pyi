@@ -1,5 +1,7 @@
+from array import array
 from collections.abc import Iterable, Iterator
-from typing import Any, Literal, Self, TypedDict, overload
+from enum import IntEnum
+from typing import Any, Literal, Required, Self, TypedDict, overload
 
 import networkx
 import pandas
@@ -9,6 +11,11 @@ from libmata.alphabets import Symbol
 from libmata.utils import BinaryRelation
 
 State = int
+
+STATE_BITS: int
+"""Width of a state in bits that Mata was built with (CMake option MATA_STATE_BITS)."""
+MAX_STATE: State
+"""The "no state" sentinel; states are 0 to MAX_STATE - 1."""
 
 def epsilon() -> Symbol: ...
 
@@ -54,8 +61,8 @@ class Transition:
         :param Symbol s: symbol
         :param State target: target state
         """
-    def __eq__(self, other: Self) -> bool: ...
-    def __neq__(self, other: Self) -> bool: ...
+    def __eq__(self, other: object) -> bool: ...
+    def __hash__(self) -> int: ...
 
 class SymbolPost:
     """Wrapper over pair of symbol and states for transitions"""
@@ -68,12 +75,11 @@ class SymbolPost:
     @targets.setter
     def targets(self, value) -> None: ...
     def __init__(self, symbol: Symbol, states: list[State]) -> None: ...
-    def __lt__(self, other: Self) -> bool: ...
-    def __gt__(self, other: Self) -> bool: ...
-    def __le__(self, other: Self) -> bool: ...
-    def __ge__(self, other: Self) -> bool: ...
-    def __eq__(self, other: Self) -> bool: ...
-    def __neq__(self, other: Self) -> bool: ...
+    def __lt__(self, other: object) -> bool: ...
+    def __gt__(self, other: object) -> bool: ...
+    def __le__(self, other: object) -> bool: ...
+    def __ge__(self, other: object) -> bool: ...
+    def __eq__(self, other: object) -> bool: ...
 
 class Delta:
     """Wrapper over the transition relation (`Delta`) of an automaton, allowing operations on transitions similar
@@ -91,6 +97,16 @@ class Delta:
     def add(
         self, source: State, symbol: Symbol | str, target: Iterable[State], alphabet: alph.Alphabet = None
     ) -> None: ...
+    def add_transitions(self, sources: Iterable[State], symbols: Iterable[Symbol], targets: Iterable[State]) -> None:
+        """Add multiple transitions from sequences of sources, symbols, and targets.
+
+        All three sequences must have equal length. Invalid input raises without modifying the automaton.
+        """
+    def add_transitions_from(self, triples: Iterable[tuple[State, Symbol, State]]) -> None:
+        """Add multiple transitions from an iterable of (source, symbol, target) triples.
+
+        Equivalent to add_transitions() but accepting a single iterable. Invalid input raises without modifying.
+        """
     @overload
     def remove(self, source: Transition) -> None: ...
     @overload
@@ -119,6 +135,11 @@ class Delta:
     def __iter__(self) -> Iterator[Transition]: ...
     def get_transitions_from(self, source: State) -> list[Transition]:
         """Get the transitions leading from `source`."""
+    def iter_transitions_from(self, source: State) -> Iterator[Transition]:
+        """Iterate over transitions from a source state (streaming form).
+
+        For a list, use get_transitions_from().
+        """
     def get_transitions_to(self, target: State) -> list[Transition]:
         """Get the transitions leading to `target`."""
     def get_transitions_between(self, source: State, target: State) -> list[Transition]:
@@ -126,6 +147,12 @@ class Delta:
     def get_used_symbols(self) -> set[Symbol]:
         """Get the set of symbols used on the transitions in Delta."""
     def __eq__(self, other: Self) -> bool: ...
+
+class RegexPrintMode(IntEnum):
+    """What `Nfa.to_regex_str()` optimizes for."""
+
+    Fast = 0
+    Readable = 1
 
 class Nfa:
     """Wrapper over NFA
@@ -140,10 +167,22 @@ class Nfa:
         """
     def deepcopy(self) -> Self:
         """Deepcopy Nfa using C++ copy constructor."""
+    def __copy__(self) -> Self:
+        """Copy the automaton with the C++ copy constructor; the copy shares the label and the alphabet."""
+    def __deepcopy__(self, memo: dict[int, Any]) -> Self:
+        """Copy the automaton with the C++ copy constructor and deep-copy the label; the alphabet stays shared."""
     @property
     def label(self) -> Any: ...
     @label.setter
     def label(self, value: Any) -> None: ...
+    def __reduce__(self) -> tuple:
+        """Pickle support: rebuild from the states, initial and final states and `transitions_as_arrays()`.
+
+        The alphabet and the label are pickled with the automaton, so they must be picklable themselves.
+        The label is pickled as state after the automaton, so it may refer back to the automaton.
+        """
+    def __setstate__(self, label: Any) -> None:
+        """Restore the label pickled by `__reduce__`."""
     @property
     def initial_states(self) -> list[State]: ...
     @initial_states.setter
@@ -279,10 +318,10 @@ class Nfa:
         """Get the current number of states in the whole automaton.
         :return: The number of states.
         """
-    def iterate(self) -> Iterable[Transition]:
-        """Iterates over all transitions
+    def iterate(self) -> Iterator[Transition]:
+        """Iterate over all transitions (streaming form).
 
-        :return: stream of transitions
+        For a list, use get_trans_as_sequence().
         """
     def get_transitions_from_state(self, state: State) -> list[SymbolPost]:
         """Returns list of SymbolPost for the given state
@@ -296,16 +335,21 @@ class Nfa:
         :return: List mata_nfa.CTrans: List of transitions leading to state_to.
         """
     def get_trans_as_sequence(self) -> list[Transition]:
-        """Get automaton transitions as a sequence.
+        """Get automaton transitions as a sequence (materializes iterate()).
 
-        TODO: Refactor into a generator.
+        For streaming, use iterate().
 
         :return: List of automaton transitions.
         """
-    def get_trans_from_state_as_sequence(self, source: State) -> list[Transition]:
-        """Get automaton transitions from state_from as a sequence.
+    def iter_transitions_from(self, state: State) -> Iterator[Transition]:
+        """Iterate over transitions from a source state (streaming form).
 
-        TODO: Refactor into a generator.
+        For a list, use get_trans_from_state_as_sequence().
+        """
+    def get_trans_from_state_as_sequence(self, source: State) -> list[Transition]:
+        """Get automaton transitions from source as a sequence (materializes iter_transitions_from()).
+
+        For streaming, use iter_transitions_from().
 
         :return: List of automaton transitions.
         """
@@ -361,6 +405,11 @@ class Nfa:
 
         :return: true if the NFA is deterministic.
         """
+    def is_minimal(self) -> bool:
+        """Tests if the NFA is a minimal deterministic automaton of its language, as returned by minimize().
+
+        :return: true if the NFA is minimal.
+        """
     def is_complete(self, alphabet: alph.Alphabet = None) -> bool:
         """Test if automaton is complete.
 
@@ -379,6 +428,20 @@ class Nfa:
 
         :param Symbol symbol: The symbol to check.
         :return: True if the passed symbol is epsilon symbol, False otherwise.
+        """
+    def to_regex_str(self, mode: RegexPrintMode = RegexPrintMode.Fast, alphabet: alph.Alphabet | None = None) -> str:
+        """Transforms the language of the automaton to a regular expression string.
+
+        :param RegexPrintMode mode: `Fast` to optimize conversion speed, `Readable` to optimize readability.
+        :param alph.Alphabet alphabet: Alphabet to name the symbols with; the automaton's own alphabet when `None`.
+        :return: The language of the automaton as an RE2 regular expression.
+        """
+    def to_mata_str(self, alphabet: alph.Alphabet | None = None, encoding: str = "utf-8") -> str:
+        """Transforms the automaton to a mata-format string.
+
+        :param alph.Alphabet alphabet: Alphabet to name the symbols with; the automaton's own alphabet when `None`.
+        :param str encoding: Encoding of the produced string.
+        :return: The automaton in the mata format.
         """
     def to_dot_file(
         self,
@@ -415,6 +478,14 @@ class Nfa:
         :param int max_label_lenght: maximum label length (-1 means no limit, 0 means no label)
         :return: string with dot representation of the automaton
         """
+    def transitions_as_arrays(self) -> tuple[array, array, array]:
+        """Export all transitions as three parallel `array('q')` arrays: sources, symbols, targets.
+
+        One C++ pass fills typed int64 buffers instead of building one Python object per transition.
+        The order matches `iterate()` (source state, then symbol, then target).
+
+        :return: Tuple `(sources, symbols, targets)` of `array.array` with typecode 'q'.
+        """
     def to_dataframe(self) -> pandas.DataFrame:
         """Transforms the automaton to DataFrame format.
 
@@ -432,7 +503,9 @@ class Nfa:
         that is represented as graph with edges (source, target) with
         additional properties.
 
-        Each symbol is added as an property to each edge.
+        Each symbol is added as a property to each edge. If multiple symbols
+        exist on the same edge, they are accumulated into a sorted 'symbols' list.
+        Single-symbol edges retain the scalar 'symbol' attribute for compatibility.
 
         :return:
         """
@@ -509,11 +582,16 @@ class Nfa:
         :param list path: list of states
         :return: pair of word (list of symbols) and true or false, whether the search was successful
         """
-    def make_complete(self, sink_state: State, alphabet: alph.Alphabet) -> None:
+    def get_words(self, max_length: int) -> set[tuple[Symbol, ...]]:
+        """Get the set of all words in the language of the automaton whose length is <= `max_length`."""
+    def get_words_lazy(self, max_length: int | None = None) -> Iterator[tuple[Symbol, ...]]:
+        """Lazily enumerate the words in the language of the automaton whose length is <= `max_length`."""
+    def make_complete(self, sink_state: State, alphabet: alph.Alphabet) -> bool:
         """Makes NFA complete.
 
         :param Symbol sink_state: sink state of the automaton
         :param OnTheFlyAlphabet alphabet: alphabet to make complete against.
+        :return: True if the automaton was modified, False if already complete.
         """
     def get_symbols(self) -> set[Symbol]:
         """Return a set of symbols used on the transitions in NFA.
@@ -540,18 +618,74 @@ class Nfa:
         """
 
 # Operations
-def determinize_with_subset_map(lhs: Nfa) -> tuple[Nfa, dict[tuple[State], State]]:
+class _DeterminizeParams(TypedDict, total=False):
+    algorithm: Required[Literal["four_russians", "classical"]]
+    reduction: Literal["none", "bisimulation", "simulation", "adaptive"]
+
+def determinize_with_subset_map(
+    lhs: Nfa, params: _DeterminizeParams | None = None
+) -> tuple[Nfa, dict[tuple[State], State]]:
     """Determinize the lhs automaton
 
     :param Nfa lhs: non-deterministic finite automaton
+    :param Dict params: Additional parameters for the determinization:
+      - "algorithm":
+        - "four_russians": The "Four Russians" subset construction, see `determinize_four_russians()`. This is the
+          default when params is None or empty; in other params, the key "algorithm" is required.
+        - "classical": The classical subset construction.
+        With the same reduction, both give the same DFA, but they may number its states differently.
+      - "reduction":
+        - "none": No reduction. This is the default, also when the key is absent.
+        - "bisimulation", "simulation", "adaptive": A smaller DFA for the same language, not always minimal, see
+          `DeterminizationReduction`. In the subset map, merged states then appear as one of them.
     :return: deterministic finite automaton, subset map
     """
 
-def determinize(lhs: Nfa) -> Nfa:
+def determinize(lhs: Nfa, params: _DeterminizeParams | None = None) -> Nfa:
     """Determinize the lhs automaton
 
     :param Nfa lhs: non-deterministic finite automaton
+    :param Dict params: Additional parameters for the determinization:
+      - "algorithm":
+        - "four_russians": The "Four Russians" subset construction, see `determinize_four_russians()`. This is the
+          default when params is None or empty; in other params, the key "algorithm" is required.
+        - "classical": The classical subset construction.
+        With the same reduction, both give the same DFA, but they may number its states differently.
+      - "reduction":
+        - "none": No reduction. This is the default, also when the key is absent.
+        - "bisimulation", "simulation", "adaptive": A smaller DFA for the same language, not always minimal, see
+          `DeterminizationReduction`. In the subset map, merged states then appear as one of them.
     :return: deterministic finite automaton
+    """
+
+class DeterminizationReduction(IntEnum):
+    """Reduction of a determinized automaton: a smaller DFA for the same language, not always minimal."""
+
+    Bisimulation = 1
+    Simulation = 2
+    Adaptive = 3
+
+def determinize_four_russians(lhs: Nfa, block_size: int = 0, reduction: DeterminizationReduction | None = None) -> Nfa:
+    """Determinize the lhs automaton by the "Four Russians" subset construction.
+
+    The same construction as the default of `determinize()`, with its options. With a reduction, gives a smaller DFA
+    for the same language.
+
+    :param Nfa lhs: non-deterministic finite automaton
+    :param int block_size: NFA states per block: 1 (no tables), 2, 4, ..., 64, or 0 to choose automatically
+    :param DeterminizationReduction reduction: reduction of the result, or None for no reduction
+    :return: deterministic finite automaton
+    """
+
+def determinize_four_russians_with_subset_map(
+    lhs: Nfa, block_size: int = 0, reduction: DeterminizationReduction | None = None
+) -> tuple[Nfa, dict[tuple[State], State]]:
+    """Determinize the lhs automaton by the "Four Russians" subset construction, see `determinize_four_russians()`.
+
+    :param Nfa lhs: non-deterministic finite automaton
+    :param int block_size: NFA states per block: 1 (no tables), 2, 4, ..., 64, or 0 to choose automatically
+    :param DeterminizationReduction reduction: reduction of the result, or None for no reduction
+    :return: deterministic finite automaton, subset map (with a reduction, merged states appear as one of them)
     """
 
 def union(lhs: Nfa, rhs: Nfa) -> Nfa:
@@ -682,7 +816,27 @@ class _ResidualReduceParams(TypedDict):
     type: Literal["after", "with"]
     direction: Literal["forward", "backward"]
 
-def reduce(aut: Nfa, params: dict[Literal["algorithm"], Literal["simulation"]] | _ResidualReduceParams = None) -> Nfa:
+class _SatReduceParams(TypedDict, total=False):
+    algorithm: Required[Literal["sat"]]
+    type: Literal["nfa", "dfa"]
+    solver: str
+
+class _QbfReduceParams(TypedDict, total=False):
+    algorithm: Required[Literal["qbf"]]
+    type: Literal["nfa"]
+    solver: str
+
+class ExternalSolverNotFound(RuntimeError):
+    """Raised when no external SAT or QBF solver can be found or run for reduce() with "sat" or "qbf"."""
+
+def reduce(
+    aut: Nfa,
+    params: dict[Literal["algorithm"], Literal["simulation"]]
+    | _ResidualReduceParams
+    | _SatReduceParams
+    | _QbfReduceParams
+    | None = None,
+) -> Nfa:
     """Reduce the automaton.
 
     :param Nfa aut: Original automaton to reduce.
@@ -696,7 +850,17 @@ def reduce(aut: Nfa, params: dict[Literal["algorithm"], Literal["simulation"]] |
         - "direction":
           - "forward": (Only for "algorithm": "residual") Forward residual construction.
           - "backward": (Only for "algorithm": "residual") Backward residual construction.
+        Experimental, for small automata: "algorithm": "sat" or "qbf" computes an automaton with the minimum number of
+        states using an external SAT or QBF solver, optionally with:
+        - "type":
+          - "nfa": (Only for "algorithm": "sat" or "qbf", default) Minimal NFA.
+          - "dfa": (Only for "algorithm": "sat") Minimal deterministic automaton.
+        - "solver": (Only for "algorithm": "sat" or "qbf") Command running the solver. Defaults to the environment
+          variable MATA_SAT_SOLVER or MATA_QBF_SOLVER, then to a solver found in PATH (cadical, kissat,
+          cryptominisat5, picosat; depqbf, caqe).
     :return: Reduced automaton.
+    :raises ExternalSolverNotFound: If no solver can be found or run for "algorithm": "sat" or "qbf".
+    :raises RuntimeError: If the reduction fails otherwise.
     """
 
 def reduce_residual_after(aut: Nfa) -> Nfa:

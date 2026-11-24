@@ -1,0 +1,164 @@
+From afc72ac6157af54a7aed21d740ee14aa808944a0 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Wed, 18 Nov 2026 10:35:14 +0100
+Subject: [PATCH] nft: +perf Build composition posts by sorting, not by
+ shifting
+
+In compose_fast_with(), each target of a newly created SymbolPost went
+through SymbolPost::insert(State): append when the target is larger than
+the last one, otherwise binary search and shift the tail. Newly created
+pair states append in increasing order, but pairs created earlier arrive
+in arbitrary order, so a post that revisits k existing pairs pays O(k^2)
+element moves in the worst case.
+
+Collect the targets with push_back() instead and finish each post with
+one sort_and_rmdupl() before insert_symbol_post_to_delta() moves it
+into the delta. The resulting targets are the same sorted
+duplicate-free set, so the delta, the levels and the generated-state
+normalization see identical posts; duplicates that insert() used to
+drop are now dropped by the sort.
+
+Measured with callgrind instruction counts (Ir, --toggle-collect on the
+compose call only) on the fast composition of NoJump operands: samples
+of the automata-lib-bench nft corpora (composition/pair,
+composition/construct_replace, length_formula/sync_1_0,
+length_formula/sync_0_0, 55 files in total, outputs up to 10.5M
+transitions) and 5 large random 2-level pairs. All 6063 corpus files and
+all random cases produce byte-identical hashed results (states,
+transitions, levels, initial/final sets, delta).
+
+Ir base -> head: pair 42.15G -> 43.51G (1.032x, the three huge
+Commutativity cases with monotone pair creation regress 3.2%), cr 4.75G
+-> 4.82G (1.016x), lf10 30.93G -> 30.82G (0.997x), lf00 21.90G -> 20.80G
+(0.950x, best case 0.879x), random 39.74G -> 39.00G (0.981x, best case
+0.893x). Grand total 139.48G -> 138.95G (0.996x): the wins on
+older-pair-heavy posts and the losses on always-fresh-pair posts nearly
+cancel out, and the pair/cr groups regress slightly on average.
+
+Because the shift that insert() performed is only the worst case of
+work this change avoids, and the instruction regression on the largest
+pair-group inputs is 3.2% while the best cases improve 10-12%, this is
+a trade, not a clear win.
+
+Part of #817
+---
+ src/nft/composition.cc | 26 ++++++++++++++++----------
+ 1 file changed, 16 insertions(+), 10 deletions(-)
+
+diff --git a/src/nft/composition.cc b/src/nft/composition.cc
+index 5c6c5529a..04ef0cd92 100644
+--- a/src/nft/composition.cc
++++ b/src/nft/composition.cc
+@@ -1435,11 +1435,12 @@ std::optional<Nft> compose_fast_with(
+ 				SymbolPost symbol_post{symbol};
+ 				for (const State lhs_sync_target : lhs_sync_targets) {
+ 					for (const State rhs_sync_target : rhs_sync_targets) {
+-						symbol_post.insert(
++						symbol_post.push_back(
+ 							create_composition_state(lhs_sync_target, rhs_sync_target, composition_target_level)
+ 						);
+ 					}
+ 				}
++				symbol_post.targets.sort_and_rmdupl();
+ 				insert_symbol_post_to_delta(composition_state, std::move(symbol_post));
+ 				return;
+ 			}
+@@ -1469,13 +1470,14 @@ std::optional<Nft> compose_fast_with(
+ 				for (const auto& moving_next_targets : same_symbol_posts) {
+ 					for (const State moving_next_target : moving_next_targets->targets) {
+ 						for (const State static_sync_target : static_sync_targets) {
+-							symbol_post.insert(create_composition_state(
++							symbol_post.push_back(create_composition_state(
+ 								moving_next_target, static_sync_target, composition_target_level,
+ 								is_remaining_transition_in_lhs
+ 							));
+ 						}
+ 					}
+ 				}
++				symbol_post.targets.sort_and_rmdupl();
+ 				insert_symbol_post_to_delta(composition_state, std::move(symbol_post));
+ 			}
+ 		};
+@@ -1610,7 +1612,7 @@ std::optional<Nft> compose_fast_with(
+ 						MATA_ASSERT(copy_eps_symbol_post != copy_nft.delta[copy_target].end());
+ 						for (const State sync_target : copy_eps_symbol_post->targets) {
+ 							MATA_ASSERT(copy_nft.levels[sync_target] == 0);
+-							symbol_post.insert(create_composition_state(
++							symbol_post.push_back(create_composition_state(
+ 								sync_target, stationar_state, 0, is_copy_state_lhs, epsilon_filter_mode
+ 							));
+ 						}
+@@ -1652,16 +1654,17 @@ std::optional<Nft> compose_fast_with(
+ 							waiting_worklist->emplace(new_composition_state, copy_target);
+ 						}
+ 						// A cached waiting state can be smaller than a target added before it.
+-						symbol_post.insert(new_composition_state);
++						symbol_post.push_back(new_composition_state);
+ 					} else {
+ 						// Just copy this transition.
+-						symbol_post.insert(create_composition_state(
++						symbol_post.push_back(create_composition_state(
+ 							copy_target, stationar_state, new_composition_state_level, is_copy_state_lhs,
+ 							epsilon_filter_mode
+ 						));
+ 					}
+ 				}
+ 			}
++			symbol_post.targets.sort_and_rmdupl();
+ 			if (!symbol_post.targets.empty()) {
+ 				insert_symbol_post_to_delta(composition_state, std::move(symbol_post));
+ 			}
+@@ -1741,10 +1744,11 @@ std::optional<Nft> compose_fast_with(
+ 			SymbolPost symbol_post{EPSILON};
+ 			for (const State epsilon_target : epsilon_target_it->targets) {
+ 				MATA_ASSERT(running_levels[epsilon_target] == 0);
+-				symbol_post.insert(
++				symbol_post.push_back(
+ 					create_composition_state(waiting_root_state, epsilon_target, 0, is_lhs_waiting, epsilon_filter_mode)
+ 				);
+ 			}
++			symbol_post.targets.sort_and_rmdupl();
+ 			// This function ensures that the transitions are added in the most optimal way.
+ 			// It creates one common path for all targets and then use only the last transitions of
+ 			// that path to connect to all targets.
+@@ -1833,7 +1837,7 @@ std::optional<Nft> compose_fast_with(
+ 							result.levels[composition_state] + (num_of_epsilons_to_replace_sync >= 1 ? 1 : 0) ==
+ 							result.levels.num_of_levels
+ 						);
+-						epsilon_symbol_post.insert(create_composition_state(
++						epsilon_symbol_post.push_back(create_composition_state(
+ 							waiting_root_state, running_epsilon_target, 0, is_lhs_waiting, epsilon_filter_mode
+ 						));
+ 					} else {
+@@ -1852,9 +1856,10 @@ std::optional<Nft> compose_fast_with(
+ 							worklist.emplace(new_composition_state, running_epsilon_target);
+ 						}
+ 						// A cached waiting state can be smaller than a target added before it.
+-						epsilon_symbol_post.insert(new_composition_state);
++						epsilon_symbol_post.push_back(new_composition_state);
+ 					}
+ 				}
++				epsilon_symbol_post.targets.sort_and_rmdupl();
+ 				if (!epsilon_symbol_post.targets.empty()) {
+ 					insert_symbol_post_to_delta(composition_state, std::move(epsilon_symbol_post));
+ 				}
+@@ -1973,13 +1978,14 @@ std::optional<Nft> compose_fast_with(
+ 
+ 		SymbolPost symbol_post{EPSILON};
+ 		for (const State lhs_target : lhs_only_targets) {
+-			symbol_post.insert(
++			symbol_post.push_back(
+ 				create_composition_state(lhs_target, rhs_src, 0, true, EpsilonFilterMode::LhsMayMoveAlone)
+ 			);
+ 		}
+ 		for (const auto& [rhs_target, next_mode] : rhs_only_targets) {
+-			symbol_post.insert(create_composition_state(lhs_src, rhs_target, 0, true, next_mode));
++			symbol_post.push_back(create_composition_state(lhs_src, rhs_target, 0, true, next_mode));
+ 		}
++		symbol_post.targets.sort_and_rmdupl();
+ 		insert_symbol_post_to_delta(source, std::move(symbol_post));
+ 	};
+ 
+-- 
+2.56.0
+

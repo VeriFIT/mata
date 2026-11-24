@@ -2,11 +2,14 @@ from libc.stdint cimport uint8_t
 from libcpp cimport bool
 from libcpp.vector cimport vector
 
+cdef extern from "mata/utils/generator-support.hh":
+    cdef bint C_HAS_GENERATOR_SUPPORT "MATA_HAS_GENERATOR_SUPPORT"
+
 cdef extern from "mata/utils/sparse-set.hh" namespace "mata::utils":
     cdef cppclass CSparseSet "mata::utils::SparseSet" [T]:
         vector[T] dense
         vector[T] sparse
-        size_t size
+        size_t size()
         size_t domain_size
 
         CSparseSet()
@@ -75,6 +78,12 @@ cdef extern from "mata/utils/utils.hh" namespace "mata":
 
 cdef extern from "mata/utils/utils.hh" namespace "mata::utils":
     cdef cppclass CPairHash "mata::utils::PairHash" [A, B]:
+        pass
+
+    # The hash and equality of utils::StringMap, which also find strings by std::string_view.
+    cdef cppclass CStringHash "mata::utils::StringHash":
+        pass
+    cdef cppclass CTransparentEqualTo "std::equal_to<>":
         pass
 
 

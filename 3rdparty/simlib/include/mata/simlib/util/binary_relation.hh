@@ -89,7 +89,10 @@ public:
 
 		if (rowSize_ < size)
 		{
-			this->grow(size, defVal);
+			// An empty relation is sized exactly: rounding the rows up to a power of two, which amortizes alloc() and
+			//  split(), would quadruple the memory of a large relation in the worst case.
+			if (0 == size_) { this->realloc(size, defVal); }
+			else { this->grow(size, defVal); }
 		}
 
 		size_ = size;
@@ -424,6 +427,42 @@ public:
 			{
 				if (this->get(row, col))
 				{	// if 'col' is equivalent (w.r.t. the relation) to 'row'
+					assert(UNDEF_PROJ == quotProj[col]);
+
+					quotProj[col] = row;
+				}
+			}
+		}
+	}
+
+	/**
+	 * @brief  Gets the projection of elements to the representatives of the classes of the symmetric fragment
+	 *
+	 * For a preorder, this is restrict_to_symmetric() followed by get_quotient_projection(), but it neither copies nor
+	 * rewrites the relation.
+	 *
+	 * @param[out]  quotProj  The vector mapping elements to their
+	 *                        representatives in the quotient set, quotProj[i] is
+	 *                        the least element equivalent to the i-th one
+	 */
+	void get_symmetric_quotient_projection(
+		std::vector<size_t>&             quotProj) const
+	{
+		const size_t UNDEF_PROJ = static_cast<size_t>(-1);
+
+		quotProj.assign(this->size(), UNDEF_PROJ);
+		for (size_t row = 0; row < this->size(); ++row)
+		{
+			if (UNDEF_PROJ != quotProj[row])
+			{	// 'row' is already in the class of a smaller element
+				continue;
+			}
+
+			quotProj[row] = row;
+			for (size_t col = row + 1; col < this->size(); ++col)
+			{
+				if (this->get(row, col) && this->get(col, row))
+				{
 					assert(UNDEF_PROJ == quotProj[col]);
 
 					quotProj[col] = row;

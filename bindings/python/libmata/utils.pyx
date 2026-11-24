@@ -1,8 +1,10 @@
-import tabulate
-
 from cython.operator import dereference
 
-from libmata.utils cimport CBinaryRelation
+from libmata.utils cimport CBinaryRelation, C_HAS_GENERATOR_SUPPORT
+
+#: Whether mata was built against a standard library implementing `std::generator`. When false, the lazy word
+#:  enumerators (`Nfa.get_words_lazy()`, `Nft.get_words_lazy()`) raise `RuntimeError` instead of yielding words.
+HAS_GENERATOR_SUPPORT = C_HAS_GENERATOR_SUPPORT
 
 cdef class BinaryRelation:
     """Wrapper for binary relation."""
@@ -52,13 +54,14 @@ cdef class BinaryRelation:
 
         :return: relation of list of lists to booleans
         """
-        size = self.size()
+        cdef Py_ssize_t size = self.thisptr.size()
+        cdef Py_ssize_t i, j
         result = []
-        for i in range(0, size):
-            sub_result = []
-            for j in range(0, size):
-                sub_result.append(self.get(i, j))
-            result.append(sub_result)
+        for i in range(size):
+            row = [False] * size
+            for j in range(size):
+                row[j] = self.thisptr.get(i, j)
+            result.append(row)
         return result
 
     def reset(self, bool defValue = False):
@@ -154,4 +157,10 @@ cdef class BinaryRelation:
         return projection
 
     def __str__(self):
+        try:
+            import tabulate
+        except ImportError as error:
+            raise ImportError(
+                "Printing a BinaryRelation needs tabulate: install it with \"pip install libmata[pandas]\"."
+            ) from error
         return str(tabulate.tabulate(self.to_matrix()))

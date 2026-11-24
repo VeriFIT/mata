@@ -2,7 +2,7 @@
  * Benchmark: Bool_comb (b-param)
  *
  * The benchmark program reproduces the results of CADE'23 for benchmarks in directory
- * /nfa-bench/benchmarks/bool_comb/cox
+ * /nfa-bench/benchmarks/nfa/bool_comb/cox
  *
  * Optimal Inputs: inputs/bench-double-bool-comb-cox.in
  *

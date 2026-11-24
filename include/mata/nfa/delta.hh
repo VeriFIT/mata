@@ -20,6 +20,8 @@ using StatePost = mata::StatePost;
 using SuccessorCursor = mata::SuccessorCursor;
 using SynchronizedExistentialSymbolPostIterator = mata::SynchronizedExistentialSymbolPostIterator;
 using Delta = mata::Delta;
+using DeltaBuilder = mata::DeltaBuilder;
+using PostWorkspace = mata::PostWorkspace;
 
 /**
  * @brief The base every NFA derives from.

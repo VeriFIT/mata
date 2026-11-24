@@ -1,16 +1,18 @@
 /* tests-nft-intersection.cc -- Tests for intersection of NFTs
  */
 
+#include <functional>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include "mata/nft/algorithms.hh"
+#include "mata/nft/builder.hh"
 #include "mata/nft/nft.hh"
 
 using namespace mata::nft;
 using namespace mata::utils;
-using namespace mata::parser;
 
 // Some common automata {{{
 
@@ -854,4 +856,232 @@ TEST_CASE("mata::nft::Move semantics", "[.profiling][std::move]") {
 		a.initial.insert(1);
 		b = std::move(a);
 	}
+}
+
+TEST_CASE("mata::nft::intersection() keeps no room for the target pairs a symbol post skips") {
+	// In JumpMode::RepeatSymbol the class product skips every pair whose target on either side sits at an
+	//  already-passed level: the lhs 'a' targets on level 2 (<= rhs source level 2) and symmetrically on the
+	//  other side. Only the two level-0 targets per side can pair, so the surviving post must hold exactly their
+	//  2x2 pairs, with no room left for the 5x3 pairs visited.
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> prod_map;
+
+	Nft lhs{Nft::with_levels({3, {0, 2, 0, 0, 2, 2, 2}}, 7, {0}, {2})};
+	lhs.delta.add(0, 'x', 1);
+	lhs.delta.add(1, 'a', 2);
+	lhs.delta.add(1, 'a', 3);
+	lhs.delta.add(1, 'a', 4);
+	lhs.delta.add(1, 'a', 5);
+	lhs.delta.add(1, 'a', 6);
+
+	Nft rhs{Nft::with_levels({3, {0, 2, 0, 0, 2}}, 5, {0}, {2})};
+	rhs.delta.add(0, 'x', 1);
+	rhs.delta.add(1, 'a', 2);
+	rhs.delta.add(1, 'a', 3);
+	rhs.delta.add(1, 'a', 4);
+
+	const Nft result{intersection(lhs, rhs, &prod_map, JumpMode::RepeatSymbol)};
+
+	const State middle{prod_map[{1, 1}]};
+	const StatePost& middle_post{result.delta.state_post(middle)};
+	const auto symbol_post{middle_post.find('a')};
+	REQUIRE(symbol_post != middle_post.end());
+	CHECK(symbol_post->targets.size() == 4);
+	CHECK(symbol_post->targets.capacity() == 4);
+	CHECK(result.delta.num_of_transitions() == 5);
+}
+
+TEST_CASE("mata::nft::intersection() keeps no room for the DONT_CARE target pairs a symbol post skips") {
+	// The same skip in process_dont_care(): of the 5x3 targets only the two level-0 targets per side pass the
+	//  level filter, so the surviving 'b' post must hold exactly their 2x2 pairs.
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> prod_map;
+
+	Nft lhs{Nft::with_levels({3, {0, 2, 0, 0, 2, 2, 2}}, 7, {0}, {2})};
+	lhs.delta.add(0, 'x', 1);
+	lhs.delta.add(1, DONT_CARE, 2);
+	lhs.delta.add(1, DONT_CARE, 3);
+	lhs.delta.add(1, DONT_CARE, 4);
+	lhs.delta.add(1, DONT_CARE, 5);
+	lhs.delta.add(1, DONT_CARE, 6);
+
+	Nft rhs{Nft::with_levels({3, {0, 2, 0, 0, 2}}, 5, {0}, {2})};
+	rhs.delta.add(0, 'x', 1);
+	rhs.delta.add(1, 'b', 2);
+	rhs.delta.add(1, 'b', 3);
+	rhs.delta.add(1, 'b', 4);
+
+	const Nft result{intersection(lhs, rhs, &prod_map, JumpMode::RepeatSymbol)};
+
+	const State middle{prod_map[{1, 1}]};
+	const StatePost& middle_post{result.delta.state_post(middle)};
+	const auto symbol_post{middle_post.find('b')};
+	REQUIRE(symbol_post != middle_post.end());
+	CHECK(symbol_post->targets.size() == 4);
+	CHECK(symbol_post->targets.capacity() == 4);
+	CHECK(result.delta.num_of_transitions() == 5);
+}
+
+TEST_CASE("mata::nft::intersection() keeps no room for the target pairs a symbol post merges") {
+	// Under JumpMode::RepeatSymbol, every target of 'a' in lhs is deeper than the single one in rhs, so lhs waits in
+	//  state 0 for each of them: all 32 pairs pass the level filter and merge into one product state. The product
+	//  post must hold that one target only.
+	constexpr State num_of_lhs_targets{32};
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> prod_map;
+
+	Levels lhs_levels(3, num_of_lhs_targets + 1, 2);
+	lhs_levels[0] = 0;
+	Nft lhs{Nft::with_levels(std::move(lhs_levels), num_of_lhs_targets + 1, {0}, {1})};
+	for (State target{1}; target <= num_of_lhs_targets; ++target) { lhs.delta.add(0, 'a', target); }
+
+	Nft rhs{Nft::with_levels({3, {0, 1}}, 2, {0}, {1})};
+	rhs.delta.add(0, 'a', 1);
+
+	const Nft result{intersection(lhs, rhs, &prod_map, JumpMode::RepeatSymbol)};
+
+	const StatePost& source_post{result.delta.state_post(prod_map[{0, 0}])};
+	const auto symbol_post{source_post.find('a')};
+	REQUIRE(symbol_post != source_post.end());
+	CHECK(symbol_post->targets.size() == 1);
+	// The single target fits the inline storage: nothing was reserved for the 32 merged pairs.
+	CHECK(symbol_post->targets.is_inline());
+}
+
+TEST_CASE("mata::nft::intersection() keeps no room for the DONT_CARE target pairs a symbol post merges") {
+	// In JumpMode::RepeatSymbol, process_dont_care() appends to the symbol post the class product already
+	//  created: the two lhs targets of 'a' on level 1 pair with the DONT_CARE target of rhs on level 1, so the
+	//  post grows from four targets to six, the last two being fresh ids appended in order. That merge must size
+	//  the post for the union instead of doubling its capacity.
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> prod_map;
+
+	// lhs: state 0 'a'->{1, 2} on level 1.
+	Nft lhs{Nft::with_levels({3, {0, 1, 1}}, 3, {0}, {1})};
+	lhs.delta.add(0, 'a', 1);
+	lhs.delta.add(0, 'a', 2);
+
+	// rhs: state 0 'a'->{1, 2, 3} on levels 1, 2, 2, plus 0 -DONT_CARE-> 4 on level 1.
+	Nft rhs{Nft::with_levels({3, {0, 1, 2, 2, 1}}, 5, {0}, {1})};
+	rhs.delta.add(0, 'a', 1);
+	rhs.delta.add(0, 'a', 2);
+	rhs.delta.add(0, 'a', 3);
+	rhs.delta.add(0, DONT_CARE, 4);
+
+	const Nft result{intersection(lhs, rhs, &prod_map, JumpMode::RepeatSymbol)};
+
+	const StatePost& source_post{result.delta.state_post(prod_map[{0, 0}])};
+	const auto symbol_post{source_post.find('a')};
+	REQUIRE(symbol_post != source_post.end());
+	CHECK(symbol_post->targets.size() == 6);
+	CHECK(symbol_post->targets.capacity() == 6);
+}
+
+TEST_CASE("mata::nft::intersection() with an empty operand keeps the level count - issue #763") {
+	const Nft empty3 = Nft::with_levels(3);
+	const Nft sigma_star3 = mata::nft::builder::create_sigma_star_nft(size_t{3});
+
+	const Nft result = intersection(empty3, sigma_star3);
+	CHECK(result.is_lang_empty());
+	CHECK(result.levels.num_of_levels == 3);
+}
+
+TEST_CASE("mata::nft::intersection() between NFTs with different level counts throws - issue #763") {
+	const Nft two = Nft::with_levels(2);
+	const Nft three = Nft::with_levels(3);
+	CHECK_THROWS_AS(intersection(two, three), std::invalid_argument);
+}
+
+TEST_CASE("mata::nft::intersection() deduplicates repeated targets within one symbol post") {
+	// Under JumpMode::RepeatSymbol a side waits in its source state whenever the other side's target is deeper, so
+	//  two different combinations of targets of one symbol can give the same product state. Unlike in the NFA
+	//  product, the targets collected for a symbol post therefore need deduplication, not only sorting.
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> prod_map;
+
+	// Both targets of 'a' in lhs sit on level 2, the single target of 'a' in rhs on level 1. lhs is the deeper side
+	//  in both combinations, hence it waits in state 0 twice and both yield the pair (0, 1).
+	Nft lhs{Nft::with_levels({3, {0, 2, 2}}, 3, {0}, {1, 2})};
+	lhs.delta.add(0, 'a', 1);
+	lhs.delta.add(0, 'a', 2);
+
+	Nft rhs{Nft::with_levels({3, {0, 1}}, 2, {0}, {1})};
+	rhs.delta.add(0, 'a', 1);
+
+	const Nft result{intersection(lhs, rhs, &prod_map, JumpMode::RepeatSymbol)};
+
+	const State source{prod_map[{0, 0}]};
+	const StatePost& source_post{result.delta.state_post(source)};
+	const auto symbol_post{source_post.find('a')};
+	REQUIRE(symbol_post != source_post.end());
+	CHECK(symbol_post->targets.size() == 1);
+	CHECK(symbol_post->targets.front() == prod_map[{0, 1}]);
+	CHECK(result.delta.num_of_transitions() == 1);
+}
+
+TEST_CASE("mata::nft::intersection() keeps exactly the symbols both state posts have") {
+	// The product walks both state posts with a two-pointer merge. The operands below share one symbol per level and
+	//  surround it with symbols only one of them has, so a merge that mismatches the posts shows up immediately.
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> prod_map;
+
+	Nft lhs{Nft::with_levels({2, {0, 1, 1, 0}}, 4, {0}, {3})};
+	lhs.delta.add(0, 'a', 1); // Only in lhs.
+	lhs.delta.add(0, 'c', 1);
+	lhs.delta.add(0, 'c', 2);
+	lhs.delta.add(0, 'e', 1); // Only in lhs.
+	lhs.delta.add(1, 'x', 3); // Only in lhs.
+	lhs.delta.add(1, 'z', 3);
+	lhs.delta.add(2, 'z', 3);
+
+	Nft rhs{Nft::with_levels({2, {0, 1, 1, 0}}, 4, {0}, {3})};
+	rhs.delta.add(0, 'b', 1); // Only in rhs.
+	rhs.delta.add(0, 'c', 1);
+	rhs.delta.add(0, 'c', 2);
+	rhs.delta.add(0, 'd', 1); // Only in rhs.
+	rhs.delta.add(1, 'y', 3); // Only in rhs.
+	rhs.delta.add(1, 'z', 3);
+	rhs.delta.add(2, 'z', 3);
+
+	const Nft result{intersection(lhs, rhs, &prod_map, JumpMode::AppendDontCares)};
+
+	// 'c' leads to all four pairs of the two targets on each side, and each of them reaches (3, 3) over 'z'.
+	CHECK(result.num_of_states() == 6);
+	CHECK(result.delta.num_of_transitions() == 8);
+	const State source{prod_map[{0, 0}]};
+	CHECK(result.delta.state_post(source).num_of_moves() == 4);
+	for (const State lhs_target : {State{1}, State{2}}) {
+		for (const State rhs_target : {State{1}, State{2}}) {
+			const State middle{prod_map[{lhs_target, rhs_target}]};
+			CHECK(result.delta.contains(source, 'c', middle));
+			CHECK(result.delta.state_post(middle).num_of_moves() == 1);
+			CHECK(result.delta.contains(middle, 'z', prod_map[{3, 3}]));
+		}
+	}
+	CHECK(result.final.contains(prod_map[{3, 3}]));
+}
+
+TEST_CASE("mata::nft::intersection() does not match DONT_CARE with EPSILON (#987)") {
+	Nft any_symbol{Nft::with_levels(1, 2, {0}, {1})};
+	any_symbol.delta.add(0, DONT_CARE, 1);
+	Nft nothing{Nft::with_levels(1, 2, {0}, {1})};
+	nothing.delta.add(0, EPSILON, 1);
+
+	for (const Nft& result : {intersection(any_symbol, nothing), intersection(nothing, any_symbol)}) {
+		CHECK(result.is_lang_empty());
+		CHECK(!result.is_in_lang(mata::Word{}));
+	}
+
+	Nft letter{Nft::with_levels(1, 2, {0}, {1})};
+	letter.delta.add(0, 'a', 1);
+	CHECK(intersection(any_symbol, letter).is_in_lang(mata::Word{'a'}));
+	CHECK(intersection(letter, any_symbol).is_in_lang(mata::Word{'a'}));
+}
+
+TEST_CASE("mata::nft::algorithms::product() takes a named final-state predicate - issue #769") {
+	Nft lhs{Nft::with_levels(1, 2, {0}, {1})};
+	lhs.delta.add(0, 'a', 1);
+	Nft rhs{Nft::with_levels(1, 2, {0}, {0, 1})};
+	rhs.delta.add(0, 'a', 1);
+
+	const std::function<bool(State, State)> both_final{[&](const State lhs_state, const State rhs_state) {
+		return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);
+	}};
+	const Nft result{algorithms::product(lhs, rhs, both_final)};
+	CHECK(result.final.size() == 1);
+	CHECK(result.delta.num_of_transitions() == 1);
 }

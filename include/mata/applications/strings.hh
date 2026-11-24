@@ -5,8 +5,20 @@
 #ifndef MATA_STRING_SOLVING_HH_
 #define MATA_STRING_SOLVING_HH_
 
+#include <limits>
+#include <mutex>
+#include <span>
+
 #include "mata/nfa/nfa.hh"
 #include "mata/nft/nft.hh"
+#include "mata/utils/generator-support.hh"
+#include "mata/utils/lazy-generator.hh"
+
+#if MATA_HAS_GENERATOR_SUPPORT
+	#include <generator>
+#endif
+
+#include <cstdint>
 
 /**
  * Operations on NFAs/NFTs used for string constraint solving.
@@ -28,13 +40,10 @@ using Nft = nft::Nft;
 class ShortestWordsMap {
   public:
 	/**
-	 * Maps states in the automaton @p aut to shortest words accepted by languages of the states.
+	 * Prepares shortest words for every state of @p aut.
 	 * @param aut Automaton to compute shortest words for.
 	 */
-	explicit ShortestWordsMap(const Nfa& aut) : reversed_automaton_(revert(aut)) {
-		insert_initial_lengths();
-		compute();
-	}
+	explicit ShortestWordsMap(const Nfa& aut) : aut_{aut}, distances_{aut_.distances_to_final()} {}
 
 	/**
 	 * Gets shortest words for the given @p states.
@@ -51,49 +60,9 @@ class ShortestWordsMap {
 	std::set<Word> get_shortest_words_from(State state) const;
 
   private:
-	using WordLength = int; ///< A length of a word.
-	/// Pair binding the length of all words in the word set and word set with words of the given length.
-	using LengthWordsPair = std::pair<WordLength, std::set<Word>>;
-	/// Map mapping states to the shortest words accepted by the automaton from the mapped state.
-	std::unordered_map<State, LengthWordsPair> shortest_words_map_{};
-	std::set<State> processed_{}; ///< Set of already processed states.
-	std::deque<State> fifo_queue_{}; ///< FIFO queue for states to process.
-	const Nfa reversed_automaton_; ///< Reversed input automaton.
-
-	/**
-	 * @brief Inserts initial lengths into the shortest words map.
-	 *
-	 * Inserts initial length of length 0 for final state in the automaton (initial states in the reversed automaton).
-	 */
-	void insert_initial_lengths();
-
-	/**
-	 * Computes shortest words for all states in the automaton.
-	 */
-	void compute();
-
-	/**
-	 * Computes shortest words for the given @p state.
-	 * @param[in] state State to compute shortest words for.
-	 */
-	void compute_for_state(State state);
-
-	/**
-	 * Creates default shortest words mapping for yet unprocessed @p state.
-	 * @param[in] state State to map default shortest words.
-	 * @return Created default shortest words map element for the given @p state.
-	 */
-	LengthWordsPair map_default_shortest_words(const State state) {
-		return shortest_words_map_.emplace(state, std::make_pair(-1, std::set<Word>{})).first->second;
-	}
-
-	/**
-	 * Update words for the current state.
-	 * @param[out] act Current state shortest words and length.
-	 * @param[in] dst Transition target state shortest words and length.
-	 * @param[in] symbol Symbol to update with.
-	 */
-	static void update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, Symbol symbol);
+	Nfa aut_;
+	/// Shortest accepting path length from every state, or @c Limits::max_state if no final state is reachable.
+	std::vector<State> distances_{};
 }; // Class ShortestWordsMap.
 
 /**
@@ -103,17 +72,52 @@ class ShortestWordsMap {
 std::set<Word> get_shortest_words(const Nfa& nfa);
 
 /**
+ * @brief Get the longest words (regarding their length) of the automaton.
+ *
+ * The language has longest words iff it is finite, i.e., iff no cycle passes through a useful state (a state reachable
+ *  from an initial state that reaches a final state). Cycles through useless states are allowed. Every symbol,
+ *  epsilon included, counts as one letter, as in @c get_shortest_words().
+ *
+ * Costs O(|Q| + |delta|) to compute the length of the longest words from every state, and then a depth-first search
+ *  over macrostates that follows only the transitions on some longest accepting path, so every branch of the search
+ *  ends in a word to report and every word is reported once, however many accepting paths spell it.
+ *
+ * @return Set of the longest words (empty if the language is empty), or @c std::nullopt if the language is infinite.
+ */
+std::optional<std::set<Word>> get_longest_words(const Nfa& nfa);
+
+#if MATA_HAS_GENERATOR_SUPPORT
+/**
+ * @brief Lazy variant of @c get_longest_words(): yields the longest words one by one, in lexicographic order.
+ *
+ * Laziness is sound because only the enumeration is lazy: the finiteness of the language and the length of the
+ *  longest words are decided by this call before the first word is yielded, in O(|Q| + |delta|), so a word once
+ *  yielded is known to be longest. The delay between two words is O(length * |delta|) at worst.
+ *
+ * @note The generator refers to @p nfa, which therefore has to outlive it.
+ * @return Generator of the longest words (yielding nothing if the language is empty), or @c std::nullopt if the
+ *  language is infinite.
+ */
+std::optional<std::generator<Word>> get_longest_words_lazy(const Nfa& nfa);
+#endif
+
+/**
  * @brief Get the accepting words for each tape of @p nft with specific lengths
  *
  * This function finds such an accepting word of @p nft that for each tape i,
  * the word on this tape (on the ith index of resulting vector) has the length lengths[i].
  *
+ * The search runs over configurations (state, number of symbols written on each tape), so it terminates on
+ * epsilon cycles and costs O(|delta| * prod(lengths[i] + 1)) instead of being exponential in the lengths.
+ *
  * @param nft Transducer whose accepting words we are looking for
  * @param lengths The lengths of the words of each tape (size of lengths == the levels of @p nft)
  * @return std::optional<std::vector<Word>> Either the resulting words of tapes, or std::nullopt if such words of
  * specific lengths do not exist
+ * @throws std::invalid_argument When @p lengths does not have one entry per level of @p nft, when @p nft has jump
+ * transitions, or when @p lengths spans more configurations than can be indexed.
  */
-std::optional<std::vector<Word>> get_words_of_lengths(const Nft& nft, std::vector<unsigned> lengths);
+std::optional<std::vector<Word>> get_words_of_lengths(const Nft& nft, const std::vector<unsigned>& lengths);
 
 /**
  * @brief Get all the one symbol words accepted by @p nfa.
@@ -177,17 +181,38 @@ class Segmentation {
 	}
 
 	/**
+	 * Get the ε-transitions grouped by their depth.
+	 * @return Vector indexed by depth; element @c i lists the ε-transitions of depth @c i.
+	 */
+	const std::vector<std::vector<Transition>>& get_epsilon_transitions_by_depth() const {
+		return epsilon_transitions_by_depth_;
+	}
+
+	/**
+	 * Get the ε-transitions leaving @p state.
+	 *
+	 * All ε-transitions of one state lie consecutively at a single depth, so they are a view into
+	 *  @c get_epsilon_transitions_by_depth().
+	 * @return The ε-transitions leaving @p state; empty if there are none.
+	 */
+	std::span<const Transition> get_epsilon_transitions(State state) const;
+
+	/**
 	 * Get segmentation depths for ε-transitions.
+	 *
+	 * Built from @c get_epsilon_transitions_by_depth() on the first call.
 	 * @return Map of depths to lists of ε-transitions.
 	 */
-	const EpsilonDepthTransitions& get_epsilon_depths() const { return epsilon_depth_transitions_; }
+	const EpsilonDepthTransitions& get_epsilon_depths() const;
 
 	/**
 	 * Get the epsilon depth trans map object (mapping of depths and states to eps-successors)
 	 *
+	 * Built from @c get_epsilon_transitions_by_depth() on the first call.
 	 * @return Map of depths to a map of states to transitions
 	 */
-	const EpsilonDepthTransitionMap& get_epsilon_depth_trans_map() const { return this->eps_depth_trans_map_; }
+	[[deprecated("Use get_epsilon_transitions(state), which needs no copy of the ε-transitions.")]]
+	const EpsilonDepthTransitionMap& get_epsilon_depth_trans_map() const;
 
 	/**
 	 * Get segment automata.
@@ -200,21 +225,61 @@ class Segmentation {
 	 * Get raw segment automata.
 	 * @return A vector of segments for the segment automaton in the order from the left (initial state in segment
 	 * automaton) to the right (final states of segment automaton) without trimming (the states are same as in the
-	 * original automaton).
+	 * original automaton). A segment holds only the transitions reachable from its initial states; the posts of the
+	 * other states are empty.
 	 */
 	const std::vector<Nfa>& get_untrimmed_segments();
 
 	const VisitedEpsMap& get_visited_eps() const { return this->visited_eps_; }
 
   private:
-	const std::set<Symbol> epsilons_; ///< Symbol for which to execute segmentation.
+	std::set<Symbol> epsilons_; ///< Symbol for which to execute segmentation.
 	/// Automaton to execute segmentation for. Must be a segment automaton (can be split into @p segments).
+	// A one-shot, stack-allocated algorithm helper which only borrows the input automaton for its lifetime; it is
+	//  never copied nor assigned.
 	const SegNfa& automaton_;
-	EpsilonDepthTransitions epsilon_depth_transitions_{}; ///< Epsilon depths.
-	EpsilonDepthTransitionMap eps_depth_trans_map_{}; /// Epsilon depths with mapping of states to epsilon transitions
+	/// ε-transitions indexed by their depth; each ε-transition is stored once.
+	std::vector<std::vector<Transition>> epsilon_transitions_by_depth_{};
+	/// Position of the ε-transitions of a state in @c epsilon_transitions_by_depth_, indexed by the state.
+	struct EpsilonTransitionSpan {
+		EpsilonDepth depth{};
+		size_t begin{};
+		size_t end{};
+	};
+	std::vector<EpsilonTransitionSpan> epsilon_transitions_of_state_{};
+	/// Value built on the first call of @c get(), safely for concurrent @c const calls. A copied or moved-from
+	///  @c Segmentation copies the ε-transition index, so the copy starts unbuilt and builds its own view on demand.
+	template <typename T> class LazyView {
+	  public:
+		LazyView() = default;
+		LazyView(const LazyView& /*other*/) {}
+		LazyView(LazyView&& /*other*/) noexcept {}
+		LazyView& operator=(const LazyView&) = delete;
+		LazyView& operator=(LazyView&&) = delete;
+		~LazyView() = default;
+
+		template <typename Build> const T& get(Build&& build) const {
+			std::call_once(built_, [&] { std::forward<Build>(build)(value_); });
+			return value_;
+		}
+
+	  private:
+		mutable std::once_flag built_{};
+		mutable T value_{};
+	};
+	LazyView<EpsilonDepthTransitions> epsilon_depth_transitions_{}; ///< View for @c get_epsilon_depths().
+	LazyView<EpsilonDepthTransitionMap> eps_depth_trans_map_{}; ///< View for @c get_epsilon_depth_trans_map().
 	std::vector<SegNfa> segments_{}; ///< Segments for @p automaton.
 	std::vector<SegNfa> segments_raw_{}; ///< Raw segments for @p automaton.
 	VisitedEpsMap visited_eps_{}; /// number of visited eps for each state
+
+	/// One epsilon-counter vector per ε-head, indexed by @c epsilon_ranks_; every target of the head shares it.
+	std::vector<std::vector<unsigned>> epsilon_counts_{};
+	std::map<Symbol, size_t>
+		epsilon_ranks_{}; ///< Position of each symbol of @c epsilons_ in an epsilon-counter vector.
+	/// Index into @c epsilon_counts_ last written to each state, or @c no_eps_count when the state was never a target.
+	std::vector<size_t> last_eps_count_index_{};
+	static constexpr size_t no_eps_count{std::numeric_limits<size_t>::max()};
 
 	/**
 	 * Pair of state and its depth.
@@ -222,7 +287,7 @@ class Segmentation {
 	struct StateDepthTuple {
 		State state; ///< State with a depth.
 		EpsilonDepth depth; ///< Depth of a state.
-		VisitedEpsilonsCounterMap eps; /// visited epsilons and their numbers
+		size_t eps_index{}; ///< Index of the visited-epsilon counters in @c epsilon_counts_.
 	};
 
 	/**
@@ -236,37 +301,34 @@ class Segmentation {
 	void split_aut_into_segments();
 
 	/**
-	 * Propagate changes to the current segment automaton to the next segment automaton.
-	 * @param[in] current_depth Current depth.
-	 * @param[in] transition Current epsilon transition.
+	 * Breadth-first queue of state and depth pairs; each state is queued at most once.
+	 *
+	 * The first time a state is queued is the time it is processed: a FIFO queue pops the first copy of a state before
+	 *  any later one, so skipping the later copies at push keeps the order and the depths of the processed states.
 	 */
-	void update_next_segment(size_t current_depth, const Transition& transition);
+	struct Worklist {
+		std::deque<StateDepthTuple> queue{};
+		BoolVector queued{};
 
-	/**
-	 * Update current segment automaton.
-	 * @param[in] current_depth Current depth.
-	 * @param[in] transition Current epsilon transition.
-	 */
-	void update_current_segment(size_t current_depth, const Transition& transition);
-
-	/**
-	 * Initialize map of visited states.
-	 * @return Map of visited states.
-	 */
-	std::unordered_map<State, bool> initialize_visited_map() const;
+		void push(const StateDepthTuple& state_depth_pair) {
+			if (queued[state_depth_pair.state]) { return; }
+			queued[state_depth_pair.state] = true;
+			queue.push_back(state_depth_pair);
+		}
+	};
 
 	/**
 	 * Initialize worklist of states with depths to process.
-	 * @return Queue of state and its depth pairs.
+	 * @return Worklist with the initial states at depth 0.
 	 */
-	std::deque<StateDepthTuple> initialize_worklist() const;
+	Worklist initialize_worklist() const;
 
 	/**
 	 * Process pair of state and its depth.
 	 * @param[in] state_depth_pair Current state depth pair.
 	 * @param[out] worklist Worklist of state and depth pairs to process.
 	 */
-	void process_state_depth_pair(const StateDepthTuple& state_depth_pair, std::deque<StateDepthTuple>& worklist);
+	void process_state_depth_pair(const StateDepthTuple& state_depth_pair, Worklist& worklist);
 
 	/**
 	 * Add states with non-epsilon transitions to the @p worklist.
@@ -275,7 +337,7 @@ class Segmentation {
 	 * @param worklist[out] Worklist of state and depth pairs to process.
 	 */
 	void add_transitions_to_worklist(
-		const StateDepthTuple& state_depth_pair, const SymbolPost& move, std::deque<StateDepthTuple>& worklist
+		const StateDepthTuple& state_depth_pair, const SymbolPost& move, Worklist& worklist
 	);
 
 	/**
@@ -284,43 +346,56 @@ class Segmentation {
 	 * @param[in] move Move from current state.
 	 * @param[out] worklist Worklist of state and depth pairs to process.
 	 */
-	void handle_epsilon_transitions(
-		const StateDepthTuple& state_depth_pair, const SymbolPost& move, std::deque<StateDepthTuple>& worklist
-	);
-
-	/**
-	 * @brief Remove inner initial and final states.
-	 *
-	 * Remove all initial states for all segments but the first one and all final states for all segments but the
-	 *  last one.
-	 */
-	void remove_inner_initial_and_final_states();
+	void
+		handle_epsilon_transitions(const StateDepthTuple& state_depth_pair, const SymbolPost& move, Worklist& worklist);
 }; // Class Segmentation.
 
-/// A noodle is represented as a sequence of segments (a copy of the segment automata) created as if there was exactly
-///  one ε-transition between each two consecutive segments.
-using Noodle = std::vector<std::shared_ptr<SegNfa>>;
+/**
+ * @brief A segment of a noodle: the part of a segment automaton between one of its initial states and one of its final
+ *  states.
+ *
+ * @c automaton is the reduced part of the segment automaton that reaches the final state, shared by all segments that
+ *  end in that final state; the segment is the language of @c initial in it. The initial states of @c automaton itself
+ *  are hence not those of the segment. The parts of one final state overlap almost completely, so sharing them keeps
+ *  one automaton per final state instead of one per pair of an initial and a final state.
+ */
+struct NoodleSegment {
+	std::shared_ptr<const Nfa> automaton;
+	State initial;
+
+	/// The segment as an automaton of its own: @c automaton trimmed to the states reachable from @c initial.
+	Nfa to_nfa() const;
+	/// Whether the language of the segment is {ε}.
+	bool is_epsilon_only() const;
+
+	bool operator==(const NoodleSegment&) const = default;
+};
+
+/// A noodle is represented as a sequence of segments created as if there was exactly one ε-transition between each two
+///  consecutive segments.
+using Noodle = std::vector<NoodleSegment>;
 /// Segment with a counter of visited epsilons.
-using SegmentWithEpsilonsCounter = std::pair<std::shared_ptr<Nfa>, VisitedEpsilonsCounterVector>;
+using SegmentWithEpsilonsCounter = std::pair<NoodleSegment, VisitedEpsilonsCounterVector>;
 /// Noodles as segments enriched with EpsCntMap
 using NoodleWithEpsilonsCounter = std::vector<SegmentWithEpsilonsCounter>;
 
 /**
  * @brief segs_one_initial_final
  *
- * segments_one_initial_final[init, final] is the pointer to automaton created from one of
- * the segments such that init and final are one of the initial and final states of the segment
- * and the created automaton takes this segment, sets initial={init}, final={final}
- * and trims it; also segments_one_initial_final[unused_state, final] is used for the first
- * segment (where we always want all initial states, only final state changes) and
- * segments_one_initial_final[init, unused_state] is similarly for the last segment
- * TODO: should we use unordered_map? then we need hash
+ * segments_one_initial_final[init, final] is the segment of one of the segments such that init and final are one of
+ *  the initial and final states of the segment, i.e. the language from init to final in the segment; also
+ *  segments_one_initial_final[unused_state, final] is used for the first segment (where we always want all initial
+ *  states, only final state changes) and segments_one_initial_final[init, unused_state] is similarly for the last
+ *  segment. All pairs of one final state share one automaton (see NoodleSegment); the first segment, whose pairs
+ *  differ in the final state only, gets a single initial state by unifying its initial states.
+ * The map is ordered so that all pairs of one initial state are contiguous: noodlify_mult_eps() visits them with one
+ *  range scan instead of probing every final state.
  */
 void segs_one_initial_final(
 	const std::vector<Nfa>& segments,
 	bool include_empty,
 	const State& unused_state,
-	std::map<std::pair<State, State>, std::shared_ptr<Nfa>>& out
+	std::map<std::pair<State, State>, NoodleSegment>& out
 );
 
 /**
@@ -364,13 +439,15 @@ std::vector<NoodleWithEpsilonsCounter>
  *  representing the intersection. That can be achieved by computing a product of both sides. First, the left side
  *  has to be concatenated over an epsilon transitions into a single automaton to compute the intersection on, though.
  *
- * @param[in] lhs_automata Sequence of segment automata for left side of an equation to noodlify.
+ * @param[in,out] lhs_automata Sequence of segment automata for left side of an equation to noodlify. Their initial and
+ *  final states are unified in place (unify_initial(), unify_final()).
  * @param[in] rhs_automaton Segment automaton for right side of an equation to noodlify.
  * @param[in] include_empty Whether to also include empty noodles.
  * @param[in] params Additional parameters for the noodlification:
  *     - "reduce": "false", "forward", "backward", "bidirectional"; Execute forward, backward or bidirectional
  * simulation minimization before noodlification.
  * @return A list of all (non-empty) noodles.
+ * @note Modifies @p lhs_automata, see above; @p rhs_automaton is left as it is.
  */
 std::vector<Noodle> noodlify_for_equation(
 	const std::vector<std::reference_wrapper<Nfa>>& lhs_automata,
@@ -391,13 +468,19 @@ std::vector<Noodle> noodlify_for_equation(
  *  representing the intersection. That can be achieved by computing a product of both sides. First, the left side
  *  has to be concatenated over an epsilon transitions into a single automaton to compute the intersection on, though.
  *
- * @param[in] lhs_automata Sequence of pointers to segment automata for left side of an equation to noodlify.
+ * @param[in,out] lhs_automata Sequence of pointers to segment automata for left side of an equation to noodlify. Their
+ *  initial and final states are unified in place (unify_initial(), unify_final()), but only when "reduce" is set to
+ *  "forward", "backward" or "bidirectional".
  * @param[in] rhs_automaton Segment automaton for right side of an equation to noodlify.
  * @param[in] include_empty Whether to also include empty noodles.
  * @param[in] params Additional parameters for the noodlification:
  *     - "reduce": "false", "forward", "backward", "bidirectional"; Execute forward, backward or bidirectional
  * simulation minimization before noodlification.
  * @return A list of all (non-empty) noodles.
+ * @note Unlike the std::reference_wrapper overload, which always unifies the left side automata, this overload unifies
+ *  them only when reducing. Under the default "reduce": "false" the product may then have more initial and final
+ *  states, so the noodles (and their number) can differ from those of the std::reference_wrapper overload on the
+ *  same automata. @p rhs_automaton is left as it is.
  */
 std::vector<Noodle> noodlify_for_equation(
 	const std::vector<Nfa*>& lhs_automata,
@@ -409,13 +492,15 @@ std::vector<Noodle> noodlify_for_equation(
 /**
  * @brief Create noodles for left and right side of equation (both sides are given as a sequence of automata).
  *
- * @param[in] lhs_automata Sequence of pointers to segment automata for left side of an equation to noodlify.
- * @param[in] rhs_automaton Sequence of pointers to segment automata for right side of an equation to noodlify.
+ * @param[in,out] lhs_automata Sequence of pointers to segment automata for left side of an equation to noodlify.
+ * @param[in,out] rhs_automata Sequence of pointers to segment automata for right side of an equation to noodlify.
  * @param[in] include_empty Whether to also include empty noodles.
  * @param[in] params Additional parameters for the noodlification:
  *     - "reduce": "false", "forward", "backward", "bidirectional"; Execute forward, backward or bidirectional
  * simulation minimization before noodlification.
  * @return A list of all (non-empty) noodles together with the positions reached from the beginning of left/right side.
+ * @note Modifies the automata of both sides: their initial and final states are unified in place (unify_initial(),
+ *  unify_final()), each automaton once even if it occurs several times.
  */
 std::vector<NoodleWithEpsilonsCounter> noodlify_for_equation(
 	const std::vector<std::shared_ptr<Nfa>>& lhs_automata,
@@ -447,6 +532,20 @@ struct TransducerNoodleElement {
 
 using TransducerNoodle = std::vector<TransducerNoodleElement>;
 
+/**
+ * @brief Create noodles for transducer @p nft with the concatenation of @p input_automata on its input track and the
+ *  concatenation of @p output_automata on its output track.
+ *
+ * @param[in] nft Transducer relating the input and the output track.
+ * @param[in,out] input_automata Automata of the input track.
+ * @param[in,out] output_automata Automata of the output track.
+ * @param[in] reduce_intersection Whether to reduce the composition before noodlification.
+ * @param[in] use_homomorphic_heuristic Whether to compose each input automaton with @p nft separately when @p nft is
+ *  homomorphic.
+ * @return A list of all (non-empty) noodles.
+ * @note Modifies @p input_automata and @p output_automata: their initial and final states are unified in place
+ *  (unify_initial(), unify_final()), each automaton once even if it occurs several times.
+ */
 std::vector<TransducerNoodle> noodlify_for_transducer(
 	const std::shared_ptr<Nft>& nft,
 	const std::vector<std::shared_ptr<Nfa>>& input_automata,
@@ -454,6 +553,167 @@ std::vector<TransducerNoodle> noodlify_for_transducer(
 	bool reduce_intersection = true,
 	bool use_homomorphic_heuristic = true
 );
+
+/**
+ * @brief The order in which the noodlify_*_lazy() functions emit the noodles.
+ *
+ * The search is depth-first over the segments; at every node it orders the candidates for the next segment (the pairs
+ *  of an initial and a final state of it). The order is greedy: a candidate ranked first leads to the next noodle, not
+ *  necessarily to the best noodle overall.
+ */
+struct NoodleOrder {
+	enum class Kind : std::uint8_t {
+		Forward, ///< The order of the functions returning a vector.
+		Reverse, ///< The reverse of that order.
+		/// The candidate whose segment has the fewest states reachable from its initial state first (segments with the
+		///  language {ε} hence first), ties in the forward order. Builds the shared automata of all candidates of a
+		///  node when the search reaches the node.
+		SmallestFirst,
+		/// The candidate whose segment has the most states first, ties in the forward order; see SmallestFirst.
+		LargestFirst,
+		/// The candidates of every node shuffled by a generator seeded with @c seed.
+		Random,
+	};
+	Kind kind{Kind::Forward};
+	/// The seed of Kind::Random.
+	uint64_t seed{0};
+
+	bool operator==(const NoodleOrder&) const = default;
+};
+
+#if MATA_HAS_GENERATOR_SUPPORT
+/**
+ * @brief Emit the noodles of noodlify_mult_eps() one at a time.
+ *
+ * The search over the segments runs only as far as the consumer takes noodles, keeping one noodle and the search
+ *  stack in memory instead of all noodles, and the shared automaton of a final state (see NoodleSegment) is built
+ *  when the search first reaches the final state. A consumer that stops early skips the rest of the work.
+ *
+ * Suppressing repeated noodles (possible when ε-only segments are omitted) keeps the key of every distinct result
+ *  until enumeration ends, so memory also grows with the number of results; MultEps and the transducer lazy paths
+ *  have this output-dependent cost.
+ *
+ * With NoodleOrder::Kind::Reverse, the noodles come in the reverse order of NoodleOrder::Kind::Forward. A noodle that
+ *  the search finishes more than once (possible only when segments with the language {ε} are left out) is emitted
+ *  where it is finished first in the given order, so another order may place such a noodle elsewhere.
+ *
+ * The generator owns @p aut. Without the C++23 <generator> header, this function and the other noodlify_*_lazy()
+ *  functions are not declared.
+ */
+std::generator<NoodleWithEpsilonsCounter>
+	noodlify_mult_eps_lazy(SegNfa aut, std::set<Symbol> epsilons, bool include_empty = false, NoodleOrder order = {});
+/**
+ * @brief Emit the noodles of noodlify() one at a time.
+ *
+ * Unlike noodlify_mult_eps_lazy(), every noodle has one segment per segment of @p aut, including the segments with
+ *  the language {ε}; otherwise as noodlify_mult_eps_lazy(). The generator owns @p aut.
+ */
+std::generator<Noodle> noodlify_lazy(SegNfa aut, Symbol epsilon, bool include_empty = false, NoodleOrder order = {});
+
+/**
+ * @brief Emit the noodles of noodlify_for_equation() for both sides given as sequences of automata one at a time.
+ *
+ * The product of the sides is computed (and the automata of the sides unified) in the call, the noodles when they
+ *  are taken from the generator; see noodlify_mult_eps_lazy().
+ */
+std::generator<NoodleWithEpsilonsCounter> noodlify_for_equation_lazy(
+	const std::vector<std::shared_ptr<Nfa>>& lhs_automata,
+	const std::vector<std::shared_ptr<Nfa>>& rhs_automata,
+	bool include_empty = false,
+	const ParameterMap& params = {{"reduce", "false"}},
+	NoodleOrder order = {}
+);
+/**
+ * @brief Emit the noodles of noodlify_for_equation() for a sequence of left side automata and one right side automaton
+ *  one at a time.
+ *
+ * The product of the sides is computed (and the left side automata unified, as noodlify_for_equation() does) in the
+ *  call, the noodles when they are taken from the generator; see noodlify_lazy().
+ */
+std::generator<Noodle> noodlify_for_equation_lazy(
+	const std::vector<std::reference_wrapper<Nfa>>& lhs_automata,
+	const Nfa& rhs_automaton,
+	bool include_empty = false,
+	const ParameterMap& params = {{"reduce", "false"}},
+	NoodleOrder order = {}
+);
+
+/**
+ * @brief Emit the noodles of noodlify_for_equation() for a sequence of pointers to left side automata and one right
+ *  side automaton one at a time.
+ *
+ * The product of the sides is computed in the call, the noodles when they are taken from the generator; see
+ *  noodlify_lazy().
+ * @note As noodlify_for_equation() with std::vector<Nfa*>, it unifies the initial and final states of the left side
+ *  automata in place only when "reduce" is set to "forward", "backward" or "bidirectional", so under the default its
+ *  noodles can differ from those of the std::reference_wrapper overload.
+ */
+std::generator<Noodle> noodlify_for_equation_lazy(
+	const std::vector<Nfa*>& lhs_automata,
+	const Nfa& rhs_automaton,
+	bool include_empty = false,
+	const ParameterMap& params = {{"reduce", "false"}},
+	NoodleOrder order = {}
+);
+
+/**
+ * @brief Emit the noodles of noodlify_for_transducer() one at a time.
+ *
+ * The composition with the transducer is computed (and the input and output automata unified) in the call, the
+ *  noodles when they are taken from the generator; see noodlify_mult_eps_lazy(). The transducer and the projections
+ *  of a segment are built once while the consumer holds any of them, and again when it is reached after they were
+ *  all released.
+ */
+std::generator<TransducerNoodle> noodlify_for_transducer_lazy(
+	const std::shared_ptr<Nft>& nft,
+	const std::vector<std::shared_ptr<Nfa>>& input_automata,
+	const std::vector<std::shared_ptr<Nfa>>& output_automata,
+	bool reduce_intersection = true,
+	bool use_homomorphic_heuristic = true,
+	NoodleOrder order = {}
+);
+#endif
+
+/**
+ * @name Bindings-facing lazy noodlification
+ * The noodlify_*_lazy() functions, returning a heap-allocated pull adaptor that the caller owns and must delete instead
+ *  of a std::generator, for callers that cannot drive a C++23 coroutine (the Python bindings, generated by Cython).
+ *  They are declared everywhere and throw std::runtime_error without std::generator support.
+ *
+ * Unlike the lazy noodlification functions themselves, which keep referencing their arguments until the noodles are
+ *  taken, the entry points below keep their arguments alive until the adaptor is deleted: the automata are held
+ *  through @c std::shared_ptr and copied into the frame of a coroutine that owns them, so the caller may release its
+ *  references right after the call.
+ */
+///@{
+utils::LazyGenerator<Noodle>*
+	noodlify_lazy_ptr(const SegNfa& aut, Symbol epsilon, bool include_empty, NoodleOrder order);
+utils::LazyGenerator<NoodleWithEpsilonsCounter>* noodlify_mult_eps_lazy_ptr(
+	const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty, NoodleOrder order
+);
+utils::LazyGenerator<Noodle>* noodlify_for_equation_lazy_ptr(
+	const std::vector<std::shared_ptr<Nfa>>& lhs_automata,
+	const std::shared_ptr<Nfa>& rhs_automaton,
+	bool include_empty,
+	const ParameterMap& params,
+	NoodleOrder order
+);
+utils::LazyGenerator<NoodleWithEpsilonsCounter>* noodlify_for_equation_lazy_ptr(
+	const std::vector<std::shared_ptr<Nfa>>& lhs_automata,
+	const std::vector<std::shared_ptr<Nfa>>& rhs_automata,
+	bool include_empty,
+	const ParameterMap& params,
+	NoodleOrder order
+);
+utils::LazyGenerator<TransducerNoodle>* noodlify_for_transducer_lazy_ptr(
+	const std::shared_ptr<Nft>& nft,
+	const std::vector<std::shared_ptr<Nfa>>& input_automata,
+	const std::vector<std::shared_ptr<Nfa>>& output_automata,
+	bool reduce_intersection,
+	bool use_homomorphic_heuristic,
+	NoodleOrder order
+);
+///@}
 
 /**
  * @brief Process epsilon map to a sequence of values (sorted according to key desc)
@@ -483,7 +743,7 @@ constexpr Symbol END_MARKER{mata::nft::EPSILON - 99}; ///< Marker marking the en
 /**
  * How many occurrences of the regex to replace, in order from left to right?
  */
-enum class ReplaceMode {
+enum class ReplaceMode : std::uint8_t {
 	Single, ///< Replace only the first occurrence of the regex.
 	All, ///< Replace all occurrences of the regex.
 };
@@ -491,14 +751,14 @@ enum class ReplaceMode {
 /**
  * Create identity transducer over the @p alphabet with @p num_of_levels levels.
  */
-Nft create_identity(const Alphabet* const alphabet, size_t num_of_levels = 2);
+Nft create_identity(const Alphabet* alphabet, size_t num_of_levels = 2);
 
 /**
  * Create identity input/output transducer with 2 levels over the @p alphabet with @p level_cnt levels with single
  *  symbol @p from_symbol replaced with @to_symbol.
  */
 Nft create_identity_with_single_symbol_replace(
-	const Alphabet* const alphabet, Symbol from_symbol, Symbol replacement, ReplaceMode replace_mode = ReplaceMode::All
+	const Alphabet* alphabet, Symbol from_symbol, Symbol replacement, ReplaceMode replace_mode = ReplaceMode::All
 );
 
 /**
@@ -506,10 +766,7 @@ Nft create_identity_with_single_symbol_replace(
  *  symbol @p from_symbol replaced with word @p replacement.
  */
 Nft create_identity_with_single_symbol_replace(
-	const Alphabet* const alphabet,
-	Symbol from_symbol,
-	const Word& replacement,
-	ReplaceMode replace_mode = ReplaceMode::All
+	const Alphabet* alphabet, Symbol from_symbol, const Word& replacement, ReplaceMode replace_mode = ReplaceMode::All
 );
 
 /**
@@ -526,7 +783,7 @@ Nft create_identity_with_single_symbol_replace(
 Nft replace_reluctant_regex(
 	const std::string& regex,
 	const Word& replacement,
-	const Alphabet* const alphabet,
+	const Alphabet* alphabet,
 	ReplaceMode replace_mode = ReplaceMode::All,
 	Symbol begin_marker = BEGIN_MARKER
 );
@@ -546,7 +803,7 @@ Nft replace_reluctant_regex(
 Nft replace_reluctant_regex(
 	nfa::Nfa aut,
 	const Word& replacement,
-	const Alphabet* const alphabet,
+	const Alphabet* alphabet,
 	ReplaceMode replace_mode = ReplaceMode::All,
 	Symbol begin_marker = BEGIN_MARKER
 );
@@ -563,7 +820,7 @@ Nft replace_reluctant_regex(
 Nft replace_reluctant_literal(
 	const Word& literal,
 	const Word& replacement,
-	const Alphabet* const alphabet,
+	const Alphabet* alphabet,
 	ReplaceMode replace_mode = ReplaceMode::All,
 	Symbol end_marker = END_MARKER
 );
@@ -577,7 +834,7 @@ Nft replace_reluctant_literal(
  * @return The reluctant leftmost replace NFT.
  */
 Nft replace_reluctant_single_symbol(
-	Symbol from_symbol, Symbol replacement, const Alphabet* const alphabet, ReplaceMode replace_mode = ReplaceMode::All
+	Symbol from_symbol, Symbol replacement, const Alphabet* alphabet, ReplaceMode replace_mode = ReplaceMode::All
 );
 
 /**
@@ -589,10 +846,7 @@ Nft replace_reluctant_single_symbol(
  * @return The reluctant leftmost replace NFT.
  */
 Nft replace_reluctant_single_symbol(
-	Symbol from_symbol,
-	const Word& replacement,
-	const Alphabet* const alphabet,
-	ReplaceMode replace_mode = ReplaceMode::All
+	Symbol from_symbol, const Word& replacement, const Alphabet* alphabet, ReplaceMode replace_mode = ReplaceMode::All
 );
 
 /**
@@ -615,7 +869,7 @@ class ReluctantReplace {
 	static Nft replace_regex(
 		nfa::Nfa aut,
 		const Word& replacement,
-		const Alphabet* const alphabet,
+		const Alphabet* alphabet,
 		ReplaceMode replace_mode = ReplaceMode::All,
 		Symbol begin_marker = BEGIN_MARKER
 	);
@@ -631,7 +885,7 @@ class ReluctantReplace {
 	static Nft replace_literal(
 		const Word& literal,
 		const Word& replacement,
-		const Alphabet* const alphabet,
+		const Alphabet* alphabet,
 		ReplaceMode replace_mode = ReplaceMode::All,
 		Symbol end_marker = END_MARKER
 	);
@@ -644,10 +898,7 @@ class ReluctantReplace {
 	 * @return The reluctant leftmost replace NFT.
 	 */
 	static Nft replace_symbol(
-		Symbol from_symbol,
-		Symbol replacement,
-		const Alphabet* const alphabet,
-		ReplaceMode replace_mode = ReplaceMode::All
+		Symbol from_symbol, Symbol replacement, const Alphabet* alphabet, ReplaceMode replace_mode = ReplaceMode::All
 	);
 	/**
 	 * Create NFT modelling a reluctant leftmost replace of symbol @p from_symbol to @p replacement.
@@ -660,7 +911,7 @@ class ReluctantReplace {
 	static Nft replace_symbol(
 		Symbol from_symbol,
 		const Word& replacement,
-		const Alphabet* const alphabet,
+		const Alphabet* alphabet,
 		ReplaceMode replace_mode = ReplaceMode::All
 	);
 
@@ -669,40 +920,36 @@ class ReluctantReplace {
 
 	static Nft marker_nft(const nfa::Nfa& marker_dfa, Symbol marker);
 
-	static nfa::Nfa generic_marker_dfa(const std::string& regex, const Alphabet* const alphabet);
+	static nfa::Nfa generic_marker_dfa(const std::string& regex, const Alphabet* alphabet);
 
-	static nfa::Nfa generic_marker_dfa(nfa::Nfa regex, const Alphabet* const alphabet);
+	static nfa::Nfa generic_marker_dfa(nfa::Nfa regex, const Alphabet* alphabet);
 
-	static nfa::Nfa begin_marker_nfa(const std::string& regex, const Alphabet* const alphabet);
+	static nfa::Nfa begin_marker_nfa(const std::string& regex, const Alphabet* alphabet);
 
-	static nfa::Nfa begin_marker_nfa(nfa::Nfa regex, const Alphabet* const alphabet);
+	static nfa::Nfa begin_marker_nfa(nfa::Nfa regex, const Alphabet* alphabet);
 
 	static Nft begin_marker_nft(const nfa::Nfa& marker_nfa, Symbol begin_marker);
 
 	static Nft end_marker_dft(const nfa::Nfa& end_marker_dfa, Symbol end_marker);
 
-	static nfa::Nfa reluctant_nfa_with_marker(nfa::Nfa nfa, Symbol marker, const Alphabet* const alphabet);
+	static nfa::Nfa reluctant_nfa_with_marker(const nfa::Nfa& nfa, Symbol marker, const Alphabet* alphabet);
 
 	static Nft reluctant_leftmost_nft(
 		const std::string& regex,
-		const Alphabet* const alphabet,
+		const Alphabet* alphabet,
 		Symbol begin_marker,
 		const Word& replacement,
 		ReplaceMode replace_mode
 	);
 
 	static Nft reluctant_leftmost_nft(
-		nfa::Nfa nfa,
-		const Alphabet* const alphabet,
-		Symbol begin_marker,
-		const Word& replacement,
-		ReplaceMode replace_mode
+		nfa::Nfa nfa, const Alphabet* alphabet, Symbol begin_marker, const Word& replacement, ReplaceMode replace_mode
 	);
 
 	static Nft replace_literal_nft(
 		const Word& literal,
 		const Word& replacement,
-		const Alphabet* const alphabet,
+		const Alphabet* alphabet,
 		Symbol end_marker,
 		ReplaceMode replace_mode = ReplaceMode::All
 	);

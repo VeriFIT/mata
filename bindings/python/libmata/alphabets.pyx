@@ -187,7 +187,7 @@ cdef class OnTheFlyAlphabet(Alphabet):
 
         :return: Map of strings to symbols.
         """
-        cdef umap[string, Symbol] c_symbol_map = self.thisptr.get().get_symbol_map()
+        cdef COnTheFlyAlphabet.StringToSymbolMap c_symbol_map = self.thisptr.get().get_symbol_map()
         symbol_map = {}
         for symbol, value in c_symbol_map:
             symbol_map[symbol.decode('utf-8')] = value
@@ -406,25 +406,7 @@ cdef class AlphabetLevels:
         In `Global` mode, the single shared alphabet is returned regardless of `level`. In `MultiLevel` mode,
         `level` is required and must index a non-null slot.
         """
-        cdef size_t size = self.thisptr.get().size()
-        cdef size_t idx
-        cdef shared_ptr[CAlphabet] slot
-        if self.thisptr.get().mode() == AlphabetLevelsModeGlobal:
-            if size == 0:
-                raise RuntimeError("AlphabetLevels (Global) has no underlying alphabet.")
-            slot = self.thisptr.get().at(0)
-            if slot.get() == NULL:
-                raise RuntimeError("AlphabetLevels (Global) has no underlying alphabet.")
-            return wrap_alphabet(slot)
-
-        if level is None:
-            raise RuntimeError("AlphabetLevels (MultiLevel) requires an explicit level.")
-        idx = <size_t><Level>level
-        if idx >= size:
-            raise RuntimeError(f"AlphabetLevels has no alphabet for level {level} (out of range).")
-        slot = self.thisptr.get().at(idx)
-        if slot.get() == NULL:
-            raise RuntimeError(f"AlphabetLevels has no alphabet for level {level} (entry is null).")
+        cdef shared_ptr[CAlphabet] slot = self.thisptr.get().for_level(self._c_level(level))
         return wrap_alphabet(slot)
 
     def __getitem__(self, level: int | None) -> Alphabet:
@@ -440,11 +422,11 @@ cdef class AlphabetLevels:
         for i in range(size):
             yield wrap_alphabet(self.thisptr.get().at(i))
 
-    def push_back(self, Alphabet alphabet) -> None:
+    def push_back(self, Alphabet alphabet = None) -> None:
         """Append `alphabet` as the new last level."""
         self.thisptr.get().push_back(alphabet.as_base() if alphabet is not None else shared_ptr[CAlphabet]())
 
-    def insert(self, size_t index, Alphabet alphabet) -> None:
+    def insert(self, size_t index, Alphabet alphabet = None) -> None:
         """Insert `alphabet` before `index`, shifting subsequent levels up."""
         cdef size_t size = self.thisptr.get().size()
         if index > size:

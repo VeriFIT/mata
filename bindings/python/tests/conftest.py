@@ -2,7 +2,9 @@
 
 import os
 import shutil
+import sys
 import tempfile
+import threading
 
 import libmata.nfa.nfa as mata_nfa
 import pytest
@@ -14,10 +16,57 @@ __author__ = "Tomas Fiedor"
 @pytest.fixture(scope="function")
 def cleandir():
     """Runs the test in the clean new dir, which is purged afterwards"""
+    original_path = os.getcwd()
     temp_path = tempfile.mkdtemp()
     os.chdir(temp_path)
-    yield
-    shutil.rmtree(temp_path)
+    try:
+        yield temp_path
+    finally:
+        os.chdir(original_path)
+        shutil.rmtree(temp_path)
+
+
+@pytest.fixture(scope="function")
+def runs_without_the_gil():
+    """Returns whether the main thread runs Python code while a given callable runs in another thread."""
+    if not getattr(sys, "_is_gil_enabled", lambda: True)():
+        pytest.skip("the interpreter has no GIL")
+
+    def _runs_without_the_gil(operation, release=lambda: None):
+        """Return whether this thread runs Python code before the other thread finishes `operation`.
+
+        With a 60 s switch interval, the worker keeps the GIL from `entered.set()` until it blocks, releases the GIL,
+        or exits, so `entered.wait()` returns early only if `operation()` released the GIL. Check `finished` at once:
+        any delay, such as a sleep, lets a short native call finish first and reports a false negative.
+        `release()` runs after the check, before joining, to unblock an `operation` that waits for it.
+        """
+        entered = threading.Event()
+        finished = threading.Event()
+
+        def run():
+            entered.set()
+            try:
+                operation()
+            finally:
+                finished.set()
+
+        switch_interval = sys.getswitchinterval()
+        # Prevent ordinary Python instruction preemption from masquerading as a native GIL release.
+        sys.setswitchinterval(60)
+        try:
+            worker = threading.Thread(target=run)
+            worker.start()
+            entered.wait()
+            try:
+                ran_during_the_operation = not finished.is_set()
+            finally:
+                release()
+            worker.join()
+            return ran_during_the_operation
+        finally:
+            sys.setswitchinterval(switch_interval)
+
+    return _runs_without_the_gil
 
 
 @pytest.fixture(scope="function")
@@ -92,6 +141,7 @@ def fa_odd_ones():
     lhs.add_transition(1, 1, 0)
     lhs.add_transition(1, 0, 1)
     lhs.make_final_state(1)
+    yield lhs
 
 
 @pytest.fixture(scope="function")
@@ -103,6 +153,7 @@ def fa_even_ones():
     lhs.add_transition(1, 1, 0)
     lhs.add_transition(1, 0, 1)
     lhs.make_final_state(0)
+    yield lhs
 
 
 @pytest.fixture(scope="function")

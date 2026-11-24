@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from enum import IntEnum
 from typing import Self
 
@@ -26,6 +26,15 @@ class CompositionMode(IntEnum):
     General = 0
     FastNoJump = 1
     Auto = 2
+
+class CompositionNormalization(IntEnum):
+    """How `compose()` normalizes its result; every mode keeps the relation and the level of every state."""
+
+    None_ = 0
+    GeneratedOnly = 1
+    Full = 2
+    Auto = 3
+    Trim = 4
 
 class Levels:
     """Wrapper over the per-state levels of an NFT (`mata::nft::Levels`)."""
@@ -106,7 +115,10 @@ class Nft:
     def alphabets(self) -> alph.AlphabetLevels | None:
         """The per-level alphabets of the NFT, or `None` if none is set."""
     @alphabets.setter
-    def alphabets(self, value: alph.AlphabetLevels | None) -> None: ...
+    def alphabets(self, value: alph.AlphabetLevels | None) -> None:
+        """
+        :raises TypeError: when @p value is neither `AlphabetLevels` nor `None`.
+        """
     @property
     def initial_states(self) -> list[State]: ...
     @initial_states.setter
@@ -201,7 +213,8 @@ class Nft:
         symbols_or_alphabet: Symbol | list[Symbol] | alph.Alphabet | None = None,
         jump_mode: JumpMode = JumpMode.RepeatSymbol,
     ) -> Self:
-        """Insert identity transition(s) at `state`."""
+        """Insert identity transition(s) at `state`: one self-loop jump per symbol for `RepeatSymbol`, an explicit
+        loop with one transition per level otherwise."""
     def contains_jump_transitions(self) -> bool:
         """Check if the transducer contains any jump transition."""
     def trim(self) -> Self:
@@ -296,6 +309,10 @@ class Nft:
         self, max_length: int | None = None, jump_mode: JumpMode = JumpMode.RepeatSymbol
     ) -> set[tuple[Symbol, ...]]:
         """Get the set of all words in the language of the NFT whose length is <= `max_length`."""
+    def get_words_lazy(
+        self, max_length: int | None = None, jump_mode: JumpMode = JumpMode.RepeatSymbol
+    ) -> Iterator[tuple[Symbol, ...]]:
+        """Lazily enumerate the words in the language of the NFT whose length is <= `max_length`."""
     def apply(
         self,
         nfa_or_word: mata_nfa.Nfa | list[Symbol],
@@ -357,6 +374,7 @@ def compose(
     project_out_sync_levels: bool = True,
     jump_mode: JumpMode = JumpMode.RepeatSymbol,
     composition_mode: CompositionMode = CompositionMode.Auto,
+    normalization: CompositionNormalization = CompositionNormalization.Auto,
 ) -> Nft:
     """Compose `lhs` and `rhs` by aligning their synchronization levels."""
 

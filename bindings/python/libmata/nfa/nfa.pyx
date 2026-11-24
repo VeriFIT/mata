@@ -1,9 +1,10 @@
+import copy
+from enum import IntEnum
 import shlex
 import subprocess
-import pandas
-import networkx as nx
 
-from libc.stdint cimport uint8_t
+from cpython.array cimport array, clone as array_clone
+from libc.stdint cimport int64_t, uint8_t, uint64_t
 from libcpp cimport bool
 from libcpp.optional cimport make_optional
 from libcpp.list cimport list as clist
@@ -16,22 +17,112 @@ from libcpp.vector cimport vector
 
 from cython.operator import dereference, postincrement as postinc, preincrement as preinc
 
+cdef extern from *:
+    """
+    #include <utility>
+    void __pyx_add_transitions_batch(mata::nfa::Delta& delta, std::vector<mata::nfa::Transition>& trans) {
+        delta.add(std::move(trans));
+    }
+    """
+    void __pyx_add_transitions_batch(CDelta&, vector[CTrans]&) except +
+
+cdef extern from *:
+    """
+    #include <cstdint>
+    static void __pyx_fill_transition_arrays(
+        const mata::nfa::Delta& delta, int64_t* sources, int64_t* symbols, int64_t* targets
+    ) {
+        size_t i = 0;
+        for (const mata::nfa::Transition& trans : delta.transitions()) {
+            sources[i] = static_cast<int64_t>(trans.source);
+            symbols[i] = static_cast<int64_t>(trans.symbol);
+            targets[i] = static_cast<int64_t>(trans.target);
+            ++i;
+        }
+    }
+    """
+    void __pyx_fill_transition_arrays(const CDelta&, int64_t*, int64_t*, int64_t*) noexcept
+
 cimport libmata.nfa.nfa as mata_nfa
 cimport libmata.alphabets as alph
 
 from libmata.nfa.nfa cimport \
     Symbol, State, StateSet, StateRenaming, \
-    CDelta, CRun, CTrans, CNfa, CSymbolPost, CEPSILON
+    CDelta, CRun, CTrans, CNfa, CSymbolPost, CSmallStateSet, CEPSILON, CMAX_STATE, CSTATE_BITS
 
-from libmata.alphabets cimport CAlphabet, CConstAlphabet
+from libmata.alphabets cimport CAlphabet, CConstAlphabet, CLazyWordGenerator
 from libmata.utils cimport COrdVector, CBinaryRelation, BinaryRelation, CPairHash
 
 
 cdef Symbol EPSILON = CEPSILON
 
+#: Width of a state in bits that Mata was built with (CMake option MATA_STATE_BITS).
+STATE_BITS = CSTATE_BITS
+#: The "no state" sentinel; states are 0 to MAX_STATE - 1. Creating MAX_STATE or above raises OverflowError.
+MAX_STATE = CMAX_STATE
+
 
 def epsilon():
     return EPSILON
+
+
+cdef list _targets_list(const CSmallStateSet& targets):
+    """Copy the targets of a symbol post into a list."""
+    cdef const State* data = targets.data()
+    return [data[i] for i in range(targets.size())]
+
+
+cdef list _symbol_posts_list(const CStatePost& state_post):
+    """Copy the symbol posts of a state post, read in place, into a list of `SymbolPost`."""
+    cdef CStatePost.const_iterator it = state_post.cbegin()
+    symbol_posts = []
+    while it != state_post.cend():
+        symbol_posts.append(SymbolPost(dereference(it).symbol, _targets_list(dereference(it).targets)))
+        preinc(it)
+    return symbol_posts
+
+
+cdef extern from *:
+    """
+    #include "mata/nfa/algorithms.hh"
+
+    /* Cython emits __Pyx_CppExn2PyErr() for the declarations using the plain "except +". */
+    static void __Pyx_CppExn2PyErr();
+
+    /* Called while a C++ exception is being handled: return the message of an ExternalSolverNotFound, or nullptr
+       after translating any other exception the way Cython translates it by default. The message is not copied, so
+       nothing here can throw: what() stays valid while the exception is handled, which spans the whole translator. */
+    static const char* mata_external_solver_not_found_message() {
+        try {
+            throw;
+        } catch (const mata::nfa::algorithms::ExternalSolverNotFound& error) {
+            return error.what();
+        } catch (...) {
+            __Pyx_CppExn2PyErr();
+            return nullptr;
+        }
+    }
+    """
+    const char* mata_external_solver_not_found_message()
+
+
+class ExternalSolverNotFound(RuntimeError):
+    """Raised when no external SAT or QBF solver can be found or run for reduce() with "sat" or "qbf"."""
+
+
+cdef void translate_mata_exception() except *:
+    """Translate the C++ exception being handled into a Python one."""
+    cdef const char* message = mata_external_solver_not_found_message()
+    if message != NULL:
+        raise ExternalSolverNotFound(message.decode("utf-8", "replace"))
+
+
+cdef inline void _check_delta_not_mutated(CDelta* c_delta, uint64_t epoch) except *:
+    """Raise if `c_delta` changed since `epoch` was read: iterators and posts pointing into it are dangling then."""
+    if c_delta.mutation_epoch() != epoch:
+        raise RuntimeError(
+            "The automaton was modified during iteration; its transitions iterator is no longer valid."
+        )
 
 
 cdef class Run:
@@ -99,15 +190,10 @@ cdef class Transition:
         :param Symbol s: symbol
         :param State target: target state
         """
-        self.thisptr = new mata_nfa.CTrans(source, s, target)
+        self.thisptr = CTrans(source, s, target)
 
-    def __dealloc__(self):
-        """Destructor"""
-        if self.thisptr != NULL:
-            del self.thisptr
-
-    cdef copy_from(self, CTrans trans):
-        """Copies the internals of trans into the wrapped pointer
+    cdef copy_from(self, const CTrans& trans):
+        """Copies the internals of trans into this transition
 
         :param CTrans trans: copied transition
         """
@@ -115,11 +201,15 @@ cdef class Transition:
         self.thisptr.symbol = trans.symbol
         self.thisptr.target = trans.target
 
-    def __eq__(self, Transition other):
-        return dereference(self.thisptr) == dereference(other.thisptr)
+    def __eq__(self, other):
+        # Untyped: with `allow_none_for_extension_args` off, a typed parameter turns `trans == None`
+        #  and `trans in [None, trans]` into a TypeError instead of False.
+        if not isinstance(other, Transition):
+            return NotImplemented
+        return self.thisptr == (<Transition>other).thisptr
 
-    def __neq__(self, Transition other):
-        return dereference(self.thisptr) != dereference(other.thisptr)
+    def __hash__(self):
+        return hash((self.source, self.symbol, self.target))
 
     def __str__(self):
         return f"{self.thisptr.source}-[{self.thisptr.symbol}]\u2192{self.thisptr.target}"
@@ -142,13 +232,12 @@ cdef class SymbolPost:
 
     @property
     def targets(self):
-        cdef vector[State] states_as_vector = self.thisptr.targets.to_vector()
-        return [s for s in states_as_vector]
+        return _targets_list(self.thisptr.targets)
 
     @targets.setter
     def targets(self, value):
         cdef StateSet targets = StateSet(value)
-        self.thisptr.targets = targets
+        self.thisptr.targets = CSmallStateSet(targets)
 
     def __cinit__(self, Symbol symbol, vector[State] states):
         cdef StateSet targets = StateSet(states)
@@ -158,23 +247,32 @@ cdef class SymbolPost:
         if self.thisptr != NULL:
             del self.thisptr
 
-    def __lt__(self, SymbolPost other):
-        return dereference(self.thisptr) < dereference(other.thisptr)
+    def __lt__(self, other):
+        if not isinstance(other, SymbolPost):
+            return NotImplemented
+        return dereference(self.thisptr) < dereference((<SymbolPost>other).thisptr)
 
-    def __gt__(self, SymbolPost other):
-        return dereference(self.thisptr) > dereference(other.thisptr)
+    def __gt__(self, other):
+        if not isinstance(other, SymbolPost):
+            return NotImplemented
+        return dereference(self.thisptr) > dereference((<SymbolPost>other).thisptr)
 
-    def __le__(self, SymbolPost other):
-        return dereference(self.thisptr) <= dereference(other.thisptr)
+    def __le__(self, other):
+        if not isinstance(other, SymbolPost):
+            return NotImplemented
+        return dereference(self.thisptr) <= dereference((<SymbolPost>other).thisptr)
 
-    def __ge__(self, SymbolPost other):
-        return dereference(self.thisptr) >= dereference(other.thisptr)
+    def __ge__(self, other):
+        if not isinstance(other, SymbolPost):
+            return NotImplemented
+        return dereference(self.thisptr) >= dereference((<SymbolPost>other).thisptr)
 
-    def __eq__(self, SymbolPost other):
+    def __eq__(self, other):
+        if not isinstance(other, SymbolPost):
+            return NotImplemented
         return self.symbol == other.symbol and self.targets == other.targets
 
-    def __neq__(self, SymbolPost other):
-        return self.symbol != other.symbol or self.targets != other.targets
+    # `SymbolPost` stays unhashable: its `symbol`/`targets` setters make instances mutable.
 
     def __str__(self):
         trans = "{" + ",".join(map(str, self.targets)) + "}"
@@ -215,7 +313,7 @@ cdef class Delta:
         """
         cdef StateSet targets
         if isinstance(source, Transition):
-            self.automaton_ptr.get().delta.add(dereference((<Transition>source).thisptr))
+            self.automaton_ptr.get().delta.add((<Transition>source).thisptr)
             return
         if isinstance(symbol, str):
             alphabet = alphabet or store().get('alphabet')
@@ -227,6 +325,81 @@ cdef class Delta:
             self.automaton_ptr.get().delta.add_targets(<State>source, <Symbol>symbol, targets)
         else:
             self.automaton_ptr.get().delta.add(<State>source, <Symbol>symbol, <State>target)
+    def add_transitions(self, sources, symbols, targets):
+        """Add multiple transitions from sequences of sources, symbols, and targets.
+        
+        All three sequences must have equal length. States and symbols are converted to their C++ types
+        (State and Symbol), and if any conversion fails, the automaton remains unmodified.
+        
+        Duplicates are automatically collapsed, and states up to the largest mentioned ID are allocated,
+        exactly as with repeated add().
+        
+        :param sources: Sequence (list, tuple, or buffer-protocol object) of source states.
+        :param symbols: Sequence (list, tuple, or buffer-protocol object) of symbols.
+        :param targets: Sequence (list, tuple, or buffer-protocol object) of target states.
+        """
+        cdef vector[CTrans] transitions
+        cdef size_t n = len(sources)
+        cdef CTrans trans
+        cdef State src
+        cdef Symbol sym
+        cdef State tgt
+        
+        # Validate: all same length
+        if len(symbols) != n or len(targets) != n:
+            raise ValueError(f"sources, symbols, targets must have equal length: got {n}, {len(symbols)}, {len(targets)}")
+        
+        # Validate and convert all inputs before modifying the automaton
+        transitions.reserve(n)
+        for i in range(n):
+            try:
+                src = <State>sources[i]
+                sym = <Symbol>symbols[i]
+                tgt = <State>targets[i]
+            except (TypeError, OverflowError) as e:
+                raise type(e)(f"Invalid value at index {i}: {e}") from e
+            trans.source = src
+            trans.symbol = sym
+            trans.target = tgt
+            transitions.push_back(trans)
+        
+        
+        # Call the C++ batched import through a helper that uses std::move
+        __pyx_add_transitions_batch(self.automaton_ptr.get().delta, transitions)
+    
+    def add_transitions_from(self, triples):
+        """Add multiple transitions from an iterable of (source, symbol, target) triples.
+        
+        Equivalent to add_transitions(sources, symbols, targets) but accepting a single iterable.
+        
+        :param triples: Iterable of (source, symbol, target) tuples.
+        """
+        cdef vector[CTrans] transitions
+        cdef CTrans trans
+        cdef State src
+        cdef Symbol sym
+        cdef State tgt
+        items = list(triples)  # Materialize so we can validate length upfront
+        
+        # Validate arity and convert all inputs
+        transitions.reserve(len(items))
+        for i, item in enumerate(items):
+            try:
+                if not isinstance(item, (tuple, list)) or len(item) != 3:
+                    raise ValueError(f"Expected (source, symbol, target) at index {i}, got {item}")
+                src = <State>item[0]
+                sym = <Symbol>item[1]
+                tgt = <State>item[2]
+            except (TypeError, OverflowError, ValueError) as e:
+                raise type(e)(f"Invalid triple at index {i}: {e}") from e
+            trans.source = src
+            trans.symbol = sym
+            trans.target = tgt
+            transitions.push_back(trans)
+        
+        
+        # Call the C++ batched import through a helper that uses std::move
+        __pyx_add_transitions_batch(self.automaton_ptr.get().delta, transitions)
 
     def remove(self, source, symbol=None, target=None):
         """Remove a transition from Delta.
@@ -237,7 +410,7 @@ cdef class Delta:
         :param target: Target state of the transition to remove.
         """
         if isinstance(source, Transition):
-            self.automaton_ptr.get().delta.remove(dereference((<Transition>source).thisptr))
+            self.automaton_ptr.get().delta.remove((<Transition>source).thisptr)
             return
         self.automaton_ptr.get().delta.remove(<State>source, <Symbol>symbol, <State>target)
 
@@ -251,7 +424,7 @@ cdef class Delta:
         :return: True if Delta contains the transition, False otherwise.
         """
         if isinstance(source, Transition):
-            return self.automaton_ptr.get().delta.contains(dereference((<Transition>source).thisptr))
+            return self.automaton_ptr.get().delta.contains((<Transition>source).thisptr)
         return self.automaton_ptr.get().delta.contains(<State>source, <Symbol>symbol, <State>target)
 
     def __contains__(self, item) -> bool:
@@ -302,9 +475,7 @@ cdef class Delta:
         :param State state: Source state to get the outgoing transitions of.
         :return: List of `SymbolPost` for `state`.
         """
-        cdef CStatePost c_state_post = self.automaton_ptr.get().delta.state_post(state)
-        cdef vector[CSymbolPost] c_symbol_posts = c_state_post.to_vector()
-        return [SymbolPost(symbol_post.symbol, symbol_post.targets.to_vector()) for symbol_post in c_symbol_posts]
+        return _symbol_posts_list(self.automaton_ptr.get().delta[state])
 
     def __getitem__(self, State state) -> list[SymbolPost]:
         return self.state_post(state)
@@ -312,18 +483,54 @@ cdef class Delta:
     def transitions(self):
         """Iterate over all transitions in Delta.
 
+        The transitions are read live: modifying the automaton while the generator runs invalidates the iterator,
+        and the next advance raises `RuntimeError`.
+
         :return: Generator of `Transition` instances.
         """
-        cdef CTransitions c_transitions = self.automaton_ptr.get().delta.transitions()
+        cdef CDelta* c_delta = &self.automaton_ptr.get().delta
+        cdef uint64_t epoch = c_delta.mutation_epoch()
+        cdef CTransitions c_transitions = c_delta.transitions()
         cdef CTransitions.const_iterator iterator = c_transitions.begin()
-        while iterator != c_transitions.end():
-            trans = Transition()
+        cdef CTransitions.const_iterator end = c_transitions.end()
+        while iterator != end:
+            trans = Transition.__new__(Transition)
             (<Transition>trans).copy_from(dereference(iterator))
             preinc(iterator)
             yield trans
+            _check_delta_not_mutated(c_delta, epoch)
 
     def __iter__(self):
         return self.transitions()
+    def iter_transitions_from(self, State source):
+        """Iterate over transitions from a source state, reading the state post by reference (streaming form).
+
+        For a list, use get_transitions_from(). The automaton is read live: modifying it while the generator runs
+        invalidates the iterator, and the next advance raises `RuntimeError`.
+
+        :param State source: Source state to iterate transitions from.
+        :return: Generator of Transition instances.
+        """
+        cdef CDelta* c_delta = &self.automaton_ptr.get().delta
+        cdef uint64_t epoch = c_delta.mutation_epoch()
+        cdef const CStatePost* c_state_post = &c_delta[0][source]
+        cdef CStatePost.const_iterator c_state_post_it = c_state_post.cbegin()
+        cdef const CSymbolPost* c_symbol_post
+        cdef const State* c_symbol_post_it
+        cdef const State* c_symbol_post_end
+        cdef Symbol symbol
+        cdef State target
+        while c_state_post_it != c_state_post.cend():
+            c_symbol_post = &dereference(c_state_post_it)
+            symbol = c_symbol_post.symbol
+            c_symbol_post_it = c_symbol_post.cbegin()
+            c_symbol_post_end = c_symbol_post.cend()
+            while c_symbol_post_it != c_symbol_post_end:
+                target = dereference(c_symbol_post_it)
+                preinc(c_symbol_post_it)
+                yield Transition(source, symbol, target)
+                _check_delta_not_mutated(c_delta, epoch)
+            preinc(c_state_post_it)
 
     def get_transitions_from(self, State source) -> list[Transition]:
         """Get the transitions leading from `source`.
@@ -332,13 +539,15 @@ cdef class Delta:
         :return: List of `Transition` instances leading from `source`.
         """
         transitions = []
-        cdef CStatePost c_state_post = self.automaton_ptr.get().delta[source]
-        cdef vector[CSymbolPost] c_symbol_posts = c_state_post.to_vector()
-        cdef vector[State] c_targets
-        for symbol_post in c_symbol_posts:
-            c_targets = symbol_post.targets.to_vector()
-            for target in c_targets:
-                transitions.append(Transition(source, symbol_post.symbol, target))
+        cdef const CStatePost* c_state_post = &self.automaton_ptr.get().delta[source]
+        cdef CStatePost.const_iterator c_state_post_it = c_state_post.cbegin()
+        cdef const State* c_targets
+        cdef size_t i
+        while c_state_post_it != c_state_post.cend():
+            c_targets = dereference(c_state_post_it).targets.data()
+            for i in range(dereference(c_state_post_it).targets.size()):
+                transitions.append(Transition(source, dereference(c_state_post_it).symbol, c_targets[i]))
+            preinc(c_state_post_it)
         return transitions
 
     def get_transitions_to(self, State target) -> list[Transition]:
@@ -384,10 +593,29 @@ cdef class Delta:
         return str(self)
 
 
+class RegexPrintMode(IntEnum):
+    """What `Nfa.to_regex_str()` optimizes for."""
+    Fast = <int>mata_nfa.RegexPrintModeFast
+    Readable = <int>mata_nfa.RegexPrintModeReadable
+
+
+def _rebuild_nfa(num_of_states, initial_states, final_states, sources, symbols, targets, alphabet):
+    """Rebuild an `Nfa` from the state pickled by `Nfa.__reduce__`; the label follows via `Nfa.__setstate__`."""
+    aut = Nfa(num_of_states, alphabet=alphabet)
+    aut.make_initial_states(initial_states)
+    aut.make_final_states(final_states)
+    aut.delta.add_transitions(sources, symbols, targets)
+    return aut
+
+
 cdef class Nfa:
     """Wrapper over NFA
 
     Note: In order to add more properties to Nfa, see `nfa.pxd`, where there is forward declaration
+
+    Concurrency: the long-running operations release the GIL, but the C++ library does not synchronize anything.
+    The automaton and its alphabet may be read from several threads at once, but must not be modified meanwhile
+    (translating a symbol through an `OnTheFlyAlphabet` modifies the alphabet).
     """
 
     def __cinit__(self, state_number = 0, alph.Alphabet alphabet = None, label=None):
@@ -412,6 +640,20 @@ cdef class Nfa:
         new.thisptr = make_shared[CNfa](mata_nfa.CNfa(dereference(orig)))
         return new
 
+    def __copy__(self):
+        """Copy the automaton with the C++ copy constructor; the copy shares the label and the alphabet."""
+        cdef Nfa result = Nfa.__new__(Nfa)
+        result.thisptr = make_shared[CNfa](dereference(self.thisptr.get()))
+        result.label = self.label
+        return result
+
+    def __deepcopy__(self, memo):
+        """Copy the automaton with the C++ copy constructor and deep-copy the label; the alphabet stays shared."""
+        cdef Nfa result = self.__copy__()
+        memo[id(self)] = result
+        result.label = copy.deepcopy(self.label, memo)
+        return result
+
     @property
     def label(self):
         return self.label
@@ -419,6 +661,24 @@ cdef class Nfa:
     @label.setter
     def label(self, value):
         self.label = value
+
+    def __reduce__(self):
+        """Pickle the states, the initial and final states, the columnar transitions and the alphabet.
+
+        The label is pickled as state after the automaton is memoized, so it may refer back to the automaton.
+        """
+        return (
+            _rebuild_nfa,
+            (
+                self.thisptr.get().num_of_states(), self.initial_states, self.final_states,
+                *self.transitions_as_arrays(), self.alphabet,
+            ),
+            self.label,
+        )
+
+    def __setstate__(self, label):
+        """Restore the label pickled by `__reduce__`."""
+        self.label = label
 
     @property
     def initial_states(self):
@@ -548,13 +808,14 @@ cdef class Nfa:
     def unify_final(self, bool force_new_state = False) -> Nfa:
         """Unify final states into a single new final state."""
         self.thisptr.get().unify_final(force_new_state)
+        return self
 
     def add_transition_object(self, Transition tr):
         """Adds transition to automaton
 
         :param Transition tr: added transition
         """
-        self.thisptr.get().delta.add(dereference(tr.thisptr))
+        self.thisptr.get().delta.add(tr.thisptr)
 
     def add_transition(self, State source, symbol, State target, alph.Alphabet alphabet = None):
         """Constructs transition and adds it to automaton
@@ -577,7 +838,7 @@ cdef class Nfa:
 
         :param Transition tr: Transition to be removed.
         """
-        self.thisptr.get().delta.remove(dereference(tr.thisptr))
+        self.thisptr.get().delta.remove(tr.thisptr)
 
     def remove_trans_raw(self, State source, Symbol symbol, State target):
         """Constructs transition and removes it from the automaton.
@@ -616,18 +877,24 @@ cdef class Nfa:
         return self.thisptr.get().num_of_states()
 
     def iterate(self):
-        """Iterates over all transitions
+        """Iterate over all transitions (streaming form).
 
-        :return: stream of transitions
+        This is a generator; for a list, use get_trans_as_sequence(). The transitions are read live: modifying the
+        automaton while the generator runs invalidates the iterator, and the next advance raises `RuntimeError`.
+
+        :return: Generator of transitions
         """
-        cdef CTransitions transitions = self.thisptr.get().delta.transitions()
+        cdef CDelta* c_delta = &self.thisptr.get().delta
+        cdef uint64_t epoch = c_delta.mutation_epoch()
+        cdef CTransitions transitions = c_delta.transitions()
         cdef CTransitions.const_iterator iterator = transitions.begin()
-        while iterator != transitions.end():
-            trans = Transition()
-            lhs = dereference(iterator)
-            trans.copy_from(lhs)
+        cdef CTransitions.const_iterator end = transitions.end()
+        while iterator != end:
+            trans = Transition.__new__(Transition)
+            (<Transition>trans).copy_from(dereference(iterator))
             preinc(iterator)
             yield trans
+            _check_delta_not_mutated(c_delta, epoch)
 
     def get_transitions_from_state(self, State state):
         """Returns list of SymbolPost for the given state
@@ -635,20 +902,7 @@ cdef class Nfa:
         :param State state: state for which we are getting the transitions
         :return: SymbolPost
         """
-        cdef mata_nfa.CStatePost transitions = self.thisptr.get().delta.state_post(state)
-        cdef vector[mata_nfa.CSymbolPost] transitions_list = transitions.to_vector()
-
-        cdef vector[mata_nfa.CSymbolPost].iterator it = transitions_list.begin()
-        cdef vector[mata_nfa.CSymbolPost].iterator end = transitions_list.end()
-        transsymbols = []
-        while it != end:
-            t = SymbolPost(
-                dereference(it).symbol,
-                dereference(it).targets.to_vector()
-            )
-            postinc(it)
-            transsymbols.append(t)
-        return transsymbols
+        return _symbol_posts_list(self.thisptr.get().delta[state])
 
     def get_transitions_to_state(self, State state_to):
         """Get transitions leading to state_to (state_to is their target state).
@@ -660,40 +914,65 @@ cdef class Nfa:
         for c_transition in c_transitions:
             trans.append(Transition(c_transition.source, c_transition.symbol, c_transition.target))
         return trans
+    def iter_transitions_from(self, State source):
+        """Iterate over transitions from a source state, reading the state post by reference.
+
+        This is a streaming/generator form; for a list, use get_trans_from_state_as_sequence(). The automaton is
+        read live: modifying it while the generator runs invalidates the iterator, and the next advance raises
+        `RuntimeError`.
+
+        :param State source: Source state to iterate transitions from.
+        :return: Generator of Transition instances.
+        """
+        cdef CDelta* c_delta = &self.thisptr.get().delta
+        cdef uint64_t epoch = c_delta.mutation_epoch()
+        cdef const CStatePost* c_state_post = &c_delta[0][source]
+        cdef CStatePost.const_iterator c_state_post_it = c_state_post.cbegin()
+        cdef const CSymbolPost* c_symbol_post
+        cdef const State* c_symbol_post_it
+        cdef const State* c_symbol_post_end
+        cdef Symbol symbol
+        cdef State target
+        while c_state_post_it != c_state_post.cend():
+            c_symbol_post = &dereference(c_state_post_it)
+            symbol = c_symbol_post.symbol
+            c_symbol_post_it = c_symbol_post.cbegin()
+            c_symbol_post_end = c_symbol_post.cend()
+            while c_symbol_post_it != c_symbol_post_end:
+                target = dereference(c_symbol_post_it)
+                preinc(c_symbol_post_it)
+                yield Transition(source, symbol, target)
+                _check_delta_not_mutated(c_delta, epoch)
+            preinc(c_state_post_it)
 
     def get_trans_as_sequence(self):
         """Get automaton transitions as a sequence.
 
-        TODO: Refactor into a generator.
+        The list is filled in one C++ pass, without materialising the generator. For streaming, use iterate().
 
         :return: List of automaton transitions.
         """
-        cdef CTransitions c_transitions = self.thisptr.get().delta.transitions()
-        transitions = []
-        for c_transition in c_transitions:
-            transitions.append(Transition(c_transition.source, c_transition.symbol, c_transition.target))
-        return transitions
+        cdef CDelta* c_delta = &self.thisptr.get().delta
+        cdef CTransitions transitions = c_delta.transitions()
+        cdef CTransitions.const_iterator iterator = transitions.begin()
+        cdef CTransitions.const_iterator end = transitions.end()
+        cdef Transition trans
+        result = []
+        while iterator != end:
+            trans = Transition.__new__(Transition)
+            trans.copy_from(dereference(iterator))
+            result.append(trans)
+            preinc(iterator)
+        return result
 
     def get_trans_from_state_as_sequence(self, State source) -> list[Transition]:
-        """Get automaton transitions from state_from as a sequence.
-
-        TODO: Refactor into a generator.
+        """Get automaton transitions from source as a sequence.
+        
+        This materializes iter_transitions_from(source) into a list. For streaming, use iter_transitions_from().
 
         :return: List of automaton transitions.
         """
-        transitions = []
-        cdef CStatePost c_state_post = self.thisptr.get().delta[source]
-        cdef COrdVector[CSymbolPost].const_iterator c_state_post_it = c_state_post.cbegin()
-        cdef CSymbolPost c_symbol_post
-        cdef COrdVector[State].const_iterator c_symbol_post_it
-        while c_state_post_it != c_state_post.cend():
-            c_symbol_post = dereference(c_state_post_it)
-            c_symbol_post_it = c_symbol_post.begin()
-            while c_symbol_post_it != c_symbol_post.end():
-                transitions.append(Transition(source, c_symbol_post.symbol, dereference(c_symbol_post_it)))
-                preinc(c_symbol_post_it)
-            preinc(c_state_post_it)
-        return transitions
+        return list(self.iter_transitions_from(source))
 
     def get_useful_states(self):
         """Get useful states (states which are reachable and terminating at the same time).
@@ -778,6 +1057,16 @@ cdef class Nfa:
         """
         return self.thisptr.get().is_deterministic()
 
+    def is_minimal(self):
+        """Tests if the NFA is a minimal deterministic automaton of its language, as returned by minimize().
+
+        Deterministic, trimmed (a sink state counts as redundant) and without equivalent states. The empty language is
+          minimal only as a single non-final initial state without transitions.
+
+        :return: true if the NFA is minimal.
+        """
+        return self.thisptr.get().is_minimal()
+
     def is_complete(self, alph.Alphabet alphabet = None):
         """Test if automaton is complete.
 
@@ -817,13 +1106,36 @@ cdef class Nfa:
         result += "final_states: {}\n".format([s for s in self.thisptr.get().final])
         result += "transitions:\n"
         for trans in self.iterate():
-            symbol = trans.symbol if self.thisptr.get().alphabet.get() == NULL \
-                else self.thisptr.get().alphabet.get().reverse_translate_symbol(trans.symbol)
+            if self.thisptr.get().alphabet.get() == NULL:
+                symbol = trans.symbol
+            else:
+                symbol = self.thisptr.get().alphabet.get().reverse_translate_symbol(trans.symbol).decode('utf-8')
             result += f"{trans.source}-[{symbol}]\u2192{trans.target}\n"
         return result
 
     def __repr__(self):
         return str(self)
+
+    def to_regex_str(self, mode=RegexPrintMode.Fast, alph.Alphabet alphabet = None) -> str:
+        """Transforms the language of the automaton to a regular expression string.
+
+        :param RegexPrintMode mode: `Fast` to optimize conversion speed, `Readable` to optimize readability.
+        :param alph.Alphabet alphabet: Alphabet to name the symbols with; the automaton's own alphabet when `None`.
+        :return: The language of the automaton as an RE2 regular expression.
+        """
+        cdef mata_nfa.CRegexPrintMode c_mode = <mata_nfa.CRegexPrintMode><int>RegexPrintMode(mode)
+        cdef string result = self.thisptr.get().print_to_regex(c_mode, alph.unwrap_alphabet_or_null(alphabet))
+        return result.decode('utf-8')
+
+    def to_mata_str(self, alph.Alphabet alphabet = None, encoding='utf-8') -> str:
+        """Transforms the automaton to a mata-format string.
+
+        :param alph.Alphabet alphabet: Alphabet to name the symbols with; the automaton's own alphabet when `None`.
+        :param str encoding: Encoding of the produced string.
+        :return: The automaton in the mata format.
+        """
+        cdef string result = self.thisptr.get().print_to_mata(alph.unwrap_alphabet_or_null(alphabet))
+        return result.decode(encoding)
 
     def to_dot_file(self, output_file='aut.dot', output_format='pdf', decode_ascii_chars=False, use_intervals=False, max_label_length=-1):
         """Transforms the automaton to dot format.
@@ -869,7 +1181,28 @@ cdef class Nfa:
             del output_stream
         return result.decode(encoding)
 
-    def to_dataframe(self) -> pandas.DataFrame:
+    def transitions_as_arrays(self):
+        """Export all transitions as three parallel `array('q')` arrays: sources, symbols, targets.
+
+        One C++ pass fills typed int64 buffers instead of building one Python object per transition.
+        The order matches `iterate()` (source state, then symbol, then target).
+
+        :return: Tuple `(sources, symbols, targets)` of `array.array` with typecode 'q'.
+        """
+        cdef CDelta* c_delta = &self.thisptr.get().delta
+        cdef Py_ssize_t num_of_transitions = c_delta.num_of_transitions()
+        cdef array int64_template = array('q')
+        cdef array sources = array_clone(int64_template, num_of_transitions, zero=False)
+        cdef array symbols = array_clone(int64_template, num_of_transitions, zero=False)
+        cdef array targets = array_clone(int64_template, num_of_transitions, zero=False)
+        cdef int64_t* c_sources = <int64_t*>sources.data.as_voidptr
+        cdef int64_t* c_symbols = <int64_t*>symbols.data.as_voidptr
+        cdef int64_t* c_targets = <int64_t*>targets.data.as_voidptr
+        # Keeps the GIL: a thread mutating the delta mid-pass would invalidate the iterators and overrun the buffers.
+        __pyx_fill_transition_arrays(dereference(c_delta), c_sources, c_symbols, c_targets)
+        return sources, symbols, targets
+
+    def to_dataframe(self):
         """Transforms the automaton to DataFrame format.
 
         Transforms the automaton into pandas.DataFrame format,
@@ -879,26 +1212,56 @@ cdef class Nfa:
 
         :return: automaton represented as a pandas dataframe
         """
-        columns = ['source', 'symbol', 'target']
-        data = [
-            [trans.source, trans.symbol, trans.target] for trans in self.iterate()
-        ]
-        return pandas.DataFrame(data, columns=columns)
+        try:
+            import pandas
+        except ImportError as error:
+            raise ImportError(
+                "Nfa.to_dataframe() needs pandas: install it with \"pip install libmata[pandas]\"."
+            ) from error
+        # numpy comes with pandas. pandas copies an `array.array` element by element, an ndarray in one go.
+        import numpy
 
-    def to_networkx_graph(self) -> nx.Graph:
-        """Transforms the automaton into networkx.Graph
+        columns = zip(('source', 'symbol', 'target'), self.transitions_as_arrays())
+        return pandas.DataFrame({name: numpy.frombuffer(column, dtype=numpy.int64) for name, column in columns})
+
+    def to_networkx_graph(self):
+        """Transforms the automaton to networkx.Graph
 
         Transforms the automaton into networkx.Graph format,
         that is represented as graph with edges (source, target) with
         additional properties.
 
-        Each symbol is added as an property to each edge.
+        Each symbol is added as a property to each edge. If multiple symbols
+        exist on the same edge, they are accumulated into a sorted 'symbols' list.
+        Single-symbol edges retain the scalar 'symbol' attribute for compatibility.
 
         :return:
         """
+        try:
+            import networkx as nx
+        except ImportError as error:
+            raise ImportError(
+                "Nfa.to_networkx_graph() needs networkx: install it with \"pip install libmata[plotting]\"."
+            ) from error
+        # Accumulate symbols per (source, target) pair.
+        edge_symbols = {}
+        sources, symbols, targets = self.transitions_as_arrays()
+        for source, symbol, target in zip(sources, symbols, targets):
+            key = (source, target)
+            if key not in edge_symbols:
+                edge_symbols[key] = []
+            edge_symbols[key].append(symbol)
+
         G = nx.DiGraph()
-        for trans in self.iterate():
-            G.add_edge(trans.source, trans.target, symbol=trans.symbol)
+        # Add edges with sorted symbols list, and scalar symbol for single-symbol edges.
+        edges_to_add = []
+        for (source, target), symbols in edge_symbols.items():
+            symbols_sorted = sorted(set(symbols))
+            attrs = {"symbols": symbols_sorted}
+            if len(symbols_sorted) == 1:
+                attrs["symbol"] = symbols_sorted[0]
+            edges_to_add.append((source, target, attrs))
+        G.add_edges_from(edges_to_add)
         return G
 
     def post_map_of(self, State st, alph.Alphabet alphabet):
@@ -941,14 +1304,14 @@ cdef class Nfa:
         :param epsilon: Epsilon symbol.
         :return: Epsilon transitions if there are any epsilon transitions for the passed state. None otherwise.
         """
-        cdef COrdVector[CSymbolPost].const_iterator c_epsilon_symbol_posts_iter = self.thisptr.get().delta.epsilon_symbol_posts(
+        cdef CStatePost.const_iterator c_epsilon_symbol_posts_iter = self.thisptr.get().delta.epsilon_symbol_posts(
             state, epsilon
         )
         if c_epsilon_symbol_posts_iter == self.thisptr.get().delta.state_post(state).cend():
             return None
 
         cdef CSymbolPost epsilon_transitions = dereference(c_epsilon_symbol_posts_iter)
-        return SymbolPost(epsilon_transitions.symbol, epsilon_transitions.targets.to_vector())
+        return SymbolPost(epsilon_transitions.symbol, _targets_list(epsilon_transitions.targets))
 
     def is_universal(self, alph.Alphabet alphabet, params = None):
         """Tests if NFA is universal with regard to the given alphabet.
@@ -956,6 +1319,10 @@ cdef class Nfa:
         :param OnTheFlyAlphabet alphabet: on the fly alphabet.
         :param dict params: additional params to the function, currently supports key 'algorithm',
             which determines used universality test.
+
+        Epsilon transitions are removed from a copy of the automaton before the check, and epsilon in the alphabet
+        is ignored.
+
         :return: true if NFA is universal.
         """
         params = params or {'algorithm': 'antichains'}
@@ -1024,15 +1391,39 @@ cdef class Nfa:
         cdef pair[CRun, bool] result = self.thisptr.get().get_word_for_path(dereference(input.thisptr))
         return result.first.word, result.second
 
-    def make_complete(self, State sink_state, alph.Alphabet alphabet):
+    def get_words(self, max_length) -> set[tuple[int, ...]]:
+        """Get the set of all words in the language of the automaton whose length is <= `max_length`."""
+        cdef cset[vector[Symbol]] result = self.thisptr.get().get_words(<size_t>max_length)
+        return {tuple(word) for word in result}
+
+    def get_words_lazy(self, max_length = None):
+        """Lazily enumerate the words in the language of the automaton whose length is <= `max_length`.
+
+        Unlike `get_words()`, this does not compute the whole set before returning anything: words are
+        produced one at a time, so the caller can stop early, or work with a language that would otherwise
+        be too large (or, with `max_length` left unbounded, infinite) to enumerate up front.
+
+        Raises `RuntimeError` when mata was built with a standard library that does not implement
+        `std::generator` (some, like Apple's system libc++ on macOS, do not, even under C++23).
+
+        :return: Generator of words, each as a tuple of symbols.
+        """
+        cdef size_t c_max_length = max_length if max_length is not None else <size_t>(-1)
+        cdef CLazyWordGenerator* it = c_get_words_lazy_ptr(dereference(self.thisptr.get()), c_max_length)
+        try:
+            while not it.done():
+                yield tuple(it.next())
+        finally:
+            del it
+
+    def make_complete(self, State sink_state, alph.Alphabet alphabet) -> bool:
         """Makes NFA complete.
 
         :param Symbol sink_state: sink state of the automaton
         :param OnTheFlyAlphabet alphabet: alphabet to make complete against.
+        :return: True if the automaton was modified, False if already complete.
         """
-        if not self.thisptr.get().is_state(sink_state):
-            self.thisptr.get().add_state(self.thisptr.get().num_of_states())
-        self.thisptr.get().make_complete(alphabet.as_base().get(), make_optional[State](sink_state))
+        return self.thisptr.get().make_complete(alphabet.as_base().get(), make_optional[State](sink_state))
 
     def get_symbols(self):
         """Return a set of symbols used on the transitions in NFA.
@@ -1076,26 +1467,123 @@ cdef class Nfa:
 
 
 # Operations
-def determinize_with_subset_map(Nfa lhs):
+cdef umap[string, string] encode_params(params) except *:
+    """Encode a parameter dictionary into the C++ `ParameterMap`.
+
+    The heavy operations release the GIL, so the dictionary has to be converted before the call, not inside it.
+
+    :param params: Dictionary of `str`/`bytes` keys and values.
+    :return: The parameters as a C++ `ParameterMap`.
+    """
+    cdef umap[string, string] c_params
+    for key, value in params.items():
+        c_params[key.encode('utf-8') if isinstance(key, str) else key] = \
+            value.encode('utf-8') if isinstance(value, str) else value
+    return c_params
+
+
+def determinize_with_subset_map(Nfa lhs, params = None):
     """Determinize the lhs automaton
 
     :param Nfa lhs: non-deterministic finite automaton
+    :param Dict params: Additional parameters for the determinization:
+      - "algorithm":
+        - "four_russians": The "Four Russians" subset construction, see `determinize_four_russians()`. This is the
+          default when params is None or empty; in other params, the key "algorithm" is required.
+        - "classical": The classical subset construction.
+        With the same reduction, both give the same DFA, but they may number its states differently.
+      - "reduction":
+        - "none": No reduction. This is the default, also when the key is absent.
+        - "bisimulation", "simulation", "adaptive": A smaller DFA for the same language, not always minimal, see
+          `DeterminizationReduction`. In the subset map, merged states then appear as one of them.
     :return: deterministic finite automaton, subset map
     """
-    result = Nfa()
+    params = params or {"algorithm": "four_russians"}
+    cdef Nfa result = Nfa()
     cdef umap[StateSet, State] subset_map
-    mata_nfa.c_determinize(result.thisptr.get(), dereference(lhs.thisptr.get()), &subset_map)
+    cdef umap[string, string] c_params = encode_params(params)
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_determinize(c_result, dereference(c_lhs), &subset_map, c_params)
     return result, subset_map_to_dictionary(subset_map)
 
-def determinize(Nfa lhs):
+def determinize(Nfa lhs, params = None):
     """Determinize the lhs automaton
 
     :param Nfa lhs: non-deterministic finite automaton
+    :param Dict params: Additional parameters for the determinization:
+      - "algorithm":
+        - "four_russians": The "Four Russians" subset construction, see `determinize_four_russians()`. This is the
+          default when params is None or empty; in other params, the key "algorithm" is required.
+        - "classical": The classical subset construction.
+        With the same reduction, both give the same DFA, but they may number its states differently.
+      - "reduction":
+        - "none": No reduction. This is the default, also when the key is absent.
+        - "bisimulation", "simulation", "adaptive": A smaller DFA for the same language, not always minimal, see
+          `DeterminizationReduction`. In the subset map, merged states then appear as one of them.
     :return: deterministic finite automaton
     """
-    result = Nfa()
-    mata_nfa.c_determinize(result.thisptr.get(), dereference(lhs.thisptr.get()), NULL)
+    params = params or {"algorithm": "four_russians"}
+    cdef Nfa result = Nfa()
+    cdef umap[string, string] c_params = encode_params(params)
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_determinize(c_result, dereference(c_lhs), NULL, c_params)
     return result
+
+class DeterminizationReduction(IntEnum):
+    """Reduction of a determinized automaton: a smaller DFA for the same language, not always minimal."""
+    Bisimulation = <int>mata_nfa.DeterminizationReductionBisimulation
+    Simulation = <int>mata_nfa.DeterminizationReductionSimulation
+    Adaptive = <int>mata_nfa.DeterminizationReductionAdaptive
+
+
+cdef mata_nfa.CFourRussiansOptions _c_four_russians_options(unsigned block_size, reduction):
+    cdef mata_nfa.CFourRussiansOptions options
+    options.block_size = block_size
+    if reduction is None:
+        options.reduction = mata_nfa.DeterminizationReductionNone
+    else:
+        options.reduction = <mata_nfa.CDeterminizationReduction><int>DeterminizationReduction(reduction)
+    return options
+
+def determinize_four_russians(Nfa lhs, unsigned block_size = 0, reduction = None):
+    """Determinize the lhs automaton by the "Four Russians" subset construction.
+
+    The same construction as the default of `determinize()`, with its options. With a reduction, gives a smaller DFA
+    for the same language.
+
+    :param Nfa lhs: non-deterministic finite automaton
+    :param int block_size: NFA states per block: 1 (no tables), 2, 4, ..., 64, or 0 to choose automatically
+    :param DeterminizationReduction reduction: reduction of the result, or None for no reduction
+    :return: deterministic finite automaton
+    """
+    cdef Nfa result = Nfa()
+    cdef mata_nfa.CFourRussiansOptions options = _c_four_russians_options(block_size, reduction)
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_determinize_four_russians(c_result, dereference(c_lhs), options, NULL)
+    return result
+
+def determinize_four_russians_with_subset_map(Nfa lhs, unsigned block_size = 0, reduction = None):
+    """Determinize the lhs automaton by the "Four Russians" subset construction, see `determinize_four_russians()`.
+
+    :param Nfa lhs: non-deterministic finite automaton
+    :param int block_size: NFA states per block: 1 (no tables), 2, 4, ..., 64, or 0 to choose automatically
+    :param DeterminizationReduction reduction: reduction of the result, or None for no reduction
+    :return: deterministic finite automaton, subset map (with a reduction, merged states appear as one of them)
+    """
+    cdef Nfa result = Nfa()
+    cdef umap[StateSet, State] subset_map
+    cdef mata_nfa.CFourRussiansOptions options = _c_four_russians_options(block_size, reduction)
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_determinize_four_russians(c_result, dereference(c_lhs), options, &subset_map)
+    return result, subset_map_to_dictionary(subset_map)
 
 def union(Nfa lhs, Nfa rhs):
     """Performs union of lhs and rhs
@@ -1104,10 +1592,12 @@ def union(Nfa lhs, Nfa rhs):
     :param Nfa rhs: second automaton
     :return: union of lhs and rhs
     """
-    result = Nfa()
-    mata_nfa.c_union_nondet(
-        result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get())
-    )
+    cdef Nfa result = Nfa()
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    cdef CNfa* c_rhs = rhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_union_nondet(c_result, dereference(c_lhs), dereference(c_rhs))
     return result
 
 def intersection(Nfa lhs, Nfa rhs, Symbol first_epsilon = CEPSILON):
@@ -1127,10 +1617,12 @@ def intersection(Nfa lhs, Nfa rhs, Symbol first_epsilon = CEPSILON):
     :param Symbol first_epsilon: the smallest epsilon.
     :return: Intersection of lhs and rhs.
     """
-    result = Nfa()
-    mata_nfa.c_intersection(
-        result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), first_epsilon, NULL
-    )
+    cdef Nfa result = Nfa()
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    cdef CNfa* c_rhs = rhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_intersection(c_result, dereference(c_lhs), dereference(c_rhs), first_epsilon, NULL)
     return result
 
 def intersection_with_product_map(Nfa lhs, Nfa rhs, Symbol first_epsilon = CEPSILON):
@@ -1150,10 +1642,15 @@ def intersection_with_product_map(Nfa lhs, Nfa rhs, Symbol first_epsilon = CEPSI
     :param Nfa rhs: Second automaton.
     :return: Intersection of lhs and rhs, product map of original pairs of states to new states.
     """
-    result = Nfa()
+    cdef Nfa result = Nfa()
     cdef umap[pair[State, State], State, CPairHash[State, State]] c_product_map
-    mata_nfa.c_intersection(
-        result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), first_epsilon, &c_product_map)
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    cdef CNfa* c_rhs = rhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_intersection(
+            c_result, dereference(c_lhs), dereference(c_rhs), first_epsilon, &c_product_map
+        )
     return result, {tuple(k): v for k, v in c_product_map}
 
 def concatenate(Nfa lhs, Nfa rhs, use_epsilon: bool = False) -> Nfa:
@@ -1165,9 +1662,13 @@ def concatenate(Nfa lhs, Nfa rhs, use_epsilon: bool = False) -> Nfa:
     :param use_epsilon: Whether to concatenate over an epsilon symbol.
     :return: Nfa: Concatenated automaton.
     """
-    result = Nfa()
-    mata_nfa.c_concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()),
-                         use_epsilon, NULL, NULL)
+    cdef Nfa result = Nfa()
+    cdef bool c_use_epsilon = use_epsilon
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    cdef CNfa* c_rhs = rhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_concatenate(c_result, dereference(c_lhs), dereference(c_rhs), c_use_epsilon, NULL, NULL)
     return result
 
 def concatenate_with_result_state_maps(Nfa lhs, Nfa rhs, use_epsilon: bool = False) \
@@ -1179,11 +1680,17 @@ def concatenate_with_result_state_maps(Nfa lhs, Nfa rhs, use_epsilon: bool = Fal
     :param use_epsilon: Whether to concatenate over an epsilon symbol.
     :return: Nfa: Concatenated automaton.
     """
-    result = Nfa()
+    cdef Nfa result = Nfa()
     cdef StateRenaming c_lhs_map
     cdef StateRenaming c_rhs_map
-    mata_nfa.c_concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()),
-                         use_epsilon, &c_lhs_map, &c_rhs_map)
+    cdef bool c_use_epsilon = use_epsilon
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    cdef CNfa* c_rhs = rhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_concatenate(
+            c_result, dereference(c_lhs), dereference(c_rhs), c_use_epsilon, &c_lhs_map, &c_rhs_map
+        )
     lhs_map = {}
     for key, value in c_lhs_map:
         lhs_map[key] = value
@@ -1207,17 +1714,16 @@ def complement(Nfa nfa, alph.Alphabet alphabet, params = None):
                          complete, and swaps final and non-final states.
     :return: The complemented automaton.
     """
-    result = Nfa()
+    cdef Nfa result = Nfa()
+    # A bare `Alphabet()` is a generic wrapper around a null pointer; dereferencing it segfaulted.
+    alphabet._check_initialized()
     params = params or {'algorithm': 'classical'}
-    mata_nfa.c_complement(
-        result.thisptr.get(),
-        dereference(nfa.thisptr.get()),
-        <CAlphabet&>dereference(alphabet.as_base()),
-        {
-            k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-            for k, v in params.items()
-        },
-    )
+    cdef umap[string, string] c_params = encode_params(params)
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_nfa = nfa.thisptr.get()
+    cdef CAlphabet* c_alphabet = alphabet.as_base().get()
+    with nogil:
+        mata_nfa.c_complement(c_result, dereference(c_nfa), dereference(c_alphabet), c_params)
     return result
 
 def revert(Nfa lhs):
@@ -1226,8 +1732,11 @@ def revert(Nfa lhs):
     :param Nfa lhs: source automaton
     :return: automaton with reversed transitions
     """
-    result = Nfa()
-    mata_nfa.c_revert(result.thisptr.get(), dereference(lhs.thisptr.get()))
+    cdef Nfa result = Nfa()
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_revert(c_result, dereference(c_lhs))
     return result
 
 def remove_epsilon(Nfa lhs, Symbol epsilon = CEPSILON):
@@ -1237,8 +1746,11 @@ def remove_epsilon(Nfa lhs, Symbol epsilon = CEPSILON):
     :param Symbol epsilon: Symbol representing the epsilon.
     :return: Nfa: Automaton with epsilon transitions removed.
     """
-    result = Nfa()
-    mata_nfa.c_remove_epsilon(result.thisptr.get(), dereference(lhs.thisptr.get()), epsilon)
+    cdef Nfa result = Nfa()
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_remove_epsilon(c_result, dereference(c_lhs), epsilon)
     return result
 
 def minimize(Nfa lhs, params = None):
@@ -1247,17 +1759,24 @@ def minimize(Nfa lhs, params = None):
     :param Nfa lhs: automaton to be minimized
     :param Dict params: Additional parameters for the minimization operation:
       - "algorithm":
-        - "brzozowski": The Brzozowski minimization algorithm.
-        - "hopcroft": The Hopcroft minimization algorithm, only works on trimmed (no useless states) DFAs as input.
+        - "auto": Determinize the automaton if it is not deterministic, trim it, and minimize it with Hopcroft.
+          An automaton with an empty language is returned as a single non-final initial state. This is the default.
+        - "hopcroft": Run Hopcroft directly on a trimmed DFA. Raises an error for a nondeterministic input
+          (except a transition-free automaton without initial states); trimming is not checked, but is required
+          for minimality.
+        - "hopcroft_nondet": The same normalization as "auto", followed by the Hopcroft minimization algorithm.
+          Accepts any automaton.
+        - "brzozowski": The Brzozowski minimization algorithm. Accepts any automaton, but determinizes twice and
+          can blow up exponentially even on an input that already is a trimmed DFA.
     :return: minimized automaton
     """
-    params = params or {"algorithm": "brzozowski"}
-    result = Nfa()
-    mata_nfa.c_minimize(result.thisptr.get(), dereference(lhs.thisptr.get()),
-        {
-            k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
-        }
-    )
+    params = params or {"algorithm": "auto"}
+    cdef Nfa result = Nfa()
+    cdef umap[string, string] c_params = encode_params(params)
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    with nogil:
+        mata_nfa.c_minimize(c_result, dereference(c_lhs), c_params)
     return result
 
 def reduce_with_state_map(Nfa aut, params = None):
@@ -1271,13 +1790,12 @@ def reduce_with_state_map(Nfa aut, params = None):
     """
     params = params or {"algorithm": "simulation"}
     cdef StateRenaming state_map
-    result = Nfa()
-    mata_nfa.c_reduce(result.thisptr.get(), dereference(aut.thisptr.get()), &state_map,
-                    {
-                        k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
-                    }
-                    )
-
+    cdef Nfa result = Nfa()
+    cdef umap[string, string] c_params = encode_params(params)
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_aut = aut.thisptr.get()
+    with nogil:
+        mata_nfa.c_reduce(c_result, dereference(c_aut), &state_map, c_params)
     return result, {k: v for k, v in state_map}
 
 def reduce(Nfa aut, params = None):
@@ -1294,15 +1812,27 @@ def reduce(Nfa aut, params = None):
         - "direction":
           - "forward": (Only for "algorithm": "residual") Forward residual construction.
           - "backward": (Only for "algorithm": "residual") Backward residual construction.
+        Experimental, for small automata: "algorithm": "sat" or "qbf" computes an automaton with the minimum number of
+        states using an external SAT or QBF solver, optionally with:
+        - "type":
+          - "nfa": (Only for "algorithm": "sat" or "qbf", default) Minimal NFA.
+          - "dfa": (Only for "algorithm": "sat") Minimal deterministic automaton.
+        - "solver": (Only for "algorithm": "sat" or "qbf") Command running the solver. Defaults to the environment
+          variable MATA_SAT_SOLVER or MATA_QBF_SOLVER, then to a solver found in PATH (cadical, kissat,
+          cryptominisat5, picosat; depqbf, caqe).
+        - "epsilon": (Only for "algorithm": "sat" or "qbf") "letter" (default) treats EPSILON as an ordinary letter,
+          as in simulation and residual reduction. "empty" removes EPSILON before minimizing.
     :return: Reduced automaton.
+    :raises ExternalSolverNotFound: If no solver can be found or run for "algorithm": "sat" or "qbf".
+    :raises RuntimeError: If the reduction fails otherwise.
     """
     params = params or {"algorithm": "simulation"}
-    result = Nfa()
-    mata_nfa.c_reduce(result.thisptr.get(), dereference(aut.thisptr.get()), NULL,
-                    {
-                        k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
-                    }
-                    )
+    cdef Nfa result = Nfa()
+    cdef umap[string, string] c_params = encode_params(params)
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_aut = aut.thisptr.get()
+    with nogil:
+        mata_nfa.c_reduce(c_result, dereference(c_aut), NULL, c_params)
     return result
 
 def reduce_residual_after(Nfa aut):
@@ -1311,8 +1841,11 @@ def reduce_residual_after(Nfa aut):
     :param Nfa aut: Original automaton to reduce.
     :return: Reduced automaton.
     """
-    result = Nfa()
-    mata_nfa.c_reduce_residual_after(result.thisptr.get(), dereference(aut.thisptr.get()))
+    cdef Nfa result = Nfa()
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_aut = aut.thisptr.get()
+    with nogil:
+        mata_nfa.c_reduce_residual_after(c_result, dereference(c_aut))
     return result
 
 def reduce_residual_with(Nfa aut):
@@ -1321,8 +1854,11 @@ def reduce_residual_with(Nfa aut):
     :param Nfa aut: Original automaton to reduce.
     :return: Reduced automaton.
     """
-    result = Nfa()
-    mata_nfa.c_reduce_residual_with(result.thisptr.get(), dereference(aut.thisptr.get()))
+    cdef Nfa result = Nfa()
+    cdef CNfa* c_result = result.thisptr.get()
+    cdef CNfa* c_aut = aut.thisptr.get()
+    with nogil:
+        mata_nfa.c_reduce_residual_with(c_result, dereference(c_aut))
     return result
 
 def compute_relation(Nfa lhs, params = None):
@@ -1333,20 +1869,12 @@ def compute_relation(Nfa lhs, params = None):
     :return: computd relation
     """
     params = params or {'relation': 'simulation', 'direction': 'forward'}
-    cdef CBinaryRelation relation = mata_nfa.c_compute_relation(
-        dereference(lhs.thisptr.get()),
-        {
-            k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-            for k, v in params.items()
-        }
-    )
-    result = BinaryRelation()
-    cdef size_t relation_size = relation.size()
-    result.resize(relation_size)
-    for i in range(0, relation_size):
-        for j in range(0, relation_size):
-            val = relation.get(i, j)
-            result.set(i, j, val)
+    cdef umap[string, string] c_params = encode_params(params)
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    cdef BinaryRelation result = BinaryRelation()
+    cdef CBinaryRelation* c_result = result.thisptr
+    with nogil:
+        c_result[0] = mata_nfa.c_compute_relation(dereference(c_lhs), c_params)
     return result
 
 # Tests
@@ -1357,21 +1885,22 @@ def is_included_with_cex(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params
     :param Nfa rhs: bigger automaton
     :param alph.Alphabet alphabet: alpabet shared by two automata
     :param dict params: additional params
+
+    Epsilon transitions are removed from copies of the operands that have them, so the counterexample
+    refers to the states of those epsilon-free copies.
+
     :return: true if lhs is included by rhs, counter example word if not
     """
-    run = Run()
+    cdef Run run = Run()
     cdef CAlphabet* c_alphabet = alph.unwrap_alphabet_or_null(alphabet)
     params = params or {'algorithm': 'antichains'}
-    result = mata_nfa.c_is_included(
-        dereference(lhs.thisptr.get()),
-        dereference(rhs.thisptr.get()),
-        run.thisptr,
-        c_alphabet,
-        {
-            k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-            for k, v in params.items()
-        }
-    )
+    cdef umap[string, string] c_params = encode_params(params)
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    cdef CNfa* c_rhs = rhs.thisptr.get()
+    cdef CRun* c_run = run.thisptr
+    cdef bool result
+    with nogil:
+        result = mata_nfa.c_is_included(dereference(c_lhs), dereference(c_rhs), c_run, c_alphabet, c_params)
     return result, run
 
 def is_included(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None):
@@ -1381,20 +1910,19 @@ def is_included(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None):
     :param Nfa rhs: bigger automaton
     :param alph.Alphabet alphabet: alpabet shared by two automata
     :param dict params: additional params
+
+    Epsilon transitions are removed from copies of the operands that have them.
+
     :return: true if lhs is included by rhs, counter example word if not
     """
     cdef CAlphabet* c_alphabet = alph.unwrap_alphabet_or_null(alphabet)
     params = params or {'algorithm': 'antichains'}
-    result = mata_nfa.c_is_included(
-        dereference(lhs.thisptr.get()),
-        dereference(rhs.thisptr.get()),
-        NULL,
-        c_alphabet,
-        {
-            k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-            for k, v in params.items()
-        }
-    )
+    cdef umap[string, string] c_params = encode_params(params)
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    cdef CNfa* c_rhs = rhs.thisptr.get()
+    cdef bool result
+    with nogil:
+        result = mata_nfa.c_is_included(dereference(c_lhs), dereference(c_rhs), NULL, c_alphabet, c_params)
     return result
 
 def equivalence_check(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None) -> bool:
@@ -1404,31 +1932,26 @@ def equivalence_check(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = 
 :param Nfa rhs: Bigger automaton.
 :param alph.Alphabet alphabet: Alphabet shared by two automata.
 :param dict params: Additional params:
-- "algorithm": "antichains"
+- "algorithm": "naive", "antichains" or "hkc" (bisimulation up to congruence). Default: "antichains".
+
+Epsilon transitions are removed from copies of the operands that have them.
+
 :return: True if lhs is equivalent to rhs, False otherwise.
 """
     params = params or {'algorithm': 'antichains'}
-    cdef CAlphabet * c_alphabet = NULL
+    cdef umap[string, string] c_params = encode_params(params)
+    cdef CNfa* c_lhs = lhs.thisptr.get()
+    cdef CNfa* c_rhs = rhs.thisptr.get()
+    cdef CAlphabet* c_alphabet = NULL
+    cdef bool result
     if alphabet:
         c_alphabet = alphabet.as_base().get()
-        return mata_nfa.c_are_equivalent(
-            dereference(lhs.thisptr.get()),
-            dereference(rhs.thisptr.get()),
-            c_alphabet,
-            {
-                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-                for k, v in params.items()
-            }
-        )
+        with nogil:
+            result = mata_nfa.c_are_equivalent(dereference(c_lhs), dereference(c_rhs), c_alphabet, c_params)
     else:
-        return mata_nfa.c_are_equivalent(
-            dereference(lhs.thisptr.get()),
-            dereference(rhs.thisptr.get()),
-            {
-                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-                for k, v in params.items()
-            }
-        )
+        with nogil:
+            result = mata_nfa.c_are_equivalent(dereference(c_lhs), dereference(c_rhs), c_params)
+    return result
 
 def accepts_epsilon(Nfa lhs):
     """Tests if automaton accepts epsilon

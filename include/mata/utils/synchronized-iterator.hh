@@ -5,8 +5,11 @@
 #ifndef MATA_SYNCHRONIZED_ITERATOR_HH
 #define MATA_SYNCHRONIZED_ITERATOR_HH
 
+#include <cstddef>
 #include <stdexcept>
 #include <vector>
+
+#include "assert.hh"
 
 namespace mata::utils {
 
@@ -21,7 +24,9 @@ namespace mata::utils {
  * The intended usage in, for instance, determinisation is for Type to be TransSymbolStates.
  * TransSymbolStates is ordered by the symbol.
  *
- * SynchronisedIterator is the parent virtual class.
+ * SynchronisedIterator is the base class holding the data shared by both synchronized iterators. The hierarchy is
+ * non-polymorphic on purpose: every user instantiates one of the two derived classes directly, so the base needs no
+ * vtable.
  * It stores a vector of end-iterators for the OrdContainer v and a vector of current positions.
  * They are filled in using the function push_back(begin,end), that adds begin and end iterators of v to positions and
  *  ends, respectively.
@@ -59,7 +64,7 @@ template <typename Iterator> class SynchronizedIterator {
 	 * Calling after advance breaks the iterator.
 	 * Specifies begin and end of one vector, to initialise before the iteration starts.
 	 */
-	virtual void push_back(const Iterator& begin, const Iterator& end) {
+	void push_back(const Iterator& begin, const Iterator& end) {
 		// Btw, I don't know what I am doing with the const & parameter passing,
 		// begin is actually incremented in advance ...? But tests do pass ...
 		this->positions.emplace_back(begin);
@@ -70,7 +75,7 @@ template <typename Iterator> class SynchronizedIterator {
 	 * Though they should keep the allocated space.
 	 * @param size Number of elements to reserve up-front for positions and ends.
 	 */
-	virtual void reset(const size_t size = 0) {
+	void reset(const size_t size = 0) {
 		positions.clear();
 		ends.clear();
 		if (size > 0) {
@@ -83,11 +88,6 @@ template <typename Iterator> class SynchronizedIterator {
 		this->positions.reserve(size);
 		this->ends.reserve(size);
 	}
-
-	virtual bool advance() = 0;
-	virtual const std::vector<Iterator>& get_current() const = 0;
-
-	virtual ~SynchronizedIterator() = default;
 };
 
 template <typename Iterator> class SynchronizedUniversalIterator : public SynchronizedIterator<Iterator> {
@@ -105,10 +105,16 @@ template <typename Iterator> class SynchronizedUniversalIterator : public Synchr
 	 * If positions are synchronized to start with, then synchronized_at_current_minimum decides whether to stay or
 	 *  advance further.
 	 * The general of the algorithm is to synchronize everybody with position[0].
+	 *
+	 * @pre At least one input was pushed since construction or the last @c reset() (asserted in debug builds);
+	 *  universal synchronization over no inputs is not meaningful. In release builds this keeps returning false,
+	 *  and both callers (NFT intersection in @c src/nft/intersection.cc and composition in
+	 *  @c src/nft/composition.cc) push two inputs anyway.
 	 */
-	bool advance() override {
-		// Nothing to synchronize.
-		if (this->positions.empty()) { return false; } // TODO: ?? or not?
+	bool advance() {
+		MATA_ASSERT(!this->positions.empty());
+		// Nothing to synchronize: there is no position to return.
+		if (this->positions.empty()) { return false; }
 
 		// If already synchronized, start moving forward by advancing position[0] (and so break synchronization).
 		if (this->synchronized_at_current_minimum) {
@@ -125,6 +131,10 @@ template <typename Iterator> class SynchronizedUniversalIterator : public Synchr
 			if (this->positions[i] == this->ends[i]) { return false; }
 
 			//  Advance position[i] and position[0] to the closest equal values.
+			// Remember where position[0] was: when it moves, every earlier position has to be re-synchronized.
+			//  Only position[0] is compared with its own earlier value; comparing positions of different containers
+			//  (the former 'positions[0] > positions[1]') depended on where the containers lay in memory.
+			const Iterator position_0_before{this->positions[0]};
 			while (*this->positions[i] != *this->positions[0]) {
 				// Advance position[i] to or beyond position[0].
 				while (*this->positions[i] < *this->positions[0]) {
@@ -138,13 +148,11 @@ template <typename Iterator> class SynchronizedUniversalIterator : public Synchr
 					if (this->positions[0] == this->ends[0]) { return false; }
 				}
 
-				// If position[0] changed, start from position 1 again.
-				// (note that
-				// i gets incremented at the end of the for-loop body,
-				// and that,
-				// since we are inside the for, there are at least two positions
-				// as the for starts with i=1.)
-				if (this->positions[0] > this->positions[1]) { i = 0; }
+				// If position[0] moved, start from position 1 again (i is incremented by the for-loop).
+				if (this->positions[0] != position_0_before) {
+					i = 0;
+					break;
+				}
 			}
 		}
 		this->synchronized_at_current_minimum = true;
@@ -152,11 +160,11 @@ template <typename Iterator> class SynchronizedUniversalIterator : public Synchr
 	}
 
 	/// Returns the vector of current positions.
-	const std::vector<Iterator>& get_current() const override { return this->positions; }
+	const std::vector<Iterator>& get_current() const { return this->positions; }
 
 	explicit SynchronizedUniversalIterator(const size_t size = 0) : SynchronizedIterator<Iterator>(size) {}
 
-	void reset(const size_t size = 0) override {
+	void reset(const size_t size = 0) {
 		SynchronizedIterator<Iterator>::reset(size);
 		this->synchronized_at_current_minimum = false;
 	}
@@ -186,7 +194,7 @@ template <typename Iterator> class SynchronizedExistentialIterator : public Sync
 	 * Since next_minimum becomes the current minimum,
 	 * new next_minimum must be updated too.
 	 */
-	bool advance() override {
+	bool advance() {
 		// The next_minimum becomes the current current_minimum.
 		auto current_minimum = this->next_minimum;
 
@@ -201,7 +209,8 @@ template <typename Iterator> class SynchronizedExistentialIterator : public Sync
 				// swapped with a position from the end of the vector,
 				// and the vector is shortened.
 				// The same is done with ends.
-				while (position_i_it == end_i_it && i < positions_size) {
+				// Check the bound first: once i == positions_size, the slot at i was popped.
+				while (i < positions_size && position_i_it == end_i_it) {
 					position_i_it = this->positions[positions_size - 1];
 					end_i_it = this->ends[positions_size - 1];
 					// This must be here, because in the next call, position_size is set again with positions.size().
@@ -238,9 +247,9 @@ template <typename Iterator> class SynchronizedExistentialIterator : public Sync
 	 * Beware, they will be ordered differently from how there were input into the iterator.
 	 * This is due to swapping of the emptied positions with positions at the end.
 	 */
-	const std::vector<Iterator>& get_current() const override { return this->currently_synchronized; }
+	const std::vector<Iterator>& get_current() const { return this->currently_synchronized; }
 
-	void push_back(const Iterator& begin, const Iterator& end) override {
+	void push_back(const Iterator& begin, const Iterator& end) {
 		// Empty vector would not have any effect (unlike in the case of the universal iterator).
 		if (begin == end) { return; }
 
@@ -262,7 +271,7 @@ template <typename Iterator> class SynchronizedExistentialIterator : public Sync
 		this->currently_synchronized.reserve(size);
 	}
 
-	void reset(const size_t size = 0) override {
+	void reset(const size_t size = 0) {
 		SynchronizedIterator<Iterator>::reset(size);
 		if (size > 0) { this->currently_synchronized.reserve(size); }
 		this->currently_synchronized.clear();
@@ -274,9 +283,12 @@ template <typename Iterator> class SynchronizedExistentialIterator : public Sync
  * as the two parameters of the method push_back,
  * this function wraps the method push_back,
  * takes the iterator and v and extracts the v.begin() and v.end() from v.
+ *
+ * @note Templated on the concrete iterator type: 'SynchronizedExistentialIterator::push_back()' does more than the one
+ *  in the base class, and the hierarchy is not polymorphic, so the base type must not appear in the signature.
  */
-template <class Container>
-void push_back(SynchronizedIterator<typename Container::const_iterator>& i, const Container& container) {
+template <class SynchronizedIteratorType, class Container>
+void push_back(SynchronizedIteratorType& i, const Container& container) {
 	i.push_back(container.begin(), container.end());
 }
 

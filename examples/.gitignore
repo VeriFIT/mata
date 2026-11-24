@@ -1,6 +1,7 @@
 example*
 !example*.cc
 !example*.mf
+!examples.just
 
 pcap-filter/pcap-filter
 prob-lo-mizer/prob-lo-mizer

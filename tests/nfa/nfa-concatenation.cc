@@ -1,14 +1,16 @@
 /* tests-nfa-concatenation.cc -- Tests for concatenation of NFAs
  */
 
+#include <optional>
+#include <random>
 #include <unordered_set>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "mata/applications/strings.hh"
+#include "mata/nfa/algorithms.hh"
 #include "mata/nfa/builder.hh"
-#include "mata/nfa/nfa.hh"
 
 using namespace mata::nfa;
 using namespace mata::applications::strings;
@@ -607,6 +609,71 @@ TEST_CASE("Bug with epsilon transitions") {
 	CHECK(are_equivalent(result, expected));
 }
 
+TEST_CASE("mata::nfa::concatenate() fills the state renaming maps") {
+	// A chain 0 --a--> 1 --a--> 2, initial 0, final 2.
+	Nfa lhs{};
+	lhs.add_state(2);
+	lhs.initial.insert(0);
+	lhs.final.insert(2);
+	lhs.delta.add(0, 'a', 1);
+	lhs.delta.add(1, 'a', 2);
+	// A one-state loop over 'b', initial and final.
+	Nfa rhs{};
+	rhs.add_state();
+	rhs.initial.insert(0);
+	rhs.final.insert(0);
+	rhs.delta.add(0, 'b', 0);
+
+	const StateRenaming expected_lhs_renaming{{0, 0}, {1, 1}, {2, 2}};
+	const StateRenaming expected_rhs_renaming{{0, 3}};
+
+	SECTION("an ordinary call fills both maps") {
+		StateRenaming lhs_renaming{{7, 7}}; // Stale entries must not survive a requested map.
+		StateRenaming rhs_renaming{{7, 7}};
+		const Nfa result{concatenate(lhs, rhs, true, &lhs_renaming, &rhs_renaming)};
+
+		CHECK(lhs_renaming == expected_lhs_renaming);
+		CHECK(rhs_renaming == expected_rhs_renaming);
+		CHECK(result.num_of_states() == 4);
+		CHECK(result.delta.contains(2, EPSILON, 3));
+	}
+
+	SECTION("a requested map is filled even when the result is empty") {
+		// No final state in rhs: the concatenation is empty, yet the maps still describe the full concatenation.
+		Nfa no_final_rhs{rhs};
+		no_final_rhs.final.clear();
+
+		StateRenaming lhs_renaming{};
+		StateRenaming rhs_renaming{};
+		const Nfa result{concatenate(lhs, no_final_rhs, true, &lhs_renaming, &rhs_renaming)};
+
+		CHECK(result.num_of_states() == 0);
+		CHECK(lhs_renaming == expected_lhs_renaming);
+		CHECK(rhs_renaming == expected_rhs_renaming);
+	}
+
+	SECTION("an operand without states maps only its own states") {
+		StateRenaming lhs_renaming{{7, 7}};
+		StateRenaming rhs_renaming{{7, 7}};
+		const Nfa result{concatenate(lhs, Nfa{}, true, &lhs_renaming, &rhs_renaming)};
+
+		CHECK(result.num_of_states() == 0);
+		CHECK(lhs_renaming == expected_lhs_renaming);
+		CHECK(rhs_renaming.empty());
+	}
+
+	SECTION("nullptr maps are skipped") {
+		CHECK_NOTHROW(concatenate(lhs, rhs, true));
+		CHECK_NOTHROW(concatenate(lhs, rhs, true, nullptr, nullptr));
+		StateRenaming lhs_renaming{};
+		StateRenaming rhs_renaming{};
+		CHECK_NOTHROW(concatenate(lhs, rhs, true, nullptr, &rhs_renaming));
+		CHECK(rhs_renaming == expected_rhs_renaming);
+		CHECK_NOTHROW(concatenate(lhs, rhs, true, &lhs_renaming, nullptr));
+		CHECK(lhs_renaming == expected_lhs_renaming);
+	}
+}
+
 TEST_CASE("mata::nfa::concatenate() inplace") {
 	SECTION("Empty automaton without states") {
 		Nfa lhs{};
@@ -714,9 +781,37 @@ TEST_CASE("mata::nfa::concatenate() inplace") {
 		lhs.delta.add(0, 115, 0);
 		lhs.delta.add(0, 116, 0);
 
+		const Nfa copy{lhs};
+		Nfa expected{copy};
+		expected.concatenate(copy);
+
 		size_t lhs_size = lhs.num_of_states();
 		Nfa result = lhs.concatenate(lhs);
 		CHECK(result.num_of_states() == lhs_size * 2);
+		CHECK(result.is_identical(expected));
+		CHECK(are_equivalent(result, concatenate(copy, copy)));
+	}
+
+	SECTION("the same automaton with several initial and final states, some past the delta") {
+		Nfa aut{};
+		aut.delta.add(0, 'a', 1);
+		aut.delta.add(1, 'b', 0);
+		aut.delta.add(1, 'c', 2);
+		aut.initial.insert({0, 3});
+		aut.final.insert({1, 3});
+		const Nfa copy{aut};
+		Nfa expected{copy};
+		expected.concatenate(copy);
+		REQUIRE(expected.num_of_states() == 8);
+
+		Nfa result{aut};
+		result.concatenate(result);
+		CHECK(result.is_identical(expected));
+		CHECK(are_equivalent(result, concatenate(copy, copy)));
+
+		Nfa consumed{aut};
+		consumed.concatenate(std::move(consumed));
+		CHECK(consumed.is_identical(expected));
 	}
 }
 
@@ -1112,4 +1207,308 @@ TEST_CASE("mata::nfa::concatenate_nth_power()") {
 
 		CHECK(are_equivalent(concatenate_nth_power(aut, 4), expected));
 	}
+}
+
+TEST_CASE("mata::nfa::concatenate_eps() with custom epsilon and use_epsilon=false") {
+	// Test that concatenate_eps with a custom epsilon and use_epsilon=false behaves like concatenate().
+	Nfa x{2, {0}, {1}};
+	x.delta.add(0, 1, 1);
+
+	Nfa y{2, {0}, {1}};
+	y.delta.add(0, 2, 1);
+
+	const Symbol custom_epsilon = 100;
+
+	// concatenate_eps with custom epsilon and use_epsilon=false should remove the custom epsilon transitions.
+	const Nfa xy_concat = mata::nfa::algorithms::concatenate_eps(x, y, custom_epsilon, /*use_epsilon=*/false);
+	const Nfa xy_normal = concatenate(x, y);
+
+	// The two results should be equivalent.
+	REQUIRE(are_equivalent(xy_concat, xy_normal));
+
+	// The custom epsilon symbol should not be in the used symbols.
+	REQUIRE(!xy_concat.delta.get_used_symbols().contains(custom_epsilon));
+
+	// Test the language: [1,2] should be accepted, [1,100,2] should not.
+	REQUIRE(xy_concat.is_in_lang({1, 2}));
+	REQUIRE(!xy_concat.is_in_lang({1, custom_epsilon, 2}));
+}
+
+TEST_CASE("mata::nfa::concatenate_eps() with custom epsilon preserves operand epsilon transitions") {
+	// Test that when custom epsilon != EPSILON, the operands' own EPSILON transitions are preserved.
+	const Symbol custom_epsilon = 100;
+
+	Nfa x{2, {0}, {1}};
+	x.delta.add(0, 1, 1);
+	x.delta.add(0, EPSILON, 1); // Operand has its own EPSILON transition.
+
+	Nfa y{2, {0}, {1}};
+	y.delta.add(0, 2, 1);
+
+	// With use_epsilon=false and custom_epsilon, the operand's EPSILON should be preserved.
+	const Nfa xy_concat = mata::nfa::algorithms::concatenate_eps(x, y, custom_epsilon, /*use_epsilon=*/false);
+
+	// The operand's EPSILON transition should still be there (reached from state 0 of the concatenation).
+	REQUIRE(xy_concat.delta.get_used_symbols().contains(EPSILON));
+	// The custom epsilon should not be present.
+	REQUIRE(!xy_concat.delta.get_used_symbols().contains(custom_epsilon));
+}
+
+TEST_CASE("mata::nfa::concatenate_eps() removes operand transitions over the connecting symbol") {
+	// The guarantee is about the symbol, not about where the transition came from: an operand transition labelled
+	// with the connecting epsilon is removed together with the connectors.
+	const Symbol custom_epsilon = 100;
+
+	Nfa x{3, {0}, {2}};
+	x.delta.add(0, 1, 1);
+	x.delta.add(1, custom_epsilon, 2); // Operand's own transition over the connecting symbol.
+
+	Nfa y{2, {0}, {1}};
+	y.delta.add(0, 2, 1);
+
+	const Nfa xy_concat = mata::nfa::algorithms::concatenate_eps(x, y, custom_epsilon, /*use_epsilon=*/false);
+
+	CHECK(!xy_concat.delta.get_used_symbols().contains(custom_epsilon));
+	// x accepted 1.100, so with 100 treated as epsilon the concatenation accepts 1.2, not 1.100.2.
+	CHECK(xy_concat.is_in_lang({1, 2}));
+	CHECK(!xy_concat.is_in_lang({1, custom_epsilon, 2}));
+}
+
+TEST_CASE("mata::nfa::concatenate_eps() builds one epsilon connector post per lhs final") {
+	Nfa lhs{};
+	lhs.add_state(4);
+	lhs.initial.insert(0);
+	lhs.final = {1, 3};
+	lhs.delta.add(0, 'a', 1);
+	lhs.delta.add(0, 'a', 3);
+	// Merge into an existing epsilon post, not just append to an empty one.
+	lhs.delta.add(3, EPSILON, 2);
+	// A symbol below a custom epsilon keeps the result post ordered by symbols otherwise.
+	lhs.delta.add(1, 'b', 0);
+
+	Nfa rhs{};
+	rhs.add_state(3);
+	rhs.initial = {0, 2};
+	rhs.final.insert(1);
+	rhs.delta.add(0, 'c', 1);
+	rhs.delta.add(2, 'd', 1);
+	rhs.delta.add(2, 'c', 0);
+
+	const State lhs_states_num{static_cast<State>(lhs.num_of_states())};
+	auto expected = [&](const Symbol epsilon) {
+		Nfa reference{lhs.delta, lhs.initial, lhs.final};
+		reference.delta.append_shifted(rhs.delta, lhs_states_num);
+		reference.add_state(static_cast<State>(lhs.num_of_states() + rhs.num_of_states() - 1));
+		for (const State lhs_final_state : lhs.final) {
+			for (const State rhs_initial_state : rhs.initial) {
+				reference.delta.add(lhs_final_state, epsilon, lhs_states_num + rhs_initial_state);
+			}
+		}
+		reference.final.clear();
+		for (const State rhs_final_state : rhs.final) { reference.final.insert(lhs_states_num + rhs_final_state); }
+		return reference;
+	};
+
+	SECTION("default epsilon") {
+		const Nfa result{algorithms::concatenate_eps(lhs, rhs, EPSILON, true)};
+		const Nfa reference{expected(EPSILON)};
+		CHECK(result.delta == reference.delta);
+		CHECK(result.initial == reference.initial);
+		CHECK(result.final == reference.final);
+	}
+
+	SECTION("custom epsilon above the operand symbols") {
+		const Symbol custom_epsilon{42};
+		const Nfa result{algorithms::concatenate_eps(lhs, rhs, custom_epsilon, true)};
+		const Nfa reference{expected(custom_epsilon)};
+		CHECK(result.delta == reference.delta);
+		CHECK(result.initial == reference.initial);
+		CHECK(result.final == reference.final);
+	}
+
+	SECTION("custom epsilon below other posts") {
+		const Symbol custom_epsilon{3};
+		const Nfa result{algorithms::concatenate_eps(lhs, rhs, custom_epsilon, true)};
+		const Nfa reference{expected(custom_epsilon)};
+		CHECK(result.delta == reference.delta);
+		CHECK(result.initial == reference.initial);
+		CHECK(result.final == reference.final);
+	}
+}
+
+namespace {
+/// Draw a value in [0, bound) from the raw generator output, portably across standard libraries.
+size_t concat_draw(std::mt19937& rng, const size_t bound) { return static_cast<size_t>(rng()) % bound; }
+
+/// A deterministic random NFA over {0, ..., num_of_symbols - 1} (plus an optional epsilon symbol), intended to
+///  stand alone without depending on other files' generators.
+Nfa random_concat_nfa(
+	std::mt19937& rng,
+	const size_t num_of_states,
+	const size_t num_of_symbols,
+	const std::optional<Symbol> epsilon = std::nullopt
+) {
+	Nfa nfa{num_of_states};
+	if (num_of_states == 0) { return nfa; }
+	nfa.initial.insert(static_cast<State>(concat_draw(rng, num_of_states)));
+	if (concat_draw(rng, 2) == 0) { nfa.initial.insert(static_cast<State>(concat_draw(rng, num_of_states))); }
+	for (State state{0}; state < num_of_states; ++state) {
+		if (concat_draw(rng, 3) == 0) { nfa.final.insert(state); }
+		for (Symbol symbol{0}; symbol < num_of_symbols; ++symbol) {
+			const size_t transitions{concat_draw(rng, 3)};
+			for (size_t transition{0}; transition < transitions; ++transition) {
+				nfa.delta.add(state, symbol, static_cast<State>(concat_draw(rng, num_of_states)));
+			}
+		}
+		if (epsilon.has_value() && concat_draw(rng, 3) == 0) {
+			nfa.delta.add(state, *epsilon, static_cast<State>(concat_draw(rng, num_of_states)));
+		}
+	}
+	return nfa;
+}
+} // namespace
+
+TEST_CASE("mata::nfa::concatenate(use_epsilon=false) matches the connector-and-remove reference", "[differential]") {
+	// Reference: build with epsilons, then remove them globally. The new path should agree for both epsilon-free
+	//  operands (direct merge) and operands carrying their own epsilon transitions (fallback).
+	std::mt19937 rng{42'424'242};
+	for (size_t iteration{0}; iteration < 96; ++iteration) {
+		const bool with_epsilon{iteration % 3 == 2};
+		const std::optional<Symbol> epsilon = with_epsilon ? std::optional<Symbol>{EPSILON} : std::nullopt;
+		const size_t rhs_states{concat_draw(rng, 10) + 1};
+		const size_t lhs_states{concat_draw(rng, 10) + 1};
+		const Nfa lhs{random_concat_nfa(rng, lhs_states, 3, epsilon)};
+		const Nfa rhs{random_concat_nfa(rng, rhs_states, 3, epsilon)};
+
+		const Nfa actual{algorithms::concatenate_eps(lhs, rhs, EPSILON, false)};
+		Nfa expected{algorithms::concatenate_eps(lhs, rhs, EPSILON, true)};
+		expected.remove_epsilon(EPSILON);
+
+		INFO("iteration=" << iteration << " with_epsilon=" << with_epsilon);
+		CHECK(are_equivalent(actual, expected));
+		if (!with_epsilon) {
+			// For epsilon-free operands the direct path is exact: same delta, same finality, same trimming.
+			CHECK(actual.delta == expected.delta);
+			CHECK(actual.final == expected.final);
+			CHECK(actual.initial == expected.initial);
+			CHECK(actual.num_of_states() == expected.num_of_states());
+		}
+	}
+}
+
+TEST_CASE("mata::nfa::concatenate_eps(use_epsilon=false) handles empty languages and self-concatenation") {
+	SECTION("empty lhs language") {
+		Nfa lhs{};
+		lhs.add_state(1);
+		lhs.initial.insert(0);
+		lhs.delta.add(0, 'a', 1);
+		Nfa rhs{};
+		rhs.add_state();
+		rhs.initial.insert(0);
+		rhs.final.insert(0);
+		CHECK(concatenate(lhs, rhs, false).num_of_states() == 0);
+	}
+	SECTION("empty rhs language") {
+		Nfa lhs{};
+		lhs.add_state();
+		lhs.initial.insert(0);
+		lhs.final.insert(0);
+		Nfa rhs{};
+		rhs.add_state(1);
+		rhs.initial.insert(0);
+		CHECK(concatenate(lhs, rhs, false).num_of_states() == 0);
+	}
+	SECTION("self-concatenation") {
+		Nfa aut{};
+		aut.add_state(1);
+		aut.initial.insert(0);
+		aut.final.insert(1);
+		aut.delta.add(0, 'a', 1);
+		Nfa self{aut};
+		const Nfa result{concatenate(aut, aut, false)};
+		Nfa expected{algorithms::concatenate_eps(self, self, EPSILON, true)};
+		expected.remove_epsilon(EPSILON);
+		CHECK(result.delta == expected.delta);
+		CHECK(result.final == expected.final);
+		CHECK(result.num_of_states() == expected.num_of_states());
+	}
+	SECTION("rhs initial is also final makes lhs final in result") {
+		Nfa lhs{};
+		lhs.add_state(1);
+		lhs.initial.insert(0);
+		lhs.final.insert(1);
+		lhs.delta.add(0, 'a', 1);
+		Nfa rhs{};
+		rhs.add_state();
+		rhs.initial.insert(0);
+		rhs.final.insert(0);
+		rhs.delta.add(0, 'b', 0);
+		const Nfa result{concatenate(lhs, rhs, false)};
+		CHECK(result.final.contains(1)); // Original lhs final stays final iff some rhs initial is final.
+		CHECK(result.delta.contains(1, 'b', 2));
+	}
+}
+
+TEST_CASE("mata::nfa::concatenate_eps(use_epsilon=false) keeps operand epsilon transitions via fallback") {
+	// Pre-existing epsilon transitions must still go through global removal exactly as before.
+	Nfa lhs{};
+	lhs.add_state(2);
+	lhs.initial.insert(0);
+	lhs.final.insert(2);
+	lhs.delta.add(0, 'a', 1);
+	lhs.delta.add(1, EPSILON, 2);
+	Nfa rhs{};
+	rhs.add_state(1);
+	rhs.initial.insert(0);
+	rhs.final.insert(1);
+	rhs.delta.add(0, 'b', 1);
+
+	const Nfa actual{algorithms::concatenate_eps(lhs, rhs, EPSILON, false)};
+	Nfa expected{algorithms::concatenate_eps(lhs, rhs, EPSILON, true)};
+	expected.remove_epsilon(EPSILON);
+
+	CHECK(are_equivalent(actual, expected));
+	CHECK(!actual.delta.get_used_symbols().contains(EPSILON));
+	CHECK(actual.is_in_lang({'a', 'b'}));
+}
+
+TEST_CASE("mata::nfa::concatenate_eps(use_epsilon=false) trims trailing unused states like remove_epsilon") {
+	// A lhs with unused trailing states and a transitionless rhs: remove_epsilon trims the direct result to the
+	//  last used state, which the direct construction has to replicate.
+	Nfa lhs{};
+	lhs.add_state(3); // Four states, but only 0 -> 1 is used.
+	lhs.initial.insert(0);
+	lhs.final.insert(1);
+	lhs.delta.add(0, 'a', 1);
+	Nfa rhs{};
+	rhs.add_state();
+	rhs.initial.insert(0);
+	rhs.final.insert(0);
+
+	const Nfa result{concatenate(lhs, rhs, false)};
+	Nfa expected{algorithms::concatenate_eps(lhs, rhs, EPSILON, true)};
+	expected.remove_epsilon(EPSILON);
+
+	CHECK(result.num_of_states() == expected.num_of_states());
+	CHECK(result.delta == expected.delta);
+	CHECK(result.final == expected.final);
+	CHECK(result.final.contains(1));
+	CHECK(result.is_in_lang({'a'}));
+}
+
+TEST_CASE("mata::nfa::concatenate_eps(use_epsilon=false) handles a 2000-state forward epsilon chain") {
+	// Fallback-path stress: 2000 states chained by forward epsilon transitions. Correctness, not speed.
+	Nfa lhs{2'000};
+	lhs.initial.insert(0);
+	lhs.final.insert(1'999);
+	for (State state{0}; state + 1 < 2'000; ++state) { lhs.delta.add(state, EPSILON, state + 1); }
+	Nfa rhs{};
+	rhs.add_state();
+	rhs.initial.insert(0);
+	rhs.final.insert(0);
+
+	const Nfa result{algorithms::concatenate_eps(lhs, rhs, EPSILON, false)};
+	CHECK(result.num_of_states() > 0);
+	CHECK(result.final.contains(0));
+	CHECK(!result.delta.get_used_symbols().contains(EPSILON));
 }

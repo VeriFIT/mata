@@ -5,6 +5,8 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/parser/re2parser.hh"
 
+#include <limits>
+
 using namespace mata::nfa;
 
 using Symbol = mata::Symbol;
@@ -792,15 +794,17 @@ TEST_CASE("mata::Parser basic_parsing") {
 	}
 
 	SECTION("b\\w+?") {
+		// The non-greedy repetition matches as few characters as possible, but its language is the same as of 'b\w+'.
 		aut = mata::parser::create_nfa("b\\w+?");
 		CHECK(!aut.delta.empty());
 		CHECK(!aut.is_lang_empty());
 		CHECK(!aut.is_in_lang(Word{}));
 		CHECK(!aut.is_in_lang(Word{'b'}));
 		CHECK(aut.is_in_lang(Word{'b', 'e'}));
-		CHECK(!aut.is_in_lang(Word{'b', 'e', 'e'}));
-		CHECK(!aut.is_in_lang(Word{'b', 'e', 'e', 'r'}));
-		CHECK(!aut.is_in_lang(Word{'b', 'e', 'e', 'r', 's'}));
+		CHECK(aut.is_in_lang(Word{'b', 'e', 'e'}));
+		CHECK(aut.is_in_lang(Word{'b', 'e', 'e', 'r'}));
+		CHECK(aut.is_in_lang(Word{'b', 'e', 'e', 'r', 's'}));
+		CHECK(!aut.is_in_lang(Word{'b', 'e', ' '}));
 	}
 
 	SECTION("b(a|e|i)d") {
@@ -1622,6 +1626,27 @@ TEST_CASE("mata::Parser UTF-8 encoding") { // {{{
 		for (const Symbol c : symbols) { CHECK(aut.is_in_lang(Run{Word{c}, {}})); }
 	}
 
+	SECTION("Regex (\\x{200}a)*\\x{200}b with nondeterministic byte paths") {
+		// RE2 produces nondeterministic byte paths for the repeated \x{200}, one for the loop and one for the final b.
+		Nfa aut = mata::parser::create_nfa("(\\x{200}a)*\\x{200}b", false, 306, true, Encoding::Utf8);
+		Nfa decoded = aut.decode_utf8();
+		// Must accept the word [0x200, 'b']
+		CHECK(decoded.is_in_lang(Run{Word{0x2'00, 'b'}, {}}));
+		// Must accept the word [0x200, 'a', 0x200, 'b']
+		CHECK(decoded.is_in_lang(Run{Word{0x2'00, 'a', 0x2'00, 'b'}, {}}));
+	}
+
+	SECTION("Regex (\\x{200}|\\x{201})*\\x{201} with byte paths sharing the leading byte") {
+		// U+0200 is C8 80 and U+0201 is C8 81: the loop and the final \x{201} both start with C8, so U+0201 is
+		// decoded along two byte paths with different targets.
+		Nfa aut = mata::parser::create_nfa("(\\x{200}|\\x{201})*\\x{201}", false, 306, true, Encoding::Utf8);
+		Nfa decoded = aut.decode_utf8();
+		CHECK(decoded.is_in_lang(Run{Word{0x2'01}, {}}));
+		CHECK(decoded.is_in_lang(Run{Word{0x2'00, 0x2'01}, {}}));
+		CHECK(decoded.is_in_lang(Run{Word{0x2'01, 0x2'01}, {}}));
+		CHECK(!decoded.is_in_lang(Run{Word{0x2'00}, {}}));
+	}
+
 } // }}}
 
 TEST_CASE("mata::parser Parsing regexes with ^ and $") {
@@ -1877,5 +1902,197 @@ TEST_CASE("Foldcase") {
 		result.final.insert(final_s);
 		for (Symbol c = 0; c <= 0x7F; c++) { result.delta.add(initial_s, c, final_s); }
 		CHECK(are_equivalent(nfa, result));
+	}
+}
+
+TEST_CASE("mata::parser::create_nfa() optional simulation reduction") {
+	for (const std::string regex :
+		 {"a*b|c(de)*", "(?:[a-z]b|c[d-f]){20}", "(cd(abcde)*)|(a(aaa)*)", "((a+b)*a)*", "[abcd]*e+", ""}) {
+		CAPTURE(regex);
+		const Nfa plain{mata::parser::create_nfa(regex, false, 306, false)};
+		const Nfa reduced{mata::parser::create_nfa(regex)};
+		CHECK(are_equivalent(plain, reduced));
+		CHECK(reduced.num_of_states() <= plain.num_of_states());
+		Nfa trimmed{plain};
+		trimmed.trim();
+		CHECK(trimmed.num_of_states() == plain.num_of_states());
+
+		const Nfa built_plain{mata::nfa::builder::create_from_regex(regex, false)};
+		CHECK(built_plain.num_of_states() == plain.num_of_states());
+		CHECK(are_equivalent(built_plain, plain));
+		const Nfa built{mata::nfa::builder::create_from_regex(regex)};
+		CHECK(built.num_of_states() == reduced.num_of_states());
+		CHECK(are_equivalent(built, plain));
+	}
+
+	SECTION("Reduction merges simulation-equivalent states") {
+		CHECK(
+			mata::parser::create_nfa("a*b|c(de)*").num_of_states() <
+			mata::parser::create_nfa("a*b|c(de)*", false, 306, false).num_of_states()
+		);
+		CHECK(
+			mata::nfa::builder::create_from_regex("a*b|c(de)*").num_of_states() <
+			mata::nfa::builder::create_from_regex("a*b|c(de)*", false).num_of_states()
+		);
+	}
+}
+
+TEST_CASE("mata::parser::create_nfa() instructions without a consuming transition of their own") {
+	// Non-greedy repetitions put a match before the repeated part in the same instruction list, '(?s).*' and
+	//  '[\x00-\xff]*' compile to an AltMatch, and '[^\x00-\xff]' to a fail instruction.
+	struct Case {
+		std::string regex;
+		std::vector<Word> accepted;
+		std::vector<Word> rejected;
+	};
+	const std::vector<Case> cases{
+		{"a*?", {{}, {'a'}, {'a', 'a', 'a'}}, {{'b'}, {'a', 'b'}}},
+		{"a+?", {{'a'}, {'a', 'a'}, {'a', 'a', 'a'}}, {{}, {'b'}}},
+		{"a??b", {{'b'}, {'a', 'b'}}, {{}, {'a'}, {'a', 'a', 'b'}}},
+		{"(ab)*?c", {{'c'}, {'a', 'b', 'c'}, {'a', 'b', 'a', 'b', 'c'}}, {{}, {'a', 'b'}, {'a', 'c'}}},
+		{"(?s)a.*", {{'a'}, {'a', 'b'}, {'a', '\n'}, {'a', 0xff, 0x00}}, {{}, {'b'}, {'b', 'a'}}},
+		{"a[\\x00-\\xff]*", {{'a'}, {'a', 'a'}, {'a', 0x00}, {'a', 0xff}}, {{}, {'b'}, {0xff, 'a'}}},
+		{"(?s).*", {{}, {'a'}, {0x00}, {0xff, '\n', 'b'}}, {}},
+		{"(?s).*?b", {{'b'}, {'a', 'b'}, {0xff, 'b'}}, {{}, {'a'}, {'b', 'a'}}},
+		{"[^\\x00-\\xff]", {}, {{}, {'a'}, {0x00}, {0xff}}},
+		{"a|[^\\x00-\\xff]", {{'a'}}, {{}, {'b'}, {'a', 'a'}}},
+	};
+	for (const auto& [regex, accepted, rejected] : cases) {
+		CAPTURE(regex);
+		const Nfa without_epsilon{mata::parser::create_nfa(regex)};
+		const Nfa unreduced{mata::parser::create_nfa(regex, false, 306, false)};
+		const Nfa with_epsilon{mata::parser::create_nfa(regex, true, 306, false)};
+		const Nfa epsilon_removed{remove_epsilon(with_epsilon, 306)};
+		for (const Word& word : accepted) {
+			CAPTURE(word);
+			CHECK(without_epsilon.is_in_lang(word));
+			CHECK(unreduced.is_in_lang(word));
+			CHECK(epsilon_removed.is_in_lang(word));
+		}
+		for (const Word& word : rejected) {
+			CAPTURE(word);
+			CHECK(!without_epsilon.is_in_lang(word));
+			CHECK(!unreduced.is_in_lang(word));
+			CHECK(!epsilon_removed.is_in_lang(word));
+		}
+		CHECK(are_equivalent(without_epsilon, epsilon_removed));
+	}
+}
+
+TEST_CASE("mata::parser::create_nfa() post-processing options") {
+	using mata::parser::Re2Options;
+	constexpr Symbol epsilon{500};
+	const auto uses_symbol = [](const Nfa& nfa, const Symbol symbol) {
+		for (const Transition& transition : nfa.delta.transitions()) {
+			if (transition.symbol == symbol) { return true; }
+		}
+		return false;
+	};
+
+	SECTION("Defaults reproduce the overload with individual parameters") {
+		for (const std::string regex : {"a*b|c(de)*", "(a+)|(e)(w*)+(b*)", "[abcd]*e+", "", "(?s)a.*"}) {
+			CAPTURE(regex);
+			const Nfa options{mata::parser::create_nfa(regex, Re2Options{})};
+			const Nfa individual{mata::parser::create_nfa(regex)};
+			CHECK(options.num_of_states() == individual.num_of_states());
+			CHECK(are_equivalent(options, individual));
+			const Nfa built{mata::nfa::builder::create_from_regex(regex, Re2Options{})};
+			CHECK(built.num_of_states() == individual.num_of_states());
+			const Nfa unreduced{mata::parser::create_nfa(regex, Re2Options{.reduce = false})};
+			CHECK(unreduced.num_of_states() == mata::parser::create_nfa(regex, false, 306, false).num_of_states());
+			CHECK(are_equivalent(unreduced, individual));
+		}
+	}
+
+	SECTION("Epsilon transitions are kept with the requested symbol") {
+		const Nfa with_epsilon{
+			mata::parser::create_nfa("(a)(b)", Re2Options{.keep_epsilon = true, .epsilon = epsilon, .reduce = false})
+		};
+		CHECK(uses_symbol(with_epsilon, epsilon));
+		CHECK(!uses_symbol(with_epsilon, 306));
+		const Nfa without_epsilon{mata::parser::create_nfa("(a)(b)", Re2Options{.epsilon = epsilon})};
+		CHECK(!uses_symbol(without_epsilon, epsilon));
+		CHECK(are_equivalent(remove_epsilon(with_epsilon, epsilon), without_epsilon));
+	}
+
+	SECTION("Trimming is optional") {
+		// The 'a' transition leads to a state that cannot reach a final state.
+		const Nfa untrimmed{mata::parser::create_nfa("a[^\\x00-\\xff]", Re2Options{.trim = false, .reduce = false})};
+		CHECK(untrimmed.num_of_states() > 0);
+		CHECK(untrimmed.is_lang_empty());
+		const Nfa trimmed{mata::parser::create_nfa("a[^\\x00-\\xff]", Re2Options{.reduce = false})};
+		CHECK(trimmed.num_of_states() == 0);
+		for (const std::string regex : {"a*b|c(de)*", "(a+)|(e)(w*)+(b*)", "a(b|[^\\x00-\\xff])"}) {
+			CAPTURE(regex);
+			Nfa raw{mata::parser::create_nfa(regex, Re2Options{.trim = false, .reduce = false})};
+			CHECK(are_equivalent(raw, mata::parser::create_nfa(regex)));
+			raw.trim();
+			CHECK(raw.num_of_states() == mata::parser::create_nfa(regex, Re2Options{.reduce = false}).num_of_states());
+		}
+	}
+
+	SECTION("Encoding") {
+		// U+0100 is the two bytes c4 80 in UTF-8 and not a Latin1 character.
+		const Nfa utf8{mata::parser::create_nfa("\\x{100}", Re2Options{.encoding = Encoding::Utf8})};
+		CHECK(utf8.is_in_lang(Word{0xc4, 0x80}));
+		CHECK_THROWS(mata::parser::create_nfa("\\x{100}", Re2Options{.encoding = Encoding::Latin1}));
+	}
+}
+
+TEST_CASE("mata::parser::create_nfa() accepts a caller-selected memory budget") {
+	using mata::parser::Re2Options;
+	const Re2Options default_options{.trim = false, .reduce = false};
+	const Nfa default_automaton{mata::parser::create_nfa("ab", default_options)};
+	CHECK(default_automaton.is_in_lang(Word{'a', 'b'}));
+
+	const Re2Options zero_budget_options{default_options};
+	CHECK(are_equivalent(default_automaton, mata::parser::create_nfa("ab", zero_budget_options)));
+	Re2Options negative_budget_options{default_options};
+	negative_budget_options.max_mem = -1;
+	CHECK(are_equivalent(default_automaton, mata::parser::create_nfa("ab", negative_budget_options)));
+
+	Re2Options tiny_options{default_options};
+	tiny_options.max_mem = 1;
+	CHECK_THROWS_WITH(
+		mata::parser::create_nfa("a{1000}", tiny_options), Catch::Matchers::ContainsSubstring("memory budget")
+	);
+
+	Re2Options limited_options{default_options};
+	limited_options.max_mem = 1'024;
+	CHECK_THROWS_WITH(
+		mata::parser::create_nfa("a{1000}", limited_options), Catch::Matchers::ContainsSubstring("memory budget")
+	);
+
+	std::string oversized{};
+	for (int repetition = 0; repetition < 200; ++repetition) { oversized += "(?:ab|cd){1000}"; }
+	Re2Options generous_options{default_options};
+	generous_options.max_mem = std::numeric_limits<std::int64_t>::max();
+	const Nfa larger_automaton{mata::parser::create_nfa(oversized, generous_options)};
+	CHECK(!larger_automaton.is_lang_empty());
+	Word accepted_word{};
+	accepted_word.reserve(400'000);
+	// Each of 200 groups consumes 1,000 alternatives of two symbols: 400,000 symbols in total.
+	for (int repetition = 0; repetition < 200'000; ++repetition) {
+		accepted_word.push_back('a');
+		accepted_word.push_back('b');
+	}
+	CHECK(larger_automaton.is_in_lang(accepted_word));
+}
+
+TEST_CASE("mata::parser::create_nfa() regex beyond RE2's memory budget") {
+	std::string regex = "";
+	for (int i = 0; i < 1'000; ++i) { regex += "[a-z]{1000}"; }
+	CHECK_THROWS_WITH(mata::parser::create_nfa(regex), Catch::Matchers::ContainsSubstring("memory budget"));
+}
+
+TEST_CASE("mata::parser::create_nfa() reports bad input instead of killing the caller - issue #729") {
+	SECTION("a syntax error throws") { CHECK_THROWS_AS(mata::parser::create_nfa("(ab"), std::invalid_argument); }
+
+	// `Regexp::CompileToProg()` returns no program when it would exceed two thirds of RE2's `max_mem`.
+	//  That null program used to be dereferenced right away, which killed the whole process.
+	SECTION("a regex beyond the RE2 program memory budget throws") {
+		std::string pattern{};
+		for (int repetition{0}; repetition < 200; ++repetition) { pattern += "(?:ab|cd){1000}"; }
+		CHECK_THROWS_WITH(mata::parser::create_nfa(pattern), Catch::Matchers::ContainsSubstring("memory budget"));
 	}
 }

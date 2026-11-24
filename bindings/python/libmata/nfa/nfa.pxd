@@ -8,10 +8,10 @@ from libcpp.memory cimport shared_ptr
 from libcpp.string cimport string
 from libcpp.list cimport list as clist
 from libcpp.pair cimport pair
-from libc.stdint cimport uint8_t
+from libc.stdint cimport uint8_t, uint64_t
 
 from libmata.utils cimport CSparseSet, COrdVector, CBoolVector, CBinaryRelation, CPairHash
-from libmata.alphabets cimport CAlphabet, CConstAlphabet, Symbol
+from libmata.alphabets cimport CAlphabet, CConstAlphabet, CLazyWordGenerator, Symbol
 
 cdef extern from "<iostream>" namespace "std":
     cdef cppclass ostream:
@@ -28,7 +28,10 @@ cdef extern from "<sstream>" namespace "std":
 
 cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
     # Typedefs
-    ctypedef unsigned long State
+    # The real width is MATA_STATE_BITS (32 unless configured otherwise). Declared over a plain C integer, Cython
+    #  converts through `mata::nfa::State` itself, so out-of-range values raise OverflowError at either width. Over a
+    #  typedef such as `uint32_t`, it would convert through that typedef instead and truncate 64-bit states.
+    ctypedef unsigned int State
     ctypedef COrdVector[State] StateSet
     ctypedef uset[State] UnorderedStateSet
     ctypedef umap[Symbol, StateSet] PostSymb
@@ -39,8 +42,15 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
     ctypedef umap[string, string] ParameterMap
 
     cdef const Symbol CEPSILON "mata::nfa::EPSILON"
+    cdef const State CMAX_STATE "mata::nfa::Limits::max_state"
 
     cdef cppclass CStatePost "mata::nfa::StatePost":
+        # Its own iterator, not OrdVector[SymbolPost]'s: StatePost stores its symbol posts with Mata's Delta allocator.
+        cppclass const_iterator:
+            bool operator==(const_iterator&)
+            bool operator!=(const_iterator&)
+            CSymbolPost& operator*()
+            const_iterator& operator++()
         void insert(CSymbolPost&)
         CSymbolPost& operator[](Symbol)
         CSymbolPost& back()
@@ -48,14 +58,14 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         void remove(CSymbolPost&)
         bool empty()
         vector[CSymbolPost] to_vector()
-        COrdVector[CSymbolPost].const_iterator cbegin()
-        COrdVector[CSymbolPost].const_iterator cend()
+        const_iterator cbegin()
+        const_iterator cend()
 
     cdef cppclass CTransitions "mata::nfa::Delta::Transitions":
         cppclass const_iterator:
             bool operator==(const_iterator&)
             bool operator!=(const_iterator&)
-            CTrans& operator*()
+            CTrans operator*()
             const_iterator& operator++()
         const_iterator begin()
         const_iterator end()
@@ -72,6 +82,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         void clear()
         bool empty()
         bool uses_state(State)
+        size_t num_of_transitions()
         size_t num_of_states()
         void add(CTrans) except +
         void add(State, Symbol, State) except +
@@ -80,13 +91,16 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         void remove(State, Symbol, State) except +
         bool contains(State, Symbol, State)
         bool contains(CTrans)
-        COrdVector[CSymbolPost].const_iterator epsilon_symbol_posts(State state, Symbol epsilon)
-        COrdVector[CSymbolPost].const_iterator epsilon_symbol_posts(CStatePost& post, Symbol epsilon)
-        size_t num_of_transitions()
         CTransitions transitions()
-        vector[CTrans] get_transitions_to(State)
-        vector[CTrans] get_transitions_between(State, State)
+        vector[CTrans] get_transitions_to(State) except +
+        vector[CTrans] get_transitions_between(State, State) except +
+        CStatePost.const_iterator epsilon_symbol_posts(State state, Symbol epsilon)
+        CStatePost.const_iterator epsilon_symbol_posts(CStatePost& post, Symbol epsilon)
+        void add(vector[CTrans]&) except +
         COrdVector[Symbol] get_used_symbols()
+        # Bumped by every mutation of the transition relation; generators use it to detect invalidated iterators.
+        uint64_t mutation_epoch()
+
 
     cdef cppclass CRun "mata::nfa::Run":
         # Public Attributes
@@ -110,10 +124,18 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         bool operator==(CTrans)
         bool operator!=(CTrans)
 
+    # Target states of a symbol post; small sets are stored inline.
+    cdef cppclass CSmallStateSet "mata::nfa::SmallStateSet":
+        CSmallStateSet() except +
+        CSmallStateSet(StateSet&) except +
+        size_t size() const
+        bint empty() const
+        const State* data() const
+
     cdef cppclass CSymbolPost "mata::nfa::SymbolPost":
         # Public Attributes
         Symbol symbol
-        StateSet targets
+        CSmallStateSet targets
 
         # Constructors
         CSymbolPost() except +
@@ -126,8 +148,12 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         bool operator>(CSymbolPost)
         bool operator>=(CSymbolPost)
 
-        COrdVector[State].const_iterator begin()
-        COrdVector[State].const_iterator end()
+        const State* cbegin() const
+        const State* cend() const
+
+    cdef enum CRegexPrintMode "mata::nfa::RegexPrintMode":
+        RegexPrintModeFast "mata::nfa::RegexPrintMode::Fast"
+        RegexPrintModeReadable "mata::nfa::RegexPrintMode::Readable"
 
     # Structural base shared by mata::nfa::Nfa and mata::nft::Nft.
     cdef cppclass CAutomaton "mata::Automaton":
@@ -145,31 +171,21 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
 
         # Constructor
         CNfa() except +
-        CNfa(unsigned long) except +
-        CNfa(unsigned long, CSparseSet[State], CSparseSet[State], shared_ptr[CAlphabet])
+        CNfa(size_t) except +
+        CNfa(size_t, CSparseSet[State], CSparseSet[State], shared_ptr[CAlphabet]) except +
         CNfa(const CNfa&)
 
         # Public Functions
-        void make_initial(State)
-        void make_initial(vector[State])
-        bool has_initial(State)
-        void remove_initial(State)
-        void clear_initial()
-        void make_final(State)
-        void make_final(vector[State])
-        bool has_final(State)
-        void remove_final(State)
-        void clear_final()
         void unify_initial(bool)
         void unify_final(bool)
         bool is_state(State)
         StateSet post(StateSet&, Symbol)
-        State add_state()
-        State add_state(State)
+        State add_state() except +
+        State add_state(State) except +
         void print_to_dot(ostream, bool, bool, int)
         CNfa& trim(StateRenaming*)
-        CNfa& concatenate(CNfa&)
-        CNfa& unite_nondet_with(CNfa&)
+        CNfa& concatenate(CNfa&) except +
+        CNfa& unite_nondet_with(CNfa&) except +
         void get_one_letter_aut(CNfa&)
         bool is_epsilon(Symbol)
         CBoolVector get_useful_states()
@@ -180,6 +196,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         size_t num_of_states()
         bool is_lang_empty(CRun*)
         bool is_deterministic()
+        bool is_minimal()
         bool is_complete(CAlphabet*) except +
         bool is_complete() except +
         bool is_universal(CAlphabet&, ParameterMap&) except +
@@ -190,38 +207,59 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         StateSet read_word(CRun&, bool)
         optional[State] read_word_det(CRun&)
         pair[CRun, bool] get_word_for_path(CRun&)
-        void make_complete(CAlphabet*, optional[State]) except +
+        cset[vector[Symbol]] get_words(size_t) except +
+        bool make_complete(CAlphabet*, optional[State]) except +
         shared_ptr[CConstAlphabet] resolve_alphabet(CAlphabet*) except +
         COrdVector[Symbol] get_symbols_to_work_with(CAlphabet*) except +
+        string print_to_mata(const CAlphabet*) except +
+        string print_to_regex(CRegexPrintMode, const CAlphabet*) except +
 
     # Automata tests
-    cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CAlphabet*, ParameterMap&)
-    cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CRun*, CAlphabet*, ParameterMap&) except +
-    cdef bool c_are_equivalent "mata::nfa::are_equivalent" (CNfa&, CNfa&, CAlphabet*, ParameterMap&)
-    cdef bool c_are_equivalent "mata::nfa::are_equivalent" (CNfa&, CNfa&, ParameterMap&)
+    cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CAlphabet*, ParameterMap&) except + nogil
+    cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CRun*, CAlphabet*, ParameterMap&) except + nogil
+    cdef bool c_are_equivalent "mata::nfa::are_equivalent" (CNfa&, CNfa&, CAlphabet*, ParameterMap&) except + nogil
+    cdef bool c_are_equivalent "mata::nfa::are_equivalent" (CNfa&, CNfa&, ParameterMap&) except + nogil
 
     # Automata operations
-    cdef void compute_fw_direct_simulation(const CNfa&)
+    cdef void compute_fw_direct_simulation(const CNfa&) except +
 
     # Helper functions
-    cdef CRun c_encode_word "mata::nfa::encode_word" (CAlphabet*, vector[string])
+    cdef CRun c_encode_word "mata::nfa::encode_word" (CAlphabet*, vector[string]) except +
 
 cdef extern from "mata/nfa/algorithms.hh" namespace "mata::nfa::algorithms":
-    cdef CBinaryRelation& c_compute_relation "mata::nfa::algorithms::compute_relation" (CNfa&, ParameterMap&)
+    cdef CBinaryRelation c_compute_relation "mata::nfa::algorithms::compute_relation" (CNfa&, ParameterMap&) except + nogil
 
+    cdef enum CDeterminizationReduction "mata::nfa::algorithms::DeterminizationReduction":
+        DeterminizationReductionNone "mata::nfa::algorithms::DeterminizationReduction::None"
+        DeterminizationReductionBisimulation "mata::nfa::algorithms::DeterminizationReduction::Bisimulation"
+        DeterminizationReductionSimulation "mata::nfa::algorithms::DeterminizationReduction::Simulation"
+        DeterminizationReductionAdaptive "mata::nfa::algorithms::DeterminizationReduction::Adaptive"
+
+    cdef cppclass CFourRussiansOptions "mata::nfa::algorithms::FourRussiansOptions":
+        unsigned block_size
+        CDeterminizationReduction reduction
+
+# Translate the C++ exception being handled into a Python one; defined in nfa.pyx.
+cdef void translate_mata_exception() except *
+
+# The long-running entry points are declared `except + nogil` so that the callers can run them without the GIL.
+# The C++ library does not synchronise anything: concurrent calls may only read the automata and alphabets they
+# are given, and no other thread may mutate them meanwhile (`OnTheFlyAlphabet::translate_symb` mutates).
 cdef extern from "mata/nfa/plumbing.hh" namespace "mata::nfa::plumbing":
-    cdef void get_elements(StateSet*, CBoolVector)
-    cdef void c_determinize "mata::nfa::plumbing::determinize" (CNfa*, CNfa&, umap[StateSet, State]*)
-    cdef void c_union_nondet "mata::nfa::plumbing::union_nondet" (CNfa*, CNfa&, CNfa&)
-    cdef void c_intersection "mata::nfa::plumbing::intersection" (CNfa*, CNfa&, CNfa&, Symbol, umap[pair[State, State], State, CPairHash[State, State]]*)
-    cdef void c_concatenate "mata::nfa::plumbing::concatenate" (CNfa*, CNfa&, CNfa&, bool, StateRenaming*, StateRenaming*)
-    cdef void c_complement "mata::nfa::plumbing::complement" (CNfa*, CNfa&, CAlphabet&, ParameterMap&) except +
-    cdef void c_revert "mata::nfa::plumbing::revert" (CNfa*, CNfa&)
-    cdef void c_remove_epsilon "mata::nfa::plumbing::remove_epsilon" (CNfa*, CNfa&, Symbol) except +
-    cdef void c_minimize "mata::nfa::plumbing::minimize" (CNfa*, CNfa&, ParameterMap&)
-    cdef void c_reduce "mata::nfa::plumbing::reduce" (CNfa*, CNfa&, StateRenaming*, ParameterMap&)
-    cdef void c_reduce_residual_with "mata::nfa::plumbing::reduce_residual_with" (CNfa*, CNfa&)
-    cdef void c_reduce_residual_after "mata::nfa::plumbing::reduce_residual_after" (CNfa*, CNfa&)
+    cdef void get_elements(StateSet*, CBoolVector) except +
+    cdef void c_determinize "mata::nfa::plumbing::determinize" (CNfa*, CNfa&, umap[StateSet, State]*, ParameterMap&) except + nogil
+    cdef void c_determinize_four_russians "mata::nfa::plumbing::determinize_four_russians" (CNfa*, CNfa&, CFourRussiansOptions&, umap[StateSet, State]*) except + nogil
+    cdef void c_union_nondet "mata::nfa::plumbing::union_nondet" (CNfa*, CNfa&, CNfa&) except + nogil
+    cdef void c_intersection "mata::nfa::plumbing::intersection" (CNfa*, CNfa&, CNfa&, Symbol, umap[pair[State, State], State, CPairHash[State, State]]*) except + nogil
+    cdef void c_concatenate "mata::nfa::plumbing::concatenate" (CNfa*, CNfa&, CNfa&, bool, StateRenaming*, StateRenaming*) except + nogil
+    cdef void c_complement "mata::nfa::plumbing::complement" (CNfa*, CNfa&, CAlphabet&, ParameterMap&) except + nogil
+    cdef void c_revert "mata::nfa::plumbing::revert" (CNfa*, CNfa&) except + nogil
+    cdef void c_remove_epsilon "mata::nfa::plumbing::remove_epsilon" (CNfa*, CNfa&, Symbol) except + nogil
+    cdef void c_minimize "mata::nfa::plumbing::minimize" (CNfa*, CNfa&, ParameterMap&) except + nogil
+    cdef void c_reduce "mata::nfa::plumbing::reduce" (CNfa*, CNfa&, StateRenaming*, ParameterMap&) except +translate_mata_exception nogil
+    cdef void c_reduce_residual_with "mata::nfa::plumbing::reduce_residual_with" (CNfa*, CNfa&) except + nogil
+    cdef void c_reduce_residual_after "mata::nfa::plumbing::reduce_residual_after" (CNfa*, CNfa&) except + nogil
+    cdef CLazyWordGenerator* c_get_words_lazy_ptr "mata::nfa::plumbing::get_words_lazy_ptr" (CNfa&, size_t) except +
 
 
 
@@ -229,20 +267,38 @@ cdef extern from "mata/nfa/plumbing.hh" namespace "mata::nfa::plumbing":
 #
 # This is needed in order for these classes to be used in other packages.
 cdef class Nfa:
-    # TODO: Shared pointers are not ideal as they bring some overhead which could be substantial in theory. We are not
-    #  sure whether the shared pointers will be a problem in this case, but it would be good to pay attention to this and
-    #  potentially create some kind of Factory/Allocator/Pool class, that would take care of management of the pointers
-    #  to optimize the shared pointers away if we find that the overhead is becoming too significant to ignore.
+    """Wrapper over NFA automaton.
+    
+    Ownership model:
+    - Nfa owns the automaton via shared_ptr[CNfa]; the C++ object lives as long as any Python or C++ reference exists.
+    - Delta views obtained from Nfa.delta hold an aliasing shared_ptr to the same automaton, keeping it alive.
+    - Iteration generators (iterate(), iter_transitions_from()) hold self alive, so the automaton outlives them.
+    - Transition holds its value inline; SymbolPost/Run own a raw heap object individually (not shared).
+    """
+    # TODO: Shared pointers bring atomic-count overhead; measure in a loop (create/drop views, call methods) to decide if real.
     cdef shared_ptr[CNfa] thisptr
     cdef label
 
 cdef class Transition:
-    cdef CTrans* thisptr
-    cdef copy_from(self, CTrans trans)
+    """Wrapper over a transition: (source, symbol, target).
+
+    Ownership: the value is stored inline, so a Transition is independent of any automaton and needs no heap
+    allocation of its own.
+    """
+    cdef CTrans thisptr
+    cdef copy_from(self, const CTrans& trans)
 
 cdef class Delta:
-    # Holds a shared pointer to the owning automaton (rather than a raw `CDelta*`) so that the `Delta` view stays
-    # valid even if all other Python references to the automaton are dropped.
+    """View over the transition relation (Delta) of an automaton.
+    
+    Ownership: holds an aliasing shared_ptr to the owning automaton, keeping it alive. The Delta view
+    stays valid even if all other Python references to the automaton are dropped.
+    """
     cdef shared_ptr[CAutomaton] automaton_ptr
 
 cdef object wrap_delta(shared_ptr[CAutomaton] automaton_ptr)
+
+cdef extern from "mata/config.hh":
+    cdef int CSTATE_BITS "MATA_STATE_BITS"
+
+cdef umap[string, string] encode_params(params) except *
