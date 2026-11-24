@@ -1,5 +1,6 @@
 //! The form in which the engine stores a leaf, and the import of an [`Automaton`] into it.
 
+use std::collections::HashMap;
 use std::hash::BuildHasher;
 use std::sync::OnceLock;
 use std::time::Instant;
@@ -69,6 +70,149 @@ impl Raw {
 		self.edges.append(&mut moves.edges);
 		self.letters.append(&mut moves.letters);
 		(start, self.edges.len())
+	}
+
+	/// The quotient by the coarsest forward bisimulation: the same language on every tape, and, for a trimmed
+	/// deterministic automaton, the minimal one. Without it, explicit nodes stacked on each other (a chain of
+	/// pre-images) multiply their sizes level by level.
+	pub(crate) fn quotient(&self) -> Raw {
+		let num_states = self.finals.len();
+		let mut outgoing: Vec<Vec<usize>> = vec![Vec::new(); num_states];
+		for (edge, &(source, _)) in self.edges.iter().enumerate() {
+			outgoing[source.index()].push(edge);
+		}
+
+		let mut block: Vec<u32> = self
+			.finals
+			.iter()
+			.map(|&is_final| u32::from(is_final))
+			.collect();
+		let mut num_blocks =
+			usize::from(self.finals.contains(&true)) + usize::from(self.finals.contains(&false));
+		loop {
+			// A state's block and its moves, as tuples and target blocks.
+			type Signature<'a> = (u32, Vec<(&'a [Symbol], u32)>);
+			let mut renumbering: HashMap<Signature, u32, FxBuildHasher> = HashMap::default();
+			let mut refined = Vec::with_capacity(num_states);
+			for state in 0..num_states {
+				let mut signature: Vec<(&[Symbol], u32)> = outgoing[state]
+					.iter()
+					.map(|&edge| (self.tuple(edge), block[self.edges[edge].1.index()]))
+					.collect();
+				signature.sort_unstable();
+				signature.dedup();
+				let next = u32::try_from(renumbering.len()).expect("fewer than 2^32 states");
+				refined.push(*renumbering.entry((block[state], signature)).or_insert(next));
+			}
+
+			block = refined;
+			// Refinement only splits blocks, so the same count means stable.
+			if renumbering.len() == num_blocks {
+				break;
+			}
+			num_blocks = renumbering.len();
+		}
+
+		let mut quotient = Raw::new(self.arity);
+		quotient.finals = vec![false; num_blocks];
+		for (state, &is_final) in self.finals.iter().enumerate() {
+			quotient.finals[block[state] as usize] = is_final;
+		}
+		quotient.initial = self
+			.initial
+			.iter()
+			.map(|state| StateId::new(block[state.index()] as usize))
+			.collect();
+		quotient.initial.sort_unstable();
+		quotient.initial.dedup();
+		let mut moves: Vec<(u32, &[Symbol], u32)> = (0..self.edges.len())
+			.map(|edge| {
+				let (source, target) = self.edges[edge];
+				(
+					block[source.index()],
+					self.tuple(edge),
+					block[target.index()],
+				)
+			})
+			.collect();
+		moves.sort_unstable();
+		moves.dedup();
+		for (source, tuple, target) in moves {
+			quotient.push(
+				StateId::new(source as usize),
+				tuple,
+				StateId::new(target as usize),
+			);
+		}
+
+		quotient
+	}
+
+	/// The subset construction over the tuples of `self`, or `None` once it has more than `max_states` states.
+	pub(crate) fn determinize(&self, max_states: usize) -> Option<Raw> {
+		let mut outgoing: Vec<Vec<usize>> = vec![Vec::new(); self.finals.len()];
+		for (edge, &(source, _)) in self.edges.iter().enumerate() {
+			outgoing[source.index()].push(edge);
+		}
+
+		let mut start = self.initial.clone();
+		start.sort_unstable();
+		start.dedup();
+		let mut subsets: IndexSet<Vec<StateId>, FxBuildHasher> = IndexSet::default();
+		subsets.insert(start);
+		let mut dfa = Raw::new(self.arity);
+		dfa.initial.push(StateId::new(0));
+		let mut next = 0;
+		while next < subsets.len() {
+			if subsets.len() > max_states {
+				return None;
+			}
+
+			let mut moves: Vec<(&[Symbol], StateId)> = subsets[next]
+				.iter()
+				.flat_map(|state| &outgoing[state.index()])
+				.map(|&edge| (self.tuple(edge), self.edges[edge].1))
+				.collect();
+			moves.sort_unstable();
+			moves.dedup();
+			dfa.finals
+				.push(subsets[next].iter().any(|state| self.finals[state.index()]));
+			for group in moves.chunk_by(|a, b| a.0 == b.0) {
+				let target: Vec<StateId> = group.iter().map(|&(_, target)| target).collect();
+				let (index, _) = subsets.insert_full(target);
+				dfa.push(StateId::new(next), group[0].0, StateId::new(index));
+			}
+			next += 1;
+		}
+
+		Some(dfa)
+	}
+
+	/// The useful part of `self`: states reachable from an initial one that reach a final one.
+	pub(crate) fn trimmed(&self) -> Raw {
+		let renumbered = useful_states(self);
+		let mut trimmed = Raw::new(self.arity);
+		trimmed.finals = vec![false; renumbered.iter().flatten().count()];
+		for (&new, &is_final) in renumbered.iter().zip(&self.finals) {
+			if let Some(new) = new {
+				trimmed.finals[new.index()] = is_final;
+			}
+		}
+		trimmed.initial = self
+			.initial
+			.iter()
+			.filter_map(|&state| renumbered[state.index()])
+			.collect();
+		for edge in 0..self.edges.len() {
+			let (source, target) = self.edges[edge];
+			if let (Some(source), Some(target)) =
+				(renumbered[source.index()], renumbered[target.index()])
+			{
+				trimmed.push(source, self.tuple(edge), target);
+			}
+		}
+
+		trimmed
 	}
 }
 

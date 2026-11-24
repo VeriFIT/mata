@@ -714,6 +714,53 @@ fn node_statistics_count_the_macrostates_and_posts_of_each_term() -> Result<(), 
 	Ok(())
 }
 
+/// The pairs over {0, 1} that differ in at most one position.
+fn flip_at_most_one() -> Tuples {
+	let mut moves = Vec::new();
+	for a in SYMBOLS {
+		for b in SYMBOLS {
+			if a == b {
+				moves.push((0, vec![a, b], 0));
+				moves.push((1, vec![a, b], 1));
+			} else {
+				moves.push((0, vec![a, b], 1));
+			}
+		}
+	}
+
+	Tuples {
+		arity: 2,
+		initial: vec![0],
+		finals: vec![true, true],
+		moves,
+	}
+}
+
+#[test]
+fn eager_pre_images_stay_small_level_by_level() -> Result<(), Error> {
+	// The pre-image k levels down holds the words within k flips of a 1 at position 6: at most a few states per
+	// position. Built eagerly but unreduced, each level multiplied the size of the one below.
+	const LEVELS: usize = 8;
+	let mut formula = Formula::new();
+	let relation = formula.leaf(&flip_at_most_one())?;
+	let mut chain = formula.leaf(&one_at(6, 8))?;
+	for _ in 0..LEVELS {
+		let pre_image = formula.pre_image(chain, relation)?;
+		chain = formula.explicit(pre_image)?;
+	}
+	let initial = formula.leaf(&one_at(0, 0))?;
+	let query = formula.intersection(initial, chain)?;
+	let outcome = formula.check(query, &Options::new())?;
+	assert!(!outcome.is_empty());
+	assert_eq!(outcome.stats.explicit.len(), LEVELS);
+	for node in &outcome.stats.explicit {
+		assert!(!node.lazy);
+		assert!(node.states <= 12, "{} states", node.states);
+	}
+
+	Ok(())
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn plans_and_views_are_json() -> Result<(), Error> {

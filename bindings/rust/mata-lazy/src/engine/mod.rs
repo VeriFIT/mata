@@ -371,7 +371,7 @@ impl<'f> Engine<'f> {
 			Some(leaf) => (leaf, true),
 			None => match self.explore(child, options.max_states)? {
 				Explored::Done(raw) => {
-					let leaf = Arc::new(Leaf::build(&raw, Vec::new()));
+					let leaf = Arc::new(Leaf::build(&reduce(&raw), Vec::new()));
 					self.formula
 						.explicit_cache
 						.lock()
@@ -803,4 +803,19 @@ fn root_symbols(options: &Options, arity: usize) -> Result<Vec<Vec<Symbol>>, Err
 	}
 
 	Ok(root_symbols)
+}
+
+/// How many times the states of an explicit node's bisimulation quotient its subset construction may have.
+const DETERMINIZE_FACTOR: usize = 4;
+
+/// An explicit node's automaton made small: minimal when its subset construction stays within
+/// [`DETERMINIZE_FACTOR`] times its bisimulation quotient, that quotient otherwise. An explicit node above another
+/// reads the smaller one, so a chain of them (pre-images in regular model checking) does not grow level by level.
+fn reduce(raw: &Raw) -> Raw {
+	// Trimmed first: a dead successor would tell two states with the same language apart.
+	let quotient = raw.trimmed().quotient();
+	match quotient.determinize(quotient.finals.len().saturating_mul(DETERMINIZE_FACTOR)) {
+		Some(dfa) => dfa.trimmed().quotient(),
+		None => quotient,
+	}
 }
