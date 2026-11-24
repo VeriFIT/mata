@@ -34,6 +34,9 @@ struct Re2Options {
 	///  states, where the conversion itself takes milliseconds; turn it off for large regexes and when the result is
 	///  determinized anyway.
 	bool reduce{true};
+	/// Approximate RE2 program memory budget in bytes. Positive values override RE2's default budget; non-positive
+	/// values preserve it. This applies to regex compilation, not to trimming or reduction.
+	std::int64_t max_mem{0};
 };
 
 /**

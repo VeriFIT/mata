@@ -233,8 +233,10 @@ mata::nfa::Nfa mata::parser::create_nfa(const std::string& pattern, const Re2Opt
 	const auto parsed_regex = std::unique_ptr<re2::Regexp, decltype([](re2::Regexp* regex) { regex->Decref(); })>(
 		regex_parser.parse_regex_string(pattern, options.encoding)
 	);
+	const std::int64_t budget{options.max_mem > 0 ? options.max_mem : regex_parser.options.max_mem()};
+	// Keep (2 * budget) / 3 exact without overflowing at a caller-selected INT64_MAX budget.
 	const auto program =
-		std::unique_ptr<re2::Prog>(parsed_regex->CompileToProg(regex_parser.options.max_mem() * 2 / 3));
+		std::unique_ptr<re2::Prog>(parsed_regex->CompileToProg(budget / 3 * 2 + ((budget % 3) * 2) / 3));
 	if (program == nullptr) {
 		throw std::invalid_argument("Error compiling the regular expression: it exceeds RE2's memory budget");
 	}

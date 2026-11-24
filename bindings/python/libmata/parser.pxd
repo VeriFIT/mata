@@ -27,6 +27,7 @@ cdef extern from "mata/parser/re2parser.hh" namespace "mata::parser":
         Symbol epsilon
         bool trim
         bool reduce
+        long long max_mem
 
     cdef void create_nfa(CNfa*, string, bool, Symbol, bool) except +
     cdef void create_nfa(CNfa*, string, const CRe2Options&) except +
