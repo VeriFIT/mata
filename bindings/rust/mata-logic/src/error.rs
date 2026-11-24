@@ -26,6 +26,14 @@ pub enum Error {
 		/// The number of variables.
 		vars: usize,
 	},
+	/// Text that is not a formula of a front-end, such as [`Ws1s::parse`](crate::ws1s::Ws1s::parse).
+	#[error("at byte {offset}: {message}")]
+	Parse {
+		/// The byte offset of the error in the text.
+		offset: usize,
+		/// What is wrong.
+		message: String,
+	},
 	/// An error of the formula, including the limits of a query.
 	#[error(transparent)]
 	Lazy(#[from] mata_lazy::Error),
