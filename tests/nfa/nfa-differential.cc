@@ -896,6 +896,70 @@ TEST_CASE("mata::nfa differential: HKC on dense automata with more than 64 state
 	}
 }
 
+TEST_CASE("mata::nfa differential: inclusion agrees with epsilon removal", "[differential]") {
+	for (unsigned seed{0}; seed < 200; ++seed) {
+		std::mt19937 rng{seed};
+		const size_t num_of_states{2 + seed % 7};
+		const size_t num_of_symbols{1 + seed % 2};
+		const std::shared_ptr<EnumAlphabet> alphabet{alphabet_of(num_of_symbols)};
+		alphabet->add_new_symbol(EPSILON);
+		auto ordinary_symbols{alphabet->get_alphabet_symbols()};
+		ordinary_symbols.pop_back();
+		const EnumAlphabet alphabet_without_epsilon{std::move(ordinary_symbols)};
+		Nfa lhs{random_nfa(rng, num_of_states, num_of_symbols, alphabet, EPSILON)};
+		Nfa rhs{random_nfa(rng, num_of_states, num_of_symbols, alphabet, EPSILON)};
+		// Guarantee a reachable epsilon transition in each operand, not just a chance of one from the generator.
+		lhs.delta.add(*lhs.initial.begin(), EPSILON, static_cast<State>((seed + 1) % num_of_states));
+		rhs.delta.add(*rhs.initial.begin(), EPSILON, static_cast<State>((seed + 2) % num_of_states));
+		const Nfa lhs_without_epsilon{remove_epsilon(lhs)};
+		const Nfa rhs_without_epsilon{remove_epsilon(rhs)};
+		INFO(describe(seed, lhs));
+		INFO(describe(seed, rhs));
+
+		for (const bool reverse : {false, true}) {
+			const Nfa& smaller{reverse ? rhs : lhs};
+			const Nfa& bigger{reverse ? lhs : rhs};
+			const Nfa& removed_smaller{reverse ? rhs_without_epsilon : lhs_without_epsilon};
+			const Nfa& removed_bigger{reverse ? lhs_without_epsilon : rhs_without_epsilon};
+			if (reverse) {
+				INFO("rhs <= lhs");
+			} else {
+				INFO("lhs <= rhs");
+			}
+
+			// A public counterexample is over ordinary symbols and its path belongs to the epsilon-free copy.
+			for (const ParameterMap* params : {&NAIVE, &ANTICHAINS}) {
+				INFO(params->at("algorithm"));
+				const bool expected{is_included(removed_smaller, removed_bigger, &alphabet_without_epsilon, *params)};
+				Run cex{};
+				const bool actual{is_included(smaller, bigger, &cex, alphabet.get(), *params)};
+				CHECK(actual == expected);
+				if (!actual) {
+					CHECK(reference_accepts(smaller, cex.word));
+					CHECK(!reference_accepts(bigger, cex.word));
+					CHECK(is_accepting_run(removed_smaller, cex));
+				}
+			}
+
+			// Direct algorithms instead synchronize EPSILON as a letter, including in the default naive alphabet.
+			Run naive_cex{};
+			Run antichain_cex{};
+			const bool naive{algorithms::is_included_naive(smaller, bigger, nullptr, &naive_cex)};
+			const bool antichain{algorithms::is_included_antichains(smaller, bigger, nullptr, &antichain_cex)};
+			CHECK(naive == antichain);
+			if (!naive) {
+				CHECK(smaller.is_in_lang(naive_cex));
+				CHECK(!bigger.is_in_lang(naive_cex.word));
+			}
+			if (!antichain) {
+				CHECK(smaller.is_in_lang(antichain_cex));
+				CHECK(!bigger.is_in_lang(antichain_cex.word));
+			}
+		}
+		CHECK(alphabet->get_alphabet_symbols().contains(EPSILON));
+	}
+}
+
 TEST_CASE("mata::nfa differential: HKC with epsilon transitions", "[differential]") {
 	for (unsigned seed{0}; seed < 200; ++seed) {
 		std::mt19937 rng{seed};

@@ -7,6 +7,7 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/utils/assert.hh"
 #include "mata/utils/two-dimensional-map.hh"
+#include "product-internal.hh"
 #include <algorithm>
 #include <deque>
 #include <functional>
@@ -20,11 +21,11 @@ namespace mata::nfa {
 
 // TODO: move this method to nfa.hh? It is something one might want to use (e.g. for union, inclusion, equivalence of
 // DFAs).
-Nfa mata::nfa::algorithms::product(
+Nfa internal::product(
 	const Nfa& lhs,
 	const Nfa& rhs,
 	const std::function<bool(State, State)>& final_condition,
-	const Symbol first_epsilon,
+	const std::optional<Symbol> first_epsilon,
 	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>>* product_map
 ) {
 	Nfa product{}; // The product automaton.
@@ -109,9 +110,13 @@ Nfa mata::nfa::algorithms::product(
 		// Compute classic product for current state pair.
 		const StatePost& lhs_state_post{lhs.delta[lhs_source]};
 		const StatePost& rhs_state_post{rhs.delta[rhs_source]};
-		// Epsilons sort after all normal symbols and are handled separately below.
-		const StatePost::const_iterator lhs_symbols_end{lhs_state_post.first_epsilon_it(first_epsilon)};
-		const StatePost::const_iterator rhs_symbols_end{rhs_state_post.first_epsilon_it(first_epsilon)};
+		// A nullopt mode leaves no one-sided symbols, so EPSILON goes through the synchronized merge too.
+		const StatePost::const_iterator lhs_symbols_end{
+			first_epsilon.has_value() ? lhs_state_post.first_epsilon_it(*first_epsilon) : lhs_state_post.end()
+		};
+		const StatePost::const_iterator rhs_symbols_end{
+			first_epsilon.has_value() ? rhs_state_post.first_epsilon_it(*first_epsilon) : rhs_state_post.end()
+		};
 
 		// Find all transitions that have the same symbol for the first and the second state of the processed pair, and
 		//  create a transition to every pair of a target of the first one and a target of the second one. Both state
@@ -172,6 +177,16 @@ Nfa mata::nfa::algorithms::product(
 	}
 	return product;
 } // intersection().
+
+Nfa mata::nfa::algorithms::product(
+	const Nfa& lhs,
+	const Nfa& rhs,
+	const std::function<bool(State, State)>& final_condition,
+	const Symbol first_epsilon,
+	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>>* product_map
+) {
+	return internal::product(lhs, rhs, final_condition, first_epsilon, product_map);
+}
 
 bool is_intersection_empty(const Nfa& lhs, const Nfa& rhs, Run* const witness, const Symbol first_epsilon) {
 	using StatePair = std::pair<State, State>;

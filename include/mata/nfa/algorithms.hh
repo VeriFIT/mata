@@ -186,7 +186,8 @@ Nfa complement_brzozowski(const Nfa& aut, const mata::utils::OrdVector<Symbol>& 
 
 /**
  * Inclusion implemented by complementation of bigger automaton, intersecting it with smaller and then it checks
- *  emptiness of intersection.
+ *  emptiness of intersection. @c EPSILON is read as an ordinary synchronized symbol, in transitions and in
+ *  @p alphabet.
  * @param[in] smaller Automaton which language should be included in the bigger one.
  * @param[in] bigger Automaton which language should include the smaller one.
  * @param[in] alphabet Alphabet of both automata (it is computed automatically, but it is more efficient to set it if

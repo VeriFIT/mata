@@ -7,22 +7,21 @@
 #include "mata/utils/sparse-set.hh"
 
 #include "antichain-inclusion.hh"
+#include "product-internal.hh"
 
 using namespace mata::nfa;
 using namespace mata::utils;
+using mata::Alphabet;
+using mata::EnumAlphabet;
+using mata::Symbol;
 using mata::nfa::internal::Node;
 using mata::nfa::internal::ProcessedAntichain;
 using mata::nfa::internal::Step;
 
 namespace {
-/// The symbols of @c create_alphabet(lhs, rhs), without building the names it maps them to.
+/// Every transition symbol of both operands: direct naive algorithms read EPSILON as a letter too.
 OrdVector<mata::Symbol> used_letters(const Nfa& lhs, const Nfa& rhs) {
-	OrdVector<mata::Symbol> symbols{
-		OrdVector<mata::Symbol>::set_union(lhs.delta.get_used_symbols(), rhs.delta.get_used_symbols())
-	};
-	// EPSILON sorts last and is no letter.
-	if (!symbols.empty() && symbols.back() == EPSILON) { symbols.pop_back(); }
-	return symbols;
+	return OrdVector<mata::Symbol>::set_union(lhs.delta.get_used_symbols(), rhs.delta.get_used_symbols());
 }
 /// Does @p nfa have a transition on @c EPSILON? EPSILON is the largest symbol, so one symbol post per state is read.
 bool contains_epsilon(const Nfa& nfa) {
@@ -73,10 +72,21 @@ bool mata::nfa::algorithms::is_included_naive(
 		bigger_cmpl = complement(bigger, *alphabet);
 	}
 
-	// The map is only read to translate the counterexample path back to `smaller`'s states, but `intersection()`
-	//  inserts every product state into it.
+	// Preserve the public intersection's empty-product shortcut before entering the shared implementation.
+	if (smaller.initial.empty() || smaller.final.empty() || bigger_cmpl.initial.empty() || bigger_cmpl.final.empty()) {
+		return true;
+	}
+
+	// The map is only read to translate the counterexample path back to `smaller`'s states, but the product
+	//  inserts every product state into it. A nullopt boundary synchronizes EPSILON like every other letter.
 	std::unordered_map<std::pair<State, State>, State, mata::utils::PairHash<State, State>> prod_map;
-	const Nfa nfa_isect = intersection(smaller, bigger_cmpl, Limits::max_symbol, cex != nullptr ? &prod_map : nullptr);
+	const Nfa nfa_isect = internal::product(
+		smaller, bigger_cmpl,
+		[&](const State lhs_state, const State rhs_state) {
+			return smaller.final.contains(lhs_state) && bigger_cmpl.final.contains(rhs_state);
+		},
+		std::nullopt, cex != nullptr ? &prod_map : nullptr
+	);
 
 	const bool result = nfa_isect.is_lang_empty(cex);
 	if (cex != nullptr && !result) {
@@ -309,6 +319,18 @@ const Nfa& epsilon_free(const Nfa& nfa, Nfa& storage) {
 	return storage;
 }
 
+/// Keep a null alphabet and borrow one without EPSILON; use @p storage only when EPSILON has to be removed. Only the
+///  naive algorithm reads the symbols of the alphabet, and alphabets such as @c IntAlphabet cannot enumerate them, so
+///  @p alphabet is borrowed unread unless @p naive.
+const Alphabet* epsilon_free(const Alphabet* const alphabet, EnumAlphabet& storage, const bool naive) {
+	if (alphabet == nullptr || !naive) { return alphabet; }
+	OrdVector<Symbol> symbols{alphabet->get_alphabet_symbols()};
+	if (symbols.empty() || symbols.back() != EPSILON) { return alphabet; }
+	symbols.pop_back();
+	storage = EnumAlphabet{std::move(symbols)};
+	return &storage;
+}
+
 } // namespace
 
 bool mata::nfa::algorithms::are_equivalent_epsilon_as_symbol(
@@ -336,10 +358,15 @@ bool mata::nfa::is_included(
 	const ParameterMap& params
 ) { // {{{
 	AlgoType algo{set_algorithm(std::to_string(__func__), params)};
-	// All algorithms read EPSILON as an ordinary letter, so epsilon has to go before they see the automata.
+	// All algorithms read EPSILON as an ordinary letter, so epsilon has to go before they see the automata
+	//  or the alphabet.
 	Nfa smaller_storage{};
 	Nfa bigger_storage{};
-	return algo(epsilon_free(smaller, smaller_storage), epsilon_free(bigger, bigger_storage), alphabet, cex);
+	EnumAlphabet alphabet_storage{};
+	return algo(
+		epsilon_free(smaller, smaller_storage), epsilon_free(bigger, bigger_storage),
+		epsilon_free(alphabet, alphabet_storage, algo == algorithms::is_included_naive), cex
+	);
 } // is_included }}}
 
 bool mata::nfa::are_equivalent(
@@ -347,8 +374,12 @@ bool mata::nfa::are_equivalent(
 ) {
 	Nfa lhs_storage{};
 	Nfa rhs_storage{};
+	EnumAlphabet alphabet_storage{};
+	// A missing or unknown "algorithm" is reported by are_equivalent_epsilon_as_symbol().
+	const bool naive{haskey(params, "algorithm") && params.at("algorithm") == "naive"};
 	return algorithms::are_equivalent_epsilon_as_symbol(
-		epsilon_free(lhs, lhs_storage), epsilon_free(rhs, rhs_storage), alphabet, params, cex
+		epsilon_free(lhs, lhs_storage), epsilon_free(rhs, rhs_storage), epsilon_free(alphabet, alphabet_storage, naive),
+		params, cex
 	);
 }
 
