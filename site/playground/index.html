@@ -80,7 +80,8 @@
           <h1>Playground</h1>
           <p class="playground-lead">
             Mata compiled to WebAssembly and running in your browser. Change an
-            automaton or an operation, and the result follows.
+            automaton or an operation, and the result follows; or write a Mata
+            Script and run it.
           </p>
         </div>
         <div class="head-actions">
@@ -94,7 +95,36 @@
         </div>
       </div>
 
-      <div class="workbench">
+      <div class="tab-list mode-tabs" role="tablist" aria-label="Mode">
+        <button
+          class="tab"
+          type="button"
+          role="tab"
+          id="mode-operations"
+          aria-controls="workbench"
+          aria-selected="true"
+        >
+          Operations
+        </button>
+        <button
+          class="tab"
+          type="button"
+          role="tab"
+          id="mode-script"
+          aria-controls="script-bench"
+          aria-selected="false"
+          tabindex="-1"
+        >
+          Script
+        </button>
+      </div>
+
+      <div
+        class="workbench"
+        id="workbench"
+        role="tabpanel"
+        aria-labelledby="mode-operations"
+      >
         <form
           class="controls"
           id="controls"
@@ -323,6 +353,64 @@
             <div class="view-panels"></div>
           </div>
           <div class="message" id="message"></div>
+        </section>
+      </div>
+
+      <div
+        class="workbench script-bench"
+        id="script-bench"
+        role="tabpanel"
+        aria-labelledby="mode-script"
+        hidden
+      >
+        <form
+          class="controls"
+          id="script-controls"
+          autocomplete="off"
+          spellcheck="false"
+        >
+          <fieldset class="automaton-input script-source">
+            <legend>Mata Script</legend>
+            <textarea
+              id="script-text"
+              name="script"
+              class="is-mata"
+              rows="12"
+              aria-describedby="script-hint script-error"
+            ></textarea>
+            <p class="hint" id="script-hint">
+              A script in the
+              <a href="../docs/script-language.html">Mata Script language</a>.
+              Run it with Ctrl+Enter. An input or a parameter it declares gets a
+              field below.
+            </p>
+            <p class="field-error" id="script-error" hidden></p>
+          </fieldset>
+          <div class="controls" id="script-declarations" hidden></div>
+          <div class="script-actions">
+            <button id="script-run" class="button button-primary" type="submit">
+              Run
+            </button>
+            <button
+              id="script-stop"
+              class="button button-small"
+              type="button"
+              disabled
+            >
+              Stop
+            </button>
+            <label for="script-limit">Time limit</label>
+            <select id="script-limit" name="limit" class="select"></select>
+          </div>
+        </form>
+
+        <section class="output" aria-labelledby="script-output-title">
+          <div class="output-head">
+            <h2 id="script-output-title">Output</h2>
+            <p class="status" id="script-status" role="status"></p>
+          </div>
+          <div class="verdict-box" id="script-summary" hidden></div>
+          <div class="script-output" id="script-output"></div>
         </section>
       </div>
     </main>
