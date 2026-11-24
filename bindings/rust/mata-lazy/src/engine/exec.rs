@@ -11,7 +11,9 @@
 //! - `op(X, X) = X`, `prefixes(prefixes(X)) = prefixes(X)`, and structurally equal nodes are built once;
 //! - the cheaper operand of a union or intersection goes left.
 //!
-//! Explicit nodes stop the rewrites from looking into them.
+//! Explicit nodes stop the rewrites from looking into them. The query's annotations make nodes explicit, keep
+//! explicit nodes of the formula lazy, and fix the operand order of an intersection (not one that De Morgan
+//! turns into a union) or of a synchronized product.
 
 use std::cmp::Ordering;
 use std::collections::hash_map::Entry;
@@ -25,6 +27,7 @@ use typed_index_collections::TiVec;
 use crate::formula::{Formula, Node, Pad, ResultTape, SyncSpec, TapePair};
 use crate::ids::{ExecId, Id, LeafId, NodeId};
 use crate::leaf::Leaf;
+use crate::plan::{Annotations, Order};
 use crate::{ExplicitOptions, Tape};
 
 /// A leaf of the formula, or an explicit node that the query built.
@@ -169,8 +172,9 @@ enum Decision {
 	Alias(Src),
 	Leaf(LeafId),
 	Complement(Src),
-	Boolean(Boolean, Src, Src),
-	IdentityOf(Boolean, Src, Src),
+	/// The operation, its operands, and whether their order is fixed.
+	Boolean(Boolean, Src, Src, bool),
+	IdentityOf(Boolean, Src, Src, bool),
 	Identity(Src),
 	Project(Src, Arc<[usize]>),
 	PadClosure(Src, Arc<Pad>),
@@ -193,8 +197,8 @@ impl Decision {
 			| Decision::PadClosure(s, _)
 			| Decision::Explicit(s, ..)
 			| Decision::Prefixes(s) => vec![*s],
-			Decision::Boolean(_, a, b)
-			| Decision::IdentityOf(_, a, b)
+			Decision::Boolean(_, a, b, _)
+			| Decision::IdentityOf(_, a, b, _)
 			| Decision::Diagonal(a, b)
 			| Decision::Sync(a, b, _) => vec![*a, *b],
 			Decision::DiagonalSync(u, a, b, _) => vec![*u, *a, *b],
@@ -204,12 +208,21 @@ impl Decision {
 
 struct Rewriter<'a> {
 	formula: &'a Formula,
-	marked: &'a FxHashSet<NodeId>,
+	annotations: &'a Annotations,
 }
 
 impl Rewriter<'_> {
 	fn is_marked(&self, node: NodeId) -> bool {
-		self.marked.contains(&node) && !matches!(self.formula.nodes[node], Node::Explicit(..))
+		self.annotations.explicit.contains_key(&node)
+			&& !matches!(self.formula.nodes[node], Node::Explicit(..))
+	}
+
+	fn order(&self, node: NodeId) -> Order {
+		self.annotations
+			.order
+			.get(&node)
+			.copied()
+			.unwrap_or_default()
 	}
 
 	fn identity_child(&self, node: NodeId) -> Option<NodeId> {
@@ -239,7 +252,9 @@ impl Rewriter<'_> {
 		if self.is_marked(node) {
 			match form {
 				Form::Plain => {
-					return Decision::Explicit((node, Form::Inner), ExplicitOptions::new(), node);
+					let options = self.annotations.explicit[&node];
+
+					return Decision::Explicit((node, Form::Inner), options, node);
 				}
 				Form::Negated => return Decision::Complement(plain(node)),
 				Form::Inner => {}
@@ -249,33 +264,61 @@ impl Rewriter<'_> {
 		let negated = form == Form::Negated;
 
 		match &self.formula.nodes[node] {
+			Node::Explicit(child, _) if self.annotations.lazy.contains(&node) => {
+				Decision::Alias((*child, form))
+			}
 			Node::Complement(child) if negated && self.formula.pads[*child] => {
 				Decision::Complement(plain(node))
 			}
 			Node::Complement(child) => {
 				Decision::Alias((*child, if negated { Form::Plain } else { Form::Negated }))
 			}
-			Node::Union(a, b) => self.decide_boolean(Boolean::Union, *a, *b, negated),
-			Node::Intersection(a, b) => self.decide_boolean(Boolean::Intersection, *a, *b, negated),
+			Node::Union(a, b) => self.decide_boolean(Boolean::Union, *a, *b, negated, Order::Auto),
+			Node::Intersection(a, b) => {
+				let order = self.order(node);
+
+				self.decide_boolean(Boolean::Intersection, *a, *b, negated, order)
+			}
 			_ if negated => Decision::Complement(plain(node)),
 			Node::Leaf(leaf) => Decision::Leaf(*leaf),
 			Node::Identity(child) => Decision::Identity(plain(*child)),
 			Node::Project(child, tapes) => self.decide_project(*child, tapes),
 			Node::PadClosure(child, pad) => Decision::PadClosure(plain(*child), Arc::clone(pad)),
+			Node::Sync(a, b, spec) if self.order(node) == Order::Swapped => {
+				Decision::Sync(plain(*b), plain(*a), Arc::new(spec.swapped()))
+			}
 			Node::Sync(a, b, spec) => Decision::Sync(plain(*a), plain(*b), Arc::clone(spec)),
-			Node::Explicit(child, options) => Decision::Explicit(plain(*child), *options, node),
+			Node::Explicit(child, options) => {
+				let options = self.annotations.explicit.get(&node).unwrap_or(options);
+
+				Decision::Explicit(plain(*child), *options, node)
+			}
 			Node::Prefixes(child) => Decision::Prefixes(plain(*child)),
 		}
 	}
 
-	fn decide_boolean(&self, op: Boolean, a: NodeId, b: NodeId, negated: bool) -> Decision {
+	fn decide_boolean(
+		&self,
+		op: Boolean,
+		a: NodeId,
+		b: NodeId,
+		negated: bool,
+		order: Order,
+	) -> Decision {
 		if negated {
-			return Decision::Boolean(op.dual(), (a, Form::Negated), (b, Form::Negated));
+			return Decision::Boolean(op.dual(), (a, Form::Negated), (b, Form::Negated), false);
 		}
 
+		let (a, b) = if order == Order::Swapped {
+			(b, a)
+		} else {
+			(a, b)
+		};
+		let fixed = order != Order::Auto;
+
 		match (self.identity_child(a), self.identity_child(b)) {
-			(Some(lhs), Some(rhs)) => Decision::IdentityOf(op, plain(lhs), plain(rhs)),
-			_ => Decision::Boolean(op, plain(a), plain(b)),
+			(Some(lhs), Some(rhs)) => Decision::IdentityOf(op, plain(lhs), plain(rhs), fixed),
+			_ => Decision::Boolean(op, plain(a), plain(b), fixed),
 		}
 	}
 
@@ -355,6 +398,8 @@ enum Key {
 	Leaf(LeafId),
 	Union(Arc<[ExecId]>),
 	Intersection(ExecId, ExecId),
+	/// An intersection whose operands an annotation ordered.
+	OrderedIntersection(ExecId, ExecId),
 	Complement(ExecId),
 	Identity(ExecId),
 	Project(ExecId, Arc<[usize]>),
@@ -433,9 +478,9 @@ impl<'f> Emitter<'f> {
 			Decision::Alias(src) => built[src],
 			Decision::Leaf(index) => self.leaf(*index, &formula.leaves[*index]),
 			Decision::Complement(src) => self.complement(built[src]),
-			Decision::Boolean(op, a, b) => self.boolean(*op, built[a], built[b]),
-			Decision::IdentityOf(op, lhs, rhs) => {
-				let inner = self.boolean(*op, built[lhs], built[rhs]);
+			Decision::Boolean(op, a, b, fixed) => self.boolean(*op, built[a], built[b], *fixed),
+			Decision::IdentityOf(op, lhs, rhs, fixed) => {
+				let inner = self.boolean(*op, built[lhs], built[rhs], *fixed);
 
 				self.identity(inner)
 			}
@@ -446,7 +491,7 @@ impl<'f> Emitter<'f> {
 			Decision::DiagonalSync(u, a, b, spec) => {
 				let synced = self.sync(built[a], built[b], spec);
 
-				self.intersection(built[u], synced)
+				self.intersection(built[u], synced, false)
 			}
 			Decision::Sync(a, b, spec) => self.sync(built[a], built[b], spec),
 			Decision::Prefixes(src) => self.prefixes(built[src]),
@@ -485,26 +530,29 @@ impl<'f> Emitter<'f> {
 		self.emit(Key::Leaf(index), op, leaf.arity(), cost)
 	}
 
-	fn boolean(&mut self, op: Boolean, a: ExecId, b: ExecId) -> ExecId {
+	/// `fixed` keeps the order of the operands of an intersection.
+	fn boolean(&mut self, op: Boolean, a: ExecId, b: ExecId, fixed: bool) -> ExecId {
 		match op {
 			Boolean::Union => self.union(a, b),
-			Boolean::Intersection => self.intersection(a, b),
+			Boolean::Intersection => self.intersection(a, b, fixed),
 		}
 	}
 
-	fn intersection(&mut self, a: ExecId, b: ExecId) -> ExecId {
+	/// `fixed` keeps the order of the operands, which otherwise puts the cheaper one left.
+	fn intersection(&mut self, a: ExecId, b: ExecId, fixed: bool) -> ExecId {
 		if a == b {
 			return a;
 		}
 
-		let (a, b) = if self.costs[a] <= self.costs[b] {
-			(a, b)
+		let (a, b, key) = if fixed {
+			(a, b, Key::OrderedIntersection(a, b))
+		} else if self.costs[a] <= self.costs[b] {
+			(a, b, Key::Intersection(a.min(b), a.max(b)))
 		} else {
-			(b, a)
+			(b, a, Key::Intersection(a.min(b), a.max(b)))
 		};
 
 		let cost = self.product_cost(a, b);
-		let key = Key::Intersection(a.min(b), a.max(b));
 		let arity = self.nodes[a].arity;
 
 		self.emit(key, Op::Intersection(a, b), arity, cost)
@@ -642,13 +690,13 @@ fn log2_sum(logs: impl Iterator<Item = f64> + Clone) -> f64 {
 	max + logs.map(|log| (log - max).exp2()).sum::<f64>().log2()
 }
 
-/// Builds the execution DAG of `root`, with the source nodes in `marked` made explicit.
-pub(crate) fn build<'f>(
-	formula: &'f Formula,
-	root: NodeId,
-	marked: &FxHashSet<NodeId>,
-) -> Exec<'f> {
-	let decisions = Rewriter { formula, marked }.decide_all(root);
+/// Builds the execution DAG of `root`, with the query's `annotations`.
+pub(crate) fn build<'f>(formula: &'f Formula, root: NodeId, annotations: &Annotations) -> Exec<'f> {
+	let decisions = Rewriter {
+		formula,
+		annotations,
+	}
+	.decide_all(root);
 	let aliases = aliases(&decisions);
 	let resolve = |src: Src| aliases.get(&src).copied().unwrap_or(src);
 	let inner_unions = inner_unions(&decisions, &aliases, resolve(plain(root)));
@@ -657,7 +705,7 @@ pub(crate) fn build<'f>(
 	// The branches of the unions that only one union above uses, which get no node of their own.
 	let mut pending: FxHashMap<Src, Vec<ExecId>> = FxHashMap::default();
 	for (&src, decision) in &decisions {
-		let Decision::Boolean(Boolean::Union, a, b) = decision else {
+		let Decision::Boolean(Boolean::Union, a, b, _) = decision else {
 			// The union above an alias of a pending union takes its branches.
 			if !(matches!(decision, Decision::Alias(_)) && inner_unions.contains(&resolve(src))) {
 				let id = emitter.emit_decision(formula, &built, decision);
@@ -765,9 +813,8 @@ pub(crate) fn reachable(nodes: &TiVec<ExecId, ExecNode<'_>>, from: ExecId) -> Ti
 
 #[cfg(test)]
 mod tests {
-	use rustc_hash::FxHashSet;
-
 	use super::{Op, build};
+	use crate::plan::Annotations;
 	use crate::{Automaton, Formula, Symbol};
 
 	/// The empty word.
@@ -805,7 +852,7 @@ mod tests {
 		}
 
 		let root = formula.node(root).expect("a term of the formula");
-		let exec = build(&formula, root, &FxHashSet::default());
+		let exec = build(&formula, root, &Annotations::default());
 		let branches: usize = exec
 			.nodes
 			.iter()

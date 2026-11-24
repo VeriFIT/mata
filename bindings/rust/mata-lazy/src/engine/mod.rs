@@ -94,6 +94,7 @@ use crate::formula::Formula;
 use crate::ids::{ExecId, Id, NodeId, StateId};
 use crate::leaf::{Leaf, Raw};
 use crate::options::{ExplicitOptions, Materialized, Stats, Tapes};
+use crate::plan::Annotations;
 use crate::{Error, Options, Symbol, Witness};
 
 /// Successors, initial macrostates and subsumption recurse once per level of the DAG; the stack grows by
@@ -240,12 +241,8 @@ impl<'f> Engine<'f> {
 		options: &Options,
 	) -> Result<Engine<'f>, Error> {
 		let budget = Budget::new(options);
-		let marked = options
-			.explicit
-			.iter()
-			.map(|&term| formula.node(term))
-			.collect::<Result<FxHashSet<NodeId>, Error>>()?;
-		let exec = exec::build(formula, root, &marked);
+		let annotations = Annotations::new(formula, options)?;
+		let exec = exec::build(formula, root, &annotations);
 		let alphabets = Alphabets::new(&exec, &root_symbols(options, exec.nodes[exec.root].arity)?);
 
 		for (id, node) in exec.nodes.iter_enumerated() {

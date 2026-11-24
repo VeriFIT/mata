@@ -26,6 +26,14 @@ pub struct Term {
 	node: u32,
 }
 
+impl Term {
+	/// The number of the term in its formula, which numbers terms in the order they were built.
+	#[must_use]
+	pub fn id(self) -> usize {
+		self.node as usize
+	}
+}
+
 /// A tape of one operand of [`sync_product`](Formula::sync_product).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Tape {
@@ -68,6 +76,26 @@ pub(crate) enum Node {
 	Prefixes(NodeId),
 }
 
+impl Node {
+	/// The operands, in order.
+	pub(crate) fn children(&self) -> impl Iterator<Item = NodeId> {
+		let operands = match *self {
+			Node::Leaf(_) => [None, None],
+			Node::Complement(child)
+			| Node::Identity(child)
+			| Node::Project(child, _)
+			| Node::PadClosure(child, _)
+			| Node::Explicit(child, _)
+			| Node::Prefixes(child) => [Some(child), None],
+			Node::Union(a, b) | Node::Intersection(a, b) | Node::Sync(a, b, _) => {
+				[Some(a), Some(b)]
+			}
+		};
+
+		operands.into_iter().flatten()
+	}
+}
+
 /// A synchronized pair of tapes, one of the left operand and one of the right.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct TapePair {
@@ -88,6 +116,35 @@ pub(crate) struct ResultTape {
 pub(crate) struct SyncSpec {
 	pub(crate) pairs: Box<[TapePair]>,
 	pub(crate) layout: Box<[ResultTape]>,
+}
+
+impl SyncSpec {
+	/// The same product with its operands swapped.
+	pub(crate) fn swapped(&self) -> SyncSpec {
+		let swap = |tape| match tape {
+			Tape::Lhs(index) => Tape::Rhs(index),
+			Tape::Rhs(index) => Tape::Lhs(index),
+		};
+
+		SyncSpec {
+			pairs: self
+				.pairs
+				.iter()
+				.map(|pair| TapePair {
+					lhs: pair.rhs,
+					rhs: pair.lhs,
+				})
+				.collect(),
+			layout: self
+				.layout
+				.iter()
+				.map(|tape| ResultTape {
+					source: swap(tape.source),
+					peer: tape.peer,
+				})
+				.collect(),
+		}
+	}
 }
 
 /// A DAG of Boolean and relational operations over automata, checked for emptiness lazily.

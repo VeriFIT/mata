@@ -367,6 +367,20 @@ impl Leaf {
 		self.finals[state.index()]
 	}
 
+	/// Whether it has at most one initial state and no state has two moves on one tuple or a wildcard move, which
+	/// overlaps the others.
+	pub(crate) fn is_deterministic(&self) -> bool {
+		let tuple = |edge: usize| &self.letters[edge * self.arity..(edge + 1) * self.arity];
+
+		self.initial.len() <= 1
+			&& !self.letters.contains(&Symbol::ANY)
+			// The moves of a state are sorted by tuple, so equal tuples are adjacent.
+			&& (0..self.num_states()).all(|state| {
+				(self.offsets[state] + 1..self.offsets[state + 1])
+					.all(|edge| tuple(edge - 1) != tuple(edge))
+			})
+	}
+
 	/// The moves from `state`, sorted by tuple, then target.
 	pub(crate) fn moves(
 		&self,

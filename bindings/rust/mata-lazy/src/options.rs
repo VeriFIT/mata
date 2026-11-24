@@ -2,7 +2,7 @@
 
 use std::time::Duration;
 
-use crate::{Symbol, Term, Witness};
+use crate::{Plan, Symbol, Term, Witness};
 
 /// Options of one query ([`check`](crate::Formula::check), `materialize`).
 ///
@@ -27,6 +27,7 @@ pub struct Options {
 	pub(crate) cache_budget: Option<usize>,
 	pub(crate) max_length: Option<usize>,
 	pub(crate) shortest: bool,
+	pub(crate) plan: Plan,
 }
 
 /// Symbols that a query adds to the alphabets of the checked term.
@@ -63,6 +64,7 @@ impl Options {
 			cache_budget: None,
 			max_length: None,
 			shortest: false,
+			plan: Plan::new(),
 		}
 	}
 
@@ -156,6 +158,17 @@ impl Options {
 	#[must_use]
 	pub fn cache_budget(mut self, bytes: usize) -> Options {
 		self.cache_budget = Some(bytes);
+
+		self
+	}
+
+	/// Annotates the nodes of the query with `plan`, which replaces an earlier plan. Its annotations take
+	/// precedence over [`explicit`](Options::explicit). The query fails with
+	/// [`ForeignTerm`](crate::Error::ForeignTerm) for a term of another formula, and with
+	/// [`InvalidPlan`](crate::Error::InvalidPlan) for an operand order of a term that is not a product.
+	#[must_use]
+	pub fn plan(mut self, plan: Plan) -> Options {
+		self.plan = plan;
 
 		self
 	}

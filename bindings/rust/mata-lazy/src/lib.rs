@@ -19,6 +19,9 @@
 //! [`check`](Formula::check)) explores only the macrostates it needs. Products pair states and complements
 //! build subsets on the fly, and simulation-based subsumption prunes macrostates that are below others. A term
 //! marked [`explicit`](Formula::explicit) is built as an automaton when a query starts and read like a leaf.
+//! A [`Plan`] chooses per query and term between lazy and explicit, and the operand order of products; a
+//! [`Policy`] computes one from the [`view`](Formula::view) of a formula. A plan changes the cost of a query,
+//! never its answer.
 //!
 //! ```
 //! # #[cfg(feature = "regex")] {
@@ -70,12 +73,15 @@ mod formula;
 mod ids;
 mod leaf;
 mod options;
+mod plan;
+mod policy;
 #[cfg(feature = "regex")]
 pub mod regex;
 #[cfg(feature = "rustfst")]
 pub mod rustfst;
 mod simulation;
 mod symbol;
+mod view;
 mod witness;
 
 pub use automaton::Automaton;
@@ -83,5 +89,8 @@ pub use error::Error;
 pub use explicit::ExplicitAutomaton;
 pub use formula::{Formula, Pad, Tape, Term};
 pub use options::{ExplicitOptions, Materialized, Options, Outcome, Stats};
+pub use plan::{Annotation, Eval, Order, Plan};
+pub use policy::{AllEager, AllLazy, External, Heuristic, Policy};
 pub use symbol::Symbol;
+pub use view::{LeafInfo, NodeKind, NodeView, PlanView};
 pub use witness::Witness;
