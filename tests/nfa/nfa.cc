@@ -3462,6 +3462,81 @@ TEST_CASE("mata::nfa::is_included() antichains agree with naive on random automa
 	}
 }
 
+TEST_CASE("mata::nfa naive inclusion uses lazy difference only for eligible Boolean queries") {
+	Nfa any_letter{1, {0}, {0}};
+	for (const Symbol symbol : {static_cast<Symbol>('a'), static_cast<Symbol>('b')}) {
+		any_letter.delta.add(0, symbol, 0);
+	}
+	Nfa only_a{1, {0}, {0}};
+	only_a.delta.add(0, static_cast<Symbol>('a'), 0);
+	const EnumAlphabet whole_alphabet{static_cast<Symbol>('a'), static_cast<Symbol>('b')};
+
+	CHECK(algorithms::is_included_naive(only_a, any_letter, nullptr, nullptr));
+
+	// This positive-inclusion family is exponential for a search that determinizes the nondeterministic left input.
+	Nfa nondeterministic{4, {0}, {3}};
+	nondeterministic.delta.add(0, static_cast<Symbol>('a'), 0);
+	nondeterministic.delta.add(0, static_cast<Symbol>('b'), 0);
+	nondeterministic.delta.add(0, static_cast<Symbol>('a'), 1);
+	for (State state{1}; state < 3; ++state) {
+		nondeterministic.delta.add(state, static_cast<Symbol>('a'), state + 1);
+		nondeterministic.delta.add(state, static_cast<Symbol>('b'), state + 1);
+	}
+	CHECK(!nondeterministic.is_deterministic());
+	CHECK(algorithms::is_included_naive(nondeterministic, any_letter, nullptr, nullptr));
+	Nfa only_b{2, {0}, {1}};
+	only_b.delta.add(0, 'b', 1);
+	CHECK(!algorithms::is_included_naive(only_a, only_b, nullptr, nullptr));
+	CHECK(algorithms::is_included_naive(only_a, only_a, nullptr, nullptr));
+
+	// A universal bigger automaton is answered without searching the pairs. Two all-final unary cycles of coprime
+	//  lengths have no common period, so a search keeps every pair of their states.
+	const auto all_final_cycle{[](const size_t length) {
+		Nfa cycle{length, {0}, {}};
+		for (State state{0}; state < length; ++state) {
+			cycle.final.insert(state);
+			cycle.delta.add(state, 'a', static_cast<State>((state + 1) % length));
+		}
+		return cycle;
+	}};
+	CHECK(algorithms::is_included_naive(all_final_cycle(7), all_final_cycle(11), nullptr, nullptr));
+	Nfa universal_nondeterministic{2, {0}, {0, 1}};
+	universal_nondeterministic.delta.add(0, 'a', 0);
+	universal_nondeterministic.delta.add(0, 'a', 1);
+	universal_nondeterministic.delta.add(1, 'a', 0);
+	CHECK(algorithms::is_included_naive(all_final_cycle(7), universal_nondeterministic, nullptr, nullptr));
+	// All states final is not enough: without an initial state the language is empty, and a letter missing at a
+	//  reachable state leaves the words through it out.
+	Nfa no_initial{all_final_cycle(3)};
+	no_initial.initial.clear();
+	CHECK(!algorithms::is_included_naive(all_final_cycle(7), no_initial, nullptr, nullptr));
+	CHECK(!algorithms::is_included_naive(any_letter, all_final_cycle(3), nullptr, nullptr));
+	// The left language is empty even though this automaton has an initial state and transitions.
+	Nfa non_accepting{all_final_cycle(7)};
+	non_accepting.final.clear();
+	CHECK(algorithms::is_included_naive(non_accepting, only_b, nullptr, nullptr));
+
+	// The supplied alphabet must be respected: words outside it cannot form a counterexample.
+	const EnumAlphabet just_a{static_cast<Symbol>('a')};
+	CHECK(algorithms::is_included_naive(any_letter, only_a, &just_a, nullptr));
+	CHECK(!algorithms::is_included_naive(any_letter, only_a, &whole_alphabet, nullptr));
+
+	// The lazy difference has an epsilon-free precondition; these cases retain the existing construction.
+	Nfa eps_left{2, {0}, {1}};
+	eps_left.delta.add(0, EPSILON, 1);
+	eps_left.delta.add(1, 'a', 1);
+	Nfa one_a{2, {0}, {1}};
+	one_a.delta.add(0, 'a', 1);
+	CHECK(!algorithms::is_included_naive(eps_left, one_a, nullptr, nullptr));
+	CHECK(is_included(one_a, eps_left, nullptr, nullptr, {{"algorithm", "naive"}}));
+
+	CHECK(algorithms::is_included_naive(Nfa{}, any_letter, nullptr, nullptr));
+	Run cex{};
+	REQUIRE(!algorithms::is_included_naive(any_letter, only_a, nullptr, &cex));
+	CHECK(cex.word == Word{'b'});
+	CHECK(!cex.path.empty());
+}
+
 TEST_CASE("mata::nfa naive inclusion and equivalence without an alphabet agree with antichains (#754)") {
 	// Without an alphabet, the naive algorithms complement over the letters of both operands. Each operand has a
 	//  letter of its own here, and epsilon transitions, which are no letter.

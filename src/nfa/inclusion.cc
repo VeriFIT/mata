@@ -24,6 +24,15 @@ OrdVector<mata::Symbol> used_letters(const Nfa& lhs, const Nfa& rhs) {
 	if (!symbols.empty() && symbols.back() == EPSILON) { symbols.pop_back(); }
 	return symbols;
 }
+/// Does @p nfa have a transition on @c EPSILON? EPSILON is the largest symbol, so one symbol post per state is read.
+bool contains_epsilon(const Nfa& nfa) {
+	const size_t num_of_states{nfa.num_of_states()};
+	for (State state{0}; state < num_of_states; ++state) {
+		const StatePost& state_post{nfa.delta[state]};
+		if (Delta::epsilon_symbol_posts(state_post) != state_post.end()) { return true; }
+	}
+	return false;
+}
 } // namespace
 
 /// naive language inclusion check (complementation + intersection + emptiness)
@@ -38,6 +47,25 @@ bool mata::nfa::algorithms::is_included_naive(
 		cex->word.clear();
 		cex->path.clear();
 	}
+	// An empty left language is included in every right-hand language, without constructing a complement or product.
+	if (cex == nullptr && smaller.final.empty()) { return true; }
+	// Boolean queries on deterministic left inputs can stop at the first difference instead of constructing the full
+	// complement. The lazy difference determinizes its left input, so other inputs retain the legacy path to avoid
+	// subset-constructing them. It also requires epsilon-free inputs and the full alphabet used by the legacy path.
+	if (cex == nullptr && smaller.is_deterministic() && !contains_epsilon(smaller) && !contains_epsilon(bigger)) {
+		const OrdVector<mata::Symbol> letters{used_letters(smaller, bigger)};
+		if (alphabet == nullptr || alphabet->get_alphabet_symbols() == letters) {
+			// The legacy path returns at once when the complement of @p bigger has no final state; the lazy search
+			//  would keep every reachable pair instead. Every word over the letters has a run in an automaton with an
+			//  initial state, all states final, and every letter at every reachable state, so it accepts them all.
+			if (!bigger.initial.empty() && bigger.final.size() == bigger.num_of_states() &&
+				bigger.is_complete(letters)) {
+				return true;
+			}
+			return !get_word_from_lang_difference(smaller, bigger).has_value();
+		}
+	}
+
 	Nfa bigger_cmpl;
 	if (alphabet == nullptr) {
 		bigger_cmpl = complement(bigger, used_letters(smaller, bigger));
@@ -272,16 +300,6 @@ AlgoType set_algorithm(const std::string& function_name, const ParameterMap& par
 	}
 
 	return algo;
-}
-
-/// Does @p nfa have a transition on @c EPSILON? EPSILON is the largest symbol, so one symbol post per state is read.
-bool contains_epsilon(const Nfa& nfa) {
-	const size_t num_of_states{nfa.num_of_states()};
-	for (State state{0}; state < num_of_states; ++state) {
-		const StatePost& state_post{nfa.delta[state]};
-		if (Delta::epsilon_symbol_posts(state_post) != state_post.end()) { return true; }
-	}
-	return false;
 }
 
 /// An epsilon-free view of @p nfa, stored in @p storage only when @p nfa actually has epsilon transitions.
