@@ -1,4 +1,5 @@
-//! Length-bounded and breadth-first searches, against an eager evaluator of random formulas over {a, b}.
+//! Length-bounded and breadth-first searches and prefix closures, against an eager evaluator of random formulas
+//! over {a, b}.
 
 use std::collections::VecDeque;
 
@@ -61,6 +62,23 @@ impl Nfa {
 					})
 				})
 				.collect(),
+		}
+	}
+
+	/// The single word `word`.
+	fn word(word: &[usize]) -> Nfa {
+		let mut moves = vec![[Vec::new(), Vec::new()]; word.len() + 1];
+		for (state, &letter) in word.iter().enumerate() {
+			moves[state][letter].push(state + 1);
+		}
+
+		let mut finals = vec![false; word.len() + 1];
+		finals[word.len()] = true;
+
+		Nfa {
+			initial: vec![0],
+			finals,
+			moves,
 		}
 	}
 
@@ -152,6 +170,31 @@ impl Nfa {
 		complement
 	}
 
+	/// Every state that reaches a final state becomes final.
+	fn prefixes(&self) -> Nfa {
+		let mut live = self.finals.clone();
+		let mut changed = true;
+		while changed {
+			changed = false;
+			for state in 0..live.len() {
+				if !live[state]
+					&& self.moves[state]
+						.iter()
+						.flatten()
+						.any(|&target| live[target])
+				{
+					live[state] = true;
+					changed = true;
+				}
+			}
+		}
+
+		Nfa {
+			finals: live,
+			..self.clone()
+		}
+	}
+
 	fn accepts(&self, word: &[usize]) -> bool {
 		let mut states = normalized(self.initial.clone());
 		for &letter in word {
@@ -233,6 +276,10 @@ fn generate(formula: &mut Formula, rng: &mut StdRng, depth: usize) -> Result<(Te
 			let (a, ea) = generate(formula, rng, depth - 1)?;
 			(formula.complement(a)?, ea.complement())
 		}
+		4 => {
+			let (a, ea) = generate(formula, rng, depth - 1)?;
+			(formula.prefixes(a)?, ea.prefixes())
+		}
 		_ => {
 			let (a, ea) = generate(formula, rng, depth - 1)?;
 			(formula.explicit(a)?, ea)
@@ -259,6 +306,26 @@ fn letters(word: &[Symbol]) -> Vec<usize> {
 				.expect("a letter of {a, b}")
 		})
 		.collect()
+}
+
+/// Every word over {a, b} of at most `length` letters.
+fn words(length: usize) -> Vec<Vec<usize>> {
+	let mut words = vec![Vec::new()];
+	let mut start = 0;
+	for _ in 0..length {
+		let end = words.len();
+		for index in start..end {
+			for letter in 0..2 {
+				let mut word = words[index].clone();
+				word.push(letter);
+				words.push(word);
+			}
+		}
+
+		start = end;
+	}
+
+	words
 }
 
 /// An NFA with initial state 0 and the given final states and moves.
@@ -426,6 +493,143 @@ fn bounded_searches_answer_for_the_words_within_the_bound() -> Result<(), Error>
 			}
 		}
 	}
+
+	Ok(())
+}
+
+#[test]
+fn prefix_closures_hold_exactly_the_prefixes() -> Result<(), Error> {
+	let words = words(4);
+	for seed in 0..150 {
+		let mut rng = StdRng::seed_from_u64(seed);
+		let mut formula = Formula::new();
+		let (term, eager) = generate(&mut formula, &mut rng, 2)?;
+		let prefixes = formula.prefixes(term)?;
+		let others = formula.complement(prefixes)?;
+		let eager = eager.prefixes();
+		let eager_others = eager.complement();
+
+		for (closure, expected) in [(prefixes, &eager), (others, &eager_others)] {
+			let outcome = formula.check(closure, &Options::new().shortest(true))?;
+			let found = outcome.witness.map(|witness| witness.len());
+			assert_eq!(found, expected.shortest(), "seed {seed}");
+		}
+
+		for word in &words {
+			let single = leaf(&mut formula, &Nfa::word(word))?;
+			for (closure, expected) in [(prefixes, &eager), (others, &eager_others)] {
+				let both = formula.intersection(closure, single)?;
+				for options in configurations() {
+					let holds = formula.check(both, &options)?.witness.is_some();
+					assert_eq!(
+						holds,
+						expected.accepts(word),
+						"seed {seed}, word {word:?}, {options:?}"
+					);
+				}
+			}
+		}
+	}
+
+	Ok(())
+}
+
+/// Two tapes in lock step; a 0 pads.
+struct Steps<'s>(&'s [[u8; 2]]);
+
+impl Automaton for Steps<'_> {
+	type State = usize;
+
+	fn arity(&self) -> usize {
+		2
+	}
+
+	fn initial_states(&self) -> impl IntoIterator<Item = usize> {
+		[0]
+	}
+
+	fn is_final(&self, state: usize) -> bool {
+		state == self.0.len()
+	}
+
+	fn for_each_move(&self, state: usize, mut visit: impl FnMut(&[Symbol], usize)) {
+		if let Some(step) = self.0.get(state) {
+			let symbol = |letter: u8| {
+				if letter == 0 {
+					Symbol::EPSILON
+				} else {
+					Symbol::from(letter)
+				}
+			};
+
+			visit(&[symbol(step[0]), symbol(step[1])], state + 1);
+		}
+	}
+}
+
+#[test]
+fn prefixes_keep_the_steps_of_all_tapes_together() -> Result<(), Error> {
+	let mut formula = Formula::new();
+	// (ab, c), padded as (a, c)(b, ε).
+	let pair = formula.leaf(&Steps(&[*b"ac", [b'b', 0]]))?;
+	let prefixes = formula.prefixes(pair)?;
+	let in_prefixes = |formula: &mut Formula, steps: &[[u8; 2]]| -> Result<bool, Error> {
+		let steps = formula.leaf(&Steps(steps))?;
+		let both = formula.intersection(prefixes, steps)?;
+
+		Ok(!formula.is_empty(both)?)
+	};
+
+	assert!(in_prefixes(&mut formula, &[])?);
+	assert!(in_prefixes(&mut formula, &[*b"ac"])?);
+	assert!(in_prefixes(&mut formula, &[*b"ac", [b'b', 0]])?);
+	// (a, ε) pads the second tape where the relation reads `c`.
+	assert!(!in_prefixes(&mut formula, &[[b'a', 0]])?);
+
+	Ok(())
+}
+
+/// One move on the wildcard.
+struct AnyOnce;
+
+impl Automaton for AnyOnce {
+	type State = bool;
+
+	fn arity(&self) -> usize {
+		1
+	}
+
+	fn initial_states(&self) -> impl IntoIterator<Item = bool> {
+		[false]
+	}
+
+	fn is_final(&self, read: bool) -> bool {
+		read
+	}
+
+	fn for_each_move(&self, read: bool, mut visit: impl FnMut(&[Symbol], bool)) {
+		if !read {
+			visit(&[Symbol::ANY], true);
+		}
+	}
+}
+
+#[test]
+fn prefixes_of_a_wildcard_over_no_symbols_are_empty() -> Result<(), Error> {
+	let mut formula = Formula::new();
+	let any = formula.leaf(&AnyOnce)?;
+	let prefixes = formula.prefixes(any)?;
+
+	// With no symbol to read, the leaf's state does not reach its final state.
+	assert!(formula.is_empty(any)? && formula.is_empty(prefixes)?);
+	let over_a = Options::new().alphabet(*b"a");
+	assert_eq!(
+		formula
+			.check(prefixes, &over_a)?
+			.witness
+			.map(|witness| witness.len()),
+		Some(0)
+	);
 
 	Ok(())
 }

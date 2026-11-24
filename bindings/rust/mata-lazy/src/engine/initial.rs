@@ -48,7 +48,8 @@ impl Engine<'_> {
 			Op::Identity(child)
 			| Op::Project(child, _)
 			| Op::PadClosure(child, _)
-			| Op::Transparent(child) => self.initial_count(child),
+			| Op::Transparent(child)
+			| Op::Prefixes(child) => self.initial_count(child),
 			Op::Explicit { .. } => unreachable!("explicit nodes are replaced before the search"),
 		});
 		self.initial_counts[node] = Some(count);
@@ -97,6 +98,14 @@ impl Engine<'_> {
 			}
 			Op::Identity(child) | Op::Project(child, _) | Op::Transparent(child) => {
 				self.initial_at(child, index)
+			}
+			Op::Prefixes(child) => {
+				let target = self.initial_at(child, index)?;
+
+				Ok(Target {
+					accepting: self.is_live(node, child, target)?,
+					..target
+				})
 			}
 			Op::Explicit { .. } => unreachable!("explicit nodes are replaced before the search"),
 		})?;
@@ -162,6 +171,16 @@ impl Engine<'_> {
 			}
 			Op::Identity(child) | Op::Project(child, _) | Op::Transparent(child) => {
 				self.has_accepting_initial(child)
+			}
+			Op::Prefixes(child) => {
+				for index in 0..self.initial_count(child) {
+					let target = self.initial_at(child, index)?;
+					if self.is_live(node, child, target)? {
+						return Ok(true);
+					}
+				}
+
+				Ok(false)
 			}
 			Op::Explicit { .. } => unreachable!("explicit nodes are replaced before the search"),
 		})?;
@@ -288,6 +307,16 @@ impl Engine<'_> {
 			Op::Identity(child) | Op::Project(child, _) | Op::Transparent(child) => {
 				self.initial(child)?
 			}
+			Op::Prefixes(child) => self
+				.initial(child)?
+				.iter()
+				.map(|&target| {
+					Ok(Target {
+						accepting: self.is_live(node, child, target)?,
+						..target
+					})
+				})
+				.collect::<Result<Rc<[Target]>, Limit>>()?,
 			Op::Explicit { .. } => unreachable!("explicit nodes are replaced before the search"),
 		};
 

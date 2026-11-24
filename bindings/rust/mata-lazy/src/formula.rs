@@ -65,6 +65,7 @@ pub(crate) enum Node {
 	PadClosure(NodeId, Arc<Pad>),
 	Sync(NodeId, NodeId, Arc<SyncSpec>),
 	Explicit(NodeId, ExplicitOptions),
+	Prefixes(NodeId),
 }
 
 /// A synchronized pair of tapes, one of the left operand and one of the right.
@@ -488,6 +489,39 @@ impl Formula {
 		self.sync_product(language, relation, &[(0, 1)], &[Tape::Rhs(0)])
 	}
 
+	/// The prefix closure `{u | ∃v: u·v ∈ term}`, taken over steps: a prefix keeps the first steps of all tapes
+	/// together, padding included. It is empty when `term` is, and holds the empty word otherwise.
+	///
+	/// A query decides whether a macrostate of `term` reaches an accepting one with a search from it, whose answers
+	/// it keeps; leaves and explicit nodes are trimmed, so for them it needs none. With this, `term`'s macrostates
+	/// and their subsumption carry over unchanged.
+	///
+	/// ```
+	/// # #[cfg(feature = "regex")] {
+	/// use mata_lazy::Formula;
+	/// use mata_lazy::regex::Regex;
+	///
+	/// let mut formula = Formula::new();
+	/// let abc = formula.leaf(&Regex::new("abc")?)?;
+	/// let ab = formula.leaf(&Regex::new("ab")?)?;
+	/// let ac = formula.leaf(&Regex::new("ac")?)?;
+	/// let prefixes = formula.prefixes(abc)?;
+	/// let has_ab = formula.intersection(prefixes, ab)?;
+	/// let has_ac = formula.intersection(prefixes, ac)?;
+	/// assert!(!formula.is_empty(has_ab)? && formula.is_empty(has_ac)?);
+	/// # }
+	/// # Ok::<(), Box<dyn std::error::Error>>(())
+	/// ```
+	///
+	/// # Errors
+	///
+	/// [`ForeignTerm`](Error::ForeignTerm).
+	pub fn prefixes(&mut self, term: Term) -> Result<Term, Error> {
+		let node = self.node(term)?;
+
+		Ok(self.push(Node::Prefixes(node), self.arities[node]))
+	}
+
 	/// The same relation, built as an explicit automaton when a query starts; see
 	/// [`explicit_with`](Formula::explicit_with).
 	///
@@ -603,7 +637,8 @@ impl Formula {
 			Node::Identity(child)
 			| Node::Project(child, _)
 			| Node::PadClosure(child, _)
-			| Node::Explicit(child, _) => self.pads[child],
+			| Node::Explicit(child, _)
+			| Node::Prefixes(child) => self.pads[child],
 			Node::Union(a, b) | Node::Intersection(a, b) | Node::Sync(a, b, _) => {
 				self.pads[a] || self.pads[b]
 			}

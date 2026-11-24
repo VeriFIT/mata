@@ -111,6 +111,7 @@ Builders:
   need it after a projection.
 - `sync_product`, `compose_on`, `compose`, `post_image`, `pre_image`: products of relations synchronized on tapes.
 - `explicit`, `explicit_with`: the same relation, built as an automaton when a query starts.
+- `prefixes`: the prefix closure, the words that some word of the relation extends, counted in lock steps.
 
 Queries:
 

@@ -1,9 +1,9 @@
 //! Lazy emptiness checking of Boolean and relational combinations of automata and transducers.
 //!
 //! A [`Formula`] is a DAG of operations (union, intersection, complement, identity, projection,
-//! synchronized product, composition, images) over leaves. A leaf is any [`Automaton`], and the backends
-//! implement it for the automata of other crates. [`materialize`](Formula::materialize) builds the relation of a
-//! term as an [`ExplicitAutomaton`] that other crates can copy.
+//! synchronized product, composition, images, prefix closure) over leaves. A leaf is any [`Automaton`], and the
+//! backends implement it for the automata of other crates. [`materialize`](Formula::materialize) builds the relation
+//! of a term as an [`ExplicitAutomaton`] that other crates can copy.
 //!
 //! | Backend | Leaves |
 //! |---|---|

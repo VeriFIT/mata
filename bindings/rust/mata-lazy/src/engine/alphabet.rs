@@ -129,7 +129,8 @@ fn tape_classes(
 			| Op::Complement(_)
 			| Op::Explicit { .. }
 			| Op::PadClosure(..)
-			| Op::Transparent(_) => {
+			| Op::Transparent(_)
+			| Op::Prefixes(_) => {
 				for child in node.op.children() {
 					for tape in 0..node.arity {
 						classes.union(slot(id, tape), slot(child, tape));

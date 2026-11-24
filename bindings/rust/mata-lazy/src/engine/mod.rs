@@ -19,6 +19,7 @@
 //! | intersection, sync product, diagonal | (state, state) | both | pairs of moves whose tuples merge, once each when the product drops tapes |
 //! | complement | a minimized set of child states | no member | one move per tuple of the alphabets |
 //! | identity, projection | the child's | the child's | the child's moves, relabelled |
+//! | prefix closure | the child's | it reaches an accepting one (`prefixes`) | the child's moves |
 //!
 //! # Successors
 //!
@@ -66,6 +67,7 @@ mod join;
 mod memo;
 mod pad;
 mod post;
+mod prefixes;
 mod store;
 mod subsumption;
 
@@ -192,8 +194,9 @@ pub(crate) struct Engine<'f> {
 	alphabets: Alphabets,
 	stores: TiVec<ExecId, Store>,
 	posts: TiVec<ExecId, Vec<Option<Rc<Post>>>>,
-	/// The root and the nodes sharing its macrostates expand each macrostate once, so they keep no posts. An
-	/// identity relabels its child's post, which is kept, as a copy would double it.
+	/// The root and the nodes sharing its macrostates expand each macrostate once, so they keep no posts, down to a
+	/// prefix closure, which searches its child. An identity relabels its child's post, which is kept, as a copy
+	/// would double it.
 	cached: TiVec<ExecId, bool>,
 	/// The tuples of the posts of each complement node, and of each identity of one.
 	tables: TiVec<ExecId, Option<Rc<Table>>>,
@@ -208,6 +211,8 @@ pub(crate) struct Engine<'f> {
 	union_starts: TiVec<ExecId, Option<Rc<[usize]>>>,
 	/// Per node, whether one of its initial macrostates accepts, once asked.
 	accepting_initials: TiVec<ExecId, Option<bool>>,
+	/// Per prefix closure, whether the macrostates of its child it asked about reach an accepting one.
+	live: TiVec<ExecId, FxHashMap<StateId, bool>>,
 	/// What each product's join may skip.
 	plans: TiVec<ExecId, JoinPlan>,
 	join_scratch: Scratch,
@@ -272,6 +277,9 @@ impl<'f> Engine<'f> {
 			.collect();
 		for node in exec.sharing(exec.root) {
 			cached[node] = false;
+			if matches!(exec.nodes[node].op, Op::Prefixes(_)) {
+				break;
+			}
 		}
 
 		let plans = join::plans(&exec);
@@ -298,6 +306,7 @@ impl<'f> Engine<'f> {
 			initials: vec![None; num_nodes].into(),
 			union_starts: vec![None; num_nodes].into(),
 			accepting_initials: vec![None; num_nodes].into(),
+			live: vec![FxHashMap::default(); num_nodes].into(),
 			plans,
 			join_scratch: Scratch::default(),
 			join_buffers: JoinBuffers::default(),
