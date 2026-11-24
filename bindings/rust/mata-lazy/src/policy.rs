@@ -129,9 +129,9 @@ impl Policy for Heuristic {
 			.iter()
 			.enumerate()
 			.filter(|&(index, node)| {
-				wanted[index]
-					&& small(index)
-					&& !matches!(node.kind, NodeKind::Leaf | NodeKind::Explicit { .. })
+				let can_materialize =
+					!matches!(node.kind, NodeKind::Leaf | NodeKind::Explicit { .. });
+				wanted[index] && small(index) && can_materialize
 			})
 			.fold(Plan::new(), |plan, (_, node)| {
 				plan.annotate(node.term, Annotation::eager_within(self.max_states))
