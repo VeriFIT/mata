@@ -7,6 +7,7 @@
 #include "assert.hh"
 
 #include <algorithm>
+#include <concepts>
 #include <cstdint>
 #include <functional>
 #include <iostream>
@@ -263,6 +264,11 @@ template <class A> struct VectorHash {
  */
 template <class A, class B> struct PairHash {
 	size_t operator()(const std::pair<A, B>& pair) const {
+		// Pack a unique unsigned 32-bit pair payload once instead of mixing it twice.
+		if constexpr (sizeof(size_t) == 8 && std::unsigned_integral<A> && std::unsigned_integral<B> &&
+					  sizeof(A) == sizeof(uint32_t) && sizeof(B) == sizeof(uint32_t)) {
+			return hash_mix((static_cast<uint64_t>(pair.first) << 32) | static_cast<uint64_t>(pair.second));
+		}
 		return hash_combine(hash_combine(HASH_SEED, pair.first), pair.second);
 	}
 };

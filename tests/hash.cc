@@ -39,6 +39,23 @@ constexpr size_t min_distinct_hashes(const size_t count) {
 	}
 }
 
+TEST_CASE("mata::utils::PairHash keeps non-32-bit and signed keys on the generic combine") {
+	const int first{-1};
+	const uint64_t second{42};
+	const PairHash<int, uint64_t> hasher{};
+	CHECK(hasher({first, second}) == hash_combine(hash_combine(HASH_SEED, first), second));
+}
+
+TEST_CASE("mata::utils::PairHash preserves every unsigned 32-bit component") {
+	const PairHash<uint32_t, uint32_t> hasher{};
+	std::unordered_set<size_t> hashes{};
+	constexpr uint32_t base{0xde'ad'be'00};
+	for (uint32_t first{0}; first < 256; ++first) {
+		for (uint32_t second{0}; second < 256; ++second) { hashes.insert(hasher({base + first, base + second})); }
+	}
+	CHECK(hashes.size() == 256 * 256);
+}
+
 TEST_CASE("mata::utils::hash_combine() mixes the running value") {
 	// The pairs (1, 0) and (0, 63) collided under the pre-#797 combine, which added the shifted running value to
 	//  the hash of the new element instead of mixing it.
