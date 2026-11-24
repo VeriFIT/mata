@@ -489,6 +489,31 @@ TEST_CASE("mata::nfa::is_intersection_empty()") {
 		CHECK(!is_intersection_empty(lhs, rhs, &witness));
 		CHECK(witness.word == mata::Word{'b', 'c'});
 	}
+
+	SECTION("cycles are visited once and do not hide a witness") {
+		lhs = Nfa{3, {0}, {2}};
+		lhs.delta.add(0, 'a', 1);
+		lhs.delta.add(1, 'a', 0);
+		lhs.delta.add(1, 'b', 2);
+		rhs = lhs;
+		Run witness{};
+		CHECK(!is_intersection_empty(lhs, rhs, &witness));
+		CHECK(lhs.is_in_lang(witness, true));
+		CHECK(rhs.is_in_lang(witness, true));
+	}
+
+	SECTION("sparse symbols are matched exactly") {
+		lhs = Nfa{3, {0}, {2}};
+		lhs.delta.add(0, 5, 1);
+		lhs.delta.add(1, 1'000'000, 2);
+		rhs = Nfa{4, {0}, {3}};
+		rhs.delta.add(0, 5, 1);
+		rhs.delta.add(1, 1'000'000, 3);
+		Run witness{};
+		CHECK(!is_intersection_empty(lhs, rhs, &witness));
+		CHECK(lhs.is_in_lang(witness, true));
+		CHECK(rhs.is_in_lang(witness, true));
+	}
 }
 
 TEST_CASE("mata::nfa::algorithms::product() takes a named final-state predicate - issue #769") {

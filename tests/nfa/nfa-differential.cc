@@ -168,6 +168,21 @@ bool reference_accepts(const Nfa& nfa, const Word& word, const Symbol epsilon = 
 	return false;
 }
 
+/// @p nfa with every symbol at or above @p first_epsilon relabeled to EPSILON. This is the automaton in which a
+///  witness returned by `is_intersection_empty()` replays after its one-sided moves were stripped.
+Nfa relabel_one_sided_as_epsilon(const Nfa& nfa, const Symbol first_epsilon) {
+	Nfa relabeled{nfa.num_of_states()};
+	relabeled.initial = nfa.initial;
+	relabeled.final = nfa.final;
+	relabeled.alphabet = nfa.alphabet;
+	for (const Transition& transition : nfa.delta.transitions()) {
+		relabeled.delta.add(
+			transition.source, transition.symbol < first_epsilon ? transition.symbol : EPSILON, transition.target
+		);
+	}
+	return relabeled;
+}
+
 /// The shortest nonempty-or-empty words accepted from exactly @p initial states, derived only by the reference
 ///  acceptor. @p words must include every word up to the number of states minus one.
 std::set<Word> reference_shortest_words(Nfa nfa, const StateSet& initial, const std::vector<Word>& words) {
@@ -592,6 +607,34 @@ void check_reduction(const unsigned seed) {
 	CHECK(renaming == expected_renaming);
 }
 
+/// The lazy emptiness agrees with the materialized product, and every nonempty answer carries a witness that
+///  replays in both operands once their one-sided symbols are read as epsilon.
+void check_intersection_emptiness(const unsigned seed, const Symbol first_epsilon, const bool with_epsilon) {
+	std::mt19937 rng{seed};
+	const size_t num_of_states{2 + seed % 5};
+	const size_t num_of_symbols{1 + seed % 3};
+	const std::shared_ptr<EnumAlphabet> alphabet{alphabet_of(num_of_symbols)};
+	const std::optional<Symbol> epsilon{with_epsilon ? std::optional<Symbol>{first_epsilon} : std::nullopt};
+	const Nfa lhs{random_nfa(rng, num_of_states, num_of_symbols, alphabet, epsilon)};
+	const Nfa rhs{random_nfa(rng, num_of_states, num_of_symbols, alphabet, epsilon)};
+	INFO(describe(seed, lhs));
+	INFO(describe(seed, rhs));
+
+	Run witness{};
+	const bool empty{is_intersection_empty(lhs, rhs, &witness, first_epsilon)};
+	CHECK(empty == intersection(lhs, rhs, first_epsilon).is_lang_empty());
+	CHECK(empty == is_intersection_empty(lhs, rhs, nullptr, first_epsilon));
+	if (empty) { return; }
+
+	// One-sided moves are stripped from the witness; all remaining symbols are shared, so replaying the witness
+	//  after reading the one-sided symbols as epsilon must accept in both operands.
+	const Nfa lhs_replay{relabel_one_sided_as_epsilon(lhs, first_epsilon)};
+	const Nfa rhs_replay{relabel_one_sided_as_epsilon(rhs, first_epsilon)};
+	CHECK(lhs_replay.is_in_lang(witness, true));
+	CHECK(rhs_replay.is_in_lang(witness, true));
+	for (const Symbol symbol : witness.word) { CHECK(symbol < first_epsilon); }
+}
+
 } // Anonymous namespace.
 
 TEST_CASE("mata::nfa differential: the algorithms agree with the reference acceptor", "[differential]") {
@@ -610,6 +653,15 @@ TEST_CASE("mata::nfa differential: epsilon removal keeps the language", "[differ
 		// A non-default epsilon that is larger than every ordinary symbol: the removal must not
 		//  assume the default one, and the ordinary symbols must survive it.
 		check_epsilon_removal(seed, 2 + seed % 5, 1 + seed % 2, MAX_WORD_LENGTH, 100);
+	}
+}
+
+TEST_CASE("mata::nfa differential: lazy intersection emptiness agrees with the product", "[differential]") {
+	for (unsigned seed{0}; seed < 300; ++seed) {
+		// The default epsilon: every epsilon move is one-sided and is stripped from the witness.
+		check_intersection_emptiness(seed, EPSILON, seed % 2 == 0);
+		// A custom epsilon that also treats symbols at and above it as epsilon and leaves symbols below it shared.
+		check_intersection_emptiness(seed, 2, seed % 2 == 0);
 	}
 }
 
