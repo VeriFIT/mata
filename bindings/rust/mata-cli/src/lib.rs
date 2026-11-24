@@ -60,6 +60,7 @@ pub mod cli;
 pub(crate) mod convert;
 pub(crate) mod dot;
 pub(crate) mod eval;
+pub(crate) mod lazy;
 pub(crate) mod lexer;
 pub(crate) mod literal;
 pub(crate) mod ops;
@@ -143,6 +144,7 @@ fn display_value_depth(value: &Value, engine: &eval::Engine, depth: usize) -> St
 			format!("(run :word ({word}) :path ({path}))\n")
 		}
 		Value::Function(_) => "#<function>\n".to_owned(),
+		Value::Term(term) => format!("#<term of arity {}>\n", engine.lazy.arity(*term)),
 		Value::None => "none\n".to_owned(),
 	}
 }

@@ -433,12 +433,16 @@ language page specifies but this build does not have are listed in the
 - Every operation of the catalogue records the language version that added it. A script sees the operations of the
   version its header declares, and the names of all of them are reserved, so an operation added later can never clash
   with a name a script defined.
-- The interpreter implements 162 operations: the portable core of the language, the script forms that a direct command
-  needs, and the NFA, NFT, string-solving, automaton and intermediate-automaton operations `bindings/rust/mata` covers,
+- The interpreter implements 178 operations: the portable core of the language, the script forms that a direct command
+  needs, the NFA, NFT, string-solving, automaton and intermediate-automaton operations `bindings/rust/mata` covers,
+  and the 15 {ref}`lazy: operations <script-lazy>` of `mata::lazy` (with the special form `lazy:stats`),
   so every operation of the [script language](script-language) page runs. An operation outside that table is rejected
   by name and never approximated: a script reports `unknown name 'nft:minimize'` and a direct command reports
   `unknown operation 'nft:minimize'`, both exiting `2`. `nft:minimize` is the one operation name of the page that is
   rejected: the library declares it only under `MATA_NFT_NOT_IMPLEMENTED`.
+- The `lazy:` operations are script-only: `mata lazy` is not a direct command yet. One `mata::lazy::Formula` lives
+  for the whole run, held by the evaluator, so terms from different queries combine; leaves are imported once per
+  automaton value and `:alphabet`. `mata-cli` enables the `lazy` feature of the `mata` crate for it.
 - The interpreter limits how deeply a script may nest, as an error instead of a crash of the process: a function
   call chain deeper than 1000 calls, and a source nesting deeper than 1000 levels, are reported where they stand.
   The whole interpreter runs on a thread with a large stack, so a script that stays inside the limits never

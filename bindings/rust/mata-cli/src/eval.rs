@@ -27,6 +27,8 @@ pub(crate) enum Value {
 	Symbol(Symbol),
 	Run(Rc<mata::Run>),
 	Function(Rc<Function>),
+	/// A node of the run's lazy formula, [`Engine::lazy`].
+	Term(mata::lazy::Term),
 	None,
 }
 
@@ -228,6 +230,8 @@ pub(crate) struct Engine {
 	/// When the run must stop, and its time limit: an error before the next top-level form, function
 	/// call or loop round once passed. A library operation that runs is not interrupted.
 	pub(crate) deadline: Option<(Instant, Duration)>,
+	/// The lazy formula of the run, which every `Term` belongs to.
+	pub(crate) lazy: crate::lazy::Lazy,
 }
 
 /// How deeply function calls may nest; deeper recursion is an error rather than an overflow of the
@@ -301,6 +305,7 @@ impl Engine {
 			plan: crate::optimize::Plan::default(),
 			memo: crate::optimize::Memo::default(),
 			deadline: None,
+			lazy: crate::lazy::Lazy::new(),
 		}
 	}
 
@@ -856,6 +861,7 @@ impl Engine {
 			"->" => self.evaluate_pipeline(parts, expression),
 			"as" => self.evaluate_as(parts, expression),
 			"time" => self.evaluate_time(parts, expression),
+			"lazy:stats" => self.evaluate_lazy_stats(parts, expression),
 			"witness" => self.evaluate_witness(parts, expression),
 			_ => {
 				if self.options.optimize.on()
@@ -968,6 +974,36 @@ impl Engine {
 			.record(&label, &seconds)
 			.map_err(|error| parts[0].at(error.message))?;
 		self.emit(&line)?;
+		Ok(value)
+	}
+
+	/// `(lazy:stats label check)`: runs the check and prints the records of its statistics.
+	fn evaluate_lazy_stats(&mut self, parts: &[Expr], expression: &Expr) -> Result<Value, Error> {
+		if parts.len() != 2 {
+			return Err(
+				expression.at("lazy:stats needs a label and an application of a lazy check".into())
+			);
+		}
+		let Value::String(label) = self.evaluate(&parts[0])? else {
+			return Err(parts[0].at("the lazy:stats label must be a String".into()));
+		};
+		if !crate::lazy::applies_check(&parts[1]) {
+			return Err(parts[1].at(crate::lazy::stats_message()));
+		}
+		self.lazy.stats = None;
+		let value = self.evaluate(&parts[1])?;
+		// The check is the last one the operand runs, so the statistics are its own.
+		let stats = self
+			.lazy
+			.stats
+			.take()
+			.expect("a lazy check keeps its statistics");
+		for (name, count) in crate::lazy::stats_records(&stats) {
+			let line = self
+				.record(&format!("{label}.{name}"), &count.to_string())
+				.map_err(|error| parts[0].at(error.message))?;
+			self.emit(&line)?;
+		}
 		Ok(value)
 	}
 
@@ -1767,6 +1803,9 @@ pub(crate) const WITNESS_OPERATIONS: &[&str] = &[
 	"automaton:language-empty?",
 	"automaton:included?",
 	"automaton:equivalent?",
+	"lazy:empty?",
+	"lazy:included?",
+	"lazy:equivalent?",
 ];
 
 /// Whether `expression` is an application of a witness operation.
@@ -1791,6 +1830,7 @@ fn is_timed(name: &str) -> bool {
 		|| name.starts_with("strings:")
 		|| name.starts_with("automaton:")
 		|| name.starts_with("intermediate:")
+		|| crate::lazy::is_query(name)
 }
 
 /// Why `name` cannot be defined by a script, or `None` when it can. Every namespaced name is reserved,
@@ -1958,6 +1998,7 @@ fn value_sort_depth(value: &Value, depth: usize) -> String {
 		Value::Symbol(_) => "Symbol".into(),
 		Value::Run(_) => "Run".into(),
 		Value::Function(_) => "Function".into(),
+		Value::Term(_) => "Term".into(),
 		Value::None => "none".into(),
 	}
 }

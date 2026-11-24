@@ -135,20 +135,21 @@ works. `loop` and `recur` need the option described in [Loops and recursion](#lo
 
 ## Values and sorts
 
-| Sort                    | Value                                                                     |
-| ----------------------- | ------------------------------------------------------------------------- |
-| `Nfa`                   | `mata::nfa::Nfa`                                                          |
-| `Nft`                   | `mata::nft::Nft`                                                          |
-| `Automaton`             | Either an `Nfa` or an `Nft`; which one is known only when the script runs |
-| `IntermediateAutomaton` | `mata::IntermediateAut`: a parsed automaton that is not constructed yet   |
-| `Alphabet`              | `mata::Alphabet`                                                          |
-| `Symbol`                | `mata::Symbol`; `epsilon` and `dont-care` are predefined                  |
-| `Word`                  | `mata::Word`                                                              |
-| `Run`                   | `mata::nfa::Run`: a word and a path                                       |
-| `Bool`, `Int`, `String` |                                                                           |
-| `(List T)`              | A list of values of sort `T`                                              |
-| `(Option T)`            | Either a `T` or `none`, for operations that return `std::optional`        |
-| `Function`              | An operation, a defined function or a `lambda`                            |
+| Sort                    | Value                                                                              |
+| ----------------------- | ---------------------------------------------------------------------------------- |
+| `Nfa`                   | `mata::nfa::Nfa`                                                                   |
+| `Nft`                   | `mata::nft::Nft`                                                                   |
+| `Automaton`             | Either an `Nfa` or an `Nft`; which one is known only when the script runs          |
+| `IntermediateAutomaton` | `mata::IntermediateAut`: a parsed automaton that is not constructed yet            |
+| `Alphabet`              | `mata::Alphabet`                                                                   |
+| `Symbol`                | `mata::Symbol`; `epsilon` and `dont-care` are predefined                           |
+| `Word`                  | `mata::Word`                                                                       |
+| `Run`                   | `mata::nfa::Run`: a word and a path                                                |
+| `Bool`, `Int`, `String` |                                                                                    |
+| `(List T)`              | A list of values of sort `T`                                                       |
+| `(Option T)`            | Either a `T` or `none`, for operations that return `std::optional`                 |
+| `Function`              | An operation, a defined function or a `lambda`                                     |
+| `Term`                  | A node of the run's lazy formula; see [The `lazy:` namespace](#the-lazy-namespace) |
 
 ### Checking
 
@@ -494,6 +495,7 @@ The namespace tells where the function lives:
 | `alphabet:`     | The member functions of `mata::Alphabet`                                 |
 | `intermediate:` | `mata::parser`, `mata::IntermediateAut` and `mata::Mintermization`       |
 | `list:`         | No library counterpart                                                   |
+| `lazy:`         | `mata::lazy` of the Rust bindings; see [below](#the-lazy-namespace)      |
 
 ### Arguments
 
@@ -542,6 +544,8 @@ Each application is one library call, with these exceptions:
 - With more than two operands, `(nfa:intersection a b c)` is `(nfa:intersection (nfa:intersection a b) c)`. This holds
   for every operation whose library function takes two automata and returns one: `union-nondeterministic`,
   `intersection` and `concatenate` of both namespaces, and `nft:compose`.
+- A `lazy:` builder makes no call at all; the query that checks its term is the call. See
+  [The `lazy:` namespace](#the-lazy-namespace).
 
 ### NFA operations
 
@@ -657,6 +661,94 @@ when the script runs. Operands of different kinds are an error; convert explicit
 
 `automaton:load` and `automaton:parse` accept either kind and return an `Automaton`.
 
+(script-lazy)=
+
+### The `lazy:` namespace
+
+The `lazy:` operations decide properties of Boolean and relational combinations of automata and transducers without
+building the combination: products pair states and complements build subsets on the fly, and a query explores only
+the macrostates it needs. They run `mata::lazy`, the `mata-lazy` crate of the Rust bindings, which has no C++
+counterpart. A script that uses them says so with `:requires (lazy)`.
+
+Builders combine values of the sort `Term` and do no automata work. A query checks one term, which is one call of the
+library:
+
+```scheme
+(mata-script "0.1.0" :requires (lazy))
+(set-option :alphabet "bytes")
+(define a (lazy:leaf (nfa:create-from-regex "a(a|b)*")))
+(define b (lazy:leaf (nfa:create-from-regex "(a|b)*b")))
+(check (lazy:included? a b))                                     ; false
+(print (lazy:witness (lazy:intersection a (lazy:complement b))))  ; a
+```
+
+| Builder                                           | `mata::lazy`                | Arities                     |
+| ------------------------------------------------- | --------------------------- | --------------------------- |
+| `(lazy:leaf automaton :alphabet "x y")`           | `leaf`, `leaf_over`         | `Nfa` → 1, `Nft` → levels   |
+| `(lazy:union t u …)`, `(lazy:intersection t u …)` | `union`, `intersection`     | n, n → n, folded from left  |
+| `(lazy:complement t)`                             | `complement`                | n → n                       |
+| `(lazy:identity t)`                               | `identity`                  | 1 → 2                       |
+| `(lazy:project t (list 2 0))`                     | `project`                   | n → the tapes, in its order |
+| `(lazy:compose r s)`                              | `compose`                   | 2, 2 → 2                    |
+| `(lazy:post-image l r)`, `(lazy:pre-image l r)`   | `post_image`, `pre_image`   | 1, 2 → 1                    |
+| `(lazy:explicit t :max-states n)`                 | `explicit`, `explicit_with` | n → n                       |
+
+| Query                    | `mata::lazy`                 | Value                                  |
+| ------------------------ | ---------------------------- | -------------------------------------- |
+| `(lazy:empty? t)`        | `check(t)`                   | `Bool`: whether `t` is empty           |
+| `(lazy:included? t u)`   | `check(t ∩ ¬u)`              | `Bool`                                 |
+| `(lazy:equivalent? t u)` | `check((t ∩ ¬u) ∪ (u ∩ ¬t))` | `Bool`                                 |
+| `(lazy:witness t)`       | `check(t)`                   | A tuple of `t`, `none` if `t` is empty |
+| `(lazy:materialize t)`   | `materialize(t)` as an `Nft` | An `Nfa` for arity 1, else an `Nft`    |
+
+- **Lock step.** A term of arity n denotes a relation over n-tuples of words, read in lock step: one step reads one
+  symbol on every tape, and `epsilon` pads a shorter word. A language has arity 1, and a leaf of an `Nft` has one tape
+  per level. This is exact for length-preserving relations, as in regular model checking. Mata's `nft:compose` and
+  `nft:apply` align padding asynchronously, so on a transducer that pads they can give another relation than
+  `lazy:compose` and the images.
+- **Arities** are checked when the builder runs: `(lazy:intersection language relation)` stops the script with
+  `intersection expects arity 1, found 2`. The checker knows only that both operands are terms.
+- **Alphabets.** The complement is taken over the tuples of concrete symbols of the tapes' alphabets, so it holds no
+  padding. A tape's alphabet holds the symbols that the leaves read on the tapes that must read the same symbols (both
+  operands of an intersection, both tapes of an identity, …), the symbols of `:alphabet` of their `lazy:leaf`, and,
+  for the term a query checks, the symbols of the query's `:alphabet`. `:alphabet` is symbol names separated by
+  spaces, translated through the script alphabet. The same complement can therefore mean different things in
+  different queries: `(lazy:complement (lazy:leaf (nfa:create-from-regex "(a|b)*")))` is empty, and not empty with
+  `:alphabet "a b c"`.
+- **One formula per run.** Every term of a run is a node of one formula, which only grows while the run lasts, so
+  terms built for different queries combine. A value is imported as a leaf once for each `:alphabet` it is given, and
+  `=` is true of two terms that are the same node, such as two leaves of one value.
+- **Explicit nodes.** `lazy:explicit` builds its term as an automaton when a query starts and reads it like a leaf;
+  later queries of the run reuse it. With `:max-states n` (an `Int`), a term that needs more than `n` states stays
+  lazy.
+- **Limits.** A query takes `:time-limit` in milliseconds and `:max-states`, the number of macrostates it may hold,
+  both `Int`s. A query that passes a limit is an error that stops the script, naming the limit:
+  `the query holds more than 2 macrostates`.
+- **Witnesses.** `lazy:empty?`, `lazy:included?` and `lazy:equivalent?` are [witness](#witnesses) operations: the
+  witness is a tuple of the checked term, so a tuple of `t` not in `u` for `lazy:included?`. A tuple of a language is
+  a `Word`, and of a relation a list of one `Word` per tape. The search is depth-first, so the witness is the first
+  tuple found, not the shortest.
+- **Timing and tracing.** `:time-operations` and `:trace` report the queries, which are the calls; builders make none.
+  `:optimize` neither remembers nor rewrites `lazy:` applications.
+
+`(lazy:stats label check)` evaluates `check`, an application of `lazy:empty?`, `lazy:witness`, `lazy:included?` or
+`lazy:equivalent?`, returns its value, and prints one record per counter of that query, `label.counter: number`, in
+the form of [timing](#timing) records:
+
+| Counter                | Meaning                                                                   |
+| ---------------------- | ------------------------------------------------------------------------- |
+| `explored`             | Macrostates of the checked term whose successors were computed            |
+| `pruned`               | Macrostates of the checked term skipped because a found one subsumes them |
+| `macrostates`          | Macrostates created in all nodes                                          |
+| `dropped`              | Cached successors dropped to stay within the cache budget                 |
+| `explicit`             | Explicit nodes built as automata, not those past their `:max-states`      |
+| `explicit-states`      | States of those automata                                                  |
+| `explicit-transitions` | Transitions of those automata                                             |
+
+Not part of the language yet: synchronized products and composition on chosen tapes (`sync_product`, `compose_on`),
+`lazy:universal?`, `lazy:in-language?`, padding closures, bounded search (`:max-length`), the remaining options of
+`mata::lazy` (`:cache-budget`, `:antichain`, `:subsumption`), and a direct command `mata lazy`.
+
 ### Other namespaces
 
 | Script                                               | Library                                                   |
@@ -746,7 +838,9 @@ Each of these procedures has one verdict that a word can explain: inclusion, equ
 do not hold, and the two emptiness checks when the language is not empty. `(witness application)` makes the call with
 the output parameter and returns the stored `Word` for that verdict, and `none` for the other one. The call is made
 once, so the verdict is not computed separately. The application must be a call of `nfa:included?`,
-`nfa:equivalent?`, `nfa:universal?`, `nfa:language-empty?` or `nfa:intersection-empty?`; anything else is an error:
+`nfa:equivalent?`, `nfa:universal?`, `nfa:language-empty?`, `nfa:intersection-empty?`, or of the
+[`lazy:`](#the-lazy-namespace) decisions `lazy:empty?`, `lazy:included?` and `lazy:equivalent?`; anything else is an
+error:
 
 ```scheme
 (define counterexample (witness (nfa:included? smaller bigger)))
@@ -754,8 +848,8 @@ once, so the verdict is not computed separately. The application must be a call 
 ```
 
 With `(set-option :produce-witnesses true)`, every such call passes the output parameter, and `(get-witness)` returns
-the witness of the most recent decision operation, the `nfa:` and `nft:` operations whose names end in `?`, and `none`
-when that operation stored none. This is the convenient form in an interactive session:
+the witness of the most recent decision operation, the `nfa:`, `nft:` and `lazy:` operations whose names end in `?`,
+and `none` when that operation stored none. This is the convenient form in an interactive session:
 
 ```scheme
 (set-option :produce-witnesses true)
@@ -900,9 +994,9 @@ A script names the version of the language it is written for in a header, the fi
   the declared version has it yet or not, so adding an operation cannot change the meaning of a script that defined a
   name of its own.
 - **`:requires`** lists optional parts of the language that the script needs: `hints`, `witnesses`, `transducers`,
-  `loops-and-recursion`, `optimizer`, `trace`, `automaton`, `strings` and `intermediate`. An interpreter without one
-  of them rejects the script before running it, naming the feature, rather than failing at the first form that needs
-  it. `mata formats` lists the features and whether the build implements them.
+  `loops-and-recursion`, `optimizer`, `trace`, `automaton`, `strings`, `intermediate` and `lazy`. An interpreter
+  without one of them rejects the script before running it, naming the feature, rather than failing at the first form
+  that needs it. `mata formats` lists the features and whether the build implements them.
 - **`:profile`** selects a [profile](#portable-core); `core` is the only one, and any other name is an error.
 - **A script without a header** is read as the version of the interpreter that runs it. That suits a one-line
   `--expression` and an interactive session, but a script kept in a file should name its version; `mata script check`
