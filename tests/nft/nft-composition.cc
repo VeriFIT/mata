@@ -4233,6 +4233,15 @@ TEST_CASE("mata::nft::compose() validates the whole request - issue #818") {
 		CHECK_NOTHROW(compose(one_level, one_level, {0}, {0}, false, JumpMode::NoJump, CompositionMode::FastNoJump));
 	}
 
+	SECTION("unknown composition mode") {
+		using Catch::Matchers::ContainsSubstring;
+		const auto invalid_mode{static_cast<CompositionMode>(3)};
+		CHECK_THROWS_WITH(
+			compose(two_levels, two_levels, {1}, {0}, true, JumpMode::RepeatSymbol, invalid_mode),
+			ContainsSubstring("composition mode") && ContainsSubstring("3")
+		);
+	}
+
 	SECTION("kept synchronization levels with different alphabet instances") {
 		Nft lhs{two_levels};
 		Nft rhs{two_levels};

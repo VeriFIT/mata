@@ -1856,7 +1856,8 @@ Nft intersection(
  *  @c std::invalid_argument naming the violated condition is thrown, in Release builds too.
  *
  * @return A new NFT after the composition.
- * @throws std::invalid_argument When the request violates the precondition above, when @p composition_mode is
+ * @throws std::invalid_argument When @p composition_mode is not one of its named enumerators, when the request violates
+ *  the precondition above, when @p composition_mode is
  *  @c FastNoJump and @p jump_mode is not @c NoJump, when @c FastNoJump is asked for more than one synchronization
  *  level, or when the fast composition is to read an NFT with @p jump_mode @c NoJump (@p composition_mode
  *  @c FastNoJump, or @c Auto with one synchronization level) and the NFT has a transition to another level than the
