@@ -729,14 +729,35 @@ std::pair<int, std::string> run_process(std::vector<std::string> arguments, cons
 	return {WIFEXITED(status) ? WEXITSTATUS(status) : unknown_exit_code, std::move(output)};
 }
 
+/// The outcome of probing one DepQBF executable for --no-dynamic-nenofex, keyed by the executable path and its
+///  modification time so that an in-place replacement invalidates the cached answer.
+struct DepQbfProbe {
+	std::filesystem::path executable;
+	std::filesystem::file_time_type modified;
+	bool supports_no_dynamic_nenofex;
+};
+
 /// Add --no-dynamic-nenofex to @p solver if it runs a DepQBF supporting the option: DepQBF built with Nenofex (e.g.,
 ///  version 6 from Homebrew) prints the values of variables only with it, while older versions reject it. The output
 ///  of the probing run is written to @p directory.
 void add_depqbf_options(std::vector<std::string>& solver, const std::filesystem::path& directory) {
-	if (std::filesystem::path{solver.front()}.filename() != "depqbf" ||
+	const std::filesystem::path executable{solver.front()};
+	if (executable.filename() != "depqbf" ||
 		std::find(solver.begin(), solver.end(), "--no-dynamic-nenofex") != solver.end()) {
 		return;
 	}
+
+	// The probe is conclusive only when the executable was actually run, so a missing or unreadable modification
+	//  time keeps the old uncached path.
+	static thread_local std::optional<DepQbfProbe> cached_probe{};
+	std::error_code metadata_error{};
+	const std::filesystem::file_time_type modified{std::filesystem::last_write_time(executable, metadata_error)};
+	if (!metadata_error && cached_probe.has_value() && cached_probe->executable == executable &&
+		cached_probe->modified == modified) {
+		if (cached_probe->supports_no_dynamic_nenofex) { solver.emplace_back("--no-dynamic-nenofex"); }
+		return;
+	}
+
 	std::string help{};
 	try {
 		help = run_process({solver.front(), "--help"}, directory / "help.txt").second;
@@ -747,7 +768,9 @@ void add_depqbf_options(std::vector<std::string>& solver, const std::filesystem:
 		//  unchanged: the run with the full command decides whether the solver works.
 		return;
 	}
-	if (help.find("--no-dynamic-nenofex") != std::string::npos) { solver.emplace_back("--no-dynamic-nenofex"); }
+	const bool supports_no_dynamic_nenofex{help.find("--no-dynamic-nenofex") != std::string::npos};
+	if (!metadata_error) { cached_probe = DepQbfProbe{executable, modified, supports_no_dynamic_nenofex}; }
+	if (supports_no_dynamic_nenofex) { solver.emplace_back("--no-dynamic-nenofex"); }
 }
 
 /// The command running a SAT or QBF solver: @p command, or the value of the environment variable, or the first default

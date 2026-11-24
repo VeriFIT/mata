@@ -7,6 +7,7 @@
 
 #include <array>
 #include <cerrno>
+#include <chrono>
 #include <csignal>
 #include <cstdlib>
 #include <filesystem>
@@ -523,6 +524,54 @@ TEST_CASE("mata::nfa::reduce() with algorithms \"sat\" and \"qbf\" running fake 
 				CHECK(are_equivalent(nfa, input));
 			}
 		}
+	}
+
+	SECTION("DepQBF help probing is repeated only for a changed executable") {
+		const TemporaryDirectory log_directory{"mata probe log"};
+		const std::filesystem::path probe_file{log_directory.path() / "probes"};
+		const std::string record_probe{"echo probe >> \"" + probe_file.string() + "\"\n"};
+		const FakeSolver depqbf{
+			"case \"$1\" in --help)\n" + record_probe +
+				"echo ' --no-dynamic-nenofex disable dynamic nenofex'; exit 0;; esac\n"
+				"case \"$*\" in *--qdo*--no-dynamic-nenofex*) echo 's cnf 0 10 20'; exit 20;; esac\n"
+				"kill -6 $$",
+			"depqbf"
+		};
+		const auto write_time{std::filesystem::last_write_time(depqbf.path())};
+		const auto count_probes{[&] {
+			std::ifstream file{probe_file};
+			unsigned count{0};
+			for (std::string line{}; std::getline(file, line);) {
+				if (line == "probe") { ++count; }
+			}
+			return count;
+		}};
+		for (int invocation{0}; invocation < 2; ++invocation) {
+			const Nfa nfa{reduce(input, nullptr, {{"algorithm", "qbf"}, {"solver", depqbf.command() + " --qdo"}})};
+			CHECK(nfa.num_of_states() == 4);
+			CHECK(are_equivalent(nfa, input));
+		}
+		CHECK(count_probes() == 1);
+
+		// Replacing the solver in place must invalidate its cached options even though its pathname is unchanged.
+		std::ofstream{
+			depqbf.path()
+		} << "#!/bin/sh\ncase \"$1\" in --help)\n"
+		  << record_probe << "echo ' --qdo QDIMACS output'; exit 0;; esac\n"
+		  << "case \"$*\" in *--no-dynamic-nenofex*) echo 'unknown option'; kill -6 $$;; esac\n"
+		  << "case \"$*\" in *--qdo*) echo 's cnf 0 10 20'; exit 20;; esac\n"
+		  << "kill -6 $$\n";
+		std::filesystem::last_write_time(depqbf.path(), write_time + std::chrono::seconds{1});
+		const Nfa nfa{reduce(input, nullptr, {{"algorithm", "qbf"}, {"solver", depqbf.command() + " --qdo"}})};
+		CHECK(nfa.num_of_states() == 4);
+		CHECK(are_equivalent(nfa, input));
+		CHECK(count_probes() == 2);
+
+		// The negative answer is cached too: the fourth reduction reuses it without probing again.
+		const Nfa cached{reduce(input, nullptr, {{"algorithm", "qbf"}, {"solver", depqbf.command() + " --qdo"}})};
+		CHECK(cached.num_of_states() == 4);
+		CHECK(are_equivalent(cached, input));
+		CHECK(count_probes() == 2);
 	}
 
 	SECTION("Solver commands with quotes") {
