@@ -78,6 +78,13 @@ pub enum Error {
 		/// The alphabets given.
 		found: usize,
 	},
+	/// A [`Plan`](crate::Plan) that annotates an operand order of a term that has none, or JSON that is no plan of
+	/// the formula (a missing term, a term twice, bad syntax); the whole plan is rejected.
+	#[error("invalid plan: {reason}")]
+	InvalidPlan {
+		/// What is wrong.
+		reason: String,
+	},
 	/// The query held more macrostates than [`max_states`](crate::Options::max_states).
 	#[error("the query holds more than {max_states} macrostates")]
 	#[non_exhaustive]

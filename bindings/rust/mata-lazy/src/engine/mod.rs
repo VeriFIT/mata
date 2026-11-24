@@ -93,7 +93,8 @@ use self::subsumption::{Antichain, Subsumption};
 use crate::formula::Formula;
 use crate::ids::{ExecId, Id, NodeId, StateId};
 use crate::leaf::{Leaf, Raw};
-use crate::options::{ExplicitOptions, Materialized, Stats, Tapes};
+use crate::options::{ExplicitOptions, Materialized, NodeStats, Stats, Tapes};
+use crate::plan::Annotations;
 use crate::{Error, Options, Symbol, Witness};
 
 /// Successors, initial macrostates and subsumption recurse once per level of the DAG; the stack grows by
@@ -230,6 +231,8 @@ pub(crate) struct Engine<'f> {
 	pad_steps: TiVec<ExecId, pad::PadSteps>,
 	budget: Budget,
 	stats: Stats,
+	/// The posts computed per node, for [`NodeStats`].
+	post_counts: TiVec<ExecId, usize>,
 }
 
 impl<'f> Engine<'f> {
@@ -240,12 +243,8 @@ impl<'f> Engine<'f> {
 		options: &Options,
 	) -> Result<Engine<'f>, Error> {
 		let budget = Budget::new(options);
-		let marked = options
-			.explicit
-			.iter()
-			.map(|&term| formula.node(term))
-			.collect::<Result<FxHashSet<NodeId>, Error>>()?;
-		let exec = exec::build(formula, root, &marked);
+		let annotations = Annotations::new(formula, options)?;
+		let exec = exec::build(formula, root, &annotations);
 		let alphabets = Alphabets::new(&exec, &root_symbols(options, exec.nodes[exec.root].arity)?);
 
 		for (id, node) in exec.nodes.iter_enumerated() {
@@ -318,6 +317,7 @@ impl<'f> Engine<'f> {
 			pad_steps: (0..num_nodes).map(|_| pad::PadSteps::default()).collect(),
 			budget,
 			stats: Stats::default(),
+			post_counts: vec![0; num_nodes].into(),
 		};
 
 		engine
@@ -753,12 +753,31 @@ impl<'f> Engine<'f> {
 	}
 
 	pub(crate) fn stats(&self) -> Stats {
+		let nodes = self
+			.exec
+			.sources
+			.iter()
+			.map(|&(node, id)| {
+				let mut counted = id;
+				while let Op::Transparent(child) = self.exec.nodes[counted].op {
+					counted = child;
+				}
+
+				NodeStats {
+					term: self.formula.term(node),
+					macrostates: self.stores[self.exec.owner(id)].len(),
+					posts: self.post_counts[counted],
+				}
+			})
+			.collect();
+
 		Stats {
 			macrostates: self.stores.iter().map(Store::len).sum(),
 			dropped: self
 				.cache_budget
 				.as_ref()
 				.map_or(0, |budget| budget.dropped),
+			nodes,
 			..self.stats.clone()
 		}
 	}

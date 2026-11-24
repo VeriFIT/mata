@@ -1,11 +1,15 @@
-//! Random formulas over small tuple automata. Checks that queries never panic, that subsumption, the antichain and
-//! explicit nodes do not change the answer, that a budget only turns an answer into `StateLimit`, that a
-//! cache budget does not change the witness, and that a witness is in the relation.
+//! Random formulas over small tuple automata. Checks that queries never panic, that subsumption, the antichain,
+//! explicit nodes and plans (of every policy, and random ones) do not change the answer, that a budget only turns
+//! an answer into `StateLimit`, that a cache budget does not change the witness, and that a witness is in the
+//! relation.
 
 use std::time::Instant;
 
 use arbitrary::{Result, Unstructured};
-use mata_lazy::{Automaton, Error, Formula, Options, Outcome, Symbol, Tape, Term};
+use mata_lazy::{
+	AllEager, AllLazy, Annotation, Automaton, Error, Formula, Heuristic, NodeKind, Options, Order,
+	Outcome, Plan, PlanView, Policy, Symbol, Tape, Term,
+};
 
 const MAX_ARITY: usize = 3;
 const MAX_STATES: u32 = 4;
@@ -171,6 +175,27 @@ fn build(input: &mut Unstructured<'_>) -> Result<(Formula, Vec<Term>)> {
 	Ok((formula, terms))
 }
 
+/// A plan that annotates each term of `view` as `input` says.
+fn plan(input: &mut Unstructured<'_>, view: &PlanView) -> Result<Plan> {
+	let mut plan = Plan::new();
+	for node in &view.nodes {
+		let mut annotation = match input.int_in_range(0..=3)? {
+			0 => continue,
+			1 => Annotation::lazy(),
+			2 => Annotation::eager(),
+			_ => Annotation::eager_within(input.int_in_range(0..=64)?),
+		};
+		if matches!(node.kind, NodeKind::Intersection | NodeKind::Sync { .. }) {
+			let order = *input.choose(&[Order::Auto, Order::AsWritten, Order::Swapped])?;
+			annotation = annotation.order(order);
+		}
+
+		plan = plan.annotate(node.term, annotation);
+	}
+
+	Ok(plan)
+}
+
 /// The outcome of a query that may fail only at the state limit.
 fn within_limit(result: Result<Outcome, Error>) -> Option<Outcome> {
 	match result {
@@ -226,11 +251,18 @@ pub fn check(input: &[u8], trace: bool) -> Result<()> {
 		.iter()
 		.fold(budget.clone(), |options, &term| options.explicit(term));
 	let tight = Options::new().max_states(input.int_in_range(0..=BUDGET)?);
+	let view = formula.view(root).expect("a term of the formula");
+	let heuristic = Heuristic::new().max_states(input.int_in_range(1..=1 << 10)?);
+	let planned = |plan: Plan| budget.clone().plan(plan);
 	for (name, options) in [
 		("no subsumption", budget.clone().subsumption(false)),
 		("no antichain", budget.clone().antichain(false)),
 		("all explicit", all_explicit),
 		("tight budget", tight),
+		("all lazy", planned(AllLazy.plan(&view))),
+		("all eager", planned(AllEager.plan(&view))),
+		("heuristic", planned(heuristic.plan(&view))),
+		("random plan", planned(plan(&mut input, &view)?)),
 	] {
 		if let Some(other) = within_limit(timed(name, &options)) {
 			assert_eq!(other.is_empty(), outcome.is_empty(), "{name}");

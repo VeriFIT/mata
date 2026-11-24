@@ -7,7 +7,10 @@ use std::hash::Hash;
 use std::str::FromStr;
 
 use mata::State;
-use mata::lazy::{Error, Formula, Options, Outcome, Symbol, Tape, Term, Witness};
+use mata::lazy::{
+	AllEager, Annotation, Error, Formula, Heuristic, NodeKind, Options, Order, Outcome, Plan,
+	Policy, Symbol, Tape, Term, Witness,
+};
 use mata::nft::{DONT_CARE, Nft};
 use rand::rngs::StdRng;
 use rand::{RngExt, SeedableRng};
@@ -640,6 +643,33 @@ fn assert_agrees(
 		empty,
 		"seed {seed}, all explicit"
 	);
+
+	// Plans change the cost only.
+	let view = formula.view(root)?;
+	let swapped = view.nodes.iter().fold(Plan::new(), |plan, node| {
+		let annotation = match node.kind {
+			NodeKind::Intersection | NodeKind::Sync { .. } => {
+				Annotation::lazy().order(Order::Swapped)
+			}
+			_ => Annotation::lazy(),
+		};
+
+		plan.annotate(node.term, annotation)
+	});
+	for (name, plan) in [
+		("all eager", AllEager.plan(&view)),
+		("heuristic", Heuristic::new().max_states(16).plan(&view)),
+		("lazy, products swapped", swapped),
+	] {
+		let outcome = formula.check(root, &Options::new().plan(plan))?;
+		assert_eq!(outcome.is_empty(), empty, "seed {seed}, {name}");
+		if let Some(witness) = &outcome.witness {
+			assert!(
+				eager.accepts(&word(witness)),
+				"seed {seed}, {name}: witness {witness}"
+			);
+		}
+	}
 
 	let materialized = Nft::try_from(&formula.materialize(root, &Options::new())?)
 		.expect("Mata holds every arity here");

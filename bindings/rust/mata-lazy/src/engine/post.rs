@@ -660,6 +660,7 @@ impl Engine<'_> {
 		}
 
 		let (post, nanos) = self.timed(|engine| deep(|| engine.compute_post(node, state)));
+		self.post_counts[node] += 1;
 		// Past a limit the post may be partial, so it is neither kept nor used.
 		let mut post = post?;
 		self.stopped()?;

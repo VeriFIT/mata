@@ -26,6 +26,8 @@ publish = false
 regex = ["dep:regex-automata"]
 ## Leaves from rustfst transducers (pure Rust).
 rustfst = ["dep:rustfst"]
+## Plans, plan views and statistics as JSON (`Formula::plan_from_json`, `Plan::to_json`, `PlanView::to_json`).
+serde = ["dep:serde", "dep:serde_json"]
 
 [dependencies]
 hashbrown.workspace = true
@@ -37,6 +39,8 @@ thiserror.workspace = true
 typed-index-collections.workspace = true
 regex-automata = { workspace = true, optional = true }
 rustfst = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
 
 [dev-dependencies]
 rand.workspace = true

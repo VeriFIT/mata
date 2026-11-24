@@ -2,7 +2,7 @@
 
 use std::time::Duration;
 
-use crate::{Symbol, Term, Witness};
+use crate::{Plan, Symbol, Term, Witness};
 
 /// Options of one query ([`check`](crate::Formula::check), `materialize`).
 ///
@@ -27,6 +27,7 @@ pub struct Options {
 	pub(crate) cache_budget: Option<usize>,
 	pub(crate) max_length: Option<usize>,
 	pub(crate) shortest: bool,
+	pub(crate) plan: Plan,
 }
 
 /// Symbols that a query adds to the alphabets of the checked term.
@@ -63,6 +64,7 @@ impl Options {
 			cache_budget: None,
 			max_length: None,
 			shortest: false,
+			plan: Plan::new(),
 		}
 	}
 
@@ -152,10 +154,22 @@ impl Options {
 	/// Keeps the successors that the query caches within `bytes` (by default it keeps all). Over the budget, it
 	/// drops those that took the least time to compute per byte, weighted by their reads, and were not read again
 	/// since (GreedyDual-Size with frequency). It computes a dropped successor again when it needs it, so only the
-	/// time and [`dropped`](Stats::dropped) change, not the answer or the other statistics.
+	/// time, [`dropped`](Stats::dropped) and the [`posts`](NodeStats::posts) of the nodes change, not the answer or
+	/// the other statistics.
 	#[must_use]
 	pub fn cache_budget(mut self, bytes: usize) -> Options {
 		self.cache_budget = Some(bytes);
+
+		self
+	}
+
+	/// Annotates the nodes of the query with `plan`, which replaces an earlier plan. Its annotations take
+	/// precedence over [`explicit`](Options::explicit). The query fails with
+	/// [`ForeignTerm`](crate::Error::ForeignTerm) for a term of another formula, and with
+	/// [`InvalidPlan`](crate::Error::InvalidPlan) for an operand order of a term that is not a product.
+	#[must_use]
+	pub fn plan(mut self, plan: Plan) -> Options {
+		self.plan = plan;
 
 		self
 	}
@@ -246,6 +260,7 @@ impl Outcome {
 
 /// Counters of one query.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[non_exhaustive]
 pub struct Stats {
 	/// Macrostates of the checked term whose successors were computed.
@@ -258,10 +273,32 @@ pub struct Stats {
 	pub explicit: Vec<Materialized>,
 	/// Cached successors dropped to stay within [`cache_budget`](Options::cache_budget).
 	pub dropped: usize,
+	/// The terms of the query that it evaluates in a node of their own, by [`id`](Term::id).
+	pub nodes: Vec<NodeStats>,
+}
+
+/// The counters of one term of a query.
+///
+/// The query rewrites the formula first (complements pushed down, projections folded, structurally equal terms
+/// merged), so a term is counted in the node that evaluates it. Terms merged into one node, or that share its
+/// macrostates (an identity, a projection), report the same counts, so a sum over the terms can count some
+/// twice. A term that becomes part of a larger node, such as a union flattened into the union above it, is not
+/// listed.
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[non_exhaustive]
+pub struct NodeStats {
+	/// The term.
+	pub term: Term,
+	/// Macrostates created in its node; 0 for a leaf or a term built explicitly.
+	pub macrostates: usize,
+	/// Successors of its macrostates computed, again after [`cache_budget`](Options::cache_budget) dropped them.
+	pub posts: usize,
 }
 
 /// One explicit node of a query.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[non_exhaustive]
 pub struct Materialized {
 	/// The term marked explicit.

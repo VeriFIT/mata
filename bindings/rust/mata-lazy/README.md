@@ -117,10 +117,10 @@ Queries:
 
 - `is_empty`, `find_word`: whether the relation is empty, or a witness.
 - `check`: a witness and statistics, with options for extra alphabet symbols, terms made explicit for one query,
-  limits on states and time (their errors carry the statistics so far), a memory budget for cached results,
-  subsumption and the antichain on or off, a search bounded to words of at most `max_length` steps (the outcome is
-  then `bounded` when the search stopped there without a witness), and a breadth-first search (`shortest`) whose
-  witness has the fewest steps.
+  a plan (below), limits on states and time (their errors carry the statistics so far), a memory budget for cached
+  results, subsumption and the antichain on or off, a search bounded to words of at most `max_length` steps (the
+  outcome is then `bounded` when the search stopped there without a witness), and a breadth-first search (`shortest`)
+  whose witness has the fewest steps. The statistics also count macrostates and computed successors per term.
 - `materialize`: the whole relation as an `ExplicitAutomaton`, which other libraries copy (into a Mata `Nft` with
   `Nft::try_from`) and which can be a leaf again.
 
@@ -141,6 +141,41 @@ A few things are worth knowing.
 - **Explicit nodes** help when a subterm is small or used by many queries. Such a subterm is built once (and cached
   in the formula) and gets a better simulation for pruning. Its `max_states` option keeps it lazy when it turns out
   large.
+
+## Plans and policies
+
+A query can run the same formula with different per-term choices, given as a `Plan` in `Options::plan`. An
+`Annotation` makes a term lazy or eager (`Eval::Lazy`, `Eval::Eager` with an optional budget, like
+`explicit_with`) and fixes the operand order of an intersection or a synchronized product (`Order::AsWritten`,
+`Order::Swapped`; by default the engine puts the operand with fewer macrostates left in an intersection). A plan
+changes the cost of a query, never its answer: only a limit of the query can turn an answer into an error, and the
+witness can differ. Plans name terms of one formula; an order on a term that is not a product, or a term of another
+formula, makes the query fail.
+
+`Formula::view(term)` gives the terms below `term`, children first, with their kind, arity, operands, fan-out and
+the size of each leaf. A `Policy` turns that view into a plan:
+
+- `AllLazy`: every operation lazy, even the formula's explicit nodes.
+- `AllEager`: every operation built explicitly, children first, the eager baseline.
+- `Heuristic`: bounds the macrostates of each term from the leaf sizes (products multiply, unions add, a
+  complement is exponential) and builds explicitly the largest terms below the root that stay under a bound. For
+  `(A ∩ B) ∩ C` with small `A` and `B`, it builds `A ∩ B` eagerly and runs the outer intersection lazily.
+- `External`: a plan from outside, such as one that a person or a tool wrote after reading the view.
+
+With the `serde` feature, `PlanView::to_json` and `Stats` serialize to JSON, with terms written as their `Term::id`,
+and `Formula::plan_from_json` reads a plan back, rejecting it as a whole when it names a missing term, a term
+twice, or an order of a term that is not a product:
+
+```json
+{
+  "annotations": [
+    { "term": 3, "eval": { "eager": { "max_states": 1000 } } },
+    { "term": 4, "eval": "lazy", "order": "swapped" }
+  ]
+}
+```
+
+`Heuristic` is opt-in: no plan keeps the default behaviour, and the heuristic has no benchmarked cost rule yet.
 
 ## Examples
 
