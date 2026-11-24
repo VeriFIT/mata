@@ -18,8 +18,8 @@ keep that invariant. This crate holds the connectives only, not the atoms of a p
 
 ## Limits
 
-- `exists` (and so `forall`) is not lazy yet: it builds the projection explicitly to close it under padding, and
-  decides a formula without free variables right away.
+- `exists` (and so `forall`) decides a formula without free variables right away; otherwise it stays lazy, closing
+  the projection under padding with `mata_lazy::Formula::pad_closure`.
 - A complement reads all 2ᵏ columns of its k tapes at each step.
 
 ## License

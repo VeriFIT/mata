@@ -2,10 +2,10 @@
 
 use std::fmt;
 
-use mata_lazy::{Automaton, Formula, Options, Symbol, Tape, Term};
+use mata_lazy::{Automaton, Formula, Options, Pad, Symbol, Tape, Term};
 use rustc_hash::FxHashMap;
 
-use crate::closure::{Constant, Encodings, Padded};
+use crate::closure::{Constant, Encodings};
 use crate::{Error, Model};
 
 /// The bit 0, as the symbol of a tape.
@@ -315,8 +315,7 @@ impl Logic {
 
 	/// `∃vars. prop`. Variables of `vars` that are not free in `prop` are skipped.
 	///
-	/// Not lazy yet: the projection is built explicitly ([`Formula::materialize`]) to close it under padding, and
-	/// a prop without free variables is decided now.
+	/// A prop without free variables is decided now.
 	///
 	/// # Errors
 	///
@@ -339,10 +338,11 @@ impl Logic {
 		let projected = self.formula.project(prop.term, &kept)?;
 		// The dropped tapes may have needed longer words than the kept ones: the kept words are then in the
 		// relation only with padding.
-		let explicit = self.formula.materialize(projected, &Options::new())?;
-		let term = self
-			.formula
-			.leaf_over(&Padded::new(&explicit, self.padding), [BITS])?;
+		let pad = match self.padding {
+			Padding::Zero => Pad::Step(vec![ZERO; kept.len()].into()),
+			Padding::Sign => Pad::Last,
+		};
+		let term = self.formula.pad_closure(projected, pad)?;
 
 		Ok(Prop {
 			term,
