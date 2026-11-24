@@ -6,6 +6,7 @@ use crate::{Error, Plan, Policy, Tape, Term};
 
 /// The terms that one term depends on, children first, as [`Formula::view`] gives them.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[non_exhaustive]
 pub struct PlanView {
 	/// The viewed term.
@@ -23,10 +24,22 @@ impl PlanView {
 			.ok()
 			.map(|index| &self.nodes[index])
 	}
+
+	/// The view as JSON, with terms written as their [`id`](Term::id)s.
+	///
+	/// # Panics
+	///
+	/// Never: a view is numbers and names, which JSON always holds.
+	#[cfg(feature = "serde")]
+	#[must_use]
+	pub fn to_json(&self) -> String {
+		serde_json::to_string_pretty(self).expect("a view is plain data")
+	}
 }
 
 /// One term of a [`PlanView`].
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[non_exhaustive]
 pub struct NodeView {
 	/// The term.
@@ -47,6 +60,11 @@ pub struct NodeView {
 
 /// The builder of a [`NodeView`].
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(
+	feature = "serde",
+	derive(serde::Serialize),
+	serde(rename_all = "snake_case")
+)]
 #[non_exhaustive]
 pub enum NodeKind {
 	/// [`leaf`](Formula::leaf) or [`leaf_over`](Formula::leaf_over).
@@ -64,6 +82,8 @@ pub enum NodeKind {
 		/// The kept tapes, in order.
 		tapes: Vec<usize>,
 	},
+	/// [`pad_closure`](Formula::pad_closure).
+	PadClosure,
 	/// [`sync_product`](Formula::sync_product), which also builds compositions and images.
 	Sync {
 		/// The synchronized pairs of a left and a right tape.
@@ -82,6 +102,7 @@ pub enum NodeKind {
 
 /// The automaton of a leaf, as the formula holds it (trimmed, without silent moves).
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[non_exhaustive]
 pub struct LeafInfo {
 	/// The number of states.
@@ -163,6 +184,7 @@ impl Formula {
 				},
 				None,
 			),
+			Node::PadClosure(..) => (NodeKind::PadClosure, None),
 			Node::Sync(_, _, spec) => (
 				NodeKind::Sync {
 					pairs: spec.pairs.iter().map(|pair| (pair.lhs, pair.rhs)).collect(),

@@ -260,6 +260,7 @@ impl Outcome {
 
 /// Counters of one query.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[non_exhaustive]
 pub struct Stats {
 	/// Macrostates of the checked term whose successors were computed.
@@ -284,6 +285,7 @@ pub struct Stats {
 /// twice. A term that becomes part of a larger node, such as a union flattened into the union above it, is not
 /// listed.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[non_exhaustive]
 pub struct NodeStats {
 	/// The term.
@@ -296,6 +298,7 @@ pub struct NodeStats {
 
 /// One explicit node of a query.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[non_exhaustive]
 pub struct Materialized {
 	/// The term marked explicit.

@@ -451,6 +451,8 @@ dependencies = [
  "regex-automata",
  "rustc-hash",
  "rustfst",
+ "serde",
+ "serde_json",
  "stacker",
  "thiserror",
  "typed-index-collections",

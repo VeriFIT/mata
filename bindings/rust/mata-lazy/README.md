@@ -162,6 +162,19 @@ the size of each leaf. A `Policy` turns that view into a plan:
   `(A ∩ B) ∩ C` with small `A` and `B`, it builds `A ∩ B` eagerly and runs the outer intersection lazily.
 - `External`: a plan from outside, such as one that a person or a tool wrote after reading the view.
 
+With the `serde` feature, `PlanView::to_json` and `Stats` serialize to JSON, with terms written as their `Term::id`,
+and `Formula::plan_from_json` reads a plan back, rejecting it as a whole when it names a missing term, a term
+twice, or an order of a term that is not a product:
+
+```json
+{
+  "annotations": [
+    { "term": 3, "eval": { "eager": { "max_states": 1000 } } },
+    { "term": 4, "eval": "lazy", "order": "swapped" }
+  ]
+}
+```
+
 `Heuristic` is opt-in: no plan keeps the default behaviour, and the heuristic has no benchmarked cost rule yet.
 
 ## Examples

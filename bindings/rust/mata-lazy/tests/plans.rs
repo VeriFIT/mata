@@ -1,5 +1,5 @@
 //! Plans and policies: random formulas under random plans against a brute-force evaluator, the plan view, the
-//! annotations and per-node statistics.
+//! annotations, per-node statistics and JSON plans.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -645,6 +645,68 @@ fn node_statistics_count_the_macrostates_and_posts_of_each_term() -> Result<(), 
 	let (uncached_states, uncached_posts) = node(&uncached, ab).expect("a ∩ b has a node");
 	assert_eq!(uncached_states, ab_states);
 	assert!(uncached_posts > ab_posts, "{uncached_posts} > {ab_posts}");
+
+	Ok(())
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn plans_and_views_are_json() -> Result<(), Error> {
+	let (formula, [a, _, c, ab, abc]) = two_intersections()?;
+	let plan = Plan::new()
+		.annotate(ab, Annotation::eager_within(100))
+		.annotate(abc, Annotation::lazy().order(Order::Swapped))
+		.annotate(c, Annotation::lazy());
+	assert_eq!(formula.plan_from_json(&plan.to_json())?, plan);
+
+	let written = format!(
+		r#"{{"annotations": [{{"term": {}, "eval": {{"eager": {{}}}}}}, {{"term": {}, "order": "as_written"}}]}}"#,
+		ab.id(),
+		abc.id()
+	);
+	let read = formula.plan_from_json(&written)?;
+	assert_eq!(read.annotation(ab), Some(&Annotation::eager()));
+	assert_eq!(
+		read.annotation(abc),
+		Some(&Annotation::default().order(Order::AsWritten))
+	);
+	let explicit = formula
+		.check(abc, &Options::new().plan(read))?
+		.stats
+		.explicit;
+	assert_eq!(
+		explicit.iter().map(|node| node.term).collect::<Vec<_>>(),
+		[ab]
+	);
+
+	for invalid in [
+		r#"{"annotations": [{"term": 99}]}"#.to_owned(),
+		format!(
+			r#"{{"annotations": [{{"term": {}, "order": "swapped"}}]}}"#,
+			a.id()
+		),
+		format!(
+			r#"{{"annotations": [{{"term": {0}}}, {{"term": {0}}}]}}"#,
+			ab.id()
+		),
+		format!(
+			r#"{{"annotations": [{{"term": {}, "eval": "eagerly"}}]}}"#,
+			ab.id()
+		),
+		r#"{"annotations": [], "extra": 1}"#.to_owned(),
+	] {
+		assert!(
+			matches!(
+				formula.plan_from_json(&invalid),
+				Err(Error::InvalidPlan { .. })
+			),
+			"{invalid}"
+		);
+	}
+
+	let view = formula.view(abc)?.to_json();
+	assert!(view.contains(r#""kind": "intersection""#), "{view}");
+	assert!(view.contains(r#""deterministic": true"#), "{view}");
 
 	Ok(())
 }

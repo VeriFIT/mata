@@ -21,7 +21,7 @@
 //! marked [`explicit`](Formula::explicit) is built as an automaton when a query starts and read like a leaf.
 //! A [`Plan`] chooses per query and term between lazy and explicit, and the operand order of products; a
 //! [`Policy`] computes one from the [`view`](Formula::view) of a formula. A plan changes the cost of a query,
-//! never its answer.
+//! never its answer. With the feature `serde`, plans, views and statistics are JSON.
 //!
 //! ```
 //! # #[cfg(feature = "regex")] {

@@ -27,15 +27,29 @@ pub struct Term {
 }
 
 impl Term {
-	/// The number of the term in its formula, which numbers terms in the order they were built.
+	/// The number of the term in its formula, which numbers terms in the order they were built. JSON plans and
+	/// views name terms by it.
 	#[must_use]
 	pub fn id(self) -> usize {
 		self.node as usize
 	}
 }
 
+/// A term is written as its [`id`](Term::id).
+#[cfg(feature = "serde")]
+impl serde::Serialize for Term {
+	fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+		serializer.serialize_u32(self.node)
+	}
+}
+
 /// A tape of one operand of [`sync_product`](Formula::sync_product).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(
+	feature = "serde",
+	derive(serde::Serialize),
+	serde(rename_all = "snake_case")
+)]
 pub enum Tape {
 	/// Tape of the left operand.
 	Lhs(usize),

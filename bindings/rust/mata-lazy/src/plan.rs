@@ -5,6 +5,8 @@ use std::collections::BTreeMap;
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::formula::{Formula, Node};
+#[cfg(feature = "serde")]
+use crate::ids::Id;
 use crate::ids::NodeId;
 use crate::{Error, ExplicitOptions, Options, Term};
 
@@ -106,6 +108,29 @@ impl Plan {
 	pub fn is_empty(&self) -> bool {
 		self.annotations.is_empty()
 	}
+
+	/// The plan as JSON, which [`Formula::plan_from_json`] reads back: an object with a list `annotations` of
+	/// objects `{"term": id, "eval": ..., "order": ...}`, where `eval` is `"keep"`, `"lazy"`, or
+	/// `{"eager": {"max_states": n}}` (`max_states` optional), and `order` is `"auto"`, `"as_written"` or
+	/// `"swapped"`. A missing `eval` or `order` is `"keep"` or `"auto"`.
+	///
+	/// # Panics
+	///
+	/// Never: a plan is numbers and names, which JSON always holds.
+	#[cfg(feature = "serde")]
+	#[must_use]
+	pub fn to_json(&self) -> String {
+		let annotations = self
+			.iter()
+			.map(|(term, annotation)| json::Annotation {
+				term: term.id(),
+				eval: annotation.eval,
+				order: annotation.order,
+			})
+			.collect();
+
+		serde_json::to_string_pretty(&json::Plan { annotations }).expect("a plan is plain data")
+	}
 }
 
 /// What a [`Plan`] says about one term.
@@ -160,6 +185,11 @@ impl Annotation {
 
 /// Whether a term is built lazily or explicitly.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[cfg_attr(
+	feature = "serde",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(rename_all = "snake_case", deny_unknown_fields)
+)]
 pub enum Eval {
 	/// As the formula and [`Options::explicit`] say.
 	#[default]
@@ -179,6 +209,11 @@ pub enum Eval {
 /// A product explores the moves of its left operand and joins each with the matching moves of the right one,
 /// so the left operand should be the one with fewer moves.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[cfg_attr(
+	feature = "serde",
+	derive(serde::Serialize, serde::Deserialize),
+	serde(rename_all = "snake_case")
+)]
 pub enum Order {
 	/// The engine's choice: the operand with the smaller bound on its macrostates goes left in an
 	/// intersection, and a synchronized product keeps its order.
@@ -254,4 +289,69 @@ fn check_order(formula: &Formula, node: NodeId, order: Order) -> Result<(), Erro
 			formula.term(node).id()
 		),
 	})
+}
+
+#[cfg(feature = "serde")]
+impl Formula {
+	/// Reads a plan of this formula from JSON in the format of [`Plan::to_json`], whose terms are given by their
+	/// [`id`](Term::id).
+	///
+	/// # Errors
+	///
+	/// [`InvalidPlan`](Error::InvalidPlan) if `json` is not such a plan, names a term that the formula does not
+	/// have or a term twice, or gives an operand order to a term that is not an intersection or a synchronized
+	/// product.
+	pub fn plan_from_json(&self, json: &str) -> Result<Plan, Error> {
+		let invalid = |reason: String| Error::InvalidPlan { reason };
+		let parsed: json::Plan =
+			serde_json::from_str(json).map_err(|error| invalid(error.to_string()))?;
+
+		let mut plan = Plan::new();
+		for entry in parsed.annotations {
+			let node = NodeId::new(entry.term);
+			if entry.term >= self.nodes.len() {
+				return Err(invalid(format!("no term {}", entry.term)));
+			}
+
+			check_order(self, node, entry.order)?;
+			let term = self.term(node);
+			if plan.annotation(term).is_some() {
+				return Err(invalid(format!("term {} annotated twice", entry.term)));
+			}
+
+			plan = plan.annotate(
+				term,
+				Annotation {
+					eval: entry.eval,
+					order: entry.order,
+				},
+			);
+		}
+
+		Ok(plan)
+	}
+}
+
+/// The JSON form of a plan.
+#[cfg(feature = "serde")]
+mod json {
+	use serde::{Deserialize, Serialize};
+
+	use crate::{Eval, Order};
+
+	#[derive(Serialize, Deserialize)]
+	#[serde(deny_unknown_fields)]
+	pub(super) struct Plan {
+		pub(super) annotations: Vec<Annotation>,
+	}
+
+	#[derive(Serialize, Deserialize)]
+	#[serde(deny_unknown_fields)]
+	pub(super) struct Annotation {
+		pub(super) term: usize,
+		#[serde(default)]
+		pub(super) eval: Eval,
+		#[serde(default)]
+		pub(super) order: Order,
+	}
 }

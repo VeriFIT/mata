@@ -139,7 +139,7 @@ impl Policy for Heuristic {
 }
 
 /// A plan given from outside, such as one that a person or a tool wrote after reading the [`PlanView`]; it does
-/// not depend on the view.
+/// not depend on the view. With the feature `serde`, `Formula::plan_from_json` reads it from JSON.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct External(pub Plan);
 
