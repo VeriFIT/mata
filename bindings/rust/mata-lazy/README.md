@@ -107,6 +107,8 @@ Builders:
 - `union`, `intersection`, `complement`: Boolean operations on relations of the same arity.
 - `identity`: `{(w, w) | w ∈ L}`.
 - `project`: keeps the given tapes, in that order.
+- `pad_closure`: `{w | w·pᵏ ∈ L for some k}`, with `p` a fixed step or the word's last step; logics over numbers
+  need it after a projection.
 - `sync_product`, `compose_on`, `compose`, `post_image`, `pre_image`: products of relations synchronized on tapes.
 - `explicit`, `explicit_with`: the same relation, built as an automaton when a query starts.
 

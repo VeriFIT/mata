@@ -7,6 +7,7 @@
 use std::rc::Rc;
 
 use super::exec::{Exec, Op};
+use crate::formula::Pad;
 use crate::ids::{ExecId, Id};
 use crate::{Symbol, Tape};
 
@@ -34,12 +35,26 @@ impl Alphabets {
 
 		let mut symbols: Vec<Vec<Symbol>> = vec![Vec::new(); num_classes];
 		for (id, node) in exec.nodes.iter_enumerated() {
-			if let Op::Leaf(leaf) = &node.op
-				&& exec.reachable[id]
-			{
-				for (tape, tape_symbols) in leaf.tape_symbols.iter().enumerate() {
-					symbols[class_of[slot(id, tape)]].extend_from_slice(tape_symbols);
+			if !exec.reachable[id] {
+				continue;
+			}
+
+			match &node.op {
+				Op::Leaf(leaf) => {
+					for (tape, tape_symbols) in leaf.tape_symbols.iter().enumerate() {
+						symbols[class_of[slot(id, tape)]].extend_from_slice(tape_symbols);
+					}
 				}
+				Op::PadClosure(_, pad) => {
+					if let Pad::Step(step) = &**pad {
+						for (tape, &symbol) in step.iter().enumerate() {
+							if symbol.is_concrete() {
+								symbols[class_of[slot(id, tape)]].push(symbol);
+							}
+						}
+					}
+				}
+				_ => {}
 			}
 		}
 
@@ -113,6 +128,7 @@ fn tape_classes(
 			| Op::Intersection(..)
 			| Op::Complement(_)
 			| Op::Explicit { .. }
+			| Op::PadClosure(..)
 			| Op::Transparent(_) => {
 				for child in node.op.children() {
 					for tape in 0..node.arity {

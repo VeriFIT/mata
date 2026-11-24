@@ -172,6 +172,13 @@ impl Subsumption {
 							.any(|&y| self.subsumed(exec, stores, child, x, y))
 					})
 			}
+			// The same padding step, and the child's states compare.
+			Op::PadClosure(child, _) => {
+				let (smaller, larger) = (store.tagged(s1), store.tagged(s2));
+
+				smaller.branch == larger.branch
+					&& self.subsumed(exec, stores, child, smaller.state, larger.state)
+			}
 			_ => unreachable!("leaves and transparent nodes are handled above"),
 		}
 	}
@@ -298,6 +305,7 @@ impl Subsumption {
 				Op::Complement(_) => {
 					rank -= i64::try_from(store.set(state).len()).unwrap_or(i64::MAX);
 				}
+				Op::PadClosure(child, _) => self.pending.push((child, store.tagged(state).state)),
 				_ => unreachable!("owners are not transparent"),
 			}
 		}

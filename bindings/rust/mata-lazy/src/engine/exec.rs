@@ -22,7 +22,7 @@ use std::sync::Arc;
 use rustc_hash::{FxHashMap, FxHashSet};
 use typed_index_collections::TiVec;
 
-use crate::formula::{Formula, Node, ResultTape, SyncSpec, TapePair};
+use crate::formula::{Formula, Node, Pad, ResultTape, SyncSpec, TapePair};
 use crate::ids::{ExecId, Id, LeafId, NodeId};
 use crate::leaf::Leaf;
 use crate::{ExplicitOptions, Tape};
@@ -54,6 +54,9 @@ pub(crate) enum Op<'f> {
 	Complement(ExecId),
 	Identity(ExecId),
 	Project(ExecId, Arc<[usize]>),
+	/// `{w | w·p^k ∈ child}`; its macrostates are a state of the child and the number of the last step read
+	/// (see [`PadSteps`](super::pad::PadSteps)).
+	PadClosure(ExecId, Arc<Pad>),
 	Sync(ExecId, ExecId, Arc<SyncSpec>),
 	/// `{w | w ∈ lhs, (w, w) ∈ rhs}`, with pair macrostates.
 	Diagonal(ExecId, ExecId),
@@ -78,6 +81,7 @@ impl Op<'_> {
 			Op::Complement(a)
 			| Op::Identity(a)
 			| Op::Project(a, _)
+			| Op::PadClosure(a, _)
 			| Op::Explicit { child: a, .. }
 			| Op::Transparent(a) => ([Some(*a), None], &[]),
 		};
@@ -163,6 +167,7 @@ enum Decision {
 	IdentityOf(Boolean, Src, Src),
 	Identity(Src),
 	Project(Src, Arc<[usize]>),
+	PadClosure(Src, Arc<Pad>),
 	Diagonal(Src, Src),
 	/// `U ∩ X'` for the diagonal of `U` and a sync product, with the product's two tapes synchronized.
 	DiagonalSync(Src, Src, Src, Arc<SyncSpec>),
@@ -178,6 +183,7 @@ impl Decision {
 			| Decision::Complement(s)
 			| Decision::Identity(s)
 			| Decision::Project(s, _)
+			| Decision::PadClosure(s, _)
 			| Decision::Explicit(s, ..) => vec![*s],
 			Decision::Boolean(_, a, b)
 			| Decision::IdentityOf(_, a, b)
@@ -247,6 +253,7 @@ impl Rewriter<'_> {
 			Node::Leaf(leaf) => Decision::Leaf(*leaf),
 			Node::Identity(child) => Decision::Identity(plain(*child)),
 			Node::Project(child, tapes) => self.decide_project(*child, tapes),
+			Node::PadClosure(child, pad) => Decision::PadClosure(plain(*child), Arc::clone(pad)),
 			Node::Sync(a, b, spec) => Decision::Sync(plain(*a), plain(*b), Arc::clone(spec)),
 			Node::Explicit(child, options) => Decision::Explicit(plain(*child), *options, node),
 		}
@@ -342,6 +349,7 @@ enum Key {
 	Complement(ExecId),
 	Identity(ExecId),
 	Project(ExecId, Arc<[usize]>),
+	PadClosure(ExecId, Arc<Pad>),
 	Sync(ExecId, ExecId, Arc<SyncSpec>),
 	Diagonal(ExecId, ExecId),
 	Explicit(ExecId, NodeId),
@@ -423,6 +431,7 @@ impl<'f> Emitter<'f> {
 			}
 			Decision::Identity(src) => self.identity(built[src]),
 			Decision::Project(src, tapes) => self.project(built[src], tapes),
+			Decision::PadClosure(src, pad) => self.pad_closure(built[src], pad),
 			Decision::Diagonal(u, x) => self.diagonal(built[u], built[x]),
 			Decision::DiagonalSync(u, a, b, spec) => {
 				let synced = self.sync(built[a], built[b], spec);
@@ -546,6 +555,15 @@ impl<'f> Emitter<'f> {
 		let arity = self.nodes[child].arity;
 
 		self.emit(Key::Complement(child), Op::Complement(child), arity, cost)
+	}
+
+	fn pad_closure(&mut self, child: ExecId, pad: &Arc<Pad>) -> ExecId {
+		let cost = self.unary_cost(child);
+		let key = Key::PadClosure(child, Arc::clone(pad));
+		let op = Op::PadClosure(child, Arc::clone(pad));
+		let arity = self.nodes[child].arity;
+
+		self.emit(key, op, arity, cost)
 	}
 
 	fn project(&mut self, child: ExecId, tapes: &Arc<[usize]>) -> ExecId {

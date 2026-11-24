@@ -62,6 +62,7 @@ mod exec;
 mod initial;
 mod join;
 mod memo;
+mod pad;
 mod post;
 mod store;
 mod subsumption;
@@ -193,6 +194,8 @@ pub(crate) struct Engine<'f> {
 	antichain: bool,
 	/// Whether the posts of each complement node use bitsets over its child's states.
 	dense: TiVec<ExecId, Option<Box<Dense>>>,
+	/// The steps and reachability that each pad closure remembers.
+	pad_steps: TiVec<ExecId, pad::PadSteps>,
 	budget: Budget,
 	stats: Stats,
 }
@@ -227,7 +230,7 @@ impl<'f> Engine<'f> {
 			.nodes
 			.iter()
 			.map(|node| match node.op {
-				Op::Union(_) => Store::Tagged(IndexSet::default()),
+				Op::Union(_) | Op::PadClosure(..) => Store::Tagged(IndexSet::default()),
 				Op::Intersection(..) | Op::Sync(..) | Op::Diagonal(..) => {
 					Store::Pair(IndexSet::default())
 				}
@@ -274,6 +277,7 @@ impl<'f> Engine<'f> {
 			subsumption: Subsumption::new(options.subsumption, num_nodes, budget.deadline()),
 			antichain: options.subsumption && options.antichain,
 			dense,
+			pad_steps: (0..num_nodes).map(|_| pad::PadSteps::default()).collect(),
 			budget,
 			stats: Stats::default(),
 		};

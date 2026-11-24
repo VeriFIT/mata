@@ -45,9 +45,10 @@ impl Engine<'_> {
 				self.initial_count(a).saturating_mul(self.initial_count(b))
 			}
 			Op::Complement(_) => 1,
-			Op::Identity(child) | Op::Project(child, _) | Op::Transparent(child) => {
-				self.initial_count(child)
-			}
+			Op::Identity(child)
+			| Op::Project(child, _)
+			| Op::PadClosure(child, _)
+			| Op::Transparent(child) => self.initial_count(child),
 			Op::Explicit { .. } => unreachable!("explicit nodes are replaced before the search"),
 		});
 		self.initial_counts[node] = Some(count);
@@ -89,6 +90,11 @@ impl Engine<'_> {
 				Ok(self.pair_target(node, lhs, rhs))
 			}
 			Op::Complement(_) => unreachable!("a complement has one initial macrostate"),
+			Op::PadClosure(child, pad) => {
+				let target = self.initial_at(child, index)?;
+
+				self.pad_target(node, child, &pad, 0, target)
+			}
 			Op::Identity(child) | Op::Project(child, _) | Op::Transparent(child) => {
 				self.initial_at(child, index)
 			}
@@ -145,6 +151,15 @@ impl Engine<'_> {
 				Ok(self.has_accepting_initial(a)? && self.has_accepting_initial(b)?)
 			}
 			Op::Complement(child) => Ok(!self.has_accepting_initial(child)?),
+			Op::PadClosure(..) => {
+				for index in 0..self.initial_count(node) {
+					if self.initial_at(node, index)?.accepting {
+						return Ok(true);
+					}
+				}
+
+				Ok(false)
+			}
 			Op::Identity(child) | Op::Project(child, _) | Op::Transparent(child) => {
 				self.has_accepting_initial(child)
 			}
@@ -261,6 +276,14 @@ impl Engine<'_> {
 				let state = self.stores[node].intern_set(&members);
 
 				Rc::new([Target { state, accepting }])
+			}
+			Op::PadClosure(child, pad) => {
+				let mut initial = Vec::new();
+				for &target in self.initial(child)?.iter() {
+					initial.push(self.pad_target(node, child, &pad, 0, target)?);
+				}
+
+				initial.into()
 			}
 			Op::Identity(child) | Op::Project(child, _) | Op::Transparent(child) => {
 				self.initial(child)?

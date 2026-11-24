@@ -45,6 +45,15 @@ impl Tape {
 	}
 }
 
+/// The step that [`pad_closure`](Formula::pad_closure) appends.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum Pad {
+	/// The same symbols every time, one per tape; [`ANY`](Symbol::ANY) reads any symbol of its tape's alphabet.
+	Step(Box<[Symbol]>),
+	/// The last step of the word, again (sign extension); the empty word gets none.
+	Last,
+}
+
 #[derive(Debug)]
 pub(crate) enum Node {
 	Leaf(LeafId),
@@ -53,6 +62,7 @@ pub(crate) enum Node {
 	Complement(NodeId),
 	Identity(NodeId),
 	Project(NodeId, Arc<[usize]>),
+	PadClosure(NodeId, Arc<Pad>),
 	Sync(NodeId, NodeId, Arc<SyncSpec>),
 	Explicit(NodeId, ExplicitOptions),
 }
@@ -284,6 +294,30 @@ impl Formula {
 		}
 
 		Ok(self.push(Node::Project(node, tapes.into()), tapes.len()))
+	}
+
+	/// The words of `term` with padding steps cut off the end: `{w | w·p^k ∈ term for some k ≥ 0}`, where `p`
+	/// is `pad`. Logics that encode numbers as words need it after a projection, as the dropped tapes may have
+	/// needed longer words than the kept ones. Symbols of a [`Pad::Step`] join the alphabets of their tapes.
+	///
+	/// # Errors
+	///
+	/// [`Arity`](Error::Arity) if a [`Pad::Step`] does not have one symbol per tape, or
+	/// [`ForeignTerm`](Error::ForeignTerm).
+	pub fn pad_closure(&mut self, term: Term, pad: Pad) -> Result<Term, Error> {
+		let node = self.node(term)?;
+		let arity = self.arities[node];
+		if let Pad::Step(step) = &pad
+			&& step.len() != arity
+		{
+			return Err(Error::Arity {
+				operation: "pad_closure",
+				expected: arity,
+				found: step.len(),
+			});
+		}
+
+		Ok(self.push(Node::PadClosure(node, Arc::new(pad)), arity))
 	}
 
 	/// The synchronized product, which holds the tuples of both operands whose `synchronized` tape pairs read
@@ -565,9 +599,10 @@ impl Formula {
 		let pads = match node {
 			Node::Leaf(leaf) => self.leaves[leaf].has_padding,
 			Node::Complement(_) => false,
-			Node::Identity(child) | Node::Project(child, _) | Node::Explicit(child, _) => {
-				self.pads[child]
-			}
+			Node::Identity(child)
+			| Node::Project(child, _)
+			| Node::PadClosure(child, _)
+			| Node::Explicit(child, _) => self.pads[child],
 			Node::Union(a, b) | Node::Intersection(a, b) | Node::Sync(a, b, _) => {
 				self.pads[a] || self.pads[b]
 			}
