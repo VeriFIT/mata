@@ -1222,7 +1222,7 @@ Nfa mata::nfa::collapse_by_length(const Nfa& aut, const size_t length, const Par
 	if (dfa.num_of_states() == 0) {
 		Nfa empty_language{1};
 		empty_language.initial.insert(0);
-		empty_language.alphabet = dfa.alphabet;
+		empty_language.alphabet = aut.alphabet;
 		return empty_language;
 	}
 	// Moore's rounds compare bounded languages exactly only on a complete DFA: a missing transition and one into a
@@ -1261,8 +1261,9 @@ Nfa mata::nfa::collapse_by_length(const Nfa& aut, const size_t length, const Par
 	for (const Transition& transition : dfa.delta.transitions()) {
 		quotient.delta.add(block[transition.source], transition.symbol, block[transition.target]);
 	}
-	quotient.alphabet = dfa.alphabet;
-	return backward ? revert(trim(quotient)) : trim(quotient);
+	Nfa result{backward ? revert(trim(quotient)) : trim(quotient)};
+	result.alphabet = aut.alphabet; // revert() drops the alphabet.
+	return result;
 }
 
 // Anonymous namespace for the Hopcroft minimization algorithm.

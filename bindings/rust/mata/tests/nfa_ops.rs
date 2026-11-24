@@ -144,6 +144,17 @@ fn collapse_by_length_over_approximates_until_the_length_separates_states() -> R
 }
 
 #[test]
+fn collapse_by_length_reads_epsilon_as_the_empty_word() -> Result<(), Error> {
+	// Through the binding, an epsilon transition is no letter: at a length that separates every state, the result
+	// is the language, not the epsilon-free words around it.
+	let joined = Nfa::from_regex("a")?.concat_over_epsilon(&Nfa::from_regex("b")?);
+	let abstraction = joined.collapse_by_length(3, false, Direction::Forward);
+	assert!(abstraction.is_equivalent_to(&Nfa::from_regex("ab")?));
+	assert!(!abstraction.accepts(&word_from_bytes("b")));
+	Ok(())
+}
+
+#[test]
 fn is_flat_separates_one_cycle_per_state_from_two() -> Result<(), Error> {
 	assert!(Nfa::from_word(&[Symbol::from(b'a'), Symbol::from(b'b')]).is_flat());
 	assert!(!Nfa::from_regex("(a|b)*")?.is_flat());

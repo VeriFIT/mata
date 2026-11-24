@@ -969,9 +969,10 @@ std::unique_ptr<Nfa> one_letter_automaton(const Nfa& nfa, const Symbol abstract_
 
 std::unique_ptr<Nfa>
 	collapse_by_length(const Nfa& nfa, const std::size_t length, const bool traces, const Direction direction) {
+	auto storage = std::optional<Nfa>();
 	return boxed(
 		mata::nfa::collapse_by_length(
-			nfa, length,
+			without_epsilon(nfa, storage), length,
 			{{"languages", traces ? "traces" : "words"},
 			 {"direction", direction == Direction::Backward ? "backward" : "forward"}}
 		)

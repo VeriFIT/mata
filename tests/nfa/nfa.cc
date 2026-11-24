@@ -5079,6 +5079,19 @@ TEST_CASE("mata::nfa::collapse_by_length()") {
 		CHECK(are_equivalent(collapse_by_length(aut, 6, {{"direction", "backward"}}), aut));
 	}
 
+	SECTION("every result keeps the alphabet of the input") {
+		const auto alphabet{std::make_shared<OnTheFlyAlphabet>()};
+		alphabet->add_new_symbol("a", 'a');
+		alphabet->add_new_symbol("b", 'b');
+		Nfa aut{builder::create_from_regex("aaab")};
+		aut.alphabet = alphabet;
+		CHECK(collapse_by_length(aut, 1).alphabet == alphabet);
+		CHECK(collapse_by_length(aut, 1, {{"direction", "backward"}}).alphabet == alphabet);
+		Nfa empty{2, {0}, {1}};
+		empty.alphabet = alphabet;
+		CHECK(collapse_by_length(empty, 1).alphabet == alphabet);
+	}
+
 	SECTION("the empty language and invalid parameters") {
 		const Nfa empty{collapse_by_length(Nfa{2, {0}, {1}}, 3)};
 		CHECK(empty.num_of_states() == 1);
