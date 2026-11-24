@@ -705,97 +705,100 @@ for every operation whose library function takes two automata and returns one: <
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:get-one-letter-automaton</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">Nfa::get_one_letter_aut</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:language-empty?</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:collapse-by-length</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">collapse_by_length</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:language-empty?</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">Nfa::is_lang_empty</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:intersection-empty?</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:intersection-empty?</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">is_intersection_empty</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:included?</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:included?</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">is_included</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:equivalent?</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:equivalent?</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">are_equivalent</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:universal?</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:universal?</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">Nfa::is_universal</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:in-language?</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:in-language?</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">Nfa::is_in_lang</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:in-language-prefix?</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:in-language-prefix?</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">Nfa::is_in_lang_prefix</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:deterministic?</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:deterministic?</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">Nfa::is_deterministic</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:complete?</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:complete?</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">is_complete</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:minimal?</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:minimal?</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">is_minimal</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:flat?</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:flat?</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">is_flat</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:identical?</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:identical?</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">is_identical</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:get-word</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:get-word</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">Nfa::get_word</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:get-shortest-word</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:get-shortest-word</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">get_shortest_word</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:get-words</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:get-words</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">get_words</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:get-word-from-complement</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:get-word-from-complement</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">Nfa::get_word_from_complement</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:get-word-from-language-difference</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:get-word-from-language-difference</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">get_word_from_lang_difference</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:number-of-states</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:number-of-states</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">Nfa::num_of_states</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:number-of-transitions</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:number-of-transitions</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">Delta::num_of_transitions</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:create-from-regex</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:create-from-regex</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">builder::create_from_regex</span></code>; <code class="docutils literal notranslate"><span class="pre">Re2Options</span></code> members are keywords</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:create-single-word-nfa</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:create-single-word-nfa</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">builder::create_single_word_nfa</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:create-empty-string-nfa</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:create-empty-string-nfa</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">builder::create_empty_string_nfa</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:create-sigma-star-nfa</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:create-sigma-star-nfa</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">builder::create_sigma_star_nfa</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:create-random-nfa-tabakov-vardi</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:create-random-nfa-tabakov-vardi</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">builder::create_random_nfa_tabakov_vardi</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:construct</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:construct</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">builder::construct</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:create-alphabet</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:create-alphabet</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">create_alphabet</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:encode-word</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:encode-word</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">encode_word</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:print-to-mata</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:print-to-mata</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">Nfa::print_to_mata</span></code>; returns a string</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:print-to-dot</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:print-to-dot</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">Nfa::print_to_dot</span></code>; returns a string</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:print-to-regex</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:print-to-regex</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">Nfa::print_to_regex</span></code>; returns a string; <code class="docutils literal notranslate"><span class="pre">:mode</span></code> is <code class="docutils literal notranslate"><span class="pre">fast</span></code> or <code class="docutils literal notranslate"><span class="pre">readable</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:load</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:parse</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:literal</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">nfa:load</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:parse</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:literal</span></code></p></td>
 <td><p>No single library counterpart</p></td>
 </tr>
 </tbody>
