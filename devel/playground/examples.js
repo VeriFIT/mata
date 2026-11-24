@@ -120,12 +120,41 @@ s b s
 s c s
 `;
 
+const TOKEN_STEP_NFT = `@NFT-explicit
+%Alphabet-auto
+%Initial s0
+%Final s2
+%Levels s0:0 s1:0 s2:0 m0:1 m1:1 m2:1 m3:1
+%LevelsNum 2
+s0 n m0
+m0 n s0
+s0 t m1
+m1 n s1
+s1 n m2
+m2 t s2
+s2 n m3
+m3 n s2
+`;
+
+const TOKEN_COPY_NFT = `@NFT-explicit
+%Alphabet-auto
+%Initial s0
+%Final s2
+%Levels s0:0 s1:0 s2:0 m0:1 m1:1 m2:1 m3:1
+%LevelsNum 2
+s0 n m0
+m0 n s0
+s0 t m1
+m1 t s1
+s1 n m2
+m2 t s2
+s2 n m3
+m3 n s2
+`;
+
 // Script examples in groups, one group per namespace they show. Each has a title, the script, and the texts of the
 // inputs and the values of the parameters it declares, by name. The smoke test of the build runs every one and expects
 // the exit status `status` (0 when left out): bindings/wasm/script-smoke-test.mjs.
-//
-// Only the namespaces of the interpreter of this branch may be used: a group for `lazy:` or `ws1s:` scripts is added
-// here with the namespace (its scripts declare it with `:requires`).
 export const SCRIPT_EXAMPLE_GROUPS = [
     {
         title: "Scripts: automata and transducers",
@@ -222,6 +251,73 @@ export const SCRIPT_EXAMPLE_GROUPS = [
 (check "same as the regex"
   (nfa:equivalent? words (nfa:create-from-regex (concat "(a|b){0," (to-string n) "}"))))
 (print (nfa:print-to-dot (nfa:minimize (nfa:determinize words))))
+`,
+            },
+        ],
+    },
+    {
+        title: "Scripts: lazy operations and logic",
+        examples: [
+            {
+                title: "Inclusion of regular expressions, with a shortest counterexample",
+                script: `(mata-script "0.1.0" :requires (lazy))
+(set-option :alphabet "bytes")
+
+(define smaller (lazy:leaf (nfa:create-from-regex "a(a|b)*")))
+(define bigger (lazy:leaf (nfa:create-from-regex "(a|b)*b")))
+(define missing (lazy:intersection smaller (lazy:complement bigger)))
+(check "included" (lazy:empty? missing :shortest true))
+(print (lazy:witness missing :shortest true))
+(print (lazy:stats "one lazy check" (lazy:empty? missing)))
+`,
+            },
+            {
+                title: "The same lazy formula under different plans",
+                script: `(mata-script "0.1.0" :requires (lazy))
+(set-option :alphabet "bytes")
+
+(define (leaf regex) (lazy:leaf (nfa:create-from-regex regex)))
+(define ab (lazy:intersection (leaf "(a|b)*a(a|b)") (leaf "(a|b)*b(a|b)")))
+(define abc (lazy:intersection ab (leaf "(a|b){3,5}")))
+(lazy:annotate ab :eval "eager" :max-states 1000)
+(lazy:annotate abc :order "swapped")
+(print (lazy:view abc))
+(print (lazy:plan))
+(print (lazy:stats "annotated" (lazy:empty? abc)))
+(print (lazy:stats "all lazy" (lazy:empty? abc :policy "lazy")))
+(print (lazy:stats "heuristic" (lazy:empty? abc :policy "heuristic" :heuristic-max-states 100)))
+`,
+            },
+            {
+                title: "Regular model checking with a length abstraction",
+                script: `(mata-script "0.1.0" :requires (lazy transducers witnesses))
+(set-option :alphabet "bytes")
+(declare-input step Nft)
+(declare-input copy Nft)
+
+; Prefixing makes every partial configuration accepting: at most one token.
+(define reachable (lazy:prefixes (lazy:leaf (nfa:create-from-regex "n*tn*"))))
+(define (post relation) (lazy:post-image reachable (lazy:leaf relation)))
+(check "passing the token preserves the invariant" (lazy:included? (post step) reachable))
+(check "copying the token preserves the invariant" (lazy:included? (post copy) reachable))
+(print (witness (lazy:included? (post copy) reachable)))
+`,
+                inputs: {
+                    step: TOKEN_STEP_NFT,
+                    copy: TOKEN_COPY_NFT,
+                },
+            },
+            {
+                title: "Deciding WS1S formulae",
+                script: `(mata-script "0.1.0")
+(check "successors add up"
+  (ws1s:valid? "(x = y + 1 & y = z + 1) => x = z + 2"))
+(check "order is not valid"
+  (ws1s:valid? "x < y | y + 2 < x"))
+(check "a bounded satisfiability query"
+  (ws1s:satisfiable? "ex1 x: x = 3" :max-length 4 :shortest true))
+(check "the empty set has no member"
+  (ws1s:satisfiable? "x in empty"))
 `,
             },
         ],
