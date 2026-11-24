@@ -37,6 +37,8 @@ assert_eq!(a.minimize().num_states(), 4);
 - [`lazy`] checks Boolean and relational combinations of automata and transducers for emptiness lazily, building
   only what the answer needs (the [`mata-lazy`](https://github.com/VeriFIT/mata/tree/devel/bindings/rust/mata-lazy)
   crate, with [`Nfa`] and [`nft::Nft`](nft) leaves).
+- [`logic`] decides formulas over variables encoded as words, such as Presburger arithmetic, on top of [`lazy`]
+  (the [`mata-logic`](https://github.com/VeriFIT/mata/tree/devel/bindings/rust/mata-logic) crate).
 
 ## Building
 
@@ -45,12 +47,14 @@ assert_eq!(a.minimize().num_states(), 4);
 ## Features
 
 - `lazy` (default): the [`lazy`] module.
+- `logic` (default): the [`logic`] module; enables `lazy`.
 - `serde`: `Serialize` and `Deserialize` for [`Nfa`], [`Alphabet`], [`State`], [`Symbol`] and [`Transition`].
 
 <!-- Explicit link targets, so that the links also work on crates.io, where this README is shown too. -->
 
 [`Alphabet`]: https://docs.rs/mata/latest/mata/alphabet/struct.Alphabet.html
 [`lazy`]: https://docs.rs/mata/latest/mata/lazy/index.html
+[`logic`]: https://docs.rs/mata/latest/mata/logic/index.html
 [`Limits`]: https://docs.rs/mata/latest/mata/struct.Limits.html
 [`Nfa`]: https://docs.rs/mata/latest/mata/nfa/struct.Nfa.html
 [`Nfa::display_with`]: https://docs.rs/mata/latest/mata/nfa/struct.Nfa.html#method.display_with

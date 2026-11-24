@@ -418,7 +418,7 @@ impl Post {
 	}
 
 	/// Sorts the moves by tuple and target, without repeats.
-	fn dedup(&mut self) {
+	pub(super) fn dedup(&mut self) {
 		let key = |index: usize| (self.tuple(index), self.state(index));
 		let mut order: Vec<usize> = (0..self.len()).collect();
 		order.sort_unstable_by_key(|&index| key(index));
@@ -698,6 +698,7 @@ impl Engine<'_> {
 			Op::Complement(child) => self.complement_post(node, child, state),
 			Op::Identity(child) => self.identity_post(node, child, state),
 			Op::Project(child, tapes) => self.project_post(node, child, &tapes, state),
+			Op::PadClosure(child, pad) => self.pad_closure_post(node, child, &pad, state),
 			Op::Explicit { .. } | Op::Transparent(_) => {
 				unreachable!("explicit nodes are replaced before the search")
 			}

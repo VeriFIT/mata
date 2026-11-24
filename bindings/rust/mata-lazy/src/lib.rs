@@ -81,7 +81,7 @@ mod witness;
 pub use automaton::Automaton;
 pub use error::Error;
 pub use explicit::ExplicitAutomaton;
-pub use formula::{Formula, Tape, Term};
+pub use formula::{Formula, Pad, Tape, Term};
 pub use options::{ExplicitOptions, Materialized, Options, Outcome, Stats};
 pub use symbol::Symbol;
 pub use witness::Witness;

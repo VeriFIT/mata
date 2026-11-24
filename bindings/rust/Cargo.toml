@@ -1,5 +1,5 @@
 [workspace]
-members = ["mata-sys", "mata", "mata-cli", "mata-lazy"]
+members = ["mata-sys", "mata", "mata-cli", "mata-lazy", "mata-logic"]
 resolver = "3"
 
 [workspace.package]
@@ -17,6 +17,7 @@ categories = ["api-bindings", "algorithms", "mathematics"]
 mata-sys = { version = "0.1.0", path = "mata-sys" }
 mata = { version = "0.1.0", path = "mata" }
 mata-lazy = { version = "0.1.0", path = "mata-lazy" }
+mata-logic = { version = "0.1.0", path = "mata-logic" }
 cxx = "1.0.205"
 cxx-build = { version = "1.0.205", features = ["parallel"] }
 cmake = "0.1.58"

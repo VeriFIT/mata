@@ -13,7 +13,7 @@ use super::budget::Budget;
 use super::exec::{Exec, Op};
 use super::post::{Post, Target, index_u32};
 use super::store::{Pair, Store};
-use crate::formula::{SyncSpec, TapePair};
+use crate::formula::{Pad, SyncSpec, TapePair};
 use crate::ids::{ExecId, StateId};
 use crate::{Symbol, Tape};
 
@@ -229,6 +229,14 @@ fn shapes(exec: &Exec<'_>) -> TiVec<ExecId, Shape> {
 			Op::Explicit { child, .. } => Shape {
 				distinct: shapes[*child].distinct,
 				wild: vec![true; arity],
+			},
+			// One move per move of the child; with the last step, wildcards become concrete steps.
+			Op::PadClosure(child, pad) => match **pad {
+				Pad::Step(_) => shapes[*child].clone(),
+				Pad::Last => Shape {
+					distinct: true,
+					wild: vec![false; arity],
+				},
 			},
 			Op::Transparent(child) => shapes[*child].clone(),
 		};
