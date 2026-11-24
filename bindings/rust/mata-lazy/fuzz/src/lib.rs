@@ -244,6 +244,30 @@ pub fn check(input: &[u8], trace: bool) -> Result<()> {
 		assert_eq!(other.witness, outcome.witness, "small cache");
 	}
 
+	// Breadth first, the witness has the fewest steps: a bound of that many finds one, a bound of one less none. A
+	// witness of arity 0 does not show its steps.
+	if let Some(shortest) = within_limit(timed("shortest", &budget.clone().shortest(true))) {
+		assert_eq!(shortest.is_empty(), outcome.is_empty(), "shortest");
+		if let (Some(fewest), Some(witness)) = (&shortest.witness, &outcome.witness)
+			&& witness.arity() > 0
+		{
+			assert!(
+				fewest.len() <= witness.len(),
+				"shortest {fewest}, found {witness}"
+			);
+			let steps = fewest.len();
+			let bounds = std::iter::once((steps, true))
+				.chain(steps.checked_sub(1).map(|less| (less, false)));
+			for (max_length, found) in bounds {
+				let options = budget.clone().max_length(max_length);
+				if let Some(bounded) = within_limit(timed("bounded", &options)) {
+					assert_eq!(bounded.witness.is_some(), found, "bounded by {max_length}");
+					assert!(found || bounded.bounded, "bounded by {max_length}");
+				}
+			}
+		}
+	}
+
 	if let Some(witness) = &outcome.witness {
 		let steps: Vec<&[Symbol]> = witness.steps().collect();
 		// A step that pads every tape is silent in a leaf, so its chain would be a shorter word.

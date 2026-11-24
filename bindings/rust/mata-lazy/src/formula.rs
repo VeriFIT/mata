@@ -552,10 +552,11 @@ impl Formula {
 	/// explicit term of `options`.
 	pub fn check(&self, term: Term, options: &Options) -> Result<Outcome, Error> {
 		let mut engine = engine::Engine::new(self, self.node(term)?, options)?;
-		let witness = engine.search()?;
+		let (witness, bounded) = engine.search()?;
 
 		Ok(Outcome {
 			witness,
+			bounded,
 			stats: engine.stats(),
 		})
 	}

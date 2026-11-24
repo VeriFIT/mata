@@ -116,8 +116,10 @@ Queries:
 
 - `is_empty`, `find_word`: whether the relation is empty, or a witness.
 - `check`: a witness and statistics, with options for extra alphabet symbols, terms made explicit for one query,
-  limits on states and time (their errors carry the statistics so far), a memory budget for cached results, and
-  subsumption and the antichain on or off.
+  limits on states and time (their errors carry the statistics so far), a memory budget for cached results,
+  subsumption and the antichain on or off, a search bounded to words of at most `max_length` steps (the outcome is
+  then `bounded` when the search stopped there without a witness), and a breadth-first search (`shortest`) whose
+  witness has the fewest steps.
 - `materialize`: the whole relation as an `ExplicitAutomaton`, which other libraries copy (into a Mata `Nft` with
   `Nft::try_from`) and which can be a leaf again.
 

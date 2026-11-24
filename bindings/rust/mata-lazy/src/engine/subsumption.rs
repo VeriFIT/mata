@@ -364,19 +364,29 @@ fn left_spine<'f>(exec: &Exec<'f>, owner: ExecId) -> Option<(Vec<ExecId>, LeafRe
 	}
 }
 
+/// A macrostate in the antichain, and the number of steps in which the search reached it.
+#[derive(Clone, Copy, Debug)]
+struct Member {
+	state: StateId,
+	depth: usize,
+}
+
 #[derive(Debug)]
 pub(crate) struct Antichain<'f> {
 	shape: Shape<'f>,
+	/// Whether a member prunes only macrostates reached in at least as many steps, which a search bounded in length
+	/// or by the fewest steps needs.
+	by_depth: bool,
 	alive: FxHashSet<StateId>,
 	/// The members by group, then size; no group or size without members.
-	buckets: FxHashMap<StateId, BTreeMap<u32, Vec<StateId>>>,
+	buckets: FxHashMap<StateId, BTreeMap<u32, Vec<Member>>>,
 	/// The groups that may hold members above, and below, the macrostate being inserted.
 	above: Vec<StateId>,
 	below: Vec<StateId>,
 }
 
 impl<'f> Antichain<'f> {
-	pub(crate) fn new(exec: &Exec<'f>) -> Antichain<'f> {
+	pub(crate) fn new(exec: &Exec<'f>, by_depth: bool) -> Antichain<'f> {
 		let owner = exec.owner(exec.root);
 		let shape = match exec.nodes[owner].op {
 			Op::Union(_) => Shape::Branch { owner },
@@ -405,6 +415,7 @@ impl<'f> Antichain<'f> {
 
 		Antichain {
 			shape,
+			by_depth,
 			alive: FxHashSet::default(),
 			buckets: FxHashMap::default(),
 			above: Vec::new(),
@@ -416,14 +427,18 @@ impl<'f> Antichain<'f> {
 		!self.alive.contains(&state)
 	}
 
-	/// Unless a member subsumes `state`, adds it and drops the members it subsumes; returns whether it did.
+	/// Unless a member subsumes `state`, reached in `depth` steps, adds it and drops the members it subsumes; returns
+	/// whether it did. By depth, only members reached in at most `depth` steps count, and only those reached in at
+	/// least `depth` steps are dropped, so `state` may replace itself as a member reached in more steps.
 	pub(crate) fn insert(
 		&mut self,
 		exec: &Exec<'_>,
 		stores: &TiVec<ExecId, Store>,
 		subsumption: &mut Subsumption,
 		state: StateId,
+		depth: usize,
 	) -> bool {
+		let by_depth = self.by_depth;
 		let Fingerprint { group, size } = self.fingerprint(stores, state);
 		// Under `All` and `Leftmost` every size is 0.
 		let same = (Bound::Included(size), Bound::Included(size));
@@ -442,10 +457,10 @@ impl<'f> Antichain<'f> {
 			};
 
 			for (_, members) in sizes.range(check) {
-				if members
-					.iter()
-					.any(|&member| subsumption.root_subsumed(exec, stores, state, member))
-				{
+				if members.iter().any(|member| {
+					(!by_depth || member.depth <= depth)
+						&& subsumption.root_subsumed(exec, stores, state, member.state)
+				}) {
 					return false;
 				}
 			}
@@ -458,11 +473,12 @@ impl<'f> Antichain<'f> {
 
 			let mut emptied = false;
 			for (_, members) in sizes.range_mut(remove) {
-				let covered = members.extract_if(.., |&mut member| {
-					subsumption.root_subsumed(exec, stores, member, state)
+				let covered = members.extract_if(.., |member| {
+					(!by_depth || depth <= member.depth)
+						&& subsumption.root_subsumed(exec, stores, member.state, state)
 				});
 				for member in covered {
-					self.alive.remove(&member);
+					self.alive.remove(&member.state);
 				}
 
 				emptied |= members.is_empty();
@@ -482,7 +498,7 @@ impl<'f> Antichain<'f> {
 			.or_default()
 			.entry(size)
 			.or_default()
-			.push(state);
+			.push(Member { state, depth });
 
 		true
 	}

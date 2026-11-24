@@ -25,6 +25,8 @@ pub struct Options {
 	pub(crate) subsumption: bool,
 	pub(crate) antichain: bool,
 	pub(crate) cache_budget: Option<usize>,
+	pub(crate) max_length: Option<usize>,
+	pub(crate) shortest: bool,
 }
 
 /// Symbols that a query adds to the alphabets of the checked term.
@@ -48,7 +50,7 @@ impl Default for Options {
 }
 
 impl Options {
-	/// No extra alphabets, no explicit terms, no limits, subsumption and the antichain on.
+	/// No extra alphabets, no explicit terms, no limits, subsumption and the antichain on, depth first.
 	#[must_use]
 	pub fn new() -> Options {
 		Options {
@@ -59,6 +61,8 @@ impl Options {
 			subsumption: true,
 			antichain: true,
 			cache_budget: None,
+			max_length: None,
+			shortest: false,
 		}
 	}
 
@@ -155,6 +159,45 @@ impl Options {
 
 		self
 	}
+
+	/// Searches only the words of at most `steps` steps (lock-step tuples, padding included). The search then does not
+	/// expand a macrostate reached in `steps` steps, and when it leaves one unexpanded the [`Outcome`] without a witness
+	/// is [`bounded`](Outcome::bounded): no word of at most `steps` steps is in the relation, but longer ones may be.
+	/// [`materialize`](crate::Formula::materialize) ignores it.
+	///
+	/// The antichain then skips a macrostate only for one found in at most as many steps.
+	///
+	/// ```
+	/// # #[cfg(feature = "regex")] {
+	/// use mata_lazy::{Formula, Options};
+	/// use mata_lazy::regex::Regex;
+	///
+	/// let mut formula = Formula::new();
+	/// let long = formula.leaf(&Regex::new("aaaa")?)?;
+	/// let outcome = formula.check(long, &Options::new().max_length(3))?;
+	/// assert!(outcome.witness.is_none() && outcome.bounded && !outcome.is_empty());
+	/// assert!(formula.check(long, &Options::new().max_length(4))?.witness.is_some());
+	/// # }
+	/// # Ok::<(), Box<dyn std::error::Error>>(())
+	/// ```
+	#[must_use]
+	pub fn max_length(mut self, steps: usize) -> Options {
+		self.max_length = Some(steps);
+
+		self
+	}
+
+	/// Searches breadth first (off by default), so that the witness has the fewest steps of any word in the
+	/// relation. The search then numbers every initial macrostate of the checked term before it expands one, and
+	/// keeps the whole frontier, which can take more memory than the default depth-first search. The antichain skips
+	/// a macrostate only for one found in at most as many steps. [`materialize`](crate::Formula::materialize)
+	/// ignores it.
+	#[must_use]
+	pub fn shortest(mut self, enabled: bool) -> Options {
+		self.shortest = enabled;
+
+		self
+	}
 }
 
 /// Options of one explicit node.
@@ -183,17 +226,21 @@ impl ExplicitOptions {
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct Outcome {
-	/// A tuple of words in the relation, or `None` if it is empty.
+	/// A tuple of words in the relation, or `None` if there is none (of at most
+	/// [`max_length`](Options::max_length) steps).
 	pub witness: Option<Witness>,
+	/// Whether the search found no witness and left a macrostate unexpanded at
+	/// [`max_length`](Options::max_length), so that longer words may be in the relation. Never with a witness.
+	pub bounded: bool,
 	/// What the query did.
 	pub stats: Stats,
 }
 
 impl Outcome {
-	/// Whether the relation is empty.
+	/// Whether the relation is empty: no witness, and the search was not [`bounded`](Outcome::bounded).
 	#[must_use]
 	pub fn is_empty(&self) -> bool {
-		self.witness.is_none()
+		self.witness.is_none() && !self.bounded
 	}
 }
 
