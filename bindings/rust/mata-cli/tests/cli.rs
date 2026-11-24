@@ -3795,6 +3795,7 @@ fn lazy_plans_policies_and_json_round_trips_preserve_the_answer() {
 	              (check \"all lazy\" (lazy:empty? a-and-b-and-c :policy \"lazy\"))\n\
 	              (check \"all eager\" (lazy:empty? a-and-b-and-c :policy \"eager\"))\n\
 	              (check \"heuristic\" (lazy:empty? a-and-b-and-c :policy \"heuristic\" :heuristic-max-states 64))\n\
+	              (check \"portfolio\" (lazy:empty? a-and-b-and-c :policy \"portfolio\"))\n\
 	              (print (lazy:stats \"annotated\" (lazy:empty? a-and-b-and-c)))\n\
 	              (print (lazy:stats \"external\" (lazy:empty? a-and-b-and-c :plan (lazy:plan))))\n\
 	              (print (lazy:stats \"all lazy\" (lazy:empty? a-and-b-and-c :policy \"lazy\")))\n\
@@ -3811,6 +3812,7 @@ fn lazy_plans_policies_and_json_round_trips_preserve_the_answer() {
 		"all lazy: false",
 		"all eager: false",
 		"heuristic: false",
+		"portfolio: false",
 	] {
 		assert!(text.contains(answer), "{text}");
 	}

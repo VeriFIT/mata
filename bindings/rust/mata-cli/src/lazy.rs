@@ -7,7 +7,9 @@ use std::collections::{HashMap, HashSet};
 use std::rc::{Rc, Weak};
 use std::time::Duration;
 
-use mata::lazy::{self, ExplicitOptions, Formula, Options, Outcome, Policy, Stats, Term, Witness};
+use mata::lazy::{
+	self, ExplicitOptions, Formula, Options, Outcome, Plan, Policy, Stats, Term, Witness,
+};
 use mata::{Nfa, Word, nft::Nft};
 
 use crate::Error;
@@ -152,10 +154,16 @@ impl Lazy {
 		Ok(term)
 	}
 
-	/// Runs one check of `term` and keeps its statistics for `lazy:stats`.
-	fn check(&mut self, term: Term, options: &Options) -> Result<Outcome, Error> {
+	/// Runs one check of `term`, or a portfolio of its plans, and keeps its statistics for `lazy:stats`.
+	fn check(&mut self, term: Term, query: &Query) -> Result<Outcome, Error> {
 		self.stats = None;
-		let outcome = self.formula.check(term, options)?;
+		let outcome = if query.portfolio.is_empty() {
+			self.formula.check(term, &query.options)?
+		} else {
+			self.formula
+				.check_portfolio(term, &query.options, &query.portfolio)?
+				.1
+		};
 		self.stats = Some(outcome.stats.clone());
 		Ok(outcome)
 	}
@@ -392,8 +400,8 @@ fn dispatch_query(
 		"lazy_empty_within" => {
 			let [value] = take(arguments, name)?;
 			let operand = term(&value)?;
-			let options = query_options(engine, operand)?;
-			let outcome = engine.lazy.check(operand, &options)?;
+			let query = query_options(engine, operand)?;
+			let outcome = engine.lazy.check(operand, &query)?;
 			Ok(Value::Bool(outcome.witness.is_none()))
 		}
 		"lazy_included" => {
@@ -414,15 +422,20 @@ fn dispatch_query(
 		"lazy_witness" => {
 			let [value] = take(arguments, name)?;
 			let operand = term(&value)?;
-			let options = query_options(engine, operand)?;
-			let outcome = engine.lazy.check(operand, &options)?;
+			let query = query_options(engine, operand)?;
+			let outcome = engine.lazy.check(operand, &query)?;
 			Ok(outcome.witness.as_ref().map_or(Value::None, witness_value))
 		}
 		"lazy_materialize" => {
 			let [value] = take(arguments, name)?;
 			let operand = term(&value)?;
-			let options = query_options(engine, operand)?;
-			let explicit = engine.lazy.formula.materialize(operand, &options)?;
+			let query = query_options(engine, operand)?;
+			if !query.portfolio.is_empty() {
+				return Err(Error::plain(
+					"lazy:materialize builds the whole term, so a portfolio gains nothing".into(),
+				));
+			}
+			let explicit = engine.lazy.formula.materialize(operand, &query.options)?;
 			let nft = Nft::try_from(&explicit).map_err(|e| Error::plain(e.to_string()))?;
 			Ok(if explicit.arity() == 1 {
 				Value::Nfa(Rc::new(nft.to_nfa()))
@@ -439,8 +452,8 @@ fn dispatch_query(
 /// Checks `term` for emptiness: `true` when it is empty. The witness, a word of the term, is stored when one is
 /// wanted, as the `nfa:` decisions do.
 fn decide(engine: &mut Engine, term: Term) -> Result<Value, Error> {
-	let options = query_options(engine, term)?;
-	let outcome = engine.lazy.check(term, &options)?;
+	let query = query_options(engine, term)?;
+	let outcome = engine.lazy.check(term, &query)?;
 	let wanted = engine.options.produce_witnesses.on() || engine.witness_requested.on();
 	engine.last_witness = if wanted {
 		outcome.witness.as_ref().map(witness_value)
@@ -503,7 +516,11 @@ pub(crate) fn decide_tree(
 		}
 		_ => unreachable!("a decision has as many operands as its operation"),
 	};
-	let outcome = engine.lazy.check(term, options)?;
+	let query = Query {
+		options: options.clone(),
+		portfolio: Vec::new(),
+	};
+	let outcome = engine.lazy.check(term, &query)?;
 	let wanted = engine.options.produce_witnesses.on() || engine.witness_requested.on();
 	engine.last_witness = if wanted {
 		outcome.witness.as_ref().map(witness_value)
@@ -533,45 +550,56 @@ fn witness_value(witness: &Witness) -> Value {
 	}
 }
 
+/// The options of one lazy query, and the plans of a portfolio (none for a single query).
+struct Query {
+	options: Options,
+	portfolio: Vec<Plan>,
+}
+
 /// The options of one lazy query, including the default annotations or an overriding policy or external plan.
-fn query_options(engine: &mut Engine, term: Term) -> Result<Options, Error> {
+fn query_options(engine: &mut Engine, term: Term) -> Result<Query, Error> {
 	let options = options(engine)?;
 	let external = optional::<String>(engine, "plan");
 	let policy = optional::<String>(engine, "policy");
 	if external.is_some() && policy.is_some() {
 		return Err(Error::plain(":plan and :policy cannot be combined".into()));
 	}
-	let plan = if let Some(json) = external {
-		engine.lazy.formula.plan_from_json(&json)
-	} else {
-		match policy {
-			None => Ok(engine.lazy.annotations.clone()),
-			Some(policy) => {
-				let view = engine.lazy.formula.view(term);
-				match (policy.as_str(), view) {
-					("lazy", Ok(view)) => Ok(lazy::AllLazy.plan(&view)),
-					("eager", Ok(view)) => Ok(lazy::AllEager.plan(&view)),
-					("heuristic", Ok(view)) => {
-						let heuristic = lazy::Heuristic::new();
-						let heuristic =
-							if let Some(limit) = optional::<i64>(engine, "heuristic-max-states") {
-								heuristic.max_states(count(limit, ":heuristic-max-states")?)
-							} else {
-								heuristic
-							};
-						Ok(heuristic.plan(&view))
-					}
-					("lazy" | "eager" | "heuristic", Err(error)) => Err(error),
-					(other, _) => {
-						return Err(Error::plain(format!(
-							":policy must be lazy, eager or heuristic, not {other}"
-						)));
-					}
-				}
-			}
-		}
-	}?;
-	Ok(options.plan(plan))
+	let single = |plan: Plan| Query {
+		options: options.clone().plan(plan),
+		portfolio: Vec::new(),
+	};
+	if let Some(json) = external {
+		return Ok(single(engine.lazy.formula.plan_from_json(&json)?));
+	}
+	let Some(policy) = policy else {
+		return Ok(single(engine.lazy.annotations.clone()));
+	};
+	if !matches!(
+		policy.as_str(),
+		"lazy" | "eager" | "heuristic" | "portfolio"
+	) {
+		return Err(Error::plain(format!(
+			":policy must be lazy, eager, heuristic or portfolio, not {policy}"
+		)));
+	}
+	let view = engine.lazy.formula.view(term)?;
+	let heuristic = match optional::<i64>(engine, "heuristic-max-states") {
+		Some(limit) => lazy::Heuristic::new().max_states(count(limit, ":heuristic-max-states")?),
+		None => lazy::Heuristic::new(),
+	};
+	Ok(match policy.as_str() {
+		"lazy" => single(lazy::AllLazy.plan(&view)),
+		"eager" => single(lazy::AllEager.plan(&view)),
+		"heuristic" => single(heuristic.plan(&view)),
+		_ => Query {
+			options,
+			portfolio: vec![
+				lazy::AllLazy.plan(&view),
+				lazy::AllEager.plan(&view),
+				heuristic.plan(&view),
+			],
+		},
+	})
 }
 
 /// The options of a query: its limits and the symbols it adds to the alphabet of the checked term.
