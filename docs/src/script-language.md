@@ -1010,6 +1010,8 @@ their own, which `mata version` prints beside it.
 
 ## Examples
 
+### Regression specifications
+
 A regression specification that needs no input file:
 
 ```scheme
@@ -1024,6 +1026,183 @@ A regression specification that needs no input file:
 (assert (nfa:in-language? minimal (word "a" "b" "c")))
 (assert (not (nfa:in-language? minimal (word "b"))))
 ```
+
+A whole regression suite over a list of regular expressions, still without any input file. Every expression must be
+equivalent to its determinized-and-minimized form, and that form must be deterministic and minimal:
+
+```scheme
+(mata-script "0.1.0")
+(set-option :alphabet "bytes")
+
+(define regexes (list "a(b|c)*" "(ab)*" "a?b?c?" "(a|b|c)*abc"))
+
+(list:map
+  (lambda (re)
+    (define parsed (nfa:create-from-regex re))
+    (define minimized (-> parsed nfa:determinize nfa:minimize))
+    (assert (nfa:equivalent? parsed minimized))
+    (assert (nfa:deterministic? minimized))
+    (assert (nfa:minimal? minimized))
+    (echo (concat re ": " (to-string (nfa:number-of-states minimized)) " states")))
+  regexes)
+```
+
+The same suite written against automata built by `nfa:literal`, so the expected languages are spelled out state by
+state instead of by a regular expression:
+
+```scheme
+(mata-script "0.1.0")
+(set-option :alphabet "bytes")
+
+; a+ as a literal automaton and as a regular expression
+(define a-plus
+  (nfa:literal :initial (q0) :final (q1)
+               :transitions ((q0 a q1) (q1 a q1))))
+(define a-plus-re (nfa:create-from-regex "aa*"))
+
+(check "equivalent" (nfa:equivalent? a-plus a-plus-re))
+(assert (nfa:in-language? a-plus (word "a" "a" "a")))
+(assert (not (nfa:in-language? a-plus (word))))
+```
+
+### Queries and reports
+
+A one-off query that prints the size of an automaton and classifies it, with `let`, `cond` and string concatenation:
+
+```scheme
+(mata-script "0.1.0")
+(set-option :alphabet "bytes")
+(declare-input a Nfa)
+
+(let ((states (nfa:number-of-states a))
+      (transitions (nfa:number-of-transitions a)))
+  (echo (concat "states=" (to-string states)
+                " transitions=" (to-string transitions)))
+  (cond
+    ((nfa:language-empty? a) (echo "empty language"))
+    ((nfa:deterministic? a) (echo "deterministic"))
+    (else (echo "non-deterministic, non-empty"))))
+```
+
+A query that prints the shortest counterexample to an inclusion, or confirms that the inclusion holds. With
+`:produce-witnesses`, every later decision call also stores its witness for `get-witness`:
+
+```scheme
+(mata-script "0.1.0" :requires (witnesses))
+(set-option :alphabet "bytes")
+(declare-input smaller Nfa)
+(declare-input bigger Nfa)
+
+(define counterexample (witness (nfa:included? smaller bigger)))
+(if (none? counterexample)
+    (echo "included")
+    (do
+      (echo "not included; a counterexample:")
+      (print (get counterexample))))
+```
+
+### Pipelines and output
+
+A pipeline that determinizes and minimizes a regular expression, saves the result as a `.mata` file, and prints its
+DOT graph, all as one chain. `write` and `print` return their argument, so they slot into the pipeline:
+
+```scheme
+(mata-script "0.1.0")
+(set-option :alphabet "bytes")
+
+(-> (nfa:create-from-regex "a(b|c)*")
+    nfa:determinize
+    nfa:minimize
+    (write "minimal.mata")
+    nfa:print-to-dot
+    print)
+```
+
+### Parameterized runs and batches
+
+A benchmark that runs the same check a configurable number of times, taking the count from the command line with
+`--param rounds=…`. Each round gets its own timing label, because a label printed twice is an error:
+
+```scheme
+(mata-script "0.1.0")
+(set-option :alphabet "bytes")
+(declare-param rounds Int 3)
+(declare-input smaller Nfa)
+(declare-input bigger Nfa)
+
+(list:map
+  (lambda (round)
+    (time (concat "inclusion-" (to-string round))
+      (nfa:included? smaller bigger :algorithm "antichains")))
+  (list:range 0 rounds))
+```
+
+A batch script that processes every input independently and reports each one's size before and after determinization,
+labelled by its position on the command line:
+
+```scheme
+(mata-script "0.1.0")
+(declare-inputs automata (List Nfa))
+
+(list:map
+  (lambda (i)
+    (define a (list:nth automata i))
+    (define label (concat "input-" (to-string i)))
+    (echo (concat label ": " (to-string (nfa:number-of-states a)) " states before"))
+    (define d (time (concat label "-determinize") (nfa:determinize a)))
+    (echo (concat label ": " (to-string (nfa:number-of-states d)) " states after")))
+  (list:range 0 (list:length automata)))
+```
+
+A fold that picks the largest input and then runs a single check on it, instead of operating on every input:
+
+```scheme
+(mata-script "0.1.0")
+(declare-inputs automata (List Nfa))
+
+(define largest
+  (list:fold
+    (lambda (best a) (if (< (nfa:number-of-states best) (nfa:number-of-states a)) a best))
+    (list:nth automata 0)
+    automata))
+
+(check "largest-intersects-own-complement-empty"
+       (nfa:language-empty? (nfa:intersection largest (nfa:complement largest))))
+```
+
+### Comparing algorithms
+
+One script that compares several inclusion algorithms on the same inputs, using a parameter for the algorithm name
+and a hint for the library. The first version uses the same approach as the `email-filter` benchmark at the top of
+this page, but with the algorithms given as a list:
+
+```scheme
+(mata-script "0.1.0" :requires (hints))
+(declare-input lhs Nfa)
+(declare-input rhs Nfa)
+
+(list:map
+  (lambda (algorithm)
+    (check algorithm
+      (time (concat algorithm "-time") (nfa:included? lhs rhs :algorithm algorithm))))
+  (list "naive" "antichains"))
+```
+
+The default of a hint can also be changed once for the rest of the script, so that only the calls that should
+differ need to spell it out. A hint written in an application still wins over the changed default:
+
+```scheme
+(mata-script "0.1.0" :requires (hints))
+(declare-input lhs Nfa)
+(declare-input rhs Nfa)
+
+(set-option :default (nfa:included? :algorithm "antichains"))
+
+(check "default" (nfa:included? lhs rhs))
+(check "naive" (time "naive-time" (nfa:included? lhs rhs :algorithm "naive")))
+```
+
+### Transducers
 
 The image of a language under a transducer, checked against a specification, with a function:
 
@@ -1043,6 +1222,29 @@ The image of a language under a transducer, checked against a specification, wit
     (print (get counterexample)))
 ```
 
+### String solving
+
+A reluctant replacement built from the `strings:` namespace, applied to a regular language. The transducer replaces
+every occurrence of `ab` by `x`, so no word containing `ab` is in the output language:
+
+```scheme
+(mata-script "0.1.0" :requires (strings))
+(set-option :alphabet "bytes")
+
+(define replace-ab
+  (strings:replace-reluctant-literal (word "a" "b") (word "x") (script-alphabet)))
+
+(define input (nfa:create-from-regex "(a|b)*"))
+(define output (nft:to-nfa (nft:apply replace-ab input)))
+
+(assert (nfa:in-language? output (word "x" "x")))
+(assert (not (nfa:in-language? output (word "a" "b"))))
+(check "no ab remains"
+       (nfa:intersection-empty? output (nfa:create-from-regex "(a|b)*ab(a|b)*")))
+```
+
+### Either kind of automaton
+
 A script that works on an input of either kind:
 
 ```scheme
@@ -1052,6 +1254,45 @@ A script that works on an input of either kind:
 
 (check (automaton:included? a b))
 (check (automaton:included? b a))
+```
+
+### Fixpoints
+
+Reachability as a fixpoint over a transducer that encodes one step of a transition relation. The `loop`/`recur` form
+stops when a round adds nothing new; [Loops and recursion](#loops-and-recursion) has the same computation written as
+a recursive function:
+
+```scheme
+(mata-script "0.1.0" :requires (loops-and-recursion))
+(set-option :loops-and-recursion true)
+(set-option :alphabet "bytes")
+(declare-input step Nft)
+(declare-input initial Nfa)
+(declare-input bad Nfa)
+
+(define reachable
+  (loop ((reached initial))
+    (define next
+      (nfa:union-nondeterministic reached (nft:to-nfa (nft:apply step reached))))
+    (if (nfa:included? next reached) reached (recur next))))
+
+(check "safe" (nfa:intersection-empty? reachable bad))
+```
+
+### Portable core
+
+The same intersection-and-inclusion query restricted to the portable core, so that another library implementing the
+profile can run it too. `:profile core` rules out functions, conditionals, loops and most operations, and the checker
+rejects anything outside the profile before the script runs:
+
+```scheme
+(mata-script "0.1.0" :profile core)
+(declare-input lhs Nfa)
+(declare-input rhs Nfa)
+
+(define both (time "intersection" (nfa:intersection lhs rhs)))
+(check "language-empty" (time "emptiness" (nfa:language-empty? both)))
+(check "included" (nfa:included? lhs rhs))
 ```
 
 ## Open questions
