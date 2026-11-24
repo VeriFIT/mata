@@ -1954,7 +1954,7 @@ Nfa mata::nfa::reduce(const Nfa& aut, StateRenaming* state_renaming, const Param
 
 	if (state_renaming) {
 		state_renaming->clear();
-		*state_renaming = reduced_state_map;
+		*state_renaming = std::move(reduced_state_map);
 	}
 	return result;
 }
