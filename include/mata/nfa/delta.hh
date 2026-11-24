@@ -1023,6 +1023,7 @@ class Delta {
 		PostWorkspace& workspace
 	) const;
 	friend class Nfa;
+	friend class DeltaBuilder;
 
 	/// Monotonic counter of mutating calls; lets clients of @c Delta invalidate their own derived data.
 	uint64_t mutation_epoch_{0};
@@ -1160,6 +1161,7 @@ class DeltaBuilder {
 		has_symbol_ = true;
 		// Copied in its final form, inline or with exact capacity, instead of grown target by target in the post.
 		state_posts_[source_].emplace_back(symbol_, std::span<const State>{targets_});
+		transition_count_ += targets_.size();
 	}
 
 	/// Closes the current source state.
@@ -1177,9 +1179,11 @@ class DeltaBuilder {
 			state_posts_.resize(num_of_states_for(max_target_));
 		}
 		Delta delta{};
-		delta.reserve(state_posts_.size());
-		for (StatePost& state_post : state_posts_) { delta.emplace_back(std::move(state_post)); }
-		state_posts_.clear();
+		++delta.mutation_epoch_;
+		delta.state_posts_ = std::move(state_posts_);
+		// Every emitted target was counted above; the first count query need not rescan the posts.
+		delta.cached_transition_count_.store(transition_count_, std::memory_order_relaxed);
+		delta.count_dirty_.store(false, std::memory_order_release);
 		return delta;
 	}
 
@@ -1190,6 +1194,7 @@ class DeltaBuilder {
 	Symbol symbol_{0};
 	State source_{0};
 	State max_target_{0};
+	size_t transition_count_{0};
 	bool in_state_{false};
 	bool in_symbol_{false};
 	bool has_symbol_{false}; ///< Has the current state emitted a symbol post already?

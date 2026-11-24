@@ -853,8 +853,12 @@ TEST_CASE("mata::nfa::DeltaBuilder") {
 			}
 			builder.finish_state();
 		}
-		const Delta built{builder.finish()};
+		Delta built{builder.finish()};
 		CHECK(built == delta_from_adds(transitions));
+		CHECK(built.num_of_transitions() == transitions.size());
+		built.add(6, 'a', 0);
+		CHECK(built.num_of_transitions() == transitions.size() + 1);
+		CHECK(built.remove(0, 'a', 1));
 		CHECK(built.num_of_transitions() == transitions.size());
 	}
 
