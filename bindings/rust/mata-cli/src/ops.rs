@@ -257,6 +257,21 @@ pub(crate) const OPTIONAL_PARAMETERS: &[OptionalParameter] = &[
 		sort: "Int",
 	},
 	OptionalParameter {
+		operation: "lazy:annotate",
+		name: "eval",
+		sort: "String",
+	},
+	OptionalParameter {
+		operation: "lazy:annotate",
+		name: "max-states",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:annotate",
+		name: "order",
+		sort: "String",
+	},
+	OptionalParameter {
 		operation: "lazy:empty?",
 		name: "time-limit",
 		sort: "Int",
@@ -279,6 +294,21 @@ pub(crate) const OPTIONAL_PARAMETERS: &[OptionalParameter] = &[
 	OptionalParameter {
 		operation: "lazy:empty?",
 		name: "alphabet",
+		sort: "String",
+	},
+	OptionalParameter {
+		operation: "lazy:empty?",
+		name: "policy",
+		sort: "String",
+	},
+	OptionalParameter {
+		operation: "lazy:empty?",
+		name: "heuristic-max-states",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:empty?",
+		name: "plan",
 		sort: "String",
 	},
 	OptionalParameter {
@@ -307,6 +337,21 @@ pub(crate) const OPTIONAL_PARAMETERS: &[OptionalParameter] = &[
 		sort: "String",
 	},
 	OptionalParameter {
+		operation: "lazy:empty-within?",
+		name: "policy",
+		sort: "String",
+	},
+	OptionalParameter {
+		operation: "lazy:empty-within?",
+		name: "heuristic-max-states",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:empty-within?",
+		name: "plan",
+		sort: "String",
+	},
+	OptionalParameter {
 		operation: "lazy:witness",
 		name: "time-limit",
 		sort: "Int",
@@ -329,6 +374,21 @@ pub(crate) const OPTIONAL_PARAMETERS: &[OptionalParameter] = &[
 	OptionalParameter {
 		operation: "lazy:witness",
 		name: "alphabet",
+		sort: "String",
+	},
+	OptionalParameter {
+		operation: "lazy:witness",
+		name: "policy",
+		sort: "String",
+	},
+	OptionalParameter {
+		operation: "lazy:witness",
+		name: "heuristic-max-states",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:witness",
+		name: "plan",
 		sort: "String",
 	},
 	OptionalParameter {
@@ -357,6 +417,21 @@ pub(crate) const OPTIONAL_PARAMETERS: &[OptionalParameter] = &[
 		sort: "String",
 	},
 	OptionalParameter {
+		operation: "lazy:included?",
+		name: "policy",
+		sort: "String",
+	},
+	OptionalParameter {
+		operation: "lazy:included?",
+		name: "heuristic-max-states",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:included?",
+		name: "plan",
+		sort: "String",
+	},
+	OptionalParameter {
 		operation: "lazy:equivalent?",
 		name: "time-limit",
 		sort: "Int",
@@ -379,6 +454,21 @@ pub(crate) const OPTIONAL_PARAMETERS: &[OptionalParameter] = &[
 	OptionalParameter {
 		operation: "lazy:equivalent?",
 		name: "alphabet",
+		sort: "String",
+	},
+	OptionalParameter {
+		operation: "lazy:equivalent?",
+		name: "policy",
+		sort: "String",
+	},
+	OptionalParameter {
+		operation: "lazy:equivalent?",
+		name: "heuristic-max-states",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:equivalent?",
+		name: "plan",
 		sort: "String",
 	},
 	OptionalParameter {
@@ -394,6 +484,21 @@ pub(crate) const OPTIONAL_PARAMETERS: &[OptionalParameter] = &[
 	OptionalParameter {
 		operation: "lazy:materialize",
 		name: "alphabet",
+		sort: "String",
+	},
+	OptionalParameter {
+		operation: "lazy:materialize",
+		name: "policy",
+		sort: "String",
+	},
+	OptionalParameter {
+		operation: "lazy:materialize",
+		name: "heuristic-max-states",
+		sort: "Int",
+	},
+	OptionalParameter {
+		operation: "lazy:materialize",
+		name: "plan",
 		sort: "String",
 	},
 	OptionalParameter {
@@ -1625,6 +1730,9 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 		"Term",
 	),
 	op("lazy:explicit", "lazy_explicit", 1, Some(1), "Term", "Term"),
+	op("lazy:plan", "lazy_plan", 0, Some(0), "", "String"),
+	op("lazy:view", "lazy_view", 1, Some(1), "Term", "String"),
+	op("lazy:annotate", "lazy_annotate", 1, Some(1), "Term", "Term"),
 	op("lazy:empty?", "lazy_empty", 1, Some(1), "Term", "Bool"),
 	op(
 		"lazy:empty-within?",

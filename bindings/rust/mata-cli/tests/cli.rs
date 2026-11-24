@@ -3679,6 +3679,58 @@ fn lazy_stats_prints_the_records_of_one_check() {
 }
 
 #[test]
+fn lazy_plans_policies_and_json_round_trips_preserve_the_answer() {
+	let script = "(mata-script \"0.1.0\" :requires (lazy))\n\
+	              (set-option :alphabet \"bytes\")\n\
+	              (define (leaf regex) (lazy:leaf (nfa:create-from-regex regex)))\n\
+	              (define a (leaf \"a*\"))\n\
+	              (define b (leaf \"a(a|b)*\"))\n\
+	              (define a-and-b (lazy:intersection a b))\n\
+	              (define a-and-b-and-c (lazy:intersection a-and-b (leaf \"a*\")))\n\
+	              (lazy:annotate a-and-b :eval \"eager\" :max-states 100)\n\
+	              (lazy:annotate a-and-b-and-c :order \"swapped\")\n\
+	              (check \"annotated\" (lazy:empty? a-and-b-and-c))\n\
+	              (check \"external\" (lazy:empty? a-and-b-and-c :plan (lazy:plan)))\n\
+	              (check \"all lazy\" (lazy:empty? a-and-b-and-c :policy \"lazy\"))\n\
+	              (check \"all eager\" (lazy:empty? a-and-b-and-c :policy \"eager\"))\n\
+	              (check \"heuristic\" (lazy:empty? a-and-b-and-c :policy \"heuristic\" :heuristic-max-states 64))\n\
+	              (print (lazy:stats \"annotated\" (lazy:empty? a-and-b-and-c)))\n\
+	              (print (lazy:stats \"external\" (lazy:empty? a-and-b-and-c :plan (lazy:plan))))\n\
+	              (print (lazy:stats \"all lazy\" (lazy:empty? a-and-b-and-c :policy \"lazy\")))\n\
+	              (print (lazy:stats \"all eager\" (lazy:empty? a-and-b-and-c :policy \"eager\")))\n\
+	              (print (lazy:stats \"heuristic\" (lazy:empty? a-and-b-and-c :policy \"heuristic\" :heuristic-max-states 64)))\n\
+	              (print (lazy:plan))\n\
+	              (print (lazy:view a-and-b-and-c))";
+	let output = run_script(script, true, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	let text = stdout(&output);
+	for answer in [
+		"annotated: false",
+		"external: false",
+		"all lazy: false",
+		"all eager: false",
+		"heuristic: false",
+	] {
+		assert!(text.contains(answer), "{text}");
+	}
+	let records = records(&text);
+	for label in ["annotated", "external", "heuristic"] {
+		assert_eq!(records[&format!("{label}.explicit")], "1", "{text}");
+	}
+	assert_eq!(records["all lazy.explicit"], "0", "{text}");
+	assert_eq!(records["all eager.explicit"], "2", "{text}");
+	for fragment in [
+		"\"swapped\"",
+		"\"eager\"",
+		"\"max_states\": 100",
+		"\"fan_out\"",
+		"\"tape_alphabet_sizes\"",
+	] {
+		assert!(text.contains(fragment), "{fragment}: {text}");
+	}
+}
+
+#[test]
 fn a_lazy_query_past_its_limit_is_an_error() {
 	// Words with an `a` three places before the end, intersected with the same for `b`: the subset
 	// construction needs more than two macrostates.
