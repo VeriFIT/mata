@@ -161,18 +161,16 @@ export function regexToBytes(pattern) {
 
 const quote = (text) => `"${text.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 
-// The graph, node and edge defaults of the drawings of the playground.
-export const DOT_STYLE = [
-    '  graph [rankdir=LR, bgcolor="transparent", nodesep=0.3, ranksep=0.45, pad=0.1];',
-    '  node [shape=circle, fontname="Courier", fontsize=13, width=0.42, height=0.42, fixedsize=false, margin=0.04];',
-    '  edge [fontname="Courier", fontsize=13, arrowsize=0.7];',
-];
-
 // The DOT text of `automaton` (as described by the playground's evaluate()), with the symbols named `symbols`.
 // Parallel transitions are merged into one edge.
 export function toDot(automaton, symbols) {
     const finals = new Set(automaton.final);
-    const lines = ["digraph {", ...DOT_STYLE];
+    const lines = [
+        "digraph {",
+        '  graph [rankdir=LR, bgcolor="transparent", nodesep=0.3, ranksep=0.45, pad=0.1];',
+        '  node [shape=circle, fontname="Courier", fontsize=13, width=0.42, height=0.42, fixedsize=false, margin=0.04];',
+        '  edge [fontname="Courier", fontsize=13, arrowsize=0.7];',
+    ];
     for (let state = 0; state < automaton.states; state++) {
         const classes = finals.has(state) ? "state final" : "state";
         const name = automaton.stateNames?.[state];
@@ -204,8 +202,7 @@ export function toDot(automaton, symbols) {
     return lines.join("\n");
 }
 
-// The state of the playground in the fragment of its address, and back. The operation mode keeps its form; the Script
-// mode (`mode: "script"`) keeps the script and the values of its declared inputs and parameters, by name.
+// The state of the playground in the fragment of its address, and back.
 const STATE_KEYS = {
     aFormat: "af",
     aText: "a",
@@ -215,21 +212,9 @@ const STATE_KEYS = {
     word: "w",
     alphabet: "alph",
 };
-const SCRIPT_MODE = "script";
-const INPUT_PREFIX = "i.";
-const PARAM_PREFIX = "p.";
 
 export function encodeState(state) {
     const params = new URLSearchParams();
-    if (state.mode === SCRIPT_MODE) {
-        params.set("m", SCRIPT_MODE);
-        params.set("s", state.script ?? "");
-        for (const [name, text] of Object.entries(state.inputs ?? {}))
-            params.set(`${INPUT_PREFIX}${name}`, text);
-        for (const [name, value] of Object.entries(state.params ?? {}))
-            params.set(`${PARAM_PREFIX}${name}`, value);
-        return params.toString();
-    }
     for (const [key, short] of Object.entries(STATE_KEYS)) {
         if (state[key] !== undefined && state[key] !== "")
             params.set(short, state[key]);
@@ -239,21 +224,6 @@ export function encodeState(state) {
 
 export function decodeState(fragment) {
     const params = new URLSearchParams(fragment.replace(/^#/, ""));
-    if (params.get("m") === SCRIPT_MODE) {
-        const state = {
-            mode: SCRIPT_MODE,
-            script: params.get("s") ?? "",
-            inputs: {},
-            params: {},
-        };
-        for (const [key, value] of params) {
-            if (key.startsWith(INPUT_PREFIX))
-                state.inputs[key.slice(INPUT_PREFIX.length)] = value;
-            else if (key.startsWith(PARAM_PREFIX))
-                state.params[key.slice(PARAM_PREFIX.length)] = value;
-        }
-        return state;
-    }
     const state = {};
     for (const [key, short] of Object.entries(STATE_KEYS)) {
         if (params.has(short)) state[key] = params.get(short);

@@ -1,8 +1,6 @@
-// The playground page: in the operation mode, it sends the automata and the operation to the worker as they change and
-// shows the outcome; the Script mode (script-mode.js) runs a Mata Script.
+// The playground page: it sends the automata and the operation to the worker as they change and shows the outcome.
 
-import { EXAMPLES, SCRIPT_EXAMPLE_GROUPS } from "./examples.js";
-import { initScriptMode } from "./script-mode.js";
+import { EXAMPLES } from "./examples.js";
 import {
     decodeState,
     encodeState,
@@ -751,60 +749,6 @@ form.addEventListener("change", (event) => {
     }
 });
 
-// The modes: the operations on automata A and B, and the Script mode.
-
-let mode = "operations";
-const modeTabs = {
-    operations: document.getElementById("mode-operations"),
-    script: document.getElementById("mode-script"),
-};
-const modePanels = {
-    operations: document.getElementById("workbench"),
-    script: document.getElementById("script-bench"),
-};
-
-function currentState() {
-    return mode === "script" ? scriptMode.readState() : readForm();
-}
-
-const scriptMode = initScriptMode({
-    onChange: () => {
-        if (mode === "script")
-            history.replaceState(null, "", `#${encodeState(currentState())}`);
-    },
-});
-
-// Shows `next`; the operation mode recomputes its result, which also starts its worker the first time.
-function setMode(next, { focus = false } = {}) {
-    const changed = next !== mode;
-    mode = next;
-    for (const [key, tab] of Object.entries(modeTabs)) {
-        const selected = key === next;
-        tab.setAttribute("aria-selected", String(selected));
-        tab.tabIndex = selected ? 0 : -1;
-        modePanels[key].hidden = !selected;
-        if (selected && focus) tab.focus();
-    }
-    if (!changed) return;
-    if (next === "script") {
-        abandon();
-        scriptMode.activate();
-        history.replaceState(null, "", `#${encodeState(currentState())}`);
-    } else {
-        evaluate();
-    }
-}
-
-for (const [key, tab] of Object.entries(modeTabs)) {
-    tab.addEventListener("click", () => setMode(key));
-    tab.addEventListener("keydown", (event) => {
-        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key))
-            return;
-        event.preventDefault();
-        setMode(key === "script" ? "operations" : "script", { focus: true });
-    });
-}
-
 // The state an example sets: everything but its title.
 function exampleState(example) {
     const state = { ...DEFAULT_STATE, ...example };
@@ -813,51 +757,23 @@ function exampleState(example) {
 }
 
 const exampleSelect = document.getElementById("example");
-exampleSelect.append(
-    el(
-        "optgroup",
-        { label: "Operations" },
-        EXAMPLES.map((example, index) =>
-            el("option", { value: `op ${index}` }, example.title),
-        ),
-    ),
-    ...SCRIPT_EXAMPLE_GROUPS.map((group, groupIndex) =>
-        el(
-            "optgroup",
-            { label: group.title },
-            group.examples.map((example, index) =>
-                el(
-                    "option",
-                    { value: `script ${groupIndex} ${index}` },
-                    example.title,
-                ),
-            ),
-        ),
-    ),
+EXAMPLES.forEach((example, index) =>
+    exampleSelect.append(el("option", { value: String(index) }, example.title)),
 );
 exampleSelect.addEventListener("change", () => {
-    const [kind, first, second] = exampleSelect.value.split(" ");
+    const example = EXAMPLES[Number(exampleSelect.value)];
     exampleSelect.value = "";
-    if (kind === "op") {
-        const example = EXAMPLES[Number(first)];
-        writeForm(exampleState(example));
-        selectedView = "result";
-        if (mode === "operations") evaluate();
-        else setMode("operations");
-    } else if (kind === "script") {
-        const example =
-            SCRIPT_EXAMPLE_GROUPS[Number(first)].examples[Number(second)];
-        scriptMode.writeState(example);
-        setMode("script");
-        history.replaceState(null, "", `#${encodeState(currentState())}`);
-    }
+    if (!example) return;
+    writeForm(exampleState(example));
+    selectedView = "result";
+    evaluate();
 });
 
 const copyLink = document.getElementById("copy-link");
 copyLink.addEventListener("click", async () => {
     try {
         const url = new URL(location.href);
-        url.hash = encodeState(currentState());
+        url.hash = encodeState(readForm());
         await navigator.clipboard.writeText(url.href);
         copyLink.textContent = "Link copied";
     } catch {
@@ -866,32 +782,19 @@ copyLink.addEventListener("click", async () => {
     setTimeout(() => (copyLink.textContent = "Copy link"), 1600);
 });
 
-// Shows the state of an address: a script, or the form of the operation mode.
-function showAddress(fragment) {
-    const state = decodeState(fragment);
-    if (state.mode === "script") {
-        scriptMode.writeState(state);
-        setMode("script");
-        return;
-    }
-    writeForm({ ...DEFAULT_STATE, ...state });
-    selectedView = "result";
-    if (mode === "operations") evaluate();
-    else setMode("operations");
-}
-
 window.addEventListener("hashchange", () => {
-    if (location.hash.slice(1) === encodeState(currentState())) return;
-    showAddress(location.hash);
+    if (location.hash.slice(1) === encodeState(readForm())) return;
+    writeForm({ ...DEFAULT_STATE, ...decodeState(location.hash) });
+    selectedView = "result";
+    evaluate();
 });
 
-// Start: the state from the address, or the first example. The operation mode starts from the first example also when
-// the address holds a script, so that it shows a result when it is opened.
-writeForm(exampleState(EXAMPLES[0]));
+// Start: the state from the address, or the first example.
+writeForm(
+    location.hash.length > 1
+        ? { ...DEFAULT_STATE, ...decodeState(location.hash) }
+        : exampleState(EXAMPLES[0]),
+);
 output.status.textContent = "Loading Mata…";
-if (location.hash.length > 1) {
-    showAddress(location.hash);
-} else {
-    startWorker();
-    evaluate();
-}
+startWorker();
+evaluate();
