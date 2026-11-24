@@ -130,7 +130,8 @@ impl Policy for Heuristic {
 			.enumerate()
 			.filter(|&(index, node)| {
 				wanted[index]
-					&& small(index) && !matches!(node.kind, NodeKind::Leaf | NodeKind::Explicit { .. })
+					&& small(index)
+					&& !matches!(node.kind, NodeKind::Leaf | NodeKind::Explicit { .. })
 			})
 			.fold(Plan::new(), |plan, (_, node)| {
 				plan.annotate(node.term, Annotation::eager_within(self.max_states))
