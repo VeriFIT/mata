@@ -1084,8 +1084,9 @@ A one-off query that prints the size of an automaton and classifies it, with `le
     (else (echo "non-deterministic, non-empty"))))
 ```
 
-A query that prints the shortest counterexample to an inclusion, or confirms that the inclusion holds. With
-`:produce-witnesses`, every later decision call also stores its witness for `get-witness`:
+A query that prints a counterexample to an inclusion, or confirms that the inclusion holds. The witness is a word the
+decision procedure happened to find, not necessarily the shortest one. With `:produce-witnesses`, every later decision
+call also stores its witness for `get-witness`:
 
 ```scheme
 (mata-script "0.1.0" :requires (witnesses))
@@ -1240,7 +1241,7 @@ every occurrence of `ab` by `x`, so no word containing `ab` is in the output lan
 (assert (nfa:in-language? output (word "x" "x")))
 (assert (not (nfa:in-language? output (word "a" "b"))))
 (check "no ab remains"
-       (nfa:intersection-empty? output (nfa:create-from-regex "(a|b)*ab(a|b)*")))
+       (nfa:intersection-empty? output (nfa:create-from-regex "(a|b|x)*ab(a|b|x)*")))
 ```
 
 ### Either kind of automaton
