@@ -18,12 +18,14 @@ Before starting a performance or design change, check here whether it has been t
 | [EXP-5][exp-5]                          | Shared SCC-based epsilon closure                    | rejected |
 | [EXP-6][exp-6]                          | Scan for already-contained OrdVector ranges         | rejected |
 | [EXP-7][exp-7]                          | Build composition posts by appending and sorting    | rejected |
+| [EXP-8][exp-8]                          | NFT quotient renaming with a state-indexed vector   | rejected |
 
 [exp-3]: 3-antichain-iterator-universality/README.md
 [exp-4]: 4-residual-after-subset-index/README.md
 [exp-5]: 5-shared-closure-helper/README.md
 [exp-6]: 6-ordvector-subset-guard/README.md
 [exp-7]: 7-composition-posts-sorting/README.md
+[exp-8]: 8-nft-quotient-vector-map/README.md
 
 ## Adding a record
 
