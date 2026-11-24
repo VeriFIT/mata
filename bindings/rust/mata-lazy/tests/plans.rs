@@ -2,6 +2,7 @@
 //! annotations, per-node statistics and JSON plans.
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::time::Duration;
 
 use mata_lazy::{
 	AllEager, AllLazy, Annotation, Automaton, Error, Eval, Formula, Heuristic, NodeKind, Options,
@@ -757,6 +758,56 @@ fn eager_pre_images_stay_small_level_by_level() -> Result<(), Error> {
 		assert!(!node.lazy);
 		assert!(node.states <= 12, "{} states", node.states);
 	}
+
+	Ok(())
+}
+
+/// The one word of `length` zeros, as a chain of states.
+struct Zeros {
+	length: u32,
+}
+
+impl Automaton for Zeros {
+	type State = u32;
+
+	fn arity(&self) -> usize {
+		1
+	}
+
+	fn initial_states(&self) -> impl IntoIterator<Item = u32> {
+		[0]
+	}
+
+	fn is_final(&self, state: u32) -> bool {
+		state == self.length
+	}
+
+	fn for_each_move(&self, state: u32, mut visit: impl FnMut(&[Symbol], u32)) {
+		if state < self.length {
+			visit(&[SYMBOLS[0]], state + 1);
+		}
+	}
+}
+
+#[test]
+fn a_long_explicit_chain_is_reduced_in_quasi_linear_time() -> Result<(), Error> {
+	// Refinement that rescans every state each round separates one more state of the chain per round: about
+	// 2.5 * 10^9 visits here, far past the limit. Subsumption and the antichain are off, as the search over a
+	// leaf this long is quadratic with them; this test is about building the explicit node.
+	const LENGTH: u32 = 50_000;
+	let mut formula = Formula::new();
+	let zeros = formula.leaf(&Zeros { length: LENGTH })?;
+	let product = formula.intersection(zeros, zeros)?;
+	let explicit = formula.explicit(product)?;
+	let outcome = formula.check(
+		explicit,
+		&Options::new()
+			.subsumption(false)
+			.antichain(false)
+			.time_limit(Duration::from_secs(20)),
+	)?;
+	assert!(!outcome.is_empty());
+	assert_eq!(outcome.stats.explicit[0].states, LENGTH as usize + 1);
 
 	Ok(())
 }

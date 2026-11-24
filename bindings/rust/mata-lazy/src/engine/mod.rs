@@ -92,7 +92,7 @@ use self::store::Store;
 use self::subsumption::{Antichain, Subsumption};
 use crate::formula::Formula;
 use crate::ids::{ExecId, Id, NodeId, StateId};
-use crate::leaf::{Leaf, Raw};
+use crate::leaf::{Leaf, Raw, Stopped};
 use crate::options::{ExplicitOptions, Materialized, NodeStats, Stats, Tapes};
 use crate::plan::Annotations;
 use crate::{Error, Options, Symbol, Witness};
@@ -371,7 +371,16 @@ impl<'f> Engine<'f> {
 			Some(leaf) => (leaf, true),
 			None => match self.explore(child, options.max_states)? {
 				Explored::Done(raw) => {
-					let leaf = Arc::new(Leaf::build(&reduce(&raw), Vec::new()));
+					// The reduction reads the clock as the exploration does, so a limit stops it too.
+					let budget = &mut self.budget;
+					let reduced = reduce(&raw, &mut || {
+						budget.step(0);
+						budget.passed()
+					});
+					let Ok(reduced) = reduced else {
+						return self.budget.check();
+					};
+					let leaf = Arc::new(Leaf::build(&reduced, Vec::new()));
 					self.formula
 						.explicit_cache
 						.lock()
@@ -811,11 +820,14 @@ const DETERMINIZE_FACTOR: usize = 4;
 /// An explicit node's automaton made small: minimal when its subset construction stays within
 /// [`DETERMINIZE_FACTOR`] times its bisimulation quotient, that quotient otherwise. An explicit node above another
 /// reads the smaller one, so a chain of them (pre-images in regular model checking) does not grow level by level.
-fn reduce(raw: &Raw) -> Raw {
+fn reduce(raw: &Raw, stop: &mut dyn FnMut() -> bool) -> Result<Raw, Stopped> {
 	// Trimmed first: a dead successor would tell two states with the same language apart.
-	let quotient = raw.trimmed().quotient();
-	match quotient.determinize(quotient.finals.len().saturating_mul(DETERMINIZE_FACTOR)) {
-		Some(dfa) => dfa.trimmed().quotient(),
-		None => quotient,
+	let quotient = raw.trimmed().quotient(stop)?;
+	match quotient.determinize(
+		quotient.finals.len().saturating_mul(DETERMINIZE_FACTOR),
+		stop,
+	)? {
+		Some(dfa) => dfa.trimmed().minimize(stop),
+		None => Ok(quotient),
 	}
 }

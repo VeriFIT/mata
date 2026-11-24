@@ -1,6 +1,5 @@
 //! The form in which the engine stores a leaf, and the import of an [`Automaton`] into it.
 
-use std::collections::HashMap;
 use std::hash::BuildHasher;
 use std::sync::OnceLock;
 use std::time::Instant;
@@ -8,7 +7,7 @@ use std::time::Instant;
 use hashbrown::HashTable;
 use indexmap::IndexSet;
 use parking_lot::Mutex;
-use rustc_hash::FxBuildHasher;
+use rustc_hash::{FxBuildHasher, FxHashMap};
 
 use crate::ids::{Id, StateId};
 use crate::simulation::{Simulation, TimedOut};
@@ -72,84 +71,127 @@ impl Raw {
 		(start, self.edges.len())
 	}
 
-	/// The quotient by the coarsest forward bisimulation: the same language on every tape, and, for a trimmed
-	/// deterministic automaton, the minimal one. Without it, explicit nodes stacked on each other (a chain of
-	/// pre-images) multiply their sizes level by level.
-	pub(crate) fn quotient(&self) -> Raw {
+	/// The quotient by the coarsest forward bisimulation, which keeps the language on every tape. It refines a
+	/// partition by finality: when a block splits, only the predecessors of its smaller part are compared again,
+	/// so every state is revisited O(log n) times. [`Stopped`] when `stop` says so (it is asked once per split
+	/// block processed).
+	pub(crate) fn quotient(&self, stop: &mut dyn FnMut() -> bool) -> Result<Raw, Stopped> {
 		let num_states = self.finals.len();
 		let mut outgoing: Vec<Vec<usize>> = vec![Vec::new(); num_states];
-		for (edge, &(source, _)) in self.edges.iter().enumerate() {
+		let mut predecessors: Vec<Vec<usize>> = vec![Vec::new(); num_states];
+		for (edge, &(source, target)) in self.edges.iter().enumerate() {
 			outgoing[source.index()].push(edge);
+			predecessors[target.index()].push(source.index());
 		}
 
-		let mut block: Vec<u32> = self
-			.finals
-			.iter()
-			.map(|&is_final| u32::from(is_final))
-			.collect();
-		let mut num_blocks =
-			usize::from(self.finals.contains(&true)) + usize::from(self.finals.contains(&false));
-		loop {
-			// A state's block and its moves, as tuples and target blocks.
-			type Signature<'a> = (u32, Vec<(&'a [Symbol], u32)>);
-			let mut renumbering: HashMap<Signature, u32, FxBuildHasher> = HashMap::default();
-			let mut refined = Vec::with_capacity(num_states);
-			for state in 0..num_states {
-				let mut signature: Vec<(&[Symbol], u32)> = outgoing[state]
+		let mut blocks = Partition::new(num_states);
+		for state in (0..num_states).filter(|&state| self.finals[state]) {
+			blocks.mark(state);
+		}
+		blocks.split();
+		// Every block once, so that every state with a move is compared once.
+		let mut work: Vec<usize> = (0..blocks.sets).collect();
+		blocks.created.clear();
+
+		// The round in which a state was last touched.
+		let mut stamp = vec![usize::MAX; num_states];
+		let mut round = 0;
+		while let Some(changed) = work.pop() {
+			if stop() {
+				return Err(Stopped);
+			}
+			round += 1;
+
+			// The states with a move into `changed`, by their block.
+			let mut touched: FxHashMap<usize, Vec<usize>> = FxHashMap::default();
+			for position in blocks.first[changed]..blocks.past[changed] {
+				for &source in &predecessors[blocks.elements[position]] {
+					if stamp[source] != round {
+						stamp[source] = round;
+						touched.entry(blocks.set[source]).or_default().push(source);
+					}
+				}
+			}
+
+			let signature = |state: usize, blocks: &Partition| {
+				let mut signature: Vec<(&[Symbol], usize)> = outgoing[state]
 					.iter()
-					.map(|&edge| (self.tuple(edge), block[self.edges[edge].1.index()]))
+					.map(|&edge| (self.tuple(edge), blocks.set[self.edges[edge].1.index()]))
 					.collect();
 				signature.sort_unstable();
 				signature.dedup();
-				let next = u32::try_from(renumbering.len()).expect("fewer than 2^32 states");
-				refined.push(*renumbering.entry((block[state], signature)).or_insert(next));
+				signature
+			};
+			for members in touched.into_values() {
+				let reference = blocks
+					.other_member(&members)
+					.map(|other| signature(other, &blocks));
+				let mut groups: FxHashMap<Vec<(&[Symbol], usize)>, Vec<usize>> =
+					FxHashMap::default();
+				for &state in &members {
+					groups
+						.entry(signature(state, &blocks))
+						.or_default()
+						.push(state);
+				}
+				// The states with the reference signature, or else the largest group, keep the block.
+				let kept = reference.or_else(|| {
+					groups
+						.iter()
+						.max_by_key(|(_, group)| group.len())
+						.map(|(signature, _)| signature.clone())
+				});
+				for (signature, group) in groups {
+					if Some(&signature) == kept.as_ref() {
+						continue;
+					}
+					for state in group {
+						blocks.mark(state);
+					}
+					blocks.split();
+				}
 			}
-
-			block = refined;
-			// Refinement only splits blocks, so the same count means stable.
-			if renumbering.len() == num_blocks {
-				break;
-			}
-			num_blocks = renumbering.len();
+			work.append(&mut blocks.created);
 		}
 
 		let mut quotient = Raw::new(self.arity);
-		quotient.finals = vec![false; num_blocks];
-		for (state, &is_final) in self.finals.iter().enumerate() {
-			quotient.finals[block[state] as usize] = is_final;
+		quotient.finals = vec![false; blocks.sets];
+		for state in (0..num_states).filter(|&state| self.finals[state]) {
+			quotient.finals[blocks.set[state]] = true;
 		}
 		quotient.initial = self
 			.initial
 			.iter()
-			.map(|state| StateId::new(block[state.index()] as usize))
+			.map(|state| StateId::new(blocks.set[state.index()]))
 			.collect();
 		quotient.initial.sort_unstable();
 		quotient.initial.dedup();
-		let mut moves: Vec<(u32, &[Symbol], u32)> = (0..self.edges.len())
+		let mut moves: Vec<(usize, &[Symbol], usize)> = (0..self.edges.len())
 			.map(|edge| {
 				let (source, target) = self.edges[edge];
 				(
-					block[source.index()],
+					blocks.set[source.index()],
 					self.tuple(edge),
-					block[target.index()],
+					blocks.set[target.index()],
 				)
 			})
 			.collect();
 		moves.sort_unstable();
 		moves.dedup();
 		for (source, tuple, target) in moves {
-			quotient.push(
-				StateId::new(source as usize),
-				tuple,
-				StateId::new(target as usize),
-			);
+			quotient.push(StateId::new(source), tuple, StateId::new(target));
 		}
 
-		quotient
+		Ok(quotient)
 	}
 
-	/// The subset construction over the tuples of `self`, or `None` once it has more than `max_states` states.
-	pub(crate) fn determinize(&self, max_states: usize) -> Option<Raw> {
+	/// The subset construction over the tuples of `self`: `Ok(None)` once it has more than `max_states` states,
+	/// [`Stopped`] when `stop` says so (it is asked once per subset).
+	pub(crate) fn determinize(
+		&self,
+		max_states: usize,
+		stop: &mut dyn FnMut() -> bool,
+	) -> Result<Option<Raw>, Stopped> {
 		let mut outgoing: Vec<Vec<usize>> = vec![Vec::new(); self.finals.len()];
 		for (edge, &(source, _)) in self.edges.iter().enumerate() {
 			outgoing[source.index()].push(edge);
@@ -165,7 +207,10 @@ impl Raw {
 		let mut next = 0;
 		while next < subsets.len() {
 			if subsets.len() > max_states {
-				return None;
+				return Ok(None);
+			}
+			if stop() {
+				return Err(Stopped);
 			}
 
 			let mut moves: Vec<(&[Symbol], StateId)> = subsets[next]
@@ -185,7 +230,113 @@ impl Raw {
 			next += 1;
 		}
 
-		Some(dfa)
+		Ok(Some(dfa))
+	}
+
+	/// The minimal automaton of `self`, which must be trimmed and deterministic over its tuples: the partition
+	/// refinement of Valmari and Lehtinen for partial DFAs (STACS 2008), in O(m log n) for m moves and n states.
+	/// [`Stopped`] when `stop` says so (it is asked once per class of moves).
+	pub(crate) fn minimize(&self, stop: &mut dyn FnMut() -> bool) -> Result<Raw, Stopped> {
+		let num_states = self.finals.len();
+		let num_edges = self.edges.len();
+		let mut minimal = Raw::new(self.arity);
+		if num_states == 0 {
+			return Ok(minimal);
+		}
+		debug_assert_eq!(self.initial.len(), 1, "a deterministic automaton");
+
+		// Letters are the distinct tuples, numbered in their order.
+		let mut tuples: Vec<&[Symbol]> = (0..num_edges).map(|edge| self.tuple(edge)).collect();
+		tuples.sort_unstable();
+		tuples.dedup();
+		let label = |edge: usize| {
+			tuples
+				.binary_search(&self.tuple(edge))
+				.expect("the tuple of a move")
+		};
+		let tail = |edge: usize| self.edges[edge].0.index();
+		let head = |edge: usize| self.edges[edge].1.index();
+
+		// The moves into each state.
+		let mut incoming_start = vec![0; num_states + 1];
+		for edge in 0..num_edges {
+			incoming_start[head(edge) + 1] += 1;
+		}
+		for state in 0..num_states {
+			incoming_start[state + 1] += incoming_start[state];
+		}
+		let mut incoming = vec![0; num_edges];
+		let mut fill = incoming_start.clone();
+		for edge in 0..num_edges {
+			incoming[fill[head(edge)]] = edge;
+			fill[head(edge)] += 1;
+		}
+
+		// Blocks of states, first split by finality.
+		let mut blocks = Partition::new(num_states);
+		for state in (0..num_states).filter(|&state| self.finals[state]) {
+			blocks.mark(state);
+		}
+		blocks.split();
+
+		// Cords: classes of moves, first by label.
+		let mut by_label: Vec<(usize, usize)> =
+			(0..num_edges).map(|edge| (label(edge), edge)).collect();
+		by_label.sort_unstable();
+		let mut cords = Partition::new(num_edges);
+		cords.sets = 0;
+		for (position, &(letter, edge)) in by_label.iter().enumerate() {
+			if position == 0 || by_label[position - 1].0 != letter {
+				cords.first[cords.sets] = position;
+				cords.sets += 1;
+			}
+			cords.past[cords.sets - 1] = position + 1;
+			cords.elements[position] = edge;
+			cords.location[edge] = position;
+			cords.set[edge] = cords.sets - 1;
+		}
+
+		let mut block = 1;
+		let mut cord = 0;
+		while cord < cords.sets {
+			if stop() {
+				return Err(Stopped);
+			}
+			for position in cords.first[cord]..cords.past[cord] {
+				blocks.mark(tail(cords.elements[position]));
+			}
+			blocks.split();
+			cord += 1;
+
+			while block < blocks.sets {
+				for position in blocks.first[block]..blocks.past[block] {
+					let state = blocks.elements[position];
+					for &edge in &incoming[incoming_start[state]..incoming_start[state + 1]] {
+						cords.mark(edge);
+					}
+				}
+				cords.split();
+				block += 1;
+			}
+		}
+
+		minimal.finals = vec![false; blocks.sets];
+		for state in (0..num_states).filter(|&state| self.finals[state]) {
+			minimal.finals[blocks.set[state]] = true;
+		}
+		minimal
+			.initial
+			.push(StateId::new(blocks.set[self.initial[0].index()]));
+		let mut moves: Vec<(usize, usize, usize)> = (0..num_edges)
+			.map(|edge| (blocks.set[tail(edge)], label(edge), blocks.set[head(edge)]))
+			.collect();
+		moves.sort_unstable();
+		moves.dedup();
+		for (source, letter, target) in moves {
+			minimal.push(StateId::new(source), tuples[letter], StateId::new(target));
+		}
+
+		Ok(minimal)
 	}
 
 	/// The useful part of `self`: states reachable from an initial one that reach a final one.
@@ -213,6 +364,99 @@ impl Raw {
 		}
 
 		trimmed
+	}
+}
+
+/// A reduction gave up, as its query passed a limit.
+#[derive(Debug)]
+pub(crate) struct Stopped;
+
+/// A partition of `0..n` whose sets are contiguous ranges of `elements`, refined by marking elements and splitting
+/// every touched set into its marked and unmarked part; the smaller part gets the new number.
+struct Partition {
+	sets: usize,
+	elements: Vec<usize>,
+	location: Vec<usize>,
+	set: Vec<usize>,
+	first: Vec<usize>,
+	past: Vec<usize>,
+	marked: Vec<usize>,
+	touched: Vec<usize>,
+	/// The sets that splits created, in order.
+	created: Vec<usize>,
+}
+
+impl Partition {
+	/// One set of all `n` elements, or none for `n == 0`.
+	fn new(n: usize) -> Partition {
+		let mut partition = Partition {
+			sets: usize::from(n > 0),
+			elements: (0..n).collect(),
+			location: (0..n).collect(),
+			set: vec![0; n],
+			first: vec![0; n + 1],
+			past: vec![0; n + 1],
+			marked: vec![0; n + 1],
+			touched: Vec::new(),
+			created: Vec::new(),
+		};
+		partition.past[0] = n;
+		partition
+	}
+
+	fn mark(&mut self, element: usize) {
+		let set = self.set[element];
+		let position = self.location[element];
+		let boundary = self.first[set] + self.marked[set];
+		if position < boundary {
+			return; // Marked already.
+		}
+		self.elements[position] = self.elements[boundary];
+		self.location[self.elements[position]] = position;
+		self.elements[boundary] = element;
+		self.location[element] = boundary;
+		if self.marked[set] == 0 {
+			self.touched.push(set);
+		}
+		self.marked[set] += 1;
+	}
+
+	fn split(&mut self) {
+		while let Some(set) = self.touched.pop() {
+			let boundary = self.first[set] + self.marked[set];
+			self.marked[set] = 0;
+			if boundary == self.past[set] {
+				continue;
+			}
+
+			let new = self.sets;
+			if boundary - self.first[set] <= self.past[set] - boundary {
+				self.first[new] = self.first[set];
+				self.past[new] = boundary;
+				self.first[set] = boundary;
+			} else {
+				self.past[new] = self.past[set];
+				self.first[new] = boundary;
+				self.past[set] = boundary;
+			}
+			for position in self.first[new]..self.past[new] {
+				self.set[self.elements[position]] = new;
+			}
+			self.created.push(new);
+			self.sets += 1;
+		}
+	}
+
+	/// A member of the set of `marked`'s elements that is not among them, if there is one; marks nothing.
+	fn other_member(&mut self, marked: &[usize]) -> Option<usize> {
+		let set = self.set[marked[0]];
+		for &element in marked {
+			self.mark(element);
+		}
+		let boundary = self.first[set] + self.marked[set];
+		self.marked[set] = 0;
+		self.touched.clear();
+		(boundary < self.past[set]).then(|| self.elements[boundary])
 	}
 }
 
