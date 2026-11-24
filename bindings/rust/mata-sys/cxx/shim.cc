@@ -967,6 +967,17 @@ std::unique_ptr<Nfa> one_letter_automaton(const Nfa& nfa, const Symbol abstract_
 	return boxed(nfa.get_one_letter_aut(abstract_symbol));
 }
 
+std::unique_ptr<Nfa>
+	collapse_by_length(const Nfa& nfa, const std::size_t length, const bool traces, const Direction direction) {
+	return boxed(
+		mata::nfa::collapse_by_length(
+			nfa, length,
+			{{"languages", traces ? "traces" : "words"},
+			 {"direction", direction == Direction::Backward ? "backward" : "forward"}}
+		)
+	);
+}
+
 bool is_flat(const Nfa& nfa) { return nfa.is_flat(); }
 
 bool accepts_prefix(const Nfa& nfa, const rust::Slice<const Symbol> word, const bool use_epsilon) {

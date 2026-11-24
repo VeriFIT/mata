@@ -218,6 +218,7 @@ std::unique_ptr<Nfa> left_quotient(const Nfa& nfa, const Nfa& prefixes, Symbol f
 std::unique_ptr<Nfa> right_quotient(const Nfa& nfa, const Nfa& suffixes, Symbol first_epsilon);
 std::unique_ptr<Nfa> decode_utf8(const Nfa& nfa);
 std::unique_ptr<Nfa> one_letter_automaton(const Nfa& nfa, Symbol abstract_symbol);
+std::unique_ptr<Nfa> collapse_by_length(const Nfa& nfa, std::size_t length, bool traces, Direction direction);
 bool is_flat(const Nfa& nfa);
 bool accepts_prefix(const Nfa& nfa, rust::Slice<const Symbol> word, bool use_epsilon);
 bool word_from_complement(const Nfa& nfa, rust::Slice<const Symbol> symbols, rust::Vec<Symbol>& word);

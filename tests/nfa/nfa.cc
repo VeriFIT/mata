@@ -5027,6 +5027,67 @@ TEST_CASE("mata::nfa::minimize() with the default \"auto\" strategy") {
 	}
 }
 
+TEST_CASE("mata::nfa::collapse_by_length()") {
+	SECTION("the abstraction over-approximates and reaches the minimal DFA once stable") {
+		const Nfa aut{builder::create_from_regex("(a|b)*a(a|b)(a|b)")};
+		const Nfa minimal{minimize(aut)};
+		for (size_t length{0}; length <= 5; ++length) {
+			const Nfa abstraction{collapse_by_length(aut, length)};
+			CHECK(is_included(aut, abstraction));
+			CHECK(abstraction.num_of_states() <= minimal.num_of_states());
+		}
+		CHECK(are_equivalent(collapse_by_length(aut, 5), aut));
+		CHECK(collapse_by_length(aut, 5).num_of_states() == minimal.num_of_states());
+	}
+
+	SECTION("states with equal short languages merge, losing the long distinction") {
+		// a^4 has five states with pairwise different languages; up to length 1 only "accepts the empty word" and
+		//  "accepts a" are told apart, so the first three states merge into a loop.
+		const Nfa aut{builder::create_from_regex("aaaa")};
+		const Nfa abstraction{collapse_by_length(aut, 1)};
+		CHECK(abstraction.num_of_states() == 3);
+		CHECK(abstraction.is_in_lang(Run{{'a', 'a', 'a', 'a'}, {}}));
+		CHECK(abstraction.is_in_lang(Run{{'a', 'a'}, {}}));
+		CHECK(!abstraction.is_in_lang(Run{{'a'}, {}}));
+		CHECK(!abstraction.is_in_lang(Run{{}, {}}));
+		CHECK(collapse_by_length(aut, 0).num_of_states() == 2);
+	}
+
+	SECTION("a missing transition and one to a state without short words are the same") {
+		// After 'b' only the long word "aaa" remains, which length 1 cannot see: the 'b' branch must merge with
+		//  the dead end, not stay apart because one transition exists and the other does not.
+		const Nfa aut{builder::create_from_regex("ab|baaa")};
+		const Nfa abstraction{collapse_by_length(aut, 1)};
+		CHECK(is_included(aut, abstraction));
+		CHECK(abstraction.is_in_lang(Run{{'a', 'b'}, {}}));
+	}
+
+	SECTION("traces treat every state as final") {
+		const Nfa aut{builder::create_from_regex("ab*c")};
+		const Nfa traces{collapse_by_length(aut, 2, {{"languages", "traces"}})};
+		CHECK(traces.is_in_lang(Run{{'a'}, {}}));
+		CHECK(traces.is_in_lang(Run{{'a', 'b'}, {}}));
+		CHECK(!traces.is_in_lang(Run{{'c'}, {}}));
+	}
+
+	SECTION("backward compares prefixes") {
+		const Nfa aut{builder::create_from_regex("aaaab")};
+		const Nfa backward{collapse_by_length(aut, 1, {{"direction", "backward"}})};
+		CHECK(is_included(aut, backward));
+		CHECK(backward.is_in_lang(Run{{'a', 'a', 'b'}, {}}));
+		CHECK(!backward.is_in_lang(Run{{'a'}, {}}));
+		CHECK(are_equivalent(collapse_by_length(aut, 6, {{"direction", "backward"}}), aut));
+	}
+
+	SECTION("the empty language and invalid parameters") {
+		const Nfa empty{collapse_by_length(Nfa{2, {0}, {1}}, 3)};
+		CHECK(empty.num_of_states() == 1);
+		CHECK(empty.final.empty());
+		CHECK_THROWS_AS(collapse_by_length(empty, 1, {{"languages", "prefixes"}}), std::invalid_argument);
+		CHECK_THROWS_AS(collapse_by_length(empty, 1, {{"direction", "both"}}), std::invalid_argument);
+	}
+}
+
 TEST_CASE("mata::nfa::Nfa::is_minimal()") {
 	SECTION("fixed automata") {
 		Nfa minimal(2);
