@@ -3670,6 +3670,10 @@ fn the_regular_model_checking_examples_reach_their_verdicts() {
 		assert_eq!(status(&output), 0, "{system}: {}", stderr(&output));
 		assert_eq!(stdout(&output), format!("{verdict}\n"), "{system}");
 	}
+	let invariant = format!("{examples}/inductive-invariant.matasc");
+	let output = mata(["script", "run", invariant.as_str()]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "no reachable 0: true\n");
 }
 
 #[test]

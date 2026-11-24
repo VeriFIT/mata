@@ -41,3 +41,10 @@ scan the left processes again, `4` wait for the right processes, `5` critical. T
 
 Initially every process is idle (`0*`); a configuration with two processes in `5` is bad. `burns-broken.mata` drops
 the condition of `4` to `5`.
+
+## An inductive invariant
+
+[`inductive-invariant.matasc`](inductive-invariant.matasc) is the proof rule of regular abstraction frameworks
+(_Computing Inductive Invariants of Regular Abstraction Frameworks_, CONCUR 2024) on the example of
+`bindings/rust/mata/examples/lazy_model_checking.rs`, as one lazy formula with no loop. It prints
+`no reachable 0: true`.
