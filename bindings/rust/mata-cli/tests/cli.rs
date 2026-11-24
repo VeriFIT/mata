@@ -3695,6 +3695,48 @@ fn a_lazy_query_past_its_limit_is_an_error() {
 }
 
 #[test]
+fn lazy_closures_prefixes_and_bounded_searches_work_from_a_script() {
+	let script = "(mata-script \"0.1.0\" :requires (lazy))\n\
+	              (set-option :alphabet \"bytes\")\n\
+	              (define (leaf regex) (lazy:leaf (nfa:create-from-regex regex)))\n\
+	              (check \"prefixes\" (lazy:equivalent? (lazy:prefixes (leaf \"ab\")) (leaf \"|a|ab\")))\n\
+	              (check \"constant padding\" (lazy:equivalent? (lazy:pad-closure (leaf \"ab0\") (symbol \"0\")) (leaf \"ab0?\")))\n\
+	              (check \"any padding\" (lazy:equivalent? (lazy:pad-closure (leaf \"aab\") dont-care) (leaf \"|a|aa|aab\")))\n\
+	              (check \"last padding\" (lazy:equivalent? (lazy:pad-closure (leaf \"abb\")) (leaf \"ab|abb\")))\n\
+	              (check \"too short\" (lazy:empty-within? (leaf \"aaaa\") :max-length 3))\n\
+	              (check \"long enough\" (lazy:empty? (leaf \"aaaa\") :max-length 4))\n\
+	              (print (lazy:witness (lazy:union (leaf \"aaa\") (leaf \"a\")) :shortest true))";
+	let output = run_script(script, true, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(
+		stdout(&output),
+		"prefixes: true\nconstant padding: true\nany padding: true\nlast padding: true\n\
+		 too short: true\nlong enough: false\na\n"
+	);
+}
+
+#[test]
+fn ws1s_formulae_are_parsed_and_decided_from_a_script() {
+	let script = "(check \"valid\" (ws1s:valid? \"(x = y + 1 & y = z + 1) => x = z + 2\"))\n\
+	              (check \"invalid\" (ws1s:valid? \"x < y | y + 2 < x\"))\n\
+	              (check \"satisfiable\" (ws1s:satisfiable? \"ex1 x: x = 3\"))\n\
+	              (check \"unsatisfiable\" (ws1s:satisfiable? \"x in empty\"))";
+	let output = run_script(script, true, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(
+		stdout(&output),
+		"valid: true\ninvalid: false\nsatisfiable: true\nunsatisfiable: false\n"
+	);
+}
+
+#[test]
+fn a_ws1s_syntax_error_is_reported() {
+	let output = run_script("(ws1s:valid? \"ex1 x: \")", true, &[]);
+	assert_eq!(status(&output), 2);
+	assert!(stderr(&output).contains("at byte"));
+}
+
+#[test]
 fn lazy_operands_are_checked_before_the_script_runs() {
 	let script = "(mata-script \"0.1.0\" :requires (lazy))\n\
 	              (define a (nfa:create-from-regex \"a*\"))\n\
