@@ -9,6 +9,7 @@
 #include <iterator>
 #include <limits>
 #include <list>
+#include <map>
 #include <numeric>
 #include <optional>
 #include <queue>
@@ -1198,6 +1199,71 @@ Nfa mata::nfa::minimize(const Nfa& aut, const ParameterMap& params) {
 	}
 
 	return algo(aut);
+}
+
+Nfa mata::nfa::collapse_by_length(const Nfa& aut, const size_t length, const ParameterMap& params) {
+	const std::string languages{haskey(params, "languages") ? params.at("languages") : "words"};
+	const std::string direction{haskey(params, "direction") ? params.at("direction") : "forward"};
+	if (languages != "words" && languages != "traces") {
+		throw std::invalid_argument(std::string(__func__) + ": unknown \"languages\": " + languages);
+	}
+	if (direction != "forward" && direction != "backward") {
+		throw std::invalid_argument(std::string(__func__) + ": unknown \"direction\": " + direction);
+	}
+	const bool backward{direction == "backward"};
+
+	Nfa input{trim(backward ? revert(aut) : aut)};
+	if (languages == "traces") {
+		// Every state of a trimmed automaton is final for traces; determinizing keeps every macrostate final.
+		for (State state{0}; state < input.num_of_states(); ++state) { input.final.insert(state); }
+	}
+	Nfa dfa{input.is_deterministic() ? std::move(input) : determinize(input)};
+	dfa.trim();
+	if (dfa.num_of_states() == 0) {
+		Nfa empty_language{1};
+		empty_language.initial.insert(0);
+		empty_language.alphabet = aut.alphabet;
+		return empty_language;
+	}
+	// Moore's rounds compare bounded languages exactly only on a complete DFA: a missing transition and one into a
+	//  state without short words read the same, but have different signatures. Blocks that cannot reach a final
+	//  state, the sink among them, are trimmed away at the end.
+	dfa.make_complete(dfa.delta.get_used_symbols());
+	const size_t num_of_states{dfa.num_of_states()};
+
+	// Moore refinement: after round k, two states share a block iff their languages up to length k are equal.
+	std::vector<State> block(num_of_states, 0);
+	const bool split_by_finality{!dfa.final.empty() && dfa.final.size() != num_of_states};
+	if (split_by_finality) {
+		for (const State state : dfa.final) { block[state] = 1; }
+	}
+	size_t num_of_blocks{split_by_finality ? 2U : 1U};
+	using Signature = std::vector<std::pair<Symbol, State>>;
+	for (size_t round{0}; round < length; ++round) {
+		std::map<std::pair<State, Signature>, State> renumbering{};
+		std::vector<State> refined(num_of_states);
+		for (State state{0}; state < num_of_states; ++state) {
+			Signature signature{};
+			for (const SymbolPost& symbol_post : dfa.delta[state]) {
+				signature.emplace_back(symbol_post.symbol, block[symbol_post.targets.front()]);
+			}
+			const auto next_block{static_cast<State>(renumbering.size())};
+			refined[state] = renumbering.try_emplace({block[state], std::move(signature)}, next_block).first->second;
+		}
+		block = std::move(refined);
+		if (renumbering.size() == num_of_blocks) { break; } // Stable: more rounds split nothing.
+		num_of_blocks = renumbering.size();
+	}
+
+	Nfa quotient{num_of_blocks};
+	for (const State state : dfa.initial) { quotient.initial.insert(block[state]); }
+	for (const State state : dfa.final) { quotient.final.insert(block[state]); }
+	for (const Transition& transition : dfa.delta.transitions()) {
+		quotient.delta.add(block[transition.source], transition.symbol, block[transition.target]);
+	}
+	Nfa result{backward ? revert(trim(quotient)) : trim(quotient)};
+	result.alphabet = aut.alphabet; // revert() drops the alphabet.
+	return result;
 }
 
 // Anonymous namespace for the Hopcroft minimization algorithm.

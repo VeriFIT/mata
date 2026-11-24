@@ -3636,6 +3636,47 @@ fn a_token_passing_step_checks_the_same_lazily_and_eagerly() {
 }
 
 #[test]
+fn the_regular_model_checking_examples_reach_their_verdicts() {
+	// `examples/rmc/armc.matasc`: abstraction by `nfa:collapse-by-length`, refined when an error is spurious.
+	let examples = format!("{}/../../../examples/rmc", env!("CARGO_MANIFEST_DIR"));
+	let token = [
+		"--param",
+		"initial-regex=tn*",
+		"--param",
+		"bad-regex=n*tn*",
+		"--param",
+		"symbols=n t",
+	];
+	let burns = [
+		"--param",
+		"initial-regex=0*",
+		"--param",
+		"bad-regex=[0-4]*(5[0-4]*)?",
+		"--param",
+		"symbols=0 1 2 3 4 5",
+	];
+	for (system, parameters, verdict) in [
+		("token-passing", token, "safe, length 1"),
+		("token-copying", token, "unsafe, steps: 1, length 1"),
+		("burns", burns, "safe, length 1"),
+		("burns-broken", burns, "unsafe, steps: 10, length 1"),
+	] {
+		let script = format!("{examples}/armc.matasc");
+		let input = format!("{examples}/{system}.mata");
+		let mut arguments = vec!["script", "run"];
+		arguments.extend(parameters);
+		arguments.extend([script.as_str(), input.as_str()]);
+		let output = mata(arguments);
+		assert_eq!(status(&output), 0, "{system}: {}", stderr(&output));
+		assert_eq!(stdout(&output), format!("{verdict}\n"), "{system}");
+	}
+	let invariant = format!("{examples}/inductive-invariant.matasc");
+	let output = mata(["script", "run", invariant.as_str()]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "no reachable 0: true\n");
+}
+
+#[test]
 fn a_lazy_complement_is_taken_over_the_alphabet_of_the_query() {
 	let script = "(mata-script \"0.1.0\" :requires (lazy))\n\
 	              (set-option :alphabet \"bytes\")\n\

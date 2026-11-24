@@ -1384,6 +1384,26 @@ Nfa complement(
 Nfa minimize(const Nfa& aut, const ParameterMap& params = {{"algorithm", "auto"}});
 
 /**
+ * @brief Finite-length abstraction α_n of abstract regular model checking (Bouajjani, Habermehl, Vojnar, CAV 2004).
+ *
+ * Merges the states whose languages of words of length at most @p length are equal. The input is trimmed and
+ *  determinized first, so the states compared are those of a DFA, where @p length rounds of Moore partition
+ *  refinement decide this equivalence exactly. The quotient accepts a superset of the language of @p aut and may be
+ *  nondeterministic; once @p length is large enough that refinement stabilises, it is the minimal DFA (trimmed).
+ *
+ * @param[in] aut Automaton to abstract. EPSILON is an ordinary symbol.
+ * @param[in] length The bound n on the length of the compared words.
+ * @param[in] params Optional parameters:
+ * - "languages": "words" (default) compares the accepted words of length at most n; "traces" compares all words of
+ *    length at most n readable from a state, as if every state were final.
+ * - "direction": "forward" (default) compares the languages of suffixes; "backward" those of prefixes.
+ * @return The abstraction; an automaton with an empty language becomes a single non-final initial state.
+ */
+Nfa collapse_by_length(
+	const Nfa& aut, size_t length, const ParameterMap& params = {{"languages", "words"}, {"direction", "forward"}}
+);
+
+/**
  * @brief Determinize automaton.
  *
  * @param[in] aut Automaton to determinize.

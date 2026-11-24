@@ -571,6 +571,7 @@ Each application is one library call, with these exceptions:
 | `nfa:make-complete`                     | `Nfa::make_complete`                                                     |
 | `nfa:decode-utf8`                       | `Nfa::decode_utf8`                                                       |
 | `nfa:get-one-letter-automaton`          | `Nfa::get_one_letter_aut`                                                |
+| `nfa:collapse-by-length`                | `collapse_by_length`                                                     |
 | `nfa:language-empty?`                   | `Nfa::is_lang_empty`                                                     |
 | `nfa:intersection-empty?`               | `is_intersection_empty`                                                  |
 | `nfa:included?`                         | `is_included`                                                            |

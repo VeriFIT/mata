@@ -1169,6 +1169,24 @@ impl Nfa {
 		))
 	}
 
+	/// The finite-length abstraction `α_n` of abstract regular model checking (Mata's `collapse_by_length`): the
+	/// quotient of the minimal DFA's states whose languages of words up to `length` agree. It accepts a superset of
+	/// `self`, and equals the minimal DFA once `length` is large enough. With `traces`, every state counts as final;
+	/// [`Direction::Backward`] compares prefixes instead of suffixes.
+	///
+	/// # Complexity
+	///
+	/// Determinizes: exponential in the worst case.
+	#[must_use = "returns a new automaton and leaves `self` unchanged"]
+	pub fn collapse_by_length(&self, length: usize, traces: bool, direction: Direction) -> Nfa {
+		new_nfa(ffi::collapse_by_length(
+			self.raw(),
+			length,
+			traces,
+			direction.into(),
+		))
+	}
+
 	/// Whether no state lies on two cycles (Mata's `is_flat`).
 	#[must_use]
 	pub fn is_flat(&self) -> bool {
