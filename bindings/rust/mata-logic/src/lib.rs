@@ -6,12 +6,14 @@
 //! [`Padding`]: natural numbers or finite sets (WS1S) pad with zeros, integers in two's complement (Presburger
 //! arithmetic, LIA) repeat the sign.
 //!
-//! This crate is pure Rust. `mata` re-exports it as `mata::logic`.
+//! The front-end [`ws1s`] parses and decides formulas of WS1S. This crate is pure Rust. `mata` re-exports it as
+//! `mata::logic`.
 
 mod closure;
 mod error;
 mod logic;
 mod model;
+pub mod ws1s;
 
 pub use error::Error;
 pub use logic::{Logic, ONE, Padding, Prop, Var, ZERO};
