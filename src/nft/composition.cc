@@ -1209,9 +1209,12 @@ Nft compose(
 			}
 			[[fallthrough]];
 		case CompositionMode::General:
-		default:
 			return algorithms::compose_general(
 				lhs, rhs, lhs_sync_levels, rhs_sync_levels, project_out_sync_levels, jump_mode, normalization
+			);
+		default:
+			throw std::invalid_argument(
+				"compose: unsupported composition mode " + std::to_string(static_cast<int>(composition_mode)) + "."
 			);
 	}
 }

@@ -178,6 +178,8 @@ def test_nft_compose_rejects_invalid_requests():
         mata_nft.compose(lhs, lhs, [0, 1], [0])
     with pytest.raises(ValueError):
         mata_nft.compose_alphabets(lhs, one_level, 2, 0)
+    with pytest.raises(ValueError, match="composition mode"):
+        mata_nft.compose(lhs, lhs, 1, 0, composition_mode=3)
 
 
 def test_nft_is_included_and_are_equivalent():
