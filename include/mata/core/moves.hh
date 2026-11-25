@@ -8,6 +8,8 @@
 #include <cstddef>
 #include <iterator>
 
+#include "mata/utils/assert.hh"
+
 namespace mata::posts {
 
 /**
@@ -42,6 +44,10 @@ struct MoveTypeOf<P> {
  *
  * Available only at @c key_arity 1, since a @c Move holds a single key. Above that, use @c for_each_move().
  *
+ * @pre No symbol post in the range is without targets: for speed, the iterator does not skip one. Mata's own writes
+ *  keep a post so, as @c remove() and @c defragment() erase the symbol posts they empty. A symbol post created
+ *  empty through @c mutable_state_post() has to get its targets before its moves are iterated.
+ *  @c for_each_move() and the successor cursors have no such precondition.
  * @tparam P The post visited.
  */
 template <typename P> class PostMoves {
@@ -87,6 +93,7 @@ template <typename P> class PostMoves {
 			: symbol_post_it_{symbol_post_it},
 			  symbol_post_end_{symbol_post_end} {
 			if (at_end()) { return; }
+			MATA_ASSERT(!symbol_post_it_->targets.empty(), "iterating the moves of a symbol post without targets");
 			move_.symbol = symbol_post_it_->symbol;
 			target_it_ = symbol_post_it_->targets.cbegin();
 			move_.target = *target_it_;
@@ -110,6 +117,7 @@ template <typename P> class PostMoves {
 			// Iterate over to the next symbol post, check for end.
 			++symbol_post_it_;
 			if (at_end()) { return *this; }
+			MATA_ASSERT(!symbol_post_it_->targets.empty(), "iterating the moves of a symbol post without targets");
 			move_.symbol = symbol_post_it_->symbol;
 			target_it_ = symbol_post_it_->targets.begin();
 			move_.target = *target_it_;
