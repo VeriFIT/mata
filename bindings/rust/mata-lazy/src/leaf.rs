@@ -1,13 +1,13 @@
 //! The form in which the engine stores a leaf, and the import of an [`Automaton`] into it.
 
-use std::hash::BuildHasher;
+use std::hash::{BuildHasher, Hash, Hasher};
 use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
 use hashbrown::HashTable;
 use indexmap::IndexSet;
 use parking_lot::Mutex;
-use rustc_hash::{FxBuildHasher, FxHashMap};
+use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet, FxHasher};
 
 use crate::ids::{Id, StateId};
 use crate::simulation::{Simulation, TimedOut, Until};
@@ -78,19 +78,55 @@ impl Raw {
 		(start, self.edges.len())
 	}
 
-	/// The tuple of every move, numbered in the order of the distinct tuples.
-	fn labels(&self) -> Vec<usize> {
-		let mut tuples: Vec<&[Symbol]> =
-			(0..self.edges.len()).map(|edge| self.tuple(edge)).collect();
-		tuples.sort_unstable();
-		tuples.dedup();
-		(0..self.edges.len())
-			.map(|edge| {
-				tuples
-					.binary_search(&self.tuple(edge))
-					.expect("the tuple of a move")
-			})
-			.collect()
+	/// The tuple of every move, numbered in the order of first appearance, and the distinct tuples.
+	/// One linear pass, with a check per move, so cancellation never waits for a sort.
+	fn labels(
+		&self,
+		stop: &mut dyn FnMut() -> bool,
+	) -> Result<(Vec<usize>, Vec<&[Symbol]>), Stopped> {
+		let mut labels = Vec::with_capacity(self.edges.len());
+		let mut tuples = Vec::new();
+		let mut positions: FxHashMap<&[Symbol], usize> = FxHashMap::default();
+		for edge in 0..self.edges.len() {
+			if stop() {
+				return Err(Stopped);
+			}
+			let label = *positions.entry(self.tuple(edge)).or_insert_with_key(|_| {
+				tuples.push(self.tuple(edge));
+				tuples.len() - 1
+			});
+			labels.push(label);
+		}
+		Ok((labels, tuples))
+	}
+
+	/// Moves sorted by their dense `labels`: a counting sort, which checks `stop` per label and per move.
+	fn moves_by_label(
+		&self,
+		labels: &[usize],
+		stop: &mut dyn FnMut() -> bool,
+	) -> Result<Vec<(usize, usize)>, Stopped> {
+		let letters = labels.iter().copied().max().map_or(0, |max| max + 1);
+		let mut starts = vec![0; letters + 1];
+		for &letter in labels {
+			starts[letter + 1] += 1;
+		}
+		for letter in 0..letters {
+			if stop() {
+				return Err(Stopped);
+			}
+			starts[letter + 1] += starts[letter];
+		}
+		let mut moves = Vec::new();
+		moves.resize(self.edges.len(), (0, 0));
+		for edge in 0..self.edges.len() {
+			if stop() {
+				return Err(Stopped);
+			}
+			moves[starts[labels[edge]]] = (labels[edge], edge);
+			starts[labels[edge]] += 1;
+		}
+		Ok(moves)
 	}
 
 	/// The quotient by the coarsest forward bisimulation, which keeps the language on every tape: the partition
@@ -102,13 +138,16 @@ impl Raw {
 	pub(crate) fn quotient(&self, stop: &mut dyn FnMut() -> bool) -> Result<Raw, Stopped> {
 		let num_states = self.finals.len();
 		let num_edges = self.edges.len();
-		let label = self.labels();
+		let (label, _) = self.labels(stop)?;
 		let tail = |edge: usize| self.edges[edge].0.index();
 		let mut incoming: Vec<Vec<usize>> = vec![Vec::new(); num_states];
 		for (edge, &(_, target)) in self.edges.iter().enumerate() {
+			if stop() {
+				return Err(Stopped);
+			}
 			incoming[target.index()].push(edge);
 		}
-		let mut blocks = self.blocks_by_letters(&label);
+		let mut blocks = self.blocks_by_letters(&label, stop)?;
 
 		// The moves of a state with a letter into a compound set, counted in one cell.
 		let mut counts: Vec<usize> = Vec::new();
@@ -170,14 +209,9 @@ impl Raw {
 
 			// A state with moves into the splitter is told apart by the letters of those moves and whether it
 			// has a move with the same letter into the rest; the states without such moves keep their block.
-			entries.sort_unstable();
+			let by_state = canonical_cells(entries, &counts, stop)?;
 			let mut touched: FxHashMap<usize, KeyGroups> = FxHashMap::default();
-			for moves in entries.chunk_by(|a, b| a.0 == b.0) {
-				let state = moves[0].0;
-				let key = moves
-					.iter()
-					.map(|&(_, letter, old)| (letter, counts[old] > 0))
-					.collect();
+			for (state, key) in by_state {
 				touched
 					.entry(blocks.set[state])
 					.or_default()
@@ -209,17 +243,26 @@ impl Raw {
 
 	/// The states split by finality and the letters of their moves, so that the blocks are stable with respect to
 	/// the one compound set of all states.
-	fn blocks_by_letters(&self, label: &[usize]) -> Partition {
+	fn blocks_by_letters(
+		&self,
+		label: &[usize],
+		stop: &mut dyn FnMut() -> bool,
+	) -> Result<Partition, Stopped> {
 		let num_states = self.finals.len();
 		let mut letters: Vec<Vec<usize>> = vec![Vec::new(); num_states];
 		for (edge, &(source, _)) in self.edges.iter().enumerate() {
+			if stop() {
+				return Err(Stopped);
+			}
 			letters[source.index()].push(label[edge]);
 		}
 		let mut blocks = Partition::new(num_states);
-		let mut groups: FxHashMap<(bool, Vec<usize>), Vec<usize>> = FxHashMap::default();
-		for (state, mut state_letters) in letters.into_iter().enumerate() {
-			state_letters.sort_unstable();
-			state_letters.dedup();
+		let mut groups: FxHashMap<(bool, LetterSet), Vec<usize>> = FxHashMap::default();
+		for (state, state_letters) in letters.into_iter().enumerate() {
+			if stop() {
+				return Err(Stopped);
+			}
+			let state_letters = LetterSet::new(state_letters);
 			groups
 				.entry((self.finals[state], state_letters))
 				.or_default()
@@ -232,7 +275,7 @@ impl Raw {
 			blocks.split();
 		}
 		blocks.created.clear();
-		blocks
+		Ok(blocks)
 	}
 
 	/// `self` with the states of every block of `blocks` merged.
@@ -296,29 +339,32 @@ impl Raw {
 				return Err(Stopped);
 			}
 
-			let mut moves: Vec<(&[Symbol], StateId)> = Vec::new();
+			let mut moves: FxHashMap<&[Symbol], Vec<StateId>> = FxHashMap::default();
 			for state in &subsets[next] {
-				if stop() {
-					return Err(Stopped);
+				for &edge in &outgoing[state.index()] {
+					if stop() {
+						return Err(Stopped);
+					}
+					moves
+						.entry(self.tuple(edge))
+						.or_default()
+						.push(self.edges[edge].1);
 				}
-				moves.extend(
-					outgoing[state.index()]
-						.iter()
-						.map(|&edge| (self.tuple(edge), self.edges[edge].1)),
-				);
 			}
-			moves.sort_unstable();
-			moves.dedup();
 			dfa.finals
 				.push(subsets[next].iter().any(|state| self.finals[state.index()]));
-			for group in moves.chunk_by(|a, b| a.0 == b.0) {
+			// Grouped without a sort. A subset is canonical: its members in state order, each once.
+			for (tuple, mut targets) in moves {
 				if stop() {
 					return Err(Stopped);
 				}
 				if dfa.edges.len() == max_moves {
 					return Ok(None);
 				}
-				let target: Vec<StateId> = group.iter().map(|&(_, target)| target).collect();
+				// Only the target subset is sorted to get one canonical key, not all the moves.
+				targets.sort_unstable();
+				targets.dedup();
+				let target = targets;
 				let size = target.len();
 				let (index, new) = subsets.insert_full(target);
 				// Checked as each subset is found, so a state with many new targets does not emit them all first.
@@ -328,7 +374,7 @@ impl Raw {
 						return Ok(None);
 					}
 				}
-				dfa.push(StateId::new(next), group[0].0, StateId::new(index));
+				dfa.push(StateId::new(next), tuple, StateId::new(index));
 			}
 			next += 1;
 		}
@@ -348,15 +394,8 @@ impl Raw {
 		}
 		debug_assert_eq!(self.initial.len(), 1, "a deterministic automaton");
 
-		// Letters are the distinct tuples, numbered in their order.
-		let mut tuples: Vec<&[Symbol]> = (0..num_edges).map(|edge| self.tuple(edge)).collect();
-		tuples.sort_unstable();
-		tuples.dedup();
-		let label = |edge: usize| {
-			tuples
-				.binary_search(&self.tuple(edge))
-				.expect("the tuple of a move")
-		};
+		// Letters are the distinct tuples, numbered in their order; one linear pass per move.
+		let (label, tuples) = self.labels(stop)?;
 		let tail = |edge: usize| self.edges[edge].0.index();
 		let head = |edge: usize| self.edges[edge].1.index();
 
@@ -382,10 +421,8 @@ impl Raw {
 		}
 		blocks.split();
 
-		// Cords: classes of moves, first by label.
-		let mut by_label: Vec<(usize, usize)> =
-			(0..num_edges).map(|edge| (label(edge), edge)).collect();
-		by_label.sort_unstable();
+		// Cords: classes of moves, first by label; a linear counting sort.
+		let by_label = self.moves_by_label(&label, stop)?;
 		let mut cords = Partition::new(num_edges);
 		cords.sets = 0;
 		for (position, &(letter, edge)) in by_label.iter().enumerate() {
@@ -436,7 +473,7 @@ impl Raw {
 			.initial
 			.push(StateId::new(blocks.set[self.initial[0].index()]));
 		let mut moves: Vec<(usize, usize, usize)> = (0..num_edges)
-			.map(|edge| (blocks.set[tail(edge)], label(edge), blocks.set[head(edge)]))
+			.map(|edge| (blocks.set[tail(edge)], label[edge], blocks.set[head(edge)]))
 			.collect();
 		moves.sort_unstable();
 		moves.dedup();
@@ -448,12 +485,9 @@ impl Raw {
 	}
 
 	/// The useful part of `self`: states reachable from an initial one that reach a final one. [`Stopped`] when
-	/// `stop` says so (it is asked once the useful states are known, and per move).
+	/// `stop` says so (it is asked per state of the useful-state search, and per move).
 	pub(crate) fn trimmed(&self, stop: &mut dyn FnMut() -> bool) -> Result<Raw, Stopped> {
-		let renumbered = useful_states(self);
-		if stop() {
-			return Err(Stopped);
-		}
+		let renumbered = useful_states_until(self, stop)?;
 		let mut trimmed = Raw::new(self.arity);
 		trimmed.finals = vec![false; renumbered.iter().flatten().count()];
 		for (&new, &is_final) in renumbered.iter().zip(&self.finals) {
@@ -488,6 +522,61 @@ pub(crate) struct Stopped;
 
 /// The states of one block with moves into a splitter, by their letters and whether they also reach the rest.
 type KeyGroups = FxHashMap<Vec<(usize, bool)>, Vec<usize>>;
+
+/// The `(letter, whether a move remains)` cells for every state, sorted within each state. The grouping is the same
+/// as sorting every entry together, but each sort covers only one state's cells and `stop` is asked per state.
+fn canonical_cells(
+	entries: Vec<(usize, usize, usize)>,
+	counts: &[usize],
+	stop: &mut dyn FnMut() -> bool,
+) -> Result<FxHashMap<usize, Vec<(usize, bool)>>, Stopped> {
+	let mut by_state: FxHashMap<usize, Vec<(usize, bool)>> = FxHashMap::default();
+	for (state, letter, old) in entries {
+		by_state
+			.entry(state)
+			.or_default()
+			.push((letter, counts[old] > 0));
+	}
+	for key in by_state.values_mut() {
+		if stop() {
+			return Err(Stopped);
+		}
+		key.sort_unstable();
+	}
+	Ok(by_state)
+}
+
+/// A set of move labels, for grouping states by their outgoing letters without sorting them.
+#[derive(PartialEq, Eq)]
+struct LetterSet {
+	letters: FxHashSet<usize>,
+	/// The commutative hash: set equality is independent of insertion order.
+	fingerprint: u64,
+}
+
+impl LetterSet {
+	fn new(letters: Vec<usize>) -> LetterSet {
+		let mut fingerprint = 0;
+		let mut set = FxHashSet::default();
+		for letter in letters {
+			if set.insert(letter) {
+				let mut hash = FxHasher::default();
+				letter.hash(&mut hash);
+				fingerprint ^= hash.finish();
+			}
+		}
+		LetterSet {
+			letters: set,
+			fingerprint,
+		}
+	}
+}
+
+impl Hash for LetterSet {
+	fn hash<H: Hasher>(&self, state: &mut H) {
+		state.write_u64(self.fingerprint);
+	}
+}
 
 /// A partition of `0..n` whose sets are contiguous ranges of `elements`, refined by marking elements and splitting
 /// every touched set into its marked and unmarked part; the smaller part gets the new number.
@@ -966,9 +1055,20 @@ fn column(letters: &[Symbol], arity: usize, tape: usize) -> impl Iterator<Item =
 
 /// The new number of every state that can reach a final state, in the old order.
 fn useful_states(raw: &Raw) -> Vec<Option<StateId>> {
+	useful_states_until(raw, &mut || false).expect("nothing stops")
+}
+
+/// [`useful_states`], stopping once `stop` says so; asked per edge and per state visited.
+fn useful_states_until(
+	raw: &Raw,
+	stop: &mut dyn FnMut() -> bool,
+) -> Result<Vec<Option<StateId>>, Stopped> {
 	let num_states = raw.finals.len();
 	let mut predecessors = vec![Vec::new(); num_states];
 	for &(source, target) in &raw.edges {
+		if stop() {
+			return Err(Stopped);
+		}
 		predecessors[target.index()].push(source);
 	}
 
@@ -978,6 +1078,9 @@ fn useful_states(raw: &Raw) -> Vec<Option<StateId>> {
 		.map(StateId::new)
 		.collect();
 	while let Some(state) = stack.pop() {
+		if stop() {
+			return Err(Stopped);
+		}
 		for &source in &predecessors[state.index()] {
 			if !useful[source.index()] {
 				useful[source.index()] = true;
@@ -991,5 +1094,5 @@ fn useful_states(raw: &Raw) -> Vec<Option<StateId>> {
 		renumbered[old] = Some(StateId::new(new));
 	}
 
-	renumbered
+	Ok(renumbered)
 }
