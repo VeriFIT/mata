@@ -89,9 +89,12 @@ template <typename K, typename N, typename R> class PostEntryCore {
 		  symbol{symbol} {}
 	PostEntryCore(const Key symbol, Nested states_to) : targets{std::move(states_to)}, symbol{symbol} {}
 
-	PostEntryCore(PostEntryCore&& rhs) noexcept : targets{std::move(rhs.targets)}, symbol{rhs.symbol} {}
+	/// Nothrow when the key and the nested post are: a key or post that may throw is let throw, not terminate.
+	PostEntryCore(PostEntryCore&& rhs) = default;
 	PostEntryCore(const PostEntryCore& rhs) = default;
-	PostEntryCore& operator=(PostEntryCore&& rhs) noexcept;
+	PostEntryCore& operator=(PostEntryCore&& rhs) noexcept(
+		std::is_nothrow_move_assignable_v<N> && std::is_nothrow_move_assignable_v<K>
+	);
 	PostEntryCore& operator=(const PostEntryCore& rhs) = default;
 
 	/// A key needs only to be totally ordered: without its own @c <=>, the ordering is built from @c == and @c <.

@@ -10,12 +10,14 @@
 namespace mata::posts::detail {
 
 template <typename K, typename N, typename R>
-PostEntryCore<K, N, R>& PostEntryCore<K, N, R>::operator=(PostEntryCore&& rhs) noexcept {
+PostEntryCore<K, N, R>& PostEntryCore<K, N, R>::operator=(PostEntryCore&& rhs) noexcept(
+	std::is_nothrow_move_assignable_v<N> && std::is_nothrow_move_assignable_v<K>
+) {
 	// Self-assignment is checked by address: operator== compares only the key, so a by-value check
 	//  would also skip assigning an entry with the same key but different targets (std::sort does this).
 	if (this != &rhs) {
 		targets = std::move(rhs.targets);
-		symbol = rhs.symbol;
+		symbol = std::move(rhs.symbol);
 	}
 	return *this;
 }
