@@ -29,7 +29,8 @@ using namespace mata;
 /// @{
 template class mata::posts::internal::PostEntryCore<mata::Symbol, mata::SmallStateSet>;
 template class mata::posts::PostEntry<mata::Symbol, mata::SmallStateSet>;
-template class mata::posts::Post<mata::SymbolPost, mata::ReservedKeys<mata::Symbol>, mata::utils::DeltaAllocator<mata::SymbolPost>>;
+template class mata::posts::
+	Post<mata::SymbolPost, mata::ReservedKeys<mata::Symbol>, mata::utils::DeltaAllocator<mata::SymbolPost>>;
 template class mata::posts::PostMoves<mata::StatePost::Base>;
 
 template class mata::posts::KeyedAccess<mata::Delta::Base, mata::StatePost>;

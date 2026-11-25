@@ -20,7 +20,7 @@
 #include "mata/utils/ord-vector.hh"
 
 #if defined(MATA_RELATION_HH) || defined(MATA_TYPES_HH) || defined(MATA_ALPHABET_HH)
-#error "a core/ header includes the shipped relation, its types or the alphabet"
+	#error "a core/ header includes the shipped relation, its types or the alphabet"
 #endif
 
 // Neither the key nor the state is the shipped one: char is not mata::Symbol, std::uint16_t is not mata::State.

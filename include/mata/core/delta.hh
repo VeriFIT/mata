@@ -663,7 +663,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 
 	/**
 	 * @brief Record new transitions. A no-op while the count is dirty.
-	 * 
+	 *
 	 * @param added Number of transitions added to the relation.
 	 */
 	void note_added(const size_t added) {
@@ -676,7 +676,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 
 	/**
 	 * @brief Record removed transitions. A no-op while the count is dirty.
-	 * 
+	 *
 	 * @param removed Number of transitions removed from the relation.
 	 */
 	void note_removed(const size_t removed) {
@@ -689,7 +689,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 
 	/**
 	 * @brief Set the cached transition count to @p count and mark it clean.
-	 * 
+	 *
 	 * @param count New cached transition count.
 	 */
 	void set_count(const size_t count) {
@@ -699,7 +699,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 
 	/**
 	 * @brief Copy the cached transition count and dirty flag from @p other.
-	 * 
+	 *
 	 * @param other Relation to copy the cached transition count and dirty flag from.
 	 */
 	void copy_count_from(const DeltaBase& other) {

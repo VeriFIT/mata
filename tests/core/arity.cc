@@ -92,7 +92,9 @@ using Delta = posts::DeltaBase<StatePost, TransitionTraits>;
 // The library ships concrete classes in the chain RelationOf builds: the entry derives from the chain's entry,
 //  the post is the chain's post of that entry. Neither adds state.
 static_assert(std::derived_from<SymbolPost, posts::PostChain<Symbol, SmallStateSet>::Entry>);
-static_assert(std::derived_from<StatePost, posts::Post<SymbolPost, ReservedKeys<Symbol>, utils::DeltaAllocator<SymbolPost>>>);
+static_assert(
+	std::derived_from<StatePost, posts::Post<SymbolPost, ReservedKeys<Symbol>, utils::DeltaAllocator<SymbolPost>>>
+);
 // The state post's entries come from the Delta allocator, as the spilled target sets do.
 static_assert(std::same_as<StatePost::VectorType::allocator_type, utils::DeltaAllocator<SymbolPost>>);
 // The successors over every symbol are a StateSet for the shipped relation, the target set for a generic one.

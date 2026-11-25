@@ -115,7 +115,8 @@ class SymbolPost : public posts::PostEntry<Symbol, SmallStateSet> {
 /// Symbol posts keyed by states. Their block comes from @c utils::DeltaAllocator, like a spilled target set's.
 class StatePost : public posts::Post<SymbolPost, ReservedKeys<Symbol>, utils::DeltaAllocator<SymbolPost>> {
   public:
-	using Base = posts::Post<SymbolPost, ReservedKeys<Symbol>, utils::DeltaAllocator<SymbolPost>>; ///< The generic post.
+	using Base =
+		posts::Post<SymbolPost, ReservedKeys<Symbol>, utils::DeltaAllocator<SymbolPost>>; ///< The generic post.
 	using Base::Base;
 	using Base::operator=;
 	using Base::get_successors; ///< The keyed one, which returns the targets under a symbol without a copy.

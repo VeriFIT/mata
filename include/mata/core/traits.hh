@@ -145,7 +145,9 @@ struct PostTraits<X> {
 	using Target = typename X::Target;
 };
 template <typename X>
-	requires(!requires { X::key_arity; } && !requires { typename X::Target; } && requires { typename X::value_type; })
+	requires(
+		!requires { X::key_arity; } && !requires { typename X::Target; } && requires { typename X::value_type; }
+	)
 struct PostTraits<X> {
 	static constexpr size_t key_arity{0};
 	using Target = typename X::value_type;

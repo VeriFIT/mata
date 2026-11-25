@@ -47,7 +47,7 @@ template <typename T>
 concept Printable = std::formattable<const T, char>;
 
 /// @name Post vocabulary
-/// What @c mata::posts::DeltaBase and the visits need of a chain of posts. 
+/// What @c mata::posts::DeltaBase and the visits need of a chain of posts.
 ///  @c mata::DeltaLike does not use them: a relation an automaton is built on need not be made of posts.
 ///@{
 namespace posts {
@@ -175,11 +175,12 @@ template <typename C> using CursorIterator = std::remove_cvref_t<decltype(std::d
  *  the relation, not into the cursor.
  */
 template <typename C, typename Target>
-concept SuccessorCursorLike = std::semiregular<internal::CursorIterator<C>> && requires(internal::CursorIterator<C> it) {
-	{ *it } -> std::convertible_to<const Target&>;
-	{ ++it };
-	{ it != std::default_sentinel } -> std::convertible_to<bool>;
-};
+concept SuccessorCursorLike =
+	std::semiregular<internal::CursorIterator<C>> && requires(internal::CursorIterator<C> it) {
+		{ *it } -> std::convertible_to<const Target&>;
+		{ ++it };
+		{ it != std::default_sentinel } -> std::convertible_to<bool>;
+	};
 
 /**
  * @brief A concept for a transition relation an @c mata::AutomatonBase can be built on.
