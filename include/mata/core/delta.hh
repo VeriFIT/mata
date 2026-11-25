@@ -654,8 +654,8 @@ DeltaBase<P, TT> defragment(
 );
 } // namespace posts
 
-// Makes @c mata::defragment another name for @c posts::defragment, not a second function.
-// A separate @c defragment in @c mata would break unqualified calls inside @c mata.
+// Makes @c mata::defragment another name for @c posts::defragment, not a second template.
+// A second template in @c mata would make unqualified calls ambiguous, as ADL finds both.
 using posts::defragment;
 
 } // namespace mata.

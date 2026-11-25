@@ -553,6 +553,18 @@ class DeltaBuilder {
 	bool has_symbol_{false}; ///< Has the current state emitted a symbol post already?
 }; // class DeltaBuilder.
 
+/**
+ * @brief Defragment @p delta, keeping its concrete type. @see mata::posts::defragment.
+ *
+ * @param[in] delta Relation to defragment.
+ * @param[in] is_staying Boolean vector indicating which states are staying in the relation.
+ * @param[in] renaming Vector of states to rename the remaining state posts to.
+ * @return The defragmented relation.
+ */
+inline Delta defragment(const Delta& delta, const BoolVector& is_staying, const std::vector<State>& renaming) {
+	return Delta{posts::defragment(delta, is_staying, renaming)};
+}
+
 using SuccessorCursor = posts::SuccessorCursor<StatePost>; ///< The successor cursor of @c Delta.
 
 /// The automaton every NFA and NFT derives from: @c mata::AutomatonBase over @c Delta.
