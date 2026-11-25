@@ -487,7 +487,10 @@ template <typename E> class Post : utils::OrdVector<E> {
 		if (last_symbol > Reserved::max_ordinary) {
 			throw std::runtime_error("Using a reserved key as a last symbol to iterate over.");
 		}
-		return {*this, cbegin(), first_epsilon_it(last_symbol + 1)};
+		// Scanned back from the end, where only the few keys above @p last_symbol are.
+		auto symbols_end{cend()};
+		while (symbols_end != cbegin() && last_symbol < std::prev(symbols_end)->key()) { --symbols_end; }
+		return {*this, cbegin(), symbols_end};
 	}
 
 	/**
