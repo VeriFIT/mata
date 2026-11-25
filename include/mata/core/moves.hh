@@ -99,9 +99,10 @@ template <typename P> class PostMoves {
 			move_.target = *target_it_;
 		}
 
-		const_iterator(const const_iterator& other) noexcept = default;
+		// Not declared noexcept: copying the cached move copies a target, which may own memory.
+		const_iterator(const const_iterator& other) = default;
 		const_iterator(const_iterator&&) = default;
-		const_iterator& operator=(const const_iterator& other) noexcept = default;
+		const_iterator& operator=(const const_iterator& other) = default;
 		const_iterator& operator=(const_iterator&&) = default;
 		~const_iterator() = default;
 
