@@ -32,6 +32,16 @@ template <typename K> consteval K default_max_ordinary(const K min_epsilon) {
 		return K{};
 	} // K{} is never used (just to satisfy the compiler)
 }
+
+// Returns whether @p min_epsilon is the greatest key. 
+// Only an integral key is known to have one: for any other, std::numeric_limits<K>::max() is just K{}.
+template <typename K> consteval bool default_epsilon_is_greatest(const K min_epsilon) {
+	if constexpr (std::integral<K>) {
+		return min_epsilon == std::numeric_limits<K>::max();
+	} else {
+		return false;
+	}
+}
 } // namespace detail
 
 /**
@@ -86,12 +96,14 @@ template <typename T> struct TargetTraits {
  * @tparam MaxOrdinary The largest key that is not reserved. Defaults to one below @p MinEpsilon.
  *  Can be defined explicitly to a smaller value to open the reserved-but-not-epsilon region.
  *  A non-integral key has no default and must be spelled explicitly.
+ * @tparam EpsilonIsGreatest Whether no key sorts above @p MinEpsilon. Defaults to true only for an integral key whose
+ *  @p MinEpsilon is its largest value.
  */
 template <
 	typename K,
 	K MinEpsilon = std::numeric_limits<K>::max(),
 	K MaxOrdinary = detail::default_max_ordinary<K>(MinEpsilon),
-	bool EpsilonIsGreatest = (MinEpsilon == std::numeric_limits<K>::max())>
+	bool EpsilonIsGreatest = detail::default_epsilon_is_greatest<K>(MinEpsilon)>
 struct ReservedKeys {
 	using Key = K;
 	static constexpr K min_epsilon{MinEpsilon}; ///< The smallest epsilon key.
