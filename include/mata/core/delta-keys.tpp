@@ -18,8 +18,8 @@ template <ExtensibleAlphabet A>
 void DeltaBase<P, TT>::add_keys_to(A& target_alphabet) const {
 	// Distinct keys only: a key used by n posts would otherwise be converted and hashed n times.
 	for (const auto key : get_used_keys()) {
-		// The epsilons sort last and are no letters.
-		if (key >= Reserved<0>::min_epsilon) { break; }
+		// The reserved keys, epsilons included, sort last and are no letters.
+		if (key > Reserved<0>::max_ordinary) { break; }
 		target_alphabet.update_next_symbol_value(key);
 		target_alphabet.try_add_new_symbol(std::format("{}", key), key);
 	}

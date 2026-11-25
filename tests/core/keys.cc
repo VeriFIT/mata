@@ -103,6 +103,13 @@ struct WeightAlphabet {
 	void try_add_new_symbol(const std::string& name, const Symbol symbol) { received.emplace_back(name, symbol); }
 };
 
+struct RecordingAlphabet {
+	using Symbol = mata::Symbol;
+	std::vector<Symbol> received{};
+	void update_next_symbol_value(Symbol) {}
+	void try_add_new_symbol(const std::string&, const Symbol symbol) { received.push_back(symbol); }
+};
+
 // Re-exports the protected key members. A using-declaration compiles even where the member's constraint fails.
 template <typename D> struct Exposing : D {
 	using D::add_keys_to;
@@ -350,6 +357,17 @@ TEST_CASE("a relation feeds an alphabet with its keys, named by their printed fo
 	REQUIRE(alphabet.received.size() == 2);
 	CHECK(alphabet.received[0] == std::pair<std::string, Weight>{"50c", Weight{50}});
 	CHECK(alphabet.received[1] == std::pair<std::string, Weight>{"75c", Weight{75}});
+}
+
+TEST_CASE("a relation feeds an alphabet with its ordinary keys only") {
+	Exposing<WideDelta> delta{};
+	delta.add(0, WideTail::max_ordinary, 1);
+	delta.add(0, WideTail::max_ordinary + 1, 1); // Reserved, but not an epsilon.
+	delta.add(0, OUR_EPSILON, 1);
+
+	RecordingAlphabet alphabet{};
+	delta.add_keys_to(alphabet);
+	CHECK(alphabet.received == std::vector<Symbol>{WideTail::max_ordinary});
 }
 
 TEST_CASE("a key that is not a symbol still gets a working relation") {
