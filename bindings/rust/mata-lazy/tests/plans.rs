@@ -2,7 +2,7 @@
 //! annotations, per-node statistics and JSON plans.
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use mata_lazy::{
 	AllEager, AllLazy, Annotation, Automaton, Error, Eval, Formula, Heuristic, NodeKind, Options,
@@ -915,6 +915,67 @@ fn an_explicit_node_with_high_fan_out_is_reduced_in_quasi_linear_time() -> Resul
 	Ok(())
 }
 
+/// From state 0, each of `width` letters reaches the hub 1 and a state of its own, `3 + i`; the hub has `width`
+/// letters of its own to the final state 2, and state `3 + i` one.
+struct Hub {
+	width: u32,
+}
+
+impl Automaton for Hub {
+	type State = u32;
+
+	fn arity(&self) -> usize {
+		1
+	}
+
+	fn initial_states(&self) -> impl IntoIterator<Item = u32> {
+		[0]
+	}
+
+	fn is_final(&self, state: u32) -> bool {
+		state == 2
+	}
+
+	fn for_each_move(&self, state: u32, mut visit: impl FnMut(&[Symbol], u32)) {
+		let width = self.width;
+		match state {
+			0 => {
+				for i in 0..width {
+					visit(&[Symbol::new(i)], 1);
+					visit(&[Symbol::new(i)], 3 + i);
+				}
+			}
+			1 => {
+				for j in 0..width {
+					visit(&[Symbol::new(width + j)], 2);
+				}
+			}
+			2 => {}
+			own => visit(&[Symbol::new(2 * width + own - 3)], 2),
+		}
+	}
+}
+
+#[test]
+fn an_explicit_node_whose_subset_construction_has_too_many_moves_keeps_its_quotient()
+-> Result<(), Error> {
+	// The subsets stay few and small, the hub with one other state each, but each of them has the hub's moves:
+	// about `WIDTH`^2 moves, for 4 * `WIDTH` in the quotient.
+	const WIDTH: u32 = 2000;
+	let mut formula = Formula::new();
+	let hub = formula.leaf(&Hub { width: WIDTH })?;
+	let explicit = formula.explicit(hub)?;
+	let outcome = formula.check(
+		explicit,
+		&Options::new().time_limit(Duration::from_secs(20)),
+	)?;
+	assert!(!outcome.is_empty());
+	assert_eq!(outcome.stats.explicit[0].states, WIDTH as usize + 3);
+	assert_eq!(outcome.stats.explicit[0].transitions, 4 * WIDTH as usize);
+
+	Ok(())
+}
+
 #[test]
 fn a_query_stopped_by_its_limit_caches_no_explicit_node() -> Result<(), Error> {
 	let mut formula = Formula::new();
@@ -994,6 +1055,92 @@ fn plans_and_views_are_json() -> Result<(), Error> {
 	let view = formula.view(abc)?.to_json();
 	assert!(view.contains(r#""kind": "intersection""#), "{view}");
 	assert!(view.contains(r#""deterministic": true"#), "{view}");
+
+	Ok(())
+}
+
+/// Levels of [`flip_chain`] in the portfolio tests, where the lazy plan is slow and the eager one is not.
+const PORTFOLIO_LEVELS: usize = 20;
+/// A limit that the lazy plan of the portfolio tests passes (it takes over 10 s in a release build), while the
+/// eager one answers within milliseconds.
+const LAZY_LIMIT: Duration = Duration::from_secs(2);
+
+/// The words of length `length` reaching, in `levels` flips, one of length at least 8 with 1 at position 6: none,
+/// as a flip keeps the length. A chain of pre-images, cheap built level by level, expensive lazily, where the
+/// search must explore everything.
+fn flip_chain(levels: usize, length: u32) -> Result<(Formula, Term), Error> {
+	let mut formula = Formula::new();
+	let relation = formula.leaf(&flip_at_most_one())?;
+	let mut chain = formula.leaf(&one_at(6, 8))?;
+	for _ in 0..levels {
+		chain = formula.pre_image(chain, relation)?;
+	}
+	let words = Tuples {
+		arity: 1,
+		initial: vec![0],
+		finals: (0..=length).map(|state| state == length).collect(),
+		moves: (0..length)
+			.flat_map(|state| SYMBOLS.map(|symbol| (state, vec![symbol], state + 1)))
+			.collect(),
+	};
+	let initial = formula.leaf(&words)?;
+	let query = formula.intersection(initial, chain)?;
+
+	Ok((formula, query))
+}
+
+#[test]
+#[cfg_attr(
+	target_os = "emscripten",
+	ignore = "Rust's standard library for Emscripten cannot spawn threads, so the slow plan runs first, to its end"
+)]
+fn a_portfolio_answers_with_its_fastest_plan_and_stops_the_others() -> Result<(), Error> {
+	let (formula, query) = flip_chain(PORTFOLIO_LEVELS, 7)?;
+	let view = formula.view(query)?;
+	let plans = [AllLazy.plan(&view), AllEager.plan(&view)];
+	let options = Options::new();
+	let start = Instant::now();
+	let (winner, outcome) = formula.check_portfolio(query, &options, &plans)?;
+	// The portfolio returns once the lazy query, which alone passes the limit, has stopped.
+	assert!(start.elapsed() < LAZY_LIMIT, "{:?}", start.elapsed());
+	assert_eq!(winner, 1);
+	assert!(outcome.is_empty());
+	let lazy = formula.check(
+		query,
+		&options
+			.clone()
+			.plan(plans[0].clone())
+			.time_limit(LAZY_LIMIT),
+	);
+	assert!(matches!(lazy, Err(Error::TimeLimit { .. })), "{lazy:?}");
+
+	Ok(())
+}
+
+#[test]
+fn a_portfolio_returns_the_error_of_its_first_plan_when_all_fail() -> Result<(), Error> {
+	let (formula, query) = flip_chain(PORTFOLIO_LEVELS, 7)?;
+	let (_other, foreign) = flip_chain(1, 7)?;
+	let view = formula.view(query)?;
+	// The first plan passes the state limit, the second annotates a term of another formula.
+	let plans = [
+		AllLazy.plan(&view),
+		AllEager.plan(&view).annotate(foreign, Annotation::lazy()),
+	];
+	let options = Options::new().max_states(1);
+	let outcome = formula.check_portfolio(query, &options, &plans);
+	assert!(
+		matches!(outcome, Err(Error::StateLimit { max_states: 1, .. })),
+		"{outcome:?}"
+	);
+	// In the other order, the foreign term comes first.
+	let swapped = [plans[1].clone(), plans[0].clone()];
+	let outcome = formula.check_portfolio(query, &options, &swapped);
+	assert!(matches!(outcome, Err(Error::ForeignTerm)), "{outcome:?}");
+	assert!(matches!(
+		formula.check_portfolio(query, &Options::new(), &[]),
+		Err(Error::InvalidPlan { .. })
+	));
 
 	Ok(())
 }

@@ -769,9 +769,12 @@ run and do not add formula nodes:
   fan-out, and leaf sizes and determinism. `(lazy:plan)` returns the current annotations as JSON in the format that
   `mata::lazy::Plan::to_json` emits.
 - Every query accepts `:plan` with such a JSON string, so an external tool can derive a plan from `lazy:view` and
-  return it to the script. Alternatively, `:policy` takes `"lazy"`, `"eager"`, or `"heuristic"`. The heuristic
-  eagerly builds selected small inner terms and keeps the root lazy; `:heuristic-max-states` sets its per-term bound
-  (4096 by default). `:plan` and `:policy` are mutually exclusive and override the run's annotations for that query.
+  return it to the script. Alternatively, `:policy` takes `"lazy"`, `"eager"`, `"heuristic"`, or `"portfolio"`. The
+  heuristic eagerly builds selected small inner terms and keeps the root lazy; `:heuristic-max-states` sets its
+  per-term bound (4096 by default). `"portfolio"` runs the three others at once, one thread each, takes the first
+  answer, and stops the rest; the `plan` record of `lazy:stats` then tells which plan answered. Where threads cannot
+  be started, as in the playground, the plans run one after another. `lazy:materialize` rejects it. `:plan` and
+  `:policy` are mutually exclusive and override the run's annotations for that query.
 
 `(lazy:stats label check)` evaluates `check`, an application of `lazy:empty?`, `lazy:empty-within?`, `lazy:witness`,
 `lazy:included?` or `lazy:equivalent?`, returns its value, and prints one record per counter of that query,
@@ -786,6 +789,7 @@ run and do not add formula nodes:
 | `explicit`             | Explicit nodes built as automata, not those past their `:max-states`      |
 | `explicit-states`      | States of those automata                                                  |
 | `explicit-transitions` | Transitions of those automata                                             |
+| `plan`                 | Portfolios only: the plan that answered (0 lazy, 1 eager, 2 heuristic)    |
 
 Not part of the language yet: synchronized products and composition on chosen tapes (`sync_product`, `compose_on`),
 `lazy:universal?`, `lazy:in-language?`, the remaining options of `mata::lazy` (`:cache-budget`, `:antichain`,

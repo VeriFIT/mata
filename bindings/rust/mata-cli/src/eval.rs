@@ -1066,12 +1066,15 @@ impl Engine {
 		self.lazy.stats = None;
 		let value = self.evaluate(&parts[1])?;
 		// The check is the last one the operand runs, so the statistics are its own.
-		let stats = self
+		let (stats, plan) = self
 			.lazy
 			.stats
 			.take()
 			.expect("a lazy check keeps its statistics");
-		for (name, count) in crate::lazy::stats_records(&stats) {
+		let records = crate::lazy::stats_records(&stats)
+			.into_iter()
+			.chain(plan.map(|plan| ("plan", plan)));
+		for (name, count) in records {
 			let line = self
 				.record(&format!("{label}.{name}"), &count.to_string())
 				.map_err(|error| parts[0].at(error.message))?;
