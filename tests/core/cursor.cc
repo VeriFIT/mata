@@ -291,6 +291,14 @@ TEST_CASE("mata::AutomatonBase over an arity-2 relation") {
 	aut.initial.insert(0);
 	aut.final.insert(2);
 
+	SECTION("emptiness is answered without runs") {
+		// A bare AutomatonBase has no Run type, so only the witness-free overload exists for it.
+		CHECK(!aut.is_lang_empty());
+		aut.final.erase(2);
+		aut.final.insert(3); // Final, but unreachable.
+		CHECK(aut.is_lang_empty());
+	}
+
 	SECTION("the walks reach through both key levels") {
 		CHECK(aut.get_reachable_states() == mata::StateSet{0, 1, 2});
 		const std::vector<State> from_initial{aut.distances_from_initial()};

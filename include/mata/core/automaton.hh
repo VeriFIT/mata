@@ -189,18 +189,26 @@ template <DeltaLike D> class AutomatonBase {
 	std::vector<State> distances_to_final() const; ///< Answered by a backward BFS over predecessor lists.
 
 	/**
-	 * @brief Is the accepted language (or relation) empty, optionally with a counter-example?
+	 * @brief Is the accepted language (or relation) empty?
 	 *
-	 * @note The run type comes from @p Self.
+	 * Structural, so every automaton has it, also one without runs. @see has_no_accepting_path().
+	 * @return true iff no accepting path exists.
+	 */
+	bool is_lang_empty() const { return has_no_accepting_path(); }
+
+	/**
+	 * @brief Is the accepted language (or relation) empty, with a counter-example?
+	 *
+	 * @note Only for an automaton that has runs: the run type comes from @p Self.
 	 * @note Unifying the two searches -- having the Tarjan search emit a witness on demand -- would
 	 *  save a traversal on the counter-example path, which @c is_included() and @c is_universal()
 	 *  take whenever the caller wants one. It would also stop the witness being *shortest*, and
 	 *  callers do depend on which one comes back (see the exact-word check in the
 	 *  "mata::nfa::Nfa::get_word()" tests). Worth doing only together with a decision about that.
-	 * @param[out] cex Counter-example run, filled when an accepting path exists.
+	 * @param[out] cex Counter-example run, filled when an accepting path exists. With @c nullptr, none is built.
 	 * @return true iff no accepting path exists.
 	 */
-	template <AutomatonWithRuns Self> bool is_lang_empty(this const Self& self, typename Self::Run* cex = nullptr) {
+	template <AutomatonWithRuns Self> bool is_lang_empty(this const Self& self, typename Self::Run* cex) {
 		if (cex == nullptr) { return self.has_no_accepting_path(); }
 		if (!self.find_accepting_path_(cex->path)) { return true; }
 		cex->word = self.get_word_for_path(*cex).first.word;
