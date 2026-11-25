@@ -14,12 +14,12 @@
 #include <vector>
 
 #include "mata/alphabet.hh"
+#include "mata/core/tarjan.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/utils/sparse-set.hh"
 #include <mata/simlib/explicit_lts.hh>
 #include <mata/utils/assert.hh>
 
-#include "../automaton-tarjan.hh"
 #include "../mata-writer.hh"
 
 using namespace mata::utils;
@@ -111,7 +111,7 @@ bool Nfa::is_flat() const {
 	std::vector<size_t> scc_id(num_of_states(), 0);
 	size_t current_id{0};
 
-	const mata::nfa::internal::TarjanCallbacks callbacks{
+	const mata::internal::TarjanCallbacks callbacks{
 		std::nullptr_t{}, std::nullptr_t{},
 		[this, &flat, &scc_id,
 		 &current_id](const std::span<const State> scc, const std::span<const State> remaining_stack) {
@@ -134,7 +134,7 @@ bool Nfa::is_flat() const {
 		},
 		std::nullptr_t{}
 	};
-	mata::nfa::internal::tarjan_scc_discover(this->delta, this->num_of_states(), this->initial, callbacks);
+	mata::internal::tarjan_scc_discover(this->delta, this->num_of_states(), this->initial, callbacks);
 	return flat;
 }
 
