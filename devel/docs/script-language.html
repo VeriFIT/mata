@@ -1435,9 +1435,9 @@ witness is returned may differ.</p></li>
 <code class="docutils literal notranslate"><span class="pre">number-of-states</span></code> and <code class="docutils literal notranslate"><span class="pre">number-of-transitions</span></code> operations, and the predicates on structure such as
 <code class="docutils literal notranslate"><span class="pre">nfa:deterministic?</span></code>, is computed as written.</p></li>
 <li><p><strong>What is reported:</strong> timing records and the trace describe the calls that were made, not the calls that were
-written.</p></li>
+written. A decision run as a lazy query is reported as <code class="docutils literal notranslate"><span class="pre">lazy:empty?</span></code>.</p></li>
 </ul>
-<p>The first rewrites planned are:</p>
+<p>The rewrites are:</p>
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>Written</p></th>
@@ -1448,17 +1448,30 @@ written.</p></li>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">(nfa:language-empty?</span> <span class="pre">(nfa:intersection</span> <span class="pre">a</span> <span class="pre">b))</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">is_intersection_empty(a,</span> <span class="pre">b)</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p>A definition whose value is never used</p></td>
+<tr class="row-odd"><td><p>A decision over operations, such as <code class="docutils literal notranslate"><span class="pre">(nfa:included?</span> <span class="pre">a</span> <span class="pre">(nfa:complement</span> <span class="pre">b))</span></code></p></td>
+<td><p>One lazy query</p></td>
+</tr>
+<tr class="row-even"><td><p>A definition whose value is never used</p></td>
 <td><p>Nothing</p></td>
 </tr>
-<tr class="row-even"><td><p>The same application of the same values twice</p></td>
+<tr class="row-odd"><td><p>The same application of the same values twice</p></td>
 <td><p>One call</p></td>
 </tr>
-<tr class="row-odd"><td><p>The last use of a named value</p></td>
+<tr class="row-even"><td><p>The last use of a named value</p></td>
 <td><p>The operand is moved instead of copied</p></td>
 </tr>
 </tbody>
 </table>
+<p>A <strong>decision over operations</strong> is <code class="docutils literal notranslate"><span class="pre">nfa:language-empty?</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:universal?</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:included?</span></code> or <code class="docutils literal notranslate"><span class="pre">nfa:equivalent?</span></code>
+without keywords, whose operands apply <code class="docutils literal notranslate"><span class="pre">nfa:union-nondeterministic</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:intersection</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:language-difference</span></code> or
+<code class="docutils literal notranslate"><span class="pre">nfa:complement</span></code> without keywords. These operations become a term of <code class="docutils literal notranslate"><span class="pre">mata::lazy</span></code> instead of being built, and the
+query explores only as much of it as the answer needs. <code class="docutils literal notranslate"><span class="pre">nfa:determinize</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:minimize</span></code>, <code class="docutils literal notranslate"><span class="pre">nfa:reduce</span></code>,
+<code class="docutils literal notranslate"><span class="pre">nfa:remove-epsilon</span></code> and <code class="docutils literal notranslate"><span class="pre">nfa:trim</span></code> keep the language and are left out. The other operands are evaluated as written.
+The witness of the query is the witness of the decision. A complement, and <code class="docutils literal notranslate"><span class="pre">nfa:universal?</span></code>, are taken over the
+script alphabet. A lazy query cannot do that when an automaton reads a symbol outside of the script alphabet (under
+<code class="docutils literal notranslate"><span class="pre">&quot;on-the-fly&quot;</span></code>, the byte symbols of <code class="docutils literal notranslate"><span class="pre">nfa:create-from-regex</span></code>), so then the operations are applied as written. The
+intersection emptiness of two operands without such operations stays the first rewrite, which the library decides as
+fast.</p>
 <p>A benchmark that measures one specific operation should leave the optimizer off.</p>
 </section>
 <section id="portable-core">
