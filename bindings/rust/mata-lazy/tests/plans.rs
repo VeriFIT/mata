@@ -1029,6 +1029,10 @@ fn flip_chain(levels: usize, length: u32) -> Result<(Formula, Term), Error> {
 }
 
 #[test]
+#[cfg_attr(
+	target_os = "emscripten",
+	ignore = "Rust's standard library for Emscripten cannot spawn threads, so the slow plan runs first, to its end"
+)]
 fn a_portfolio_answers_with_its_fastest_plan_and_stops_the_others() -> Result<(), Error> {
 	let (formula, query) = flip_chain(PORTFOLIO_LEVELS, 7)?;
 	let view = formula.view(query)?;
