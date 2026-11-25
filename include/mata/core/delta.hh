@@ -463,7 +463,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	DeltaBase& resize_for_states(States... states) {
 		if constexpr (sizeof...(states) > 0) {
 			if (const State max_state{std::max({static_cast<State>(states)...})}; max_state >= num_of_states()) {
-				reserve_on_insert(state_posts_, max_state);
+				utils::reserve_on_insert(state_posts_, max_state);
 				state_posts_.resize(num_of_states_for_(max_state));
 			}
 		}
