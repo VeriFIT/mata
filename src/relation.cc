@@ -324,7 +324,7 @@ Delta& Delta::append_shifted(Delta&& other, const State offset) {
 Delta Delta::reverted(const size_t num_of_states) const {
 	// A target must never lie outside the state domain, but nothing enforces it, and building the result by
 	//  repeated `add(target, symbol, source)` would have grown it to such a target; stay faithful to that.
-	size_t num_of_reversed_states{num_of_states};
+	size_t num_of_reversed_states{std::max(num_of_states, this->num_of_states())};
 	for (const StatePost& state_post : state_posts_) {
 		for (const SymbolPost& symbol_post : state_post) {
 			// The targets are sorted, so the last one is the largest.
