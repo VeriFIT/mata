@@ -296,11 +296,17 @@ impl Raw {
 				return Err(Stopped);
 			}
 
-			let mut moves: Vec<(&[Symbol], StateId)> = subsets[next]
-				.iter()
-				.flat_map(|state| &outgoing[state.index()])
-				.map(|&edge| (self.tuple(edge), self.edges[edge].1))
-				.collect();
+			let mut moves: Vec<(&[Symbol], StateId)> = Vec::new();
+			for state in &subsets[next] {
+				if stop() {
+					return Err(Stopped);
+				}
+				moves.extend(
+					outgoing[state.index()]
+						.iter()
+						.map(|&edge| (self.tuple(edge), self.edges[edge].1)),
+				);
+			}
 			moves.sort_unstable();
 			moves.dedup();
 			dfa.finals
@@ -441,9 +447,13 @@ impl Raw {
 		Ok(minimal)
 	}
 
-	/// The useful part of `self`: states reachable from an initial one that reach a final one.
-	pub(crate) fn trimmed(&self) -> Raw {
+	/// The useful part of `self`: states reachable from an initial one that reach a final one. [`Stopped`] when
+	/// `stop` says so (it is asked once the useful states are known, and per move).
+	pub(crate) fn trimmed(&self, stop: &mut dyn FnMut() -> bool) -> Result<Raw, Stopped> {
 		let renumbered = useful_states(self);
+		if stop() {
+			return Err(Stopped);
+		}
 		let mut trimmed = Raw::new(self.arity);
 		trimmed.finals = vec![false; renumbered.iter().flatten().count()];
 		for (&new, &is_final) in renumbered.iter().zip(&self.finals) {
@@ -457,6 +467,9 @@ impl Raw {
 			.filter_map(|&state| renumbered[state.index()])
 			.collect();
 		for edge in 0..self.edges.len() {
+			if stop() {
+				return Err(Stopped);
+			}
 			let (source, target) = self.edges[edge];
 			if let (Some(source), Some(target)) =
 				(renumbered[source.index()], renumbered[target.index()])
@@ -465,7 +478,7 @@ impl Raw {
 			}
 		}
 
-		trimmed
+		Ok(trimmed)
 	}
 }
 

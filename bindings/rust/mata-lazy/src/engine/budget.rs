@@ -59,6 +59,13 @@ impl Budget {
 		}
 	}
 
+	/// Whether another plan of the portfolio answered.
+	pub(crate) fn is_cancelled(&self) -> bool {
+		self.cancel
+			.as_ref()
+			.is_some_and(|cancel| cancel.load(Ordering::Relaxed))
+	}
+
 	pub(crate) fn time_limit(&self) -> Option<Duration> {
 		self.deadline.map(|(_, limit)| limit)
 	}
@@ -89,11 +96,7 @@ impl Budget {
 		{
 			self.passed.get_or_insert(Limit::Time);
 		}
-		if self
-			.cancel
-			.as_ref()
-			.is_some_and(|cancel| cancel.load(Ordering::Relaxed))
-		{
+		if self.is_cancelled() {
 			self.passed.get_or_insert(Limit::Cancelled);
 		}
 	}

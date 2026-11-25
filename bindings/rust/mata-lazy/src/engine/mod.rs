@@ -742,8 +742,13 @@ impl<'f> Engine<'f> {
 	/// The limit that the query passed, if it did. The posts and initial macrostates computed since may then
 	/// be partial, and the query stops.
 	fn stopped(&self) -> Result<(), Limit> {
+		// Late once its `Until` passed: the deadline, or else the cancellation.
 		if self.subsumption.is_late() {
-			return Err(Limit::Time);
+			return Err(if self.budget.is_cancelled() {
+				Limit::Cancelled
+			} else {
+				Limit::Time
+			});
 		}
 
 		self.budget.check()
@@ -836,7 +841,7 @@ const MOVES_FACTOR: usize = 16;
 /// the smaller one, so a chain of them (pre-images in regular model checking) does not grow level by level.
 fn reduce(raw: &Raw, stop: &mut dyn FnMut() -> bool) -> Result<Raw, Stopped> {
 	// Trimmed first: a dead successor would tell two states with the same language apart.
-	let quotient = raw.trimmed().quotient(stop)?;
+	let quotient = raw.trimmed(stop)?.quotient(stop)?;
 	let states = quotient.finals.len();
 	match quotient.determinize(
 		states.saturating_mul(DETERMINIZE_FACTOR),
@@ -844,7 +849,63 @@ fn reduce(raw: &Raw, stop: &mut dyn FnMut() -> bool) -> Result<Raw, Stopped> {
 		quotient.num_moves().saturating_mul(MOVES_FACTOR),
 		stop,
 	)? {
-		Some(dfa) => dfa.trimmed().minimize(stop),
+		Some(dfa) => dfa.trimmed(stop)?.minimize(stop),
 		None => Ok(quotient),
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use std::sync::Arc;
+	use std::sync::atomic::AtomicBool;
+
+	use super::Engine;
+	use crate::{Automaton, Error, Formula, Options, Symbol};
+
+	/// States `0..size` with `a` to the next one and `b` to the double, all final but 0: a large simulation.
+	struct Doubling {
+		size: u32,
+	}
+
+	impl Automaton for Doubling {
+		type State = u32;
+
+		fn arity(&self) -> usize {
+			1
+		}
+
+		fn initial_states(&self) -> impl IntoIterator<Item = u32> {
+			[0]
+		}
+
+		fn is_final(&self, state: u32) -> bool {
+			state != 0
+		}
+
+		fn for_each_move(&self, state: u32, mut visit: impl FnMut(&[Symbol], u32)) {
+			visit(&[Symbol::new(0)], (state + 1) % self.size);
+			visit(&[Symbol::new(1)], (2 * state) % self.size);
+		}
+	}
+
+	#[test]
+	fn a_cancelled_simulation_stops_a_query_without_a_time_limit_as_cancelled() -> Result<(), Error>
+	{
+		let mut formula = Formula::new();
+		let leaf = formula.leaf(&Doubling { size: 4000 })?;
+		// Empty, so the search minimizes complement sets, which computes the leaf's simulation first.
+		let complement = formula.complement(leaf)?;
+		let empty = formula.intersection(leaf, complement)?;
+		let node = formula.node(empty)?;
+		// Cancelled before it starts: the simulation is the first work to read the flag.
+		let cancel = Arc::new(AtomicBool::new(true));
+		let mut engine = Engine::new(&formula, node, &Options::new(), Some(cancel))?;
+		let outcome = engine.search();
+		assert!(
+			matches!(outcome, Err(Error::Cancelled { .. })),
+			"{outcome:?}"
+		);
+
+		Ok(())
 	}
 }
