@@ -148,9 +148,6 @@ template <typename P> class PostMoves {
 	PostMoves(const post_iterator symbol_post_it, const post_iterator symbol_post_end)
 		: symbol_post_it_{symbol_post_it},
 		  symbol_post_end_{symbol_post_end} {}
-	/// @copydoc PostMoves(post_iterator, post_iterator)
-	PostMoves(const P& /*state_post*/, const post_iterator symbol_post_it, const post_iterator symbol_post_end)
-		: PostMoves{symbol_post_it, symbol_post_end} {}
 
 	PostMoves(PostMoves&&) = default;
 	PostMoves(const PostMoves&) = default;

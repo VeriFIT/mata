@@ -463,7 +463,7 @@ class Post : utils::OrdVector<E, A> {
 	Moves moves() const
 		requires(key_arity == 1)
 	{
-		return {*this, this->cbegin(), this->cend()};
+		return {this->cbegin(), this->cend()};
 	}
 
 	/**
@@ -476,7 +476,7 @@ class Post : utils::OrdVector<E, A> {
 	Moves moves(const post_iterator symbol_post_it, const post_iterator symbol_post_end) const
 		requires(key_arity == 1)
 	{
-		return {*this, symbol_post_it, symbol_post_end};
+		return {symbol_post_it, symbol_post_end};
 	}
 
 	/**
@@ -488,7 +488,7 @@ class Post : utils::OrdVector<E, A> {
 	Moves moves_epsilons(const Key first_epsilon = Reserved::min_epsilon) const
 		requires(key_arity == 1)
 	{
-		return {*this, first_epsilon_it(first_epsilon), cend()};
+		return {first_epsilon_it(first_epsilon), cend()};
 	}
 
 	/**
@@ -508,7 +508,7 @@ class Post : utils::OrdVector<E, A> {
 		// Scanned back from the end, where only the few keys above @p last_symbol are.
 		auto symbols_end{cend()};
 		while (symbols_end != cbegin() && last_symbol < std::prev(symbols_end)->key()) { --symbols_end; }
-		return {*this, cbegin(), symbols_end};
+		return {cbegin(), symbols_end};
 	}
 
 	/**
