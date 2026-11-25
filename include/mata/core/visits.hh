@@ -15,6 +15,7 @@
 #include <utility>
 
 #include "mata/core/traits.hh"
+#include "mata/utils/assert.hh"
 #include "mata/utils/utils.hh"
 
 namespace mata::posts {
@@ -251,7 +252,8 @@ P defragmented(const P& post, const BoolVector& is_staying, const Renaming& rena
 /**
  * @brief Keep in @p post only the targets @p is_staying admits, renaming their states, in place.
  *
- * The renaming is monotone on the staying states, so the sets stay sorted. Entries left without targets are erased.
+ * The renaming is monotone on the staying states, so the sets stay sorted, given a target order that follows the states
+ *  (see @c mata::TargetTraits). Entries left without targets are erased.
  *
  * @param post The post to filter. @c mata::arity_of is used to recurse down to the innermost post.
  * @param is_staying A boolean vector indicating which states are staying.
@@ -269,6 +271,9 @@ void defragment_in_place(P& post, const BoolVector& is_staying, const Renaming& 
 			for (target_of<P>& target : post) {
 				target = Traits::with_state(target, renaming[Traits::state_of(target)]);
 			}
+			MATA_ASSERT(
+				std::ranges::is_sorted(post), "renaming reordered the targets: their order has to follow their states"
+			);
 		} else {
 			post = defragmented(post, is_staying, renaming);
 		}
@@ -304,6 +309,9 @@ P defragmented(const P& post, const BoolVector& is_staying, const Renaming& rena
 			const auto state{Traits::state_of(target)};
 			if (is_staying[state]) { out.push_back(Traits::with_state(target, renaming[state])); }
 		}
+		MATA_ASSERT(
+			std::ranges::is_sorted(out), "renaming reordered the targets: their order has to follow their states"
+		);
 	} else {
 		for (const auto& entry : post) {
 			typename P::Nested nested{defragmented(entry.nested(), is_staying, renaming)};

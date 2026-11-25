@@ -56,6 +56,11 @@ template <typename K> consteval bool default_epsilon_is_greatest(const K min_eps
  *  and one that does not is stopped here, rather than being taken for a state and failing deep inside
  *  an algorithm that indexes by it.
  *
+ * The order of the targets has to follow their states: renaming the states by a strictly increasing map, as trimming
+ *  does, must not reorder the targets. Any order comparing the state by @c <, wherever it comes in the comparison,
+ *  does so, which includes every defaulted @c <=>. An order that is not monotone in the state, such as even states
+ *  before odd ones, does not, and trimming would leave its target sets unsorted.
+ *
  * An example of specialization for a target with MyPayload is:
  * ```cpp
  * template <> struct mata::TargetTraits<MyPayload> {
