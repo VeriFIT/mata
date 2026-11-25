@@ -772,7 +772,7 @@ run and do not add formula nodes:
   return it to the script. Alternatively, `:policy` takes `"lazy"`, `"eager"`, `"heuristic"`, or `"portfolio"`. The
   heuristic eagerly builds selected small inner terms and keeps the root lazy; `:heuristic-max-states` sets its
   per-term bound (4096 by default). `"portfolio"` runs the three others at once, one thread each, takes the first
-  answer, and stops the rest; `lazy:stats` then reports the plan that answered. Where threads cannot be started, as in
+  answer, and stops the rest; `lazy:stats` then reports the plan that answered, in its `plan` record. Where threads cannot be started, as in
   the playground, the plans run one after another. `lazy:materialize` rejects it. `:plan` and `:policy` are mutually
   exclusive and override the run's annotations for that query.
 
@@ -780,15 +780,16 @@ run and do not add formula nodes:
 `lazy:included?` or `lazy:equivalent?`, returns its value, and prints one record per counter of that query,
 `label.counter: number`, in the form of [timing](#timing) records:
 
-| Counter                | Meaning                                                                   |
-| ---------------------- | ------------------------------------------------------------------------- |
-| `explored`             | Macrostates of the checked term whose successors were computed            |
-| `pruned`               | Macrostates of the checked term skipped because a found one subsumes them |
-| `macrostates`          | Macrostates created in all nodes                                          |
-| `dropped`              | Cached successors dropped to stay within the cache budget                 |
-| `explicit`             | Explicit nodes built as automata, not those past their `:max-states`      |
-| `explicit-states`      | States of those automata                                                  |
-| `explicit-transitions` | Transitions of those automata                                             |
+| Counter                | Meaning                                                                                        |
+| ---------------------- | ---------------------------------------------------------------------------------------------- |
+| `explored`             | Macrostates of the checked term whose successors were computed                                 |
+| `pruned`               | Macrostates of the checked term skipped because a found one subsumes them                      |
+| `macrostates`          | Macrostates created in all nodes                                                               |
+| `dropped`              | Cached successors dropped to stay within the cache budget                                      |
+| `explicit`             | Explicit nodes built as automata, not those past their `:max-states`                           |
+| `explicit-states`      | States of those automata                                                                       |
+| `explicit-transitions` | Transitions of those automata                                                                  |
+| `plan`                 | Under `:policy "portfolio"` only, the plan that answered: 0 all lazy, 1 all eager, 2 heuristic |
 
 Not part of the language yet: synchronized products and composition on chosen tapes (`sync_product`, `compose_on`),
 `lazy:universal?`, `lazy:in-language?`, the remaining options of `mata::lazy` (`:cache-budget`, `:antichain`,

@@ -83,8 +83,8 @@ pub(crate) struct Lazy {
 	leaves: HashMap<LeafKey, (Imported, Term)>,
 	/// The annotations used by every query that has no `:plan` or `:policy`.
 	annotations: lazy::Plan,
-	/// The statistics of the last query, for `lazy:stats`.
-	pub(crate) stats: Option<Stats>,
+	/// The statistics of the last query, for `lazy:stats`, and the index of the plan that answered a portfolio.
+	pub(crate) stats: Option<(Stats, Option<usize>)>,
 }
 
 impl Lazy {
@@ -157,14 +157,15 @@ impl Lazy {
 	/// Runs one check of `term`, or a portfolio of its plans, and keeps its statistics for `lazy:stats`.
 	fn check(&mut self, term: Term, query: &Query) -> Result<Outcome, Error> {
 		self.stats = None;
-		let outcome = if query.portfolio.is_empty() {
-			self.formula.check(term, &query.options)?
+		let (plan, outcome) = if query.portfolio.is_empty() {
+			(None, self.formula.check(term, &query.options)?)
 		} else {
-			self.formula
-				.check_portfolio(term, &query.options, &query.portfolio)?
-				.1
+			let (plan, outcome) =
+				self.formula
+					.check_portfolio(term, &query.options, &query.portfolio)?;
+			(Some(plan), outcome)
 		};
-		self.stats = Some(outcome.stats.clone());
+		self.stats = Some((outcome.stats.clone(), plan));
 		Ok(outcome)
 	}
 

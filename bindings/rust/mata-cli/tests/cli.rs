@@ -3801,6 +3801,7 @@ fn lazy_plans_policies_and_json_round_trips_preserve_the_answer() {
 	              (print (lazy:stats \"all lazy\" (lazy:empty? a-and-b-and-c :policy \"lazy\")))\n\
 	              (print (lazy:stats \"all eager\" (lazy:empty? a-and-b-and-c :policy \"eager\")))\n\
 	              (print (lazy:stats \"heuristic\" (lazy:empty? a-and-b-and-c :policy \"heuristic\" :heuristic-max-states 64)))\n\
+	              (print (lazy:stats \"portfolio\" (lazy:empty? a-and-b-and-c :policy \"portfolio\")))\n\
 	              (print (lazy:plan))\n\
 	              (print (lazy:view a-and-b-and-c))";
 	let output = run_script(script, true, &[]);
@@ -3822,6 +3823,12 @@ fn lazy_plans_policies_and_json_round_trips_preserve_the_answer() {
 	}
 	assert_eq!(records["all lazy.explicit"], "0", "{text}");
 	assert_eq!(records["all eager.explicit"], "2", "{text}");
+	assert!(
+		["0", "1", "2"].contains(&records["portfolio.plan"].as_str()),
+		"{text}"
+	);
+	// Only a portfolio has a plan that answered.
+	assert!(!records.contains_key("all eager.plan"), "{text}");
 	for fragment in [
 		"\"swapped\"",
 		"\"eager\"",
