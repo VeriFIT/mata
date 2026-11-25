@@ -128,11 +128,12 @@ struct ReservedKeys {
 
 namespace posts {
 /// @brief A traits specifying the key arity and target type of a post, and the aliases reading them.
+///
+/// A type is classified: a post declares both @c key_arity and @c Target, and a target set is a
+///  container (with a @c value_type) declaring neither. Anything else has no traits, so a post that has lost one of
+///  the two, e.g. to a base that failed, is reported here as an incomplete type rather than taken for a target set.
 ///@{
-template <typename X> struct PostTraits {
-	static constexpr size_t key_arity{0};
-	using Target = typename X::value_type;
-};
+template <typename X> struct PostTraits;
 /// @cond
 template <typename X>
 	requires requires {
@@ -142,6 +143,12 @@ template <typename X>
 struct PostTraits<X> {
 	static constexpr size_t key_arity{X::key_arity};
 	using Target = typename X::Target;
+};
+template <typename X>
+	requires(!requires { X::key_arity; } && !requires { typename X::Target; } && requires { typename X::value_type; })
+struct PostTraits<X> {
+	static constexpr size_t key_arity{0};
+	using Target = typename X::value_type;
 };
 /// @endcond
 template <typename X> inline constexpr size_t arity_of = PostTraits<X>::key_arity;
