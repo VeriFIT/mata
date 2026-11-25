@@ -187,7 +187,7 @@ static_assert(HasTransitionsBetween<D1> && HasTransitionsBetween<D2>);
 //  otherwise; Nfa::post() returns it as a const StateSet&.
 static_assert(HasKeyedSuccessors<D1> && HasKeyedSuccessors<D2> && HasKeyedSuccessors<D3>);
 static_assert(std::same_as<D1::KeyedSuccessors, const SmallStateSet&>);
-static_assert((std::same_as<D2::KeyedSuccessors, StateSet> && std::same_as<D3::KeyedSuccessors, StateSet>) );
+static_assert(std::same_as<D2::KeyedSuccessors, StateSet> && std::same_as<D3::KeyedSuccessors, StateSet>);
 static_assert(std::same_as<decltype(std::declval<const D1&>().get_successors(0)), SmallStateSet>);
 static_assert(std::same_as<decltype(std::declval<const D3&>().get_successors(0)), StateSet>);
 
@@ -268,7 +268,8 @@ TEST_CASE("mata::posts::DeltaBase::add - writing a key path at any arity") {
 		delta.add(2, 1, 2, 3, 4, StateSet{8, 9});
 		CHECK(delta.num_of_transitions() == 4);
 		CHECK(all_targets(delta) == std::vector<State>{5, 7, 8, 9});
-		CHECK(delta.contains(0, 1, 2, 3, 6, 7) && !delta.contains(0, 1, 2, 3, 6, 5));
+		CHECK(delta.contains(0, 1, 2, 3, 6, 7));
+		CHECK_FALSE(delta.contains(0, 1, 2, 3, 6, 5));
 
 		delta.remove(0, 1, 2, 3, 4, 5);
 		CHECK_FALSE(delta.contains(0, 1, 2, 3, 4, 5));
@@ -417,7 +418,8 @@ TEST_CASE("mata::posts::DeltaBase::remove / contains - a key path at any arity")
 		D3 delta{};
 		delta.add(0, 1, 2, 3, 5);
 		delta.add(0, 1, 2, 4, 6);
-		CHECK(delta.contains(0, 1, 2, 3, 5) && delta.contains(0, 1, 2, 4, 6));
+		CHECK(delta.contains(0, 1, 2, 3, 5));
+		CHECK(delta.contains(0, 1, 2, 4, 6));
 		CHECK(all_targets(delta) == std::vector<State>{5, 6});
 
 		delta.remove(0, 1, 2, 3, 5);

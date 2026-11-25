@@ -286,7 +286,9 @@ TEST_CASE("mata::Delta's used-key queries do not carry state between calls") {
 	CHECK(second.get_used_symbols_set() == std::set<Symbol>{2});
 	CHECK(utils::OrdVector<Symbol>{second.get_used_symbols_sps()} == utils::OrdVector<Symbol>{2});
 	const std::vector<bool> bv{second.get_used_symbols_bv()};
-	CHECK(!bv[0] && !bv[1] && bv[2]);
+	CHECK_FALSE(bv[0]);
+	CHECK_FALSE(bv[1]);
+	CHECK(bv[2]);
 }
 
 TEST_CASE("mata::Delta's symbol members are the key members under the NFA's names") {
@@ -301,7 +303,11 @@ TEST_CASE("mata::Delta's symbol members are the key members under the NFA's name
 		CHECK(utils::OrdVector<Symbol>{delta.get_used_symbols_sps()} == delta.get_used_symbols());
 		const std::vector<bool> bv{delta.get_used_symbols_bv()};
 		REQUIRE(bv.size() >= 5); // It starts at a fixed capacity, so only the bits are specified.
-		CHECK(!bv[0] && bv[1] && !bv[2] && !bv[3] && bv[4]);
+		CHECK_FALSE(bv[0]);
+		CHECK(bv[1]);
+		CHECK_FALSE(bv[2]);
+		CHECK_FALSE(bv[3]);
+		CHECK(bv[4]);
 		static_assert(std::same_as<decltype(delta.get_used_symbols()), utils::OrdVector<Symbol>>);
 		static_assert(std::same_as<decltype(delta.get_max_symbol()), Symbol>);
 	}

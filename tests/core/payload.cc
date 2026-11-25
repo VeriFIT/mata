@@ -93,7 +93,10 @@ TEST_CASE("mata::AutomatonBase over a relation whose targets carry a payload") {
 	SECTION("the reads project through state_of") {
 		CHECK(aut.get_reachable_states() == StateSet{0, 1, 2});
 		const BoolVector useful{aut.get_useful_states()};
-		CHECK(useful[0] && useful[1] && useful[2] && !useful[3]);
+		CHECK(useful[0]);
+		CHECK(useful[1]);
+		CHECK(useful[2]);
+		CHECK_FALSE(useful[3]);
 		CHECK(aut.distances_from_initial()[2] == 2);
 		CHECK_FALSE(aut.is_lang_empty());
 
