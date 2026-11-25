@@ -575,7 +575,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 		if constexpr (key_arity == 1 && std::same_as<Target, State>) {
 			// The arity-1, bare-state case is the only one that can be done without a search.
 			for (const Entry& entry : state_post(from)) {
-				if (entry.targets.find(to) != entry.targets.end()) { out.push_back(TT::make(from, entry.key(), to)); }
+				if (entry.targets.contains(to)) { out.push_back(TT::make(from, entry.key(), to)); }
 			}
 		} else {
 			state_post(from).for_each_move([&](const auto&... move) {

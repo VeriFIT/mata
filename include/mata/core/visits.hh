@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <ranges>
 #include <stdexcept>
 #include <utility>
 
@@ -19,6 +20,16 @@
 #include "mata/utils/utils.hh"
 
 namespace mata::posts {
+
+/**
+ * @brief The last target of the non-empty @p targets: the largest, as the set is sorted.
+ *
+ * Read through the contiguous storage @c mata::TargetSetLike guarantees, so the set needs no @c back().
+ */
+template <typename Targets> const auto& last_target(const Targets& targets) {
+	MATA_ASSERT(!targets.empty());
+	return std::ranges::data(targets)[targets.size() - 1];
+}
 
 /**
  * @brief Apply @p fn to every target under @p post, at any nesting depth.
@@ -231,7 +242,7 @@ template <typename P, typename Fn> P renumbered(const P& post, Fn&& rename) {
 		using Traits = TargetTraits<target_of<P>>;
 		for (const target_of<P>& target : post) {
 			const target_of<P> renamed{Traits::with_state(target, rename(Traits::state_of(target)))};
-			if (out.empty() || out.back() < renamed) {
+			if (out.empty() || last_target(out) < renamed) {
 				out.push_back(renamed);
 			} else {
 				// A merged state repeats a target, which this skips, or puts a payload target out of order.

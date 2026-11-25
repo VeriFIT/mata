@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <iterator>
+#include <ranges>
 
 #include "mata/utils/assert.hh"
 
@@ -67,7 +68,7 @@ template <typename P> class PostMoves {
 	class const_iterator {
 	  private:
 		post_iterator symbol_post_it_{};
-		typename P::Nested::const_iterator target_it_{};
+		std::ranges::iterator_t<const typename P::Nested> target_it_{};
 		post_iterator symbol_post_end_{};
 		MoveType move_{};
 
@@ -95,7 +96,7 @@ template <typename P> class PostMoves {
 			if (at_end()) { return; }
 			MATA_ASSERT(!symbol_post_it_->targets.empty(), "iterating the moves of a symbol post without targets");
 			move_.symbol = symbol_post_it_->symbol;
-			target_it_ = symbol_post_it_->targets.cbegin();
+			target_it_ = symbol_post_it_->targets.begin();
 			move_.target = *target_it_;
 		}
 

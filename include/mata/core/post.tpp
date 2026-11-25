@@ -26,7 +26,7 @@ template <typename K, typename N, typename R>
 bool PostEntryCore<K, N, R>::insert(const Target s)
 	requires(arity_of<N> == 0)
 {
-	if (targets.empty() || targets.back() < s) {
+	if (targets.empty() || last_target(targets) < s) {
 		targets.push_back(s);
 		return true;
 	}

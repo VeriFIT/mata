@@ -33,6 +33,7 @@
 #include <compare>
 #include <cstddef>
 #include <iterator>
+#include <ranges>
 #include <span>
 #include <stdexcept>
 #include <type_traits>
@@ -77,11 +78,15 @@ template <typename K, typename N, typename R> class PostEntryCore {
 
 	PostEntryCore() = default;
 	explicit PostEntryCore(const Key symbol) : symbol{symbol} {}
-	/// Parentheses, not braces: braces pick the @c initializer_list constructor, which sorts the one-element list.
 	PostEntryCore(const Key symbol, const Target state_to)
-		requires(arity_of<N> == 0)
+		requires(arity_of<N> == 0 && std::constructible_from<N, const Target&>)
 		: targets(state_to),
 		  symbol{symbol} {}
+	PostEntryCore(const Key symbol, const Target state_to)
+		requires(arity_of<N> == 0 && !std::constructible_from<N, const Target&>)
+		: symbol{symbol} {
+		targets.push_back(state_to);
+	}
 	/// @p states_to are sorted and duplicate-free, such as a @c StateSet or another entry's targets.
 	PostEntryCore(const Key symbol, const std::span<const Target> states_to)
 		requires(arity_of<N> == 0 && std::constructible_from<N, std::span<const Target>>)
@@ -103,11 +108,12 @@ template <typename K, typename N, typename R> class PostEntryCore {
 	}
 	bool operator==(const PostEntryCore& other) const { return symbol == other.symbol; }
 
-	typename Nested::iterator begin() { return targets.begin(); }
-	typename Nested::iterator end() { return targets.end(); }
+	// Through std::ranges, so a target set needs no iterator typedefs and no cbegin() of its own.
+	std::ranges::iterator_t<Nested> begin() { return std::ranges::begin(targets); }
+	std::ranges::sentinel_t<Nested> end() { return std::ranges::end(targets); }
 
-	typename Nested::const_iterator cbegin() const { return targets.cbegin(); }
-	typename Nested::const_iterator cend() const { return targets.cend(); }
+	std::ranges::iterator_t<const Nested> cbegin() const { return std::ranges::begin(targets); }
+	std::ranges::sentinel_t<const Nested> cend() const { return std::ranges::end(targets); }
 
 	bool empty() const { return targets.empty(); }
 
@@ -153,7 +159,14 @@ template <typename K, typename N, typename R> class PostEntryCore {
 	bool erase(const Target s)
 		requires(arity_of<N> == 0)
 	{
-		return targets.erase(s) != 0;
+		if constexpr (requires { { targets.erase(s) } -> std::convertible_to<size_t>; }) {
+			return targets.erase(s) != 0;
+		} else {
+			// The set does not say whether it erased, so its size does.
+			const size_t old_size{targets.size()};
+			targets.erase(s);
+			return targets.size() != old_size;
+		}
 	}
 
 	auto find(const Target s) const
@@ -204,7 +217,7 @@ template <typename K, typename N, typename R> class PostEntryCore {
 		} else {
 			// Borrowed from the set's own storage, so it lives as long as the set. A copy would dangle.
 			static_assert(
-				std::contiguous_iterator<typename Nested::const_iterator>,
+				std::contiguous_iterator<std::ranges::iterator_t<const Nested>>,
 				"target_span() needs a target set with span() or with contiguous storage"
 			);
 			return {targets.begin(), targets.end()};

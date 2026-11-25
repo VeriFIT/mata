@@ -85,7 +85,7 @@ void KeyedAccess<D, P, std::index_sequence<0>>::add(const State source, const Ke
 	if (targets.empty()) { return; }
 	if constexpr (std::same_as<Target, State>) {
 		// Sorted, so the last target is the largest state.
-		self().resize_for_states(source, targets.back());
+		self().resize_for_states(source, last_target(targets));
 	} else {
 		// A target may not be sorted.
 		State max_state{0};
@@ -167,7 +167,7 @@ bool KeyedAccess<D, P, std::index_sequence<0>>::contains(const State source, con
 		return false; 
 	}
 
-	return symbol_transitions->targets.find(target) != symbol_transitions->targets.end();
+	return symbol_transitions->targets.contains(target);
 }
 
 template <typename P, typename TT>
