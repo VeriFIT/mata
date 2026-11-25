@@ -1857,7 +1857,9 @@ template <typename Pruner> class PrunedDeterminizer {
 		result_.initial.insert(find_or_add_macrostate(pruner_.prune(chunks)));
 
 		// Expand the macrostates in the order they are found, up to @p max_macrostates.
-		for (size_t current = 0; current < macrostates_.size() && !aut_.delta.empty(); ++current) {
+		// Asked once: `empty()` scans the delta up to its first transition, and the delta does not change here.
+		const bool has_transitions{!aut_.delta.empty()};
+		for (size_t current = 0; has_transitions && current < macrostates_.size(); ++current) {
 			if (macrostates_.size() > max_macrostates) { return std::nullopt; }
 			if (fixed_block_size_ == 0) { post_.set_block_size(auto_block_size(macrostates_.size())); }
 			// (The macrostate is read before any new macrostate is added.)
