@@ -605,8 +605,11 @@ impl Formula {
 
 	/// The same relation, built as an explicit automaton when a query starts.
 	///
-	/// The query explores `term` completely, numbers its macrostates densely, trims the result and reads it like a
-	/// leaf, with a simulation of its own. Rewrites stop at this node. Materialized automata are reused by later
+	/// The query explores `term` completely, numbers its macrostates densely and trims the result; when its subset
+	/// construction over tuples stays within four times its states, it is minimized as well. Then the query reads it
+	/// like a leaf, with a simulation of its own. Explicit nodes stacked on each other therefore keep the size of
+	/// their languages, not of their products. The query's limits hold through this work. Rewrites stop at this
+	/// node. Materialized automata are reused by later
 	/// queries over the same alphabets (see [`clear_cache`](Formula::clear_cache)). When the exploration passes
 	/// `options.max_states`, the node stays lazy.
 	///

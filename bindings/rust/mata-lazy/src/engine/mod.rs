@@ -92,7 +92,7 @@ use self::store::Store;
 use self::subsumption::{Antichain, Subsumption};
 use crate::formula::Formula;
 use crate::ids::{ExecId, Id, NodeId, StateId};
-use crate::leaf::{Leaf, Raw};
+use crate::leaf::{Leaf, Raw, Stopped};
 use crate::options::{ExplicitOptions, Materialized, NodeStats, Stats, Tapes};
 use crate::plan::Annotations;
 use crate::{Error, Options, Symbol, Witness};
@@ -371,7 +371,20 @@ impl<'f> Engine<'f> {
 			Some(leaf) => (leaf, true),
 			None => match self.explore(child, options.max_states)? {
 				Explored::Done(raw) => {
-					let leaf = Arc::new(Leaf::build(&raw, Vec::new()));
+					// The reduction reads the clock as the exploration does, so a limit stops it too.
+					let budget = &mut self.budget;
+					let reduced = reduce(&raw, &mut || {
+						budget.step(0);
+						budget.passed()
+					});
+					let Ok(reduced) = reduced else {
+						return self.budget.check();
+					};
+					let leaf = Arc::new(Leaf::build(&reduced, Vec::new()));
+					// A limit may pass after the last read of the clock, while the reduction ends or the leaf is
+					// built: checked again before the leaf is published to later queries.
+					self.budget.read_clock();
+					self.budget.check()?;
 					self.formula
 						.explicit_cache
 						.lock()
@@ -803,4 +816,29 @@ fn root_symbols(options: &Options, arity: usize) -> Result<Vec<Vec<Symbol>>, Err
 	}
 
 	Ok(root_symbols)
+}
+
+/// How many times the states of an explicit node's bisimulation quotient its subset construction may have.
+const DETERMINIZE_FACTOR: usize = 4;
+
+/// How many times the states of the quotient the members of all subsets of its subset construction may be. Few
+/// subsets can still hold most states each, as the suffixes of a chain whose states are all initial.
+const MEMBERS_FACTOR: usize = 16;
+
+/// An explicit node's automaton made small: minimal when its subset construction stays within
+/// [`DETERMINIZE_FACTOR`] times its bisimulation quotient (and its subsets within [`MEMBERS_FACTOR`] times in
+/// members), that quotient otherwise. An explicit node above another reads the smaller one, so a chain of them
+/// (pre-images in regular model checking) does not grow level by level.
+fn reduce(raw: &Raw, stop: &mut dyn FnMut() -> bool) -> Result<Raw, Stopped> {
+	// Trimmed first: a dead successor would tell two states with the same language apart.
+	let quotient = raw.trimmed().quotient(stop)?;
+	let states = quotient.finals.len();
+	match quotient.determinize(
+		states.saturating_mul(DETERMINIZE_FACTOR),
+		states.saturating_mul(MEMBERS_FACTOR),
+		stop,
+	)? {
+		Some(dfa) => dfa.trimmed().minimize(stop),
+		None => Ok(quotient),
+	}
 }

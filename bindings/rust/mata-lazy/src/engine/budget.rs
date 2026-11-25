@@ -64,13 +64,18 @@ impl Budget {
 
 		self.steps_to_clock -= 1;
 		if self.steps_to_clock == 0 {
-			self.steps_to_clock = CLOCK_STEPS;
-			if self
-				.deadline
-				.is_some_and(|(deadline, _)| Instant::now() > deadline)
-			{
-				self.passed.get_or_insert(Limit::Time);
-			}
+			self.read_clock();
+		}
+	}
+
+	/// Reads the clock now, whatever the steps since the last read.
+	pub(crate) fn read_clock(&mut self) {
+		self.steps_to_clock = CLOCK_STEPS;
+		if self
+			.deadline
+			.is_some_and(|(deadline, _)| Instant::now() > deadline)
+		{
+			self.passed.get_or_insert(Limit::Time);
 		}
 	}
 
