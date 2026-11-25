@@ -112,10 +112,18 @@ template <typename P, typename Fn, typename... Keys> void visit_moves(const P& p
  *
  * @param post The post to insert into. @c mata::arity_of is used to recurse down to the innermost post.
  * @param target The target to insert.
+ * @return Whether @p target was inserted, i.e., was not there already.
  */
-template <typename P> void insert_target(P& post, const target_of<P>& target) {
+template <typename P> bool insert_target(P& post, const target_of<P>& target) {
 	static_assert(arity_of<P> == 0, "the key path ran out before the innermost post");
-	post.insert(target);
+	if constexpr (requires { post.insert(target).second; }) {
+		return post.insert(target).second;
+	} else {
+		// The set does not say whether it inserted, so its size does.
+		const size_t old_size{post.size()};
+		post.insert(target);
+		return post.size() != old_size;
+	}
 }
 
 /**
@@ -126,16 +134,17 @@ template <typename P> void insert_target(P& post, const target_of<P>& target) {
  * @param k0 The first key to descend through.
  * @param rest The remaining keys to descend through, one per post.
  *  The number of keys must match the @c key_arity of @p post minus one.
+ * @return Whether @p target was inserted, i.e., was not there already.
  */
 template <typename P, typename K0, typename... Rest>
-void insert_target(P& post, const target_of<P>& target, const K0& k0, const Rest&... rest) {
+bool insert_target(P& post, const target_of<P>& target, const K0& k0, const Rest&... rest) {
 	static_assert(arity_of<P> == sizeof...(Rest) + 1, "the key path must be one key per post");
 	auto entry_it{post.find(k0)};
 	if (entry_it == post.end()) {
 		post.insert(typename P::Entry{k0, typename P::Nested{}});
 		entry_it = post.find(k0); // insert may reallocate, so look the position up again
 	}
-	insert_target(entry_it->nested(), target, rest...);
+	return insert_target(entry_it->nested(), target, rest...);
 }
 
 /**

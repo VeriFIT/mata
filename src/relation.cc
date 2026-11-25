@@ -181,29 +181,35 @@ void Delta::add(const State source, const Symbol symbol, const std::span<const S
 	StatePost& state_post{state_posts_[source]};
 	if (state_post.empty() || state_post.back().symbol < symbol) {
 		state_post.emplace_back(symbol, targets);
+		note_added(targets.size());
 		return;
 	}
 	if (const auto symbol_post_it{state_post.find(symbol)}; symbol_post_it != state_post.end()) {
-		symbol_post_it->insert(targets);
+		note_added(symbol_post_it->insert(targets));
 	} else {
 		state_post.insert(SymbolPost{symbol, targets});
+		note_added(targets.size());
 	}
 }
 
 void Delta::add(const State source, SymbolPost&& symbol_post) {
 	if (symbol_post.targets.empty()) { return; }
 	resize_for_states(source, symbol_post.targets.back());
+	// Read before @p symbol_post is moved from.
+	const size_t num_of_targets{symbol_post.targets.size()};
 	StatePost& state_post{state_posts_[source]};
 	if (state_post.empty() || state_post.back().symbol < symbol_post.symbol) {
 		state_post.emplace_back(std::move(symbol_post));
+		note_added(num_of_targets);
 		return;
 	}
 	if (const auto existing{state_post.find(symbol_post.symbol)}; existing != state_post.end()) {
 		// One linear merge of two sorted target sets, instead of a search and a shift per target.
-		existing->insert(symbol_post.targets.span());
+		note_added(existing->insert(symbol_post.targets.span()));
 		return;
 	}
 	state_post.insert(std::move(symbol_post));
+	note_added(num_of_targets);
 }
 
 // Taken by rvalue reference to be sorted and deduplicated in place.
@@ -299,6 +305,8 @@ Delta& Delta::append_shifted(const Delta& other, const State offset) {
 		StatePost shifted_post{other_post};
 		shift_state_post(shifted_post, offset);
 		state_posts_.push_back(std::move(shifted_post));
+		// Counted only once appended: a throwing push_back must not leave its transitions counted.
+		if (!count_dirty_.load(std::memory_order_relaxed)) { note_added(posts::count_targets(state_posts_.back())); }
 	}
 	return *this;
 }
@@ -314,6 +322,7 @@ Delta& Delta::append_shifted(Delta&& other, const State offset) {
 		StatePost shifted_post{std::move(other_post)};
 		shift_state_post(shifted_post, offset);
 		state_posts_.push_back(std::move(shifted_post));
+		if (!count_dirty_.load(std::memory_order_relaxed)) { note_added(posts::count_targets(state_posts_.back())); }
 	}
 	other.clear();
 	return *this;

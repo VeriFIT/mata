@@ -6,6 +6,7 @@
  */
 
 #include <algorithm>
+#include <atomic>
 #include <concepts>
 #include <cstddef>
 #include <format>
@@ -64,7 +65,8 @@ template <typename D, typename P, size_t... KeyIdx> class KeyedAccess<D, P, std:
 	 */
 	void add(const State source, const KeyOf<P, KeyIdx>... keys, const TargetArg target) {
 		self().resize_for_states(source, D::state_of(target));
-		insert_target(self().mutable_state_post(source), target, keys...);
+		// Through the post directly: mutable_state_post() would mark the count dirty.
+		if (insert_target(self().state_posts_[source], target, keys...)) { self().note_added(1); }
 	}
 
 	/**
@@ -78,7 +80,7 @@ template <typename D, typename P, size_t... KeyIdx> class KeyedAccess<D, P, std:
 		const TargetSet snapshot{targets};
 		for (const Target& target : snapshot) {
 			self().resize_for_states(source, D::state_of(target));
-			insert_target(self().mutable_state_post(source), target, keys...);
+			if (insert_target(self().state_posts_[source], target, keys...)) { self().note_added(1); }
 		}
 	}
 
@@ -93,7 +95,10 @@ template <typename D, typename P, size_t... KeyIdx> class KeyedAccess<D, P, std:
 	 */
 	void remove(const State source, const KeyOf<P, KeyIdx>... keys, const TargetArg target) {
 		if (source >= self().state_posts_.size()) { return; }
+		// Looked up first: erase_target() reports whether the post emptied, not whether it erased.
+		const bool present{has_target_at(self().state_posts_[source], target, keys...)};
 		erase_target(self().state_posts_[source], target, keys...);
+		if (present) { self().note_removed(1); }
 	}
 
 	/**
@@ -222,12 +227,31 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	inline static const PostType empty_state_post;
 
 	DeltaBase() : state_posts_{} {}
-	DeltaBase(const DeltaBase& other) = default;
-	DeltaBase(DeltaBase&& other) = default;
+	DeltaBase(const DeltaBase& other) : state_posts_{other.state_posts_} { copy_count_from(other); }
+	/// Leaves @p other empty, so that its count stays true to it.
+	DeltaBase(DeltaBase&& other) noexcept : state_posts_{std::move(other.state_posts_)} {
+		copy_count_from(other);
+		other.clear();
+	}
 	explicit DeltaBase(const size_t n) : state_posts_{} { allocate(n); }
 
-	DeltaBase& operator=(const DeltaBase& other) = default;
-	DeltaBase& operator=(DeltaBase&& other) = default;
+	DeltaBase& operator=(const DeltaBase& other) {
+		if (this == &other) { return *this; }
+		// Copied first: a throwing copy leaves this relation, and its count, untouched.
+		std::vector<PostType> state_posts{other.state_posts_};
+		state_posts_ = std::move(state_posts);
+		copy_count_from(other);
+		return *this;
+	}
+	/// Leaves @p other empty, so that its count stays true to it.
+	DeltaBase& operator=(DeltaBase&& other) noexcept {
+		if (this == &other) { return *this; }
+		state_posts_ = std::move(other.state_posts_);
+		copy_count_from(other);
+		other.clear();
+		return *this;
+	}
+	~DeltaBase() = default;
 
 	bool operator==(const DeltaBase& other) const;
 
@@ -262,6 +286,9 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	 *  yet does not have allocated space in the relation, a new state post for @p source will be allocated along with
 	 *  all state posts for all previous states. This in turn may cause that the entire post data structure is
 	 *  re-allocated. Iterators into the relation will get invalidated.
+	 * The relation cannot see edits made through the reference, so the next query of the transition count recounts.
+	 *  The reference may be used for edits only until that query: @c num_of_transitions(), @c empty(), or any
+	 *  operation that may call them. Obtain the reference again after such a query.
 	 * @param source Source state of a state post to access.
 	 * @return State post of @p source.
 	 */
@@ -279,12 +306,19 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	 */
 	DeltaBase& defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
 
+	/// Append a state post built from @p args. The returned reference may be used for edits under the same rule as
+	///  @c mutable_state_post().
 	template <typename... Args> PostType& emplace_back(Args&&... args) {
-		// Forwarding the variadic template pack of arguments to the emplace_back() of the underlying container.
+		// Built from arbitrary arguments and editable through the returned reference, so the count is recounted.
+		mark_count_dirty();
 		return state_posts_.emplace_back(std::forward<Args>(args)...);
 	}
 
-	void clear() { state_posts_.clear(); }
+	void clear() {
+		state_posts_.clear();
+		cached_transition_count_.store(0, std::memory_order_relaxed);
+		count_dirty_.store(false, std::memory_order_relaxed);
+	}
 
 	/**
 	 * @brief Allocate state posts up to @p num_of_states states,
@@ -311,6 +345,10 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 
 	/**
 	 * @return Number of transitions in the relation.
+	 *
+	 * Constant time, except the first call after an edit the relation cannot see (see @c mutable_state_post()),
+	 *  which recounts once. Like every const query, it may run concurrently with other const queries. With
+	 *  @c MATA_EXPENSIVE_ASSERTS, every call also checks the count against a full recount.
 	 */
 	size_t num_of_transitions() const;
 
@@ -361,8 +399,9 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	 * @brief Check whether automaton contains no transitions.
 	 *
 	 * @return True if there are no transitions in the automaton, false otherwise.
+	 * @note @c num_of_transitions() == 0, so as cheap as the count and never in disagreement with it.
 	 */
-	bool empty() const;
+	bool empty() const { return num_of_transitions() == 0; }
 
 	/**
 	 * @brief Append post vector to the delta.
@@ -370,7 +409,11 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	 * @param post_vector Vector of posts to be appended.
 	 */
 	void append(const std::vector<PostType>& post_vector) {
-		for (const PostType& pst : post_vector) { this->state_posts_.push_back(pst); }
+		for (const PostType& pst : post_vector) {
+			this->state_posts_.push_back(pst);
+			// Counted only once appended: a throwing push_back must not leave its transitions counted.
+			if (!count_dirty_.load(std::memory_order_relaxed)) { note_added(count_targets(pst)); }
+		}
 	}
 
 	/**
@@ -615,7 +658,65 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 		return static_cast<size_t>(state) + 1;
 	}
 
+	/// @brief Mark the cached transition count dirty, so that the next query recounts it.
+	void mark_count_dirty() { count_dirty_.store(true, std::memory_order_relaxed); }
+
+	/**
+	 * @brief Record new transitions. A no-op while the count is dirty.
+	 * 
+	 * @param added Number of transitions added to the relation.
+	 */
+	void note_added(const size_t added) {
+		if (!count_dirty_.load(std::memory_order_relaxed)) {
+			cached_transition_count_.store(
+				cached_transition_count_.load(std::memory_order_relaxed) + added, std::memory_order_relaxed
+			);
+		}
+	}
+
+	/**
+	 * @brief Record removed transitions. A no-op while the count is dirty.
+	 * 
+	 * @param removed Number of transitions removed from the relation.
+	 */
+	void note_removed(const size_t removed) {
+		if (!count_dirty_.load(std::memory_order_relaxed)) {
+			const size_t count{cached_transition_count_.load(std::memory_order_relaxed)};
+			MATA_ASSERT(removed <= count);
+			cached_transition_count_.store(count - removed, std::memory_order_relaxed);
+		}
+	}
+
+	/**
+	 * @brief Set the cached transition count to @p count and mark it clean.
+	 * 
+	 * @param count New cached transition count.
+	 */
+	void set_count(const size_t count) {
+		cached_transition_count_.store(count, std::memory_order_relaxed);
+		count_dirty_.store(false, std::memory_order_release);
+	}
+
+	/**
+	 * @brief Copy the cached transition count and dirty flag from @p other.
+	 * 
+	 * @param other Relation to copy the cached transition count and dirty flag from.
+	 */
+	void copy_count_from(const DeltaBase& other) {
+		// The flag first: a clean flag (acquire) publishes the count stored before it.
+		const bool dirty{other.count_dirty_.load(std::memory_order_acquire)};
+		cached_transition_count_.store(
+			other.cached_transition_count_.load(std::memory_order_relaxed), std::memory_order_relaxed
+		);
+		count_dirty_.store(dirty, std::memory_order_relaxed);
+	}
+
 	std::vector<PostType> state_posts_;
+	/// Exact number of transitions whenever @c count_dirty_ is false. Both are atomic because concurrent const
+	///  queries may recount; mutators run exclusively, so they use relaxed order.
+	mutable std::atomic<size_t> cached_transition_count_{0};
+	/// Set by edits whose effect on the count is not known, such as through @c mutable_state_post().
+	mutable std::atomic<bool> count_dirty_{false};
 }; // class mata::posts::DeltaBase.
 
 /// A whole relation from its keys, spelled in terms of @c PostChain:

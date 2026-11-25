@@ -66,14 +66,16 @@ void KeyedAccess<D, P, std::index_sequence<0>>::add(const State source, Key symb
 	if (P& state_transitions{self().state_posts_[source]};
 		state_transitions.empty() || state_transitions.back().symbol < symbol) {
 		state_transitions.emplace_back(symbol, target);
+		self().note_added(1);
 	} else {
 		// We need to insert into the middle of the vector.
 		if (const auto symbol_transitions{state_transitions.find(typename P::Entry{symbol})};
 			symbol_transitions != state_transitions.end()) {
-			symbol_transitions->insert(target);
+			if (symbol_transitions->insert(target)) { self().note_added(1); }
 		} else {
 			// Add transition to a new Move struct with symbol yet unused on transitions from state_from.
 			state_transitions.insert(typename P::Entry{symbol, target});
+			self().note_added(1);
 		}
 	}
 }
@@ -93,19 +95,25 @@ void KeyedAccess<D, P, std::index_sequence<0>>::add(const State source, const Ke
 		self().resize_for_states(source, max_state);
 	}
 
+	// Read before any insert: @p targets may be borrowed from the entry that grows.
+	const size_t num_of_targets{targets.size()};
 	if (P& state_transitions{self().state_posts_[source]}; state_transitions.empty()) {
 		state_transitions.insert({symbol, targets});
+		self().note_added(num_of_targets);
 	} else if (state_transitions.back().symbol < symbol) {
 		state_transitions.insert({symbol, targets});
+		self().note_added(num_of_targets);
 	} else {
 		// We need to insert into the middle of the vector.
 		if (const auto symbol_transitions{state_transitions.find(symbol)};
 			symbol_transitions != state_transitions.end()) {
+			const size_t old_size{symbol_transitions->nested().size()};
 			symbol_transitions->insert(targets);
-
+			self().note_added(symbol_transitions->nested().size() - old_size);
 		} else {
 			// Add transition to a new Move struct with symbol yet unused on transitions from state_from.
 			state_transitions.insert(typename P::Entry{symbol, targets});
+			self().note_added(num_of_targets);
 		}
 	}
 }
@@ -141,9 +149,9 @@ void KeyedAccess<D, P, std::index_sequence<0>>::remove(const State source, const
 				"] does not exist."
 			);
 		} else {
-			symbol_transitions->erase(target);
-			if (symbol_transitions->empty()) { 
-				self().state_posts_[source].erase(*symbol_transitions); 
+			if (symbol_transitions->erase(target)) { self().note_removed(1); }
+			if (symbol_transitions->empty()) {
+				self().state_posts_[source].erase(*symbol_transitions);
 			}
 		}
 	}
@@ -172,19 +180,22 @@ bool KeyedAccess<D, P, std::index_sequence<0>>::contains(const State source, con
 
 template <typename P, typename TT>
 size_t DeltaBase<P, TT>::num_of_transitions() const {
-	size_t number_of_transitions{0};
-	for (const PostType& state_post : state_posts_) { 
-		number_of_transitions += count_targets(state_post); 
+	const auto count_by_scan{[this] {
+		size_t count{0};
+		for (const PostType& state_post : state_posts_) { count += count_targets(state_post); }
+		return count;
+	}};
+	// Concurrent const callers may all recount; they store the same value, and the release publishes it.
+	if (count_dirty_.load(std::memory_order_acquire)) {
+		const size_t count{count_by_scan()};
+		cached_transition_count_.store(count, std::memory_order_relaxed);
+		count_dirty_.store(false, std::memory_order_release);
+		return count;
 	}
-	return number_of_transitions;
-}
-
-template <typename P, typename TT>
-bool DeltaBase<P, TT>::empty() const {
-	// A key can be left with no targets under it, so it is a target that is looked for, not a key.
-	return std::ranges::none_of(state_posts_, [](const PostType& state_post) {
-		return any_target(state_post, [](const Target&) { return true; });
-	});
+	const size_t count{cached_transition_count_.load(std::memory_order_relaxed)};
+	// Catches a missed count update, or an edit through a `mutable_state_post()` reference kept past a query.
+	MATA_EXPENSIVE_ASSERT(count == count_by_scan());
+	return count;
 }
 
 
@@ -200,6 +211,8 @@ std::vector<typename DeltaBase<P, TT>::PostType> DeltaBase<P, TT>::renumber_targ
 
 template <typename P, typename TT>
 typename DeltaBase<P, TT>::PostType& DeltaBase<P, TT>::mutable_state_post(const State q) {
+	// Edits through the returned reference cannot be seen here.
+	mark_count_dirty();
 	if (q >= state_posts_.size()) {
 		utils::reserve_on_insert(state_posts_, q);
 		const size_t new_size{num_of_states_for_(q)};
@@ -223,6 +236,8 @@ DeltaBase<P, TT> defragment(const DeltaBase<P, TT>& delta, const BoolVector& is_
 
 template <typename P, typename TT>
 DeltaBase<P, TT>& DeltaBase<P, TT>::defragment(const BoolVector& is_staying, const std::vector<State>& renaming) {
+	// Drops the transitions of the leaving states without counting them, so the next query recounts.
+	mark_count_dirty();
 	size_t source_new{0};
 	for (size_t source_orig{0}, num_of_states{this->num_of_states()}; source_orig < num_of_states; ++source_orig) {
 		if (!is_staying[source_orig]) { continue; }

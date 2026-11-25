@@ -333,6 +333,7 @@ class Delta : public posts::DeltaBase<StatePost, TransitionTraits> {
 		if (state_post.empty() || state_post.back().symbol < symbol) { return false; }
 		const auto symbol_post_it{state_post.find(symbol)};
 		if (symbol_post_it == state_post.end() || !symbol_post_it->erase(target)) { return false; }
+		note_removed(1);
 		// Erase through the iterator already found instead of searching for the symbol post again.
 		if (symbol_post_it->empty()) { state_post.erase(symbol_post_it); }
 		return true;
@@ -559,6 +560,7 @@ class DeltaBuilder {
 		MATA_ASSERT((targets_.empty() || target > targets_.back()) && "targets must be strictly increasing");
 		targets_.push_back(target);
 		max_target_ = std::max(max_target_, target);
+		++num_of_transitions_;
 	}
 
 	void finish_symbol() {
@@ -583,6 +585,8 @@ class DeltaBuilder {
 		}
 		Delta delta{};
 		delta.state_posts_ = std::move(state_posts_);
+		// Every target was counted as it was pushed, so the relation starts with an exact count.
+		delta.set_count(num_of_transitions_);
 		return delta;
 	}
 
@@ -592,6 +596,7 @@ class DeltaBuilder {
 	Symbol symbol_{0};
 	State source_{0};
 	State max_target_{0};
+	size_t num_of_transitions_{0}; ///< Targets pushed so far, which finish() hands over as the exact count.
 	bool in_state_{false};
 	bool in_symbol_{false};
 	bool has_symbol_{false}; ///< Has the current state emitted a symbol post already?
