@@ -51,9 +51,7 @@ static_assert(
 	std::same_as<Delta::Key<0>, Alphabet::Symbol>, "nft::Delta's keys and mata::Alphabet's symbols must be one type."
 );
 
-// TODO: @c DONT_CARE is @c EPSILON-1 and is not reserved: to the relation it is an ordinary symbol.
-//  Whether to reserve it is an NFT semantics decision. Doing so means keying the relation by
-//  `mata::ReservedKeys<Symbol, EPSILON, DONT_CARE - 1>` instead of plain @c Symbol.
+// TODO(nft): Decide whether DONT_CARE is a reserved key: https://github.com/VeriFIT/mata/issues/1143.
 
 } // namespace mata::nft.
 
