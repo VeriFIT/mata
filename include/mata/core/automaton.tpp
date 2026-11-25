@@ -93,7 +93,7 @@ inline typename AutomatonBase<D>::StateBoolArray AutomatonBase<D>::reachable_sta
 	return reachable;
 }
 
-namespace detail {
+namespace internal {
 /**
  * @brief Label-free predecessor lists of a relation in the CSR (compressed sparse row) layout.
  *
@@ -154,7 +154,7 @@ PredecessorIndex<typename D::State> build_predecessor_index(
 	));
 	return index;
 }
-} // namespace detail.
+} // namespace internal.
 
 template <DeltaLike D>
 typename AutomatonBase<D>::StateSet
@@ -174,7 +174,7 @@ typename AutomatonBase<D>::StateSet AutomatonBase<D>::get_terminating_states() c
 	// States that can reach a final state, by a backward search over predecessors. Building the reverted automaton
 	//  first costs one sorted insert per transition, while the traversal only needs the predecessor lists.
 	const size_t num_of_states{this->num_of_states()};
-	const auto pred_index{detail::build_predecessor_index(delta, num_of_states)};
+	const auto pred_index{internal::build_predecessor_index(delta, num_of_states)};
 
 	BoolVector terminating(num_of_states, false);
 	std::vector<State> worklist{};
@@ -235,7 +235,7 @@ template <DeltaLike D>
 std::vector<typename AutomatonBase<D>::State> AutomatonBase<D>::distances_to_final() const {
 	// A BFS from the final states over the predecessor lists, which is all the reverted automaton would be used for.
 	const size_t num_states{this->num_of_states()};
-	const auto pred_index{detail::build_predecessor_index(delta, num_states)};
+	const auto pred_index{internal::build_predecessor_index(delta, num_states)};
 
 	constexpr State unreached{std::numeric_limits<State>::max()};
 	std::vector<State> distances(num_states + 1, unreached);
@@ -338,7 +338,7 @@ BoolVector AutomatonBase<D>::get_useful_states(
 	const BoolVector reachable{reachable_states_(used_initial_states)};
 
 	// Build predecessor index for forward-reachable states.
-	const auto pred_index{detail::build_predecessor_index(delta, num_of_states, &reachable)};
+	const auto pred_index{internal::build_predecessor_index(delta, num_of_states, &reachable)};
 
 	// Backward pass: BFS from final states over the predecessor index.
 	// Mark only the final states that are forward-reachable.

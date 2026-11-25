@@ -18,7 +18,7 @@
 #include "mata/utils/arg-of.hh"
 
 namespace mata {
-namespace detail {
+namespace internal {
 // Returns the default largest ordinary key for an integral key type, given the smallest epsilon key.
 template <typename K> consteval K default_max_ordinary(const K min_epsilon) {
 	static_assert(
@@ -42,7 +42,7 @@ template <typename K> consteval bool default_epsilon_is_greatest(const K min_eps
 		return false;
 	}
 }
-} // namespace detail
+} // namespace internal
 
 /**
  * @brief A traits specifying which state a target denotes.
@@ -107,8 +107,8 @@ template <typename T> struct TargetTraits {
 template <
 	typename K,
 	K MinEpsilon = std::numeric_limits<K>::max(),
-	K MaxOrdinary = detail::default_max_ordinary<K>(MinEpsilon),
-	bool EpsilonIsGreatest = detail::default_epsilon_is_greatest<K>(MinEpsilon)>
+	K MaxOrdinary = internal::default_max_ordinary<K>(MinEpsilon),
+	bool EpsilonIsGreatest = internal::default_epsilon_is_greatest<K>(MinEpsilon)>
 struct ReservedKeys {
 	using Key = K;
 	static constexpr K min_epsilon{MinEpsilon}; ///< The smallest epsilon key.
@@ -177,15 +177,15 @@ template <typename P> struct PostAt<P, 0> {
  */
 template <typename P, size_t I> using KeyOf = typename PostAt<P, I>::type::Key;
 
-namespace detail {
+namespace internal {
 template <typename P, size_t... KeyIdx> auto keys_of(std::index_sequence<KeyIdx...>) -> std::tuple<KeyOf<P, KeyIdx>...>;
-} // namespace detail
+} // namespace internal
 
 /**
  * @brief The tuple of all key types in a chain of posts @p P, outermost first.
  * For example `std::tuple<KeyOf<P, 0>, ..., KeyOf<P, arity - 1>>`.
  */
-template <typename P> using KeysOf = decltype(detail::keys_of<P>(std::make_index_sequence<arity_of<P>>{}));
+template <typename P> using KeysOf = decltype(internal::keys_of<P>(std::make_index_sequence<arity_of<P>>{}));
 ///@}
 } // namespace posts
 

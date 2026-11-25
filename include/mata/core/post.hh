@@ -48,7 +48,7 @@
 
 namespace mata::posts {
 
-namespace detail {
+namespace internal {
 /**
  * @brief The body of @c mata::posts::PostEntry.
  *
@@ -226,8 +226,8 @@ template <typename K, typename N> class PostEntryCore {
 		}
 	}
 	///@}
-}; // class mata::posts::detail::PostEntryCore.
-} // namespace detail
+}; // class mata::posts::internal::PostEntryCore.
+} // namespace internal
 
 /**
  * @brief One entry of a post: a single key, and the post nested under it.
@@ -239,9 +239,9 @@ template <typename K, typename N> class PostEntryCore {
  * @tparam K What this entry is keyed by.
  * @tparam N The post nested under that key: another post, or a @c mata::posts::TargetSetLike at the bottom.
  */
-template <typename K, typename N> class PostEntry : public detail::PostEntryCore<K, N> {
+template <typename K, typename N> class PostEntry : public internal::PostEntryCore<K, N> {
   public:
-	using detail::PostEntryCore<K, N>::PostEntryCore;
+	using internal::PostEntryCore<K, N>::PostEntryCore;
 }; // class mata::posts::PostEntry.
 
 /// @cond
@@ -255,11 +255,11 @@ template <typename K, typename N> class PostEntry : public detail::PostEntryCore
  */
 template <typename K, typename N>
 	requires(arity_of<N> == 0)
-class PostEntry<K, N> : public detail::PostEntryCore<K, N> {
+class PostEntry<K, N> : public internal::PostEntryCore<K, N> {
   public:
-	using detail::PostEntryCore<K, N>::PostEntryCore;
-	using detail::PostEntryCore<K, N>::symbol;
-	using detail::PostEntryCore<K, N>::targets;
+	using internal::PostEntryCore<K, N>::PostEntryCore;
+	using internal::PostEntryCore<K, N>::symbol;
+	using internal::PostEntryCore<K, N>::targets;
 
 	/**
 	 * @name Structured bindings
@@ -570,7 +570,7 @@ class Post : utils::OrdVector<E, A> {
 	}
 }; // class mata::posts::Post.
 
-namespace detail {
+namespace internal {
 /// The recursion behind @c PostChain. A position holding a @c mata::posts::ReservedKeysLike descriptor
 ///  contributes its @c Key and keeps the descriptor. Anything else is a key type taking the default.
 template <typename... Ts> struct Chain;
@@ -593,7 +593,7 @@ template <typename K, typename... Rest>
 struct Chain<K, Rest...> {
 	using type = Post<PostEntry<K, typename Chain<Rest...>::type>>;
 };
-} // namespace detail
+} // namespace internal
 
 /**
  * @brief Build a post chain from its keys, outermost first, ending in the target set.
@@ -610,7 +610,7 @@ struct Chain<K, Rest...> {
  * @tparam Ts The key of each post from the outside in, then the innermost post. At least two, so a
  *  chain always has a key and always ends in a set of targets.
  */
-template <typename... Ts> using PostChain = typename detail::Chain<Ts...>::type;
+template <typename... Ts> using PostChain = typename internal::Chain<Ts...>::type;
 
 } // namespace mata::posts.
 

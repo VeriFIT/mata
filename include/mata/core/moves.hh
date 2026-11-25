@@ -26,7 +26,7 @@ template <typename K, typename T> class Move {
 	bool operator==(const Move&) const = default;
 }; // class mata::posts::Move.
 
-namespace detail {
+namespace internal {
 /// The move type of the post @p P: the @c MoveType its entries name, or @c Move of its key and target.
 template <typename P> struct MoveTypeOf {
 	using type = Move<typename P::Key, typename P::Target>;
@@ -38,7 +38,7 @@ struct MoveTypeOf<P> {
 	using type = typename P::Entry::MoveType;
 };
 /// @endcond
-} // namespace detail
+} // namespace internal
 
 /**
  * @brief The moves of a post as @c Move instances: every (symbol, target) pair, or a range of them.
@@ -57,7 +57,7 @@ template <typename P> class PostMoves {
 	using post_iterator = typename P::const_iterator;
 
   public:
-	using MoveType = typename detail::MoveTypeOf<P>::type;
+	using MoveType = typename internal::MoveTypeOf<P>::type;
 
 	/**
 	 * Iterator over moves.

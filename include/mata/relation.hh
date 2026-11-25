@@ -646,7 +646,7 @@ static_assert(
 
 namespace mata {
 /// Instantiated once, in `src/relation.cc`, instead of in every translation unit including this header.
-extern template class posts::detail::PostEntryCore<Symbol, SmallStateSet>;
+extern template class posts::internal::PostEntryCore<Symbol, SmallStateSet>;
 extern template class posts::PostEntry<Symbol, SmallStateSet>;
 extern template class posts::Post<SymbolPost, ReservedKeys<Symbol>, utils::DeltaAllocator<SymbolPost>>;
 extern template class posts::PostMoves<StatePost::Base>;

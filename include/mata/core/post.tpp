@@ -1,5 +1,5 @@
 /** @file
- * @brief Member definitions of @c mata::posts::PostEntry, which live on @c mata::posts::detail::PostEntryCore.
+ * @brief Member definitions of @c mata::posts::PostEntry, which live on @c mata::posts::internal::PostEntryCore.
  */
 
 #ifndef MATA_CORE_POST_TPP
@@ -7,7 +7,7 @@
 
 #include <utility>
 
-namespace mata::posts::detail {
+namespace mata::posts::internal {
 
 template <typename K, typename N>
 PostEntryCore<K, N>& PostEntryCore<K, N>::operator=(PostEntryCore&& rhs) noexcept(
@@ -66,6 +66,6 @@ void PostEntryCore<K, N>::insert(const Nested& states)
 	}
 }
 
-} // namespace mata::posts::detail.
+} // namespace mata::posts::internal.
 
 #endif // MATA_CORE_POST_TPP

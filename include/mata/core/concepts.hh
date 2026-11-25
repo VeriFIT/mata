@@ -159,10 +159,10 @@ concept AutomatonWithRuns = requires(const A a, typename A::Run r) {
 	{ r.word = a.get_word_for_path(r).first.word };
 };
 
-namespace detail {
+namespace internal {
 /// The iterator a cursor's @c begin() yields.
 template <typename C> using CursorIterator = std::remove_cvref_t<decltype(std::declval<const C&>().begin())>;
-} // namespace detail
+} // namespace internal
 
 /**
  * @brief A concept for a cursor over the targets of one state, as Tarjan's SCC traversal walks it.
@@ -175,7 +175,7 @@ template <typename C> using CursorIterator = std::remove_cvref_t<decltype(std::d
  *  the relation, not into the cursor.
  */
 template <typename C, typename Target>
-concept SuccessorCursorLike = std::semiregular<detail::CursorIterator<C>> && requires(detail::CursorIterator<C> it) {
+concept SuccessorCursorLike = std::semiregular<internal::CursorIterator<C>> && requires(internal::CursorIterator<C> it) {
 	{ *it } -> std::convertible_to<const Target&>;
 	{ ++it };
 	{ it != std::default_sentinel } -> std::convertible_to<bool>;

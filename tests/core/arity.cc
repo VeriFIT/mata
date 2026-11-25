@@ -129,7 +129,7 @@ static_assert(HasEntryFields<D1::Entry>);
 static_assert(!HasEntryFields<D2::Entry> && !HasEntryFields<D3::Entry>);
 static_assert(HasEntryFields<D2::Entry::Nested::Entry>);
 // No extra storage, and noexcept moves so that std::vector relocates by move.
-static_assert(sizeof(D1::Entry) == sizeof(posts::detail::PostEntryCore<Symbol, SmallStateSet>));
+static_assert(sizeof(D1::Entry) == sizeof(posts::internal::PostEntryCore<Symbol, SmallStateSet>));
 static_assert(std::is_nothrow_move_constructible_v<D1::Entry> && std::is_nothrow_move_assignable_v<D1::Entry>);
 static_assert(std::is_nothrow_move_constructible_v<D2::Entry> && std::is_nothrow_move_assignable_v<D2::Entry>);
 

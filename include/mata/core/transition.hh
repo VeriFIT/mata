@@ -97,17 +97,17 @@ template <typename St, typename Keys, typename T> struct KeyedTransition {
 	std::string to_string() const { return std::format("{}", *this); }
 };
 
-namespace detail {
+namespace internal {
 template <typename T> struct is_tuple : std::false_type {};
 template <typename... Ts> struct is_tuple<std::tuple<Ts...>> : std::true_type {};
-} // namespace detail
+} // namespace internal
 
 /**
  * @brief Concept for a transition that has a static @c parts() returning a tuple of references or values.
  */
 template <typename T>
 concept TransitionLike =
-	requires(const T& t) { requires detail::is_tuple<std::remove_cvref_t<decltype(T::parts(t))>>::value; };
+	requires(const T& t) { requires internal::is_tuple<std::remove_cvref_t<decltype(T::parts(t))>>::value; };
 
 /**
  * @brief Concept for a type that can be hashed with @c std::hash.
@@ -276,14 +276,14 @@ template <typename P> struct KeyedTransitionTraits {
 	}
 };
 
-namespace detail {
+namespace internal {
 template <typename P, size_t Arity = arity_of<P>> struct DefaultTransitionTraitsOf {
 	using type = KeyedTransitionTraits<P>;
 };
 template <typename P> struct DefaultTransitionTraitsOf<P, 1> {
 	using type = SymbolTransitionTraits<P>;
 };
-} // namespace detail
+} // namespace internal
 
 /** The default transition traits for a relation:
  *   - @c SymbolTransitionTraits at arity 1,
@@ -291,7 +291,7 @@ template <typename P> struct DefaultTransitionTraitsOf<P, 1> {
  *
  * @tparam P The post type of the relation.
  */
-template <typename P> using DefaultTransitionTraits = typename detail::DefaultTransitionTraitsOf<P>::type;
+template <typename P> using DefaultTransitionTraits = typename internal::DefaultTransitionTraitsOf<P>::type;
 ///@}
 
 /**
