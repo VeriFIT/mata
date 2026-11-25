@@ -93,15 +93,14 @@ template <typename St, typename Keys, typename T> struct KeyedTransition {
 namespace detail {
 template <typename T> struct is_tuple : std::false_type {};
 template <typename... Ts> struct is_tuple<std::tuple<Ts...>> : std::true_type {};
-} // namespace mata::posts::detail.
+} // namespace detail
 
 /**
  * @brief Concept for a transition that has a static @c parts() returning a tuple of references or values.
  */
 template <typename T>
-concept TransitionLike = requires(const T& t) {
-	requires detail::is_tuple<std::remove_cvref_t<decltype(T::parts(t))>>::value;
-};
+concept TransitionLike =
+	requires(const T& t) { requires detail::is_tuple<std::remove_cvref_t<decltype(T::parts(t))>>::value; };
 
 /**
  * @brief Concept for a type that can be hashed with @c std::hash.
@@ -181,7 +180,8 @@ struct std::formatter<mata::posts::KeyedTransition<St, std::tuple<Ks...>, T>> {
 		if (it != ctx.end() && *it != '}') { throw std::format_error("a transition takes no format spec"); }
 		return it;
 	}
-	template <typename Ctx> auto format(const mata::posts::KeyedTransition<St, std::tuple<Ks...>, T>& t, Ctx& ctx) const {
+	template <typename Ctx>
+	auto format(const mata::posts::KeyedTransition<St, std::tuple<Ks...>, T>& t, Ctx& ctx) const {
 		return mata::posts::format_parts(ctx.out(), t);
 	}
 };
@@ -196,7 +196,8 @@ namespace mata::posts {
  * @param t The transition to print.
  * @return The output stream after the last character written.
  */
-template <TransitionLike T> requires std::formattable<T, char>
+template <TransitionLike T>
+	requires std::formattable<T, char>
 std::ostream& operator<<(std::ostream& os, const T& t) {
 	return os << std::format("{}", t);
 }
@@ -275,7 +276,7 @@ template <typename P, size_t Arity = arity_of<P>> struct DefaultTransitionTraits
 template <typename P> struct DefaultTransitionTraitsOf<P, 1> {
 	using type = SymbolTransitionTraits<P>;
 };
-} // namespace mata::posts::detail.
+} // namespace detail
 
 /** The default transition traits for a relation:
  *   - @c SymbolTransitionTraits at arity 1,
@@ -317,9 +318,8 @@ template <typename D> class DeltaTransitions {
 		TransitionType transition_{};
 
 		void load() {
-			transition_ = std::apply(
-				[&](const auto&... keys) { return TT::make(source_, keys..., *cursor_); }, cursor_.keys()
-			);
+			transition_ =
+				std::apply([&](const auto&... keys) { return TT::make(source_, keys..., *cursor_); }, cursor_.keys());
 		}
 		/// Position on the first transition leaving @c source_ or a later state, or become the end.
 		void seek() {

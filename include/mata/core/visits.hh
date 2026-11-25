@@ -24,7 +24,8 @@ namespace mata::posts {
  *
  * @note `if constexpr` on @c key_arity turns the recursion into nested loops (same as a caller would write by hand),
  *  making this depth-generic visit free: measured at 0.99-1.01x of hand-written loops at every arity from 1 to 9.
- *  @p Fn is a template parameter and never a @c std::function: routing the same visit through one would cost 1.08x to 2.18x.
+ *  @p Fn is a template parameter and never a @c std::function: routing the same visit through one would cost 1.08x
+ to 2.18x.
 
  * @param post The post to visit. @c mata::arity_of is used to recurse down to the innermost post.
  * @param fn The callable to apply to each target. It must accept a single argument of type @c target_of<P>.
@@ -42,7 +43,8 @@ template <typename P, typename Fn> void visit_targets(const P& post, Fn&& fn) {
  *
  * @note Stops at the first that does.
  * @param post The post to visit. @c mata::arity_of is used to recurse down to the innermost post.
- * @param pred The predicate to apply to each target. It must accept a single argument of type @c target_of<P> and return a @c bool.
+ * @param pred The predicate to apply to each target. It must accept a single argument of type @c target_of<P> and
+ * return a @c bool.
  * @return @c true if any target satisfies @p pred, @c false otherwise.
  */
 template <typename P, typename Pred> bool any_target(const P& post, Pred&& pred) {
@@ -85,8 +87,7 @@ template <typename P> size_t count_targets(const P& post) {
  *  the keys followed by a single argument of type @c target_of<P>.
  * @param keys The keys accumulated down the nesting, passed to @p fn along with each target.
  */
-template <typename P, typename Fn, typename... Keys>
-void visit_moves(const P& post, Fn&& fn, const Keys&... keys) {
+template <typename P, typename Fn, typename... Keys> void visit_moves(const P& post, Fn&& fn, const Keys&... keys) {
 	if constexpr (arity_of<P> == 0) {
 		for (const target_of<P>& target : post) { fn(keys..., target); }
 	} else {
@@ -191,8 +192,8 @@ bool erase_target(P& post, const target_of<P>& target, const K0& k0, const Rest&
  * @brief Returns whether @p a and @p b structurally equal, including every target under them.
  *
  * @note This is a deep comparison, not a shallow one.
- *  Standard @c operator== on a post compares only the keys of its entries, so it ignores every difference in the targets.
- *  To properly compare two posts, you need to use this function.
+ *  Standard @c operator== on a post compares only the keys of its entries, so it ignores every difference in the
+ * targets. To properly compare two posts, you need to use this function.
  *
  * @param a The first post to compare.
  * @param b The second post to compare.
@@ -216,7 +217,8 @@ template <typename P> bool posts_equal(const P& a, const P& b) {
  *
  * @param post The post to rebuild. @c mata::arity_of is used to recurse down to the innermost post.
  * @param rename The callable to apply to each target's state. It must accept a single argument
- *  of type @c state_of<target_of<P>>, return a new state of the same type, and be monotonic with respect to the ordering of states.
+ *  of type @c state_of<target_of<P>>, return a new state of the same type, and be monotonic with respect to the
+ * ordering of states.
  * @return A new post with the same structure as @p post, but with every target's state renamed by @p rename.
  */
 template <typename P, typename Fn> P renumbered(const P& post, Fn&& rename) {
@@ -250,10 +252,14 @@ template <typename P, typename Renaming>
 void defragment_in_place(P& post, const BoolVector& is_staying, const Renaming& renaming) {
 	if constexpr (arity_of<P> == 0) {
 		using Traits = TargetTraits<target_of<P>>;
-		const auto is_leaving{[&is_staying](const target_of<P>& target) { return !is_staying[Traits::state_of(target)]; }};
+		const auto is_leaving{[&is_staying](const target_of<P>& target) {
+			return !is_staying[Traits::state_of(target)];
+		}};
 		if constexpr (requires { post.erase_if(is_leaving); }) {
 			post.erase_if(is_leaving);
-			for (target_of<P>& target : post) { target = Traits::with_state(target, renaming[Traits::state_of(target)]); }
+			for (target_of<P>& target : post) {
+				target = Traits::with_state(target, renaming[Traits::state_of(target)]);
+			}
 		} else {
 			post = defragmented(post, is_staying, renaming);
 		}

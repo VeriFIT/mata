@@ -7,9 +7,9 @@
 
 #include <concepts>
 
+#include "mata/nft/types.hh"
 #include "mata/relation.hh"
 #include "mata/synchronized-symbol-post-iterator.hh"
-#include "mata/nft/types.hh"
 
 namespace mata::nft {
 
@@ -48,8 +48,7 @@ static_assert(
  *  the keys of the one are the symbols of the other. This is where they are checked to agree.
  */
 static_assert(
-	std::same_as<Delta::Key<0>, Alphabet::Symbol>,
-	"nft::Delta's keys and mata::Alphabet's symbols must be one type."
+	std::same_as<Delta::Key<0>, Alphabet::Symbol>, "nft::Delta's keys and mata::Alphabet's symbols must be one type."
 );
 
 // TODO: @c DONT_CARE is @c EPSILON-1 and is not reserved: to the relation it is an ordinary symbol.

@@ -9,9 +9,9 @@
 #include <utility>
 #include <vector>
 
-#include "mata/types.hh"
 #include "mata/core/automaton.hh"
 #include "mata/core/concepts.hh"
+#include "mata/types.hh"
 
 namespace tiny_delta {
 
@@ -230,9 +230,7 @@ class TinyDelta {
 		static const TinyPost empty{};
 		return empty;
 	}
-	const TinyPost& post_of(const State source) const {
-		return source < posts_.size() ? posts_[source] : empty_post();
-	}
+	const TinyPost& post_of(const State source) const { return source < posts_.size() ? posts_[source] : empty_post(); }
 
 	std::vector<TinyPost> posts_{};
 };

@@ -30,29 +30,41 @@ using D4 = posts::RelationOf<Symbol, Symbol, Symbol, Symbol, StateSet>;
 using Mixed2 = posts::RelationOf<Symbol, ReservedKeys<Symbol, 100>, StateSet>;
 
 // Probes: does the relation offer the member with this number of keys at all.
-template <typename D> concept Add1 = requires(D d) { d.add(0, 1, 2); };
-template <typename D> concept Add2 = requires(D d) { d.add(0, 1, 2, 3); };
-template <typename D> concept Add3 = requires(D d) { d.add(0, 1, 2, 3, 4); };
-template <typename D> concept Add4 = requires(D d) { d.add(0, 1, 2, 3, 4, 5); };
-template <typename D> concept Remove1 = requires(D d) { d.remove(0, 1, 2); };
-template <typename D> concept Remove2 = requires(D d) { d.remove(0, 1, 2, 3); };
-template <typename D> concept Contains1 = requires(const D d) { d.contains(0, 1, 2); };
-template <typename D> concept Contains2 = requires(const D d) { d.contains(0, 1, 2, 3); };
-template <typename D> concept HasAddTargets = requires(D d, const typename D::Nested& n) { d.add(0, 1, n); };
-template <typename D> concept HasAddTargets2 = requires(D d, const typename D::TargetSet& n) { d.add(0, 1, 2, n); };
-template <typename D> concept HasTransitions = requires(const D d) { d.transitions(); };
-template <typename D> concept HasTransitionsTo = requires(const D d) { d.get_transitions_to(0); };
-template <typename D> concept HasTransitionsBetween = requires(const D d) { d.get_transitions_between(0, 1); };
-template <typename D> concept HasKeyedSuccessors = requires(const D d) { d.get_successors(0, 1); };
+template <typename D>
+concept Add1 = requires(D d) { d.add(0, 1, 2); };
+template <typename D>
+concept Add2 = requires(D d) { d.add(0, 1, 2, 3); };
+template <typename D>
+concept Add3 = requires(D d) { d.add(0, 1, 2, 3, 4); };
+template <typename D>
+concept Add4 = requires(D d) { d.add(0, 1, 2, 3, 4, 5); };
+template <typename D>
+concept Remove1 = requires(D d) { d.remove(0, 1, 2); };
+template <typename D>
+concept Remove2 = requires(D d) { d.remove(0, 1, 2, 3); };
+template <typename D>
+concept Contains1 = requires(const D d) { d.contains(0, 1, 2); };
+template <typename D>
+concept Contains2 = requires(const D d) { d.contains(0, 1, 2, 3); };
+template <typename D>
+concept HasAddTargets = requires(D d, const typename D::Nested& n) { d.add(0, 1, n); };
+template <typename D>
+concept HasAddTargets2 = requires(D d, const typename D::TargetSet& n) { d.add(0, 1, 2, n); };
+template <typename D>
+concept HasTransitions = requires(const D d) { d.transitions(); };
+template <typename D>
+concept HasTransitionsTo = requires(const D d) { d.get_transitions_to(0); };
+template <typename D>
+concept HasTransitionsBetween = requires(const D d) { d.get_transitions_between(0, 1); };
+template <typename D>
+concept HasKeyedSuccessors = requires(const D d) { d.get_successors(0, 1); };
 
 // Every target of the relation, gathered through the generic walk.
 template <typename D> std::vector<State> all_targets(const D& delta) {
 	std::vector<State> targets{};
 	const size_t states{delta.num_of_states()};
 	for (State source{0}; source < states; ++source) {
-		posts::visit_targets(delta.state_post(source), [&targets](const State target) {
-			targets.push_back(target);
-		});
+		posts::visit_targets(delta.state_post(source), [&targets](const State target) { targets.push_back(target); });
 	}
 	return targets;
 }
@@ -175,17 +187,17 @@ static_assert(HasTransitionsBetween<D1> && HasTransitionsBetween<D2>);
 //  otherwise; Nfa::post() returns it as a const StateSet&.
 static_assert(HasKeyedSuccessors<D1> && HasKeyedSuccessors<D2> && HasKeyedSuccessors<D3>);
 static_assert(std::same_as<D1::KeyedSuccessors, const SmallStateSet&>);
-static_assert((std::same_as<D2::KeyedSuccessors, StateSet> && std::same_as<D3::KeyedSuccessors, StateSet>));
+static_assert((std::same_as<D2::KeyedSuccessors, StateSet> && std::same_as<D3::KeyedSuccessors, StateSet>) );
 static_assert(std::same_as<decltype(std::declval<const D1&>().get_successors(0)), SmallStateSet>);
 static_assert(std::same_as<decltype(std::declval<const D3&>().get_successors(0)), StateSet>);
 
 // add, remove and contains take exactly key_arity keys.
-static_assert( Add1<D1> && !Add2<D1> && !Add3<D1> && !Add4<D1>);
-static_assert(!Add1<D2> &&  Add2<D2> && !Add3<D2> && !Add4<D2>);
-static_assert(!Add1<D3> && !Add2<D3> &&  Add3<D3> && !Add4<D3>);
-static_assert(!Add1<D4> && !Add2<D4> && !Add3<D4> &&  Add4<D4>);
-static_assert( Remove1<D1> && !Remove2<D1> && !Remove1<D2> && Remove2<D2>);
-static_assert( Contains1<D1> && !Contains2<D1> && !Contains1<D2> && Contains2<D2>);
+static_assert(Add1<D1> && !Add2<D1> && !Add3<D1> && !Add4<D1>);
+static_assert(!Add1<D2> && Add2<D2> && !Add3<D2> && !Add4<D2>);
+static_assert(!Add1<D3> && !Add2<D3> && Add3<D3> && !Add4<D3>);
+static_assert(!Add1<D4> && !Add2<D4> && !Add3<D4> && Add4<D4>);
+static_assert(Remove1<D1> && !Remove2<D1> && !Remove1<D2> && Remove2<D2>);
+static_assert(Contains1<D1> && !Contains2<D1> && !Contains1<D2> && Contains2<D2>);
 
 template class mata::AutomatonBase<D2>;
 template class mata::AutomatonBase<D3>;
@@ -196,7 +208,7 @@ TEST_CASE("mata::posts::DeltaBase::add - writing a key path at any arity") {
 		D1 by_add{};
 		D1 by_path{};
 		for (const auto& [source, symbol, target] :
-		     std::vector<std::tuple<State, Symbol, State>>{{0, 1, 1}, {0, 1, 2}, {0, 4, 3}, {2, 0, 0}, {5, 9, 5}}) {
+			 std::vector<std::tuple<State, Symbol, State>>{{0, 1, 1}, {0, 1, 2}, {0, 4, 3}, {2, 0, 0}, {5, 9, 5}}) {
 			by_add.add(source, symbol, target);
 			by_path.add(source, symbol, target);
 		}
@@ -256,7 +268,7 @@ TEST_CASE("mata::posts::DeltaBase::add - writing a key path at any arity") {
 		delta.add(2, 1, 2, 3, 4, StateSet{8, 9});
 		CHECK(delta.num_of_transitions() == 4);
 		CHECK(all_targets(delta) == std::vector<State>{5, 7, 8, 9});
-		CHECK((delta.contains(0, 1, 2, 3, 6, 7) && !delta.contains(0, 1, 2, 3, 6, 5)));
+		CHECK(delta.contains(0, 1, 2, 3, 6, 7) && !delta.contains(0, 1, 2, 3, 6, 5));
 
 		delta.remove(0, 1, 2, 3, 4, 5);
 		CHECK_FALSE(delta.contains(0, 1, 2, 3, 4, 5));
@@ -405,7 +417,7 @@ TEST_CASE("mata::posts::DeltaBase::remove / contains - a key path at any arity")
 		D3 delta{};
 		delta.add(0, 1, 2, 3, 5);
 		delta.add(0, 1, 2, 4, 6);
-		CHECK((delta.contains(0, 1, 2, 3, 5) && delta.contains(0, 1, 2, 4, 6)));
+		CHECK(delta.contains(0, 1, 2, 3, 5) && delta.contains(0, 1, 2, 4, 6));
 		CHECK(all_targets(delta) == std::vector<State>{5, 6});
 
 		delta.remove(0, 1, 2, 3, 5);

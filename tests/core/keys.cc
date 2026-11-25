@@ -18,8 +18,8 @@
 #include "mata/alphabet.hh"
 #include "mata/core/concepts.hh"
 #include "mata/core/delta.hh"
-#include "mata/utils/ord-vector.hh"
 #include "mata/relation.hh"
+#include "mata/utils/ord-vector.hh"
 
 using namespace mata;
 
@@ -32,7 +32,9 @@ struct Interval {
 	auto operator<=>(const Interval& other) const = default;
 	bool operator==(const Interval& other) const = default;
 	// For Catch2's failure messages.
-	friend std::ostream& operator<<(std::ostream& os, const Interval& i) { return os << '[' << i.lo << ',' << i.hi << ']'; }
+	friend std::ostream& operator<<(std::ostream& os, const Interval& i) {
+		return os << '[' << i.lo << ',' << i.hi << ']';
+	}
 };
 
 // A key that is not a symbol and can be printed.
@@ -64,15 +66,14 @@ using NarrowTail = ReservedKeys<Symbol, OUR_EPSILON>;
 using WideTail = ReservedKeys<Symbol, OUR_EPSILON, OUR_EPSILON - 11>;
 
 // Not PostChain: PostChain would take the invalid descriptor below for a key type.
-template <typename Reserved>
-using PostOver = posts::Post<posts::PostEntry<Symbol, StateSet, Reserved>>;
+template <typename Reserved> using PostOver = posts::Post<posts::PostEntry<Symbol, StateSet, Reserved>>;
 template <typename Reserved> using DeltaOver = posts::DeltaBase<PostOver<Reserved>>;
 
 using NarrowDelta = DeltaOver<NarrowTail>;
 using WideDelta = DeltaOver<WideTail>;
 
-using IntervalReserved = ReservedKeys<Interval, Interval{OUR_EPSILON, OUR_EPSILON},
-                                      Interval{OUR_EPSILON - 1, OUR_EPSILON - 1}>;
+using IntervalReserved =
+	ReservedKeys<Interval, Interval{OUR_EPSILON, OUR_EPSILON}, Interval{OUR_EPSILON - 1, OUR_EPSILON - 1}>;
 using IntervalDelta = posts::RelationOf<IntervalReserved, StateSet>;
 
 using WeightReserved = ReservedKeys<Weight, Weight{100}, Weight{99}>;
@@ -89,7 +90,6 @@ struct FixedAlphabet {
 	using Symbol = mata::Symbol;
 };
 
-
 struct IntervalAlphabet {
 	using Symbol = Interval;
 	void update_next_symbol_value(Symbol) {}
@@ -105,15 +105,15 @@ struct WeightAlphabet {
 
 // Re-exports the protected key members. A using-declaration compiles even where the member's constraint fails.
 template <typename D> struct Exposing : D {
-	using D::D;
 	using D::add_keys_to;
+	using D::D;
+	using D::get_max_key;
 	using D::get_used_keys;
-	using D::get_used_keys_vec;
-	using D::get_used_keys_set;
-	using D::get_used_keys_sps;
 	using D::get_used_keys_bv;
 	using D::get_used_keys_chv;
-	using D::get_max_key;
+	using D::get_used_keys_set;
+	using D::get_used_keys_sps;
+	using D::get_used_keys_vec;
 };
 
 // Ordinary keys run past the reserved ones. Not a ReservedKeys, whose static_assert would reject it.
@@ -175,8 +175,12 @@ static_assert(!HasIndexedKeyMembers<Exposing<IntervalDelta>>);
 static_assert(!HasIndexedKeyMembers<Exposing<WeightDelta>>);
 static_assert(HasSymbolMembers<Delta>);
 static_assert(!HasSymbolMembers<Exposing<IntervalDelta>>);
-static_assert(std::same_as<decltype(std::declval<const Exposing<IntervalDelta>&>().get_used_keys()), utils::OrdVector<Interval>>);
-static_assert(std::same_as<decltype(std::declval<const Exposing<IntervalDelta>&>().get_max_key()), std::optional<Interval>>);
+static_assert(
+	std::same_as<decltype(std::declval<const Exposing<IntervalDelta>&>().get_used_keys()), utils::OrdVector<Interval>>
+);
+static_assert(
+	std::same_as<decltype(std::declval<const Exposing<IntervalDelta>&>().get_max_key()), std::optional<Interval>>
+);
 
 // A relation feeds an alphabet only if its keys are the alphabet's symbols and are printable.
 static_assert(Printable<Symbol> && Printable<Weight> && !Printable<Interval>);
@@ -236,8 +240,7 @@ TEST_CASE("mata::ReservedKeys - the defaults follow the relation, not core's con
 
 		// Ordinary keys are those up to max_ordinary, 99.
 		CHECK(keys_of(state_post.moves_symbols()) == std::vector<Symbol>{3, 98});
-		CHECK(keys_of(state_post.moves_epsilons())
-		      == std::vector<Symbol>{OUR_EPSILON, OUR_EPSILON + 5, EPSILON});
+		CHECK(keys_of(state_post.moves_epsilons()) == std::vector<Symbol>{OUR_EPSILON, OUR_EPSILON + 5, EPSILON});
 	}
 
 	SECTION("a wider reserved tail belongs to neither range") {
@@ -272,18 +275,18 @@ TEST_CASE("mata::Delta's used-key queries do not carry state between calls") {
 	Delta second{};
 	second.add(0, 2, 1);
 
-	(void)first.get_used_symbols();
-	(void)first.get_used_symbols_vec();
-	(void)first.get_used_symbols_set();
-	(void)first.get_used_symbols_sps();
-	(void)first.get_used_symbols_bv();
+	(void) first.get_used_symbols();
+	(void) first.get_used_symbols_vec();
+	(void) first.get_used_symbols_set();
+	(void) first.get_used_symbols_sps();
+	(void) first.get_used_symbols_bv();
 
 	CHECK(second.get_used_symbols() == utils::OrdVector<Symbol>{2});
 	CHECK(second.get_used_symbols_vec() == utils::OrdVector<Symbol>{2});
 	CHECK(second.get_used_symbols_set() == std::set<Symbol>{2});
 	CHECK(utils::OrdVector<Symbol>{second.get_used_symbols_sps()} == utils::OrdVector<Symbol>{2});
 	const std::vector<bool> bv{second.get_used_symbols_bv()};
-	CHECK((!bv[0] && !bv[1] && bv[2]));
+	CHECK(!bv[0] && !bv[1] && bv[2]);
 }
 
 TEST_CASE("mata::Delta's symbol members are the key members under the NFA's names") {
@@ -298,7 +301,7 @@ TEST_CASE("mata::Delta's symbol members are the key members under the NFA's name
 		CHECK(utils::OrdVector<Symbol>{delta.get_used_symbols_sps()} == delta.get_used_symbols());
 		const std::vector<bool> bv{delta.get_used_symbols_bv()};
 		REQUIRE(bv.size() >= 5); // It starts at a fixed capacity, so only the bits are specified.
-		CHECK((!bv[0] && bv[1] && !bv[2] && !bv[3] && bv[4]));
+		CHECK(!bv[0] && bv[1] && !bv[2] && !bv[3] && bv[4]);
 		static_assert(std::same_as<decltype(delta.get_used_symbols()), utils::OrdVector<Symbol>>);
 		static_assert(std::same_as<decltype(delta.get_max_symbol()), Symbol>);
 	}
@@ -327,7 +330,6 @@ TEST_CASE("an interval-keyed relation reports the intervals it uses") {
 		CHECK(empty.get_used_keys().empty());
 		CHECK_FALSE(empty.get_max_key().has_value());
 	}
-
 }
 
 TEST_CASE("a relation feeds an alphabet with its keys, named by their printed form") {

@@ -1709,9 +1709,7 @@ Simlib::Util::BinaryRelation mata::nft::algorithms::compute_relation(const Nft& 
 	if (const std::string& direction = params.at("direction"); "simulation" == relation && direction == "forward") {
 		return compute_fw_direct_simulation<Simlib::Util::BinaryRelation>(aut);
 	}
-	throw std::runtime_error(
-		std::string{__func__} + " received an unknown value of the \"relation\" key: " + relation
-	);
+	throw std::runtime_error(std::string{__func__} + " received an unknown value of the \"relation\" key: " + relation);
 }
 
 Nft mata::nft::reduce(const Nft& aut, StateRenaming* state_renaming, const ParameterMap& params) {

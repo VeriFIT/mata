@@ -1137,9 +1137,9 @@ TEST_CASE("mata::nfa::Delta mutation epoch") {
 	CHECK(delta.mutation_epoch() == initial_epoch + 2);
 }
 
-// The mutation epoch of devel's Delta is not part of the template relation.
-#ifdef MATA_DELTA_MUTATION_EPOCH
-#endif // MATA_DELTA_MUTATION_EPOCH
+	// The mutation epoch of devel's Delta is not part of the template relation.
+	#ifdef MATA_DELTA_MUTATION_EPOCH
+	#endif // MATA_DELTA_MUTATION_EPOCH
 
 TEST_CASE("mata::nfa::Delta mutation epoch of resize_for_states()") {
 	Delta delta;
@@ -1155,9 +1155,9 @@ TEST_CASE("mata::nfa::Delta mutation epoch of resize_for_states()") {
 	CHECK(delta.mutation_epoch() == initial_epoch + 2);
 }
 
-// The mutation epoch of devel's Delta is not part of the template relation.
-#ifdef MATA_DELTA_MUTATION_EPOCH
-#endif // MATA_DELTA_MUTATION_EPOCH
+	// The mutation epoch of devel's Delta is not part of the template relation.
+	#ifdef MATA_DELTA_MUTATION_EPOCH
+	#endif // MATA_DELTA_MUTATION_EPOCH
 
 TEST_CASE("mata::nfa::Delta moves and assignments keep count and epoch consistent") {
 	Delta source;
@@ -1414,9 +1414,9 @@ TEST_CASE("mata::nfa::Delta batched imports keep the count and the epoch") {
 	}
 }
 
-// The mutation epoch of devel's Delta is not part of the template relation.
-#ifdef MATA_DELTA_MUTATION_EPOCH
-#endif // MATA_DELTA_MUTATION_EPOCH
+	// The mutation epoch of devel's Delta is not part of the template relation.
+	#ifdef MATA_DELTA_MUTATION_EPOCH
+	#endif // MATA_DELTA_MUTATION_EPOCH
 
 TEST_CASE("mata::nfa::Delta::append_shifted() keeps the count and the epoch") {
 	Delta lhs{};
@@ -1450,9 +1450,9 @@ TEST_CASE("mata::nfa::Delta::append_shifted() keeps the count and the epoch") {
 	}
 }
 
-// The mutation epoch of devel's Delta is not part of the template relation.
-#ifdef MATA_DELTA_MUTATION_EPOCH
-#endif // MATA_DELTA_MUTATION_EPOCH
+	// The mutation epoch of devel's Delta is not part of the template relation.
+	#ifdef MATA_DELTA_MUTATION_EPOCH
+	#endif // MATA_DELTA_MUTATION_EPOCH
 
 TEST_CASE("mata::nfa::Delta count and epoch of sized and rebuilt deltas and of rejected edits") {
 	SECTION("sized constructor") {
@@ -1520,9 +1520,9 @@ TEST_CASE("mata::nfa::Delta count and epoch of sized and rebuilt deltas and of r
 	}
 }
 
-// The mutation epoch of devel's Delta is not part of the template relation.
-#ifdef MATA_DELTA_MUTATION_EPOCH
-#endif // MATA_DELTA_MUTATION_EPOCH
+	// The mutation epoch of devel's Delta is not part of the template relation.
+	#ifdef MATA_DELTA_MUTATION_EPOCH
+	#endif // MATA_DELTA_MUTATION_EPOCH
 
 TEST_CASE("mata::nfa::Delta count of consuming union and concatenation") {
 	Nfa lhs{};

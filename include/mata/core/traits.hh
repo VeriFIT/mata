@@ -22,15 +22,17 @@ namespace detail {
 // Returns the default largest ordinary key for an integral key type, given the smallest epsilon key.
 template <typename K> consteval K default_max_ordinary(const K min_epsilon) {
 	static_assert(
-		std::integral<K>,
-		"ReservedKeys<K>: only an integral key has a default reserved tail (min_epsilon = max, "
-		"max_ordinary = min_epsilon - 1). For any other key spell all three arguments: "
-		"ReservedKeys<K, MinEpsilon, MaxOrdinary>."
+		std::integral<K>, "ReservedKeys<K>: only an integral key has a default reserved tail (min_epsilon = max, "
+						  "max_ordinary = min_epsilon - 1). For any other key spell all three arguments: "
+						  "ReservedKeys<K, MinEpsilon, MaxOrdinary>."
 	);
-	if constexpr (std::integral<K>) { return min_epsilon - 1; }
-	else { return K{}; } // K{} is never used (just to satisfy the compiler)
+	if constexpr (std::integral<K>) {
+		return min_epsilon - 1;
+	} else {
+		return K{};
+	} // K{} is never used (just to satisfy the compiler)
 }
-} // namespace mata::detail.
+} // namespace detail
 
 /**
  * @brief A traits specifying which state a target denotes.
@@ -89,8 +91,7 @@ template <
 	typename K,
 	K MinEpsilon = std::numeric_limits<K>::max(),
 	K MaxOrdinary = detail::default_max_ordinary<K>(MinEpsilon),
-	bool EpsilonIsGreatest = (MinEpsilon == std::numeric_limits<K>::max())
->
+	bool EpsilonIsGreatest = (MinEpsilon == std::numeric_limits<K>::max())>
 struct ReservedKeys {
 	using Key = K;
 	static constexpr K min_epsilon{MinEpsilon}; ///< The smallest epsilon key.
@@ -116,7 +117,10 @@ template <typename X> struct PostTraits {
 	using Target = typename X::value_type;
 };
 template <typename X>
-	requires requires { X::key_arity; typename X::Target; }
+	requires requires {
+		X::key_arity;
+		typename X::Target;
+	}
 struct PostTraits<X> {
 	static constexpr size_t key_arity{X::key_arity};
 	using Target = typename X::Target;
@@ -148,9 +152,8 @@ template <typename P> struct PostAt<P, 0> {
 template <typename P, size_t I> using KeyOf = typename PostAt<P, I>::type::Key;
 
 namespace detail {
-template <typename P, size_t... KeyIdx>
-auto keys_of(std::index_sequence<KeyIdx...>) -> std::tuple<KeyOf<P, KeyIdx>...>;
-} // namespace mata::posts::detail.
+template <typename P, size_t... KeyIdx> auto keys_of(std::index_sequence<KeyIdx...>) -> std::tuple<KeyOf<P, KeyIdx>...>;
+} // namespace detail
 
 /**
  * @brief The tuple of all key types in a chain of posts @p P, outermost first.
@@ -158,7 +161,7 @@ auto keys_of(std::index_sequence<KeyIdx...>) -> std::tuple<KeyOf<P, KeyIdx>...>;
  */
 template <typename P> using KeysOf = decltype(detail::keys_of<P>(std::make_index_sequence<arity_of<P>>{}));
 ///@}
-} // namespace mata::posts.
+} // namespace posts
 
 } // namespace mata.
 

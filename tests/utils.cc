@@ -14,9 +14,7 @@
 using namespace mata::utils;
 
 TEST_CASE("mata::utils::to_string()") {
-	SECTION("a char is printed as the character") {
-		CHECK(to_string('a') == "a");
-	}
+	SECTION("a char is printed as the character") { CHECK(to_string('a') == "a"); }
 
 	SECTION("a byte-sized integer is printed as its number") {
 		CHECK(to_string(std::uint8_t{97}) == "97");

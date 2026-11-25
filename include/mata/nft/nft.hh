@@ -89,8 +89,8 @@
 // #define _STATIC_STRUCTURES_
 
 #include <algorithm>
-#include <concepts>
 #include <cassert>
+#include <concepts>
 #include <functional>
 #include <limits>
 #include <set>
@@ -1629,8 +1629,7 @@ class Nft : public Automaton {
 	 *  NFT transition sequence as a flat word on a single tape.
 	 * @return A newly created NFA. The NFT is left empty either way.
 	 */
-	template <typename D = Delta>
-	nfa::Nfa to_nfa() {
+	template <typename D = Delta> nfa::Nfa to_nfa() {
 		if constexpr (std::same_as<D, nfa::Delta>) {
 			return nfa::Nfa{std::move(delta), std::move(initial), std::move(final), nullptr};
 		} else {
@@ -1642,8 +1641,8 @@ class Nft : public Automaton {
 				"transducer's own semantics can make it."
 			);
 			static_assert(
-				std::same_as<typename D::State, typename nfa::Delta::State>
-					&& std::same_as<typename D::Target, typename nfa::Delta::Target>,
+				std::same_as<typename D::State, typename nfa::Delta::State> &&
+					std::same_as<typename D::Target, typename nfa::Delta::Target>,
 				"An NFT whose states or targets are not an NFA's needs a mapping, not a copy."
 			);
 			nfa::Delta rebuilt{};
@@ -1652,9 +1651,7 @@ class Nft : public Automaton {
 			for (State source{0}; source < num_of_states; ++source) {
 				// `for_each_move` yields `(keys..., target)`, which is exactly what `add` takes at
 				//  every supported arity -- so the transcription is one line whatever the depth.
-				delta.for_each_move(source, [&rebuilt, source](const auto&... move) {
-					rebuilt.add(source, move...);
-				});
+				delta.for_each_move(source, [&rebuilt, source](const auto&... move) { rebuilt.add(source, move...); });
 			}
 			// Leave @c this in the same state the move branch leaves it in, so the postcondition
 			//  does not depend on which branch was taken.

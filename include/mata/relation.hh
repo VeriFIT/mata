@@ -50,7 +50,7 @@ struct Transition {
 
 	/**
 	 * @brief Get the parts of @p t as a tuple.
-	 * 
+	 *
 	 * @param t Transition to get the parts of.
 	 * @return A tuple (source, symbol, target) of @p t.
 	 */
@@ -83,18 +83,18 @@ class SymbolPost : public posts::PostEntry<Symbol, SmallStateSet> {
 
 	SymbolPost() = default;
 	explicit SymbolPost(const Symbol symbol) : Base{symbol} {}
-	
+
 	/**
 	 * @brief Create a post with a single target.
-	 * 
+	 *
 	 * @param symbol Symbol of the post.
 	 * @param target Target of the post.
 	 */
 	SymbolPost(const Symbol symbol, const State target) : Base(symbol, target) {}
-	
+
 	/**
 	 * @brief Create a post with multiple targets.
-	 * 
+	 *
 	 * @param symbol Symbol of the post.
 	 * @param targets Targets of the post.
 	 */
@@ -102,7 +102,7 @@ class SymbolPost : public posts::PostEntry<Symbol, SmallStateSet> {
 
 	/**
 	 * @brief Create a post with multiple targets.
-	 * 
+	 *
 	 * @param symbol Symbol of the post.
 	 * @param targets Targets of the post.
 	 */
@@ -123,7 +123,6 @@ class StatePost : public posts::Post<SymbolPost> {
 
 	StatePost(const Base& other) : Base{other} {}
 	StatePost(Base&& other) noexcept : Base{std::move(other)} {}
-
 };
 ///@}
 
@@ -217,7 +216,7 @@ class Delta : public posts::DeltaBase<StatePost, TransitionTraits> {
 
 	/**
 	 * @brief Compare @c this with @p other for equality.
-	 * 
+	 *
 	 * @note Trailing states without transitions do not matter.
 	 * @param other The relation to compare with.
 	 * @return True if both relations have the same transitions, false otherwise.
@@ -300,7 +299,9 @@ class Delta : public posts::DeltaBase<StatePost, TransitionTraits> {
 	 * @param transition Transition to remove.
 	 * @throws Throws std::invalid_argument if the source of @p transition has no transition over its symbol.
 	 */
-	bool remove(const Transition& transition) { return remove(transition.source, transition.symbol, transition.target); }
+	bool remove(const Transition& transition) {
+		return remove(transition.source, transition.symbol, transition.target);
+	}
 
 	/**
 	 * @brief Check whether the relation contains the transition from @p source over @p symbol to @p target.
@@ -334,7 +335,8 @@ class Delta : public posts::DeltaBase<StatePost, TransitionTraits> {
 	 *
 	 * @param target_alphabet Alphabet to expand.
 	 */
-	template <ExtensibleAlphabet A> requires std::same_as<typename A::Symbol, mata::Symbol>
+	template <ExtensibleAlphabet A>
+		requires std::same_as<typename A::Symbol, mata::Symbol>
 	void add_symbols_to(A& target_alphabet) const {
 		Base::add_keys_to(target_alphabet);
 	}
@@ -365,8 +367,9 @@ class Delta : public posts::DeltaBase<StatePost, TransitionTraits> {
 	[[nodiscard]] Delta reverted(size_t num_of_states) const;
 
 	/// The epsilon closure of @p states over @p epsilons, using the buffers of @p workspace.
-	StateSet
-		epsilon_closure(const StateSet& states, const std::vector<mata::Symbol>& epsilons, PostWorkspace& workspace) const;
+	StateSet epsilon_closure(
+		const StateSet& states, const std::vector<mata::Symbol>& epsilons, PostWorkspace& workspace
+	) const;
 
 	/**
 	 * @brief The successors of @p states over @p symbol, with the epsilon closures of @p epsilon_closure_opt over
@@ -391,17 +394,15 @@ class Delta : public posts::DeltaBase<StatePost, TransitionTraits> {
 
 	/**
 	 * @brief Get the successors of @p state over every symbol.
-	 * 
+	 *
 	 * @param state State whose successors to get.
 	 * @return The successors of @p state over every symbol.
 	 */
-	SmallStateSet get_successors(const mata::State state) const { 
-		return Base::get_successors(state); 
-	}
+	SmallStateSet get_successors(const mata::State state) const { return Base::get_successors(state); }
 
 	/**
 	 * @brief Get the successors of @p state over @p symbol.
-	 * 
+	 *
 	 * @param state State whose successors to get.
 	 * @param symbol Symbol over which to get the successors.
 	 * @return The successors.
@@ -410,13 +411,13 @@ class Delta : public posts::DeltaBase<StatePost, TransitionTraits> {
 		return Base::get_successors(state, symbol);
 	}
 
-
 	/**
 	 * @brief Get the successors of @p state over @p symbol, with the epsilon closures of @p epsilon_closure_opt.
-	 * 
+	 *
 	 * @param state State whose successors to get.
 	 * @param symbol Symbol over which to get the successors.
-	 * @param epsilon_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
+	 * @param epsilon_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post
+	 * operation.
 	 * @return The successors.
 	 */
 	StateSet get_successors(mata::State state, mata::Symbol symbol, EpsilonClosureOpt epsilon_closure_opt) const;
@@ -563,8 +564,7 @@ static_assert(
 );
 /// @c mata::EPSILON, written at call sites, and the epsilon the relation's members default to must be one value.
 static_assert(
-	Delta::Reserved<0>::min_epsilon == EPSILON,
-	"mata::EPSILON and the relation's own epsilon must be the same value."
+	Delta::Reserved<0>::min_epsilon == EPSILON, "mata::EPSILON and the relation's own epsilon must be the same value."
 );
 /// @c Nfa and @c Nft name the automaton's types themselves. They must be the ones the automaton uses.
 static_assert(std::same_as<Automaton::State, State> && std::same_as<Automaton::StateSet, StateSet>);

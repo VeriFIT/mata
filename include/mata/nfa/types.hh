@@ -32,12 +32,12 @@ using ParameterMap = mata::ParameterMap;
 using Limits = mata::Limits;
 using EpsilonClosureOpt = mata::EpsilonClosureOpt;
 using ProductFinalStateCondition = mata::ProductFinalStateCondition;
+using mata::check_num_of_states;
 using mata::closes_after;
 using mata::closes_before;
-using mata::throw_state_overflow;
-using mata::check_num_of_states;
-using mata::to_state;
 using mata::num_of_states_for;
+using mata::throw_state_overflow;
+using mata::to_state;
 
 /// What @c Nfa::print_to_regex() optimizes for.
 enum class RegexPrintMode : std::uint8_t {

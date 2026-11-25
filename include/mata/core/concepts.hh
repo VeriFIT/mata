@@ -178,8 +178,12 @@ concept DeltaLike = requires(
 	{ d.mutable_state_post(s) } -> std::same_as<typename D::PostType&>;
 
 	// Traversal.
-	{ cd.for_each_successor(s, [](const typename D::Target&) {}) };
-	{ cd.for_each_move(s, [](auto&&...) {}) };
+	{
+		cd.for_each_successor(s, [](const typename D::Target&) {})
+	};
+	{
+		cd.for_each_move(s, [](auto&&...) {})
+	};
 	{ cd.successor_cursor(s) };
 	{ cd.has_self_loop(s) } -> std::convertible_to<bool>;
 

@@ -46,8 +46,7 @@ struct TarjanCallbacks {
 
 template <typename Delta> struct TarjanNodeData {
 	using State = typename Delta::State;
-	using SuccessorIterator =
-		decltype(std::declval<const Delta&>().successor_cursor(std::declval<State>()).begin());
+	using SuccessorIterator = decltype(std::declval<const Delta&>().successor_cursor(std::declval<State>()).begin());
 	SuccessorIterator current_successor_it{};
 	unsigned long index{0};
 	unsigned long lowlink{0};

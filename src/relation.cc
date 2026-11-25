@@ -9,17 +9,17 @@
 #include <algorithm>
 #include <bit>
 #include <cstdint>
+#include <functional>
+#include <iterator>
 #include <limits>
+#include <list>
 #include <numeric>
+#include <queue>
+#include <ranges>
 #include <span>
 #include <stdexcept>
 #include <string>
 #include <tuple>
-#include <functional>
-#include <iterator>
-#include <list>
-#include <queue>
-#include <ranges>
 #include <utility>
 
 using namespace mata::utils;
@@ -162,7 +162,8 @@ StateSet Delta::post_adopt_buffer(
 	return StateSet{std::move(gather_post(*this, states, symbol, epsilon_closure_opt, epsilons, workspace))};
 }
 
-StateSet Delta::get_successors(const State state, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
+StateSet
+	Delta::get_successors(const State state, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
 	PostWorkspace workspace{};
 	return post(StateSet{state}, symbol, epsilon_closure_opt, {EPSILON}, workspace);
 }
@@ -229,7 +230,8 @@ void Delta::add(std::vector<Transition>&& transitions) {
 	}
 
 	// A relation without transitions, as readers leave it after adding the states, is built anew, keeping its states.
-	//  The transitions are bucketed by source in linear time, so that only the few transitions of each source get sorted.
+	//  The transitions are bucketed by source in linear time, so that only the few transitions of each source get
+	//  sorted.
 	const size_t num_of_states_before{num_of_states()};
 	const State max_source{std::ranges::max_element(transitions, {}, &Transition::source)->source};
 	const size_t num_of_sources{num_of_states_for(max_source)};

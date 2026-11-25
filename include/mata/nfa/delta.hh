@@ -7,9 +7,9 @@
 
 #include <concepts>
 
+#include "mata/nfa/types.hh"
 #include "mata/relation.hh"
 #include "mata/synchronized-symbol-post-iterator.hh"
-#include "mata/nfa/types.hh"
 
 namespace mata::nfa {
 
@@ -27,7 +27,7 @@ using PostWorkspace = mata::PostWorkspace;
  * @brief The base every NFA derives from.
  *
  * Re-exported here rather than named as @c mata::Automaton at the class.
- * Naming @c mata::Automaton directly at `class Nfa` would leave the base pointing 
+ * Naming @c mata::Automaton directly at `class Nfa` would leave the base pointing
  * at the depth-2 relation while @c Delta pointed somewhere else.
  */
 using Automaton = mata::Automaton;
@@ -50,8 +50,7 @@ static_assert(
  *  the keys of the one are the symbols of the other. This is where they are checked to agree.
  */
 static_assert(
-	std::same_as<Delta::Key<0>, Alphabet::Symbol>,
-	"nfa::Delta's keys and mata::Alphabet's symbols must be one type."
+	std::same_as<Delta::Key<0>, Alphabet::Symbol>, "nfa::Delta's keys and mata::Alphabet's symbols must be one type."
 );
 
 } // namespace mata::nfa.

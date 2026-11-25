@@ -33,7 +33,7 @@ template <typename P>
 struct MoveTypeOf<P> {
 	using type = typename P::Entry::MoveType;
 };
-} // namespace mata::posts::detail.
+} // namespace detail
 
 /**
  * @brief The moves of a post as @c Move instances: every (symbol, target) pair, or a range of them.

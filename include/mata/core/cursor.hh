@@ -22,8 +22,6 @@ namespace mata::posts {
  *  so a position can be stored and continued later.
  *
  * @tparam P The whole post chain, not one post of it.
- *
- * @note 
  */
 template <typename P, size_t Arity = P::key_arity> class SuccessorCursor {
 	template <size_t I> using PostAt = typename posts::PostAt<P, I>::type;
@@ -38,8 +36,8 @@ template <typename P, size_t Arity = P::key_arity> class SuccessorCursor {
 		bool operator==(const Positions&) const = default;
 	};
 
-  // Note: Having one cursor struct per post, each delegating downwards is slower
-  //  by 24.4% at arity 2 and 18.6% at arity 3 against hand-written nested loops on the same shapes.
+	// Note: Having one cursor struct per post, each delegating downwards is slower
+	//  by 24.4% at arity 2 and 18.6% at arity 3 against hand-written nested loops on the same shapes.
   public:
 	using Target = typename P::Target;
 
@@ -52,7 +50,7 @@ template <typename P, size_t Arity = P::key_arity> class SuccessorCursor {
 
 		/**
 		 * @brief Scan post @p I for the next target, descending into post `I + 1` as needed.
-		 * 
+		 *
 		 * @tparam I The post index to scan.
 		 * @return true if a target was found, false if post @p I is exhausted.
 		 */

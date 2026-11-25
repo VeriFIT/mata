@@ -8,12 +8,12 @@
 #include <algorithm>
 #include <concepts>
 #include <cstddef>
-#include <limits>
-#include <stdexcept>
 #include <format>
 #include <functional>
+#include <limits>
 #include <optional>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <type_traits>
@@ -57,7 +57,7 @@ template <typename D, typename P, size_t... KeyIdx> class KeyedAccess<D, P, std:
   public:
 	/**
 	 * @brief Add the transition from @p source under @p keys to @p target.
-	 * 
+	 *
 	 * @param source Source state of the transition.
 	 * @param keys Keys of the transition.
 	 * @param target Target of the transition.
@@ -66,10 +66,10 @@ template <typename D, typename P, size_t... KeyIdx> class KeyedAccess<D, P, std:
 		self().resize_for_states(source, D::state_of(target));
 		insert_target(self().mutable_state_post(source), target, keys...);
 	}
-	
+
 	/**
 	 * @brief Add the transition from @p source under @p keys to every one of @p targets.
-	 * 
+	 *
 	 * @param source Source state of the transition.
 	 * @param keys Keys of the transition.
 	 * @param targets Set of targets of the transition.
@@ -80,10 +80,10 @@ template <typename D, typename P, size_t... KeyIdx> class KeyedAccess<D, P, std:
 			insert_target(self().mutable_state_post(source), target, keys...);
 		}
 	}
-	
+
 	/**
 	 * @brief Remove the transition from @p source under @p keys to @p target.
-	 * 
+	 *
 	 * @param source Source state of the transition.
 	 * @param keys Keys of the transition.
 	 * @param target Target of the transition.
@@ -93,10 +93,10 @@ template <typename D, typename P, size_t... KeyIdx> class KeyedAccess<D, P, std:
 		if (source >= self().state_posts_.size()) { return; }
 		erase_target(self().state_posts_[source], target, keys...);
 	}
-	
+
 	/**
 	 * @brief Check whether the relation contains the transition from @p source under @p keys to @p target.
-	 * 
+	 *
 	 * @param source Source state of the transition.
 	 * @param keys Keys of the transition.
 	 * @param target Target of the transition.
@@ -127,35 +127,35 @@ template <typename D, typename P> class KeyedAccess<D, P, std::index_sequence<0>
   public:
 	/**
 	 * @brief Add a transition from @p source over @p symbol to @p target.
-	 * 
+	 *
 	 * @param source Source state of the transition.
 	 * @param symbol Symbol of the transition.
 	 * @param target Target of the transition.
 	 */
 	void add(State source, Key symbol, TargetArg target);
-	
+
 	/**
 	 * @brief Add a transition from @p source over @p symbol to every one of @p targets.
-	 * 
+	 *
 	 * @param source Source state of the transition.
 	 * @param symbol Symbol of the transition.
 	 * @param targets Set of targets of the transition.
 	 */
 	void add(State source, Key symbol, const Nested& targets);
-	
+
 	/**
 	 * @brief Remove the transition from @p source over @p symbol to @p target.
-	 * 
+	 *
 	 * @param source Source state of the transition.
 	 * @param symbol Symbol of the transition.
 	 * @param target Target of the transition.
 	 * @throws Throws std::invalid_argument if @p source has no transition over @p symbol.
 	 */
 	void remove(State source, Key symbol, TargetArg target);
-	
+
 	/**
 	 * @brief Check whether the relation contains the transition from @p source over @p symbol to @p target.
-	 * 
+	 *
 	 * @param source Source state of the transition.
 	 * @param symbol Symbol of the transition.
 	 * @param target Target of the transition.
@@ -167,11 +167,11 @@ template <typename D, typename P> class KeyedAccess<D, P, std::index_sequence<0>
 /**
  * @brief The generic transition relation: a vector of posts indexed by source state.
  *
- * A vector of posts indexed by source state, over a chain of posts ending in a set of targets. 
+ * A vector of posts indexed by source state, over a chain of posts ending in a set of targets.
  *  The depth is deduced from @p P as @c key_arity. Posts are named by key index, not by container count:
  *  @c Key<0> is the topmost symbol, and @c PostAt<key_arity> is the innermost post.
  *
- * @tparam P The post reached from one source state, itself parameterised down to the targets. 
+ * @tparam P The post reached from one source state, itself parameterised down to the targets.
  * @tparam TT What one transition of this relation looks like and how to build one: a traits with a
  *  @c Type and a @c make(). Defaults to the symbol-named triple at arity 1 and to the tuple-keyed
  *  transition above it. @see mata::posts::DefaultTransitionTraits.
@@ -188,7 +188,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	using State = typename TargetTraits<Target>::State; ///< What indexes this relation.
 	static constexpr size_t key_arity{PostType::key_arity};
 
-	/// The post at index @p I, counted from the outermost one. 
+	/// The post at index @p I, counted from the outermost one.
 	template <size_t I> using PostAt = typename posts::PostAt<PostType, I>::type;
 	/// The key at index @p I, counted from the outermost one.
 	template <size_t I> using Key = typename PostAt<I>::Key;
@@ -196,16 +196,14 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	template <size_t I> using Reserved = typename PostAt<I>::Reserved;
 	using TargetSet = PostAt<key_arity>;
 	using KeyedSuccessors = typename PostType::KeyedSuccessors; ///< The result type of the keyed @c get_successors.
-	
+
 	/**
 	 * @brief Get the state a target denotes, whatever it carries.
-	 * 
+	 *
 	 * @param target Target to get the state of.
 	 * @return State denoted by @p target.
 	 */
-	static State state_of(const Target& target) { 
-		return TargetTraits<Target>::state_of(target); 
-	}
+	static State state_of(const Target& target) { return TargetTraits<Target>::state_of(target); }
 
 	using Entry = typename PostType::Entry;
 	using Nested = typename PostType::Nested;
@@ -229,7 +227,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 
 	/**
 	 * @brief Reserve space for @p n states in the relation.
-	 * 
+	 *
 	 * @param n Number of states to reserve space for.
 	 */
 	void reserve(const size_t n) { state_posts_.reserve(n); };
@@ -240,7 +238,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	 * If we try to access a state post of a @p source which is present in the automaton as an initial/final state,
 	 *  yet does not have allocated space in the relation, an @c empty_post is returned. Hence, the function has no side
 	 *  effects (no allocation is performed and iterators remain valid).
-	 * 
+	 *
 	 * @param source Source state of a state post to access.
 	 * @return State post of @p source.
 	 */
@@ -266,7 +264,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	/**
 	 * @brief Defragment the relation.
 	 *
-	 * This function removes all state posts which are not in @p is_staying and 
+	 * This function removes all state posts which are not in @p is_staying and
 	 *  renames the remaining state posts according to @p renaming.
 	 *
 	 * @param[in] is_staying Boolean vector indicating which states are staying in the relation.
@@ -283,7 +281,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	void clear() { state_posts_.clear(); }
 
 	/**
-	 * @brief Allocate state posts up to @p num_of_states states, 
+	 * @brief Allocate state posts up to @p num_of_states states,
 	 *  creating empty @c PostType for yet unallocated state posts.
 	 *
 	 * @param[in] num_of_states Number of states in the relation to allocate state posts for.
@@ -326,7 +324,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	///@{
 	/**
 	 * @brief Add a transition to the relation.
-	 * 
+	 *
 	 * @param transition Transition to add.
 	 */
 	void add(const TransitionType& transition) {
@@ -335,7 +333,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 
 	/**
 	 * @brief Remove a transition from the relation.
-	 * 
+	 *
 	 * @param transition Transition to remove.
 	 */
 	void remove(const TransitionType& transition) {
@@ -344,7 +342,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 
 	/**
 	 * @brief Check whether the relation contains a transition.
-	 * 
+	 *
 	 * @param transition Transition to check.
 	 * @return True if the relation contains the transition, false otherwise.
 	 */
@@ -355,7 +353,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 
 	/**
 	 * @brief Check whether automaton contains no transitions.
-	 * 
+	 *
 	 * @return True if there are no transitions in the automaton, false otherwise.
 	 */
 	bool empty() const;
@@ -366,9 +364,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	 * @param post_vector Vector of posts to be appended.
 	 */
 	void append(const std::vector<PostType>& post_vector) {
-		for (const PostType& pst : post_vector) { 
-			this->state_posts_.push_back(pst); 
-		}
+		for (const PostType& pst : post_vector) { this->state_posts_.push_back(pst); }
 	}
 
 	/**
@@ -438,7 +434,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 
 	/**
 	 * @brief Get transitions leading to @p state_to.
-	 * 
+	 *
 	 * @warning Operation is slow, traverses over every transition in the relation.
 	 * @param state_to Target state for transitions to get.
 	 * @return Transitions leading to @p state_to.
@@ -447,7 +443,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 
 	/**
 	 * @brief Get transitions from @p state_from to @p state_to.
-	 * 
+	 *
 	 * @warning Operation is slow, traverses over every transition in the relation.
 	 * @param state_from Source state.
 	 * @param state_from Target state.
@@ -457,11 +453,12 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 
 	/**
 	 * @brief Resize the delta to fit the given @p states.
-	 * 
+	 *
 	 * @tparam States A variadic parameter pack of states to resize the delta for.
 	 * @param states States to resize the delta for.
 	 */
-	template <typename... States> requires utils::AllOfType<State, States...>
+	template <typename... States>
+		requires utils::AllOfType<State, States...>
 	DeltaBase& resize_for_states(States... states) {
 		if constexpr (sizeof...(states) > 0) {
 			if (const State max_state{std::max({static_cast<State>(states)...})}; max_state >= num_of_states()) {
@@ -490,7 +487,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 
 	/**
 	 * @brief Iterate over @p epsilon symbol posts under the given @p state.
-	 * 
+	 *
 	 * @param[in] state State from which epsilon transitions are checked.
 	 * @param[in] epsilon User can define his favourite epsilon or used default.
 	 * @return An iterator to @c PostEntry with epsilon symbol. End iterator when there are no epsilon transitions.
@@ -499,12 +496,13 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 
 	/**
 	 * @brief Iterate over @p epsilon symbol posts under the given @p state_post.
-	 * 
+	 *
 	 * @param[in] state_post State post from which epsilon transitions are checked.
 	 * @param[in] epsilon User can define his favourite epsilon or used default.
 	 * @return An iterator to @c PostEntry with epsilon symbol. End iterator when there are no epsilon transitions.
 	 */
-	static PostType::const_iterator epsilon_symbol_posts(const PostType& state_post, Key<0> epsilon = Reserved<0>::min_epsilon);
+	static PostType::const_iterator
+		epsilon_symbol_posts(const PostType& state_post, Key<0> epsilon = Reserved<0>::min_epsilon);
 
   protected:
 	/// @name Keys on the transitions
@@ -535,14 +533,22 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	 *
 	 * Does not necessarily have to equal the set of symbols in the alphabet used by the automaton.
 	 */
-	utils::OrdVector<typename P::Key> get_used_keys() const requires std::totally_ordered<typename P::Key>;
-	utils::OrdVector<typename P::Key> get_used_keys_vec() const requires std::totally_ordered<typename P::Key>;
-	std::set<typename P::Key> get_used_keys_set() const requires std::totally_ordered<typename P::Key>;
-	utils::SparseSet<typename P::Key> get_used_keys_sps() const requires std::integral<typename P::Key>;
-	/// @note Indexed *by* key, so it allocates up to the largest key used. Already unusable when the automaton has epsilons.
-	std::vector<bool> get_used_keys_bv() const requires std::integral<typename P::Key>;
-	/// @note Indexed *by* key, so it allocates up to the largest key used. Already unusable when the automaton has epsilons.
-	BoolVector get_used_keys_chv() const requires std::integral<typename P::Key>;
+	utils::OrdVector<typename P::Key> get_used_keys() const
+		requires std::totally_ordered<typename P::Key>;
+	utils::OrdVector<typename P::Key> get_used_keys_vec() const
+		requires std::totally_ordered<typename P::Key>;
+	std::set<typename P::Key> get_used_keys_set() const
+		requires std::totally_ordered<typename P::Key>;
+	utils::SparseSet<typename P::Key> get_used_keys_sps() const
+		requires std::integral<typename P::Key>;
+	/// @note Indexed *by* key, so it allocates up to the largest key used. Already unusable when the automaton has
+	/// epsilons.
+	std::vector<bool> get_used_keys_bv() const
+		requires std::integral<typename P::Key>;
+	/// @note Indexed *by* key, so it allocates up to the largest key used. Already unusable when the automaton has
+	/// epsilons.
+	BoolVector get_used_keys_chv() const
+		requires std::integral<typename P::Key>;
 
 	/**
 	 * @brief The greatest key used, or nothing when there are no transitions.
@@ -551,12 +557,13 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	 *  fresh symbols at `max + 1` and above, which has to clear the epsilons too or the fresh
 	 *  symbols collide with real transitions.
 	 */
-	std::optional<typename P::Key> get_max_key() const requires std::totally_ordered<typename P::Key>;
+	std::optional<typename P::Key> get_max_key() const
+		requires std::totally_ordered<typename P::Key>;
 	///@}
 
 	/**
 	 * @brief Collect all transitions from @p from to @p to into @p out.
-	 * 
+	 *
 	 * @param[in] from Source state of the transitions to collect.
 	 * @param[in] to Target state of the transitions to collect.
 	 * @param[out] out Vector to collect the transitions into.
@@ -565,9 +572,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 		if constexpr (key_arity == 1 && std::same_as<Target, State>) {
 			// The arity-1, bare-state case is the only one that can be done without a search.
 			for (const Entry& entry : state_post(from)) {
-				if (entry.targets.find(to) != entry.targets.end()) { 
-					out.push_back(TT::make(from, entry.key(), to)); 
-				}
+				if (entry.targets.find(to) != entry.targets.end()) { out.push_back(TT::make(from, entry.key(), to)); }
 			}
 		} else {
 			state_post(from).for_each_move([&](const auto&... move) {
@@ -617,7 +622,7 @@ template <typename D> constexpr bool relation_contract_holds() {
 	static_assert(PostEntryLike<typename D::Entry>, "the relation's Entry must be its PostType's entry type.");
 	static_assert(TargetSetLike<typename D::TargetSet>, "the innermost post must be a set of targets.");
 	static_assert(DeltaLike<D>, "the relation must satisfy the contract mata::Automaton is written against.");
-	
+
 	using Base = DeltaBase<P, typename D::TransitionTraits>;
 	static_assert(
 		sizeof(D) == sizeof(Base) && alignof(D) == alignof(Base),
@@ -626,7 +631,7 @@ template <typename D> constexpr bool relation_contract_holds() {
 	return true;
 }
 
-} // namespace mata::posts.
+} // namespace posts
 
 namespace posts {
 /**
@@ -641,8 +646,12 @@ namespace posts {
  * @return The defragmented relation.
  */
 template <typename P, typename TT>
-DeltaBase<P, TT> defragment(const DeltaBase<P, TT>& delta, const BoolVector& is_staying, const std::vector<typename DeltaBase<P, TT>::State>& renaming);
-} // namespace mata::posts.
+DeltaBase<P, TT> defragment(
+	const DeltaBase<P, TT>& delta,
+	const BoolVector& is_staying,
+	const std::vector<typename DeltaBase<P, TT>::State>& renaming
+);
+} // namespace posts
 
 // Makes @c mata::defragment another name for @c posts::defragment, not a second function.
 // A separate @c defragment in @c mata would break unqualified calls inside @c mata.
@@ -650,7 +659,7 @@ using posts::defragment;
 
 } // namespace mata.
 
-#include "mata/core/delta.tpp"
 #include "mata/core/delta-keys.tpp"
+#include "mata/core/delta.tpp"
 
 #endif // MATA_CORE_DELTA_HH

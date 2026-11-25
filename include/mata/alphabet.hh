@@ -15,12 +15,11 @@
 #include <utility>
 #include <vector>
 
-#include "utils/ord-vector.hh"
 #include "mata/types.hh"
+#include "utils/ord-vector.hh"
 #include "utils/utils.hh"
 
 namespace mata {
-
 
 /// The name under which @c EPSILON is printed in the .mata format and in DOT, and which the .mata parser maps back to
 // @c EPSILON. The name is reserved: alphabets map it straight to @c EPSILON and never register it as an ordinary

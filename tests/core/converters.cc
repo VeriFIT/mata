@@ -21,8 +21,10 @@ static_assert(OtherDelta::key_arity == nfa::Delta::key_arity);
 static_assert(std::same_as<OtherDelta::State, nfa::Delta::State>);
 static_assert(std::same_as<OtherDelta::Target, nfa::Delta::Target>);
 
-template <typename D> concept MovableTo = requires(nft::Nft a) { a.template to_nfa_move<D>(); };
-template <typename D> concept CopyableTo = requires(const nft::Nft a) { a.template to_nfa_copy<D>(); };
+template <typename D>
+concept MovableTo = requires(nft::Nft a) { a.template to_nfa_move<D>(); };
+template <typename D>
+concept CopyableTo = requires(const nft::Nft a) { a.template to_nfa_copy<D>(); };
 
 nft::Nft sample() {
 	nft::Nft aut{};
@@ -62,11 +64,11 @@ TEST_CASE("mata::nft::Nft::to_nfa - moves when it can, rebuilds when it cannot")
 
 	SECTION("both branches leave the NFT empty, so the postcondition does not depend on the branch") {
 		nft::Nft a{sample()};
-		(void)a.to_nfa();
+		(void) a.to_nfa();
 		CHECK(a.delta.empty());
 
 		nft::Nft b{sample()};
-		(void)b.to_nfa<OtherDelta>();
+		(void) b.to_nfa<OtherDelta>();
 		CHECK(b.delta.empty()); // the rebuild reads rather than moves, so it must clear explicitly
 	}
 

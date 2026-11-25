@@ -65,16 +65,15 @@ template <DeltaLike D> class AutomatonBase {
 	 * @param[in] final_states Set of final states of the automaton.
 	 */
 	explicit AutomatonBase(
-		D delta = {},
-		utils::SparseSet<State> initial_states = {},
-		utils::SparseSet<State> final_states = {}
+		D delta = {}, utils::SparseSet<State> initial_states = {}, utils::SparseSet<State> final_states = {}
 	)
 		: delta(std::move(delta)),
 		  initial(std::move(initial_states)),
 		  final(std::move(final_states)) {}
 
 	/**
-	 * @brief Construct a new AutomatonBase with @p num_of_states states and optionally @p initial_states and @p final_states.
+	 * @brief Construct a new AutomatonBase with @p num_of_states states and optionally @p initial_states and @p
+	 * final_states.
 	 *
 	 * @param[in] num_of_states Number of states for which to preallocate Delta.
 	 * @param[in] initial_states Set of initial states of the automaton.
@@ -188,7 +187,6 @@ template <DeltaLike D> class AutomatonBase {
 	 */
 	std::vector<State> distances_to_final() const; ///< Answered by a backward BFS over predecessor lists.
 
-
 	/**
 	 * @brief Is the accepted language (or relation) empty, optionally with a counter-example?
 	 *
@@ -251,7 +249,6 @@ template <DeltaLike D> class AutomatonBase {
 	 */
 	template <typename Self> Self& trim(this Self& self, StateRenaming* state_renaming = nullptr);
 
-
   private:
 	/// Bool array indexed by state: a byte per state, faster to test and set than the bits of @c std::vector<bool>.
 	using StateBoolArray = BoolVector;
@@ -260,11 +257,12 @@ template <DeltaLike D> class AutomatonBase {
 	 * @brief Compute reachability of states considering only specified states.
 	 *
 	 * @note Inlining this function improves performance of related functions by ~3%.
-	 * 
+	 *
 	 * @param[in] initial_states States to start the traversal from.
 	 * @param[in] states_to_consider States to consider as potentially reachable. If @c std::nullopt is used, all
 	 *  states are considered as potentially reachable.
-	 * @return Bool array for reachable states (from @p initial_states): true for reachable, false for unreachable states.
+	 * @return Bool array for reachable states (from @p initial_states): true for reachable, false for unreachable
+	 * states.
 	 */
 	[[gnu::always_inline]] StateBoolArray reachable_states_(
 		const utils::SparseSet<State>& initial_states,
@@ -309,8 +307,8 @@ template <DeltaLike D> class AutomatonBase {
 	 * @brief Reverse the automaton structurally: reverse every transition and swap initial and final states.
 	 *
 	 * The reversal is only structural. The order of the keys in the transitions is not changed,
-	 *  the source and target states are swapped, and the payload of the transitions is not changed. 
-	 * 
+	 *  the source and target states are swapped, and the payload of the transitions is not changed.
+	 *
 	 * @note Kept as a protected helper so that @c get_terminating_states() and @c distances_to_final() do not
 	 *  have to go through a leaf-specific `revert()` free function.
 	 * @return A new automaton with reversed transitions and swapped initial/final states.
@@ -320,10 +318,10 @@ template <DeltaLike D> class AutomatonBase {
 	/**
 	 * @brief Structural part of `trim()` for a precomputed @p useful_states.
 	 *
-	 * Lets a leaf class compute the useful states once, adjust its own per-state data 
+	 * Lets a leaf class compute the useful states once, adjust its own per-state data
 	 *  and then hand the same bool vector over, instead of running Tarjan twice.
 	 *  Any renaming that happens after the trim follows ascending order of the original state numbers.
-	 * 
+	 *
 	 * @param useful_states A @c BoolVector indicating which states are useful (true) and which are not (false).
 	 * @param state_renaming Optional pointer to a @c StateRenaming map to fill with the renaming of states
 	 *  after trimming. If provided, the map will be filled with the mapping from old state numbers to

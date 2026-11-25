@@ -78,7 +78,8 @@ template <typename K, typename N, typename R> class PostEntryCore {
 	PostEntryCore() = default;
 	explicit PostEntryCore(const Key symbol) : symbol{symbol} {}
 	/// Parentheses, not braces: braces pick the @c initializer_list constructor, which sorts the one-element list.
-	PostEntryCore(const Key symbol, const Target state_to) requires(arity_of<N> == 0)
+	PostEntryCore(const Key symbol, const Target state_to)
+		requires(arity_of<N> == 0)
 		: targets(state_to),
 		  symbol{symbol} {}
 	/// @p states_to are sorted and duplicate-free, such as a @c StateSet or another entry's targets.
@@ -107,38 +108,58 @@ template <typename K, typename N, typename R> class PostEntryCore {
 	/// @name Target set
 	/// Only where the nested type is the target set.
 	///@{
-	/// Returns 
-	size_t count(const Target s) const requires(arity_of<N> == 0) {
+	/// Returns
+	size_t count(const Target s) const
+		requires(arity_of<N> == 0)
+	{
 		return targets.count(s);
 	}
-	size_t num_of_targets() const requires(arity_of<N> == 0) {
+	size_t num_of_targets() const
+		requires(arity_of<N> == 0)
+	{
 		return targets.size();
 	}
 
 	/// @return Whether @p s was inserted.
-	bool insert(Target s) requires(arity_of<N> == 0);
-	void insert(const Nested& states) requires(arity_of<N> == 0);
+	bool insert(Target s)
+		requires(arity_of<N> == 0);
+	void insert(const Nested& states)
+		requires(arity_of<N> == 0);
 	/// Insert the sorted, duplicate-free @p states, such as a @c StateSet or another entry's targets.
 	/// @return Number of states inserted.
-	size_t insert(std::span<const Target> states) requires(arity_of<N> == 0);
+	size_t insert(std::span<const Target> states)
+		requires(arity_of<N> == 0);
 
-	void push_back(const Target s) requires(arity_of<N> == 0) {
+	void push_back(const Target s)
+		requires(arity_of<N> == 0)
+	{
 		targets.push_back(s);
 	}
 
-	template <typename... Args> requires(arity_of<N> == 0)
+	template <typename... Args>
+		requires(arity_of<N> == 0)
 	decltype(auto) emplace_back(Args&&... args) {
 		// Forwardinng the variadic template pack of arguments to the emplace_back() of the underlying container.
 		return targets.emplace_back(std::forward<Args>(args)...);
 	}
 
 	/// @return Whether @p s was erased.
-	bool erase(const Target s) requires(arity_of<N> == 0) {
+	bool erase(const Target s)
+		requires(arity_of<N> == 0)
+	{
 		return targets.erase(s) != 0;
 	}
 
-	auto find(const Target s) const requires(arity_of<N> == 0) { return targets.find(s); }
-	auto find(const Target s) requires(arity_of<N> == 0) { return targets.find(s); }
+	auto find(const Target s) const
+		requires(arity_of<N> == 0)
+	{
+		return targets.find(s);
+	}
+	auto find(const Target s)
+		requires(arity_of<N> == 0)
+	{
+		return targets.find(s);
+	}
 
 	/**
 	 * @brief Apply @p fn to every target of this entry.
@@ -146,7 +167,8 @@ template <typename K, typename N, typename R> class PostEntryCore {
 	 * The innermost step of the traversal that @c mata::Automaton is written against.
 	 *  Callers above it never need to know how the targets are stored.
 	 */
-	template <typename Fn> requires(arity_of<N> == 0)
+	template <typename Fn>
+		requires(arity_of<N> == 0)
 	void for_each_target(Fn&& fn) const {
 		for (const Target target : targets) { fn(target); }
 	}
@@ -157,16 +179,20 @@ template <typename K, typename N, typename R> class PostEntryCore {
 	 * @param[in] target Target state to check.
 	 * @return True if @p target is among the targets of this entry, false otherwise.
 	 */
-	bool has_target(const Target target) const requires(arity_of<N> == 0) {
+	bool has_target(const Target target) const
+		requires(arity_of<N> == 0)
+	{
 		return targets.contains(target);
 	}
 
 	/**
 	 * @brief Return targets as a contiguous span.
-	 * 
+	 *
 	 * For iteration without exposing storage.
 	 */
-	std::span<const Target> target_span() const requires(arity_of<N> == 0) {
+	std::span<const Target> target_span() const
+		requires(arity_of<N> == 0)
+	{
 		if constexpr (requires { targets.span(); }) {
 			return targets.span();
 		} else {
@@ -176,7 +202,7 @@ template <typename K, typename N, typename R> class PostEntryCore {
 	}
 	///@}
 }; // class mata::posts::detail::PostEntryCore.
-} // namespace mata::posts::detail.
+} // namespace detail
 
 /**
  * @brief One entry of a post: a single key, and the post nested under it.
@@ -193,14 +219,15 @@ class PostEntry : public detail::PostEntryCore<K, N, R> {
 
 /**
  * @brief One entry of a post of an relation of @c key_arity = 1.
- * 
- * The key is named @c symbol and bottommoust targets are named @c targets, based on the NFA's naming. 
+ *
+ * The key is named @c symbol and bottommoust targets are named @c targets, based on the NFA's naming.
  *
  * @tparam K What this post is keyed by.
  * @tparam N The bottommost post nested under this key: a @c mata::TargetSetLike.
  * @tparam R Where this post's ordinary keys stop.
  */
-template <typename K, typename N, typename R> requires(arity_of<N> == 0)
+template <typename K, typename N, typename R>
+	requires(arity_of<N> == 0)
 class PostEntry<K, N, R> : public detail::PostEntryCore<K, N, R> {
   public:
 	using detail::PostEntryCore<K, N, R>::PostEntryCore;
@@ -210,7 +237,7 @@ class PostEntry<K, N, R> : public detail::PostEntryCore<K, N, R> {
 	/**
 	 * @name Structured bindings
 	 * `auto& [symbol, targets] = entry`. Binding to the fields directly needs them public in the
-	 *  class that declares them, which the core is not, so the tuple protocol stands in. 
+	 *  class that declares them, which the core is not, so the tuple protocol stands in.
 	 *  Each @c get() is a plain member reference and inlines to the same access.
 	 */
 	///@{
@@ -256,8 +283,8 @@ class PostEntry<K, N, R> : public detail::PostEntryCore<K, N, R> {
  *  Every step of a chain is one of these. A relation of @c key_arity @c n is @c n of them deep,
  *  ending in a @c mata::TargetSetLike.
  *
- * For relation with @c key_arity 1, the top level post uses a name alias StatePost, 
- *  and the next level down uses SymbolPost. 
+ * For relation with @c key_arity 1, the top level post uses a name alias StatePost,
+ *  and the next level down uses SymbolPost.
  *
  * @tparam E The entry type: one key plus what is nested under it.
  * @see mata::PostLike.
@@ -286,10 +313,10 @@ template <typename E> class Post : utils::OrdVector<E> {
 	///@}
 
 	using super::begin, super::end, super::cbegin, super::cend;
-	using typename super::iterator;
-	using typename super::const_iterator;
-	using typename super::VectorType; ///< The underlying vector of entries.
 	using super::OrdVector;
+	using typename super::const_iterator;
+	using typename super::iterator;
+	using typename super::VectorType; ///< The underlying vector of entries.
 	using super::operator=;
 	using super::operator==;
 	Post(const Post&) = default;
@@ -307,26 +334,26 @@ template <typename E> class Post : utils::OrdVector<E> {
 			}
 		});
 	}
-	using super::empty, super::size;
-	using super::insert;
-	using super::reserve;
-	using super::to_vector;
-	using super::push_back;
-	using super::emplace_back;
 	using super::back;
 	using super::clear;
-	using super::filter;
-	using super::front;
-	using super::pop_back;
+	using super::emplace_back;
+	using super::empty, super::size;
 	using super::erase;
+	using super::filter;
 	using super::find;
+	using super::front;
+	using super::insert;
+	using super::pop_back;
+	using super::push_back;
+	using super::reserve;
+	using super::to_vector;
 
 	iterator find(const utils::ArgOf<Key> key) { return find_(this->begin(), this->end(), key); }
 	const_iterator find(const utils::ArgOf<Key> key) const { return find_(this->begin(), this->end(), key); }
 
 	/**
 	 * @brief Returns an iterator to the smallest epsilon, or end() if there is no epsilon.
-	 * 
+	 *
 	 * @param first_epsilon The first epsilon key to look for. Defaults to the smallest reserved epsilon.
 	 * @return An iterator to the smallest epsilon, or end() if there is no epsilon.
 	 */
@@ -340,7 +367,7 @@ template <typename E> class Post : utils::OrdVector<E> {
 		auto it = end_it;
 		while (it != begin()) {
 			--it;
-			if (it->key() < first_epsilon) { 
+			if (it->key() < first_epsilon) {
 				// We crossed the threshold, we need to return the previous position.
 				return it + 1;
 			}
@@ -357,9 +384,7 @@ template <typename E> class Post : utils::OrdVector<E> {
 	TargetSet get_successors() const {
 		TargetSet successors;
 		if constexpr (key_arity == 1) {
-			for (const Entry& entry : *this) { 
-				successors.insert(entry.targets); 
-			}
+			for (const Entry& entry : *this) { successors.insert(entry.targets); }
 		} else {
 			// Above arity 1 the entries hold posts, not targets, so there is nothing to merge and
 			//  the targets have to be gathered from under every remaining key.
@@ -380,7 +405,7 @@ template <typename E> class Post : utils::OrdVector<E> {
 	 * @brief The targets reachable from this post under @p key.
 	 *
 	 * @param symbol The key to get the successors for.
-	 * @return The targets under the given key. 
+	 * @return The targets under the given key.
 	 */
 	KeyedSuccessors get_successors(const Key symbol) const {
 		const auto entry_it = find(symbol);
@@ -394,9 +419,7 @@ template <typename E> class Post : utils::OrdVector<E> {
 		} else {
 			TargetSet successors{};
 			if (entry_it != this->end()) {
-				visit_targets(entry_it->nested(), [&successors](const Target& target) {
-					successors.insert(target);
-				});
+				visit_targets(entry_it->nested(), [&successors](const Target& target) { successors.insert(target); });
 			}
 			return successors;
 		}
@@ -405,7 +428,9 @@ template <typename E> class Post : utils::OrdVector<E> {
 	using Moves = PostMoves<Post>;
 
 	/// @brief Returns an iterator over all moves.
-	Moves moves() const requires(key_arity == 1) {
+	Moves moves() const
+		requires(key_arity == 1)
+	{
 		return {*this, this->cbegin(), this->cend()};
 	}
 
@@ -416,17 +441,21 @@ template <typename E> class Post : utils::OrdVector<E> {
 	 * @param[in] symbol_post_end End iterator over symbol posts.
 	 * @return An iterator over specified moves in @c Post represented as @c Move instances.
 	 */
-	Moves moves(const post_iterator symbol_post_it, const post_iterator symbol_post_end) const requires(key_arity == 1) {
+	Moves moves(const post_iterator symbol_post_it, const post_iterator symbol_post_end) const
+		requires(key_arity == 1)
+	{
 		return {*this, symbol_post_it, symbol_post_end};
 	}
 
 	/**
 	 * @brief Returns an iterator over epsilon moves.
-	 * 
+	 *
 	 * @param[in] first_epsilon The first epsilon key to look for. Defaults to the smallest reserved epsilon.
 	 * @return An iterator over epsilon moves in @c Post represented as @c Move instances
 	 */
-	Moves moves_epsilons(const Key first_epsilon = Reserved::min_epsilon) const requires(key_arity == 1) {
+	Moves moves_epsilons(const Key first_epsilon = Reserved::min_epsilon) const
+		requires(key_arity == 1)
+	{
 		return {*this, first_epsilon_it(first_epsilon), cend()};
 	}
 
@@ -438,7 +467,9 @@ template <typename E> class Post : utils::OrdVector<E> {
 	 * @throws std::runtime_error if @p last_symbol is itself a reserved key, since the range would
 	 *  then have to run past the end of the ordinary keys.
 	 */
-	Moves moves_symbols(const Key last_symbol = Reserved::max_ordinary) const requires(key_arity == 1) {
+	Moves moves_symbols(const Key last_symbol = Reserved::max_ordinary) const
+		requires(key_arity == 1)
+	{
 		if (last_symbol > Reserved::max_ordinary) {
 			throw std::runtime_error("Using a reserved key as a last symbol to iterate over.");
 		}
@@ -458,9 +489,7 @@ template <typename E> class Post : utils::OrdVector<E> {
 		if constexpr (key_arity == 1) {
 			// NOTE: Routing arity 1 through the generic recursion measured +18-19% on the real relation.
 			//  A depth prototype had showd the recursion was free (0.99-1.01x).
-			for (const Entry& entry : *this) { 
-				entry.for_each_target(fn); 
-			}
+			for (const Entry& entry : *this) { entry.for_each_target(fn); }
 		} else {
 			visit_targets(*this, fn);
 		}
@@ -522,7 +551,7 @@ template <typename K, typename... Rest>
 struct Chain<K, Rest...> {
 	using type = Post<PostEntry<K, typename Chain<Rest...>::type>>;
 };
-} // namespace mata::posts::detail.
+} // namespace detail
 
 /**
  * @brief Build a post chain from its keys, outermost first, ending in the target set.

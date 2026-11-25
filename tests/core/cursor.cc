@@ -11,8 +11,8 @@
 
 #include "mata/core/automaton.hh"
 #include "mata/core/delta.hh"
-#include "mata/utils/ord-vector.hh"
 #include "mata/relation.hh"
+#include "mata/utils/ord-vector.hh"
 
 using namespace mata;
 
@@ -104,7 +104,7 @@ TEST_CASE("mata::SuccessorCursor agrees with the recursive walk") {
 
 	SECTION("arity 2: empty inner posts and empty target sets are skipped") {
 		Post2 post{};
-		Inner2 empty_inner{};                      // an entry whose nested post is empty
+		Inner2 empty_inner{}; // an entry whose nested post is empty
 		Inner2 inner_with_empty{};
 		inner_with_empty.push_back({1, Targets{}}); // an entry whose targets are empty
 		inner_with_empty.push_back({2, Targets{42}});
@@ -148,11 +148,11 @@ TEST_CASE("mata::SuccessorCursor agrees with the recursive walk") {
 
 	SECTION("arity 3: holes at every level") {
 		Post3 post{};
-		Inner3b empty_mid{};                        // nothing under this level-0 key
+		Inner3b empty_mid{}; // nothing under this level-0 key
 		Inner3b mid_with_empty_leaf{};
 		mid_with_empty_leaf.push_back({1, Inner3a{}}); // nothing under this level-1 key
 		Inner3a leaf_with_empty{};
-		leaf_with_empty.push_back({2, Targets{}});     // no targets under this level-2 key
+		leaf_with_empty.push_back({2, Targets{}}); // no targets under this level-2 key
 		leaf_with_empty.push_back({3, Targets{77}});
 		mid_with_empty_leaf.push_back({4, leaf_with_empty});
 		post.push_back({10, empty_mid});
@@ -238,11 +238,13 @@ using Delta2 = posts::DeltaBase<Post2>;
 using Delta3 = posts::DeltaBase<Post3>;
 using Delta4 = posts::DeltaBase<Post4>;
 
-template <typename A> concept AnswersBackwards = requires(const A a) {
+template <typename A>
+concept AnswersBackwards = requires(const A a) {
 	a.get_terminating_states();
 	a.distances_to_final();
 };
-template <typename A> concept AnswersForwards = requires(const A a) {
+template <typename A>
+concept AnswersForwards = requires(const A a) {
 	a.get_reachable_states();
 	a.distances_from_initial();
 	a.get_useful_states();

@@ -7,8 +7,8 @@
 
 namespace mata::nfa::internal {
 using mata::internal::call_callback;
-using mata::internal::TarjanCallbacks;
 using mata::internal::tarjan_scc_discover;
+using mata::internal::TarjanCallbacks;
 } // namespace mata::nfa::internal
 
 #endif // MATA_AUTOMATON_TARJAN_HH
