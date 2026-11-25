@@ -144,7 +144,7 @@ concept HasKeyMembers = requires(const D d) {
 	d.get_used_keys_set();
 	d.get_max_key();
 };
-// Only an integral key has these.
+// Only an unsigned integral key has these.
 template <typename D>
 concept HasIndexedKeyMembers = requires(const D d) {
 	d.get_used_keys_sps();

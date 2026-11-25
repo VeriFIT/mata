@@ -514,7 +514,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	///  ones it wants under the names that fit its keys, with a using-declaration or a forwarder.
 	///  @c mata::Delta does the latter, as symbols, since for the shipped relation a key is one.
 	///
-	/// The three variants indexed *by* the key's value need an integer for it.
+	/// The three variants indexed *by* the key's value need an unsigned integer for it.
 	///@{
 
 	/**
@@ -541,15 +541,17 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	std::set<typename P::Key> get_used_keys_set() const
 		requires std::totally_ordered<typename P::Key>;
 	utils::SparseSet<typename P::Key> get_used_keys_sps() const
-		requires std::integral<typename P::Key>;
+		requires std::unsigned_integral<typename P::Key>;
 	/// @note Indexed *by* key, so it allocates up to the largest key used. Already unusable when the automaton has
 	/// epsilons.
+	/// @throws std::length_error if a key is too large to index a vector.
 	std::vector<bool> get_used_keys_bv() const
-		requires std::integral<typename P::Key>;
+		requires std::unsigned_integral<typename P::Key>;
 	/// @note Indexed *by* key, so it allocates up to the largest key used. Already unusable when the automaton has
 	/// epsilons.
+	/// @throws std::length_error if a key is too large to index a vector.
 	BoolVector get_used_keys_chv() const
-		requires std::integral<typename P::Key>;
+		requires std::unsigned_integral<typename P::Key>;
 
 	/**
 	 * @brief The greatest key used, or nothing when there are no transitions.

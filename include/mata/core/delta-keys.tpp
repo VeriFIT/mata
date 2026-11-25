@@ -5,9 +5,12 @@
 #ifndef MATA_CORE_DELTA_KEYS_TPP
 #define MATA_CORE_DELTA_KEYS_TPP
 
+#include <algorithm>
+#include <cstddef>
 #include <format>
 #include <optional>
 #include <set>
+#include <stdexcept>
 #include <vector>
 
 namespace mata::posts {
@@ -157,7 +160,7 @@ std::set<typename P::Key> DeltaBase<P, TT>::get_used_keys_set() const
 // Seems to be the fastest option, but could have problems with large maximum symbols
 template <typename P, typename TT>
 utils::SparseSet<typename P::Key> DeltaBase<P, TT>::get_used_keys_sps() const
-	requires std::integral<typename P::Key> {
+	requires std::unsigned_integral<typename P::Key> {
 	using Symbols = typename P::Key;
 #ifdef _STATIC_STRUCTURES_
 	// static seems to speed things up a little
@@ -180,7 +183,7 @@ utils::SparseSet<typename P::Key> DeltaBase<P, TT>::get_used_keys_sps() const
 // Seems to be the fastest option, but could have problems with large maximum symbols
 template <typename P, typename TT>
 std::vector<bool> DeltaBase<P, TT>::get_used_keys_bv() const
-	requires std::integral<typename P::Key> {
+	requires std::unsigned_integral<typename P::Key> {
 #ifdef _STATIC_STRUCTURES_
 	// static seems to speed things up a little
 	static std::vector<bool> symbols(64, false);
@@ -191,11 +194,13 @@ std::vector<bool> DeltaBase<P, TT>::get_used_keys_bv() const
 	// symbols.dont_track_elements();
 	for (const PostType& state_post : state_posts_) {
 		for (const Entry& symbol_post : state_post) {
-			const typename P::Key symbol{symbol_post.key()};
-			if (const size_t capacity{symbol + 1}; symbols.size() < capacity) {
-				symbols.resize(capacity);
+			const auto index{static_cast<size_t>(symbol_post.key())};
+			if (index >= symbols.size()) {
+				// Checked before `index + 1`, which would wrap for the largest key of a type as wide as size_t.
+				if (index >= symbols.max_size()) { throw std::length_error("mata: a key too large to index by"); }
+				symbols.resize(index + 1);
 			}
-			symbols[symbol] = true;
+			symbols[index] = true;
 		}
 	}
 	return symbols;
@@ -203,7 +208,7 @@ std::vector<bool> DeltaBase<P, TT>::get_used_keys_bv() const
 
 template <typename P, typename TT>
 BoolVector DeltaBase<P, TT>::get_used_keys_chv() const
-	requires std::integral<typename P::Key> {
+	requires std::unsigned_integral<typename P::Key> {
 #ifdef _STATIC_STRUCTURES_
 	// static seems to speed things up a little
 	static BoolVector symbols(64, false);
@@ -214,11 +219,14 @@ BoolVector DeltaBase<P, TT>::get_used_keys_chv() const
 	// symbols.dont_track_elements();
 	for (const PostType& state_post : state_posts_) {
 		for (const Entry& symbol_post : state_post) {
-			const typename P::Key symbol{symbol_post.key()};
-			if (const size_t capacity{symbol + 1}; symbols.size() < capacity) {
-				symbols.resize(capacity * 2);
+			const auto index{static_cast<size_t>(symbol_post.key())};
+			if (index >= symbols.size()) {
+				// Checked before `index + 1`, which would wrap for the largest key of a type as wide as size_t.
+				if (index >= symbols.max_size()) { throw std::length_error("mata: a key too large to index by"); }
+				// Doubled to grow geometrically, but never past what the vector can hold.
+				symbols.resize(std::min(symbols.max_size(), 2 * (index + 1)));
 			}
-			symbols[symbol] = true;
+			symbols[index] = true;
 		}
 	}
 	// TODO: is it necessary to return ordered vector? Would the number predicate suffice?
