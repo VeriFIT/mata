@@ -84,7 +84,13 @@ template <typename St, typename Keys, typename T> struct KeyedTransition {
 	 * @param t The transition to take apart.
 	 */
 	static auto parts(const KeyedTransition& t) {
-		return std::tuple_cat(std::tuple<utils::ArgOf<St>>{t.source}, t.keys, std::tuple<utils::ArgOf<T>>{t.target});
+		// The keys too go through ArgOf: copying an owning key here could throw from inside the noexcept hash.
+		const auto by_arg = [](const auto&... key) {
+			return std::tuple<utils::ArgOf<std::remove_cvref_t<decltype(key)>>...>{key...};
+		};
+		return std::tuple_cat(
+			std::tuple<utils::ArgOf<St>>{t.source}, std::apply(by_arg, t.keys), std::tuple<utils::ArgOf<T>>{t.target}
+		);
 	}
 	/// `"(source, keys..., target)"`, as the @c std::formatter below prints it.
 	std::string to_string() const { return std::format("{}", *this); }
