@@ -104,11 +104,14 @@ impl Raw {
 	fn moves_by_label(
 		&self,
 		labels: &[usize],
+		letters: usize,
 		stop: &mut dyn FnMut() -> bool,
 	) -> Result<Vec<(usize, usize)>, Stopped> {
-		let letters = labels.iter().copied().max().map_or(0, |max| max + 1);
 		let mut starts = vec![0; letters + 1];
 		for &letter in labels {
+			if stop() {
+				return Err(Stopped);
+			}
 			starts[letter + 1] += 1;
 		}
 		for letter in 0..letters {
@@ -422,7 +425,7 @@ impl Raw {
 		blocks.split();
 
 		// Cords: classes of moves, first by label; a linear counting sort.
-		let by_label = self.moves_by_label(&label, stop)?;
+		let by_label = self.moves_by_label(&label, tuples.len(), stop)?;
 		let mut cords = Partition::new(num_edges);
 		cords.sets = 0;
 		for (position, &(letter, edge)) in by_label.iter().enumerate() {
@@ -524,7 +527,7 @@ pub(crate) struct Stopped;
 type KeyGroups = FxHashMap<Vec<(usize, bool)>, Vec<usize>>;
 
 /// The `(letter, whether a move remains)` cells for every state, sorted within each state. The grouping is the same
-/// as sorting every entry together, but each sort covers only one state's cells and `stop` is asked per state.
+/// as sorting every entry together, but each sort covers only one state's cells and `stop` is asked per entry and state.
 fn canonical_cells(
 	entries: Vec<(usize, usize, usize)>,
 	counts: &[usize],
@@ -532,6 +535,9 @@ fn canonical_cells(
 ) -> Result<FxHashMap<usize, Vec<(usize, bool)>>, Stopped> {
 	let mut by_state: FxHashMap<usize, Vec<(usize, bool)>> = FxHashMap::default();
 	for (state, letter, old) in entries {
+		if stop() {
+			return Err(Stopped);
+		}
 		by_state
 			.entry(state)
 			.or_default()
