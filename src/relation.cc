@@ -30,11 +30,11 @@ using namespace mata;
 template class mata::posts::detail::PostEntryCore<mata::Symbol, mata::SmallStateSet, mata::ReservedKeys<mata::Symbol>>;
 template class mata::posts::PostEntry<mata::Symbol, mata::SmallStateSet>;
 template class mata::posts::Post<mata::SymbolPost>;
-template class mata::posts::PostMoves<mata::StatePost>;
+template class mata::posts::PostMoves<mata::StatePost::Base>;
 
-template class mata::posts::KeyedAccess<mata::posts::DeltaBase<mata::StatePost>, mata::StatePost>;
-template class mata::posts::DeltaBase<mata::StatePost>;
-template class mata::posts::DeltaTransitions<mata::posts::DeltaBase<mata::StatePost>>;
+template class mata::posts::KeyedAccess<mata::Delta::Base, mata::StatePost>;
+template class mata::posts::DeltaBase<mata::StatePost, mata::TransitionTraits>;
+template class mata::posts::DeltaTransitions<mata::Delta::Base>;
 
 template class mata::AutomatonBase<mata::Delta>;
 /// @}

@@ -6,8 +6,14 @@
 #define MATA_RELATION_HH
 
 #include <concepts>
+#include <cstddef>
+#include <format>
+#include <functional>
+#include <ostream>
 #include <set>
 #include <span>
+#include <string>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -21,14 +27,150 @@
 
 namespace mata {
 
-/// A transition (source, symbol, target).
-using Transition = posts::Transition<State, Symbol, State>;
+/// @name Concrete types of the depth-2 relation
+/// @note Classes rather than aliases of the generic templates, so that diagnostics and IDEs name them as written here.
+///@{
+/**
+ * @brief A transition (source, symbol, target).
+ *
+ * Built from all three fields or none, so that a forgotten target does not become state 0.
+ */
+struct Transition {
+	State source{}; ///< Source state.
+	Symbol symbol{}; ///< Transition symbol.
+	State target{}; ///< Target state.
+
+	Transition() = default;
+	Transition(const State source, const Symbol symbol, const State target)
+		: source{source},
+		  symbol{symbol},
+		  target{target} {}
+
+	auto operator<=>(const Transition&) const = default;
+
+	/**
+	 * @brief Get the parts of @p t as a tuple.
+	 * 
+	 * @param t Transition to get the parts of.
+	 * @return A tuple (source, symbol, target) of @p t.
+	 */
+	static std::tuple<State, Symbol, State> parts(const Transition& t) { return {t.source, t.symbol, t.target}; }
+
+	std::string to_string() const;
+};
+
+/// Defines how @c Delta builds its transitions.
+struct TransitionTraits {
+	using Type = Transition;
+	static Transition make(const State source, const Symbol symbol, const State target) {
+		return Transition{source, symbol, target};
+	}
+};
+
 /// A move out of the depth-2 relation: a symbol and one target state.
-using Move = posts::Move<Symbol, State>;
-/// The depth-2 entry: a symbol keying a set of target states.
-using SymbolPost = posts::PostEntry<Symbol, SmallStateSet>;
-/// The depth-2 post: symbols keying sets of target states.
-using StatePost = posts::Post<SymbolPost>;
+struct Move {
+	Symbol symbol; ///< Symbol of the move.
+	State target; ///< Target state of the move.
+
+	bool operator==(const Move&) const = default;
+};
+
+/// Target states keyed by symbols
+class SymbolPost : public posts::PostEntry<Symbol, SmallStateSet> {
+  public:
+	using Base = posts::PostEntry<Symbol, SmallStateSet>; ///< The generic entry.
+	using MoveType = Move; ///< What iterating the moves of a post of these entries yields.
+
+	SymbolPost() = default;
+	explicit SymbolPost(const Symbol symbol) : Base{symbol} {}
+	
+	/**
+	 * @brief Create a post with a single target.
+	 * 
+	 * @param symbol Symbol of the post.
+	 * @param target Target of the post.
+	 */
+	SymbolPost(const Symbol symbol, const State target) : Base(symbol, target) {}
+	
+	/**
+	 * @brief Create a post with multiple targets.
+	 * 
+	 * @param symbol Symbol of the post.
+	 * @param targets Targets of the post.
+	 */
+	SymbolPost(const Symbol symbol, const std::span<const State> targets) : Base(symbol, targets) {}
+
+	/**
+	 * @brief Create a post with multiple targets.
+	 * 
+	 * @param symbol Symbol of the post.
+	 * @param targets Targets of the post.
+	 */
+	SymbolPost(const Symbol symbol, SmallStateSet targets) : Base(symbol, std::move(targets)) {}
+
+	SymbolPost(const Base& other) : Base{other} {}
+	SymbolPost(Base&& other) noexcept : Base{std::move(other)} {}
+};
+
+/// Symbol posts keyed by states.
+class StatePost : public posts::Post<SymbolPost> {
+  public:
+	using Base = posts::Post<SymbolPost>; ///< The generic post.
+	using Base::Base;
+	using Base::operator=;
+
+	StatePost() = default;
+
+	StatePost(const Base& other) : Base{other} {}
+	StatePost(Base&& other) noexcept : Base{std::move(other)} {}
+
+};
+///@}
+
+} // namespace mata.
+
+/// @name Hashing, formatting and structured bindings of the concrete types
+///@{
+template <> struct std::hash<mata::Transition> {
+	size_t operator()(const mata::Transition& t) const noexcept { return mata::posts::hash_of(t); }
+};
+template <> struct std::formatter<mata::Transition> {
+	constexpr auto parse(std::format_parse_context& ctx) {
+		auto it = ctx.begin();
+		if (it != ctx.end() && *it != '}') { throw std::format_error("a transition takes no format spec"); }
+		return it;
+	}
+	template <typename Ctx> auto format(const mata::Transition& t, Ctx& ctx) const {
+		return mata::posts::format_parts(ctx.out(), t);
+	}
+};
+template <> struct std::tuple_size<mata::SymbolPost> : std::integral_constant<std::size_t, 2> {};
+template <> struct std::tuple_element<0, mata::SymbolPost> {
+	using type = mata::Symbol;
+};
+template <> struct std::tuple_element<1, mata::SymbolPost> {
+	using type = mata::SmallStateSet;
+};
+///@}
+
+namespace mata {
+
+inline std::string Transition::to_string() const { return std::format("{}", *this); }
+
+/// Prints @p transition as `(source, symbol, target)`.
+inline std::ostream& operator<<(std::ostream& os, const Transition& transition) {
+	return os << std::format("{}", transition);
+}
+
+/// @name Layout checks
+/// The concrete types add nothing to the generic ones, so they cost nothing over them.
+///@{
+static_assert(sizeof(SymbolPost) == sizeof(SymbolPost::Base) && sizeof(StatePost) == sizeof(StatePost::Base));
+static_assert(std::is_nothrow_move_constructible_v<SymbolPost> && std::is_nothrow_move_assignable_v<SymbolPost>);
+static_assert(std::is_nothrow_move_constructible_v<StatePost> && std::is_nothrow_move_assignable_v<StatePost>);
+static_assert(std::is_trivially_copyable_v<Transition> && sizeof(Transition) == 3 * sizeof(State));
+static_assert(std::is_trivially_copyable_v<Move> && sizeof(Move) == sizeof(posts::Move<Symbol, State>));
+///@}
 
 /// Reusable buffers of @c Delta::post() and @c Delta::epsilon_closure(), so that a loop of steps allocates once.
 struct PostWorkspace {
@@ -43,9 +185,9 @@ struct PostWorkspace {
  *
  * @note Exposes the generic relation as a concrete type, so that users are shielded from the template plumbing.
  */
-class Delta : public posts::DeltaBase<StatePost, posts::SymbolTransitionTraits<StatePost>> {
+class Delta : public posts::DeltaBase<StatePost, TransitionTraits> {
   public:
-	using Base = posts::DeltaBase<StatePost, posts::SymbolTransitionTraits<StatePost>>; ///< The generic relation.
+	using Base = posts::DeltaBase<StatePost, TransitionTraits>; ///< The generic relation.
 	using Base::Base; ///< The constructors of the generic relation, including `explicit Delta(size_t)`.
 
 	Delta() = default;
@@ -72,6 +214,15 @@ class Delta : public posts::DeltaBase<StatePost, posts::SymbolTransitionTraits<S
 		return *this;
 	}
 	///@}
+
+	/**
+	 * @brief Compare @c this with @p other for equality.
+	 * 
+	 * @note Trailing states without transitions do not matter.
+	 * @param other The relation to compare with.
+	 * @return True if both relations have the same transitions, false otherwise.
+	 */
+	bool operator==(const Delta& other) const { return Base::operator==(other); }
 
 	/// @name Keyed members in concrete types
 	/// Forwarders, so that diagnostics and IDEs show `add(State, Symbol, State)`.
@@ -238,8 +389,36 @@ class Delta : public posts::DeltaBase<StatePost, posts::SymbolTransitionTraits<S
 		PostWorkspace& workspace
 	) const;
 
-	using Base::get_successors;
-	/// The successors of @p state over @p symbol, with the epsilon closures of @p epsilon_closure_opt.
+	/**
+	 * @brief Get the successors of @p state over every symbol.
+	 * 
+	 * @param state State whose successors to get.
+	 * @return The successors of @p state over every symbol.
+	 */
+	SmallStateSet get_successors(const mata::State state) const { 
+		return Base::get_successors(state); 
+	}
+
+	/**
+	 * @brief Get the successors of @p state over @p symbol.
+	 * 
+	 * @param state State whose successors to get.
+	 * @param symbol Symbol over which to get the successors.
+	 * @return The successors.
+	 */
+	const SmallStateSet& get_successors(const mata::State state, const mata::Symbol symbol) const {
+		return Base::get_successors(state, symbol);
+	}
+
+
+	/**
+	 * @brief Get the successors of @p state over @p symbol, with the epsilon closures of @p epsilon_closure_opt.
+	 * 
+	 * @param state State whose successors to get.
+	 * @param symbol Symbol over which to get the successors.
+	 * @param epsilon_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
+	 * @return The successors.
+	 */
 	StateSet get_successors(mata::State state, mata::Symbol symbol, EpsilonClosureOpt epsilon_closure_opt) const;
 
 	utils::OrdVector<mata::Symbol> get_used_symbols() const { return Base::get_used_keys(); }
@@ -387,6 +566,8 @@ static_assert(
 	Delta::Reserved<0>::min_epsilon == EPSILON,
 	"mata::EPSILON and the relation's own epsilon must be the same value."
 );
+/// @c Nfa and @c Nft name the automaton's types themselves. They must be the ones the automaton uses.
+static_assert(std::same_as<Automaton::State, State> && std::same_as<Automaton::StateSet, StateSet>);
 /// The keyed members take a target state by value.
 static_assert(
 	std::is_same_v<Delta::TargetArg, const State>,
@@ -401,10 +582,10 @@ namespace mata {
 extern template class posts::detail::PostEntryCore<Symbol, SmallStateSet, ReservedKeys<Symbol>>;
 extern template class posts::PostEntry<Symbol, SmallStateSet>;
 extern template class posts::Post<SymbolPost>;
-extern template class posts::PostMoves<StatePost>;
-extern template class posts::KeyedAccess<posts::DeltaBase<StatePost>, StatePost>;
-extern template class posts::DeltaBase<StatePost>;
-extern template class posts::DeltaTransitions<posts::DeltaBase<StatePost>>;
+extern template class posts::PostMoves<StatePost::Base>;
+extern template class posts::KeyedAccess<Delta::Base, StatePost>;
+extern template class posts::DeltaBase<StatePost, TransitionTraits>;
+extern template class posts::DeltaTransitions<Delta::Base>;
 extern template class AutomatonBase<Delta>;
 } // namespace mata.
 

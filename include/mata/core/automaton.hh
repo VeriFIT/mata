@@ -259,12 +259,14 @@ template <DeltaLike D> class AutomatonBase {
 	/**
 	 * @brief Compute reachability of states considering only specified states.
 	 *
+	 * @note Inlining this function improves performance of related functions by ~3%.
+	 * 
 	 * @param[in] initial_states States to start the traversal from.
 	 * @param[in] states_to_consider States to consider as potentially reachable. If @c std::nullopt is used, all
 	 *  states are considered as potentially reachable.
 	 * @return Bool array for reachable states (from @p initial_states): true for reachable, false for unreachable states.
 	 */
-	StateBoolArray reachable_states_(
+	[[gnu::always_inline]] StateBoolArray reachable_states_(
 		const utils::SparseSet<State>& initial_states,
 		const std::optional<const StateBoolArray>& states_to_consider = std::nullopt
 	) const;

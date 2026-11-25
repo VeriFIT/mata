@@ -101,7 +101,7 @@ AutomatonBase<D> AutomatonBase<D>::reverted() const {
 }
 
 template <DeltaLike D>
-typename AutomatonBase<D>::StateBoolArray AutomatonBase<D>::reachable_states_(
+inline typename AutomatonBase<D>::StateBoolArray AutomatonBase<D>::reachable_states_(
 	const utils::SparseSet<State>& initial_states, const std::optional<const StateBoolArray>& states_to_consider
 ) const {
 	std::vector<State> worklist{};

@@ -114,6 +114,9 @@ namespace mata::nfa {
 class Nfa : public Automaton {
   public:
 	using Run = nfa::Run; ///< Through the module seam, like every shared type.
+	// Under their own names, rather than as members of the generic automaton.
+	using State = mata::State;
+	using StateSet = mata::StateSet;
 
 	std::shared_ptr<Alphabet> alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
 	/// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types

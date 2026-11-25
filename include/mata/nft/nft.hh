@@ -124,6 +124,9 @@ class Nft : public Automaton {
 
   public:
 	using Run = nft::Run; ///< Through the module seam, like every shared type.
+	// Under their own names, rather than as members of the generic automaton.
+	using State = mata::State;
+	using StateSet = mata::StateSet;
 
 	/**
 	 * @brief Vector of levels giving each state a level in range from 0 to @c levels.num_of_levels - 1.
