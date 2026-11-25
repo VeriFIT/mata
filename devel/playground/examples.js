@@ -286,6 +286,8 @@ export const SCRIPT_EXAMPLE_GROUPS = [
 (print (lazy:stats "annotated" (lazy:empty? abc)))
 (print (lazy:stats "all lazy" (lazy:empty? abc :policy "lazy")))
 (print (lazy:stats "heuristic" (lazy:empty? abc :policy "heuristic" :heuristic-max-states 100)))
+; All three at once, the first answer wins (in the browser they run one after another).
+(print (lazy:stats "portfolio" (lazy:empty? abc :policy "portfolio")))
 `,
             },
             {

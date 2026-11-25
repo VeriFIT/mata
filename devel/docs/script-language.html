@@ -1116,9 +1116,12 @@ term, without evaluating it.</p></li>
 fan-out, and leaf sizes and determinism. <code class="docutils literal notranslate"><span class="pre">(lazy:plan)</span></code> returns the current annotations as JSON in the format that
 <code class="docutils literal notranslate"><span class="pre">mata::lazy::Plan::to_json</span></code> emits.</p></li>
 <li><p>Every query accepts <code class="docutils literal notranslate"><span class="pre">:plan</span></code> with such a JSON string, so an external tool can derive a plan from <code class="docutils literal notranslate"><span class="pre">lazy:view</span></code> and
-return it to the script. Alternatively, <code class="docutils literal notranslate"><span class="pre">:policy</span></code> takes <code class="docutils literal notranslate"><span class="pre">&quot;lazy&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;eager&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;heuristic&quot;</span></code>. The heuristic
-eagerly builds selected small inner terms and keeps the root lazy; <code class="docutils literal notranslate"><span class="pre">:heuristic-max-states</span></code> sets its per-term bound
-(4096 by default). <code class="docutils literal notranslate"><span class="pre">:plan</span></code> and <code class="docutils literal notranslate"><span class="pre">:policy</span></code> are mutually exclusive and override the run’s annotations for that query.</p></li>
+return it to the script. Alternatively, <code class="docutils literal notranslate"><span class="pre">:policy</span></code> takes <code class="docutils literal notranslate"><span class="pre">&quot;lazy&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;eager&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;heuristic&quot;</span></code>, or <code class="docutils literal notranslate"><span class="pre">&quot;portfolio&quot;</span></code>. The
+heuristic eagerly builds selected small inner terms and keeps the root lazy; <code class="docutils literal notranslate"><span class="pre">:heuristic-max-states</span></code> sets its
+per-term bound (4096 by default). <code class="docutils literal notranslate"><span class="pre">&quot;portfolio&quot;</span></code> runs the three others at once, one thread each, takes the first
+answer, and stops the rest; the <code class="docutils literal notranslate"><span class="pre">plan</span></code> record of <code class="docutils literal notranslate"><span class="pre">lazy:stats</span></code> then tells which plan answered. Where threads cannot
+be started, as in the playground, the plans run one after another. <code class="docutils literal notranslate"><span class="pre">lazy:materialize</span></code> rejects it. <code class="docutils literal notranslate"><span class="pre">:plan</span></code> and
+<code class="docutils literal notranslate"><span class="pre">:policy</span></code> are mutually exclusive and override the run’s annotations for that query.</p></li>
 </ul>
 <p><code class="docutils literal notranslate"><span class="pre">(lazy:stats</span> <span class="pre">label</span> <span class="pre">check)</span></code> evaluates <code class="docutils literal notranslate"><span class="pre">check</span></code>, an application of <code class="docutils literal notranslate"><span class="pre">lazy:empty?</span></code>, <code class="docutils literal notranslate"><span class="pre">lazy:empty-within?</span></code>, <code class="docutils literal notranslate"><span class="pre">lazy:witness</span></code>,
 <code class="docutils literal notranslate"><span class="pre">lazy:included?</span></code> or <code class="docutils literal notranslate"><span class="pre">lazy:equivalent?</span></code>, returns its value, and prints one record per counter of that query,
@@ -1150,6 +1153,9 @@ eagerly builds selected small inner terms and keeps the root lazy; <code class="
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">explicit-transitions</span></code></p></td>
 <td><p>Transitions of those automata</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">plan</span></code></p></td>
+<td><p>Portfolios only: the plan that answered (0 lazy, 1 eager, 2 heuristic)</p></td>
 </tr>
 </tbody>
 </table>
