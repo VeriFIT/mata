@@ -282,7 +282,7 @@ TEST_CASE("mata::posts::DeltaBase::add - writing a key path at any arity") {
 		CHECK(copy == delta);
 	}
 
-	SECTION("a deeper relation still reverts, which is what needs a generic write") {
+	SECTION("a deeper relation answers the backward walks") {
 		mata::AutomatonBase<D2> aut{};
 		aut.delta.add(0, 1, 2, 1);
 		aut.delta.add(1, 3, 4, 2);
@@ -291,7 +291,7 @@ TEST_CASE("mata::posts::DeltaBase::add - writing a key path at any arity") {
 		aut.final.insert(2);
 
 		CHECK(aut.get_reachable_states() == mata::StateSet{0, 1, 2});
-		// get_terminating_states() reverts the relation, so it goes through the generic write.
+		// Answered over the predecessors, gathered through the successor visit at any arity.
 		CHECK(aut.get_terminating_states() == mata::StateSet{0, 1, 2});
 
 		// distances_to_final() returns num_of_states() + 1 entries at every arity, so only the first four are checked.

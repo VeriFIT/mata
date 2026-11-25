@@ -41,8 +41,7 @@ namespace mata {
  * @note A data-owning mixin, not a polymorphic base: it owns @c delta, @c initial and @c final, and
  *  has no virtual functions. The members that need their most-derived type take an explicit object
  *  parameter (`deducing this`) instead.
- * @note @p D is not constrained to any particular @c key_arity. Only the generic visits care how
- *  deep the relation nests, and they are constrained separately.
+ * @note @p D needs no keys: every operation here follows successors only, so the relation may be a plain graph.
  * @note The largest @c State is reserved as "no state", for @c initial and @c final as much as for @c delta: the
  *  algorithms count states in @c State and use the largest one as a marker.
  */
@@ -51,8 +50,6 @@ template <DeltaLike D> class AutomatonBase {
 	using DeltaType = D; ///< The transition relation this automaton is built on.
 	using State = typename D::State; ///< What indexes the automaton: @c delta, @c initial, @c final.
 	using Target = typename D::Target; ///< The leaf payload visiting the successors yields. @see @c State.
-	/// Number of keys between a source state and a target. @see @ref arity.
-	static constexpr size_t key_arity{D::key_arity};
 	using StateSet = utils::OrdVector<State>;
 	using StateRenaming = std::unordered_map<State, State>;
 
@@ -306,18 +303,6 @@ template <DeltaLike D> class AutomatonBase {
 	 *  A leaf has to clear its own per-state data as well.
 	 */
 	void clear();
-
-	/**
-	 * @brief Reverse the automaton structurally: reverse every transition and swap initial and final states.
-	 *
-	 * The reversal is only structural. The order of the keys in the transitions is not changed,
-	 *  the source and target states are swapped, and the payload of the transitions is not changed.
-	 *
-	 * @note Kept as a protected helper so that @c get_terminating_states() and @c distances_to_final() do not
-	 *  have to go through a leaf-specific `revert()` free function.
-	 * @return A new automaton with reversed transitions and swapped initial/final states.
-	 */
-	AutomatonBase reverted() const;
 
 	/**
 	 * @brief Structural part of `trim()` for a precomputed @p useful_states.

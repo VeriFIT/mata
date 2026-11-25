@@ -113,8 +113,8 @@ TEST_CASE("mata::AutomatonBase over a relation whose targets carry a payload") {
 		CHECK(aut.is_acyclic());
 	}
 
-	SECTION("reverting turns the source into a target and carries the weight across") {
-		// Answered by reverting: 3 reaches 0, which reaches the final state.
+	SECTION("the backward walks see a payload target as its state") {
+		// Answered over the predecessors: 3 reaches 0, which reaches the final state.
 		CHECK(aut.get_terminating_states() == StateSet{0, 1, 2, 3});
 		const std::vector<State> to_final{aut.distances_to_final()};
 		CHECK(to_final[0] == 2);

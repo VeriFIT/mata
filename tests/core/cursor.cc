@@ -267,7 +267,7 @@ template class mata::AutomatonBase<Delta2>;
 template class mata::AutomatonBase<Delta3>;
 template class mata::AutomatonBase<Delta4>;
 
-// Forward and backward operations, reverting included, exist at every arity.
+// Forward and backward operations exist at every arity.
 static_assert(AnswersForwards<mata::AutomatonBase<Delta2>>);
 static_assert(AnswersForwards<mata::AutomatonBase<Delta3>>);
 static_assert(AnswersForwards<mata::AutomatonBase<Delta4>>);
@@ -315,7 +315,7 @@ TEST_CASE("mata::AutomatonBase over an arity-2 relation") {
 		CHECK(aut.delta.num_of_transitions() == 2);
 	}
 
-	SECTION("reverting works at arity 2, observed through what it serves") {
+	SECTION("the backward walks work at arity 2") {
 		CHECK(aut.get_terminating_states() == mata::StateSet{0, 1, 2});
 		const std::vector<State> to_final{aut.distances_to_final()};
 		REQUIRE(to_final.size() >= 3);

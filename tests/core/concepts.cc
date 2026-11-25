@@ -15,204 +15,67 @@
 
 namespace tiny_delta {
 
-// The innermost post: the targets under one key.
-struct TinyTargets {
-	using Target = mata::State;
-	// cppcheck-suppress unusedStructMember
-	static constexpr size_t key_arity{0};
-	// cppcheck-suppress unusedStructMember
-	static constexpr bool sorted_by_target{true};
-
-	std::vector<Target> targets{};
-
-	bool operator==(const TinyTargets& other) const = default;
-	auto begin() const { return targets.begin(); }
-	auto end() const { return targets.end(); }
-	bool empty() const { return targets.empty(); }
-	size_t size() const { return targets.size(); }
-	bool is_sorted() const { return std::ranges::is_sorted(targets); }
-	// Used by trim and renumbering.
-	void push_back(const Target& target) { targets.push_back(target); }
-	// Used by revert.
-	void insert(const Target& target) {
-		const auto it{std::ranges::lower_bound(targets, target)};
-		if (it == targets.end() || *it != target) { targets.insert(it, target); }
-	}
-	// Used by remove; the post above then drops the key if this became empty.
-	void erase(const Target& target) {
-		const auto it{std::ranges::lower_bound(targets, target)};
-		if (it != targets.end() && *it == target) { targets.erase(it); }
-	}
-	bool contains(const Target& target) const { return std::ranges::binary_search(targets, target); }
-};
-
-// One entry of a post: a key and the targets under it.
-struct TinyEntry {
-	using Key = unsigned;
-	using Nested = TinyTargets;
-
-	Key stored_key{};
-	Nested stored_nested{};
-
-	bool operator==(const TinyEntry& other) const = default;
-	Key key() const { return stored_key; }
-	const Nested& nested() const { return stored_nested; }
-	// Used to write a key path.
-	Nested& nested() { return stored_nested; }
-};
-
-// One post: sorted entries by key.
-struct TinyPost {
-	using Entry = TinyEntry;
-	using Key = TinyEntry::Key;
-	using Nested = TinyEntry::Nested;
-	using Target = TinyTargets::Target;
-	static constexpr size_t key_arity{Nested::key_arity + 1};
-	// cppcheck-suppress unusedStructMember
-	static constexpr bool sorted_by_key{true};
-	// Where the ordinary keys stop; the contract asks it of the post, not of the entry.
-	using Reserved = mata::ReservedKeys<Key>;
-
-	std::vector<Entry> entries{};
-
-	bool operator==(const TinyPost& other) const = default;
-	auto begin() const { return entries.begin(); }
-	auto end() const { return entries.end(); }
-	bool empty() const { return entries.empty(); }
-	size_t size() const { return entries.size(); }
-	bool is_sorted() const {
-		return std::ranges::is_sorted(entries, {}, [](const Entry& e) { return e.key(); });
-	}
-	void push_back(const Entry& entry) { entries.push_back(entry); }
-	// A query must not need a mutable post.
-	auto find(const Key& key) const {
-		return std::ranges::find_if(entries, [&key](const Entry& e) { return e.stored_key == key; });
-	}
-	void erase(const Entry& entry) {
-		std::erase_if(entries, [&entry](const Entry& e) { return e.stored_key == entry.stored_key; });
-	}
-	auto find(const Key& key) {
-		const auto it{std::ranges::lower_bound(entries, key, {}, [](const Entry& e) { return e.key(); })};
-		return (it != entries.end() && it->key() == key) ? it : entries.end();
-	}
-	auto begin() { return entries.begin(); }
-	auto end() { return entries.end(); }
-	void insert(const Entry& entry) {
-		entries.insert(
-			std::ranges::lower_bound(entries, entry.key(), {}, [](const Entry& e) { return e.key(); }), entry
-		);
-	}
-};
-
-// A cursor over the successors of one state. Its iterator outlives the cursor.
+// A cursor over the successors of one state. Its iterator points into the relation, so it outlives the cursor.
 class TinyCursor {
   public:
 	class const_iterator {
 	  public:
-		std::vector<TinyEntry>::const_iterator entry_it{}, entry_end{};
 		const mata::State* target_it{nullptr};
 		const mata::State* target_end{nullptr};
 
-		void load_targets() {
-			const std::vector<mata::State>& t{entry_it->nested().targets};
-			target_it = t.data();
-			target_end = target_it + t.size();
-		}
-		// Positions on a target, or at the end.
-		void seek() {
-			while (target_it == target_end) {
-				if (++entry_it == entry_end) {
-					target_it = target_end = nullptr;
-					return;
-				}
-				load_targets();
-			}
-		}
 		const mata::State& operator*() const { return *target_it; }
 		const_iterator& operator++() {
-			if (++target_it == target_end) { seek(); }
+			++target_it;
 			return *this;
 		}
-		bool operator==(std::default_sentinel_t) const { return entry_it == entry_end; }
+		bool operator==(std::default_sentinel_t) const { return target_it == target_end; }
 	};
 
-	explicit TinyCursor(const TinyPost& post) : post_{&post} {}
+	explicit TinyCursor(const std::vector<mata::State>& successors) : successors_{&successors} {}
 
-	const_iterator begin() const {
-		const_iterator it;
-		it.entry_it = post_->entries.begin();
-		it.entry_end = post_->entries.end();
-		if (it.entry_it == it.entry_end) { return it; }
-		it.load_targets();
-		it.seek();
-		return it;
-	}
+	const_iterator begin() const { return {successors_->data(), successors_->data() + successors_->size()}; }
 	std::default_sentinel_t end() const { return std::default_sentinel; }
 
   private:
-	const TinyPost* post_;
+	const std::vector<mata::State>* successors_;
 };
 
-// A relation: state -> key -> targets.
+// A relation written outside mata, with no keys and no post: each state's sorted successors.
 class TinyDelta {
   public:
-	using PostType = TinyPost;
-	using Target = TinyPost::Target;
-	using State = mata::TargetTraits<Target>::State;
-	using Key = TinyPost::Key;
-	// cppcheck-suppress unusedStructMember
-	static constexpr size_t key_arity{TinyPost::key_arity};
+	using Target = mata::State;
+	using State = mata::State;
 
-	static State state_of(const Target& target) { return mata::TargetTraits<Target>::state_of(target); }
+	static State state_of(const Target target) { return target; }
 
 	TinyDelta() = default;
-	explicit TinyDelta(const size_t num_of_states) : posts_(num_of_states) {}
+	explicit TinyDelta(const size_t num_of_states) : successors_(num_of_states) {}
 
 	bool operator==(const TinyDelta& other) const = default;
 
-	size_t num_of_states() const { return posts_.size(); }
-	bool empty() const {
-		return std::ranges::all_of(posts_, [](const TinyPost& p) { return p.empty(); });
-	}
+	size_t num_of_states() const { return successors_.size(); }
 	void allocate(const size_t num_of_states) {
-		if (num_of_states > posts_.size()) { posts_.resize(num_of_states); }
+		if (num_of_states > successors_.size()) { successors_.resize(num_of_states); }
 	}
-	void clear() { posts_.clear(); }
+	void clear() { successors_.clear(); }
 
 	template <typename F> void for_each_successor(const State source, F&& handler) const {
-		for (const TinyEntry& entry : post_of(source).entries) {
-			for (const Target& target : entry.nested()) { handler(target); }
-		}
+		for (const State target : successors_of(source)) { handler(target); }
 	}
 
-	template <typename F> void for_each_move(const State source, F&& handler) const {
-		for (const TinyEntry& entry : post_of(source).entries) {
-			for (const Target& target : entry.nested()) { handler(entry.key(), target); }
-		}
-	}
+	TinyCursor successor_cursor(const State source) const { return TinyCursor{successors_of(source)}; }
 
-	TinyCursor successor_cursor(const State source) const { return TinyCursor{post_of(source)}; }
+	bool has_self_loop(const State source) const { return std::ranges::binary_search(successors_of(source), source); }
 
-	// Used by revert.
-	TinyPost& mutable_state_post(const State source) {
-		allocate(source + 1);
-		return posts_[source];
-	}
-
-	bool has_self_loop(const State source) const {
-		bool found{false};
-		for_each_successor(source, [&](const Target& target) { found = found || state_of(target) == source; });
-		return found;
-	}
-
-	void add(const State source, const Key key, const State target) {
+	// Not required by the contract: how this relation is written to.
+	void add(const State source, const State target) {
 		allocate(std::max(source, target) + 1);
-		std::vector<TinyEntry>& entries{posts_[source].entries};
-		auto it{std::ranges::lower_bound(entries, key, {}, [](const TinyEntry& e) { return e.key(); })};
-		if (it == entries.end() || it->key() != key) { it = entries.insert(it, TinyEntry{key, {}}); }
-		std::vector<State>& targets{it->stored_nested.targets};
-		const auto target_it{std::ranges::lower_bound(targets, target)};
-		if (target_it == targets.end() || *target_it != target) { targets.insert(target_it, target); }
+		std::vector<State>& successors{successors_[source]};
+		const auto it{std::ranges::lower_bound(successors, target)};
+		if (it == successors.end() || *it != target) { successors.insert(it, target); }
+	}
+	bool has_transitions() const {
+		return std::ranges::any_of(successors_, [](const std::vector<State>& s) { return !s.empty(); });
 	}
 
 	TinyDelta& defragment(const mata::BoolVector& is_staying, const std::vector<State>& renaming) {
@@ -221,58 +84,53 @@ class TinyDelta {
 		result.allocate(static_cast<size_t>(std::ranges::count_if(is_staying, [](const auto b) { return b != 0; })));
 		for (State source{0}; source < num_of_states(); ++source) {
 			if (!stays(source)) { continue; }
-			for_each_move(source, [&](const Key key, const State target) {
-				if (stays(target)) { result.add(renaming[source], key, renaming[target]); }
-			});
+			for (const State target : successors_[source]) {
+				if (stays(target)) { result.add(renaming[source], renaming[target]); }
+			}
 		}
 		*this = std::move(result);
 		return *this;
 	}
 
   private:
-	static const TinyPost& empty_post() {
-		static const TinyPost empty{};
-		return empty;
+	// A state of the automaton that the relation has no successors stored for has none.
+	const std::vector<State>& successors_of(const State source) const {
+		static const std::vector<State> none{};
+		return source < successors_.size() ? successors_[source] : none;
 	}
-	const TinyPost& post_of(const State source) const { return source < posts_.size() ? posts_[source] : empty_post(); }
 
-	std::vector<TinyPost> posts_{};
+	std::vector<std::vector<State>> successors_{};
 };
 
 } // namespace tiny_delta.
 
 using namespace tiny_delta;
 
-static_assert(mata::TargetSetLike<TinyTargets>, "TinyTargets must be the innermost post.");
-static_assert(mata::PostEntryLike<TinyEntry>, "TinyEntry must be TinyPost's entry type.");
-static_assert(mata::PostLike<TinyPost>, "TinyPost must be one post of the relation.");
-
-static_assert(mata::DeltaLike<TinyDelta>, "A relation written outside mata must be able to satisfy the contract.");
+static_assert(mata::DeltaLike<TinyDelta>, "A plain adjacency list written outside mata must satisfy the contract.");
 
 using TinyAutomaton = mata::AutomatonBase<TinyDelta>;
 
 static_assert(std::same_as<TinyAutomaton::State, mata::State>);
 static_assert(std::same_as<TinyAutomaton::Target, mata::State>);
 static_assert(std::same_as<TinyAutomaton::DeltaType, TinyDelta>);
-static_assert(TinyAutomaton::key_arity == 1);
 
 // Instantiates every member, so a member needing more than DeltaLike fails here.
 template class mata::AutomatonBase<TinyDelta>;
 
 TEST_CASE("mata::AutomatonBase over a relation defined outside mata") {
-	// 0 -a-> 1 -b-> 2 (final), plus a dead-end 0 -a-> 3 and an unreachable 4 -a-> 4.
+	// 0 -> 1 -> 2 (final), plus a dead-end 0 -> 3 and an unreachable 4 -> 4.
 	TinyAutomaton aut{};
-	aut.delta.add(0, 'a', 1);
-	aut.delta.add(0, 'a', 3);
-	aut.delta.add(1, 'b', 2);
-	aut.delta.add(4, 'a', 4);
+	aut.delta.add(0, 1);
+	aut.delta.add(0, 3);
+	aut.delta.add(1, 2);
+	aut.delta.add(4, 4);
 	aut.initial.insert(0);
 	aut.final.insert(2);
 
 	SECTION("the presizing constructor reaches the relation") {
 		const TinyAutomaton presized{7};
 		CHECK(presized.num_of_states() == 7);
-		CHECK(presized.delta.empty());
+		CHECK(!presized.delta.has_transitions());
 	}
 
 	SECTION("the state space is read off the relation") {
@@ -285,7 +143,7 @@ TEST_CASE("mata::AutomatonBase over a relation defined outside mata") {
 		CHECK(aut.get_reachable_states() == mata::StateSet{0, 1, 2, 3});
 	}
 
-	SECTION("terminating states, which are answered by reverting") {
+	SECTION("terminating states, answered over the predecessors") {
 		CHECK(aut.get_terminating_states() == mata::StateSet{0, 1, 2});
 	}
 
@@ -315,7 +173,7 @@ TEST_CASE("mata::AutomatonBase over a relation defined outside mata") {
 	SECTION("structural comparison compares the relations") {
 		TinyAutomaton same{aut};
 		CHECK(aut.is_identical(same));
-		same.delta.add(2, 'c', 0);
+		same.delta.add(2, 0);
 		CHECK(!aut.is_identical(same));
 	}
 

@@ -177,14 +177,16 @@ concept SuccessorCursorLike = std::semiregular<detail::CursorIterator<C>> && req
 /**
  * @brief A concept for a transition relation an @c mata::AutomatonBase can be built on.
  *
+ * Exactly what the structural algorithms use: a graph over states, with no keys and no post. A relation built from
+ *  @c mata::posts::Post satisfies it, but so does a plain adjacency list.
+ *
  * @note One contract, deliberately whole so the errors are reported immediately, rather
  *  then at the calls inside functions that need them.
  * @note The largest @c State is reserved as "no state": a relation never holds it as a state, so it has at most
  *  that many states.
- * @note The automaton's states can outnumber the relation's: an initial or final state may have no post. The
- *  traversal members (@c for_each_successor(), @c for_each_move(), @c successor_cursor(), @c has_self_loop()) are
- *  called for every state of the automaton, and have to treat a state without a post as one without transitions,
- *  rather than reject it.
+ * @note The automaton's states can outnumber the relation's: an initial or final state may have no transitions
+ *  stored. The traversal members (@c for_each_successor(), @c successor_cursor(), @c has_self_loop()) are called for
+ *  every state of the automaton, and have to treat such a state as one without transitions, rather than reject it.
  */
 template <typename D>
 concept DeltaLike = requires(
@@ -195,31 +197,21 @@ concept DeltaLike = requires(
 	const BoolVector& is_staying,
 	const std::vector<typename D::State>& renaming
 ) {
-	typename D::PostType;
-	requires PostLike<typename D::PostType>;
 	typename D::Target;
 	typename D::State;
 	// A state indexes the relation and every per-state array of the algorithms over it.
 	requires std::unsigned_integral<typename D::State>;
 	requires std::same_as<typename D::State, typename TargetTraits<typename D::Target>::State>;
-	{ D::key_arity } -> std::convertible_to<size_t>;
 	{ D::state_of(t) } -> std::convertible_to<typename D::State>;
 
 	// Structure.
 	{ cd.num_of_states() } -> std::convertible_to<size_t>;
-	{ cd.empty() } -> std::convertible_to<bool>;
 	{ d.allocate(size_t{}) };
 	{ d.clear() };
-
-	/// Reverting writes into a fresh relation and needs a mutable post to write through.
-	{ d.mutable_state_post(s) } -> std::same_as<typename D::PostType&>;
 
 	// Traversal.
 	{
 		cd.for_each_successor(s, [](const typename D::Target&) {})
-	};
-	{
-		cd.for_each_move(s, [](auto&&...) {})
 	};
 	{ cd.successor_cursor(s) } -> SuccessorCursorLike<typename D::Target>;
 	{ cd.has_self_loop(s) } -> std::convertible_to<bool>;

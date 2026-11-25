@@ -64,54 +64,6 @@ template <DeltaLike D> void AutomatonBase<D>::clear() {
 	final.clear();
 }
 
-namespace detail {
-/**
- * @brief Write one visited move back with its source and target exchanged, keys untouched.
- * 
- * @param delta The transition relation to write to.
- * @param source The source state of the move to revert.
- * @param move The move to revert, as a tuple of keys and target.
- * @param Keys An index sequence for the keys in the move.
- */
-template <typename Delta, typename State, typename Move, size_t... Keys>
-void insert_reversed(Delta& delta, const State source, const Move& move, std::index_sequence<Keys...>) {
-	const auto& target{std::get<sizeof...(Keys)>(move)};
-	// The old source becomes the new target, keeping the old target's payload.
-	posts::insert_target(
-		delta.mutable_state_post(Delta::state_of(target)),
-		TargetTraits<typename Delta::Target>::with_state(target, source), std::get<Keys>(move)...
-	);
-}
-} // namespace detail.
-
-template <DeltaLike D>
-AutomatonBase<D> AutomatonBase<D>::reverted() const {
-	AutomatonBase result{};
-	const size_t num_of_states{this->num_of_states()};
-	if constexpr (requires { { delta.reverted(num_of_states) } -> std::convertible_to<D>; }) {
-		// The relation reverts itself, e.g. by a counting sort, cheaper than one sorted insert per transition.
-		result.delta = delta.reverted(num_of_states);
-	} else {
-		// In `else`, so that a relation reverting itself is not also held to the shape of moves this needs.
-		result.delta.allocate(num_of_states);
-		for (State source_state{0}; source_state < num_of_states; ++source_state) {
-			// Every move arrives as `(keys..., target)`, at any arity.
-			// Reverting leaves the keys in the same order.
-			delta.for_each_move(source_state, [&](const auto&... move) {
-				static_assert(sizeof...(move) == D::key_arity + 1, "a move is one key per post, then a target");
-				detail::insert_reversed(
-					result.delta, source_state, std::forward_as_tuple(move...),
-					std::make_index_sequence<sizeof...(move) - 1>{}
-				);
-			});
-		}
-	}
-
-	result.initial = final;
-	result.final = initial;
-	return result;
-}
-
 template <DeltaLike D>
 inline typename AutomatonBase<D>::StateBoolArray AutomatonBase<D>::reachable_states_(
 	const utils::SparseSet<State>& initial_states, const std::optional<const StateBoolArray>& states_to_consider
