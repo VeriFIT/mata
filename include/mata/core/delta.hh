@@ -371,10 +371,10 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	/**
 	 * @brief Copy posts of delta and apply a lambda update function on each state from targets.
 	 *
-	 * @warning In order to work properly, the lambda function needs to be
-	 * monotonic, that is, the order of states in targets cannot change.
+	 * The copied targets stay sorted and duplicate-free, also when @p target_renumberer merges states.
+	 *  A strictly increasing renumberer copies in linear time.
 	 *
-	 * @param target_renumberer Monotonic lambda function mapping states to different states.
+	 * @param target_renumberer Lambda function mapping states to different states.
 	 * @return std::vector<Post> Copied posts.
 	 */
 	std::vector<PostType> renumber_targets(const std::function<State(State)>& target_renumberer) const;

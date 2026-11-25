@@ -213,20 +213,29 @@ template <typename P> bool posts_equal(const P& a, const P& b) {
 }
 
 /**
- * @brief Rebuild @p post with every target renamed by fnction @p rename.
+ * @brief Rebuild @p post with every target renamed by function @p rename.
+ *
+ * The targets stay sorted and duplicate-free for any @p rename. 
+ *  A strictly increasing one costs one comparison per target. 
+ *  One that merges states or reorders them falls back to an ordered insert.
  *
  * @param post The post to rebuild. @c mata::arity_of is used to recurse down to the innermost post.
  * @param rename The callable to apply to each target's state. It must accept a single argument
- *  of type @c state_of<target_of<P>>, return a new state of the same type, and be monotonic with respect to the
- * ordering of states.
+ *  of type @c state_of<target_of<P>> and return a new state of the same type.
  * @return A new post with the same structure as @p post, but with every target's state renamed by @p rename.
  */
 template <typename P, typename Fn> P renumbered(const P& post, Fn&& rename) {
 	P out{};
 	if constexpr (arity_of<P> == 0) {
+		using Traits = TargetTraits<target_of<P>>;
 		for (const target_of<P>& target : post) {
-			using Traits = TargetTraits<target_of<P>>;
-			out.push_back(Traits::with_state(target, rename(Traits::state_of(target))));
+			const target_of<P> renamed{Traits::with_state(target, rename(Traits::state_of(target)))};
+			if (out.empty() || out.back() < renamed) {
+				out.push_back(renamed);
+			} else {
+				// A merged state repeats a target, which this skips, or puts a payload target out of order.
+				out.insert(renamed);
+			}
 		}
 	} else {
 		for (const auto& entry : post) {
