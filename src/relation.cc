@@ -123,6 +123,13 @@ void shift_state_post(StatePost& state_post, const State offset) {
 	}
 }
 
+/// Make room for @p needed number of state posts, growing at least geometrically. 
+void reserve_state_posts(std::vector<StatePost>& state_posts, const size_t needed) {
+	if (needed > state_posts.capacity()) { 
+		state_posts.reserve(std::max(needed, 2 * state_posts.capacity())); 
+	}
+}
+
 void check_append_shifted_range(const State offset, const size_t other_num_of_states) {
 	if (static_cast<size_t>(Limits::max_state) - offset < other_num_of_states) {
 		throw std::overflow_error(
@@ -288,8 +295,8 @@ Delta& Delta::append_shifted(const Delta& other, const State offset) {
 	// Self-append: one controlled snapshot, then the consuming path.
 	if (this == &other) { return append_shifted(Delta{other}, offset); }
 	check_append_shifted_range(offset, other.num_of_states());
+	reserve_state_posts(state_posts_, std::max<size_t>(num_of_states(), offset) + other.num_of_states());
 	if (num_of_states() < offset) { state_posts_.resize(offset); }
-	state_posts_.reserve(state_posts_.size() + other.state_posts_.size());
 	for (const StatePost& other_post : other.state_posts_) {
 		StatePost shifted_post{other_post};
 		shift_state_post(shifted_post, offset);
@@ -303,8 +310,8 @@ Delta& Delta::append_shifted(const Delta& other, const State offset) {
 Delta& Delta::append_shifted(Delta&& other, const State offset) {
 	if (this == &other) { return append_shifted(Delta{other}, offset); }
 	check_append_shifted_range(offset, other.num_of_states());
+	reserve_state_posts(state_posts_, std::max<size_t>(num_of_states(), offset) + other.num_of_states());
 	if (num_of_states() < offset) { state_posts_.resize(offset); }
-	state_posts_.reserve(state_posts_.size() + other.state_posts_.size());
 	for (StatePost& other_post : other.state_posts_) {
 		StatePost shifted_post{std::move(other_post)};
 		shift_state_post(shifted_post, offset);
