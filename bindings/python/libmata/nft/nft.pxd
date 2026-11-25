@@ -13,7 +13,7 @@ from libmata.alphabets cimport CAlphabet, CConstAlphabet, CAlphabetLevels, CLazy
 from libmata.nfa.nfa cimport (
     State, StateSet, StateRenaming, ParameterMap,
     CAutomaton, CDelta, CRun, CTrans, CNfa, CSymbolPost, CEPSILON,
-    ostream, ofstream, stringstream,
+    ostream, ofstream, stringstream, _Version,
 )
 
 cdef extern from "mata/nft/types.hh" namespace "mata::nft":
@@ -273,3 +273,4 @@ cdef class Levels:
 cdef class Nft:
     cdef shared_ptr[CNft] thisptr
     cdef label
+    cdef _Version _version

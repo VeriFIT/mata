@@ -328,7 +328,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	 * @param transition Transition to add.
 	 */
 	void add(const TransitionType& transition) {
-		std::apply([this](const auto&... p) { add(p...); }, TransitionType::parts(transition));
+		std::apply([this](const auto&... p) { this->add(p...); }, TransitionType::parts(transition));
 	}
 
 	/**
@@ -337,7 +337,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	 * @param transition Transition to remove.
 	 */
 	void remove(const TransitionType& transition) {
-		std::apply([this](const auto&... p) { remove(p...); }, TransitionType::parts(transition));
+		std::apply([this](const auto&... p) { this->remove(p...); }, TransitionType::parts(transition));
 	}
 
 	/**
@@ -347,7 +347,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	 * @return True if the relation contains the transition, false otherwise.
 	 */
 	bool contains(const TransitionType& transition) const {
-		return std::apply([this](const auto&... p) { return contains(p...); }, TransitionType::parts(transition));
+		return std::apply([this](const auto&... p) { return this->contains(p...); }, TransitionType::parts(transition));
 	}
 	///@}
 

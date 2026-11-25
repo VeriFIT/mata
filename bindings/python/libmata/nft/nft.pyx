@@ -1,6 +1,6 @@
 from enum import IntEnum
 
-from libc.stdint cimport uint8_t
+from libc.stdint cimport uint8_t, uint64_t
 from libcpp cimport bool
 from libcpp.memory cimport shared_ptr, make_shared, static_pointer_cast, const_pointer_cast
 from libcpp.optional cimport optional
@@ -246,6 +246,7 @@ cdef class Nft:
             CLevels(<size_t>num_of_levels), c_alphabets
         )
         self.label = label
+        self._version = _Version()
 
     @classmethod
     def with_levels(cls, levels, num_of_states = 0, alphabets: alph.AlphabetLevels = None) -> Nft:
@@ -364,6 +365,7 @@ cdef class Nft:
 
         :return: The newly created state.
         """
+        self._version.value += 1
         return self.thisptr.get().add_state()
 
     def add_state(self, State state):
@@ -371,6 +373,7 @@ cdef class Nft:
 
         :return: The requested state.
         """
+        self._version.value += 1
         return self.thisptr.get().add_state(state)
 
     def add_new_state_with_level(self, Level level):
@@ -378,6 +381,7 @@ cdef class Nft:
 
         :return: The newly created state.
         """
+        self._version.value += 1
         return self.thisptr.get().add_state_with_level(level)
 
     def add_state_with_level(self, State state, Level level):
@@ -385,6 +389,7 @@ cdef class Nft:
 
         :return: The requested state.
         """
+        self._version.value += 1
         return self.thisptr.get().add_state_with_level(state, level)
 
     def num_of_states_with_level(self, Level level) -> int:
@@ -432,9 +437,10 @@ cdef class Nft:
         Returns a live view over the automaton's transitions, allowing operations similar to the C++ interface,
         e.g. `nft.delta.add(source, symbol, target)`, `nft.delta.contains(...)`, or iterating `for t in nft.delta`.
         """
-        return mata_nfa.wrap_delta(static_pointer_cast[CAutomaton, CNft](self.thisptr))
+        return mata_nfa.wrap_delta(static_pointer_cast[CAutomaton, CNft](self.thisptr), self._version)
 
     def add_transition_object(self, Transition tr):
+        self._version.value += 1
         self.thisptr.get().delta.add((<mata_nfa.Transition>tr).thisptr)
 
     def add_transition(self, State source, symbols, target = None):
@@ -448,7 +454,9 @@ cdef class Nft:
         """
         cdef vector[Symbol] c_symbols = symbols
         if target is None:
+            self._version.value += 1
             return self.thisptr.get().add_transition_by_levels(source, c_symbols)
+        self._version.value += 1
         return self.thisptr.get().add_transition_by_levels(source, c_symbols, target)
 
     def add_transition_with_length(self, State source, Symbol symbol, size_t length, jump_mode = JumpMode.RepeatSymbol):
@@ -456,21 +464,26 @@ cdef class Nft:
 
         :return: The newly created target state.
         """
+        self._version.value += 1
         return self.thisptr.get().add_transition_with_length(source, symbol, length, _c_jump_mode(jump_mode))
 
     def add_transition_with_target(self, State source, Symbol symbol, State target, jump_mode = JumpMode.RepeatSymbol):
         """Add a single NFT transition from `source` to `target`."""
+        self._version.value += 1
         self.thisptr.get().add_transition_with_target(source, symbol, target, _c_jump_mode(jump_mode))
 
     def add_transition_with_same_level_targets(self, State source, Symbol symbol, targets, jump_mode = JumpMode.RepeatSymbol):
         """Add a NFT transition from `source` to a set of `targets`, sharing the common prefix of the transition."""
         cdef StateSet c_targets = _c_state_set(targets)
+        self._version.value += 1
         self.thisptr.get().add_transition_with_same_level_targets(source, symbol, c_targets, _c_jump_mode(jump_mode))
 
     def remove_trans(self, Transition tr):
+        self._version.value += 1
         self.thisptr.get().delta.remove((<mata_nfa.Transition>tr).thisptr)
 
     def remove_trans_raw(self, State source, Symbol symbol, State target):
+        self._version.value += 1
         self.thisptr.get().delta.remove(source, symbol, target)
 
     def has_transition(self, State source, Symbol symbol, State target):
@@ -480,6 +493,7 @@ cdef class Nft:
         return self.thisptr.get().delta.num_of_transitions()
 
     def clear(self):
+        self._version.value += 1
         self.thisptr.get().clear()
 
     def num_of_states(self) -> int:
@@ -488,15 +502,25 @@ cdef class Nft:
     def iterate(self):
         """Iterates over all transitions.
 
+        The transitions are read live: modifying the automaton while the generator runs invalidates the iterator,
+        and the next advance raises `RuntimeError`.
+
         :return: stream of transitions
         """
+        cdef _Version version = self._version
+        cdef uint64_t start = version.value
         cdef mata_nfa.CTransitions transitions = self.thisptr.get().delta.transitions()
         cdef mata_nfa.CTransitions.const_iterator iterator = transitions.begin()
-        while iterator != transitions.end():
-            trans = Transition()
+        cdef mata_nfa.CTransitions.const_iterator end = transitions.end()
+        while iterator != end:
+            trans = Transition.__new__(Transition)
             (<Transition>trans).copy_from(dereference(iterator))
             preinc(iterator)
             yield trans
+            if version.value != start:
+                raise RuntimeError(
+                    "The automaton was modified during iteration; its transitions iterator is no longer valid."
+                )
 
     def get_trans_as_sequence(self) -> list[Transition]:
         """Get automaton transitions as a sequence.
@@ -550,7 +574,9 @@ cdef class Nft:
         """
         cdef vector[Symbol] c_word = word
         if target is None:
+            self._version.value += 1
             return self.thisptr.get().insert_word(source, c_word)
+        self._version.value += 1
         return self.thisptr.get().insert_word(source, c_word, target)
 
     def insert_word_by_levels(self, State source, word_parts_on_levels, target = None):
@@ -565,7 +591,9 @@ cdef class Nft:
         for part in word_parts_on_levels:
             c_word_parts.push_back(<vector[Symbol]>part)
         if target is None:
+            self._version.value += 1
             return self.thisptr.get().insert_word_by_levels(source, c_word_parts)
+        self._version.value += 1
         return self.thisptr.get().insert_word_by_levels(source, c_word_parts, target)
 
     def insert_identity(self, State state, symbols_or_alphabet = None, jump_mode = JumpMode.RepeatSymbol) -> Nft:
@@ -584,11 +612,14 @@ cdef class Nft:
         cdef CJumpMode c_jump_mode = _c_jump_mode(jump_mode)
         if symbols_or_alphabet is None or isinstance(symbols_or_alphabet, alph.Alphabet):
             c_alphabet = alph.unwrap_alphabet_or_null(symbols_or_alphabet)
+            self._version.value += 1
             self.thisptr.get().insert_identity(state, c_alphabet, c_jump_mode)
         elif isinstance(symbols_or_alphabet, (list, set, tuple)):
             c_symbols = list(symbols_or_alphabet)
+            self._version.value += 1
             self.thisptr.get().insert_identity(state, c_symbols, c_jump_mode)
         else:
+            self._version.value += 1
             self.thisptr.get().insert_identity(state, <Symbol>symbols_or_alphabet, c_jump_mode)
         return self
 
@@ -601,6 +632,7 @@ cdef class Nft:
 
         :return: Nft (self).
         """
+        self._version.value += 1
         self.thisptr.get().trim(NULL)
         return self
 
@@ -610,11 +642,13 @@ cdef class Nft:
         :return: Nft (self), state map of original to new states.
         """
         cdef StateRenaming state_map
+        self._version.value += 1
         self.thisptr.get().trim(&state_map)
         return self, {k: v for k, v in state_map}
 
     def remove_epsilon_inplace(self, Symbol epsilon = EPSILON):
         """Remove simple epsilon transitions in place."""
+        self._version.value += 1
         self.thisptr.get().remove_epsilon(epsilon)
 
     def concatenate(self, Nft other) -> Nft:
@@ -622,6 +656,7 @@ cdef class Nft:
 
         :return: Nft (self).
         """
+        self._version.value += 1
         self.thisptr.get().concatenate(dereference(other.thisptr.get()))
         return self
 
@@ -630,6 +665,7 @@ cdef class Nft:
 
         :return: Nft (self).
         """
+        self._version.value += 1
         self.thisptr.get().unite_nondet_with(dereference(other.thisptr.get()))
         return self
 
@@ -863,8 +899,10 @@ cdef class Nft:
             c_sink_states = optional[vector[State]](<vector[State]>sink_states)
         if alphabet_or_symbols is None or isinstance(alphabet_or_symbols, alph.Alphabet):
             c_alphabet = alph.unwrap_alphabet_or_null(alphabet_or_symbols)
+            self._version.value += 1
             return self.thisptr.get().make_complete(c_alphabet, c_sink_states)
         c_symbols = _c_ord_vector_symbol(alphabet_or_symbols)
+        self._version.value += 1
         return self.thisptr.get().make_complete(c_symbols, c_sink_states)
 
     def resolve_alphabet(self, alph.Alphabet alphabet = None, level = None) -> alph.Alphabet:

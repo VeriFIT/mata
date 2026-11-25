@@ -119,7 +119,7 @@ template <typename D> struct Exposing : D {
 // Ordinary keys run past the reserved ones. Not a ReservedKeys, whose static_assert would reject it.
 struct InvertedTail {
 	using Key = Symbol;
-	static constexpr Symbol epsilon{100};
+	static constexpr Symbol min_epsilon{100};
 	static constexpr Symbol max_ordinary{200};
 	static constexpr bool epsilon_is_greatest{false};
 };

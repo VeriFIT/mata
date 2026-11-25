@@ -117,12 +117,18 @@ cdef void translate_mata_exception() except *:
         raise ExternalSolverNotFound(message.decode("utf-8", "replace"))
 
 
-cdef inline void _check_delta_not_mutated(CDelta* c_delta, uint64_t epoch) except *:
-    """Raise if `c_delta` changed since `epoch` was read: iterators and posts pointing into it are dangling then."""
-    if c_delta.mutation_epoch() != epoch:
+cdef class _Version:
+    # Declared in nfa.pxd.
+    pass
+
+
+cdef inline int _check_not_modified(_Version version, uint64_t start) except -1:
+    """Raise if the automaton was modified since `start` was read: iterators and posts pointing into it may dangle."""
+    if version.value != start:
         raise RuntimeError(
             "The automaton was modified during iteration; its transitions iterator is no longer valid."
         )
+    return 0
 
 
 cdef class Run:
@@ -282,10 +288,14 @@ cdef class SymbolPost:
         return str(self)
 
 
-cdef object wrap_delta(shared_ptr[CAutomaton] automaton_ptr):
-    """Wrap the `delta` member of the automaton behind `automaton_ptr` as a Python `Delta` object."""
+cdef object wrap_delta(shared_ptr[CAutomaton] automaton_ptr, _Version version):
+    """Wrap the `delta` member of the automaton behind `automaton_ptr` as a Python `Delta` object.
+
+    `version` is the modification count of that automaton, so that the view and the automaton share it.
+    """
     result = Delta.__new__(Delta)
     (<Delta>result).automaton_ptr = automaton_ptr
+    (<Delta>result)._version = version
     return result
 
 
@@ -313,6 +323,7 @@ cdef class Delta:
         """
         cdef StateSet targets
         if isinstance(source, Transition):
+            self._version.value += 1
             self.automaton_ptr.get().delta.add((<Transition>source).thisptr)
             return
         if isinstance(symbol, str):
@@ -320,6 +331,7 @@ cdef class Delta:
             if not alphabet:
                 raise Exception(f"Cannot translate symbol '{symbol}' without specified alphabet")
             symbol = alphabet.translate_symbol(symbol)
+        self._version.value += 1
         if isinstance(target, (set, frozenset, list, tuple)):
             targets = StateSet(target)
             self.automaton_ptr.get().delta.add_targets(<State>source, <Symbol>symbol, targets)
@@ -365,6 +377,7 @@ cdef class Delta:
         
         
         # Call the C++ batched import through a helper that uses std::move
+        self._version.value += 1
         __pyx_add_transitions_batch(self.automaton_ptr.get().delta, transitions)
     
     def add_transitions_from(self, triples):
@@ -399,6 +412,7 @@ cdef class Delta:
         
         
         # Call the C++ batched import through a helper that uses std::move
+        self._version.value += 1
         __pyx_add_transitions_batch(self.automaton_ptr.get().delta, transitions)
 
     def remove(self, source, symbol=None, target=None):
@@ -409,6 +423,7 @@ cdef class Delta:
         :param symbol: Symbol of the transition to remove.
         :param target: Target state of the transition to remove.
         """
+        self._version.value += 1
         if isinstance(source, Transition):
             self.automaton_ptr.get().delta.remove((<Transition>source).thisptr)
             return
@@ -435,6 +450,7 @@ cdef class Delta:
 
     def clear(self) -> None:
         """Remove all transitions from Delta."""
+        self._version.value += 1
         self.automaton_ptr.get().delta.clear()
 
     def empty(self) -> bool:
@@ -489,7 +505,8 @@ cdef class Delta:
         :return: Generator of `Transition` instances.
         """
         cdef CDelta* c_delta = &self.automaton_ptr.get().delta
-        cdef uint64_t epoch = c_delta.mutation_epoch()
+        cdef _Version version = self._version
+        cdef uint64_t start = version.value
         cdef CTransitions c_transitions = c_delta.transitions()
         cdef CTransitions.const_iterator iterator = c_transitions.begin()
         cdef CTransitions.const_iterator end = c_transitions.end()
@@ -498,7 +515,7 @@ cdef class Delta:
             (<Transition>trans).copy_from(dereference(iterator))
             preinc(iterator)
             yield trans
-            _check_delta_not_mutated(c_delta, epoch)
+            _check_not_modified(version, start)
 
     def __iter__(self):
         return self.transitions()
@@ -512,7 +529,8 @@ cdef class Delta:
         :return: Generator of Transition instances.
         """
         cdef CDelta* c_delta = &self.automaton_ptr.get().delta
-        cdef uint64_t epoch = c_delta.mutation_epoch()
+        cdef _Version version = self._version
+        cdef uint64_t start = version.value
         cdef const CStatePost* c_state_post = &c_delta[0][source]
         cdef CStatePost.const_iterator c_state_post_it = c_state_post.cbegin()
         cdef const CSymbolPost* c_symbol_post
@@ -529,7 +547,7 @@ cdef class Delta:
                 target = dereference(c_symbol_post_it)
                 preinc(c_symbol_post_it)
                 yield Transition(source, symbol, target)
-                _check_delta_not_mutated(c_delta, epoch)
+                _check_not_modified(version, start)
             preinc(c_state_post_it)
 
     def get_transitions_from(self, State source) -> list[Transition]:
@@ -632,6 +650,7 @@ cdef class Nfa:
             mata_nfa.CNfa(state_number, empty_default_sparse_set, empty_default_sparse_set, c_alphabet)
         )
         self.label = label
+        self._version = _Version()
 
     def deepcopy(self):
         """Deepcopy Nfa using C++ copy constructor."""
@@ -707,7 +726,7 @@ cdef class Nfa:
         Returns a live view over the automaton's transitions, allowing operations similar to the C++ interface,
         e.g. `nfa.delta.add(source, symbol, target)`, `nfa.delta.contains(...)`, or iterating `for t in nfa.delta`.
         """
-        return wrap_delta(static_pointer_cast[CAutomaton, CNfa](self.thisptr))
+        return wrap_delta(static_pointer_cast[CAutomaton, CNfa](self.thisptr), self._version)
 
     def is_state(self, state):
         """Tests if state is in the automaton
@@ -722,6 +741,7 @@ cdef class Nfa:
 
         :return: number of the state
         """
+        self._version.value += 1
         return self.thisptr.get().add_state()
 
     def add_state(self, State state):
@@ -729,6 +749,7 @@ cdef class Nfa:
 
         :return: number of the state
         """
+        self._version.value += 1
         return self.thisptr.get().add_state(state)
 
     def make_initial_state(self, State state):
@@ -802,11 +823,13 @@ cdef class Nfa:
 
     def unify_initial(self, bool force_new_state = False) -> Nfa:
         """Unify initial states into a single new initial state."""
+        self._version.value += 1
         self.thisptr.get().unify_initial(force_new_state)
         return self
 
     def unify_final(self, bool force_new_state = False) -> Nfa:
         """Unify final states into a single new final state."""
+        self._version.value += 1
         self.thisptr.get().unify_final(force_new_state)
         return self
 
@@ -815,6 +838,7 @@ cdef class Nfa:
 
         :param Transition tr: added transition
         """
+        self._version.value += 1
         self.thisptr.get().delta.add(tr.thisptr)
 
     def add_transition(self, State source, symbol, State target, alph.Alphabet alphabet = None):
@@ -829,8 +853,10 @@ cdef class Nfa:
             alphabet = alphabet or store().get('alphabet')
             if not alphabet:
                 raise Exception(f"Cannot translate symbol '{symbol}' without specified alphabet")
+            self._version.value += 1
             self.thisptr.get().delta.add(source, alphabet.translate_symbol(symbol), target)
         else:
+            self._version.value += 1
             self.thisptr.get().delta.add(source, symbol, target)
 
     def remove_trans(self, Transition tr):
@@ -838,6 +864,7 @@ cdef class Nfa:
 
         :param Transition tr: Transition to be removed.
         """
+        self._version.value += 1
         self.thisptr.get().delta.remove(tr.thisptr)
 
     def remove_trans_raw(self, State source, Symbol symbol, State target):
@@ -847,6 +874,7 @@ cdef class Nfa:
         :param Symbol symbol: Symbol of the transition to be removed.
         :param State target: Target state of the transition to be removed.
         """
+        self._version.value += 1
         self.thisptr.get().delta.remove(source, symbol, target)
 
     def has_transition(self, State source, Symbol symbol, State target):
@@ -868,6 +896,7 @@ cdef class Nfa:
 
     def clear(self):
         """Clears all of the internals in the automaton"""
+        self._version.value += 1
         self.thisptr.get().clear()
 
     def num_of_states(self) -> int:
@@ -885,7 +914,8 @@ cdef class Nfa:
         :return: Generator of transitions
         """
         cdef CDelta* c_delta = &self.thisptr.get().delta
-        cdef uint64_t epoch = c_delta.mutation_epoch()
+        cdef _Version version = self._version
+        cdef uint64_t start = version.value
         cdef CTransitions transitions = c_delta.transitions()
         cdef CTransitions.const_iterator iterator = transitions.begin()
         cdef CTransitions.const_iterator end = transitions.end()
@@ -894,7 +924,7 @@ cdef class Nfa:
             (<Transition>trans).copy_from(dereference(iterator))
             preinc(iterator)
             yield trans
-            _check_delta_not_mutated(c_delta, epoch)
+            _check_not_modified(version, start)
 
     def get_transitions_from_state(self, State state):
         """Returns list of SymbolPost for the given state
@@ -925,7 +955,8 @@ cdef class Nfa:
         :return: Generator of Transition instances.
         """
         cdef CDelta* c_delta = &self.thisptr.get().delta
-        cdef uint64_t epoch = c_delta.mutation_epoch()
+        cdef _Version version = self._version
+        cdef uint64_t start = version.value
         cdef const CStatePost* c_state_post = &c_delta[0][source]
         cdef CStatePost.const_iterator c_state_post_it = c_state_post.cbegin()
         cdef const CSymbolPost* c_symbol_post
@@ -942,7 +973,7 @@ cdef class Nfa:
                 target = dereference(c_symbol_post_it)
                 preinc(c_symbol_post_it)
                 yield Transition(source, symbol, target)
-                _check_delta_not_mutated(c_delta, epoch)
+                _check_not_modified(version, start)
             preinc(c_state_post_it)
 
     def get_trans_as_sequence(self):
@@ -1008,6 +1039,7 @@ cdef class Nfa:
          the starting point of a path ending in a final state).
         :return: Nfa.
         """
+        self._version.value += 1
         self.thisptr.get().trim(NULL)
         return self
 
@@ -1021,6 +1053,7 @@ cdef class Nfa:
         :return: Nfa, State map of original to new states.
         """
         cdef StateRenaming state_map
+        self._version.value += 1
         self.thisptr.get().trim(&state_map)
         return self, {k: v for k, v in state_map}
 
@@ -1029,6 +1062,7 @@ cdef class Nfa:
 
         :return: Nfa
         """
+        self._version.value += 1
         self.thisptr.get().concatenate(dereference(other.thisptr.get()))
         return self
 
@@ -1037,6 +1071,7 @@ cdef class Nfa:
 
         :return: Nfa
         """
+        self._version.value += 1
         self.thisptr.get().unite_nondet_with(dereference(other.thisptr.get()))
         return self
 
@@ -1295,6 +1330,7 @@ cdef class Nfa:
 
         :param Symbol epsilon: Symbol representing the epsilon symbol.
         """
+        self._version.value += 1
         self.thisptr.get().remove_epsilon(epsilon)
 
     def epsilon_symbol_posts(self, State state, Symbol epsilon = CEPSILON) -> SymbolPost | None:
@@ -1423,6 +1459,7 @@ cdef class Nfa:
         :param OnTheFlyAlphabet alphabet: alphabet to make complete against.
         :return: True if the automaton was modified, False if already complete.
         """
+        self._version.value += 1
         return self.thisptr.get().make_complete(alphabet.as_base().get(), make_optional[State](sink_state))
 
     def get_symbols(self):

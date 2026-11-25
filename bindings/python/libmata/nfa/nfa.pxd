@@ -98,8 +98,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         CStatePost.const_iterator epsilon_symbol_posts(CStatePost& post, Symbol epsilon)
         void add(vector[CTrans]&) except +
         COrdVector[Symbol] get_used_symbols()
-        # Bumped by every mutation of the transition relation; generators use it to detect invalidated iterators.
-        uint64_t mutation_epoch()
 
 
     cdef cppclass CRun "mata::nfa::Run":
@@ -266,6 +264,14 @@ cdef extern from "mata/nfa/plumbing.hh" namespace "mata::nfa::plumbing":
 # Forward declarations of classes
 #
 # This is needed in order for these classes to be used in other packages.
+cdef class _Version:
+    """Number of binding calls that modified an automaton, shared by the automaton and its `Delta` views.
+
+    The transition generators read live from the automaton: they record the value when they start and raise once it
+    moves, as their iterators may be dangling then. Every binding method that modifies the automaton bumps it.
+    """
+    cdef uint64_t value
+
 cdef class Nfa:
     """Wrapper over NFA automaton.
     
@@ -278,6 +284,7 @@ cdef class Nfa:
     # TODO: Shared pointers bring atomic-count overhead; measure in a loop (create/drop views, call methods) to decide if real.
     cdef shared_ptr[CNfa] thisptr
     cdef label
+    cdef _Version _version
 
 cdef class Transition:
     """Wrapper over a transition: (source, symbol, target).
@@ -295,8 +302,10 @@ cdef class Delta:
     stays valid even if all other Python references to the automaton are dropped.
     """
     cdef shared_ptr[CAutomaton] automaton_ptr
+    # The modification count of the automaton, shared with it.
+    cdef _Version _version
 
-cdef object wrap_delta(shared_ptr[CAutomaton] automaton_ptr)
+cdef object wrap_delta(shared_ptr[CAutomaton] automaton_ptr, _Version version)
 
 cdef extern from "mata/config.hh":
     cdef int CSTATE_BITS "MATA_STATE_BITS"
