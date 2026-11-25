@@ -57,7 +57,7 @@ namespace detail {
  *  The members that treat the nested type as the target set are constrained to that case the same
  *  way, so above it they are absent rather than quietly answering about the nested post.
  */
-template <typename K, typename N, typename R> class PostEntryCore {
+template <typename K, typename N> class PostEntryCore {
   protected:
 	// `targets` first: a small target set (such as @c mata::nfa::SmallStateSet) then leaves tail padding that
 	//  `symbol` fills, so an entry with a single inline target takes 16 bytes and no allocation.
@@ -69,7 +69,6 @@ template <typename K, typename N, typename R> class PostEntryCore {
 	///@{
 	using Key = K; ///< What this entry is keyed by.
 	using Nested = N; ///< The post nested under this key.
-	using Reserved = R; ///< Where this post's ordinary keys stop. @see mata::ReservedKeys.
 	using Target = target_of<Nested>; ///< The target type, in the innermost post.
 
 	const Key& key() const { return symbol; }
@@ -239,12 +238,10 @@ template <typename K, typename N, typename R> class PostEntryCore {
  *
  * @tparam K What this entry is keyed by.
  * @tparam N The post nested under that key: another post, or a @c mata::posts::TargetSetLike at the bottom.
- * @tparam R Where this post's ordinary keys stop.
  */
-template <typename K, typename N, typename R = ReservedKeys<K>>
-class PostEntry : public detail::PostEntryCore<K, N, R> {
+template <typename K, typename N> class PostEntry : public detail::PostEntryCore<K, N> {
   public:
-	using detail::PostEntryCore<K, N, R>::PostEntryCore;
+	using detail::PostEntryCore<K, N>::PostEntryCore;
 }; // class mata::posts::PostEntry.
 
 /// @cond
@@ -255,15 +252,14 @@ class PostEntry : public detail::PostEntryCore<K, N, R> {
  *
  * @tparam K What this post is keyed by.
  * @tparam N The bottommost post nested under this key: a @c mata::posts::TargetSetLike.
- * @tparam R Where this post's ordinary keys stop.
  */
-template <typename K, typename N, typename R>
+template <typename K, typename N>
 	requires(arity_of<N> == 0)
-class PostEntry<K, N, R> : public detail::PostEntryCore<K, N, R> {
+class PostEntry<K, N> : public detail::PostEntryCore<K, N> {
   public:
-	using detail::PostEntryCore<K, N, R>::PostEntryCore;
-	using detail::PostEntryCore<K, N, R>::symbol;
-	using detail::PostEntryCore<K, N, R>::targets;
+	using detail::PostEntryCore<K, N>::PostEntryCore;
+	using detail::PostEntryCore<K, N>::symbol;
+	using detail::PostEntryCore<K, N>::targets;
 
 	/**
 	 * @name Structured bindings
@@ -319,10 +315,12 @@ class PostEntry<K, N, R> : public detail::PostEntryCore<K, N, R> {
  *  and the next level down uses SymbolPost.
  *
  * @tparam E The entry type: one key plus what is nested under it.
+ * @tparam R Where this post's ordinary keys stop. @see mata::ReservedKeys.
  * @tparam A The allocator of the entries. @c mata::StatePost uses @c mata::utils::DeltaAllocator.
  * @see mata::posts::PostLike.
  */
-template <typename E, typename A = std::allocator<E>> class Post : utils::OrdVector<E, A> {
+template <typename E, typename R = ReservedKeys<typename E::Key>, typename A = std::allocator<E>>
+class Post : utils::OrdVector<E, A> {
 	using super = utils::OrdVector<E, A>;
 	using post_iterator = typename super::const_iterator;
 
@@ -334,7 +332,7 @@ template <typename E, typename A = std::allocator<E>> class Post : utils::OrdVec
 	using Key = typename Entry::Key; ///< What this post is keyed by (the symbol, for an NFA).
 	using Nested = typename Entry::Nested; ///< The post (or target set) under one key.
 	using Target = typename Entry::Target; ///< What visiting the successors yields, propagated up.
-	using Reserved = typename Entry::Reserved; ///< Where this post's ordinary keys stop
+	using Reserved = R; ///< Where this post's ordinary keys stop.
 	/// The innermost post: what is left once every key has been supplied.
 	using TargetSet = typename posts::PostAt<Nested, arity_of<Nested>>::type;
 	/// Number of keys from here down to a target.
@@ -579,7 +577,7 @@ template <typename Targets> struct Chain<Targets> {
 template <typename R, typename... Rest>
 	requires(sizeof...(Rest) >= 1) && ReservedKeysLike<R>
 struct Chain<R, Rest...> {
-	using type = Post<PostEntry<typename R::Key, typename Chain<Rest...>::type, R>>;
+	using type = Post<PostEntry<typename R::Key, typename Chain<Rest...>::type>, R>;
 };
 
 /// A position holding a plain key type: the post takes the default reserved tail.
@@ -612,17 +610,17 @@ template <typename... Ts> using PostChain = typename detail::Chain<Ts...>::type;
 /// Tuple protocol for the entries that expose their fields, for structured bindings.
 ///  @see mata::posts::PostEntry::get().
 ///@{
-template <typename K, typename N, typename R>
+template <typename K, typename N>
 	requires(mata::posts::arity_of<N> == 0)
-struct std::tuple_size<mata::posts::PostEntry<K, N, R>> : std::integral_constant<std::size_t, 2> {};
-template <typename K, typename N, typename R>
+struct std::tuple_size<mata::posts::PostEntry<K, N>> : std::integral_constant<std::size_t, 2> {};
+template <typename K, typename N>
 	requires(mata::posts::arity_of<N> == 0)
-struct std::tuple_element<0, mata::posts::PostEntry<K, N, R>> {
+struct std::tuple_element<0, mata::posts::PostEntry<K, N>> {
 	using type = K;
 };
-template <typename K, typename N, typename R>
+template <typename K, typename N>
 	requires(mata::posts::arity_of<N> == 0)
-struct std::tuple_element<1, mata::posts::PostEntry<K, N, R>> {
+struct std::tuple_element<1, mata::posts::PostEntry<K, N>> {
 	using type = N;
 };
 ///@}

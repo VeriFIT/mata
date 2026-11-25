@@ -27,9 +27,9 @@ using namespace mata;
 
 /// @name Instantiations on (State, Symbol, SmallStateSet) relation and automaton.
 /// @{
-template class mata::posts::detail::PostEntryCore<mata::Symbol, mata::SmallStateSet, mata::ReservedKeys<mata::Symbol>>;
+template class mata::posts::detail::PostEntryCore<mata::Symbol, mata::SmallStateSet>;
 template class mata::posts::PostEntry<mata::Symbol, mata::SmallStateSet>;
-template class mata::posts::Post<mata::SymbolPost, mata::utils::DeltaAllocator<mata::SymbolPost>>;
+template class mata::posts::Post<mata::SymbolPost, mata::ReservedKeys<mata::Symbol>, mata::utils::DeltaAllocator<mata::SymbolPost>>;
 template class mata::posts::PostMoves<mata::StatePost::Base>;
 
 template class mata::posts::KeyedAccess<mata::Delta::Base, mata::StatePost>;

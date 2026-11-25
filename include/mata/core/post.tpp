@@ -9,8 +9,8 @@
 
 namespace mata::posts::detail {
 
-template <typename K, typename N, typename R>
-PostEntryCore<K, N, R>& PostEntryCore<K, N, R>::operator=(PostEntryCore&& rhs) noexcept(
+template <typename K, typename N>
+PostEntryCore<K, N>& PostEntryCore<K, N>::operator=(PostEntryCore&& rhs) noexcept(
 	std::is_nothrow_move_assignable_v<N> && std::is_nothrow_move_assignable_v<K>
 ) {
 	// Self-assignment is checked by address: operator== compares only the key, so a by-value check
@@ -22,8 +22,8 @@ PostEntryCore<K, N, R>& PostEntryCore<K, N, R>::operator=(PostEntryCore&& rhs) n
 	return *this;
 }
 
-template <typename K, typename N, typename R>
-bool PostEntryCore<K, N, R>::insert(const Target s)
+template <typename K, typename N>
+bool PostEntryCore<K, N>::insert(const Target s)
 	requires(arity_of<N> == 0)
 {
 	if (targets.empty() || last_target(targets) < s) {
@@ -41,8 +41,8 @@ bool PostEntryCore<K, N, R>::insert(const Target s)
 	}
 }
 
-template <typename K, typename N, typename R>
-size_t PostEntryCore<K, N, R>::insert(const std::span<const Target> states)
+template <typename K, typename N>
+size_t PostEntryCore<K, N>::insert(const std::span<const Target> states)
 	requires(arity_of<N> == 0)
 {
 	const size_t old_size{targets.size()};
@@ -55,8 +55,8 @@ size_t PostEntryCore<K, N, R>::insert(const std::span<const Target> states)
 	return targets.size() - old_size;
 }
 
-template <typename K, typename N, typename R>
-void PostEntryCore<K, N, R>::insert(const Nested& states)
+template <typename K, typename N>
+void PostEntryCore<K, N>::insert(const Nested& states)
 	requires(arity_of<N> == 0)
 {
 	if constexpr (requires { std::span<const Target>{states.begin(), states.end()}; }) {

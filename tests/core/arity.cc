@@ -92,7 +92,7 @@ using Delta = posts::DeltaBase<StatePost, TransitionTraits>;
 // The library ships concrete classes in the chain RelationOf builds: the entry derives from the chain's entry,
 //  the post is the chain's post of that entry. Neither adds state.
 static_assert(std::derived_from<SymbolPost, posts::PostChain<Symbol, SmallStateSet>::Entry>);
-static_assert(std::derived_from<StatePost, posts::Post<SymbolPost, utils::DeltaAllocator<SymbolPost>>>);
+static_assert(std::derived_from<StatePost, posts::Post<SymbolPost, ReservedKeys<Symbol>, utils::DeltaAllocator<SymbolPost>>>);
 // The state post's entries come from the Delta allocator, as the spilled target sets do.
 static_assert(std::same_as<StatePost::VectorType::allocator_type, utils::DeltaAllocator<SymbolPost>>);
 static_assert(std::same_as<Delta::Base, posts::DeltaBase<StatePost, mata::TransitionTraits>>);
@@ -117,7 +117,7 @@ static_assert(HasEntryFields<D1::Entry>);
 static_assert(!HasEntryFields<D2::Entry> && !HasEntryFields<D3::Entry>);
 static_assert(HasEntryFields<D2::Entry::Nested::Entry>);
 // No extra storage, and noexcept moves so that std::vector relocates by move.
-static_assert(sizeof(D1::Entry) == sizeof(posts::detail::PostEntryCore<Symbol, SmallStateSet, ReservedKeys<Symbol>>));
+static_assert(sizeof(D1::Entry) == sizeof(posts::detail::PostEntryCore<Symbol, SmallStateSet>));
 static_assert(std::is_nothrow_move_constructible_v<D1::Entry> && std::is_nothrow_move_assignable_v<D1::Entry>);
 static_assert(std::is_nothrow_move_constructible_v<D2::Entry> && std::is_nothrow_move_assignable_v<D2::Entry>);
 
