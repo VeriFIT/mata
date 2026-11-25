@@ -1,0 +1,39 @@
+; Abstract regular model checking (Bouajjani, Habermehl, Vojnar, CAV 2004) with the finite-length abstraction.
+;
+; Configurations are words, one letter per process; STEP is a length-preserving two-level transducer. The loop
+; over-approximates the reachable configurations, merging the states of their automaton whose languages agree on
+; words up to length n. When the abstraction meets a bad configuration, the backward search from the bad ones
+; decides whether the error is real; when it is spurious, n grows and the loop starts over.
+;
+;   mata script run --param initial-regex='tn*' --param bad-regex='n*tn*' --param symbols='n t' \
+;     examples/rmc/armc.matasc examples/rmc/token-passing.mata
+(mata-script "0.1.0" :requires (lazy transducers))
+(set-option :alphabet "bytes")
+(set-option :loops-and-recursion true)
+(declare-input step Nft)
+(declare-param initial-regex String)   ; the initial configurations
+(declare-param bad-regex String)       ; the safe configurations; their complement is bad
+(declare-param symbols String)         ; the letters of a configuration, space-separated
+
+(define initial (nfa:create-from-regex initial-regex))
+(define bad (nfa:complement (nfa:create-from-regex bad-regex)))
+(define backward (nft:invert-levels step))
+(define (post (r Nfa)) (nft:to-nfa (nft:apply step r)))
+(define (pre (r Nfa)) (nfa:minimize (nft:to-nfa (nft:apply backward r))))
+
+; Whether some initial configuration reaches a bad one in ROUNDS steps.
+(define (real-error? (rounds Int))
+  (not (nfa:intersection-empty? initial
+    (loop ((r bad) (i 0)) (if (< i rounds) (recur (pre r) (+ i 1)) r)))))
+
+; One abstract fixpoint at length N: "safe", "unsafe after K steps", or "spurious".
+(define (abstract-fixpoint (n Int))
+  (loop ((reached (nfa:collapse-by-length initial n)) (round 0))
+    (if (not (lazy:empty? (lazy:intersection (lazy:leaf reached) (lazy:leaf bad)) :alphabet symbols))
+      (if (real-error? round) (concat "unsafe, steps: " (to-string round)) "spurious")
+      (let ((next (nfa:collapse-by-length (nfa:union-nondeterministic reached (post reached)) n)))
+        (if (nfa:included? next reached) "safe" (recur next (+ round 1)))))))
+
+(echo (loop ((n 0))
+  (let ((verdict (abstract-fixpoint n)))
+    (if (= verdict "spurious") (recur (+ n 1)) (concat verdict ", length " (to-string n))))))

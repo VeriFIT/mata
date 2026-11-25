@@ -2970,6 +2970,66 @@ fn the_optimizer_calls_one_operation_for_an_intersection_emptiness_and_runs_it_o
 	);
 }
 
+/// Decisions over operations on automata, which the optimizer runs as lazy queries.
+const LAZIFIED: &str = "(set-option :trace true)\n\
+	(define a (nfa:create-from-regex \"a(a|b)*\"))\n(define b (nfa:create-from-regex \"(a|b)*b\"))\n\
+	(print (nfa:included? (nfa:intersection a b) a))\n\
+	(print (nfa:equivalent? (nfa:union-nondeterministic a b) (nfa:union-nondeterministic b a)))\n\
+	(print (nfa:universal? (nfa:union-nondeterministic a (nfa:complement a))))\n\
+	(print (nfa:universal? (nfa:union-nondeterministic a b)))\n\
+	(print (nfa:language-empty? (nfa:language-difference a (nfa:minimize (nfa:determinize a)))))\n\
+	(print (nfa:language-empty? (nfa:intersection a (nfa:complement b))))\n\
+	(print (nfa:equivalent? a (nfa:intersection a b)))\n\
+	(print (nfa:language-empty? (nfa:intersection a b)))\n";
+
+#[test]
+fn the_optimizer_runs_a_decision_over_operations_as_one_lazy_query() {
+	let script =
+		format!("(set-option :alphabet \"bytes\")\n(set-option :optimize true)\n{LAZIFIED}");
+	let output = run_script(&script, true, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	let written = run_script(
+		&script.replace("(set-option :optimize true)\n", ""),
+		true,
+		&[],
+	);
+	assert_eq!(status(&written), 0, "{}", stderr(&written));
+	assert_eq!(stdout(&output), stdout(&written));
+	assert_eq!(
+		stdout(&output),
+		"true\ntrue\ntrue\nfalse\ntrue\nfalse\nfalse\nfalse\n"
+	);
+	// No operation of the operands is built; the plain intersection emptiness stays a library call.
+	let trace = stderr(&output);
+	let mut expected = vec!["mata: trace: lazy:empty?"; 7];
+	expected.push("mata: trace: nfa:intersection-empty?");
+	assert_eq!(
+		trace.lines().skip(2).collect::<Vec<_>>(),
+		expected,
+		"{trace}"
+	);
+}
+
+#[test]
+fn the_optimizer_applies_a_complement_whose_operand_reads_symbols_outside_the_script_alphabet() {
+	// Under "on-the-fly", the byte symbols of regular expressions are not in the script alphabet, which the
+	// complement is taken over; a lazy query would complement over them too.
+	let script = format!("(set-option :optimize true)\n{LAZIFIED}");
+	let output = run_script(&script, true, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	let written = run_script(
+		&script.replace("(set-option :optimize true)\n", ""),
+		true,
+		&[],
+	);
+	assert_eq!(stdout(&output), stdout(&written));
+	assert!(
+		stderr(&output).contains("mata: trace: nfa:complement\nmata: trace: nfa:union-nondeterministic\nmata: trace: nfa:universal?\n"),
+		"{}",
+		stderr(&output)
+	);
+}
+
 #[test]
 fn the_optimizer_leaves_out_a_definition_nothing_reads() {
 	let workspace = Workspace::new("optimizer-dead");
@@ -3636,6 +3696,47 @@ fn a_token_passing_step_checks_the_same_lazily_and_eagerly() {
 }
 
 #[test]
+fn the_regular_model_checking_examples_reach_their_verdicts() {
+	// `examples/rmc/armc.matasc`: abstraction by `nfa:collapse-by-length`, refined when an error is spurious.
+	let examples = format!("{}/../../../examples/rmc", env!("CARGO_MANIFEST_DIR"));
+	let token = [
+		"--param",
+		"initial-regex=tn*",
+		"--param",
+		"bad-regex=n*tn*",
+		"--param",
+		"symbols=n t",
+	];
+	let burns = [
+		"--param",
+		"initial-regex=0*",
+		"--param",
+		"bad-regex=[0-4]*(5[0-4]*)?",
+		"--param",
+		"symbols=0 1 2 3 4 5",
+	];
+	for (system, parameters, verdict) in [
+		("token-passing", token, "safe, length 1"),
+		("token-copying", token, "unsafe, steps: 1, length 1"),
+		("burns", burns, "safe, length 1"),
+		("burns-broken", burns, "unsafe, steps: 10, length 1"),
+	] {
+		let script = format!("{examples}/armc.matasc");
+		let input = format!("{examples}/{system}.mata");
+		let mut arguments = vec!["script", "run"];
+		arguments.extend(parameters);
+		arguments.extend([script.as_str(), input.as_str()]);
+		let output = mata(arguments);
+		assert_eq!(status(&output), 0, "{system}: {}", stderr(&output));
+		assert_eq!(stdout(&output), format!("{verdict}\n"), "{system}");
+	}
+	let invariant = format!("{examples}/inductive-invariant.matasc");
+	let output = mata(["script", "run", invariant.as_str()]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "no reachable 0: true\n");
+}
+
+#[test]
 fn a_lazy_complement_is_taken_over_the_alphabet_of_the_query() {
 	let script = "(mata-script \"0.1.0\" :requires (lazy))\n\
 	              (set-option :alphabet \"bytes\")\n\
@@ -3694,11 +3795,13 @@ fn lazy_plans_policies_and_json_round_trips_preserve_the_answer() {
 	              (check \"all lazy\" (lazy:empty? a-and-b-and-c :policy \"lazy\"))\n\
 	              (check \"all eager\" (lazy:empty? a-and-b-and-c :policy \"eager\"))\n\
 	              (check \"heuristic\" (lazy:empty? a-and-b-and-c :policy \"heuristic\" :heuristic-max-states 64))\n\
+	              (check \"portfolio\" (lazy:empty? a-and-b-and-c :policy \"portfolio\"))\n\
 	              (print (lazy:stats \"annotated\" (lazy:empty? a-and-b-and-c)))\n\
 	              (print (lazy:stats \"external\" (lazy:empty? a-and-b-and-c :plan (lazy:plan))))\n\
 	              (print (lazy:stats \"all lazy\" (lazy:empty? a-and-b-and-c :policy \"lazy\")))\n\
 	              (print (lazy:stats \"all eager\" (lazy:empty? a-and-b-and-c :policy \"eager\")))\n\
 	              (print (lazy:stats \"heuristic\" (lazy:empty? a-and-b-and-c :policy \"heuristic\" :heuristic-max-states 64)))\n\
+	              (print (lazy:stats \"portfolio\" (lazy:empty? a-and-b-and-c :policy \"portfolio\")))\n\
 	              (print (lazy:plan))\n\
 	              (print (lazy:view a-and-b-and-c))";
 	let output = run_script(script, true, &[]);
@@ -3710,6 +3813,7 @@ fn lazy_plans_policies_and_json_round_trips_preserve_the_answer() {
 		"all lazy: false",
 		"all eager: false",
 		"heuristic: false",
+		"portfolio: false",
 	] {
 		assert!(text.contains(answer), "{text}");
 	}
@@ -3719,6 +3823,12 @@ fn lazy_plans_policies_and_json_round_trips_preserve_the_answer() {
 	}
 	assert_eq!(records["all lazy.explicit"], "0", "{text}");
 	assert_eq!(records["all eager.explicit"], "2", "{text}");
+	assert!(
+		["0", "1", "2"].contains(&records["portfolio.plan"].as_str()),
+		"{text}"
+	);
+	// Only a portfolio has a plan that answered.
+	assert!(!records.contains_key("all eager.plan"), "{text}");
 	for fragment in [
 		"\"swapped\"",
 		"\"eager\"",

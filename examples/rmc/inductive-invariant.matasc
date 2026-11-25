@@ -1,0 +1,44 @@
+(mata-script "0.1.0" :requires (lazy transducers))
+(set-option :alphabet "bytes")
+
+; Regular abstraction frameworks (CONCUR 2024): an abstract transition relation delta over Γ = {A, B}, read through
+; an interpretation v ⊆ Γ* × Σ* with Σ = {0, 1}, proves that from 1 no 0 is reachable.
+;   ind    = ¬π₀(id(Γ*) ∩ (delta ∘ ¬v ∘ v⁻¹))   abstract states whose successors stay interpretable
+;   preach = ¬(v⁻¹ ∘ id(ind) ∘ ¬v)               concrete states that every interpretation keeps in ind
+;   post(initial, preach) ∩ unsafe = ∅         safe
+(define (letterwise pairs) (lazy:leaf (nft:parse pairs)))
+(define delta (letterwise "@NFT-explicit
+%Alphabet-auto
+%Initial q
+%Final q
+%Levels q:0 m0:1 m1:1
+%LevelsNum 2
+q A m0
+m0 B q
+q B m1
+m1 B q
+"))
+(define v (letterwise "@NFT-explicit
+%Alphabet-auto
+%Initial q
+%Final q
+%Levels q:0 m0:1 m1:1
+%LevelsNum 2
+q A m0
+m0 0 q
+q B m1
+m1 1 q
+"))
+(define v-inverse (lazy:project v (list 1 0)))
+(define not-v (lazy:complement v))
+
+(define initial (lazy:leaf (nfa:create-from-regex "1")))
+(define unsafe (lazy:leaf (nfa:create-from-regex "0")))
+(define gamma-star (lazy:leaf (nfa:create-from-regex "(A|B)*")))
+
+(define conflicts (lazy:compose (lazy:compose delta not-v) v-inverse))
+(define bad-sources (lazy:explicit (lazy:project (lazy:intersection (lazy:identity gamma-star) conflicts) (list 0))))
+(define ind (lazy:complement bad-sources))
+(define preach (lazy:complement (lazy:compose (lazy:compose v-inverse (lazy:identity ind)) not-v)))
+
+(check "no reachable 0" (lazy:empty? (lazy:intersection (lazy:post-image initial preach) unsafe)))

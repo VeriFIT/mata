@@ -438,6 +438,14 @@ pub mod ffi {
 		fn decode_utf8(nfa: &Nfa) -> Result<UniquePtr<Nfa>>;
 		/// The automaton with every transition relabelled to `abstract_symbol`.
 		fn one_letter_automaton(nfa: &Nfa, abstract_symbol: u32) -> Result<UniquePtr<Nfa>>;
+		/// The finite-length abstraction: states with equal languages up to `length` merged; `traces` treats every
+		/// state as final.
+		fn collapse_by_length(
+			nfa: &Nfa,
+			length: usize,
+			traces: bool,
+			direction: Direction,
+		) -> Result<UniquePtr<Nfa>>;
 		/// Whether every strongly connected component is a simple cycle.
 		fn is_flat(nfa: &Nfa) -> Result<bool>;
 		/// Whether some prefix of `word` is accepted; `use_epsilon` follows epsilon transitions.

@@ -1,6 +1,8 @@
 //! The further NFA operations of the library, on hand-written cases.
 
-use mata::{Alphabet, Error, Nfa, ProductFinalCondition, Requirement, Symbol, word_from_bytes};
+use mata::{
+	Alphabet, Direction, Error, Nfa, ProductFinalCondition, Requirement, Symbol, word_from_bytes,
+};
 
 #[test]
 fn concatenation_over_epsilon_keeps_the_joining_epsilon_transitions() -> Result<(), Error> {
@@ -122,6 +124,34 @@ fn one_letter_automaton_renames_every_symbol() {
 	let abstracted = word.one_letter_automaton(Symbol::from(b'x'));
 	assert!(abstracted.accepts(&[Symbol::from(b'x'), Symbol::from(b'x')]));
 	assert!(!abstracted.accepts(&[Symbol::from(b'a'), Symbol::from(b'b')]));
+}
+
+#[test]
+fn collapse_by_length_over_approximates_until_the_length_separates_states() -> Result<(), Error> {
+	let four = Nfa::from_regex("aaaa")?;
+	let coarse = four.collapse_by_length(1, false, Direction::Forward);
+	assert!(four.is_included_in(&coarse));
+	assert!(coarse.accepts(&word_from_bytes("aa")) && !coarse.accepts(&word_from_bytes("a")));
+	assert!(
+		four.collapse_by_length(4, false, Direction::Forward)
+			.is_equivalent_to(&four)
+	);
+	let prefixes = four.collapse_by_length(4, true, Direction::Forward);
+	assert!(prefixes.accepts(&word_from_bytes("aa")));
+	let backward = Nfa::from_regex("aaaab")?.collapse_by_length(1, false, Direction::Backward);
+	assert!(backward.accepts(&word_from_bytes("aab")));
+	Ok(())
+}
+
+#[test]
+fn collapse_by_length_reads_epsilon_as_the_empty_word() -> Result<(), Error> {
+	// Through the binding, an epsilon transition is no letter: at a length that separates every state, the result
+	// is the language, not the epsilon-free words around it.
+	let joined = Nfa::from_regex("a")?.concat_over_epsilon(&Nfa::from_regex("b")?);
+	let abstraction = joined.collapse_by_length(3, false, Direction::Forward);
+	assert!(abstraction.is_equivalent_to(&Nfa::from_regex("ab")?));
+	assert!(!abstraction.accepts(&word_from_bytes("b")));
+	Ok(())
 }
 
 #[test]

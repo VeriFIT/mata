@@ -2,16 +2,19 @@
 
 use std::hash::BuildHasher;
 use std::sync::OnceLock;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use hashbrown::HashTable;
 use indexmap::IndexSet;
 use parking_lot::Mutex;
-use rustc_hash::FxBuildHasher;
+use rustc_hash::{FxBuildHasher, FxHashMap};
 
 use crate::ids::{Id, StateId};
-use crate::simulation::{Simulation, TimedOut};
+use crate::simulation::{Simulation, TimedOut, Until};
 use crate::{Automaton, Error, Symbol};
+
+/// How long a query waits for another one's simulation before it reads its cancellation again.
+const LOCK_SLICE: Duration = Duration::from_millis(10);
 
 /// Transitions collected before trimming and sorting.
 #[derive(Debug)]
@@ -59,6 +62,10 @@ impl Raw {
 		self.push(source, tuple, target);
 	}
 
+	pub(crate) fn num_moves(&self) -> usize {
+		self.edges.len()
+	}
+
 	fn tuple(&self, edge: usize) -> &[Symbol] {
 		&self.letters[edge * self.arity..(edge + 1) * self.arity]
 	}
@@ -69,6 +76,493 @@ impl Raw {
 		self.edges.append(&mut moves.edges);
 		self.letters.append(&mut moves.letters);
 		(start, self.edges.len())
+	}
+
+	/// The tuple of every move, numbered in the order of the distinct tuples.
+	fn labels(&self) -> Vec<usize> {
+		let mut tuples: Vec<&[Symbol]> =
+			(0..self.edges.len()).map(|edge| self.tuple(edge)).collect();
+		tuples.sort_unstable();
+		tuples.dedup();
+		(0..self.edges.len())
+			.map(|edge| {
+				tuples
+					.binary_search(&self.tuple(edge))
+					.expect("the tuple of a move")
+			})
+			.collect()
+	}
+
+	/// The quotient by the coarsest forward bisimulation, which keeps the language on every tape: the partition
+	/// refinement of Paige and Tarjan, by letter. Blocks are kept stable with respect to a coarser partition of
+	/// compound sets, counting for every state and letter its moves into each compound set; a compound set of
+	/// several blocks loses its smaller one, and only the moves into that block are visited, so every move is
+	/// visited O(log n) times. [`Stopped`] when `stop` says so (it is asked once per block taken out, and per move
+	/// visited).
+	pub(crate) fn quotient(&self, stop: &mut dyn FnMut() -> bool) -> Result<Raw, Stopped> {
+		let num_states = self.finals.len();
+		let num_edges = self.edges.len();
+		let label = self.labels();
+		let tail = |edge: usize| self.edges[edge].0.index();
+		let mut incoming: Vec<Vec<usize>> = vec![Vec::new(); num_states];
+		for (edge, &(_, target)) in self.edges.iter().enumerate() {
+			incoming[target.index()].push(edge);
+		}
+		let mut blocks = self.blocks_by_letters(&label);
+
+		// The moves of a state with a letter into a compound set, counted in one cell.
+		let mut counts: Vec<usize> = Vec::new();
+		let mut cells: FxHashMap<(usize, usize), usize> = FxHashMap::default();
+		let mut edge_cell: Vec<usize> = (0..num_edges)
+			.map(|edge| {
+				let cell = *cells.entry((tail(edge), label[edge])).or_insert_with(|| {
+					counts.push(0);
+					counts.len() - 1
+				});
+				counts[cell] += 1;
+				cell
+			})
+			.collect();
+
+		let mut compound_of: Vec<usize> = vec![0; num_states.max(1)];
+		let mut compounds: Vec<Vec<usize>> = vec![(0..blocks.sets).collect()];
+		let mut splittable: Vec<usize> = if blocks.sets > 1 { vec![0] } else { Vec::new() };
+		let size = |blocks: &Partition, block: usize| blocks.past[block] - blocks.first[block];
+		while let Some(&compound) = splittable.last() {
+			if stop() {
+				return Err(Stopped);
+			}
+			let last = compounds[compound].len() - 1;
+			let (one, other) = (compounds[compound][last], compounds[compound][last - 1]);
+			let splitter =
+				compounds[compound].swap_remove(if size(&blocks, one) <= size(&blocks, other) {
+					last
+				} else {
+					last - 1
+				});
+			if compounds[compound].len() < 2 {
+				splittable.pop();
+			}
+			compound_of[splitter] = compounds.len();
+			compounds.push(vec![splitter]);
+
+			// Moves into the splitter get new cells; per state and letter, the old cell then counts its moves
+			// into the rest of the compound set.
+			// A fresh map: clearing the first one, with a slot per move, would cost that much per splitter.
+			let mut cells: FxHashMap<(usize, usize), usize> = FxHashMap::default();
+			let mut entries: Vec<(usize, usize, usize)> = Vec::new();
+			for position in blocks.first[splitter]..blocks.past[splitter] {
+				for &edge in &incoming[blocks.elements[position]] {
+					if stop() {
+						return Err(Stopped);
+					}
+					let old = edge_cell[edge];
+					let cell = *cells.entry((tail(edge), label[edge])).or_insert_with(|| {
+						entries.push((tail(edge), label[edge], old));
+						counts.push(0);
+						counts.len() - 1
+					});
+					counts[old] -= 1;
+					counts[cell] += 1;
+					edge_cell[edge] = cell;
+				}
+			}
+
+			// A state with moves into the splitter is told apart by the letters of those moves and whether it
+			// has a move with the same letter into the rest; the states without such moves keep their block.
+			entries.sort_unstable();
+			let mut touched: FxHashMap<usize, KeyGroups> = FxHashMap::default();
+			for moves in entries.chunk_by(|a, b| a.0 == b.0) {
+				let state = moves[0].0;
+				let key = moves
+					.iter()
+					.map(|&(_, letter, old)| (letter, counts[old] > 0))
+					.collect();
+				touched
+					.entry(blocks.set[state])
+					.or_default()
+					.entry(key)
+					.or_default()
+					.push(state);
+			}
+			for (block, groups) in touched {
+				let all = groups.values().map(Vec::len).sum::<usize>() == size(&blocks, block);
+				for group in groups.into_values().skip(usize::from(all)) {
+					for state in group {
+						blocks.mark(state);
+					}
+					blocks.split();
+				}
+			}
+			for (new, parent) in blocks.created.drain(..) {
+				let compound = compound_of[parent];
+				compound_of[new] = compound;
+				compounds[compound].push(new);
+				if compounds[compound].len() == 2 {
+					splittable.push(compound);
+				}
+			}
+		}
+
+		Ok(self.merged(&blocks))
+	}
+
+	/// The states split by finality and the letters of their moves, so that the blocks are stable with respect to
+	/// the one compound set of all states.
+	fn blocks_by_letters(&self, label: &[usize]) -> Partition {
+		let num_states = self.finals.len();
+		let mut letters: Vec<Vec<usize>> = vec![Vec::new(); num_states];
+		for (edge, &(source, _)) in self.edges.iter().enumerate() {
+			letters[source.index()].push(label[edge]);
+		}
+		let mut blocks = Partition::new(num_states);
+		let mut groups: FxHashMap<(bool, Vec<usize>), Vec<usize>> = FxHashMap::default();
+		for (state, mut state_letters) in letters.into_iter().enumerate() {
+			state_letters.sort_unstable();
+			state_letters.dedup();
+			groups
+				.entry((self.finals[state], state_letters))
+				.or_default()
+				.push(state);
+		}
+		for group in groups.into_values().skip(1) {
+			for state in group {
+				blocks.mark(state);
+			}
+			blocks.split();
+		}
+		blocks.created.clear();
+		blocks
+	}
+
+	/// `self` with the states of every block of `blocks` merged.
+	fn merged(&self, blocks: &Partition) -> Raw {
+		let mut quotient = Raw::new(self.arity);
+		quotient.finals = vec![false; blocks.sets];
+		for state in (0..self.finals.len()).filter(|&state| self.finals[state]) {
+			quotient.finals[blocks.set[state]] = true;
+		}
+		quotient.initial = self
+			.initial
+			.iter()
+			.map(|state| StateId::new(blocks.set[state.index()]))
+			.collect();
+		quotient.initial.sort_unstable();
+		quotient.initial.dedup();
+		let mut moves: Vec<(usize, &[Symbol], usize)> = (0..self.edges.len())
+			.map(|edge| {
+				let (source, target) = self.edges[edge];
+				(
+					blocks.set[source.index()],
+					self.tuple(edge),
+					blocks.set[target.index()],
+				)
+			})
+			.collect();
+		moves.sort_unstable();
+		moves.dedup();
+		for (source, tuple, target) in moves {
+			quotient.push(StateId::new(source), tuple, StateId::new(target));
+		}
+		quotient
+	}
+
+	/// The subset construction over the tuples of `self`: `Ok(None)` once it has more than `max_states` states, its
+	/// subsets more than `max_members` members in all or it more than `max_moves` moves, [`Stopped`] when `stop`
+	/// says so (it is asked once per subset and per move).
+	pub(crate) fn determinize(
+		&self,
+		max_states: usize,
+		max_members: usize,
+		max_moves: usize,
+		stop: &mut dyn FnMut() -> bool,
+	) -> Result<Option<Raw>, Stopped> {
+		let mut outgoing: Vec<Vec<usize>> = vec![Vec::new(); self.finals.len()];
+		for (edge, &(source, _)) in self.edges.iter().enumerate() {
+			outgoing[source.index()].push(edge);
+		}
+
+		let mut start = self.initial.clone();
+		start.sort_unstable();
+		start.dedup();
+		let mut members = start.len();
+		let mut subsets: IndexSet<Vec<StateId>, FxBuildHasher> = IndexSet::default();
+		subsets.insert(start);
+		let mut dfa = Raw::new(self.arity);
+		dfa.initial.push(StateId::new(0));
+		let mut next = 0;
+		while next < subsets.len() {
+			if stop() {
+				return Err(Stopped);
+			}
+
+			let mut moves: Vec<(&[Symbol], StateId)> = Vec::new();
+			for state in &subsets[next] {
+				if stop() {
+					return Err(Stopped);
+				}
+				moves.extend(
+					outgoing[state.index()]
+						.iter()
+						.map(|&edge| (self.tuple(edge), self.edges[edge].1)),
+				);
+			}
+			moves.sort_unstable();
+			moves.dedup();
+			dfa.finals
+				.push(subsets[next].iter().any(|state| self.finals[state.index()]));
+			for group in moves.chunk_by(|a, b| a.0 == b.0) {
+				if stop() {
+					return Err(Stopped);
+				}
+				if dfa.edges.len() == max_moves {
+					return Ok(None);
+				}
+				let target: Vec<StateId> = group.iter().map(|&(_, target)| target).collect();
+				let size = target.len();
+				let (index, new) = subsets.insert_full(target);
+				// Checked as each subset is found, so a state with many new targets does not emit them all first.
+				if new {
+					members += size;
+					if subsets.len() > max_states || members > max_members {
+						return Ok(None);
+					}
+				}
+				dfa.push(StateId::new(next), group[0].0, StateId::new(index));
+			}
+			next += 1;
+		}
+
+		Ok(Some(dfa))
+	}
+
+	/// The minimal automaton of `self`, which must be trimmed and deterministic over its tuples: the partition
+	/// refinement of Valmari and Lehtinen for partial DFAs (STACS 2008), in O(m log n) for m moves and n states.
+	/// [`Stopped`] when `stop` says so (it is asked once per class of moves, per move of it and per new block).
+	pub(crate) fn minimize(&self, stop: &mut dyn FnMut() -> bool) -> Result<Raw, Stopped> {
+		let num_states = self.finals.len();
+		let num_edges = self.edges.len();
+		let mut minimal = Raw::new(self.arity);
+		if num_states == 0 {
+			return Ok(minimal);
+		}
+		debug_assert_eq!(self.initial.len(), 1, "a deterministic automaton");
+
+		// Letters are the distinct tuples, numbered in their order.
+		let mut tuples: Vec<&[Symbol]> = (0..num_edges).map(|edge| self.tuple(edge)).collect();
+		tuples.sort_unstable();
+		tuples.dedup();
+		let label = |edge: usize| {
+			tuples
+				.binary_search(&self.tuple(edge))
+				.expect("the tuple of a move")
+		};
+		let tail = |edge: usize| self.edges[edge].0.index();
+		let head = |edge: usize| self.edges[edge].1.index();
+
+		// The moves into each state.
+		let mut incoming_start = vec![0; num_states + 1];
+		for edge in 0..num_edges {
+			incoming_start[head(edge) + 1] += 1;
+		}
+		for state in 0..num_states {
+			incoming_start[state + 1] += incoming_start[state];
+		}
+		let mut incoming = vec![0; num_edges];
+		let mut fill = incoming_start.clone();
+		for edge in 0..num_edges {
+			incoming[fill[head(edge)]] = edge;
+			fill[head(edge)] += 1;
+		}
+
+		// Blocks of states, first split by finality.
+		let mut blocks = Partition::new(num_states);
+		for state in (0..num_states).filter(|&state| self.finals[state]) {
+			blocks.mark(state);
+		}
+		blocks.split();
+
+		// Cords: classes of moves, first by label.
+		let mut by_label: Vec<(usize, usize)> =
+			(0..num_edges).map(|edge| (label(edge), edge)).collect();
+		by_label.sort_unstable();
+		let mut cords = Partition::new(num_edges);
+		cords.sets = 0;
+		for (position, &(letter, edge)) in by_label.iter().enumerate() {
+			if position == 0 || by_label[position - 1].0 != letter {
+				cords.first[cords.sets] = position;
+				cords.sets += 1;
+			}
+			cords.past[cords.sets - 1] = position + 1;
+			cords.elements[position] = edge;
+			cords.location[edge] = position;
+			cords.set[edge] = cords.sets - 1;
+		}
+
+		let mut block = 1;
+		let mut cord = 0;
+		while cord < cords.sets {
+			if stop() {
+				return Err(Stopped);
+			}
+			for &edge in &cords.elements[cords.first[cord]..cords.past[cord]] {
+				if stop() {
+					return Err(Stopped);
+				}
+				blocks.mark(tail(edge));
+			}
+			blocks.split();
+			cord += 1;
+
+			while block < blocks.sets {
+				if stop() {
+					return Err(Stopped);
+				}
+				for &state in &blocks.elements[blocks.first[block]..blocks.past[block]] {
+					for &edge in &incoming[incoming_start[state]..incoming_start[state + 1]] {
+						cords.mark(edge);
+					}
+				}
+				cords.split();
+				block += 1;
+			}
+		}
+
+		minimal.finals = vec![false; blocks.sets];
+		for state in (0..num_states).filter(|&state| self.finals[state]) {
+			minimal.finals[blocks.set[state]] = true;
+		}
+		minimal
+			.initial
+			.push(StateId::new(blocks.set[self.initial[0].index()]));
+		let mut moves: Vec<(usize, usize, usize)> = (0..num_edges)
+			.map(|edge| (blocks.set[tail(edge)], label(edge), blocks.set[head(edge)]))
+			.collect();
+		moves.sort_unstable();
+		moves.dedup();
+		for (source, letter, target) in moves {
+			minimal.push(StateId::new(source), tuples[letter], StateId::new(target));
+		}
+
+		Ok(minimal)
+	}
+
+	/// The useful part of `self`: states reachable from an initial one that reach a final one. [`Stopped`] when
+	/// `stop` says so (it is asked once the useful states are known, and per move).
+	pub(crate) fn trimmed(&self, stop: &mut dyn FnMut() -> bool) -> Result<Raw, Stopped> {
+		let renumbered = useful_states(self);
+		if stop() {
+			return Err(Stopped);
+		}
+		let mut trimmed = Raw::new(self.arity);
+		trimmed.finals = vec![false; renumbered.iter().flatten().count()];
+		for (&new, &is_final) in renumbered.iter().zip(&self.finals) {
+			if let Some(new) = new {
+				trimmed.finals[new.index()] = is_final;
+			}
+		}
+		trimmed.initial = self
+			.initial
+			.iter()
+			.filter_map(|&state| renumbered[state.index()])
+			.collect();
+		for edge in 0..self.edges.len() {
+			if stop() {
+				return Err(Stopped);
+			}
+			let (source, target) = self.edges[edge];
+			if let (Some(source), Some(target)) =
+				(renumbered[source.index()], renumbered[target.index()])
+			{
+				trimmed.push(source, self.tuple(edge), target);
+			}
+		}
+
+		Ok(trimmed)
+	}
+}
+
+/// A reduction gave up, as its query passed a limit.
+#[derive(Debug)]
+pub(crate) struct Stopped;
+
+/// The states of one block with moves into a splitter, by their letters and whether they also reach the rest.
+type KeyGroups = FxHashMap<Vec<(usize, bool)>, Vec<usize>>;
+
+/// A partition of `0..n` whose sets are contiguous ranges of `elements`, refined by marking elements and splitting
+/// every touched set into its marked and unmarked part; the smaller part gets the new number.
+struct Partition {
+	sets: usize,
+	elements: Vec<usize>,
+	location: Vec<usize>,
+	set: Vec<usize>,
+	first: Vec<usize>,
+	past: Vec<usize>,
+	marked: Vec<usize>,
+	touched: Vec<usize>,
+	/// The sets that splits created, in order, each with the set it was split from.
+	created: Vec<(usize, usize)>,
+}
+
+impl Partition {
+	/// One set of all `n` elements, or none for `n == 0`.
+	fn new(n: usize) -> Partition {
+		let mut partition = Partition {
+			sets: usize::from(n > 0),
+			elements: (0..n).collect(),
+			location: (0..n).collect(),
+			set: vec![0; n],
+			first: vec![0; n + 1],
+			past: vec![0; n + 1],
+			marked: vec![0; n + 1],
+			touched: Vec::new(),
+			created: Vec::new(),
+		};
+		partition.past[0] = n;
+		partition
+	}
+
+	fn mark(&mut self, element: usize) {
+		let set = self.set[element];
+		let position = self.location[element];
+		let boundary = self.first[set] + self.marked[set];
+		if position < boundary {
+			return; // Marked already.
+		}
+		self.elements[position] = self.elements[boundary];
+		self.location[self.elements[position]] = position;
+		self.elements[boundary] = element;
+		self.location[element] = boundary;
+		if self.marked[set] == 0 {
+			self.touched.push(set);
+		}
+		self.marked[set] += 1;
+	}
+
+	fn split(&mut self) {
+		while let Some(set) = self.touched.pop() {
+			let boundary = self.first[set] + self.marked[set];
+			self.marked[set] = 0;
+			if boundary == self.past[set] {
+				continue;
+			}
+
+			let new = self.sets;
+			if boundary - self.first[set] <= self.past[set] - boundary {
+				self.first[new] = self.first[set];
+				self.past[new] = boundary;
+				self.first[set] = boundary;
+			} else {
+				self.past[new] = self.past[set];
+				self.first[new] = boundary;
+				self.past[set] = boundary;
+			}
+			for position in self.first[new]..self.past[new] {
+				self.set[self.elements[position]] = new;
+			}
+			self.created.push((new, set));
+			self.sets += 1;
+		}
 	}
 }
 
@@ -396,20 +890,31 @@ impl Leaf {
 		})
 	}
 
-	/// The simulation, computed on first use; [`TimedOut`] if computing or waiting passes `deadline` (nothing kept).
-	pub(crate) fn simulation(&self, deadline: Option<Instant>) -> Result<&Simulation, TimedOut> {
+	/// The simulation, computed on first use; [`TimedOut`] if computing or waiting passes `until` (nothing kept).
+	pub(crate) fn simulation(&self, until: &Until) -> Result<&Simulation, TimedOut> {
 		match self.simulation.get() {
 			Some(simulation) => Ok(simulation),
-			None => self.compute_simulation(deadline),
+			None => self.compute_simulation(until),
 		}
 	}
 
 	/// Computes the simulation or waits for the query computing it; apart, so that the lookup above inlines.
 	#[cold]
-	fn compute_simulation(&self, deadline: Option<Instant>) -> Result<&Simulation, TimedOut> {
-		let computing = match deadline {
-			Some(deadline) => self.computing.try_lock_until(deadline).ok_or(TimedOut)?,
-			None => self.computing.lock(),
+	fn compute_simulation(&self, until: &Until) -> Result<&Simulation, TimedOut> {
+		let computing = if until.is_never() {
+			self.computing.lock()
+		} else {
+			// Waits in slices, to see a cancellation that comes before the deadline.
+			loop {
+				let slice = Instant::now() + LOCK_SLICE;
+				let wait = until.deadline.map_or(slice, |deadline| deadline.min(slice));
+				if let Some(computing) = self.computing.try_lock_until(wait) {
+					break computing;
+				}
+				if until.passed() {
+					return Err(TimedOut);
+				}
+			}
 		};
 
 		// The query that held the lock may have computed it.
@@ -417,7 +922,7 @@ impl Leaf {
 			return Ok(simulation);
 		}
 
-		let computed = Simulation::compute(self, deadline)?;
+		let computed = Simulation::compute(self, until)?;
 		let simulation = self.simulation.get_or_init(|| computed);
 		drop(computing);
 

@@ -1,8 +1,11 @@
 //! The limits of one query, and the macrostates and steps counted against them.
 
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use crate::Options;
+use crate::simulation::Until;
 
 /// Steps between two reads of the clock.
 const CLOCK_STEPS: u32 = 256;
@@ -14,6 +17,8 @@ pub(crate) enum Limit {
 	States,
 	/// [`time_limit`](Options::time_limit).
 	Time,
+	/// Another plan of a [portfolio](crate::Formula::check_portfolio) answered first.
+	Cancelled,
 }
 
 /// The limits of one query, and what it has spent of them.
@@ -26,10 +31,12 @@ pub(crate) struct Budget {
 	steps_to_clock: u32,
 	/// The first limit passed.
 	passed: Option<Limit>,
+	/// Set once the query is no longer needed; read together with the clock.
+	cancel: Option<Arc<AtomicBool>>,
 }
 
 impl Budget {
-	pub(crate) fn new(options: &Options) -> Budget {
+	pub(crate) fn new(options: &Options, cancel: Option<Arc<AtomicBool>>) -> Budget {
 		let deadline = options
 			.time_limit
 			.and_then(|limit| Some((Instant::now().checked_add(limit)?, limit)));
@@ -40,11 +47,23 @@ impl Budget {
 			macrostates: 0,
 			steps_to_clock: CLOCK_STEPS,
 			passed: None,
+			cancel,
 		}
 	}
 
-	pub(crate) fn deadline(&self) -> Option<Instant> {
-		self.deadline.map(|(deadline, _)| deadline)
+	/// When work for the query stops, for the work that reads the clock itself.
+	pub(crate) fn until(&self) -> Until {
+		Until {
+			deadline: self.deadline.map(|(deadline, _)| deadline),
+			cancel: self.cancel.clone(),
+		}
+	}
+
+	/// Whether another plan of the portfolio answered.
+	pub(crate) fn is_cancelled(&self) -> bool {
+		self.cancel
+			.as_ref()
+			.is_some_and(|cancel| cancel.load(Ordering::Relaxed))
 	}
 
 	pub(crate) fn time_limit(&self) -> Option<Duration> {
@@ -57,20 +76,28 @@ impl Budget {
 		self.check_states(0);
 	}
 
-	/// Counts a step of a loop that has created `growing` macrostates not added yet, reading the clock every
-	/// [`CLOCK_STEPS`] steps.
+	/// Counts a step of a loop that has created `growing` macrostates not added yet, reading the clock (and the
+	/// cancellation) every [`CLOCK_STEPS`] steps.
 	pub(crate) fn step(&mut self, growing: usize) {
 		self.check_states(growing);
 
 		self.steps_to_clock -= 1;
 		if self.steps_to_clock == 0 {
-			self.steps_to_clock = CLOCK_STEPS;
-			if self
-				.deadline
-				.is_some_and(|(deadline, _)| Instant::now() > deadline)
-			{
-				self.passed.get_or_insert(Limit::Time);
-			}
+			self.read_clock();
+		}
+	}
+
+	/// Reads the clock (and the cancellation).
+	fn read_clock(&mut self) {
+		self.steps_to_clock = CLOCK_STEPS;
+		if self
+			.deadline
+			.is_some_and(|(deadline, _)| Instant::now() > deadline)
+		{
+			self.passed.get_or_insert(Limit::Time);
+		}
+		if self.is_cancelled() {
+			self.passed.get_or_insert(Limit::Cancelled);
 		}
 	}
 

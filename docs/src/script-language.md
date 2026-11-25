@@ -571,6 +571,7 @@ Each application is one library call, with these exceptions:
 | `nfa:make-complete`                     | `Nfa::make_complete`                                                     |
 | `nfa:decode-utf8`                       | `Nfa::decode_utf8`                                                       |
 | `nfa:get-one-letter-automaton`          | `Nfa::get_one_letter_aut`                                                |
+| `nfa:collapse-by-length`                | `collapse_by_length`                                                     |
 | `nfa:language-empty?`                   | `Nfa::is_lang_empty`                                                     |
 | `nfa:intersection-empty?`               | `is_intersection_empty`                                                  |
 | `nfa:included?`                         | `is_included`                                                            |
@@ -768,9 +769,12 @@ run and do not add formula nodes:
   fan-out, and leaf sizes and determinism. `(lazy:plan)` returns the current annotations as JSON in the format that
   `mata::lazy::Plan::to_json` emits.
 - Every query accepts `:plan` with such a JSON string, so an external tool can derive a plan from `lazy:view` and
-  return it to the script. Alternatively, `:policy` takes `"lazy"`, `"eager"`, or `"heuristic"`. The heuristic
-  eagerly builds selected small inner terms and keeps the root lazy; `:heuristic-max-states` sets its per-term bound
-  (4096 by default). `:plan` and `:policy` are mutually exclusive and override the run's annotations for that query.
+  return it to the script. Alternatively, `:policy` takes `"lazy"`, `"eager"`, `"heuristic"`, or `"portfolio"`. The
+  heuristic eagerly builds selected small inner terms and keeps the root lazy; `:heuristic-max-states` sets its
+  per-term bound (4096 by default). `"portfolio"` runs the three others at once, one thread each, takes the first
+  answer, and stops the rest; the `plan` record of `lazy:stats` then tells which plan answered. Where threads cannot
+  be started, as in the playground, the plans run one after another. `lazy:materialize` rejects it. `:plan` and
+  `:policy` are mutually exclusive and override the run's annotations for that query.
 
 `(lazy:stats label check)` evaluates `check`, an application of `lazy:empty?`, `lazy:empty-within?`, `lazy:witness`,
 `lazy:included?` or `lazy:equivalent?`, returns its value, and prints one record per counter of that query,
@@ -785,6 +789,7 @@ run and do not add formula nodes:
 | `explicit`             | Explicit nodes built as automata, not those past their `:max-states`      |
 | `explicit-states`      | States of those automata                                                  |
 | `explicit-transitions` | Transitions of those automata                                             |
+| `plan`                 | Portfolios only: the plan that answered (0 lazy, 1 eager, 2 heuristic)    |
 
 Not part of the language yet: synchronized products and composition on chosen tapes (`sync_product`, `compose_on`),
 `lazy:universal?`, `lazy:in-language?`, the remaining options of `mata::lazy` (`:cache-budget`, `:antichain`,
@@ -969,16 +974,28 @@ calls a script asks for with cheaper ones.
   `number-of-states` and `number-of-transitions` operations, and the predicates on structure such as
   `nfa:deterministic?`, is computed as written.
 - **What is reported:** timing records and the trace describe the calls that were made, not the calls that were
-  written.
+  written. A decision run as a lazy query is reported as `lazy:empty?`.
 
-The first rewrites planned are:
+The rewrites are:
 
-| Written                                        | Run                                    |
-| ---------------------------------------------- | -------------------------------------- |
-| `(nfa:language-empty? (nfa:intersection a b))` | `is_intersection_empty(a, b)`          |
-| A definition whose value is never used         | Nothing                                |
-| The same application of the same values twice  | One call                               |
-| The last use of a named value                  | The operand is moved instead of copied |
+| Written                                                                    | Run                                    |
+| -------------------------------------------------------------------------- | -------------------------------------- |
+| `(nfa:language-empty? (nfa:intersection a b))`                             | `is_intersection_empty(a, b)`          |
+| A decision over operations, such as `(nfa:included? a (nfa:complement b))` | One lazy query                         |
+| A definition whose value is never used                                     | Nothing                                |
+| The same application of the same values twice                              | One call                               |
+| The last use of a named value                                              | The operand is moved instead of copied |
+
+A **decision over operations** is `nfa:language-empty?`, `nfa:universal?`, `nfa:included?` or `nfa:equivalent?`
+without keywords, whose operands apply `nfa:union-nondeterministic`, `nfa:intersection`, `nfa:language-difference` or
+`nfa:complement` without keywords. These operations become a term of `mata::lazy` instead of being built, and the
+query explores only as much of it as the answer needs. `nfa:determinize`, `nfa:minimize`, `nfa:reduce`,
+`nfa:remove-epsilon` and `nfa:trim` keep the language and are left out. The other operands are evaluated as written.
+The witness of the query is the witness of the decision. A complement, and `nfa:universal?`, are taken over the
+script alphabet. A lazy query cannot do that when an automaton reads a symbol outside of the script alphabet (under
+`"on-the-fly"`, the byte symbols of `nfa:create-from-regex`), so then the operations are applied as written. The
+intersection emptiness of two operands without such operations stays the first rewrite, which the library decides as
+fast.
 
 A benchmark that measures one specific operation should leave the optimizer off.
 

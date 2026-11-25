@@ -2,6 +2,7 @@
 //! annotations, per-node statistics and JSON plans.
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::time::{Duration, Instant};
 
 use mata_lazy::{
 	AllEager, AllLazy, Annotation, Automaton, Error, Eval, Formula, Heuristic, NodeKind, Options,
@@ -714,6 +715,288 @@ fn node_statistics_count_the_macrostates_and_posts_of_each_term() -> Result<(), 
 	Ok(())
 }
 
+/// The pairs over {0, 1} that differ in at most one position.
+fn flip_at_most_one() -> Tuples {
+	let mut moves = Vec::new();
+	for a in SYMBOLS {
+		for b in SYMBOLS {
+			if a == b {
+				moves.push((0, vec![a, b], 0));
+				moves.push((1, vec![a, b], 1));
+			} else {
+				moves.push((0, vec![a, b], 1));
+			}
+		}
+	}
+
+	Tuples {
+		arity: 2,
+		initial: vec![0],
+		finals: vec![true, true],
+		moves,
+	}
+}
+
+#[test]
+fn eager_pre_images_stay_small_level_by_level() -> Result<(), Error> {
+	// The pre-image k levels down holds the words within k flips of a 1 at position 6: at most a few states per
+	// position. Built eagerly but unreduced, each level multiplied the size of the one below.
+	const LEVELS: usize = 8;
+	let mut formula = Formula::new();
+	let relation = formula.leaf(&flip_at_most_one())?;
+	let mut chain = formula.leaf(&one_at(6, 8))?;
+	for _ in 0..LEVELS {
+		let pre_image = formula.pre_image(chain, relation)?;
+		chain = formula.explicit(pre_image)?;
+	}
+	let initial = formula.leaf(&one_at(0, 0))?;
+	let query = formula.intersection(initial, chain)?;
+	let outcome = formula.check(query, &Options::new())?;
+	assert!(!outcome.is_empty());
+	assert_eq!(outcome.stats.explicit.len(), LEVELS);
+	for node in &outcome.stats.explicit {
+		assert!(!node.lazy);
+		assert!(node.states <= 12, "{} states", node.states);
+	}
+
+	Ok(())
+}
+
+/// The one word of `length` zeros, as a chain of states.
+struct Zeros {
+	length: u32,
+}
+
+impl Automaton for Zeros {
+	type State = u32;
+
+	fn arity(&self) -> usize {
+		1
+	}
+
+	fn initial_states(&self) -> impl IntoIterator<Item = u32> {
+		[0]
+	}
+
+	fn is_final(&self, state: u32) -> bool {
+		state == self.length
+	}
+
+	fn for_each_move(&self, state: u32, mut visit: impl FnMut(&[Symbol], u32)) {
+		if state < self.length {
+			visit(&[SYMBOLS[0]], state + 1);
+		}
+	}
+}
+
+#[test]
+fn a_long_explicit_chain_is_reduced_in_quasi_linear_time() -> Result<(), Error> {
+	// Refinement that rescans every state each round separates one more state of the chain per round: about
+	// 2.5 * 10^9 visits here, far past the limit. Subsumption and the antichain are off, as the search over a
+	// leaf this long is quadratic with them; this test is about building the explicit node.
+	const LENGTH: u32 = 50_000;
+	let mut formula = Formula::new();
+	let zeros = formula.leaf(&Zeros { length: LENGTH })?;
+	let product = formula.intersection(zeros, zeros)?;
+	let explicit = formula.explicit(product)?;
+	let outcome = formula.check(
+		explicit,
+		&Options::new()
+			.subsumption(false)
+			.antichain(false)
+			.time_limit(Duration::from_secs(20)),
+	)?;
+	assert!(!outcome.is_empty());
+	assert_eq!(outcome.stats.explicit[0].states, LENGTH as usize + 1);
+
+	Ok(())
+}
+
+/// The chain of [`Zeros`] with every state initial.
+struct AllInitial {
+	length: u32,
+}
+
+impl Automaton for AllInitial {
+	type State = u32;
+
+	fn arity(&self) -> usize {
+		1
+	}
+
+	fn initial_states(&self) -> impl IntoIterator<Item = u32> {
+		0..=self.length
+	}
+
+	fn is_final(&self, state: u32) -> bool {
+		state == self.length
+	}
+
+	fn for_each_move(&self, state: u32, mut visit: impl FnMut(&[Symbol], u32)) {
+		if state < self.length {
+			visit(&[SYMBOLS[0]], state + 1);
+		}
+	}
+}
+
+#[test]
+fn a_chain_whose_states_are_all_initial_keeps_its_quotient() -> Result<(), Error> {
+	// The subset construction has as many subsets as states, the suffixes of the chain: about 1.25 * 10^9 members
+	// in all, which a bound on the number of subsets alone lets through.
+	const LENGTH: u32 = 50_000;
+	let mut formula = Formula::new();
+	let chain = formula.leaf(&AllInitial { length: LENGTH })?;
+	let explicit = formula.explicit(chain)?;
+	let outcome = formula.check(
+		explicit,
+		&Options::new()
+			.subsumption(false)
+			.antichain(false)
+			.time_limit(Duration::from_secs(20)),
+	)?;
+	assert!(!outcome.is_empty());
+	assert_eq!(outcome.stats.explicit[0].states, LENGTH as usize + 1);
+
+	Ok(())
+}
+
+/// A chain of `length` zeros to its final state, and two initial states with a move into every state of the
+/// chain, each with its own letter.
+struct FanOut {
+	length: u32,
+}
+
+impl Automaton for FanOut {
+	type State = u32;
+
+	fn arity(&self) -> usize {
+		1
+	}
+
+	fn initial_states(&self) -> impl IntoIterator<Item = u32> {
+		[self.length + 1, self.length + 2]
+	}
+
+	fn is_final(&self, state: u32) -> bool {
+		state == self.length
+	}
+
+	fn for_each_move(&self, state: u32, mut visit: impl FnMut(&[Symbol], u32)) {
+		if state < self.length {
+			visit(&[SYMBOLS[0]], state + 1);
+		} else if state > self.length {
+			for target in 0..=self.length {
+				visit(&[Symbol::new(target + 2)], target);
+			}
+		}
+	}
+}
+
+#[test]
+fn an_explicit_node_with_high_fan_out_is_reduced_in_quasi_linear_time() -> Result<(), Error> {
+	// Every split of the chain touches the initial states; comparing their whole moves again on each split
+	// visits about 10^9 moves here.
+	const LENGTH: u32 = 20_000;
+	let mut formula = Formula::new();
+	let fan_out = formula.leaf(&FanOut { length: LENGTH })?;
+	let product = formula.intersection(fan_out, fan_out)?;
+	let explicit = formula.explicit(product)?;
+	let outcome = formula.check(
+		explicit,
+		&Options::new()
+			.subsumption(false)
+			.antichain(false)
+			.time_limit(Duration::from_secs(20)),
+	)?;
+	assert!(!outcome.is_empty());
+	// The four initial pairs are one state.
+	assert_eq!(outcome.stats.explicit[0].states, LENGTH as usize + 2);
+
+	Ok(())
+}
+
+/// From state 0, each of `width` letters reaches the hub 1 and a state of its own, `3 + i`; the hub has `width`
+/// letters of its own to the final state 2, and state `3 + i` one.
+struct Hub {
+	width: u32,
+}
+
+impl Automaton for Hub {
+	type State = u32;
+
+	fn arity(&self) -> usize {
+		1
+	}
+
+	fn initial_states(&self) -> impl IntoIterator<Item = u32> {
+		[0]
+	}
+
+	fn is_final(&self, state: u32) -> bool {
+		state == 2
+	}
+
+	fn for_each_move(&self, state: u32, mut visit: impl FnMut(&[Symbol], u32)) {
+		let width = self.width;
+		match state {
+			0 => {
+				for i in 0..width {
+					visit(&[Symbol::new(i)], 1);
+					visit(&[Symbol::new(i)], 3 + i);
+				}
+			}
+			1 => {
+				for j in 0..width {
+					visit(&[Symbol::new(width + j)], 2);
+				}
+			}
+			2 => {}
+			own => visit(&[Symbol::new(2 * width + own - 3)], 2),
+		}
+	}
+}
+
+#[test]
+fn an_explicit_node_whose_subset_construction_has_too_many_moves_keeps_its_quotient()
+-> Result<(), Error> {
+	// The subsets stay few and small, the hub with one other state each, but each of them has the hub's moves:
+	// about `WIDTH`^2 moves, for 4 * `WIDTH` in the quotient.
+	const WIDTH: u32 = 2000;
+	let mut formula = Formula::new();
+	let hub = formula.leaf(&Hub { width: WIDTH })?;
+	let explicit = formula.explicit(hub)?;
+	let outcome = formula.check(
+		explicit,
+		&Options::new().time_limit(Duration::from_secs(20)),
+	)?;
+	assert!(!outcome.is_empty());
+	assert_eq!(outcome.stats.explicit[0].states, WIDTH as usize + 3);
+	assert_eq!(outcome.stats.explicit[0].transitions, 4 * WIDTH as usize);
+
+	Ok(())
+}
+
+#[test]
+fn a_query_stopped_by_its_limit_caches_no_explicit_node() -> Result<(), Error> {
+	let mut formula = Formula::new();
+	let zeros = formula.leaf(&Zeros { length: 50_000 })?;
+	let product = formula.intersection(zeros, zeros)?;
+	let explicit = formula.explicit(product)?;
+	let options = Options::new().subsumption(false).antichain(false);
+	let stopped = formula.check(
+		explicit,
+		&options.clone().time_limit(Duration::from_millis(1)),
+	);
+	assert!(
+		matches!(stopped, Err(Error::TimeLimit { .. })),
+		"{stopped:?}"
+	);
+	let outcome = formula.check(explicit, &options)?;
+	assert!(!outcome.stats.explicit[0].cached);
+
+	Ok(())
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn plans_and_views_are_json() -> Result<(), Error> {
@@ -772,6 +1055,92 @@ fn plans_and_views_are_json() -> Result<(), Error> {
 	let view = formula.view(abc)?.to_json();
 	assert!(view.contains(r#""kind": "intersection""#), "{view}");
 	assert!(view.contains(r#""deterministic": true"#), "{view}");
+
+	Ok(())
+}
+
+/// Levels of [`flip_chain`] in the portfolio tests, where the lazy plan is slow and the eager one is not.
+const PORTFOLIO_LEVELS: usize = 20;
+/// A limit that the lazy plan of the portfolio tests passes (it takes over 10 s in a release build), while the
+/// eager one answers within milliseconds.
+const LAZY_LIMIT: Duration = Duration::from_secs(2);
+
+/// The words of length `length` reaching, in `levels` flips, one of length at least 8 with 1 at position 6: none,
+/// as a flip keeps the length. A chain of pre-images, cheap built level by level, expensive lazily, where the
+/// search must explore everything.
+fn flip_chain(levels: usize, length: u32) -> Result<(Formula, Term), Error> {
+	let mut formula = Formula::new();
+	let relation = formula.leaf(&flip_at_most_one())?;
+	let mut chain = formula.leaf(&one_at(6, 8))?;
+	for _ in 0..levels {
+		chain = formula.pre_image(chain, relation)?;
+	}
+	let words = Tuples {
+		arity: 1,
+		initial: vec![0],
+		finals: (0..=length).map(|state| state == length).collect(),
+		moves: (0..length)
+			.flat_map(|state| SYMBOLS.map(|symbol| (state, vec![symbol], state + 1)))
+			.collect(),
+	};
+	let initial = formula.leaf(&words)?;
+	let query = formula.intersection(initial, chain)?;
+
+	Ok((formula, query))
+}
+
+#[test]
+#[cfg_attr(
+	target_os = "emscripten",
+	ignore = "Rust's standard library for Emscripten cannot spawn threads, so the slow plan runs first, to its end"
+)]
+fn a_portfolio_answers_with_its_fastest_plan_and_stops_the_others() -> Result<(), Error> {
+	let (formula, query) = flip_chain(PORTFOLIO_LEVELS, 7)?;
+	let view = formula.view(query)?;
+	let plans = [AllLazy.plan(&view), AllEager.plan(&view)];
+	let options = Options::new();
+	let start = Instant::now();
+	let (winner, outcome) = formula.check_portfolio(query, &options, &plans)?;
+	// The portfolio returns once the lazy query, which alone passes the limit, has stopped.
+	assert!(start.elapsed() < LAZY_LIMIT, "{:?}", start.elapsed());
+	assert_eq!(winner, 1);
+	assert!(outcome.is_empty());
+	let lazy = formula.check(
+		query,
+		&options
+			.clone()
+			.plan(plans[0].clone())
+			.time_limit(LAZY_LIMIT),
+	);
+	assert!(matches!(lazy, Err(Error::TimeLimit { .. })), "{lazy:?}");
+
+	Ok(())
+}
+
+#[test]
+fn a_portfolio_returns_the_error_of_its_first_plan_when_all_fail() -> Result<(), Error> {
+	let (formula, query) = flip_chain(PORTFOLIO_LEVELS, 7)?;
+	let (_other, foreign) = flip_chain(1, 7)?;
+	let view = formula.view(query)?;
+	// The first plan passes the state limit, the second annotates a term of another formula.
+	let plans = [
+		AllLazy.plan(&view),
+		AllEager.plan(&view).annotate(foreign, Annotation::lazy()),
+	];
+	let options = Options::new().max_states(1);
+	let outcome = formula.check_portfolio(query, &options, &plans);
+	assert!(
+		matches!(outcome, Err(Error::StateLimit { max_states: 1, .. })),
+		"{outcome:?}"
+	);
+	// In the other order, the foreign term comes first.
+	let swapped = [plans[1].clone(), plans[0].clone()];
+	let outcome = formula.check_portfolio(query, &options, &swapped);
+	assert!(matches!(outcome, Err(Error::ForeignTerm)), "{outcome:?}");
+	assert!(matches!(
+		formula.check_portfolio(query, &Options::new(), &[]),
+		Err(Error::InvalidPlan { .. })
+	));
 
 	Ok(())
 }

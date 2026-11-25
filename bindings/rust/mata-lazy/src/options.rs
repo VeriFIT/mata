@@ -303,7 +303,7 @@ pub struct NodeStats {
 pub struct Materialized {
 	/// The term marked explicit.
 	pub term: Term,
-	/// States of its automaton (after trimming), or the states explored before it fell back.
+	/// States of its automaton (trimmed and reduced), or the states explored before it fell back.
 	pub states: usize,
 	/// Transitions of its automaton.
 	pub transitions: usize,

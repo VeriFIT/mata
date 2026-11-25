@@ -286,6 +286,8 @@ export const SCRIPT_EXAMPLE_GROUPS = [
 (print (lazy:stats "annotated" (lazy:empty? abc)))
 (print (lazy:stats "all lazy" (lazy:empty? abc :policy "lazy")))
 (print (lazy:stats "heuristic" (lazy:empty? abc :policy "heuristic" :heuristic-max-states 100)))
+; All three at once, the first answer wins (in the browser they run one after another).
+(print (lazy:stats "portfolio" (lazy:empty? abc :policy "portfolio")))
 `,
             },
             {
@@ -305,6 +307,46 @@ export const SCRIPT_EXAMPLE_GROUPS = [
                 inputs: {
                     step: TOKEN_STEP_NFT,
                     copy: TOKEN_COPY_NFT,
+                },
+            },
+            {
+                title: "Abstract regular model checking with refinement",
+                script: `(mata-script "0.1.0" :requires (lazy transducers))
+(set-option :alphabet "bytes")
+(set-option :loops-and-recursion true)
+(declare-input step Nft)
+(declare-param initial-regex String)   ; the initial configurations
+(declare-param bad-regex String)       ; the safe configurations; their complement is bad
+(declare-param symbols String)         ; the letters of a configuration, space-separated
+
+(define initial (nfa:create-from-regex initial-regex))
+(define bad (nfa:complement (nfa:create-from-regex bad-regex)))
+(define backward (nft:invert-levels step))
+(define (post (r Nfa)) (nft:to-nfa (nft:apply step r)))
+(define (pre (r Nfa)) (nfa:minimize (nft:to-nfa (nft:apply backward r))))
+
+; Whether some initial configuration reaches a bad one in ROUNDS steps.
+(define (real-error? (rounds Int))
+  (not (nfa:intersection-empty? initial
+    (loop ((r bad) (i 0)) (if (< i rounds) (recur (pre r) (+ i 1)) r)))))
+
+; One abstract fixpoint at length N: "safe", "unsafe after K steps", or "spurious".
+(define (abstract-fixpoint (n Int))
+  (loop ((reached (nfa:collapse-by-length initial n)) (round 0))
+    (if (not (lazy:empty? (lazy:intersection (lazy:leaf reached) (lazy:leaf bad)) :alphabet symbols))
+      (if (real-error? round) (concat "unsafe, steps: " (to-string round)) "spurious")
+      (let ((next (nfa:collapse-by-length (nfa:union-nondeterministic reached (post reached)) n)))
+        (if (nfa:included? next reached) "safe" (recur next (+ round 1)))))))
+
+(echo (loop ((n 0))
+  (let ((verdict (abstract-fixpoint n)))
+    (if (= verdict "spurious") (recur (+ n 1)) (concat verdict ", length " (to-string n))))))
+`,
+                inputs: { step: TOKEN_COPY_NFT },
+                params: {
+                    "initial-regex": "tn*",
+                    "bad-regex": "n*tn*",
+                    symbols: "n t",
                 },
             },
             {
