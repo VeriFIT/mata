@@ -39,10 +39,11 @@ concept ExtensibleAlphabet = requires(A& alphabet, typename A::Symbol symbol) {
 /**
  * @brief A concept for a value with a printed form.
  *
- * A user type gets one by specialising @c std::formatter. @see mata::utils::format_or_unprintable.
+ * A user type gets one by specialising @c std::formatter. It is checked as @c const, the way it is printed.
+ *  @see mata::utils::format_or_unprintable.
  */
 template <typename T>
-concept Printable = std::formattable<T, char>;
+concept Printable = std::formattable<const T, char>;
 
 /**
  * @brief A concept for a reserved-key convention (see @c ReservedKeys).

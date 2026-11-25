@@ -582,7 +582,7 @@ template <class A> std::string to_string(const A& value) { // {{{
  * @return A string representation of the value, or "<unprintable>" if it cannot be printed.
  */
 template <typename T> std::string format_or_unprintable(const T& value) {
-	if constexpr (std::formattable<T, char>) {
+	if constexpr (std::formattable<const T, char>) {
 		return std::format("{}", value);
 	} else {
 		return "<unprintable>";

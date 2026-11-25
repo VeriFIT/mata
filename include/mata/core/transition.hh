@@ -18,6 +18,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "mata/core/concepts.hh"
 #include "mata/core/traits.hh"
 #include "mata/utils/assert.hh"
 #include "mata/utils/utils.hh"
@@ -167,7 +168,7 @@ struct std::hash<mata::posts::KeyedTransition<St, std::tuple<Ks...>, T>> {
 	}
 };
 template <typename St, typename K, typename T>
-	requires(std::formattable<St, char> && std::formattable<K, char> && std::formattable<T, char>)
+	requires(mata::Printable<St> && mata::Printable<K> && mata::Printable<T>)
 struct std::formatter<mata::posts::Transition<St, K, T>> {
 	constexpr auto parse(std::format_parse_context& ctx) {
 		auto it = ctx.begin();
@@ -179,7 +180,7 @@ struct std::formatter<mata::posts::Transition<St, K, T>> {
 	}
 };
 template <typename St, typename... Ks, typename T>
-	requires(std::formattable<St, char> && (std::formattable<Ks, char> && ...) && std::formattable<T, char>)
+	requires(mata::Printable<St> && (mata::Printable<Ks> && ...) && mata::Printable<T>)
 struct std::formatter<mata::posts::KeyedTransition<St, std::tuple<Ks...>, T>> {
 	constexpr auto parse(std::format_parse_context& ctx) {
 		auto it = ctx.begin();
@@ -203,7 +204,7 @@ namespace mata::posts {
  * @return The output stream after the last character written.
  */
 template <TransitionLike T>
-	requires std::formattable<T, char>
+	requires Printable<T>
 std::ostream& operator<<(std::ostream& os, const T& t) {
 	return os << std::format("{}", t);
 }
