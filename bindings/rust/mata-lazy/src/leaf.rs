@@ -134,7 +134,8 @@ impl Raw {
 
 			// Moves into the splitter get new cells; per state and letter, the old cell then counts its moves
 			// into the rest of the compound set.
-			cells.clear();
+			// A fresh map: clearing the first one, with a slot per move, would cost that much per splitter.
+			let mut cells: FxHashMap<(usize, usize), usize> = FxHashMap::default();
 			let mut entries: Vec<(usize, usize, usize)> = Vec::new();
 			for position in blocks.first[splitter]..blocks.past[splitter] {
 				for &edge in &incoming[blocks.elements[position]] {
@@ -249,11 +250,13 @@ impl Raw {
 		quotient
 	}
 
-	/// The subset construction over the tuples of `self`: `Ok(None)` once it has more than `max_states` states,
-	/// [`Stopped`] when `stop` says so (it is asked once per subset).
+	/// The subset construction over the tuples of `self`: `Ok(None)` once it has more than `max_states` states or
+	/// its subsets more than `max_members` members in all, [`Stopped`] when `stop` says so (it is asked once per
+	/// subset).
 	pub(crate) fn determinize(
 		&self,
 		max_states: usize,
+		max_members: usize,
 		stop: &mut dyn FnMut() -> bool,
 	) -> Result<Option<Raw>, Stopped> {
 		let mut outgoing: Vec<Vec<usize>> = vec![Vec::new(); self.finals.len()];
@@ -264,15 +267,13 @@ impl Raw {
 		let mut start = self.initial.clone();
 		start.sort_unstable();
 		start.dedup();
+		let mut members = start.len();
 		let mut subsets: IndexSet<Vec<StateId>, FxBuildHasher> = IndexSet::default();
 		subsets.insert(start);
 		let mut dfa = Raw::new(self.arity);
 		dfa.initial.push(StateId::new(0));
 		let mut next = 0;
 		while next < subsets.len() {
-			if subsets.len() > max_states {
-				return Ok(None);
-			}
 			if stop() {
 				return Err(Stopped);
 			}
@@ -288,7 +289,15 @@ impl Raw {
 				.push(subsets[next].iter().any(|state| self.finals[state.index()]));
 			for group in moves.chunk_by(|a, b| a.0 == b.0) {
 				let target: Vec<StateId> = group.iter().map(|&(_, target)| target).collect();
-				let (index, _) = subsets.insert_full(target);
+				let size = target.len();
+				let (index, new) = subsets.insert_full(target);
+				// Checked as each subset is found, so a state with many new targets does not emit them all first.
+				if new {
+					members += size;
+					if subsets.len() > max_states || members > max_members {
+						return Ok(None);
+					}
+				}
 				dfa.push(StateId::new(next), group[0].0, StateId::new(index));
 			}
 			next += 1;

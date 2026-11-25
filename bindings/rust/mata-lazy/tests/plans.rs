@@ -812,6 +812,54 @@ fn a_long_explicit_chain_is_reduced_in_quasi_linear_time() -> Result<(), Error> 
 	Ok(())
 }
 
+/// The chain of [`Zeros`] with every state initial.
+struct AllInitial {
+	length: u32,
+}
+
+impl Automaton for AllInitial {
+	type State = u32;
+
+	fn arity(&self) -> usize {
+		1
+	}
+
+	fn initial_states(&self) -> impl IntoIterator<Item = u32> {
+		0..=self.length
+	}
+
+	fn is_final(&self, state: u32) -> bool {
+		state == self.length
+	}
+
+	fn for_each_move(&self, state: u32, mut visit: impl FnMut(&[Symbol], u32)) {
+		if state < self.length {
+			visit(&[SYMBOLS[0]], state + 1);
+		}
+	}
+}
+
+#[test]
+fn a_chain_whose_states_are_all_initial_keeps_its_quotient() -> Result<(), Error> {
+	// The subset construction has as many subsets as states, the suffixes of the chain: about 1.25 * 10^9 members
+	// in all, which a bound on the number of subsets alone lets through.
+	const LENGTH: u32 = 50_000;
+	let mut formula = Formula::new();
+	let chain = formula.leaf(&AllInitial { length: LENGTH })?;
+	let explicit = formula.explicit(chain)?;
+	let outcome = formula.check(
+		explicit,
+		&Options::new()
+			.subsumption(false)
+			.antichain(false)
+			.time_limit(Duration::from_secs(20)),
+	)?;
+	assert!(!outcome.is_empty());
+	assert_eq!(outcome.stats.explicit[0].states, LENGTH as usize + 1);
+
+	Ok(())
+}
+
 /// A chain of `length` zeros to its final state, and two initial states with a move into every state of the
 /// chain, each with its own letter.
 struct FanOut {
