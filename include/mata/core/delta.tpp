@@ -81,7 +81,15 @@ void KeyedAccess<D, P, std::index_sequence<0>>::add(const State source, Key symb
 template <typename D, typename P>
 void KeyedAccess<D, P, std::index_sequence<0>>::add(const State source, const Key symbol, const Nested& targets) {
 	if (targets.empty()) { return; }
-	self().resize_for_states(source, targets.back());
+	if constexpr (std::same_as<Target, State>) {
+		// Sorted, so the last target is the largest state.
+		self().resize_for_states(source, targets.back());
+	} else {
+		// A target may not be sorted.
+		State max_state{0};
+		for (const Target& target : targets) { max_state = std::max(max_state, D::state_of(target)); }
+		self().resize_for_states(source, max_state);
+	}
 
 	if (P& state_transitions{self().state_posts_[source]}; state_transitions.empty()) {
 		state_transitions.insert({symbol, targets});
