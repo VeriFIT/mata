@@ -148,6 +148,24 @@ concept AutomatonWithRuns = requires(const A a, typename A::Run r) {
 	{ r.word = a.get_word_for_path(r).first.word };
 };
 
+namespace detail {
+/// The iterator a cursor's @c begin() yields.
+template <typename C> using CursorIterator = std::remove_cvref_t<decltype(std::declval<const C&>().begin())>;
+} // namespace detail
+
+/**
+ * @brief A concept for a cursor over the targets of one state, as Tarjan's SCC traversal walks it.
+ *
+ * The traversal keeps one iterator per state, to resume it after visiting a successor. So the iterator has to be
+ *  default-constructible and copyable, yield the targets, and end at @c std::default_sentinel.
+ */
+template <typename C, typename Target>
+concept SuccessorCursorLike = std::semiregular<detail::CursorIterator<C>> && requires(detail::CursorIterator<C> it) {
+	{ *it } -> std::convertible_to<const Target&>;
+	{ ++it };
+	{ it != std::default_sentinel } -> std::convertible_to<bool>;
+};
+
 /**
  * @brief A concept for a transition relation an @c mata::AutomatonBase can be built on.
  *
@@ -191,7 +209,7 @@ concept DeltaLike = requires(
 	{
 		cd.for_each_move(s, [](auto&&...) {})
 	};
-	{ cd.successor_cursor(s) };
+	{ cd.successor_cursor(s) } -> SuccessorCursorLike<typename D::Target>;
 	{ cd.has_self_loop(s) } -> std::convertible_to<bool>;
 
 	// Defragmentation.
