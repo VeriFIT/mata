@@ -617,6 +617,7 @@ inline Delta defragment(const Delta& delta, const BoolVector& is_staying, const 
 using SuccessorCursor = posts::SuccessorCursor<StatePost>; ///< The successor cursor of @c Delta.
 
 /// The automaton every NFA and NFT derives from: @c mata::AutomatonBase over @c Delta.
+///  A plain alias, so @c Nfa and @c Nft derive from a name and stay non-template classes.
 using Automaton = AutomatonBase<Delta>;
 /// A vector of automata moves them when it grows, and copies them instead if moving may throw.
 static_assert(std::is_nothrow_move_constructible_v<Automaton> && std::is_nothrow_move_assignable_v<Automaton>);

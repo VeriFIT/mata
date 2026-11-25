@@ -4,10 +4,6 @@
  * @c mata::AutomatonBase holds the parts of an automaton that carry no language semantics.
  *  Every operation defined here is a pass over @c delta, @c initial and @c final, and is therefore
  *  meaningful for any transition relation satisfying @c mata::DeltaLike.
- *
- * @c mata::Automaton is the one specialization the in-tree automata are built on. It is a plain
- *  alias, so @c mata::nfa::Nfa and @c mata::nft::Nft keep deriving from a name, not from a
- *  template, and stay non-template classes themselves.
  */
 
 #ifndef MATA_CORE_AUTOMATON_HH_

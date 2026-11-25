@@ -2,9 +2,11 @@ Core
 ====
 
 The generic machinery: the post templates, the visits and the cursor, the concepts, and the
-structural operations that belong to no particular automaton class. Nothing here names a concrete
-relation — ``mata::Delta`` is not available from ``core/`` alone, deliberately, so that a third party
-building their own relation compiles all of this without inheriting the one this library ships.
+structural operations that belong to no particular automaton class. Nothing here depends on a
+concrete relation: no header in ``core/`` includes the one this library ships, and its comments name
+it only as an example. A third party building their own relation therefore compiles all of this
+without inheriting ``mata::Delta``. ``tests/core/core-only.cc`` holds ``core/`` to that, and builds an
+automaton from ``core/`` alone over keys and states that are not ``mata::Symbol`` and ``mata::State``.
 
 That one lives in :ref:`relation`, and :doc:`nfa` and :doc:`nft` re-export it through their own
 seams, so ``mata::nfa::Delta`` and ``mata::Delta`` currently name the same type.

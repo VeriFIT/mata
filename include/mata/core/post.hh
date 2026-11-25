@@ -185,7 +185,7 @@ template <typename K, typename N> class PostEntryCore {
 	/**
 	 * @brief Apply @p fn to every target of this entry.
 	 *
-	 * The innermost step of the traversal that @c mata::Automaton is written against.
+	 * The innermost step of the traversal that @c mata::AutomatonBase is written against.
 	 *  Callers above it never need to know how the targets are stored.
 	 */
 	template <typename Fn>

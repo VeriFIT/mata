@@ -736,7 +736,7 @@ template <typename D> constexpr bool relation_contract_holds() {
 	static_assert(PostLike<P>, "the relation's PostType must be one post of the relation.");
 	static_assert(PostEntryLike<typename D::Entry>, "the relation's Entry must be its PostType's entry type.");
 	static_assert(TargetSetLike<typename D::TargetSet>, "the innermost post must be a set of targets.");
-	static_assert(DeltaLike<D>, "the relation must satisfy the contract mata::Automaton is written against.");
+	static_assert(DeltaLike<D>, "the relation must satisfy the contract mata::AutomatonBase is written against.");
 
 	using Base = DeltaBase<P, typename D::TransitionTraits>;
 	static_assert(
