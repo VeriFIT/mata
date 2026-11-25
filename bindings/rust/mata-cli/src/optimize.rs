@@ -452,6 +452,174 @@ pub(crate) fn disjointness<'a>(name: &str, parts: &'a [Expr]) -> Option<(&'a Exp
 	}
 }
 
+/// A decision the optimizer runs as one query of `mata::lazy`.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub(crate) enum Decision {
+	Empty,
+	Universal,
+	Included,
+	Equivalent,
+}
+
+impl Decision {
+	/// The decision `name` is, with the number of its operands.
+	fn of(name: &str) -> Option<(Decision, usize)> {
+		Some(match name {
+			"nfa:language-empty?" => (Decision::Empty, 1),
+			"nfa:universal?" => (Decision::Universal, 1),
+			"nfa:included?" => (Decision::Included, 2),
+			"nfa:equivalent?" => (Decision::Equivalent, 2),
+			_ => return None,
+		})
+	}
+
+	/// The operation written, which runs when the query cannot be lazy.
+	pub(crate) fn name(self) -> &'static str {
+		match self {
+			Decision::Empty => "nfa:language-empty?",
+			Decision::Universal => "nfa:universal?",
+			Decision::Included => "nfa:included?",
+			Decision::Equivalent => "nfa:equivalent?",
+		}
+	}
+}
+
+/// An operand of a lazy decision: the language operations that `mata::lazy` builds as terms, over leaves.
+pub(crate) enum Tree<L> {
+	Leaf(L),
+	Union(Vec<Tree<L>>),
+	Intersection(Vec<Tree<L>>),
+	Difference(Box<Tree<L>>, Box<Tree<L>>),
+	/// Over the script alphabet, as `nfa:complement`.
+	Complement(Box<Tree<L>>),
+}
+
+impl<L> Tree<L> {
+	/// The same tree with every leaf replaced by `f` of it, the leaves taken from left to right.
+	pub(crate) fn try_map<M, E>(
+		&self,
+		f: &mut impl FnMut(&L) -> Result<M, E>,
+	) -> Result<Tree<M>, E> {
+		let all = |trees: &[Tree<L>], f: &mut _| {
+			trees
+				.iter()
+				.map(|tree| tree.try_map(f))
+				.collect::<Result<Vec<_>, E>>()
+		};
+		Ok(match self {
+			Tree::Leaf(leaf) => Tree::Leaf(f(leaf)?),
+			Tree::Union(trees) => Tree::Union(all(trees, f)?),
+			Tree::Intersection(trees) => Tree::Intersection(all(trees, f)?),
+			Tree::Difference(lhs, rhs) => {
+				Tree::Difference(Box::new(lhs.try_map(f)?), Box::new(rhs.try_map(f)?))
+			}
+			Tree::Complement(tree) => Tree::Complement(Box::new(tree.try_map(f)?)),
+		})
+	}
+
+	/// The leaves, from left to right.
+	pub(crate) fn leaves(&self) -> Vec<&L> {
+		let mut leaves = Vec::new();
+		let mut stack = vec![self];
+		while let Some(tree) = stack.pop() {
+			match tree {
+				Tree::Leaf(leaf) => leaves.push(leaf),
+				Tree::Union(trees) | Tree::Intersection(trees) => stack.extend(trees.iter().rev()),
+				Tree::Difference(lhs, rhs) => stack.extend([&**rhs, &**lhs]),
+				Tree::Complement(tree) => stack.push(tree),
+			}
+		}
+		leaves
+	}
+
+	/// Whether the tree complements over the script alphabet.
+	pub(crate) fn has_complement(&self) -> bool {
+		match self {
+			Tree::Leaf(_) => false,
+			Tree::Union(trees) | Tree::Intersection(trees) => {
+				trees.iter().any(Tree::has_complement)
+			}
+			Tree::Difference(lhs, rhs) => lhs.has_complement() || rhs.has_complement(),
+			Tree::Complement(_) => true,
+		}
+	}
+}
+
+/// Operations that keep the language, which a lazy operand leaves out.
+const LANGUAGE_IDENTITIES: &[&str] = &[
+	"nfa:determinize",
+	"nfa:minimize",
+	"nfa:reduce",
+	"nfa:remove-epsilon",
+	"nfa:trim",
+];
+
+/// A decision over unions, intersections, differences and complements of automata, which runs as one lazy
+/// query: the operations are never built, and the query explores only what the answer needs. The operations
+/// that keep the language are left out. `None` when the operands have no operation to save, and for
+/// [`disjointness`], which the library decides as fast without a lazy query.
+pub(crate) fn lazification<'a>(
+	name: &str,
+	parts: &'a [Expr],
+) -> Option<(Decision, Vec<Tree<&'a Expr>>)> {
+	let (decision, arity) = Decision::of(name)?;
+	if parts.len() != arity {
+		return None;
+	}
+	let operands: Vec<Tree<&Expr>> = parts.iter().map(|part| tree(part, 0)).collect();
+	if operands
+		.iter()
+		.all(|operand| matches!(operand, Tree::Leaf(_)))
+	{
+		return None;
+	}
+	if decision == Decision::Empty
+		&& matches!(&operands[0], Tree::Intersection(trees)
+			if trees.len() == 2 && trees.iter().all(|tree| matches!(tree, Tree::Leaf(_))))
+	{
+		return None;
+	}
+	Some((decision, operands))
+}
+
+/// The lazy operand that `expression` computes: a leaf for anything but a keyword-free application of an
+/// operation a term can stand for.
+fn tree(expression: &Expr, depth: usize) -> Tree<&Expr> {
+	let Kind::Call {
+		function,
+		arguments,
+		keywords,
+	} = &expression.node
+	else {
+		return Tree::Leaf(expression);
+	};
+	let Kind::Name(name) = &function.node else {
+		return Tree::Leaf(expression);
+	};
+	let accepted = crate::ops::operation(name)
+		.is_some_and(|operation| crate::ops::accepts(operation, arguments.len()));
+	if !keywords.is_empty() || !accepted || depth > crate::ast::MAX_DEPTH {
+		return Tree::Leaf(expression);
+	}
+	let subtrees = || {
+		arguments
+			.iter()
+			.map(|argument| tree(argument, depth + 1))
+			.collect::<Vec<_>>()
+	};
+	match (name.as_str(), arguments.as_slice()) {
+		("nfa:union-nondeterministic", _) => Tree::Union(subtrees()),
+		("nfa:intersection", _) => Tree::Intersection(subtrees()),
+		("nfa:language-difference", [lhs, rhs]) => Tree::Difference(
+			Box::new(tree(lhs, depth + 1)),
+			Box::new(tree(rhs, depth + 1)),
+		),
+		("nfa:complement", [operand]) => Tree::Complement(Box::new(tree(operand, depth + 1))),
+		(name, [operand]) if LANGUAGE_IDENTITIES.contains(&name) => tree(operand, depth + 1),
+		_ => Tree::Leaf(expression),
+	}
+}
+
 /// One operand of a remembered application, compared by value or, for a value behind an `Rc`, by
 /// identity: values are immutable, so the same allocation holds the same value.
 #[derive(PartialEq, Eq, Hash)]

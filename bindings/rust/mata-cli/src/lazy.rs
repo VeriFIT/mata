@@ -3,7 +3,7 @@
 //! The `lazy:` namespace: terms of the one [`Formula`] of a run, which builders extend without automata
 //! work, and queries that each run one lazy check of a term.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::rc::{Rc, Weak};
 use std::time::Duration;
 
@@ -13,7 +13,8 @@ use mata::{Nfa, Word, nft::Nft};
 use crate::Error;
 use crate::ast::{Expr, Kind};
 use crate::eval::{AutomatonKind, Engine, Value, as_int, as_list, value_sort};
-use crate::ops::{optional, take};
+use crate::ops::{expect_nfa, optional, take};
+use crate::optimize::{Decision, Tree};
 
 /// The operations that run one check of a term, with the statistics `lazy:stats` reports.
 pub(crate) const CHECKS: &[&str] = &[
@@ -163,6 +164,35 @@ impl Lazy {
 	fn difference(&mut self, lhs: Term, rhs: Term) -> Result<Term, Error> {
 		let complement = self.formula.complement(rhs)?;
 		Ok(self.formula.intersection(lhs, complement)?)
+	}
+
+	/// The term of an operand of the optimizer, whose leaves are automata.
+	fn term_of(&mut self, tree: &Tree<Value>) -> Result<Term, Error> {
+		type Join = fn(&mut Formula, Term, Term) -> Result<Term, lazy::Error>;
+		let fold = |lazy: &mut Lazy, trees: &[Tree<Value>], join: Join| -> Result<Term, Error> {
+			let mut joined = None;
+			for tree in trees {
+				let term = lazy.term_of(tree)?;
+				joined = Some(match joined {
+					None => term,
+					Some(joined) => join(&mut lazy.formula, joined, term)?,
+				});
+			}
+			Ok(joined.expect("an operation has operands"))
+		};
+		match tree {
+			Tree::Leaf(value) => self.leaf(value, None),
+			Tree::Union(trees) => fold(self, trees, Formula::union),
+			Tree::Intersection(trees) => fold(self, trees, Formula::intersection),
+			Tree::Difference(lhs, rhs) => {
+				let (lhs, rhs) = (self.term_of(lhs)?, self.term_of(rhs)?);
+				self.difference(lhs, rhs)
+			}
+			Tree::Complement(tree) => {
+				let term = self.term_of(tree)?;
+				Ok(self.formula.complement(term)?)
+			}
+		}
 	}
 }
 
@@ -411,6 +441,69 @@ fn dispatch_query(
 fn decide(engine: &mut Engine, term: Term) -> Result<Value, Error> {
 	let options = query_options(engine, term)?;
 	let outcome = engine.lazy.check(term, &options)?;
+	let wanted = engine.options.produce_witnesses.on() || engine.witness_requested.on();
+	engine.last_witness = if wanted {
+		outcome.witness.as_ref().map(witness_value)
+	} else {
+		None
+	};
+	Ok(Value::Bool(outcome.is_empty()))
+}
+
+/// The options of the lazy query of the optimizer that decides `decision` of `operands`. `None` when its
+/// answer could differ from the written one: a complement over the script alphabet, which a query cannot
+/// restrict itself to, of automata that read symbols outside of it.
+pub(crate) fn tree_options(
+	engine: &Engine,
+	decision: Decision,
+	operands: &[Tree<Value>],
+) -> Result<Option<Options>, Error> {
+	let over_script_alphabet =
+		decision == Decision::Universal || operands.iter().any(Tree::has_complement);
+	let script: HashSet<mata::Symbol> = engine.script_alphabet.symbols().collect();
+	for leaf in operands.iter().flat_map(Tree::leaves) {
+		let nfa = expect_nfa(leaf).map_err(Error::plain)?;
+		if over_script_alphabet
+			&& nfa
+				.used_symbols()
+				.into_iter()
+				.any(|symbol| symbol != mata::Symbol::EPSILON && !script.contains(&symbol))
+		{
+			return Ok(None);
+		}
+	}
+	let mut options = Options::new();
+	if over_script_alphabet {
+		options = options.alphabet(script.into_iter().map(lazy::Symbol::from));
+	}
+	Ok(Some(options))
+}
+
+/// Decides `decision` of `operands` as one lazy query with `options`, for the optimizer; the witness is
+/// stored as by the written decision.
+pub(crate) fn decide_tree(
+	engine: &mut Engine,
+	decision: Decision,
+	operands: &[Tree<Value>],
+	options: &Options,
+) -> Result<Value, Error> {
+	let mut terms = Vec::with_capacity(operands.len());
+	for operand in operands {
+		terms.push(engine.lazy.term_of(operand)?);
+	}
+	let lazy = &mut engine.lazy;
+	let term = match (decision, terms.as_slice()) {
+		(Decision::Empty, &[term]) => term,
+		(Decision::Universal, &[term]) => lazy.formula.complement(term)?,
+		(Decision::Included, &[lhs, rhs]) => lazy.difference(lhs, rhs)?,
+		(Decision::Equivalent, &[lhs, rhs]) => {
+			let missing = lazy.difference(lhs, rhs)?;
+			let extra = lazy.difference(rhs, lhs)?;
+			lazy.formula.union(missing, extra)?
+		}
+		_ => unreachable!("a decision has as many operands as its operation"),
+	};
+	let outcome = engine.lazy.check(term, options)?;
 	let wanted = engine.options.produce_witnesses.on() || engine.witness_requested.on();
 	engine.last_witness = if wanted {
 		outcome.witness.as_ref().map(witness_value)

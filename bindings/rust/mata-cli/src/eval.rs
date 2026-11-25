@@ -865,6 +865,11 @@ impl Engine {
 			"witness" => self.evaluate_witness(parts, expression),
 			_ => {
 				if self.options.optimize.on()
+					&& let Some(value) = self.evaluate_lazification(name, parts, expression)?
+				{
+					return Ok(value);
+				}
+				if self.options.optimize.on()
 					&& let Some(value) = self.evaluate_disjointness(name, parts, expression)?
 				{
 					return Ok(value);
@@ -899,6 +904,74 @@ impl Engine {
 		}));
 		self.call_function(function, arguments, &[], expression)
 			.map(Some)
+	}
+
+	/// A decision over operations that `mata::lazy` builds as terms runs as one lazy query, which explores
+	/// only what the answer needs; [`crate::optimize::lazification`]. The operands are evaluated as written
+	/// up to those operations. When the query could answer differently from the written decision, the
+	/// operations are applied and the decision is made as written.
+	fn evaluate_lazification(
+		&mut self,
+		name: &str,
+		parts: &[Expr],
+		expression: &Expr,
+	) -> Result<Option<Value>, Error> {
+		let Some((decision, trees)) = crate::optimize::lazification(name, parts) else {
+			return Ok(None);
+		};
+		let mut operands = Vec::with_capacity(trees.len());
+		for tree in &trees {
+			operands.push(tree.try_map(&mut |leaf: &&Expr| self.evaluate(leaf))?);
+		}
+		let located = |error: Error| {
+			if error.at.is_some() {
+				error
+			} else {
+				expression.at(error.message)
+			}
+		};
+		if let Some(options) =
+			crate::lazy::tree_options(self, decision, &operands).map_err(located)?
+		{
+			self.last_witness = None;
+			if self.options.trace.on() {
+				self.trace("lazy:empty?", &[]);
+			}
+			return self
+				.timed("lazy:empty?", |engine| {
+					crate::lazy::decide_tree(engine, decision, &operands, &options)
+				})
+				.map(Some)
+				.map_err(located);
+		}
+		let mut arguments = Vec::with_capacity(operands.len());
+		for operand in &operands {
+			arguments.push(self.apply_tree(operand, expression)?);
+		}
+		self.call_function(native(decision.name()), arguments, &[], expression)
+			.map(Some)
+	}
+
+	/// The automaton an operand of [`Engine::evaluate_lazification`] computes, by the written operations.
+	fn apply_tree(
+		&mut self,
+		tree: &crate::optimize::Tree<Value>,
+		expression: &Expr,
+	) -> Result<Value, Error> {
+		use crate::optimize::Tree;
+
+		let (name, operands): (&str, Vec<&Tree<Value>>) = match tree {
+			Tree::Leaf(value) => return Ok(value.clone()),
+			Tree::Union(trees) => ("nfa:union-nondeterministic", trees.iter().collect()),
+			Tree::Intersection(trees) => ("nfa:intersection", trees.iter().collect()),
+			Tree::Difference(lhs, rhs) => ("nfa:language-difference", vec![&**lhs, &**rhs]),
+			Tree::Complement(tree) => ("nfa:complement", vec![&**tree]),
+		};
+		let mut arguments = Vec::with_capacity(operands.len());
+		for operand in operands {
+			arguments.push(self.apply_tree(operand, expression)?);
+		}
+		self.call_function(native(name), arguments, &[], expression)
 	}
 
 	fn evaluate_if(&mut self, parts: &[Expr], expression: &Expr) -> Result<Value, Error> {
@@ -2066,4 +2139,11 @@ fn check_header(requires: &[String], profile: Option<&str>) -> Result<(), String
 		None | Some("core") => Ok(()),
 		Some(other) => Err(format!("unknown profile '{other}'")),
 	}
+}
+
+/// The library operation `name` as a function value.
+fn native(name: &str) -> Value {
+	Value::Function(Rc::new(Function::Native {
+		name: name.to_owned(),
+	}))
 }

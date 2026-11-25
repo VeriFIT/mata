@@ -970,16 +970,28 @@ calls a script asks for with cheaper ones.
   `number-of-states` and `number-of-transitions` operations, and the predicates on structure such as
   `nfa:deterministic?`, is computed as written.
 - **What is reported:** timing records and the trace describe the calls that were made, not the calls that were
-  written.
+  written. A decision run as a lazy query is reported as `lazy:empty?`.
 
-The first rewrites planned are:
+The rewrites are:
 
-| Written                                        | Run                                    |
-| ---------------------------------------------- | -------------------------------------- |
-| `(nfa:language-empty? (nfa:intersection a b))` | `is_intersection_empty(a, b)`          |
-| A definition whose value is never used         | Nothing                                |
-| The same application of the same values twice  | One call                               |
-| The last use of a named value                  | The operand is moved instead of copied |
+| Written                                                                    | Run                                    |
+| -------------------------------------------------------------------------- | -------------------------------------- |
+| `(nfa:language-empty? (nfa:intersection a b))`                             | `is_intersection_empty(a, b)`          |
+| A decision over operations, such as `(nfa:included? a (nfa:complement b))` | One lazy query                         |
+| A definition whose value is never used                                     | Nothing                                |
+| The same application of the same values twice                              | One call                               |
+| The last use of a named value                                              | The operand is moved instead of copied |
+
+A **decision over operations** is `nfa:language-empty?`, `nfa:universal?`, `nfa:included?` or `nfa:equivalent?`
+without keywords, whose operands apply `nfa:union-nondeterministic`, `nfa:intersection`, `nfa:language-difference` or
+`nfa:complement` without keywords. These operations become a term of `mata::lazy` instead of being built, and the
+query explores only as much of it as the answer needs. `nfa:determinize`, `nfa:minimize`, `nfa:reduce`,
+`nfa:remove-epsilon` and `nfa:trim` keep the language and are left out. The other operands are evaluated as written.
+The witness of the query is the witness of the decision. A complement, and `nfa:universal?`, are taken over the
+script alphabet. A lazy query cannot do that when an automaton reads a symbol outside of the script alphabet (under
+`"on-the-fly"`, the byte symbols of `nfa:create-from-regex`), so then the operations are applied as written. The
+intersection emptiness of two operands without such operations stays the first rewrite, which the library decides as
+fast.
 
 A benchmark that measures one specific operation should leave the optimizer off.
 
