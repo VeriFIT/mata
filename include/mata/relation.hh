@@ -118,11 +118,25 @@ class StatePost : public posts::Post<SymbolPost, ReservedKeys<Symbol>, utils::De
 	using Base = posts::Post<SymbolPost, ReservedKeys<Symbol>, utils::DeltaAllocator<SymbolPost>>; ///< The generic post.
 	using Base::Base;
 	using Base::operator=;
+	using Base::get_successors; ///< The keyed one, which returns the targets under a symbol without a copy.
 
 	StatePost() = default;
 
 	StatePost(const Base& other) : Base{other} {}
 	StatePost(Base&& other) noexcept : Base{std::move(other)} {}
+
+	/**
+	 * @brief Get the successors over every symbol.
+	 *
+	 * A @c StateSet, the set the automata work with, rather than the generic post's @c SmallStateSet, which does not
+	 *  convert to one implicitly.
+	 * @return The successors over every symbol.
+	 */
+	StateSet get_successors() const {
+		StateSet successors{};
+		for (const SymbolPost& symbol_post : *this) { successors.insert(symbol_post.targets.span()); }
+		return successors;
+	}
 };
 ///@}
 
@@ -399,11 +413,7 @@ class Delta : public posts::DeltaBase<StatePost, TransitionTraits> {
 	 * @param state State whose successors to get.
 	 * @return The successors of @p state over every symbol.
 	 */
-	StateSet get_successors(const mata::State state) const {
-		StateSet successors{};
-		for (const SymbolPost& symbol_post : state_post(state)) { successors.insert(symbol_post.targets.span()); }
-		return successors;
-	}
+	StateSet get_successors(const mata::State state) const { return state_post(state).get_successors(); }
 
 	/**
 	 * @brief Get the successors of @p state over @p symbol.

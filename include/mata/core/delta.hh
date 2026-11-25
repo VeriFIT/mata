@@ -199,6 +199,9 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	template <size_t I> using Reserved = typename PostAt<I>::Reserved;
 	using TargetSet = PostAt<key_arity>;
 	using KeyedSuccessors = typename PostType::KeyedSuccessors; ///< The result type of the keyed @c get_successors.
+	/// The result type of the unkeyed @c get_successors: whatever the post returns, e.g. a @c StateSet for
+	///  @c mata::StatePost.
+	using Successors = decltype(std::declval<const PostType&>().get_successors());
 
 	/**
 	 * @brief Get the state a target denotes, whatever it carries.
@@ -477,7 +480,7 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	 * @param[in] state State from which successors are checked.
 	 * @return Set of states that are successors of the given @p state.
 	 */
-	TargetSet get_successors(State state) const;
+	Successors get_successors(State state) const;
 
 	/**
 	 * @brief The targets reachable from @p state under @p key.

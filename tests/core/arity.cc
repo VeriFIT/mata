@@ -95,6 +95,12 @@ static_assert(std::derived_from<SymbolPost, posts::PostChain<Symbol, SmallStateS
 static_assert(std::derived_from<StatePost, posts::Post<SymbolPost, ReservedKeys<Symbol>, utils::DeltaAllocator<SymbolPost>>>);
 // The state post's entries come from the Delta allocator, as the spilled target sets do.
 static_assert(std::same_as<StatePost::VectorType::allocator_type, utils::DeltaAllocator<SymbolPost>>);
+// The successors over every symbol are a StateSet for the shipped relation, the target set for a generic one.
+static_assert(std::same_as<decltype(std::declval<const StatePost&>().get_successors()), StateSet>);
+static_assert(std::same_as<decltype(std::declval<const Delta&>().get_successors(State{})), StateSet>);
+static_assert(std::same_as<decltype(std::declval<const Delta::Base&>().get_successors(State{})), StateSet>);
+static_assert(std::same_as<decltype(std::declval<const D1&>().get_successors(State{})), D1::TargetSet>);
+static_assert(std::same_as<decltype(std::declval<const StatePost&>().get_successors(Symbol{})), const SmallStateSet&>);
 static_assert(std::same_as<Delta::Base, posts::DeltaBase<StatePost, mata::TransitionTraits>>);
 static_assert(sizeof(StatePost) == sizeof(D1::PostType) && sizeof(SymbolPost) == sizeof(D1::Entry));
 static_assert(sizeof(Delta) == sizeof(Delta::Base)); // The wrapper adds no state, so base conversions do not slice.

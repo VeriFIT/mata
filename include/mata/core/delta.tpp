@@ -32,7 +32,7 @@ typename DeltaBase<P, TT>::PostType::const_iterator DeltaBase<P, TT>::epsilon_sy
 }
 
 template <typename P, typename TT>
-typename DeltaBase<P, TT>::TargetSet DeltaBase<P, TT>::get_successors(const State state) const {
+typename DeltaBase<P, TT>::Successors DeltaBase<P, TT>::get_successors(const State state) const {
 	return state_post(state).get_successors();
 }
 
