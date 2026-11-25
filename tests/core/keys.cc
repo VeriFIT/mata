@@ -164,14 +164,14 @@ template <typename Moves> std::vector<Symbol> keys_of(const Moves& moves) {
 
 } // namespace.
 
-static_assert(ReservedKeysLike<NarrowTail>);
-static_assert(ReservedKeysLike<WideTail>);
-static_assert(SortedWithReservedKeys<PostOver<NarrowTail>>);
-static_assert(PostLike<PostOver<WideTail>>);
+static_assert(posts::ReservedKeysLike<NarrowTail>);
+static_assert(posts::ReservedKeysLike<WideTail>);
+static_assert(posts::SortedWithReservedKeys<PostOver<NarrowTail>>);
+static_assert(posts::PostLike<PostOver<WideTail>>);
 
-static_assert(!ReservedKeysLike<InvertedTail>);
-static_assert(!SortedWithReservedKeys<PostOver<InvertedTail>>);
-static_assert(!PostLike<PostOver<InvertedTail>>);
+static_assert(!posts::ReservedKeysLike<InvertedTail>);
+static_assert(!posts::SortedWithReservedKeys<PostOver<InvertedTail>>);
+static_assert(!posts::PostLike<PostOver<InvertedTail>>);
 
 static_assert(!HasKeyMembers<IntervalDelta>); // protected
 static_assert(HasKeyMembers<Exposing<IntervalDelta>>);

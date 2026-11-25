@@ -24,7 +24,7 @@ namespace mata::posts {
 /**
  * @brief The last target of the non-empty @p targets: the largest, as the set is sorted.
  *
- * Read through the contiguous storage @c mata::TargetSetLike guarantees, so the set needs no @c back().
+ * Read through the contiguous storage @c mata::posts::TargetSetLike guarantees, so the set needs no @c back().
  */
 template <typename Targets> const auto& last_target(const Targets& targets) {
 	MATA_ASSERT(!targets.empty());

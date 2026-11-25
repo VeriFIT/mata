@@ -49,21 +49,27 @@ name a concrete relation?" has an answer, and the answer is no.
 
 Concepts
 --------
-What a transition relation has to provide for ``mata::AutomatonBase`` to work over it, plus the key
-vocabulary the relation itself needs: where a level's reserved keys begin.
+What a transition relation has to provide for ``mata::AutomatonBase`` to work over it: a graph over
+states, with no keys and no post.
 
 .. doxygenfile:: core/concepts.hh
 
 ``doxygenfile`` does not render concept declarations, so each one is named explicitly below.
 
-.. doxygenconcept:: mata::IterableRange
-.. doxygenconcept:: mata::TargetSetLike
-.. doxygenconcept:: mata::PostEntryLike
-.. doxygenconcept:: mata::ReservedKeysLike
-.. doxygenconcept:: mata::SortedWithReservedKeys
-.. doxygenconcept:: mata::PostLike
-.. doxygenconcept:: mata::SuccessorCursorLike
 .. doxygenconcept:: mata::DeltaLike
+.. doxygenconcept:: mata::SuccessorCursorLike
+.. doxygenconcept:: mata::AutomatonWithRuns
 .. doxygenconcept:: mata::ExtensibleAlphabet
 .. doxygenconcept:: mata::Printable
-.. doxygenconcept:: mata::AutomatonWithRuns
+
+Post vocabulary
+~~~~~~~~~~~~~~~
+What ``mata::posts::DeltaBase`` and the visits need of a chain of posts, including where a post's
+reserved keys begin. A relation built some other way does not need them.
+
+.. doxygenconcept:: mata::posts::IterableRange
+.. doxygenconcept:: mata::posts::TargetSetLike
+.. doxygenconcept:: mata::posts::PostEntryLike
+.. doxygenconcept:: mata::posts::ReservedKeysLike
+.. doxygenconcept:: mata::posts::SortedWithReservedKeys
+.. doxygenconcept:: mata::posts::PostLike

@@ -46,8 +46,13 @@ concept ExtensibleAlphabet = requires(A& alphabet, typename A::Symbol symbol) {
 template <typename T>
 concept Printable = std::formattable<const T, char>;
 
+/// @name Post vocabulary
+/// What @c mata::posts::DeltaBase and the visits need of a chain of posts. 
+///  @c mata::DeltaLike does not use them: a relation an automaton is built on need not be made of posts.
+///@{
+namespace posts {
 /**
- * @brief A concept for a reserved-key convention (see @c ReservedKeys).
+ * @brief A concept for a reserved-key convention (see @c mata::ReservedKeys).
  */
 template <typename R>
 concept ReservedKeysLike = requires {
@@ -93,14 +98,14 @@ concept IterableRange = requires(const R r) {
  * @brief A concept for a set of targets that can be iterated, updated, and queried.
  */
 template <typename T>
-concept TargetSetLike = IterableRange<T> && requires(const T t, const posts::target_of<T>& target) {
-	typename posts::target_of<T>;
-	requires posts::arity_of<T> == 0;
+concept TargetSetLike = IterableRange<T> && requires(const T t, const target_of<T>& target) {
+	typename target_of<T>;
+	requires arity_of<T> == 0;
 	// The successor cursors sweep the targets by pointer, which is what makes them fast.
 	requires std::ranges::contiguous_range<const T>;
 	{ std::ranges::is_sorted(t) } -> std::convertible_to<bool>;
-	{ std::declval<T&>().push_back(std::declval<const posts::target_of<T>&>()) };
-	{ std::declval<T&>().insert(std::declval<const posts::target_of<T>&>()) };
+	{ std::declval<T&>().push_back(std::declval<const target_of<T>&>()) };
+	{ std::declval<T&>().insert(std::declval<const target_of<T>&>()) };
 	{ std::declval<T&>().erase(target) };
 	{ t.contains(target) } -> std::convertible_to<bool>;
 };
@@ -140,6 +145,8 @@ concept PostLike = IterableRange<L> && SortedWithReservedKeys<L> && requires(con
 	{ l.find(std::declval<const typename L::Key&>()) };
 	{ std::declval<L&>().erase(std::declval<const typename L::Entry&>()) };
 };
+} // namespace posts
+///@}
 
 /**
  * @brief A concept for an automaton that can report its runs.

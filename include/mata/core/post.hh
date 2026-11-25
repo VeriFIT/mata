@@ -232,12 +232,12 @@ template <typename K, typename N, typename R> class PostEntryCore {
 /**
  * @brief One entry of a post: a single key, and the post nested under it.
  *
- * When @p N is a @c mata::TargetSetLike (an entry of a relation of @c key_arity 1), the entry also names its
+ * When @p N is a @c mata::posts::TargetSetLike (an entry of a relation of @c key_arity 1), the entry also names its
  *  key @c symbol and its targets @c targets, following the NFA's naming, and supports structured bindings:
  *  `auto& [symbol, targets] = entry`.
  *
  * @tparam K What this entry is keyed by.
- * @tparam N The post nested under that key: another post, or a @c mata::TargetSetLike at the bottom.
+ * @tparam N The post nested under that key: another post, or a @c mata::posts::TargetSetLike at the bottom.
  * @tparam R Where this post's ordinary keys stop.
  */
 template <typename K, typename N, typename R = ReservedKeys<K>>
@@ -253,7 +253,7 @@ class PostEntry : public detail::PostEntryCore<K, N, R> {
  * The key is named @c symbol and bottommoust targets are named @c targets, based on the NFA's naming.
  *
  * @tparam K What this post is keyed by.
- * @tparam N The bottommost post nested under this key: a @c mata::TargetSetLike.
+ * @tparam N The bottommost post nested under this key: a @c mata::posts::TargetSetLike.
  * @tparam R Where this post's ordinary keys stop.
  */
 template <typename K, typename N, typename R>
@@ -312,13 +312,13 @@ class PostEntry<K, N, R> : public detail::PostEntryCore<K, N, R> {
  *
  * An ordered vector of @p E kept sorted by key, which is what every lookup binary-searches on.
  *  Every step of a chain is one of these. A relation of @c key_arity @c n is @c n of them deep,
- *  ending in a @c mata::TargetSetLike.
+ *  ending in a @c mata::posts::TargetSetLike.
  *
  * For relation with @c key_arity 1, the top level post uses a name alias StatePost,
  *  and the next level down uses SymbolPost.
  *
  * @tparam E The entry type: one key plus what is nested under it.
- * @see mata::PostLike.
+ * @see mata::posts::PostLike.
  */
 template <typename E> class Post : utils::OrdVector<E> {
 	using super = utils::OrdVector<E>;
@@ -326,7 +326,7 @@ template <typename E> class Post : utils::OrdVector<E> {
 
   public:
 	/// @name Post protocol
-	/// @see mata::PostLike.
+	/// @see mata::posts::PostLike.
 	///@{
 	using Entry = E; ///< What iterating this post yields.
 	using Key = typename Entry::Key; ///< What this post is keyed by (the symbol, for an NFA).
@@ -564,7 +564,7 @@ template <typename E> class Post : utils::OrdVector<E> {
 }; // class mata::posts::Post.
 
 namespace detail {
-/// The recursion behind @c PostChain. A position holding a @c mata::ReservedKeysLike descriptor
+/// The recursion behind @c PostChain. A position holding a @c mata::posts::ReservedKeysLike descriptor
 ///  contributes its @c Key and keeps the descriptor. Anything else is a key type taking the default.
 template <typename... Ts> struct Chain;
 
@@ -594,7 +594,7 @@ struct Chain<K, Rest...> {
  * `PostChain<Symbol, StateSet>` is `Post<PostEntry<Symbol, StateSet>>`, which is
  *  @c mata::Post; `PostChain<Symbol, Symbol, StateSet>` is the arity-2 chain over the same key type.
  *
- * A position may be either a key type or a @c mata::ReservedKeysLike descriptor, so a post with a
+ * A position may be either a key type or a @c mata::posts::ReservedKeysLike descriptor, so a post with a
  *  non-default reserved tail needs no change of spelling and no hand-written stack:
  * ```cpp
  * using Narrow = PostChain<ReservedKeys<Symbol, 100>, StateSet>;  // one key, epsilon at 100

@@ -81,7 +81,7 @@ void KeyedAccess<D, P, std::index_sequence<0>>::add(const State source, Key symb
 template <typename D, typename P>
 void KeyedAccess<D, P, std::index_sequence<0>>::add(const State source, const Key symbol, const Nested& targets) {
 	// @p targets may be borrowed from this relation, and no copy is needed: resizing moves the posts, which leaves their
-	//  entries in place (see mata::PostLike), and a new entry copies @p targets before it is inserted.
+	//  entries in place (see mata::posts::PostLike), and a new entry copies @p targets before it is inserted.
 	if (targets.empty()) { return; }
 	if constexpr (std::same_as<Target, State>) {
 		// Sorted, so the last target is the largest state.
