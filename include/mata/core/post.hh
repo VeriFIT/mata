@@ -32,11 +32,11 @@
 #include <algorithm>
 #include <compare>
 #include <cstddef>
+#include <iterator>
 #include <span>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
-#include <vector>
 
 #include "mata/core/concepts.hh"
 #include "mata/core/moves.hh"
@@ -199,8 +199,12 @@ template <typename K, typename N, typename R> class PostEntryCore {
 		if constexpr (requires { targets.span(); }) {
 			return targets.span();
 		} else {
-			const std::vector<Target>& v{targets.to_vector()};
-			return {v.data(), v.size()};
+			// Borrowed from the set's own storage, so it lives as long as the set. A copy would dangle.
+			static_assert(
+				std::contiguous_iterator<typename Nested::const_iterator>,
+				"target_span() needs a target set with span() or with contiguous storage"
+			);
+			return {targets.begin(), targets.end()};
 		}
 	}
 	///@}
