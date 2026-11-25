@@ -377,14 +377,14 @@ impl<'f> Engine<'f> {
 						budget.step(0);
 						budget.passed()
 					});
-					// A limit may pass after the last read of the clock, while the reduction ends: checked again
-					// before the leaf is published to later queries.
-					self.budget.read_clock();
 					let Ok(reduced) = reduced else {
 						return self.budget.check();
 					};
-					self.budget.check()?;
 					let leaf = Arc::new(Leaf::build(&reduced, Vec::new()));
+					// A limit may pass after the last read of the clock, while the reduction ends or the leaf is
+					// built: checked again before the leaf is published to later queries.
+					self.budget.read_clock();
+					self.budget.check()?;
 					self.formula
 						.explicit_cache
 						.lock()
