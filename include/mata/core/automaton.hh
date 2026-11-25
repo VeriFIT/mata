@@ -43,6 +43,8 @@ namespace mata {
  *  parameter (`deducing this`) instead.
  * @note @p D is not constrained to any particular @c key_arity. Only the generic visits care how
  *  deep the relation nests, and they are constrained separately.
+ * @note The largest @c State is reserved as "no state", for @c initial and @c final as much as for @c delta: the
+ *  algorithms count states in @c State and use the largest one as a marker.
  */
 template <DeltaLike D> class AutomatonBase {
   public:

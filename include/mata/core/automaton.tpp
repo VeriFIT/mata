@@ -47,7 +47,15 @@ template <DeltaLike D> typename AutomatonBase<D>::State AutomatonBase<D>::add_st
 
 template <DeltaLike D> size_t AutomatonBase<D>::num_of_states() const {
 	// DeltaLike asks only for a count convertible to size_t; std::max needs one type.
-	return std::max({initial.domain_size(), final.domain_size(), static_cast<size_t>(delta.num_of_states())});
+	const size_t num_of_states{
+		std::max({initial.domain_size(), final.domain_size(), static_cast<size_t>(delta.num_of_states())})
+	};
+	// Every algorithm starts here, so this is where a state at the reserved maximum is caught.
+	MATA_ASSERT(
+		num_of_states <= static_cast<size_t>(std::numeric_limits<State>::max()),
+		"the largest State is reserved as \"no state\"; an initial or final state cannot be it"
+	);
+	return num_of_states;
 }
 
 template <DeltaLike D> void AutomatonBase<D>::clear() {

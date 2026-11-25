@@ -153,6 +153,8 @@ concept AutomatonWithRuns = requires(const A a, typename A::Run r) {
  *
  * @note One contract, deliberately whole so the errors are reported immediately, rather
  *  then at the calls inside functions that need them.
+ * @note The largest @c State is reserved as "no state": a relation never holds it as a state, so it has at most
+ *  that many states.
  */
 template <typename D>
 concept DeltaLike = requires(
