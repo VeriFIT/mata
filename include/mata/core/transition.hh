@@ -373,10 +373,11 @@ template <typename D> class DeltaTransitions {
 		}
 	}; // class const_iterator.
 
+	/// An empty range, with no relation behind it.
 	DeltaTransitions() = default;
 	explicit DeltaTransitions(const D* delta) : delta_{delta} {}
 
-	const_iterator begin() const { return const_iterator{*delta_}; }
+	const_iterator begin() const { return delta_ == nullptr ? end() : const_iterator{*delta_}; }
 	static const_iterator end() { return const_iterator{}; }
 
   private:
