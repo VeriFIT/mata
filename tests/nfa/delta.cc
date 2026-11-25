@@ -1247,6 +1247,11 @@ TEST_CASE("mata::nfa::Delta empty and num_of_transitions agree") {
 
 	delta.clear();
 	CHECK(delta.empty() == (delta.num_of_transitions() == 0));
+
+	// A symbol post without targets holds no transition.
+	delta.mutable_state_post(0).insert(SymbolPost{'c'});
+	CHECK(delta.num_of_transitions() == 0);
+	CHECK(delta.empty());
 }
 
 TEST_CASE("mata::nfa::Delta SymbolPost insert/erase return values") {

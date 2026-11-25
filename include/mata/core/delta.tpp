@@ -179,7 +179,10 @@ size_t DeltaBase<P, TT>::num_of_transitions() const {
 
 template <typename P, typename TT>
 bool DeltaBase<P, TT>::empty() const {
-	return std::ranges::all_of(state_posts_, [](const PostType& state_post) { return state_post.empty(); });
+	// A key can be left with no targets under it, so it is a target that is looked for, not a key.
+	return std::ranges::none_of(state_posts_, [](const PostType& state_post) {
+		return any_target(state_post, [](const Target&) { return true; });
+	});
 }
 
 
