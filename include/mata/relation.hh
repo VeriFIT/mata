@@ -398,7 +398,11 @@ class Delta : public posts::DeltaBase<StatePost, TransitionTraits> {
 	 * @param state State whose successors to get.
 	 * @return The successors of @p state over every symbol.
 	 */
-	SmallStateSet get_successors(const mata::State state) const { return Base::get_successors(state); }
+	StateSet get_successors(const mata::State state) const {
+		StateSet successors{};
+		for (const SymbolPost& symbol_post : state_post(state)) { successors.insert(symbol_post.targets.span()); }
+		return successors;
+	}
 
 	/**
 	 * @brief Get the successors of @p state over @p symbol.
