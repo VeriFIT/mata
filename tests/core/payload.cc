@@ -169,8 +169,7 @@ TEST_CASE("mata::AutomatonBase over a relation whose targets carry a payload") {
 			  }) == 1);
 
 		const auto between{aut.delta.get_transitions_between(1, 2)};
-		CHECK(between.size() == 2);
-		CHECK(between[0].target.weight + between[1].target.weight == 16);
+		CHECK(between == std::vector<WeightedDelta::TransitionType>{{1, 'b', Weighted{2, 7}}, {1, 'b', Weighted{2, 9}}});
 
 		size_t seen{0};
 		for (const auto& t : aut.delta.transitions()) { seen += static_cast<size_t>(t.target.weight); }

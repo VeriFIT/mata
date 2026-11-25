@@ -200,9 +200,13 @@ TEST_CASE("mata::SuccessorCursor agrees with the recursive walk") {
 
 		const posts::SuccessorCursor<Post4> cursor{post};
 		auto it{cursor.begin()};
+		// keys() reads the current position, so the cursor must not have run out before each read.
+		REQUIRE(it != std::default_sentinel);
 		CHECK(it.keys() == std::tuple<Symbol, Symbol, Symbol, Symbol>{20, 6, 4, 2});
 		++it;
+		REQUIRE(it != std::default_sentinel);
 		++it;
+		REQUIRE(it != std::default_sentinel);
 		CHECK(it.keys() == std::tuple<Symbol, Symbol, Symbol, Symbol>{30, 9, 8, 7});
 	}
 }
@@ -290,6 +294,7 @@ TEST_CASE("mata::AutomatonBase over an arity-2 relation") {
 	SECTION("the walks reach through both key levels") {
 		CHECK(aut.get_reachable_states() == mata::StateSet{0, 1, 2});
 		const std::vector<State> from_initial{aut.distances_from_initial()};
+		REQUIRE(from_initial.size() >= 3);
 		CHECK(from_initial[0] == 0);
 		CHECK(from_initial[1] == 1);
 		CHECK(from_initial[2] == 2);
@@ -313,6 +318,7 @@ TEST_CASE("mata::AutomatonBase over an arity-2 relation") {
 	SECTION("reverting works at arity 2, observed through what it serves") {
 		CHECK(aut.get_terminating_states() == mata::StateSet{0, 1, 2});
 		const std::vector<State> to_final{aut.distances_to_final()};
+		REQUIRE(to_final.size() >= 3);
 		CHECK(to_final[0] == 2);
 		CHECK(to_final[1] == 1);
 		CHECK(to_final[2] == 0);

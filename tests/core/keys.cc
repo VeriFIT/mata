@@ -293,6 +293,7 @@ TEST_CASE("mata::Delta's used-key queries do not carry state between calls") {
 	CHECK(second.get_used_symbols_set() == std::set<Symbol>{2});
 	CHECK(utils::OrdVector<Symbol>{second.get_used_symbols_sps()} == utils::OrdVector<Symbol>{2});
 	const std::vector<bool> bv{second.get_used_symbols_bv()};
+	REQUIRE(bv.size() >= 3);
 	CHECK_FALSE(bv[0]);
 	CHECK_FALSE(bv[1]);
 	CHECK(bv[2]);

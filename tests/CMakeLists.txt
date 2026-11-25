@@ -13,6 +13,7 @@ foreach (
 		  post
 		  cursor
 		  delta
+		  tarjan
 		  automaton
 )
 	set (header_check "${CMAKE_CURRENT_BINARY_DIR}/header-check/${header}.cc")

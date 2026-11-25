@@ -199,26 +199,27 @@ static_assert(!Add1<D4> && !Add2<D4> && !Add3<D4> && Add4<D4>);
 static_assert(Remove1<D1> && !Remove2<D1> && !Remove1<D2> && Remove2<D2>);
 static_assert(Contains1<D1> && !Contains2<D1> && !Contains1<D2> && Contains2<D2>);
 
-template class mata::AutomatonBase<D2>;
-template class mata::AutomatonBase<D3>;
-template class mata::AutomatonBase<D4>;
+// AutomatonBase over D2, D3 and D4 is instantiated explicitly in cursor.cc, which names the same types: a program may
+//  hold only one explicit instantiation definition of each.
 
 TEST_CASE("mata::posts::DeltaBase::add - writing a key path at any arity") {
-	SECTION("at arity 1 it agrees with add(), transition for transition") {
+	SECTION("at arity 1 the hand-written add() and the generic key-path write store the same transitions") {
+		using T1 = D1::TransitionType;
+		// Out of order, so that both writes also insert into the middle of a post.
+		const std::vector<T1> written{{5, 9, 5}, {0, 4, 3}, {0, 1, 2}, {2, 0, 0}, {0, 1, 1}};
+		const std::vector<T1> expected{{0, 1, 1}, {0, 1, 2}, {0, 4, 3}, {2, 0, 0}, {5, 9, 5}};
 		D1 by_add{};
 		D1 by_path{};
-		for (const auto& [source, symbol, target] :
-			 std::vector<std::tuple<State, Symbol, State>>{{0, 1, 1}, {0, 1, 2}, {0, 4, 3}, {2, 0, 0}, {5, 9, 5}}) {
-			by_add.add(source, symbol, target);
-			by_path.add(source, symbol, target);
+		for (const T1& t : written) {
+			by_add.add(t.source, t.symbol, t.target);
+			posts::insert_target(by_path.mutable_state_post(t.source), t.target, t.symbol);
 		}
-		// Not `==`: an entry's operator== compares only its key.
-		CHECK(by_add.num_of_states() == by_path.num_of_states());
-		CHECK(by_add.num_of_transitions() == by_path.num_of_transitions());
-		CHECK(all_targets(by_add) == all_targets(by_path));
-		for (State q{0}; q < by_add.num_of_states(); ++q) {
-			CHECK(posts::posts_equal(by_add.state_post(q), by_path.state_post(q)));
-		}
+		std::vector<T1> from_add{};
+		for (const T1& t : by_add.transitions()) { from_add.push_back(t); }
+		std::vector<T1> from_path{};
+		for (const T1& t : by_path.transitions()) { from_path.push_back(t); }
+		CHECK(from_add == expected);
+		CHECK(from_path == expected);
 	}
 
 	SECTION("it presizes, exactly as add() does") {
@@ -277,7 +278,8 @@ TEST_CASE("mata::posts::DeltaBase::add - writing a key path at any arity") {
 
 		D4 copy{};
 		for (const auto& transition : delta.transitions()) { copy.add(transition); }
-		CHECK(all_targets(copy) == all_targets(delta));
+		// The relation's == compares every key and target, unlike all_targets().
+		CHECK(copy == delta);
 	}
 
 	SECTION("a deeper relation still reverts, which is what needs a generic write") {
@@ -316,6 +318,8 @@ TEST_CASE("mata::posts::DeltaBase - a module names its own transition fields thr
 	std::vector<Theirs> seen{};
 	for (const auto& t : delta.transitions()) { seen.push_back(t); }
 	CHECK(seen == std::vector<Theirs>{{0, 1, 1}, {0, 2, 2}, {1, 3, 2}});
+	// The fields are read by their own names, which is what this test is about.
+	REQUIRE_FALSE(seen.empty());
 	CHECK(seen.front().from == 0);
 	CHECK(seen.front().letter == 1);
 	CHECK(seen.front().to == 1);
@@ -334,6 +338,7 @@ TEST_CASE("mata::posts::DeltaBase::transitions - generic in the arity") {
 	std::vector<T2> seen{};
 	for (const auto& t : delta.transitions()) { seen.push_back(t); }
 	CHECK(seen == std::vector<T2>{{0, {1, 2}, 7}, {0, {1, 3}, 8}, {1, {4, 5}, 0}});
+	REQUIRE_FALSE(seen.empty());
 	CHECK(std::get<1>(seen.front().keys) == 2);
 
 	CHECK(delta.get_transitions_to(8) == std::vector<T2>{{0, {1, 3}, 8}});
