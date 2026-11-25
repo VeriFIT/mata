@@ -17,6 +17,7 @@
 #include <functional>
 #include <limits>
 #include <optional>
+#include <stdexcept>
 #include <unordered_map>
 #include <utility>
 #include <vector>

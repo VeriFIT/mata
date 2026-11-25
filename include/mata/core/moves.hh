@@ -28,11 +28,13 @@ namespace detail {
 template <typename P> struct MoveTypeOf {
 	using type = Move<typename P::Key, typename P::Target>;
 };
+/// @cond
 template <typename P>
 	requires requires { typename P::Entry::MoveType; }
 struct MoveTypeOf<P> {
 	using type = typename P::Entry::MoveType;
 };
+/// @endcond
 } // namespace detail
 
 /**

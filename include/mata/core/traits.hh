@@ -116,6 +116,7 @@ template <typename X> struct PostTraits {
 	static constexpr size_t key_arity{0};
 	using Target = typename X::value_type;
 };
+/// @cond
 template <typename X>
 	requires requires {
 		X::key_arity;
@@ -125,6 +126,7 @@ struct PostTraits<X> {
 	static constexpr size_t key_arity{X::key_arity};
 	using Target = typename X::Target;
 };
+/// @endcond
 template <typename X> inline constexpr size_t arity_of = PostTraits<X>::key_arity;
 template <typename X> using target_of = typename PostTraits<X>::Target;
 ///@}

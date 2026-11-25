@@ -207,6 +207,10 @@ template <typename K, typename N, typename R> class PostEntryCore {
 /**
  * @brief One entry of a post: a single key, and the post nested under it.
  *
+ * When @p N is a @c mata::TargetSetLike (an entry of a relation of @c key_arity 1), the entry also names its
+ *  key @c symbol and its targets @c targets, following the NFA's naming, and supports structured bindings:
+ *  `auto& [symbol, targets] = entry`.
+ *
  * @tparam K What this entry is keyed by.
  * @tparam N The post nested under that key: another post, or a @c mata::TargetSetLike at the bottom.
  * @tparam R Where this post's ordinary keys stop.
@@ -217,6 +221,7 @@ class PostEntry : public detail::PostEntryCore<K, N, R> {
 	using detail::PostEntryCore<K, N, R>::PostEntryCore;
 }; // class mata::posts::PostEntry.
 
+/// @cond
 /**
  * @brief One entry of a post of an relation of @c key_arity = 1.
  *
@@ -275,6 +280,7 @@ class PostEntry<K, N, R> : public detail::PostEntryCore<K, N, R> {
 	}
 	///@}
 }; // class mata::posts::PostEntry.
+/// @endcond
 
 /**
  * @brief One post of the relation: an ordered map from a key to the post nested under it.
@@ -313,7 +319,7 @@ template <typename E> class Post : utils::OrdVector<E> {
 	///@}
 
 	using super::begin, super::end, super::cbegin, super::cend;
-	using super::OrdVector;
+	using utils::OrdVector<E>::OrdVector;
 	using typename super::const_iterator;
 	using typename super::iterator;
 	using typename super::VectorType; ///< The underlying vector of entries.

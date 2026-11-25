@@ -35,7 +35,9 @@ template <DeltaLike D> typename AutomatonBase<D>::State AutomatonBase<D>::add_st
 }
 
 template <DeltaLike D> typename AutomatonBase<D>::State AutomatonBase<D>::add_state(const State state) {
-	// Widened first: `state + 1` would wrap for the sentinel, which `allocate()` then rejects.
+	if (state == std::numeric_limits<State>::max()) [[unlikely]] {
+		throw std::overflow_error("mata: the no-state sentinel cannot become a state");
+	}
 	if (state >= delta.num_of_states()) { delta.allocate(static_cast<size_t>(state) + 1); }
 	return state;
 }

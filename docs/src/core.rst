@@ -11,7 +11,7 @@ seams, so ``mata::nfa::Delta`` and ``mata::Delta`` currently name the same type.
 
 Types
 -----
-.. doxygenfile:: core/types.hh
+.. doxygenfile:: mata/types.hh
 
 Delta
 -----
@@ -60,7 +60,7 @@ vocabulary the relation itself needs: where a level's reserved keys begin.
 .. doxygenconcept:: mata::TargetSetLike
 .. doxygenconcept:: mata::PostEntryLike
 .. doxygenconcept:: mata::ReservedKeysLike
-.. doxygenconcept:: mata::ReservedKeysAtTail
+.. doxygenconcept:: mata::SortedWithReservedKeys
 .. doxygenconcept:: mata::PostLike
 .. doxygenconcept:: mata::DeltaLike
 .. doxygenconcept:: mata::ExtensibleAlphabet

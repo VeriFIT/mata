@@ -128,6 +128,7 @@ template <typename P> class SuccessorCursor<P, 1> {
   public:
 	using Target = typename P::Target;
 
+	/// @cond
 	class const_iterator {
 	  public:
 		typename P::const_iterator symbol_post_it_{}, symbol_post_end_{};
@@ -163,6 +164,7 @@ template <typename P> class SuccessorCursor<P, 1> {
 		/// Returns the key path to the current target, outermost first.
 		auto keys() const { return std::tuple<typename P::Key>{symbol_post_it_->key()}; }
 	};
+	/// @endcond
 
 	explicit SuccessorCursor(const P& state_post) : state_post_{&state_post} {}
 
