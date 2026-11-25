@@ -320,7 +320,7 @@ TEST_CASE("mata::posts::DeltaBase - a module names its own transition fields thr
 	CHECK(seen.front().letter == 1);
 	CHECK(seen.front().to == 1);
 
-	const std::vector<Theirs> to_two{delta.get_transitions_to(2)};
+	const std::vector<Theirs> to_two = delta.get_transitions_to(2);
 	CHECK(to_two == std::vector<Theirs>{{0, 2, 2}, {1, 3, 2}});
 }
 

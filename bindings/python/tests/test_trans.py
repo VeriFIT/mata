@@ -663,7 +663,7 @@ def test_nft_modification_during_iteration_raises():
     nft = mata_nft.Nft(3)
     nft.delta.add(0, ord("a"), 1)
     nft.delta.add(1, ord("b"), 2)
-    for generator in (lambda: nft.iterate(), lambda: nft.delta.transitions()):
+    for generator in (nft.iterate, nft.delta.transitions):
         it = generator()
         next(it)
         nft.add_transition_with_target(2, ord("c"), 0)

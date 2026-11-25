@@ -18,7 +18,9 @@ namespace tiny_delta {
 // The innermost post: the targets under one key.
 struct TinyTargets {
 	using Target = mata::State;
+	// cppcheck-suppress unusedStructMember
 	static constexpr size_t key_arity{0};
+	// cppcheck-suppress unusedStructMember
 	static constexpr bool sorted_by_target{true};
 
 	std::vector<Target> targets{};
@@ -66,6 +68,7 @@ struct TinyPost {
 	using Nested = TinyEntry::Nested;
 	using Target = TinyTargets::Target;
 	static constexpr size_t key_arity{Nested::key_arity + 1};
+	// cppcheck-suppress unusedStructMember
 	static constexpr bool sorted_by_key{true};
 	// Where the ordinary keys stop; the contract asks it of the post, not of the entry.
 	using Reserved = mata::ReservedKeys<Key>;
@@ -157,6 +160,7 @@ class TinyDelta {
 	using Target = TinyPost::Target;
 	using State = mata::TargetTraits<Target>::State;
 	using Key = TinyPost::Key;
+	// cppcheck-suppress unusedStructMember
 	static constexpr size_t key_arity{TinyPost::key_arity};
 
 	static State state_of(const Target& target) { return mata::TargetTraits<Target>::state_of(target); }
