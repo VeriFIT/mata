@@ -43,7 +43,8 @@ template <DeltaLike D> typename AutomatonBase<D>::State AutomatonBase<D>::add_st
 }
 
 template <DeltaLike D> size_t AutomatonBase<D>::num_of_states() const {
-	return std::max({initial.domain_size(), final.domain_size(), delta.num_of_states()});
+	// DeltaLike asks only for a count convertible to size_t; std::max needs one type.
+	return std::max({initial.domain_size(), final.domain_size(), static_cast<size_t>(delta.num_of_states())});
 }
 
 template <DeltaLike D> void AutomatonBase<D>::clear() {
@@ -162,7 +163,7 @@ PredecessorIndex<typename D::State> build_predecessor_index(
 	using Target = typename D::Target;
 	PredecessorIndex<State> index{};
 	index.offsets.assign(num_of_states + 1, 0);
-	const size_t num_of_delta_states{std::min(num_of_states, delta.num_of_states())};
+	const size_t num_of_delta_states{std::min(num_of_states, static_cast<size_t>(delta.num_of_states()))};
 	const auto kept = [&](const State source) { return source_filter == nullptr || (*source_filter)[source]; };
 
 	// Count the kept incoming transitions of each state in the offset of the following state.
