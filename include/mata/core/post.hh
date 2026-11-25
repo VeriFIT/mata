@@ -396,11 +396,12 @@ template <typename E> class Post : utils::OrdVector<E> {
 	/// Returns the set of all target states in the @c Post.
 	TargetSet get_successors() const {
 		TargetSet successors;
-		if constexpr (key_arity == 1) {
+		if constexpr (key_arity == 1 && requires(TargetSet& set, const TargetSet& other) { set.insert(other); }) {
+			// One sorted merge per key, where the set has one.
 			for (const Entry& entry : *this) { successors.insert(entry.targets); }
 		} else {
-			// Above arity 1 the entries hold posts, not targets, so there is nothing to merge and
-			//  the targets have to be gathered from under every remaining key.
+			// One target at a time: above arity 1 the entries hold posts, not targets, and a set
+			//  need not have a bulk insert.
 			visit_targets(*this, [&successors](const Target& target) { successors.insert(target); });
 		}
 		return successors;
