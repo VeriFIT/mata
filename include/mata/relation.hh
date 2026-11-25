@@ -490,7 +490,8 @@ class DeltaBuilder {
 	void begin_state(State source) {
 		MATA_ASSERT(!in_state_ && "begin_state() called before finish_state()");
 		MATA_ASSERT((state_posts_.empty() || source >= state_posts_.size()) && "sources must be strictly increasing");
-		state_posts_.resize(static_cast<size_t>(source) + 1);
+		// Throws for the "no state" sentinel before the builder changes, instead of wrapping `source + 1` to zero.
+		state_posts_.resize(num_of_states_for(source));
 		source_ = source;
 		in_state_ = true;
 		has_symbol_ = false;
