@@ -71,92 +71,157 @@ impl Raw {
 		(start, self.edges.len())
 	}
 
-	/// The quotient by the coarsest forward bisimulation, which keeps the language on every tape. It refines a
-	/// partition by finality: when a block splits, only the predecessors of its smaller part are compared again,
-	/// so every state is revisited O(log n) times. [`Stopped`] when `stop` says so (it is asked once per split
-	/// block processed).
+	/// The quotient by the coarsest forward bisimulation, which keeps the language on every tape: the partition
+	/// refinement of Paige and Tarjan, by letter. Blocks are kept stable with respect to a coarser partition of
+	/// compound sets, counting for every state and letter its moves into each compound set; a compound set of
+	/// several blocks loses its smaller one, and only the moves into that block are visited, so every move is
+	/// visited O(log n) times. [`Stopped`] when `stop` says so (it is asked once per block taken out).
 	pub(crate) fn quotient(&self, stop: &mut dyn FnMut() -> bool) -> Result<Raw, Stopped> {
 		let num_states = self.finals.len();
-		let mut outgoing: Vec<Vec<usize>> = vec![Vec::new(); num_states];
-		let mut predecessors: Vec<Vec<usize>> = vec![Vec::new(); num_states];
-		for (edge, &(source, target)) in self.edges.iter().enumerate() {
-			outgoing[source.index()].push(edge);
-			predecessors[target.index()].push(source.index());
+		let num_edges = self.edges.len();
+		let mut tuples: Vec<&[Symbol]> = (0..num_edges).map(|edge| self.tuple(edge)).collect();
+		tuples.sort_unstable();
+		tuples.dedup();
+		let label: Vec<usize> = (0..num_edges)
+			.map(|edge| {
+				tuples
+					.binary_search(&self.tuple(edge))
+					.expect("the tuple of a move")
+			})
+			.collect();
+		let tail = |edge: usize| self.edges[edge].0.index();
+		let mut incoming: Vec<Vec<usize>> = vec![Vec::new(); num_states];
+		for (edge, &(_, target)) in self.edges.iter().enumerate() {
+			incoming[target.index()].push(edge);
 		}
+		let mut blocks = self.blocks_by_letters(&label);
 
-		let mut blocks = Partition::new(num_states);
-		for state in (0..num_states).filter(|&state| self.finals[state]) {
-			blocks.mark(state);
-		}
-		blocks.split();
-		// Every block once, so that every state with a move is compared once.
-		let mut work: Vec<usize> = (0..blocks.sets).collect();
-		blocks.created.clear();
+		// The moves of a state with a letter into a compound set, counted in one cell.
+		let mut counts: Vec<usize> = Vec::new();
+		let mut cells: FxHashMap<(usize, usize), usize> = FxHashMap::default();
+		let mut edge_cell: Vec<usize> = (0..num_edges)
+			.map(|edge| {
+				let cell = *cells.entry((tail(edge), label[edge])).or_insert_with(|| {
+					counts.push(0);
+					counts.len() - 1
+				});
+				counts[cell] += 1;
+				cell
+			})
+			.collect();
 
-		// The round in which a state was last touched.
-		let mut stamp = vec![usize::MAX; num_states];
-		let mut round = 0;
-		while let Some(changed) = work.pop() {
+		let mut compound_of: Vec<usize> = vec![0; num_states.max(1)];
+		let mut compounds: Vec<Vec<usize>> = vec![(0..blocks.sets).collect()];
+		let mut splittable: Vec<usize> = if blocks.sets > 1 { vec![0] } else { Vec::new() };
+		let size = |blocks: &Partition, block: usize| blocks.past[block] - blocks.first[block];
+		while let Some(&compound) = splittable.last() {
 			if stop() {
 				return Err(Stopped);
 			}
-			round += 1;
+			let last = compounds[compound].len() - 1;
+			let (one, other) = (compounds[compound][last], compounds[compound][last - 1]);
+			let splitter =
+				compounds[compound].swap_remove(if size(&blocks, one) <= size(&blocks, other) {
+					last
+				} else {
+					last - 1
+				});
+			if compounds[compound].len() < 2 {
+				splittable.pop();
+			}
+			compound_of[splitter] = compounds.len();
+			compounds.push(vec![splitter]);
 
-			// The states with a move into `changed`, by their block.
-			let mut touched: FxHashMap<usize, Vec<usize>> = FxHashMap::default();
-			for position in blocks.first[changed]..blocks.past[changed] {
-				for &source in &predecessors[blocks.elements[position]] {
-					if stamp[source] != round {
-						stamp[source] = round;
-						touched.entry(blocks.set[source]).or_default().push(source);
-					}
+			// Moves into the splitter get new cells; per state and letter, the old cell then counts its moves
+			// into the rest of the compound set.
+			cells.clear();
+			let mut entries: Vec<(usize, usize, usize)> = Vec::new();
+			for position in blocks.first[splitter]..blocks.past[splitter] {
+				for &edge in &incoming[blocks.elements[position]] {
+					let old = edge_cell[edge];
+					let cell = *cells.entry((tail(edge), label[edge])).or_insert_with(|| {
+						entries.push((tail(edge), label[edge], old));
+						counts.push(0);
+						counts.len() - 1
+					});
+					counts[old] -= 1;
+					counts[cell] += 1;
+					edge_cell[edge] = cell;
 				}
 			}
 
-			let signature = |state: usize, blocks: &Partition| {
-				let mut signature: Vec<(&[Symbol], usize)> = outgoing[state]
+			// A state with moves into the splitter is told apart by the letters of those moves and whether it
+			// has a move with the same letter into the rest; the states without such moves keep their block.
+			entries.sort_unstable();
+			let mut touched: FxHashMap<usize, KeyGroups> = FxHashMap::default();
+			for moves in entries.chunk_by(|a, b| a.0 == b.0) {
+				let state = moves[0].0;
+				let key = moves
 					.iter()
-					.map(|&edge| (self.tuple(edge), blocks.set[self.edges[edge].1.index()]))
+					.map(|&(_, letter, old)| (letter, counts[old] > 0))
 					.collect();
-				signature.sort_unstable();
-				signature.dedup();
-				signature
-			};
-			for members in touched.into_values() {
-				let reference = blocks
-					.other_member(&members)
-					.map(|other| signature(other, &blocks));
-				let mut groups: FxHashMap<Vec<(&[Symbol], usize)>, Vec<usize>> =
-					FxHashMap::default();
-				for &state in &members {
-					groups
-						.entry(signature(state, &blocks))
-						.or_default()
-						.push(state);
-				}
-				// The states with the reference signature, or else the largest group, keep the block.
-				let kept = reference.or_else(|| {
-					groups
-						.iter()
-						.max_by_key(|(_, group)| group.len())
-						.map(|(signature, _)| signature.clone())
-				});
-				for (signature, group) in groups {
-					if Some(&signature) == kept.as_ref() {
-						continue;
-					}
+				touched
+					.entry(blocks.set[state])
+					.or_default()
+					.entry(key)
+					.or_default()
+					.push(state);
+			}
+			for (block, groups) in touched {
+				let all = groups.values().map(Vec::len).sum::<usize>() == size(&blocks, block);
+				for group in groups.into_values().skip(usize::from(all)) {
 					for state in group {
 						blocks.mark(state);
 					}
 					blocks.split();
 				}
 			}
-			work.append(&mut blocks.created);
+			for (new, parent) in blocks.created.drain(..) {
+				let compound = compound_of[parent];
+				compound_of[new] = compound;
+				compounds[compound].push(new);
+				if compounds[compound].len() == 2 {
+					splittable.push(compound);
+				}
+			}
 		}
 
+		Ok(self.merged(&blocks))
+	}
+
+	/// The states split by finality and the letters of their moves, so that the blocks are stable with respect to
+	/// the one compound set of all states.
+	fn blocks_by_letters(&self, label: &[usize]) -> Partition {
+		let num_states = self.finals.len();
+		let mut letters: Vec<Vec<usize>> = vec![Vec::new(); num_states];
+		for (edge, &(source, _)) in self.edges.iter().enumerate() {
+			letters[source.index()].push(label[edge]);
+		}
+		let mut blocks = Partition::new(num_states);
+		let mut groups: FxHashMap<(bool, Vec<usize>), Vec<usize>> = FxHashMap::default();
+		for (state, mut state_letters) in letters.into_iter().enumerate() {
+			state_letters.sort_unstable();
+			state_letters.dedup();
+			groups
+				.entry((self.finals[state], state_letters))
+				.or_default()
+				.push(state);
+		}
+		for group in groups.into_values().skip(1) {
+			for state in group {
+				blocks.mark(state);
+			}
+			blocks.split();
+		}
+		blocks.created.clear();
+		blocks
+	}
+
+	/// `self` with the states of every block of `blocks` merged.
+	fn merged(&self, blocks: &Partition) -> Raw {
 		let mut quotient = Raw::new(self.arity);
 		quotient.finals = vec![false; blocks.sets];
-		for state in (0..num_states).filter(|&state| self.finals[state]) {
+		for state in (0..self.finals.len()).filter(|&state| self.finals[state]) {
 			quotient.finals[blocks.set[state]] = true;
 		}
 		quotient.initial = self
@@ -181,8 +246,7 @@ impl Raw {
 		for (source, tuple, target) in moves {
 			quotient.push(StateId::new(source), tuple, StateId::new(target));
 		}
-
-		Ok(quotient)
+		quotient
 	}
 
 	/// The subset construction over the tuples of `self`: `Ok(None)` once it has more than `max_states` states,
@@ -302,15 +366,14 @@ impl Raw {
 			if stop() {
 				return Err(Stopped);
 			}
-			for position in cords.first[cord]..cords.past[cord] {
-				blocks.mark(tail(cords.elements[position]));
+			for &edge in &cords.elements[cords.first[cord]..cords.past[cord]] {
+				blocks.mark(tail(edge));
 			}
 			blocks.split();
 			cord += 1;
 
 			while block < blocks.sets {
-				for position in blocks.first[block]..blocks.past[block] {
-					let state = blocks.elements[position];
+				for &state in &blocks.elements[blocks.first[block]..blocks.past[block]] {
 					for &edge in &incoming[incoming_start[state]..incoming_start[state + 1]] {
 						cords.mark(edge);
 					}
@@ -371,6 +434,9 @@ impl Raw {
 #[derive(Debug)]
 pub(crate) struct Stopped;
 
+/// The states of one block with moves into a splitter, by their letters and whether they also reach the rest.
+type KeyGroups = FxHashMap<Vec<(usize, bool)>, Vec<usize>>;
+
 /// A partition of `0..n` whose sets are contiguous ranges of `elements`, refined by marking elements and splitting
 /// every touched set into its marked and unmarked part; the smaller part gets the new number.
 struct Partition {
@@ -382,8 +448,8 @@ struct Partition {
 	past: Vec<usize>,
 	marked: Vec<usize>,
 	touched: Vec<usize>,
-	/// The sets that splits created, in order.
-	created: Vec<usize>,
+	/// The sets that splits created, in order, each with the set it was split from.
+	created: Vec<(usize, usize)>,
 }
 
 impl Partition {
@@ -442,21 +508,9 @@ impl Partition {
 			for position in self.first[new]..self.past[new] {
 				self.set[self.elements[position]] = new;
 			}
-			self.created.push(new);
+			self.created.push((new, set));
 			self.sets += 1;
 		}
-	}
-
-	/// A member of the set of `marked`'s elements that is not among them, if there is one; marks nothing.
-	fn other_member(&mut self, marked: &[usize]) -> Option<usize> {
-		let set = self.set[marked[0]];
-		for &element in marked {
-			self.mark(element);
-		}
-		let boundary = self.first[set] + self.marked[set];
-		self.marked[set] = 0;
-		self.touched.clear();
-		(boundary < self.past[set]).then(|| self.elements[boundary])
 	}
 }
 

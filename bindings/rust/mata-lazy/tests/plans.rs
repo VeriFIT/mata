@@ -812,6 +812,82 @@ fn a_long_explicit_chain_is_reduced_in_quasi_linear_time() -> Result<(), Error> 
 	Ok(())
 }
 
+/// A chain of `length` zeros to its final state, and two initial states with a move into every state of the
+/// chain, each with its own letter.
+struct FanOut {
+	length: u32,
+}
+
+impl Automaton for FanOut {
+	type State = u32;
+
+	fn arity(&self) -> usize {
+		1
+	}
+
+	fn initial_states(&self) -> impl IntoIterator<Item = u32> {
+		[self.length + 1, self.length + 2]
+	}
+
+	fn is_final(&self, state: u32) -> bool {
+		state == self.length
+	}
+
+	fn for_each_move(&self, state: u32, mut visit: impl FnMut(&[Symbol], u32)) {
+		if state < self.length {
+			visit(&[SYMBOLS[0]], state + 1);
+		} else if state > self.length {
+			for target in 0..=self.length {
+				visit(&[Symbol::new(target + 2)], target);
+			}
+		}
+	}
+}
+
+#[test]
+fn an_explicit_node_with_high_fan_out_is_reduced_in_quasi_linear_time() -> Result<(), Error> {
+	// Every split of the chain touches the initial states; comparing their whole moves again on each split
+	// visits about 10^9 moves here.
+	const LENGTH: u32 = 20_000;
+	let mut formula = Formula::new();
+	let fan_out = formula.leaf(&FanOut { length: LENGTH })?;
+	let product = formula.intersection(fan_out, fan_out)?;
+	let explicit = formula.explicit(product)?;
+	let outcome = formula.check(
+		explicit,
+		&Options::new()
+			.subsumption(false)
+			.antichain(false)
+			.time_limit(Duration::from_secs(20)),
+	)?;
+	assert!(!outcome.is_empty());
+	// The four initial pairs are one state.
+	assert_eq!(outcome.stats.explicit[0].states, LENGTH as usize + 2);
+
+	Ok(())
+}
+
+#[test]
+fn a_query_stopped_by_its_limit_caches_no_explicit_node() -> Result<(), Error> {
+	let mut formula = Formula::new();
+	let zeros = formula.leaf(&Zeros { length: 50_000 })?;
+	let product = formula.intersection(zeros, zeros)?;
+	let explicit = formula.explicit(product)?;
+	let options = Options::new().subsumption(false).antichain(false);
+	let stopped = formula.check(
+		explicit,
+		&options.clone().time_limit(Duration::from_millis(1)),
+	);
+	assert!(
+		matches!(stopped, Err(Error::TimeLimit { .. })),
+		"{stopped:?}"
+	);
+	let outcome = formula.check(explicit, &options)?;
+	assert!(!outcome.stats.explicit[0].cached);
+
+	Ok(())
+}
+
 #[cfg(feature = "serde")]
 #[test]
 fn plans_and_views_are_json() -> Result<(), Error> {
