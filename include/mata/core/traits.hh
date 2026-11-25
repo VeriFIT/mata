@@ -33,7 +33,7 @@ template <typename K> consteval K default_max_ordinary(const K min_epsilon) {
 	} // K{} is never used (just to satisfy the compiler)
 }
 
-// Returns whether @p min_epsilon is the greatest key. 
+// Returns whether @p min_epsilon is the greatest key.
 // Only an integral key is known to have one: for any other, std::numeric_limits<K>::max() is just K{}.
 template <typename K> consteval bool default_epsilon_is_greatest(const K min_epsilon) {
 	if constexpr (std::integral<K>) {

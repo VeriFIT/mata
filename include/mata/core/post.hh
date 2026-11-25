@@ -97,9 +97,9 @@ template <typename K, typename N, typename R> class PostEntryCore {
 	/// Nothrow when the key and the nested post are: a key or post that may throw is let throw, not terminate.
 	PostEntryCore(PostEntryCore&& rhs) = default;
 	PostEntryCore(const PostEntryCore& rhs) = default;
-	PostEntryCore& operator=(PostEntryCore&& rhs) noexcept(
-		std::is_nothrow_move_assignable_v<N> && std::is_nothrow_move_assignable_v<K>
-	);
+	PostEntryCore& operator=(
+		PostEntryCore&& rhs
+	) noexcept(std::is_nothrow_move_assignable_v<N> && std::is_nothrow_move_assignable_v<K>);
 	PostEntryCore& operator=(const PostEntryCore& rhs) = default;
 
 	/// A key needs only to be totally ordered: without its own @c <=>, the ordering is built from @c == and @c <.
@@ -159,7 +159,9 @@ template <typename K, typename N, typename R> class PostEntryCore {
 	bool erase(const Target s)
 		requires(arity_of<N> == 0)
 	{
-		if constexpr (requires { { targets.erase(s) } -> std::convertible_to<size_t>; }) {
+		if constexpr (requires {
+						  { targets.erase(s) } -> std::convertible_to<size_t>;
+					  }) {
 			return targets.erase(s) != 0;
 		} else {
 			// The set does not say whether it erased, so its size does.

@@ -98,9 +98,9 @@ template <DeltaLike D> class AutomatonBase {
 	AutomatonBase(AutomatonBase&& other) = default;
 
 	AutomatonBase& operator=(const AutomatonBase& other) = default;
-	AutomatonBase& operator=(AutomatonBase&& other) noexcept(
-		std::is_nothrow_move_assignable_v<D> && std::is_nothrow_move_assignable_v<utils::SparseSet<State>>
-	);
+	AutomatonBase& operator=(
+		AutomatonBase&& other
+	) noexcept(std::is_nothrow_move_assignable_v<D> && std::is_nothrow_move_assignable_v<utils::SparseSet<State>>);
 
 	/**
 	 * @brief Get the current number of states in the whole automaton.

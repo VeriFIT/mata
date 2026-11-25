@@ -227,8 +227,8 @@ template <typename P> bool posts_equal(const P& a, const P& b) {
 /**
  * @brief Rebuild @p post with every target renamed by function @p rename.
  *
- * The targets stay sorted and duplicate-free for any @p rename. 
- *  A strictly increasing one costs one comparison per target. 
+ * The targets stay sorted and duplicate-free for any @p rename.
+ *  A strictly increasing one costs one comparison per target.
  *  One that merges states or reorders them falls back to an ordered insert.
  *
  * @param post The post to rebuild. @c mata::arity_of is used to recurse down to the innermost post.

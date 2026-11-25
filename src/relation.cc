@@ -123,11 +123,9 @@ void shift_state_post(StatePost& state_post, const State offset) {
 	}
 }
 
-/// Make room for @p needed number of state posts, growing at least geometrically. 
+/// Make room for @p needed number of state posts, growing at least geometrically.
 void reserve_state_posts(std::vector<StatePost>& state_posts, const size_t needed) {
-	if (needed > state_posts.capacity()) { 
-		state_posts.reserve(std::max(needed, 2 * state_posts.capacity())); 
-	}
+	if (needed > state_posts.capacity()) { state_posts.reserve(std::max(needed, 2 * state_posts.capacity())); }
 }
 
 void check_append_shifted_range(const State offset, const size_t other_num_of_states) {
