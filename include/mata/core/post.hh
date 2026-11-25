@@ -94,7 +94,10 @@ template <typename K, typename N, typename R> class PostEntryCore {
 	PostEntryCore& operator=(PostEntryCore&& rhs) noexcept;
 	PostEntryCore& operator=(const PostEntryCore& rhs) = default;
 
-	std::weak_ordering operator<=>(const PostEntryCore& other) const { return symbol <=> other.symbol; }
+	/// A key needs only to be totally ordered: without its own @c <=>, the ordering is built from @c == and @c <.
+	std::weak_ordering operator<=>(const PostEntryCore& other) const {
+		return std::compare_weak_order_fallback(symbol, other.symbol);
+	}
 	bool operator==(const PostEntryCore& other) const { return symbol == other.symbol; }
 
 	typename Nested::iterator begin() { return targets.begin(); }
