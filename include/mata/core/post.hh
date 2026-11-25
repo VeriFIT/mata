@@ -386,7 +386,7 @@ template <typename E> class Post : utils::OrdVector<E> {
 	 * @param first_epsilon The first epsilon key to look for. Defaults to the smallest reserved epsilon.
 	 * @return An iterator to the smallest epsilon, or end() if there is no epsilon.
 	 */
-	const_iterator first_epsilon_it(const Key first_epsilon) const {
+	const_iterator first_epsilon_it(const Key first_epsilon = Reserved::min_epsilon) const {
 		// The post need to be ordered in order for the backward scan to work.
 		static_assert(
 			SortedWithReservedKeys<Post>,

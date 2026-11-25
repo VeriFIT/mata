@@ -20,7 +20,7 @@ NFT
 Functions
 ---------
 .. doxygenfile:: nft/nft.hh
-   :sections: func var typedef enum define
+   :sections: innernamespace func var typedef enum define
 
 Builder
 -------

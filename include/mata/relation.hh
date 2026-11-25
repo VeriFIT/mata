@@ -171,7 +171,12 @@ static_assert(std::is_trivially_copyable_v<Transition> && sizeof(Transition) == 
 static_assert(std::is_trivially_copyable_v<Move> && sizeof(Move) == sizeof(posts::Move<Symbol, State>));
 ///@}
 
-/// Reusable buffers of @c Delta::post() and @c Delta::epsilon_closure(), so that a loop of steps allocates once.
+/**
+ * @brief Reusable buffers of @c Delta::post() and @c Delta::epsilon_closure(), so that a loop of steps allocates once.
+ *
+ * A call writes all of its buffers, so one workspace serves one call at a time. Concurrent calls, even const queries
+ *  of the same delta, each need their own; in particular a workspace must never be a function-local @c static.
+ */
 struct PostWorkspace {
 	std::vector<State> sources{}; ///< Epsilon closure of the source states of a step.
 	std::vector<State> gathered{}; ///< Targets of a step, or the closure being built.
@@ -280,7 +285,8 @@ class Delta : public posts::DeltaBase<StatePost, TransitionTraits> {
 	 * @param source Source state of the transition.
 	 * @param symbol Symbol of the transition.
 	 * @param target Target of the transition.
-	 * @throws Throws std::invalid_argument if @p source has no transition over @p symbol.
+	 * @return Whether the transition was in the relation. Unlike the generic relation's @c remove(), a missing
+	 *  transition does not throw.
 	 */
 	bool remove(const mata::State source, const mata::Symbol symbol, const mata::State target) {
 		if (source >= state_posts_.size()) { return false; }
@@ -297,7 +303,7 @@ class Delta : public posts::DeltaBase<StatePost, TransitionTraits> {
 	 * @brief Remove the transition @p transition.
 	 *
 	 * @param transition Transition to remove.
-	 * @throws Throws std::invalid_argument if the source of @p transition has no transition over its symbol.
+	 * @return Whether the transition was in the relation; a missing transition does not throw.
 	 */
 	bool remove(const Transition& transition) {
 		return remove(transition.source, transition.symbol, transition.target);
@@ -342,17 +348,12 @@ class Delta : public posts::DeltaBase<StatePost, TransitionTraits> {
 	}
 
 	/**
-	 * @brief Get the symbols used on the transitions.
-	 *
-	 * They do not have to equal the symbols of the alphabet used by the automaton.
-	 *
-	 * @return The used symbols, ordered.
-	 */
-	/**
 	 * @brief Append the state posts of @p other with every state shifted by @p offset.
 	 *
 	 * The states of @c this below @p offset are kept (and added as empty when missing); @p other's state @c q becomes
 	 *  @c q + @p offset. Throws @c std::overflow_error when the shifted states do not fit in @c State.
+	 * @pre @p offset is at least @c num_of_states(). A smaller one would put @p other's posts at
+	 *  @c num_of_states() + @c q, but shift their targets by only @p offset.
 	 */
 	Delta& append_shifted(const Delta& other, mata::State offset);
 	/// @copydoc append_shifted(const Delta&, mata::State)
@@ -426,6 +427,13 @@ class Delta : public posts::DeltaBase<StatePost, TransitionTraits> {
 	 */
 	StateSet get_successors(mata::State state, mata::Symbol symbol, EpsilonClosureOpt epsilon_closure_opt) const;
 
+	/**
+	 * @brief Get the symbols used on the transitions.
+	 *
+	 * They do not have to equal the symbols of the alphabet used by the automaton.
+	 *
+	 * @return The used symbols, ordered.
+	 */
 	utils::OrdVector<mata::Symbol> get_used_symbols() const { return Base::get_used_keys(); }
 
 	/**

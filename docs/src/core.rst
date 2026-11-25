@@ -62,6 +62,7 @@ vocabulary the relation itself needs: where a level's reserved keys begin.
 .. doxygenconcept:: mata::ReservedKeysLike
 .. doxygenconcept:: mata::SortedWithReservedKeys
 .. doxygenconcept:: mata::PostLike
+.. doxygenconcept:: mata::SuccessorCursorLike
 .. doxygenconcept:: mata::DeltaLike
 .. doxygenconcept:: mata::ExtensibleAlphabet
 .. doxygenconcept:: mata::Printable

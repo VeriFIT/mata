@@ -88,7 +88,8 @@ template <typename D, typename P, size_t... KeyIdx> class KeyedAccess<D, P, std:
 	 * @param source Source state of the transition.
 	 * @param keys Keys of the transition.
 	 * @param target Target of the transition.
-	 * @throws Throws std::invalid_argument if @p source has no transition under @p keys.
+	 * @throws Throws std::invalid_argument if @p source has no transition under @p keys. A @p source beyond the
+	 *  relation, or a @p target missing under existing @p keys, is ignored.
 	 */
 	void remove(const State source, const KeyOf<P, KeyIdx>... keys, const TargetArg target) {
 		if (source >= self().state_posts_.size()) { return; }
@@ -150,7 +151,8 @@ template <typename D, typename P> class KeyedAccess<D, P, std::index_sequence<0>
 	 * @param source Source state of the transition.
 	 * @param symbol Symbol of the transition.
 	 * @param target Target of the transition.
-	 * @throws Throws std::invalid_argument if @p source has no transition over @p symbol.
+	 * @throws Throws std::invalid_argument if @p source has no transition over @p symbol. A @p source beyond the
+	 *  relation, or a @p target missing under an existing @p symbol, is ignored.
 	 */
 	void remove(State source, Key symbol, TargetArg target);
 

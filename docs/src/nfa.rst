@@ -20,7 +20,7 @@ NFA
 Functions
 ---------
 .. doxygenfile:: nfa/nfa.hh
-   :sections: func var typedef enum define
+   :sections: innernamespace func var typedef enum define
 
 Builder
 -------

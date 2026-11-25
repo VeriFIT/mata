@@ -162,6 +162,10 @@ template <typename C> using CursorIterator = std::remove_cvref_t<decltype(std::d
  *
  * The traversal keeps one iterator per state, to resume it after visiting a successor. So the iterator has to be
  *  default-constructible and copyable, yield the targets, and end at @c std::default_sentinel.
+ *
+ * @note The traversal keeps only the iterator, not the cursor it came from, which is a temporary. So the iterator
+ *  has to stay valid after the cursor is destroyed, for as long as the relation is not modified: it has to point into
+ *  the relation, not into the cursor.
  */
 template <typename C, typename Target>
 concept SuccessorCursorLike = std::semiregular<detail::CursorIterator<C>> && requires(detail::CursorIterator<C> it) {
@@ -177,6 +181,10 @@ concept SuccessorCursorLike = std::semiregular<detail::CursorIterator<C>> && req
  *  then at the calls inside functions that need them.
  * @note The largest @c State is reserved as "no state": a relation never holds it as a state, so it has at most
  *  that many states.
+ * @note The automaton's states can outnumber the relation's: an initial or final state may have no post. The
+ *  traversal members (@c for_each_successor(), @c for_each_move(), @c successor_cursor(), @c has_self_loop()) are
+ *  called for every state of the automaton, and have to treat a state without a post as one without transitions,
+ *  rather than reject it.
  */
 template <typename D>
 concept DeltaLike = requires(
