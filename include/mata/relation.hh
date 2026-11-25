@@ -633,6 +633,10 @@ static_assert(
 static_assert(
 	Delta::Reserved<0>::min_epsilon == EPSILON, "mata::EPSILON and the relation's own epsilon must be the same value."
 );
+/// @c Nfa and @c Nft hold an @c Alphabet beside the relation: its symbols are the relation's keys.
+static_assert(
+	std::same_as<Delta::Key<0>, Alphabet::Symbol>, "the relation's keys and mata::Alphabet's symbols must be one type."
+);
 /// @c Nfa and @c Nft name the automaton's types themselves. They must be the ones the automaton uses.
 static_assert(std::same_as<Automaton::State, State> && std::same_as<Automaton::StateSet, StateSet>);
 /// The keyed members take a target state by value.
