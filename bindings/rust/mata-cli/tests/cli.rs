@@ -2970,6 +2970,66 @@ fn the_optimizer_calls_one_operation_for_an_intersection_emptiness_and_runs_it_o
 	);
 }
 
+/// Decisions over operations on automata, which the optimizer runs as lazy queries.
+const LAZIFIED: &str = "(set-option :trace true)\n\
+	(define a (nfa:create-from-regex \"a(a|b)*\"))\n(define b (nfa:create-from-regex \"(a|b)*b\"))\n\
+	(print (nfa:included? (nfa:intersection a b) a))\n\
+	(print (nfa:equivalent? (nfa:union-nondeterministic a b) (nfa:union-nondeterministic b a)))\n\
+	(print (nfa:universal? (nfa:union-nondeterministic a (nfa:complement a))))\n\
+	(print (nfa:universal? (nfa:union-nondeterministic a b)))\n\
+	(print (nfa:language-empty? (nfa:language-difference a (nfa:minimize (nfa:determinize a)))))\n\
+	(print (nfa:language-empty? (nfa:intersection a (nfa:complement b))))\n\
+	(print (nfa:equivalent? a (nfa:intersection a b)))\n\
+	(print (nfa:language-empty? (nfa:intersection a b)))\n";
+
+#[test]
+fn the_optimizer_runs_a_decision_over_operations_as_one_lazy_query() {
+	let script =
+		format!("(set-option :alphabet \"bytes\")\n(set-option :optimize true)\n{LAZIFIED}");
+	let output = run_script(&script, true, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	let written = run_script(
+		&script.replace("(set-option :optimize true)\n", ""),
+		true,
+		&[],
+	);
+	assert_eq!(status(&written), 0, "{}", stderr(&written));
+	assert_eq!(stdout(&output), stdout(&written));
+	assert_eq!(
+		stdout(&output),
+		"true\ntrue\ntrue\nfalse\ntrue\nfalse\nfalse\nfalse\n"
+	);
+	// No operation of the operands is built; the plain intersection emptiness stays a library call.
+	let trace = stderr(&output);
+	let mut expected = vec!["mata: trace: lazy:empty?"; 7];
+	expected.push("mata: trace: nfa:intersection-empty?");
+	assert_eq!(
+		trace.lines().skip(2).collect::<Vec<_>>(),
+		expected,
+		"{trace}"
+	);
+}
+
+#[test]
+fn the_optimizer_applies_a_complement_whose_operand_reads_symbols_outside_the_script_alphabet() {
+	// Under "on-the-fly", the byte symbols of regular expressions are not in the script alphabet, which the
+	// complement is taken over; a lazy query would complement over them too.
+	let script = format!("(set-option :optimize true)\n{LAZIFIED}");
+	let output = run_script(&script, true, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	let written = run_script(
+		&script.replace("(set-option :optimize true)\n", ""),
+		true,
+		&[],
+	);
+	assert_eq!(stdout(&output), stdout(&written));
+	assert!(
+		stderr(&output).contains("mata: trace: nfa:complement\nmata: trace: nfa:union-nondeterministic\nmata: trace: nfa:universal?\n"),
+		"{}",
+		stderr(&output)
+	);
+}
+
 #[test]
 fn the_optimizer_leaves_out_a_definition_nothing_reads() {
 	let workspace = Workspace::new("optimizer-dead");
