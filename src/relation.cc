@@ -103,7 +103,7 @@ std::vector<State>& gather_post(
 	std::vector<State>& gathered{workspace.gathered};
 	gathered.clear();
 	// Stepping over epsilon with a closure requested means the source states are reachable as well.
-	if (symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::None) {
+	if (symbol == EPSILON && (closes_before(epsilon_closure_opt) || closes_after(epsilon_closure_opt))) {
 		gathered.assign(states.begin(), states.end());
 	}
 	for (const State state : sources) {

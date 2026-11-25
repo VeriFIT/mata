@@ -465,7 +465,9 @@ StateSet Nft::post(const StateSet& states, const Symbol symbol, const EpsilonClo
 	StateSet res{};
 
 	// If the symbol is EPSILON, we can stay in the same state.
-	if (symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::None) { res = states; }
+	if (symbol == EPSILON && (closes_before(epsilon_closure_opt) || closes_after(epsilon_closure_opt))) {
+		res = states;
+	}
 
 	if (delta.empty()) { return res; }
 
@@ -699,7 +701,9 @@ StateSet Nft::post(
 
 	StateSet result{};
 	// If we want to compute the epsilon cosure and the symbol is EPSILON, we can stay in the same zero states.
-	if (symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::None) { result = states; }
+	if (symbol == EPSILON && (closes_before(epsilon_closure_opt) || closes_after(epsilon_closure_opt))) {
+		result = states;
+	}
 	if (delta.empty()) { return result; }
 
 	StateSet from_states = states;
