@@ -688,6 +688,7 @@ cdef class Nft:
     def unwind_jumps_inplace(self, dont_care_symbol_replacements = None, jump_mode = JumpMode.RepeatSymbol):
         """Unwind jump transitions in place."""
         cdef COrdVector[Symbol] c_replacements = _c_ord_vector_symbol(dont_care_symbol_replacements or {DONT_CARE})
+        self._version.value += 1
         self.thisptr.get().unwind_jumps_inplace(c_replacements, _c_jump_mode(jump_mode))
 
     def unwind_jumps(self, dont_care_symbol_replacements = None, jump_mode = JumpMode.RepeatSymbol) -> Nft:
