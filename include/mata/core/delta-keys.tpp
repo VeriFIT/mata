@@ -139,13 +139,8 @@ template <typename P, typename TT>
 std::set<typename P::Key> DeltaBase<P, TT>::get_used_keys_set() const
 	requires std::totally_ordered<typename P::Key> {
 	using Symbols = typename P::Key;
-	// static should prevent reallocation, seems to speed things up a little
-#ifdef _STATIC_STRUCTURES_
-	static std::set<Symbols> symbols;
-	symbols.clear();
-#else
+	// Not a function-local `static`: one shared by every call would be shared by every thread too.
 	std::set<Symbols> symbols{};
-#endif
 	for (const PostType& state_post : state_posts_) {
 		for (const Entry& symbol_post : state_post) {
 			symbols.insert(symbol_post.key());
@@ -162,13 +157,7 @@ template <typename P, typename TT>
 utils::SparseSet<typename P::Key> DeltaBase<P, TT>::get_used_keys_sps() const
 	requires std::unsigned_integral<typename P::Key> {
 	using Symbols = typename P::Key;
-#ifdef _STATIC_STRUCTURES_
-	// static seems to speed things up a little
-	static utils::SparseSet<Symbols> symbols(64);
-	symbols.clear();
-#else
 	utils::SparseSet<Symbols> symbols(64);
-#endif
 	// symbols.dont_track_elements();
 	for (const PostType& state_post : state_posts_) {
 		for (const Entry& symbol_post : state_post) {
@@ -184,13 +173,7 @@ utils::SparseSet<typename P::Key> DeltaBase<P, TT>::get_used_keys_sps() const
 template <typename P, typename TT>
 std::vector<bool> DeltaBase<P, TT>::get_used_keys_bv() const
 	requires std::unsigned_integral<typename P::Key> {
-#ifdef _STATIC_STRUCTURES_
-	// static seems to speed things up a little
-	static std::vector<bool> symbols(64, false);
-	symbols.clear();
-#else
 	std::vector<bool> symbols(64, false);
-#endif
 	// symbols.dont_track_elements();
 	for (const PostType& state_post : state_posts_) {
 		for (const Entry& symbol_post : state_post) {
@@ -209,13 +192,7 @@ std::vector<bool> DeltaBase<P, TT>::get_used_keys_bv() const
 template <typename P, typename TT>
 BoolVector DeltaBase<P, TT>::get_used_keys_chv() const
 	requires std::unsigned_integral<typename P::Key> {
-#ifdef _STATIC_STRUCTURES_
-	// static seems to speed things up a little
-	static BoolVector symbols(64, false);
-	symbols.clear();
-#else
 	BoolVector symbols(64, false);
-#endif
 	// symbols.dont_track_elements();
 	for (const PostType& state_post : state_posts_) {
 		for (const Entry& symbol_post : state_post) {
