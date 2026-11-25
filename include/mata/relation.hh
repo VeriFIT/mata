@@ -219,19 +219,44 @@ class Delta : public posts::DeltaBase<StatePost, TransitionTraits> {
 	friend class DeltaBuilder;
 
 	/// @name Conversions from the generic relation
-	/// Implicit, since a `posts::DeltaBase<StatePost>` is this relation.
+	/// A `posts::DeltaBase<StatePost>` is this relation. Moving one in is implicit and cheap; copying one is a copy of
+	///  every transition, so it is explicit, and there is no copy-assignment from it.
 	///@{
-	Delta(const Base& other) : Base{other} {}
+	explicit Delta(const Base& other) : Base{other} {}
 	Delta(Base&& other) noexcept : Base{std::move(other)} {}
-	Delta& operator=(const Base& other) {
-		Base::operator=(other);
-		return *this;
-	}
 	Delta& operator=(Base&& other) noexcept {
 		Base::operator=(std::move(other));
 		return *this;
 	}
 	///@}
+
+	/**
+	 * @brief Defragment the delta.
+	 *
+	 * This function removes all state posts which are not in @p is_staying and
+	 *  renames the remaining state posts according to @p renaming.
+	 *
+	 * @param[in] is_staying Boolean vector indicating which states are staying in the relation.
+	 * @param[in] renaming Vector of states to rename the remaining state posts to.
+	 * @return Self with defragmented delta.
+	 */
+	Delta& defragment(const BoolVector& is_staying, const std::vector<mata::State>& renaming) {
+		Base::defragment(is_staying, renaming);
+		return *this;
+	}
+
+	/**
+	 * @brief Resize the delta to fit the given @p states.
+	 *
+	 * @tparam States A variadic parameter pack of states to resize the delta for.
+	 * @param states States to resize the delta for.
+	 */
+	template <typename... States>
+		requires utils::AllOfType<mata::State, States...>
+	Delta& resize_for_states(States... states) {
+		Base::resize_for_states(states...);
+		return *this;
+	}
 
 	/**
 	 * @brief Compare @c this with @p other for equality.

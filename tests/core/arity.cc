@@ -104,6 +104,12 @@ static_assert(std::same_as<decltype(std::declval<const StatePost&>().get_success
 static_assert(std::same_as<Delta::Base, posts::DeltaBase<StatePost, mata::TransitionTraits>>);
 static_assert(sizeof(StatePost) == sizeof(D1::PostType) && sizeof(SymbolPost) == sizeof(D1::Entry));
 static_assert(sizeof(Delta) == sizeof(Delta::Base)); // The wrapper adds no state, so base conversions do not slice.
+// Members returning the relation return Delta itself, and a base is never copied into one without saying so.
+static_assert(std::same_as<decltype(std::declval<Delta&>().defragment(BoolVector{}, std::vector<State>{})), Delta&>);
+static_assert(std::same_as<decltype(std::declval<Delta&>().resize_for_states(State{})), Delta&>);
+static_assert(!std::is_convertible_v<const Delta::Base&, Delta> && std::is_constructible_v<Delta, const Delta::Base&>);
+static_assert(std::is_convertible_v<Delta::Base&&, Delta>);
+static_assert(!std::is_assignable_v<Delta&, const Delta::Base&>);
 
 // A descriptor position gives its key type and keeps its reserved keys; other positions keep the default.
 static_assert(std::same_as<D2::Key<1>, Symbol> && std::same_as<Mixed2::Key<1>, Symbol>);
