@@ -22,6 +22,7 @@
       mataPyClang = pkgs.callPackage ./mata-py.nix {
         inherit version;
         mata = mataClang;
+        stdenv = pkgs.clangStdenv;
       };
       mataPy = mataPyGcc;
 

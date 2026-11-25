@@ -1,5 +1,6 @@
 {
   lib,
+  stdenv,
   python3Packages,
   mata,
   graphviz,
@@ -13,7 +14,7 @@ let
     else
       "0.0.0+${lib.strings.sanitizeDerivationName version}";
 in
-python3Packages.buildPythonPackage (finalAttrs: {
+(python3Packages.buildPythonPackage.override { inherit stdenv; }) (finalAttrs: {
   # Both must match the wheel's .dist-info metadata, which pythonMetadataCheckHook verifies.
   pname = "libmata";
   version = pep440Version;
