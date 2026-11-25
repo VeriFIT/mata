@@ -5,7 +5,6 @@
 #ifndef MATA_CORE_POST_TPP
 #define MATA_CORE_POST_TPP
 
-#include <algorithm>
 #include <utility>
 
 namespace mata::posts::detail {
@@ -33,12 +32,10 @@ bool PostEntryCore<K, N, R>::insert(const Target s)
 		// The set appends at the back and searches otherwise.
 		return targets.insert(s).second;
 	} else {
-		// Find the place where to put the element (if not present).
-		if (const auto it = std::ranges::lower_bound(targets, s); it == targets.end() || *it != s) {
-			targets.insert(it, s);
-			return true;
-		}
-		return false;
+		// The set does not say whether it inserted, so its size does.
+		const size_t old_size{targets.size()};
+		targets.insert(s);
+		return targets.size() != old_size;
 	}
 }
 
