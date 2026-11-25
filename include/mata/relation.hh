@@ -569,6 +569,8 @@ using SuccessorCursor = posts::SuccessorCursor<StatePost>; ///< The successor cu
 
 /// The automaton every NFA and NFT derives from: @c mata::AutomatonBase over @c Delta.
 using Automaton = AutomatonBase<Delta>;
+/// A vector of automata moves them when it grows, and copies them instead if moving may throw.
+static_assert(std::is_nothrow_move_constructible_v<Automaton> && std::is_nothrow_move_assignable_v<Automaton>);
 
 /// @name Contract checks
 /// @c Delta must satisfy the contract the generic algorithms are written against.

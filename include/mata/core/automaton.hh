@@ -18,6 +18,7 @@
 #include <limits>
 #include <optional>
 #include <stdexcept>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -91,13 +92,13 @@ template <DeltaLike D> class AutomatonBase {
 
 	AutomatonBase(const AutomatonBase& other) = default;
 
-	AutomatonBase(AutomatonBase&& other) noexcept
-		: delta{std::move(other.delta)},
-		  initial{std::move(other.initial)},
-		  final{std::move(other.final)} {}
+	/// Nothrow when the relation's move is: a relation whose move may throw is let throw, not terminate.
+	AutomatonBase(AutomatonBase&& other) = default;
 
 	AutomatonBase& operator=(const AutomatonBase& other) = default;
-	AutomatonBase& operator=(AutomatonBase&& other) noexcept;
+	AutomatonBase& operator=(AutomatonBase&& other) noexcept(
+		std::is_nothrow_move_assignable_v<D> && std::is_nothrow_move_assignable_v<utils::SparseSet<State>>
+	);
 
 	/**
 	 * @brief Get the current number of states in the whole automaton.

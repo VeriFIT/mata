@@ -19,7 +19,10 @@
 
 namespace mata {
 
-template <DeltaLike D> AutomatonBase<D>& AutomatonBase<D>::operator=(AutomatonBase&& other) noexcept {
+template <DeltaLike D>
+AutomatonBase<D>& AutomatonBase<D>::operator=(AutomatonBase&& other) noexcept(
+	std::is_nothrow_move_assignable_v<D> && std::is_nothrow_move_assignable_v<utils::SparseSet<State>>
+) {
 	if (this != &other) {
 		delta = std::move(other.delta);
 		initial = std::move(other.initial);
