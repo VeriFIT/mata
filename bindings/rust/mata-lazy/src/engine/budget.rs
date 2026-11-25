@@ -5,6 +5,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use crate::Options;
+use crate::simulation::Until;
 
 /// Steps between two reads of the clock.
 const CLOCK_STEPS: u32 = 256;
@@ -50,8 +51,12 @@ impl Budget {
 		}
 	}
 
-	pub(crate) fn deadline(&self) -> Option<Instant> {
-		self.deadline.map(|(deadline, _)| deadline)
+	/// When work for the query stops, for the work that reads the clock itself.
+	pub(crate) fn until(&self) -> Until {
+		Until {
+			deadline: self.deadline.map(|(deadline, _)| deadline),
+			cancel: self.cancel.clone(),
+		}
 	}
 
 	pub(crate) fn time_limit(&self) -> Option<Duration> {
@@ -75,8 +80,8 @@ impl Budget {
 		}
 	}
 
-	/// Reads the clock (and the cancellation) now, whatever the steps since the last read.
-	pub(crate) fn read_clock(&mut self) {
+	/// Reads the clock (and the cancellation).
+	fn read_clock(&mut self) {
 		self.steps_to_clock = CLOCK_STEPS;
 		if self
 			.deadline

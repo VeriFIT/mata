@@ -9,7 +9,8 @@
 //! rows and on those of the components it reaches, so the components are solved sinks first. One without a
 //! cycle takes one step, and one with a cycle the refinement of Henzinger, Henzinger and Kopke (FOCS 1995).
 
-use std::sync::OnceLock;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, OnceLock};
 use std::time::Instant;
 
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -39,34 +40,59 @@ const MAX_TRANSPOSED: usize = 1 << 20;
 /// The relation of a leaf whose simulation is not computed.
 pub(crate) static IDENTITY: Simulation = Simulation::new(None);
 
-/// The simulation passed the query's deadline.
+/// The simulation passed the query's deadline, or the query was cancelled.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct TimedOut;
+
+/// When work done for a query stops: at its deadline, or once another plan of its
+/// [portfolio](crate::Formula::check_portfolio) answered. The default never stops.
+#[derive(Clone, Debug, Default)]
+pub(crate) struct Until {
+	pub(crate) deadline: Option<Instant>,
+	pub(crate) cancel: Option<Arc<AtomicBool>>,
+}
+
+impl Until {
+	/// Reads the clock and the cancellation.
+	pub(crate) fn passed(&self) -> bool {
+		self.deadline
+			.is_some_and(|deadline| Instant::now() > deadline)
+			|| self
+				.cancel
+				.as_ref()
+				.is_some_and(|cancel| cancel.load(Ordering::Relaxed))
+	}
+
+	pub(crate) fn is_never(&self) -> bool {
+		self.deadline.is_none() && self.cancel.is_none()
+	}
+}
 
 /// Why the refinement stopped.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Stop {
 	/// It passed [`MAX_WORK`] or [`MAX_PAIR_CHECKS`], so the leaf gets the identity.
 	Work,
+	/// The query's [`Until`] passed.
 	Deadline,
 }
 
-/// The work and pair checks that one simulation has left, and its deadline.
+/// The work and pair checks that one simulation has left, and when it stops.
 #[derive(Debug)]
 struct Work {
 	left: usize,
 	pair_checks: usize,
 	until_clock: usize,
-	deadline: Option<Instant>,
+	until: Until,
 }
 
 impl Work {
-	fn new(deadline: Option<Instant>) -> Work {
+	fn new(until: Until) -> Work {
 		Work {
 			left: MAX_WORK,
 			pair_checks: MAX_PAIR_CHECKS,
 			until_clock: CLOCK_WORK,
-			deadline,
+			until,
 		}
 	}
 
@@ -86,7 +112,7 @@ impl Work {
 		}
 	}
 
-	/// Spends `units`, reading the clock every [`CLOCK_WORK`] units.
+	/// Spends `units`, reading the clock (and the cancellation) every [`CLOCK_WORK`] units.
 	fn spend(&mut self, units: usize) -> Result<(), Stop> {
 		self.left = self.left.checked_sub(units).ok_or(Stop::Work)?;
 		if let Some(left) = self.until_clock.checked_sub(units) {
@@ -96,10 +122,7 @@ impl Work {
 		}
 
 		self.until_clock = CLOCK_WORK;
-		if self
-			.deadline
-			.is_some_and(|deadline| Instant::now() > deadline)
-		{
+		if self.until.passed() {
 			return Err(Stop::Deadline);
 		}
 
@@ -250,12 +273,12 @@ impl Simulation {
 		}
 	}
 
-	/// The maximal simulation of `leaf`, or the identity past the bounds; [`TimedOut`] once `deadline` passes.
-	pub(crate) fn compute(leaf: &Leaf, deadline: Option<Instant>) -> Result<Simulation, TimedOut> {
+	/// The maximal simulation of `leaf`, or the identity past the bounds; [`TimedOut`] once `until` passes.
+	pub(crate) fn compute(leaf: &Leaf, until: &Until) -> Result<Simulation, TimedOut> {
 		let relation = if leaf.num_states() > MAX_STATES {
 			None
 		} else {
-			match maximal_simulation(leaf, &mut Work::new(deadline), MAX_COUNTERS) {
+			match maximal_simulation(leaf, &mut Work::new(until.clone()), MAX_COUNTERS) {
 				Ok(relation) => Some(relation),
 				Err(Stop::Work) => None,
 				Err(Stop::Deadline) => return Err(TimedOut),
@@ -1034,13 +1057,15 @@ impl Solver<'_> {
 
 #[cfg(test)]
 mod tests {
+	use std::sync::Arc;
+	use std::sync::atomic::AtomicBool;
 	use std::time::Instant;
 
 	use rand::rngs::StdRng;
 	use rand::{RngExt, SeedableRng};
 
 	use super::{
-		BitMatrix, MAX_COUNTERS, MAX_STATES, MAX_WORK, Simulation, Stop, TimedOut, Work,
+		BitMatrix, MAX_COUNTERS, MAX_STATES, MAX_WORK, Simulation, Stop, TimedOut, Until, Work,
 		maximal_simulation, set_bit,
 	};
 	use crate::Symbol;
@@ -1097,7 +1122,7 @@ mod tests {
 	fn assert_same(leaf: &Leaf) {
 		let expected = reference(leaf).words;
 		for max_counters in [MAX_COUNTERS, 0] {
-			let computed = maximal_simulation(leaf, &mut Work::new(None), max_counters)
+			let computed = maximal_simulation(leaf, &mut Work::new(Until::default()), max_counters)
 				.expect("within the work bound");
 			assert_eq!(computed.words, expected, "{leaf:?}");
 		}
@@ -1273,14 +1298,14 @@ mod tests {
 	fn large_components_start_from_the_states_with_the_same_letters() {
 		let size = 12_000;
 		let leaf = distinct_cycle(size);
-		let relation = maximal_simulation(&leaf, &mut Work::new(None), MAX_COUNTERS)
+		let relation = maximal_simulation(&leaf, &mut Work::new(Until::default()), MAX_COUNTERS)
 			.expect("within the work bound");
 		assert!(relation.get(size, 0) && relation.get(0, size));
 		assert_eq!(relation.count_row(1), 1);
 
 		let k = 300;
 		let leaf = bipartite(k);
-		let relation = maximal_simulation(&leaf, &mut Work::new(None), MAX_COUNTERS)
+		let relation = maximal_simulation(&leaf, &mut Work::new(Until::default()), MAX_COUNTERS)
 			.expect("within the work bound");
 		// The first states all move alike, and so do the others.
 		for p in 0..2 * k {
@@ -1321,7 +1346,7 @@ mod tests {
 	fn leaves_that_need_too_many_pair_checks_get_the_identity_early() {
 		// Too many checks to start the rows, and too many once pairs leave them.
 		for leaf in [cascade(16_380), doubling(16_384)] {
-			let mut work = Work::new(None);
+			let mut work = Work::new(Until::default());
 			assert!(matches!(
 				maximal_simulation(&leaf, &mut work, MAX_COUNTERS),
 				Err(Stop::Work)
@@ -1334,19 +1359,26 @@ mod tests {
 	fn leaves_up_to_max_states_get_their_simulation() {
 		let leaf = falsifier(&mut StdRng::seed_from_u64(13), 100, 400);
 		assert!(leaf.num_states() > 1 << 14 && leaf.num_states() <= MAX_STATES);
-		let simulation = Simulation::compute(&leaf, None).expect("no deadline");
+		let simulation = Simulation::compute(&leaf, &Until::default()).expect("no deadline");
 		assert!(!simulation.is_identity());
 	}
 
 	#[test]
-	fn a_simulation_stops_at_the_deadline() {
+	fn a_simulation_stops_at_the_deadline_or_once_cancelled() {
 		let leaf = doubling(4000);
-		assert!(matches!(
-			Simulation::compute(&leaf, Some(Instant::now())),
-			Err(TimedOut)
-		));
+		let deadline = Until {
+			deadline: Some(Instant::now()),
+			cancel: None,
+		};
+		let cancelled = Until {
+			deadline: None,
+			cancel: Some(Arc::new(AtomicBool::new(true))),
+		};
+		for until in [deadline, cancelled] {
+			assert!(matches!(Simulation::compute(&leaf, &until), Err(TimedOut)));
+		}
 
-		let simulation = Simulation::compute(&leaf, None).expect("no deadline");
+		let simulation = Simulation::compute(&leaf, &Until::default()).expect("no deadline");
 		assert!(!simulation.is_identity());
 	}
 }

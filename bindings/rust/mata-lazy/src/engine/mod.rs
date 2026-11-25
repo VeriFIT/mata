@@ -311,7 +311,7 @@ impl<'f> Engine<'f> {
 			plans,
 			join_scratch: Scratch::default(),
 			join_buffers: JoinBuffers::default(),
-			subsumption: Subsumption::new(options.subsumption, num_nodes, budget.deadline()),
+			subsumption: Subsumption::new(options.subsumption, num_nodes, budget.until()),
 			antichain: options.subsumption && options.antichain,
 			max_length: options.max_length,
 			shortest: options.shortest,
@@ -382,11 +382,9 @@ impl<'f> Engine<'f> {
 					let Ok(reduced) = reduced else {
 						return self.budget.check();
 					};
+					// A leaf built in full is kept even if the query then passes its limit, so a retry reuses it
+					// (only a reduction that a limit cut short is dropped).
 					let leaf = Arc::new(Leaf::build(&reduced, Vec::new()));
-					// A limit may pass after the last read of the clock, while the reduction ends or the leaf is
-					// built: checked again before the leaf is published to later queries.
-					self.budget.read_clock();
-					self.budget.check()?;
 					self.formula
 						.explicit_cache
 						.lock()
@@ -828,10 +826,14 @@ const DETERMINIZE_FACTOR: usize = 4;
 /// subsets can still hold most states each, as the suffixes of a chain whose states are all initial.
 const MEMBERS_FACTOR: usize = 16;
 
+/// How many times the moves of the quotient the moves of its subset construction may be. Few subsets can still
+/// have many moves each, the union of the distinct letters of their members.
+const MOVES_FACTOR: usize = 16;
+
 /// An explicit node's automaton made small: minimal when its subset construction stays within
-/// [`DETERMINIZE_FACTOR`] times its bisimulation quotient (and its subsets within [`MEMBERS_FACTOR`] times in
-/// members), that quotient otherwise. An explicit node above another reads the smaller one, so a chain of them
-/// (pre-images in regular model checking) does not grow level by level.
+/// [`DETERMINIZE_FACTOR`] times the states of its bisimulation quotient, [`MEMBERS_FACTOR`] times them in members of
+/// all subsets and [`MOVES_FACTOR`] times its moves, that quotient otherwise. An explicit node above another reads
+/// the smaller one, so a chain of them (pre-images in regular model checking) does not grow level by level.
 fn reduce(raw: &Raw, stop: &mut dyn FnMut() -> bool) -> Result<Raw, Stopped> {
 	// Trimmed first: a dead successor would tell two states with the same language apart.
 	let quotient = raw.trimmed().quotient(stop)?;
@@ -839,6 +841,7 @@ fn reduce(raw: &Raw, stop: &mut dyn FnMut() -> bool) -> Result<Raw, Stopped> {
 	match quotient.determinize(
 		states.saturating_mul(DETERMINIZE_FACTOR),
 		states.saturating_mul(MEMBERS_FACTOR),
+		quotient.num_moves().saturating_mul(MOVES_FACTOR),
 		stop,
 	)? {
 		Some(dfa) => dfa.trimmed().minimize(stop),

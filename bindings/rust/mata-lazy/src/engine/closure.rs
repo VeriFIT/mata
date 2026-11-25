@@ -173,7 +173,7 @@ mod tests {
 	use crate::engine::store::Store;
 	use crate::ids::{ExecId, Id, StateId};
 	use crate::leaf::{Leaf, Raw};
-	use crate::simulation::Simulation;
+	use crate::simulation::{Simulation, Until};
 
 	/// A random leaf of up to `size` states (fewer after trimming) over `letters` letters.
 	fn random_leaf(rng: &mut StdRng, size: usize, letters: u32, moves: usize, finals: f64) -> Leaf {
@@ -237,7 +237,7 @@ mod tests {
 			let finals = [0.1, 0.5, 0.9][rng.random_range(0..3)];
 			let leaf = random_leaf(&mut rng, size, letters, moves, finals);
 			let size = leaf.num_states();
-			let simulation = leaf.simulation(None).expect("no deadline");
+			let simulation = leaf.simulation(&Until::default()).expect("no deadline");
 			let Some(rows) = simulation.downward_rows() else {
 				continue;
 			};
@@ -317,7 +317,7 @@ mod tests {
 		}
 
 		let leaf = Leaf::build(&raw, Vec::new());
-		let simulation = leaf.simulation(None).expect("no deadline");
+		let simulation = leaf.simulation(&Until::default()).expect("no deadline");
 		let rows = simulation.downward_rows().expect("a relation of few pairs");
 
 		let mut store = Store::Set(IndexSet::default());

@@ -7,7 +7,6 @@
 use std::cmp::Reverse;
 use std::collections::BTreeMap;
 use std::ops::Bound;
-use std::time::Instant;
 
 use rustc_hash::{FxHashMap, FxHashSet};
 use typed_index_collections::TiVec;
@@ -19,7 +18,7 @@ use super::memo::Memo;
 use super::store::Store;
 use crate::ids::{ExecId, Id, StateId};
 use crate::leaf::Leaf;
-use crate::simulation::{IDENTITY, Simulation, TimedOut};
+use crate::simulation::{IDENTITY, Simulation, TimedOut, Until};
 
 /// Comparisons of [`minimize`](Subsumption::minimize) between two reads of the clock.
 const CLOCK_COMPARISONS: usize = 4096;
@@ -29,21 +28,21 @@ pub(crate) struct Subsumption {
 	enabled: bool,
 	memos: TiVec<ExecId, Memo>,
 	closures: Closures,
-	/// The query's deadline, for computing leaf simulations and for minimizing.
-	deadline: Option<Instant>,
-	/// Whether a simulation or a minimization passed the deadline; then leaves without one use the identity.
+	/// When the query stops, for computing leaf simulations and for minimizing.
+	until: Until,
+	/// Whether a simulation or a minimization passed `until`; then leaves without one use the identity.
 	late: bool,
 	/// The nodes and states that [`rank`](Subsumption::rank) has yet to visit, kept to reuse the memory.
 	pending: Vec<(ExecId, StateId)>,
 }
 
 impl Subsumption {
-	pub(crate) fn new(enabled: bool, num_nodes: usize, deadline: Option<Instant>) -> Subsumption {
+	pub(crate) fn new(enabled: bool, num_nodes: usize, until: Until) -> Subsumption {
 		Subsumption {
 			enabled,
 			memos: (0..num_nodes).map(|_| Memo::default()).collect(),
 			closures: Closures::new(num_nodes),
-			deadline,
+			until,
 			late: false,
 			pending: Vec::new(),
 		}
@@ -53,10 +52,10 @@ impl Subsumption {
 		self.late
 	}
 
-	/// The simulation of `leaf`, computed within the deadline; once late, the identity if it has none.
+	/// The simulation of `leaf`, computed within `until`; once late, the identity if it has none.
 	fn simulation<'l>(&mut self, leaf: &'l Leaf) -> &'l Simulation {
 		if !self.late {
-			match leaf.simulation(self.deadline) {
+			match leaf.simulation(&self.until) {
 				Ok(simulation) => return simulation,
 				Err(TimedOut) => self.late = true,
 			}
@@ -235,10 +234,7 @@ impl Subsumption {
 		for (rank, member) in ranked {
 			if compared >= CLOCK_COMPARISONS {
 				compared = 0;
-				if self
-					.deadline
-					.is_some_and(|deadline| Instant::now() > deadline)
-				{
+				if self.until.passed() {
 					self.late = true;
 				}
 			}

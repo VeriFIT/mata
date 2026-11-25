@@ -2,7 +2,7 @@
 
 use std::hash::BuildHasher;
 use std::sync::OnceLock;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use hashbrown::HashTable;
 use indexmap::IndexSet;
@@ -10,8 +10,11 @@ use parking_lot::Mutex;
 use rustc_hash::{FxBuildHasher, FxHashMap};
 
 use crate::ids::{Id, StateId};
-use crate::simulation::{Simulation, TimedOut};
+use crate::simulation::{Simulation, TimedOut, Until};
 use crate::{Automaton, Error, Symbol};
+
+/// How long a query waits for another one's simulation before it reads its cancellation again.
+const LOCK_SLICE: Duration = Duration::from_millis(10);
 
 /// Transitions collected before trimming and sorting.
 #[derive(Debug)]
@@ -59,6 +62,10 @@ impl Raw {
 		self.push(source, tuple, target);
 	}
 
+	pub(crate) fn num_moves(&self) -> usize {
+		self.edges.len()
+	}
+
 	fn tuple(&self, edge: usize) -> &[Symbol] {
 		&self.letters[edge * self.arity..(edge + 1) * self.arity]
 	}
@@ -71,24 +78,31 @@ impl Raw {
 		(start, self.edges.len())
 	}
 
-	/// The quotient by the coarsest forward bisimulation, which keeps the language on every tape: the partition
-	/// refinement of Paige and Tarjan, by letter. Blocks are kept stable with respect to a coarser partition of
-	/// compound sets, counting for every state and letter its moves into each compound set; a compound set of
-	/// several blocks loses its smaller one, and only the moves into that block are visited, so every move is
-	/// visited O(log n) times. [`Stopped`] when `stop` says so (it is asked once per block taken out).
-	pub(crate) fn quotient(&self, stop: &mut dyn FnMut() -> bool) -> Result<Raw, Stopped> {
-		let num_states = self.finals.len();
-		let num_edges = self.edges.len();
-		let mut tuples: Vec<&[Symbol]> = (0..num_edges).map(|edge| self.tuple(edge)).collect();
+	/// The tuple of every move, numbered in the order of the distinct tuples.
+	fn labels(&self) -> Vec<usize> {
+		let mut tuples: Vec<&[Symbol]> =
+			(0..self.edges.len()).map(|edge| self.tuple(edge)).collect();
 		tuples.sort_unstable();
 		tuples.dedup();
-		let label: Vec<usize> = (0..num_edges)
+		(0..self.edges.len())
 			.map(|edge| {
 				tuples
 					.binary_search(&self.tuple(edge))
 					.expect("the tuple of a move")
 			})
-			.collect();
+			.collect()
+	}
+
+	/// The quotient by the coarsest forward bisimulation, which keeps the language on every tape: the partition
+	/// refinement of Paige and Tarjan, by letter. Blocks are kept stable with respect to a coarser partition of
+	/// compound sets, counting for every state and letter its moves into each compound set; a compound set of
+	/// several blocks loses its smaller one, and only the moves into that block are visited, so every move is
+	/// visited O(log n) times. [`Stopped`] when `stop` says so (it is asked once per block taken out, and per move
+	/// visited).
+	pub(crate) fn quotient(&self, stop: &mut dyn FnMut() -> bool) -> Result<Raw, Stopped> {
+		let num_states = self.finals.len();
+		let num_edges = self.edges.len();
+		let label = self.labels();
 		let tail = |edge: usize| self.edges[edge].0.index();
 		let mut incoming: Vec<Vec<usize>> = vec![Vec::new(); num_states];
 		for (edge, &(_, target)) in self.edges.iter().enumerate() {
@@ -139,6 +153,9 @@ impl Raw {
 			let mut entries: Vec<(usize, usize, usize)> = Vec::new();
 			for position in blocks.first[splitter]..blocks.past[splitter] {
 				for &edge in &incoming[blocks.elements[position]] {
+					if stop() {
+						return Err(Stopped);
+					}
 					let old = edge_cell[edge];
 					let cell = *cells.entry((tail(edge), label[edge])).or_insert_with(|| {
 						entries.push((tail(edge), label[edge], old));
@@ -250,13 +267,14 @@ impl Raw {
 		quotient
 	}
 
-	/// The subset construction over the tuples of `self`: `Ok(None)` once it has more than `max_states` states or
-	/// its subsets more than `max_members` members in all, [`Stopped`] when `stop` says so (it is asked once per
-	/// subset).
+	/// The subset construction over the tuples of `self`: `Ok(None)` once it has more than `max_states` states, its
+	/// subsets more than `max_members` members in all or it more than `max_moves` moves, [`Stopped`] when `stop`
+	/// says so (it is asked once per subset and per move).
 	pub(crate) fn determinize(
 		&self,
 		max_states: usize,
 		max_members: usize,
+		max_moves: usize,
 		stop: &mut dyn FnMut() -> bool,
 	) -> Result<Option<Raw>, Stopped> {
 		let mut outgoing: Vec<Vec<usize>> = vec![Vec::new(); self.finals.len()];
@@ -288,6 +306,12 @@ impl Raw {
 			dfa.finals
 				.push(subsets[next].iter().any(|state| self.finals[state.index()]));
 			for group in moves.chunk_by(|a, b| a.0 == b.0) {
+				if stop() {
+					return Err(Stopped);
+				}
+				if dfa.edges.len() == max_moves {
+					return Ok(None);
+				}
 				let target: Vec<StateId> = group.iter().map(|&(_, target)| target).collect();
 				let size = target.len();
 				let (index, new) = subsets.insert_full(target);
@@ -308,7 +332,7 @@ impl Raw {
 
 	/// The minimal automaton of `self`, which must be trimmed and deterministic over its tuples: the partition
 	/// refinement of Valmari and Lehtinen for partial DFAs (STACS 2008), in O(m log n) for m moves and n states.
-	/// [`Stopped`] when `stop` says so (it is asked once per class of moves).
+	/// [`Stopped`] when `stop` says so (it is asked once per class of moves, per move of it and per new block).
 	pub(crate) fn minimize(&self, stop: &mut dyn FnMut() -> bool) -> Result<Raw, Stopped> {
 		let num_states = self.finals.len();
 		let num_edges = self.edges.len();
@@ -376,12 +400,18 @@ impl Raw {
 				return Err(Stopped);
 			}
 			for &edge in &cords.elements[cords.first[cord]..cords.past[cord]] {
+				if stop() {
+					return Err(Stopped);
+				}
 				blocks.mark(tail(edge));
 			}
 			blocks.split();
 			cord += 1;
 
 			while block < blocks.sets {
+				if stop() {
+					return Err(Stopped);
+				}
 				for &state in &blocks.elements[blocks.first[block]..blocks.past[block]] {
 					for &edge in &incoming[incoming_start[state]..incoming_start[state + 1]] {
 						cords.mark(edge);
@@ -847,20 +877,31 @@ impl Leaf {
 		})
 	}
 
-	/// The simulation, computed on first use; [`TimedOut`] if computing or waiting passes `deadline` (nothing kept).
-	pub(crate) fn simulation(&self, deadline: Option<Instant>) -> Result<&Simulation, TimedOut> {
+	/// The simulation, computed on first use; [`TimedOut`] if computing or waiting passes `until` (nothing kept).
+	pub(crate) fn simulation(&self, until: &Until) -> Result<&Simulation, TimedOut> {
 		match self.simulation.get() {
 			Some(simulation) => Ok(simulation),
-			None => self.compute_simulation(deadline),
+			None => self.compute_simulation(until),
 		}
 	}
 
 	/// Computes the simulation or waits for the query computing it; apart, so that the lookup above inlines.
 	#[cold]
-	fn compute_simulation(&self, deadline: Option<Instant>) -> Result<&Simulation, TimedOut> {
-		let computing = match deadline {
-			Some(deadline) => self.computing.try_lock_until(deadline).ok_or(TimedOut)?,
-			None => self.computing.lock(),
+	fn compute_simulation(&self, until: &Until) -> Result<&Simulation, TimedOut> {
+		let computing = if until.is_never() {
+			self.computing.lock()
+		} else {
+			// Waits in slices, to see a cancellation that comes before the deadline.
+			loop {
+				let slice = Instant::now() + LOCK_SLICE;
+				let wait = until.deadline.map_or(slice, |deadline| deadline.min(slice));
+				if let Some(computing) = self.computing.try_lock_until(wait) {
+					break computing;
+				}
+				if until.passed() {
+					return Err(TimedOut);
+				}
+			}
 		};
 
 		// The query that held the lock may have computed it.
@@ -868,7 +909,7 @@ impl Leaf {
 			return Ok(simulation);
 		}
 
-		let computed = Simulation::compute(self, deadline)?;
+		let computed = Simulation::compute(self, until)?;
 		let simulation = self.simulation.get_or_init(|| computed);
 		drop(computing);
 

@@ -607,13 +607,15 @@ impl Formula {
 
 	/// The same relation, built as an explicit automaton when a query starts.
 	///
-	/// The query explores `term` completely, numbers its macrostates densely and trims the result; when its subset
-	/// construction over tuples stays within four times its states, it is minimized as well. Then the query reads it
-	/// like a leaf, with a simulation of its own. Explicit nodes stacked on each other therefore keep the size of
-	/// their languages, not of their products. The query's limits hold through this work. Rewrites stop at this
-	/// node. Materialized automata are reused by later
-	/// queries over the same alphabets (see [`clear_cache`](Formula::clear_cache)). When the exploration passes
-	/// `options.max_states`, the node stays lazy.
+	/// The query explores `term` completely, numbers its macrostates densely, trims the result and takes its
+	/// quotient by bisimulation. When the subset construction over tuples of the quotient stays within four times
+	/// its states, sixteen times its states in members of all subsets and sixteen times its moves, the result is
+	/// minimized; otherwise the quotient is kept. Then the query reads it like a leaf, with a simulation of its own.
+	/// Explicit nodes stacked on each other therefore keep the size of their languages, not of their products. The
+	/// query's limits hold through this work, and an automaton built in full is kept even if the query then passes
+	/// a limit. Rewrites stop at this node. Materialized automata are reused by later queries over the same
+	/// alphabets (see [`clear_cache`](Formula::clear_cache)). When the exploration passes `options.max_states`, the
+	/// node stays lazy.
 	///
 	/// # Errors
 	///
