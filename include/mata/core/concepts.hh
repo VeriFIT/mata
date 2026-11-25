@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <format>
 #include <iterator>
+#include <ranges>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -95,6 +96,8 @@ template <typename T>
 concept TargetSetLike = IterableRange<T> && requires(const T t, const posts::target_of<T>& target) {
 	typename posts::target_of<T>;
 	requires posts::arity_of<T> == 0;
+	// The successor cursors sweep the targets by pointer, which is what makes them fast.
+	requires std::ranges::contiguous_range<const T>;
 	{ std::ranges::is_sorted(t) } -> std::convertible_to<bool>;
 	{ std::declval<T&>().push_back(std::declval<const posts::target_of<T>&>()) };
 	{ std::declval<T&>().insert(std::declval<const posts::target_of<T>&>()) };
