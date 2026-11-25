@@ -21,7 +21,7 @@ namespace mata {
  * @brief Specialization of utils::SynchronizedExistentialIterator for iterating over SymbolPosts.
  */
 class SynchronizedExistentialSymbolPostIterator
-	: public utils::SynchronizedExistentialIterator<utils::OrdVector<SymbolPost>::const_iterator> {
+	: public utils::SynchronizedExistentialIterator<StatePost::const_iterator> {
   public:
 	/**
 	 * @brief Get union of all targets.

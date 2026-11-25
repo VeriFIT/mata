@@ -33,6 +33,7 @@
 #include <compare>
 #include <cstddef>
 #include <iterator>
+#include <memory>
 #include <ranges>
 #include <span>
 #include <stdexcept>
@@ -318,10 +319,11 @@ class PostEntry<K, N, R> : public detail::PostEntryCore<K, N, R> {
  *  and the next level down uses SymbolPost.
  *
  * @tparam E The entry type: one key plus what is nested under it.
+ * @tparam A The allocator of the entries. @c mata::StatePost uses @c mata::utils::DeltaAllocator.
  * @see mata::posts::PostLike.
  */
-template <typename E> class Post : utils::OrdVector<E> {
-	using super = utils::OrdVector<E>;
+template <typename E, typename A = std::allocator<E>> class Post : utils::OrdVector<E, A> {
+	using super = utils::OrdVector<E, A>;
 	using post_iterator = typename super::const_iterator;
 
   public:
@@ -344,7 +346,7 @@ template <typename E> class Post : utils::OrdVector<E> {
 	///@}
 
 	using super::begin, super::end, super::cbegin, super::cend;
-	using utils::OrdVector<E>::OrdVector;
+	using super::super;
 	using typename super::const_iterator;
 	using typename super::iterator;
 	using typename super::VectorType; ///< The underlying vector of entries.

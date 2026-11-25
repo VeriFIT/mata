@@ -112,10 +112,10 @@ class SymbolPost : public posts::PostEntry<Symbol, SmallStateSet> {
 	SymbolPost(Base&& other) noexcept : Base{std::move(other)} {}
 };
 
-/// Symbol posts keyed by states.
-class StatePost : public posts::Post<SymbolPost> {
+/// Symbol posts keyed by states. Their block comes from @c utils::DeltaAllocator, like a spilled target set's.
+class StatePost : public posts::Post<SymbolPost, utils::DeltaAllocator<SymbolPost>> {
   public:
-	using Base = posts::Post<SymbolPost>; ///< The generic post.
+	using Base = posts::Post<SymbolPost, utils::DeltaAllocator<SymbolPost>>; ///< The generic post.
 	using Base::Base;
 	using Base::operator=;
 
@@ -608,7 +608,7 @@ namespace mata {
 /// Instantiated once, in `src/relation.cc`, instead of in every translation unit including this header.
 extern template class posts::detail::PostEntryCore<Symbol, SmallStateSet, ReservedKeys<Symbol>>;
 extern template class posts::PostEntry<Symbol, SmallStateSet>;
-extern template class posts::Post<SymbolPost>;
+extern template class posts::Post<SymbolPost, utils::DeltaAllocator<SymbolPost>>;
 extern template class posts::PostMoves<StatePost::Base>;
 extern template class posts::KeyedAccess<Delta::Base, StatePost>;
 extern template class posts::DeltaBase<StatePost, TransitionTraits>;

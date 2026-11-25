@@ -92,7 +92,9 @@ using Delta = posts::DeltaBase<StatePost, TransitionTraits>;
 // The library ships concrete classes in the chain RelationOf builds: the entry derives from the chain's entry,
 //  the post is the chain's post of that entry. Neither adds state.
 static_assert(std::derived_from<SymbolPost, posts::PostChain<Symbol, SmallStateSet>::Entry>);
-static_assert(std::derived_from<StatePost, posts::Post<SymbolPost>>);
+static_assert(std::derived_from<StatePost, posts::Post<SymbolPost, utils::DeltaAllocator<SymbolPost>>>);
+// The state post's entries come from the Delta allocator, as the spilled target sets do.
+static_assert(std::same_as<StatePost::VectorType::allocator_type, utils::DeltaAllocator<SymbolPost>>);
 static_assert(std::same_as<Delta::Base, posts::DeltaBase<StatePost, mata::TransitionTraits>>);
 static_assert(sizeof(StatePost) == sizeof(D1::PostType) && sizeof(SymbolPost) == sizeof(D1::Entry));
 static_assert(sizeof(Delta) == sizeof(Delta::Base)); // The wrapper adds no state, so base conversions do not slice.
