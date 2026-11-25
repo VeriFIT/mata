@@ -75,7 +75,8 @@ template <typename D, typename P, size_t... KeyIdx> class KeyedAccess<D, P, std:
 	 * @param targets Set of targets of the transition.
 	 */
 	void add(const State source, const KeyOf<P, KeyIdx>... keys, const TargetSet& targets) {
-		for (const Target& target : targets) {
+		const TargetSet snapshot{targets};
+		for (const Target& target : snapshot) {
 			self().resize_for_states(source, D::state_of(target));
 			insert_target(self().mutable_state_post(source), target, keys...);
 		}
