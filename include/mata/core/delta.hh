@@ -406,7 +406,13 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	 * @return True if @p target is among the successors of @p source, false otherwise.
 	 */
 	bool is_successor(const State source, const State target) const {
-		return any_target(state_post(source), [target](const Target& t) { return state_of(t) == target; });
+		if constexpr (std::same_as<Target, State>) {
+			// A bare state is the target itself, so the post can binary-search for it.
+			return state_post(source).has_target(target);
+		} else {
+			// A target with a payload is found by its state, which its order need not lead with.
+			return any_target(state_post(source), [target](const Target& t) { return state_of(t) == target; });
+		}
 	}
 
 	/**

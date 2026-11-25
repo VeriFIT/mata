@@ -551,7 +551,14 @@ class Post : utils::OrdVector<E, A> {
 	 * @return True if @p target is reachable under any key, false otherwise.
 	 */
 	bool has_target(const Target target) const {
-		return any_target(*this, [target](const Target& t) { return t == target; });
+		// A binary search in each innermost post, rather than a walk over every target.
+		return std::ranges::any_of(*this, [&target](const Entry& entry) {
+			if constexpr (key_arity == 1) {
+				return entry.has_target(target);
+			} else {
+				return entry.nested().has_target(target);
+			}
+		});
 	}
 
   private:
