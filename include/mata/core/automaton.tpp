@@ -60,8 +60,11 @@ template <DeltaLike D> size_t AutomatonBase<D>::num_of_states() const {
 
 template <DeltaLike D> void AutomatonBase<D>::clear() {
 	delta.clear();
+	// SparseSet::clear() keeps the domain, which num_of_states() reads, so it is truncated as well.
 	initial.clear();
+	initial.truncate();
 	final.clear();
+	final.truncate();
 }
 
 template <DeltaLike D>

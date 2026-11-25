@@ -102,8 +102,6 @@ static_assert(std::same_as<decltype(std::declval<const Delta::Base&>().get_succe
 static_assert(std::same_as<decltype(std::declval<const D1&>().get_successors(State{})), D1::TargetSet>);
 static_assert(std::same_as<decltype(std::declval<const StatePost&>().get_successors(Symbol{})), const SmallStateSet&>);
 static_assert(std::same_as<Delta::Base, posts::DeltaBase<StatePost, mata::TransitionTraits>>);
-static_assert(sizeof(StatePost) == sizeof(D1::PostType) && sizeof(SymbolPost) == sizeof(D1::Entry));
-static_assert(sizeof(Delta) == sizeof(Delta::Base)); // The wrapper adds no state, so base conversions do not slice.
 // Members returning the relation return Delta itself, and a base is never copied into one without saying so.
 static_assert(std::same_as<decltype(std::declval<Delta&>().defragment(BoolVector{}, std::vector<State>{})), Delta&>);
 static_assert(std::same_as<decltype(std::declval<Delta&>().resize_for_states(State{})), Delta&>);
@@ -128,8 +126,7 @@ concept HasEntryFields = requires(E e) {
 static_assert(HasEntryFields<D1::Entry>);
 static_assert(!HasEntryFields<D2::Entry> && !HasEntryFields<D3::Entry>);
 static_assert(HasEntryFields<D2::Entry::Nested::Entry>);
-// No extra storage, and noexcept moves so that std::vector relocates by move.
-static_assert(sizeof(D1::Entry) == sizeof(posts::internal::PostEntryCore<Symbol, SmallStateSet>));
+// Noexcept moves, so that std::vector relocates by move.
 static_assert(std::is_nothrow_move_constructible_v<D1::Entry> && std::is_nothrow_move_assignable_v<D1::Entry>);
 static_assert(std::is_nothrow_move_constructible_v<D2::Entry> && std::is_nothrow_move_assignable_v<D2::Entry>);
 

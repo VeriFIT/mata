@@ -117,6 +117,17 @@ static_assert(std::same_as<TinyAutomaton::DeltaType, TinyDelta>);
 // Instantiates every member, so a member needing more than DeltaLike fails here.
 template class mata::AutomatonBase<TinyDelta>;
 
+// A leaf over the third-party relation, as Nfa is over Delta: it publishes the protected writes and has runs.
+struct TinyLeaf : mata::AutomatonBase<TinyDelta> {
+	using Run = mata::Run;
+	using AutomatonBase::add_state;
+	using AutomatonBase::clear;
+
+	TinyLeaf() = default; // So that `aut{}` is not aggregate initialisation.
+	std::pair<Run, bool> get_word_for_path(const Run& run) const { return {run, true}; }
+};
+static_assert(mata::AutomatonWithRuns<TinyLeaf>);
+
 TEST_CASE("mata::AutomatonBase over a relation defined outside mata") {
 	// 0 -> 1 -> 2 (final), plus a dead-end 0 -> 3 and an unreachable 4 -> 4.
 	TinyAutomaton aut{};
@@ -137,6 +148,22 @@ TEST_CASE("mata::AutomatonBase over a relation defined outside mata") {
 		CHECK(aut.num_of_states() == 5);
 		CHECK(aut.is_state(4));
 		CHECK(!aut.is_state(5));
+	}
+
+	SECTION("a state past the relation, initial and final, is a state of the automaton") {
+		aut.initial.insert(7);
+		aut.final.insert(7);
+		CHECK(aut.delta.num_of_states() == 5);
+		CHECK(aut.num_of_states() == 8);
+		CHECK(aut.get_reachable_states() == mata::StateSet{0, 1, 2, 3, 7});
+		CHECK(aut.get_useful_states() == mata::BoolVector{1, 1, 1, 0, 0, 0, 0, 1});
+
+		mata::StateRenaming renaming{};
+		aut.trim(&renaming);
+		CHECK(aut.num_of_states() == 4);
+		CHECK(renaming == mata::StateRenaming{{0, 0}, {1, 1}, {2, 2}, {7, 3}});
+		CHECK(aut.initial.contains(3));
+		CHECK(aut.final.contains(3));
 	}
 
 	SECTION("reachability walks the third-party relation") {
@@ -184,5 +211,41 @@ TEST_CASE("mata::AutomatonBase over a relation defined outside mata") {
 		CHECK(renaming == mata::StateRenaming{{0, 0}, {1, 1}, {2, 2}});
 		CHECK(aut.get_reachable_states() == mata::StateSet{0, 1, 2});
 		CHECK(aut.get_useful_states() == mata::BoolVector{1, 1, 1});
+	}
+}
+
+TEST_CASE("mata::AutomatonBase over a relation defined outside mata, through a leaf") {
+	// 0 -> 1 -> 2 (final), and the shortcut 0 -> 2.
+	TinyLeaf aut{};
+	aut.delta.add(0, 1);
+	aut.delta.add(1, 2);
+	aut.delta.add(0, 2);
+	aut.initial.insert(0);
+	aut.final.insert(2);
+
+	SECTION("add_state grows the relation") {
+		CHECK(aut.add_state() == 3);
+		CHECK(aut.delta.num_of_states() == 4);
+		CHECK(aut.add_state(6) == 6);
+		CHECK(aut.delta.num_of_states() == 7);
+		CHECK(aut.add_state(1) == 1);
+		CHECK(aut.delta.num_of_states() == 7);
+	}
+
+	SECTION("clear empties the relation and both state sets") {
+		aut.clear();
+		CHECK(aut.num_of_states() == 0);
+		CHECK(aut.initial.empty());
+		CHECK(aut.final.empty());
+		CHECK(!aut.delta.has_transitions());
+	}
+
+	SECTION("emptiness with a counter-example returns a shortest accepting path") {
+		TinyLeaf::Run cex{};
+		CHECK(!aut.is_lang_empty(&cex));
+		CHECK(cex.path == std::vector<mata::State>{0, 2});
+
+		aut.final.clear();
+		CHECK(aut.is_lang_empty(&cex));
 	}
 }

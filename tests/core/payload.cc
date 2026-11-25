@@ -145,6 +145,24 @@ TEST_CASE("mata::AutomatonBase over a relation whose targets carry a payload") {
 		CHECK(gapped.final.contains(1));
 	}
 
+	SECTION("trimming drops a removed state's target from a post and renumbers the others under the same key") {
+		// 0 -a-> {1(w3), 2(w5), 3(w8)} with 1 a dead end, 3 -b-> 2(w1), and 2 final: only 1 goes, 2 and 3 shift down.
+		WeightedAutomaton mixed{};
+		mixed.delta.add(0, 'a', Weighted{1, 3});
+		mixed.delta.add(0, 'a', Weighted{2, 5});
+		mixed.delta.add(0, 'a', Weighted{3, 8});
+		mixed.delta.add(3, 'b', Weighted{2, 1});
+		mixed.initial.insert(0);
+		mixed.final.insert(2);
+		mixed.trim();
+		CHECK(mixed.num_of_states() == 3);
+		CHECK(mixed.delta.num_of_transitions() == 3);
+		CHECK(mixed.delta.contains(0, 'a', Weighted{1, 5}));
+		CHECK(mixed.delta.contains(0, 'a', Weighted{2, 8}));
+		CHECK(mixed.delta.contains(2, 'b', Weighted{1, 1}));
+		CHECK(mixed.final.contains(1));
+	}
+
 	SECTION("renumbering targets for union and concatenation keeps the weight") {
 		// What Nfa::uni and concatenate do to the other automaton's posts before appending them.
 		WeightedDelta shifted{};
