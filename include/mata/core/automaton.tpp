@@ -79,22 +79,20 @@ AutomatonBase<D> AutomatonBase<D>::reverted() const {
 	if constexpr (requires { { delta.reverted(num_of_states) } -> std::convertible_to<D>; }) {
 		// The relation reverts itself, e.g. by a counting sort, cheaper than one sorted insert per transition.
 		result.delta = delta.reverted(num_of_states);
-		result.initial = final;
-		result.final = initial;
-		return result;
-	}
-	result.delta.allocate(num_of_states);
-
-	for (State source_state{0}; source_state < num_of_states; ++source_state) {
-		// Every move arrives as `(keys..., target)`, at any arity.
-		// Reverting leaves the keys in the same order.
-		delta.for_each_move(source_state, [&](const auto&... move) {
-			static_assert(sizeof...(move) == D::key_arity + 1, "a move is one key per post, then a target");
-			detail::insert_reversed(
-				result.delta, source_state, std::forward_as_tuple(move...),
-				std::make_index_sequence<sizeof...(move) - 1>{}
-			);
-		});
+	} else {
+		// In `else`, so that a relation reverting itself is not also held to the shape of moves this needs.
+		result.delta.allocate(num_of_states);
+		for (State source_state{0}; source_state < num_of_states; ++source_state) {
+			// Every move arrives as `(keys..., target)`, at any arity.
+			// Reverting leaves the keys in the same order.
+			delta.for_each_move(source_state, [&](const auto&... move) {
+				static_assert(sizeof...(move) == D::key_arity + 1, "a move is one key per post, then a target");
+				detail::insert_reversed(
+					result.delta, source_state, std::forward_as_tuple(move...),
+					std::make_index_sequence<sizeof...(move) - 1>{}
+				);
+			});
+		}
 	}
 
 	result.initial = final;
