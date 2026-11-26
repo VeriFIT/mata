@@ -20,7 +20,12 @@
         );
         if (moved) {
           location.replace(
-            base + moved[1] + "/docs/cpp/" + moved[3] + location.hash,
+            base +
+              moved[1] +
+              "/docs/cpp/" +
+              moved[3] +
+              location.search +
+              location.hash,
           );
           return;
         }
