@@ -293,7 +293,9 @@ TEST_CASE("mata::posts::DeltaBase::add - writing a key path at any arity") {
 		//  swapped two keys and add() swapped them back.
 		std::vector<D4::TransitionType> emitted{};
 		for (const auto& transition : delta.transitions()) { emitted.push_back(transition); }
-		CHECK(emitted == std::vector<D4::TransitionType>{{0, {1, 2, 3, 6}, 7}, {2, {1, 2, 3, 4}, 8}, {2, {1, 2, 3, 4}, 9}});
+		CHECK(
+			emitted == std::vector<D4::TransitionType>{{0, {1, 2, 3, 6}, 7}, {2, {1, 2, 3, 4}, 8}, {2, {1, 2, 3, 4}, 9}}
+		);
 
 		D4 copy{};
 		for (const auto& transition : delta.transitions()) { copy.add(transition); }

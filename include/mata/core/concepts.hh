@@ -132,22 +132,22 @@ concept PostEntryLike = requires(const E e) {
  *  would leave such borrowed targets dangling.
  */
 template <typename L>
-concept PostLike = IterableRange<L> && SortedWithReservedKeys<L> && std::is_nothrow_move_constructible_v<L> &&
-	requires(const L l) {
-	typename L::Entry;
-	requires PostEntryLike<typename L::Entry>;
-	typename L::Key;
-	typename L::Nested;
-	typename L::Target;
-	{ L::key_arity } -> std::convertible_to<size_t>;
-	requires L::key_arity >= 1;
-	{ l.is_sorted() } -> std::convertible_to<bool>;
-	{ std::declval<L&>().push_back(std::declval<const typename L::Entry&>()) };
-	{ std::declval<L&>().find(std::declval<const typename L::Key&>()) };
-	{ std::declval<L&>().insert(std::declval<const typename L::Entry&>()) };
-	{ l.find(std::declval<const typename L::Key&>()) };
-	{ std::declval<L&>().erase(std::declval<const typename L::Entry&>()) };
-};
+concept PostLike =
+	IterableRange<L> && SortedWithReservedKeys<L> && std::is_nothrow_move_constructible_v<L> && requires(const L l) {
+		typename L::Entry;
+		requires PostEntryLike<typename L::Entry>;
+		typename L::Key;
+		typename L::Nested;
+		typename L::Target;
+		{ L::key_arity } -> std::convertible_to<size_t>;
+		requires L::key_arity >= 1;
+		{ l.is_sorted() } -> std::convertible_to<bool>;
+		{ std::declval<L&>().push_back(std::declval<const typename L::Entry&>()) };
+		{ std::declval<L&>().find(std::declval<const typename L::Key&>()) };
+		{ std::declval<L&>().insert(std::declval<const typename L::Entry&>()) };
+		{ l.find(std::declval<const typename L::Key&>()) };
+		{ std::declval<L&>().erase(std::declval<const typename L::Entry&>()) };
+	};
 } // namespace posts
 ///@}
 
