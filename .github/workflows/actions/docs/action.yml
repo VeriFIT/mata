@@ -5,10 +5,6 @@ inputs:
     description: "Operating system to run on"
     required: false
     default: ubuntu-latest
-  python-version:
-    description: "Python version to use"
-    required: false
-    default: "3.13"
 runs:
   using: "composite"
   steps:
@@ -16,18 +12,6 @@ runs:
     - uses: ./.github/workflows/actions/setup
       with:
         os: ${{ inputs.os }}
-    # The documentation never imports the binding, so building it (and Mata with it) is not needed.
-    - name: Setup Python environment
-      uses: ./.github/workflows/actions/setup-python
-      with:
-        os: ${{ inputs.os }}
-        python-version: ${{ inputs.python-version }}
-        install-binding: "false"
-    - name: Install Python Dependencies for documentation build
-      shell: bash
-      run: |
-        python3 -m pip install --upgrade pip
-        make -C docs init
     # Before configuring: CMake defines the `docs` target only when it finds Doxygen.
     - uses: ssciwr/doxygen-install@v1
     # Doxygen reads only the sources: build the `docs` target alone and leave the tests and examples unconfigured.
@@ -36,4 +20,3 @@ runs:
       run: |
         cmake -B build -S . -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=OFF -DMATA_BUILD_EXAMPLES=OFF
         cmake --build build --target docs
-        make -C docs/ html

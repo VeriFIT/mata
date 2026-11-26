@@ -1,13 +1,3 @@
 api/
 xml/
 _build
-src/namespace
-src/namespacelist.rst
-src/file
-src/filelist.rst
-src/struct
-src/structlist.rst
-src/class
-src/classlist.rst
-src/union
-src/unionlist.rst

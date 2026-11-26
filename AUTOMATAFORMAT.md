@@ -1,9 +1,9 @@
-# The Mata file format for automata (.mata format)
+# The Mata file format for automata (.mata format) {#automata-format}
 
 > [!WARNING]
 > The Mata library currently supports only a subset of the whole format. Notably, the Mata library supports NFAs and NFTs (transducers), but not AFAs (their support is disabled). The Mata library may also not support all the additional features described in the format, such as special formulas, tracks, etc.
 
-## Top-level file structure
+## Top-level file structure {#top-level-file-structure}
 
 - The format is **line**-based. Lines can be connected by `\`.
 - Lines are parsed into tokens. Tokens are delimited by white spaces, the format is **white space sensitive** with exception of formulas in transitions where expressions could be written without white spaces separating tokens.
@@ -24,7 +24,7 @@
 
 We categorise automata according to their **transition type**, that is, the structure of their transitions, and by their **alphabet type**, i.e., how alphabet symbols on transitions are represented. It is expected that different parameters would be parsed into different data structures. These parameters should determine the name of the automata section.
 
-## Alphabet type
+## Alphabet type {#alphabet-type}
 
 We categorise automata by the **alphabet type**, i.e., the representation of symbols on transitions. We will consider propositional formulae (over bit vectors), explicit symbols, intervals of numbers or unicode or ascii, or user-defined alphabet.
 
@@ -32,15 +32,15 @@ We categorise automata by the **alphabet type**, i.e., the representation of sym
 - **Bitvector**: Propositional variables, the syntax is the same as for explicit symbols.
 - **Character class**: Character classes, i.e. sets of symbols as used in normal regular expressions, are of the form `[bla]` or `[^bla]` where `bla` is a sequence of symbols and intervals of symbols such as `a-z`, for instance `abcd-hij-z` denotes all lower case alphabet symbols. The `^` in front complements the entire class. The character `-` in sincluded as `\-`, analogously `\` and `^`. The special keywords `\min` and `\max` denote the first repsective the last letter the alphabet.
 
-## Automata by their transition type
+## Automata by their transition type {#automata-by-their-transition-type}
 
-### NFA (Nondeterministic finite automata)
+### NFA (Nondeterministic finite automata) {#nfa-nondeterministic-finite-automata}
 
 - The transitions are triples consisting of a source state, transition formula, and target state. Note that a single explicit symbol or a single interval is also a transition formula.
 - Both symbol literals and states are determined positionally. Markers or enumeration can also be used.
 - Initial (final) states are defined by key-value line `%Initial"` (`%Final`) followed by an enumeration of states.
 
-### AFA (Alternating finite automata)
+### AFA (Alternating finite automata) {#afa-alternating-finite-automata}
 
 > [!WARNING]
 > The Mata library currently does not support AFAs; their support is disabled.
@@ -51,7 +51,7 @@ We categorise automata by the **alphabet type**, i.e., the representation of sym
 
 The transition and alphabet type is encoded in the name of a section, e.g., `@NFA-explicit` denotes that a nondeterministic finite automaton over an explicit alphabet is given.
 
-## Distinguishing between states, symbols, and nodes
+## Distinguishing between states, symbols, and nodes {#distinguishing-between-states-symbols-and-nodes}
 
 - When the general formulas are used in transition (as in case of AFA), the type of a token cannot be determined by its position. We therefore require one of the three schemes for distinguishing token types:
   - By **enumeration**.
@@ -63,7 +63,7 @@ The transition and alphabet type is encoded in the name of a section, e.g., `@NF
 
 We support specifying **epsilons**, by a key-value line `%Epsilon <formula>` where formula has the same syntax and meaning as the formulae used in transitions (depends on the alphabet type and typing scheme). The formula may be just a single letter which is supposed to mean epsilon, it may be a disjunciton of letters, when we need several different epsilons, or a more complex formula describing boolean vectors that are supposed to mean epsilons. Use cases for multiple epsilons appear for instance in string solving.
 
-## AFA and NFA Examples
+## AFA and NFA Examples {#afa-and-nfa-examples}
 
 ```
 @AFA-bits
@@ -110,7 +110,7 @@ q2 x & !y q3
 q [a-z] s
 ```
 
-## Transducer
+## Transducer {#transducer}
 
 > [!WARNING]
 > The Mata library supports transducers only as NFTs in `@NFT-explicit` sections, where `%Levels q0:0 q1:1 ...`
@@ -134,7 +134,7 @@ q [a-z]@x | [2-7]@y | [\u{1c}-\u{5c}]@z & ("(r,s)" | (r & s))
 q a1@x | a2@z & ("(r,s)" | r | s)
 ```
 
-## Special formulas and relations over symbols and transducer track names.
+## Special formulas and relations over symbols and transducer track names. {#special-formulas-and-relations-over-symbols-and-transducer-track-names}
 
 It may be useful to specify relation between symbol variables or transducer tracks. These may be SMT formulas or something special, such as `a"x=y"` specifying that the two transducer tracks read the same symbol. We reserve the type letter `f` for this. We this fuzzy for now, to be concretized when it is actually needed.
 
@@ -147,17 +147,17 @@ q (a@x | b@z) & f"z=x" ("(r,s)" | (r & s))
 
 The example above does not work in the current version where the special formulae and symbols are the same thing.
 
-## Aliases
+## Aliases {#aliases}
 
 It could be good to allow a key-value line `%Alias bla bli`, which specifies an alias. The parser will replace occurrences of the token `bla` with the string `bli`.
 
-## Attributes
+## Attributes {#attributes}
 
 We want to assign attributes to states, symbols, nodes, transducer tracks, transitions. The attributes are meant as something not relevant for the semantics of the automaton, for instance some attributes used when siplaying the automaton, such as colors.
 
 1. An attribute inside a transition is a token such as a state, node, symbol. Its identifier is `t`. We can also give attributes to states, symbols, nodes by writing key-value lines of the form `%Attribute <state> <attribute>`.
 
-## How the Mata library reads the format
+## How the Mata library reads the format {#how-the-mata-library-reads-the-format}
 
 The loaders of the Mata library (`mata::nfa::builder::parse_from_mata()`, `mata::nft::builder::parse_from_mata()`,
 and the loaders of the Python and Rust bindings) give each section to a fast reader when the section stays within the

@@ -3,3 +3,5 @@
 exclude_paths:
   - "site/**"
   - "bindings/wasm/smoke-test.mjs"
+  # Vendored from https://github.com/jothepro/doxygen-awesome-css; only reformatted, never restyled, by the tools.
+  - "docs/doxygen-awesome.css"

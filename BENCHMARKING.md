@@ -1,6 +1,6 @@
-# Guidelines for Profiling, Performance, and Integration Testing of the Mata library
+# Guidelines for Profiling, Performance, and Integration Testing of the Mata library {#benchmarking}
 
-# Repositories
+# Repositories {#repositories}
 
 > [!IMPORTANT]
 > For proper benchmarking of Mata (and comparison with other automata libraries), use
@@ -33,7 +33,7 @@ We have several repositories for all the NFA benchmarks and the benchmarking inf
 - [mata-comparison-results](https://github.com/VeriFIT/mata-comparison-results)
   - results from Mata comparison with other tools and libraries
 
-# Benchmarking in VeriFIT/mata
+# Benchmarking in VeriFIT/mata {#benchmarking-in-verifitmata}
 
 First, build the Mata library with the release version:
 
@@ -58,11 +58,11 @@ pip3 install ./tests-integration/
 source .venv/bin/activate
 ```
 
-## Benchmarking through VeriFIT/mata `./tests-integration/`
+## Benchmarking through VeriFIT/mata `./tests-integration/` {#benchmarking-through-verifitmata-tests-integration}
 
 We provide a benchmarking infrastructure directly in VeriFIT/mata repository.
 
-### Structure of the benchmarking infrastructure
+### Structure of the benchmarking infrastructure {#structure-of-the-benchmarking-infrastructure}
 
 - `./tests-integration/automata/`: short database of approximately 70 automata of various complexity. The automata come from different
   benchmarks. The `easiest` benchmarks should take less than a second, while `hardest` can take more than 60 seconds.
@@ -90,7 +90,7 @@ We provide a benchmarking infrastructure directly in VeriFIT/mata repository.
   refer to the binaries of the build directory they belong to. Use the generated copies when invoking `pycobench`
   directly.
 
-### Creating new benchmarking tests
+### Creating new benchmarking tests {#creating-new-benchmarking-tests}
 
 - To create new tests, the following should be done:
   1. We recommend you to make a copy of one of the `./tests-integration/src/templates/template*.cc` files which contains basic boilerplate code:
@@ -128,7 +128,7 @@ We provide a benchmarking infrastructure directly in VeriFIT/mata repository.
 
   1. Build sources, jobs, and inputs using `make release` or `make debug` from the project root directory or build it yourself using `cmake` from `./tests-integration/` directory.
 
-### Run on one benchmark instance
+### Run on one benchmark instance {#run-on-one-benchmark-instance}
 
 To run the benchmarking on a single benchmark instance, we use custom binaries written in `./tests-integration/src/` with custom macros (defined in `tests-integration/src/utils/`) to measure specific operations, a sequence of operations, or a single command, etc. See some of the examples in the `./tests-integration/src/`, e.g., `./tests-integration/src/bench-automata-inclusion.cc` for an example of benchmarking automata inclusion operation with two variants of the inclusion algorithm, using the mentioned macros. When the project is compiled, the binary can be run on a single instance like this:
 
@@ -152,7 +152,7 @@ To run the benchmarking on a single benchmark instance, we use custom binaries w
    built without `NDEBUG`. The measurements themselves go to stdout, so the line never reaches the
    result CSV of `pycobench`; check it whenever a number looks surprising.
 
-### Run multiple benchmarks through the benchmarking tool `pycobench`
+### Run multiple benchmarks through the benchmarking tool `pycobench` {#run-multiple-benchmarks-through-the-benchmarking-tool-pycobench}
 
 To run the benchmarks, we use the benchmarking tool [pycobench](https://github.com/VeriFIT/pycobench), included as a submodule in `./tests-integration/pycobench`.
 
@@ -254,13 +254,13 @@ For proper benchmarking, prefer [VeriFIT/automata-lib-bench](https://github.com/
 
 - This will generate CSV report of the measurement of binaries registered in `<BUILD_DIR>/tests-integration/jobs/*.yaml` files on automata listed in the `<BUILD_DIR>/tests-integration/inputs/*.input` files.
 
-### Additional benchmarking options
+### Additional benchmarking options {#additional-benchmarking-options}
 
 - Use the [Catch2 micro-benchmarking](https://github.com/catchorg/Catch2/blob/devel/docs/benchmarks.md) options through VeriFIT/mata `./tests/`
 
 - Use the [`hyperfine`](https://github.com/sharkdp/hyperfine) tool to manually measure the run time of a binary.
 
-## Optional optimization settings
+## Optional optimization settings {#optional-optimization-settings}
 
 A Release build uses `-O3 -DNDEBUG` and nothing else. The following switches are off by default and
 have to be enabled explicitly; always report a measurement together with the configuration,
@@ -294,7 +294,7 @@ leave `libmata.a` holding compiler bytecode only, and every consumer — the Pyt
 external `find_package(mata)` user, Z3-Noodler — would have to link with the matching compiler's
 LTO plugin.
 
-### Profile-guided optimization
+### Profile-guided optimization {#profile-guided-optimization}
 
 PGO is a two-stage build: an instrumented binary records which branches and functions are hot, and
 a second build is optimized for that behaviour. `just cpp::pgo` runs both stages and the training
@@ -310,7 +310,7 @@ The result is left in `build/<mode>/<compiler>-pgo`. The stages can also be driv
 ```sh
 make release BUILD_DIR=build-pgo MATA_PGO=generate
 ( cd build-pgo && ./tests/tests )                     # the training run
-# Clang: merge raw profiles; GCC's .gcda files need no merge.
+# Clang: merge raw profiles; GCC's .gcda files need no merge. {#clang-merge-raw-profiles-gccs-gcda-files-need-no-merge}
 llvm-profdata merge -output=build-pgo/pgo/mata.profdata build-pgo/pgo/*.profraw
 make release BUILD_DIR=build-pgo MATA_PGO=use
 ```
@@ -333,7 +333,7 @@ Rules for a PGO result that means anything:
 - Keep a plain Release baseline and compare baseline, IPO, PGO and IPO+PGO; a flag change can
   otherwise hide whether a source change really helped.
 
-## Instrumenting the benchmarks for gcov
+## Instrumenting the benchmarks for gcov {#instrumenting-the-benchmarks-for-gcov}
 
 Two independent switches add `--coverage` (`-fprofile-arcs -ftest-coverage`) to a build. They
 instrument different sets of binaries, and the wider one already includes the benchmarks:
@@ -369,11 +369,11 @@ unnecessary. Turn `MATA_BENCH_PROFILING` on only when the rest of the build must
 uninstrumented, and turn it off again before measuring: `--coverage` instruments every arc and the
 resulting times are not comparable to a normal Release build.
 
-## Profiling
+## Profiling {#profiling}
 
 We provide the following profiling infrastructure. The following instructions assume a Linux environment. If you are using macOS, you will have to use a virtual environment or some other profiling tool (e.g., `instruments`).
 
-### Heap and stack space profiling
+### Heap and stack space profiling {#heap-and-stack-space-profiling}
 
 - Install `massif` and optionally a visualizer for its output files, e.g., `massif-visualizer`.
 - run `massif`:
@@ -389,7 +389,7 @@ We provide the following profiling infrastructure. The following instructions as
   ./tests-integration/scripts/run_massif.sh <...>
   ```
 
-### Callgraph
+### Callgraph {#callgraph}
 
 - Install `valgrind` and optionally a visualizer for its output files, e.g., `kcachegrind` for Linux, `qachegrind` for macOS.
 - Run `valgrind`'s `callgrind` tool:

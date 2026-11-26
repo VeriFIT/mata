@@ -59,7 +59,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: docs
-          path: docs/_build/html
+          path: docs/api
   docs-python:
     runs-on: ubuntu-latest
     steps:
@@ -73,7 +73,7 @@ jobs:
           python-version: "3.13"
       - name: Build the reference of the Python bindings
         run: |
-          python3 -m pip install sphinx
+          python3 -m pip install sphinx furo
           make -C bindings/python build-ext
           python3 -m sphinx -b html bindings/python/docs bindings/python/docs/_build/html
       - uses: actions/upload-artifact@v7
