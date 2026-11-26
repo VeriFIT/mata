@@ -608,9 +608,8 @@ class DeltaBuilder {
 	Symbol symbol_{0};
 	State source_{0};
 	State max_target_{0};
-	size_t num_of_transitions_{
-		0
-	}; ///< Targets of the stored symbol posts, which finish() hands over as the exact count.
+	/// Targets of the stored symbol posts, which finish() hands over as the exact count.
+	size_t num_of_transitions_{0};
 	bool in_state_{false};
 	bool in_symbol_{false};
 	bool has_symbol_{false}; ///< Has the current state emitted a symbol post already?
