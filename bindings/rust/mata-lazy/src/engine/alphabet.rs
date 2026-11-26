@@ -91,6 +91,10 @@ impl Alphabets {
 	pub(crate) fn class_universe(&self, class: usize) -> &[Symbol] {
 		&self.universes[class]
 	}
+
+	pub(super) fn universe_arrays(&self) -> &[Rc<[Symbol]>] {
+		&self.universes
+	}
 }
 
 /// The classes of the tapes that read the same symbols, with tape `t` of node `n` at slot `slot(n, t)`.

@@ -134,8 +134,8 @@ A few things are worth knowing.
 - **Tapes move in lock step.** A relation of arity _n_ reads one symbol on each tape per step. The `EPSILON` symbol
   is padding and the `ANY` symbol matches any symbol of the tape's alphabet.
 - **A complement is taken over an alphabet**, which holds the symbols the leaves read on the tapes involved, plus
-  those added with `leaf_over` or the query options. Its moves read sets of symbols per tape, split only where the
-  moves of the complemented term differ, so a complement over many tapes costs no more moves than that term has.
+  those added with `leaf_over` or the query options. Its moves read disjoint sets of symbols per tape, split only
+  where the moves of the complemented term differ, avoiding enumeration of the concrete tuple product.
 - **The antichain** skips a macrostate of the checked term that is below one found before, which costs a
   comparison with those found. On large products of deterministic automata the comparisons can cost more than they
   save; the `antichain(false)` option turns it off and still minimizes complements.
