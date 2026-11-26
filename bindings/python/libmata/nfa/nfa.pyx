@@ -1004,8 +1004,9 @@ cdef class Nfa:
         """Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
 
         Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
-         starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
-         the starting point of a path ending in a final state).
+        starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
+        the starting point of a path ending in a final state).
+
         :return: Nfa.
         """
         self.thisptr.get().trim(NULL)
@@ -1487,15 +1488,20 @@ def determinize_with_subset_map(Nfa lhs, params = None):
 
     :param Nfa lhs: non-deterministic finite automaton
     :param Dict params: Additional parameters for the determinization:
-      - "algorithm":
-        - "four_russians": The "Four Russians" subset construction, see `determinize_four_russians()`. This is the
-          default when params is None or empty; in other params, the key "algorithm" is required.
-        - "classical": The classical subset construction.
-        With the same reduction, both give the same DFA, but they may number its states differently.
-      - "reduction":
-        - "none": No reduction. This is the default, also when the key is absent.
-        - "bisimulation", "simulation", "adaptive": A smaller DFA for the same language, not always minimal, see
-          `DeterminizationReduction`. In the subset map, merged states then appear as one of them.
+
+        - "algorithm":
+
+          - "four_russians": The "Four Russians" subset construction, see `determinize_four_russians()`. This is the
+            default when params is None or empty; in other params, the key "algorithm" is required.
+          - "classical": The classical subset construction.
+
+          With the same reduction, both give the same DFA, but they may number its states differently.
+        - "reduction":
+
+          - "none": No reduction. This is the default, also when the key is absent.
+          - "bisimulation", "simulation", "adaptive": A smaller DFA for the same language, not always minimal, see
+            `DeterminizationReduction`. In the subset map, merged states then appear as one of them.
+
     :return: deterministic finite automaton, subset map
     """
     params = params or {"algorithm": "four_russians"}
@@ -1513,15 +1519,20 @@ def determinize(Nfa lhs, params = None):
 
     :param Nfa lhs: non-deterministic finite automaton
     :param Dict params: Additional parameters for the determinization:
-      - "algorithm":
-        - "four_russians": The "Four Russians" subset construction, see `determinize_four_russians()`. This is the
-          default when params is None or empty; in other params, the key "algorithm" is required.
-        - "classical": The classical subset construction.
-        With the same reduction, both give the same DFA, but they may number its states differently.
-      - "reduction":
-        - "none": No reduction. This is the default, also when the key is absent.
-        - "bisimulation", "simulation", "adaptive": A smaller DFA for the same language, not always minimal, see
-          `DeterminizationReduction`. In the subset map, merged states then appear as one of them.
+
+        - "algorithm":
+
+          - "four_russians": The "Four Russians" subset construction, see `determinize_four_russians()`. This is the
+            default when params is None or empty; in other params, the key "algorithm" is required.
+          - "classical": The classical subset construction.
+
+          With the same reduction, both give the same DFA, but they may number its states differently.
+        - "reduction":
+
+          - "none": No reduction. This is the default, also when the key is absent.
+          - "bisimulation", "simulation", "adaptive": A smaller DFA for the same language, not always minimal, see
+            `DeterminizationReduction`. In the subset map, merged states then appear as one of them.
+
     :return: deterministic finite automaton
     """
     params = params or {"algorithm": "four_russians"}
@@ -1706,12 +1717,15 @@ def complement(Nfa nfa, alph.Alphabet alphabet, params = None):
 
     :param Nfa nfa: The automaton to complement.
     :param OnTheFlyAlphabet alphabet: The alphabet of the nfa.
-    :param dict params: Additional parameters.
-      - "algorithm":
-        - "classical": The classical algorithm determinizes the automaton, makes it complete and swaps final and
-                        non-final states.
-        - "brzozowski": The Brzozowski algorithm determinizes the automaton using Brzozowski minimization, makes it
-                         complete, and swaps final and non-final states.
+    :param dict params: Additional parameters:
+
+        - "algorithm":
+
+          - "classical": The classical algorithm determinizes the automaton, makes it complete and swaps final and
+            non-final states.
+          - "brzozowski": The Brzozowski algorithm determinizes the automaton using Brzozowski minimization, makes it
+            complete, and swaps final and non-final states.
+
     :return: The complemented automaton.
     """
     cdef Nfa result = Nfa()
@@ -1758,16 +1772,19 @@ def minimize(Nfa lhs, params = None):
 
     :param Nfa lhs: automaton to be minimized
     :param Dict params: Additional parameters for the minimization operation:
-      - "algorithm":
-        - "auto": Determinize the automaton if it is not deterministic, trim it, and minimize it with Hopcroft.
-          An automaton with an empty language is returned as a single non-final initial state. This is the default.
-        - "hopcroft": Run Hopcroft directly on a trimmed DFA. Raises an error for a nondeterministic input
-          (except a transition-free automaton without initial states); trimming is not checked, but is required
-          for minimality.
-        - "hopcroft_nondet": The same normalization as "auto", followed by the Hopcroft minimization algorithm.
-          Accepts any automaton.
-        - "brzozowski": The Brzozowski minimization algorithm. Accepts any automaton, but determinizes twice and
-          can blow up exponentially even on an input that already is a trimmed DFA.
+
+        - "algorithm":
+
+          - "auto": Determinize the automaton if it is not deterministic, trim it, and minimize it with Hopcroft.
+            An automaton with an empty language is returned as a single non-final initial state. This is the default.
+          - "hopcroft": Run Hopcroft directly on a trimmed DFA. Raises an error for a nondeterministic input
+            (except a transition-free automaton without initial states); trimming is not checked, but is required
+            for minimality.
+          - "hopcroft_nondet": The same normalization as "auto", followed by the Hopcroft minimization algorithm.
+            Accepts any automaton.
+          - "brzozowski": The Brzozowski minimization algorithm. Accepts any automaton, but determinizes twice and
+            can blow up exponentially even on an input that already is a trimmed DFA.
+
     :return: minimized automaton
     """
     params = params or {"algorithm": "auto"}
@@ -1784,8 +1801,11 @@ def reduce_with_state_map(Nfa aut, params = None):
 
     :param Nfa aut: Original automaton to reduce.
     :param Dict params: Additional parameters for the reduction algorithm:
+
         - "algorithm":
+
           - "simulation": Reduce size by simulation.
+
     :return: (Reduced automaton, state map of original to new states)
     """
     params = params or {"algorithm": "simulation"}
@@ -1803,18 +1823,25 @@ def reduce(Nfa aut, params = None):
 
     :param Nfa aut: Original automaton to reduce.
     :param Dict params: Additional parameters for the reduction algorithm:
+
         - "algorithm":
+
           - "simulation": Reduce size by simulation.
           - "residual": Reduce size by residual construction.
         - "type":
+
           - "after": (Only for "algorithm": "residual") Residual construction after the last determinization.
           - "with": (Only for "algorithm": "residual") Residual construction during the last determinization.
         - "direction":
+
           - "forward": (Only for "algorithm": "residual") Forward residual construction.
           - "backward": (Only for "algorithm": "residual") Backward residual construction.
+
         Experimental, for small automata: "algorithm": "sat" or "qbf" computes an automaton with the minimum number of
         states using an external SAT or QBF solver, optionally with:
+
         - "type":
+
           - "nfa": (Only for "algorithm": "sat" or "qbf", default) Minimal NFA.
           - "dfa": (Only for "algorithm": "sat") Minimal deterministic automaton.
         - "solver": (Only for "algorithm": "sat" or "qbf") Command running the solver. Defaults to the environment
@@ -1822,6 +1849,7 @@ def reduce(Nfa aut, params = None):
           cryptominisat5, picosat; depqbf, caqe).
         - "epsilon": (Only for "algorithm": "sat" or "qbf") "letter" (default) treats EPSILON as an ordinary letter,
           as in simulation and residual reduction. "empty" removes EPSILON before minimizing.
+
     :return: Reduced automaton.
     :raises ExternalSolverNotFound: If no solver can be found or run for "algorithm": "sat" or "qbf".
     :raises RuntimeError: If the reduction fails otherwise.
@@ -1928,16 +1956,17 @@ def is_included(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None):
 def equivalence_check(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None) -> bool:
     """Test equivalence of two automata.
 
-:param Nfa lhs: Smaller automaton.
-:param Nfa rhs: Bigger automaton.
-:param alph.Alphabet alphabet: Alphabet shared by two automata.
-:param dict params: Additional params:
-- "algorithm": "naive", "antichains" or "hkc" (bisimulation up to congruence). Default: "antichains".
+    :param Nfa lhs: Smaller automaton.
+    :param Nfa rhs: Bigger automaton.
+    :param alph.Alphabet alphabet: Alphabet shared by two automata.
+    :param dict params: Additional params:
 
-Epsilon transitions are removed from copies of the operands that have them.
+        - "algorithm": "naive", "antichains" or "hkc" (bisimulation up to congruence). Default: "antichains".
 
-:return: True if lhs is equivalent to rhs, False otherwise.
-"""
+    Epsilon transitions are removed from copies of the operands that have them.
+
+    :return: True if lhs is equivalent to rhs, False otherwise.
+    """
     params = params or {'algorithm': 'antichains'}
     cdef umap[string, string] c_params = encode_params(params)
     cdef CNfa* c_lhs = lhs.thisptr.get()

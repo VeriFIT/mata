@@ -264,6 +264,8 @@ setup(
         compiler_directives={
             "language_level": "3",
             "allow_none_for_extension_args": False,
+            # Puts signatures into docstrings, where the API reference reads them.
+            "embedsignature": True,
         },
     ),
     cmdclass={"sdist": sdist, "build_ext": build_ext},

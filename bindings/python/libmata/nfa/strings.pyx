@@ -191,8 +191,10 @@ def noodlify_for_equation(left_side_automata: list, mata_nfa.Nfa right_side_auto
     :param: mata_nfa.Nfa aut: Segment automaton representing the right side of the equation to noodlify.
     :param: bool include_empty: Whether to also include empty noodles.
     :param: dict params: Additional parameters for the noodlification:
+
         - "reduce": "false", "forward", "backward", "bidirectional"; Execute forward, backward or bidirectional simulation
-                    minimization before noodlification. When "reduce" is set, the caller's left-side automata are not mutated.
+          minimization before noodlification. When "reduce" is set, the caller's left-side automata are not mutated.
+
     :return: List of automata: A list of all (non-empty) noodles.
     """
     cdef umap[string, string] c_params = mata_nfa.encode_params(params or {})
