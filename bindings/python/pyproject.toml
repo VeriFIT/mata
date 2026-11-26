@@ -33,7 +33,7 @@ packages = ["libmata", "libmata.nfa", "libmata.nft"]
 #  documentation (`just docs`). `uv sync` installs no extras, so the optional runtime packages are listed here too.
 [dependency-groups]
 dev = [
-  "breathe>=4.35.0",
+  "furo>=2025.12.19",
   "cmake>=3.23",
   "coverage>=6.4.1",
   "cython>=3.0,<4",
@@ -41,7 +41,6 @@ dev = [
   "ipykernel>=7.1.0",
   "ipython>=7.9.0",
   "jupytext>=1.16.0",
-  "myst-parser>=4.0.0",
   "networkx>=2.6.3",
   "pandas>=1.3.5",
   "papermill>=2.6.0",
