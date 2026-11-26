@@ -284,7 +284,7 @@ template <DeltaLike D> class AutomatonBase {
 	 * @return Bool array for reachable states (from @p initial_states): true for reachable, false for unreachable
 	 * states.
 	 */
-	[[gnu::always_inline]] StateBoolArray reachable_states_(
+	StateBoolArray reachable_states_(
 		const utils::SparseSet<State>& initial_states,
 		const std::optional<const StateBoolArray>& states_to_consider = std::nullopt
 	) const;

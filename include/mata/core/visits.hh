@@ -280,7 +280,7 @@ P defragmented(const P& post, const BoolVector& is_staying, const Renaming& rena
  * @param renaming A vector indicating the new state for each staying state.
  */
 template <typename P, typename Renaming>
-void defragment_in_place(P& post, const BoolVector& is_staying, const Renaming& renaming) {
+inline void defragment_in_place(P& post, const BoolVector& is_staying, const Renaming& renaming) {
 	if constexpr (arity_of<P> == 0) {
 		using Traits = TargetTraits<target_of<P>>;
 		const auto is_leaving{[&is_staying](const target_of<P>& target) {

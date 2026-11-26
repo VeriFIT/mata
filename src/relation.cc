@@ -118,10 +118,14 @@ std::vector<State>& gather_post(
 }
 
 /// Shift every target of @p state_post by @p offset. The shift is monotone, so the target sets stay sorted.
-void shift_state_post(StatePost& state_post, const State offset) {
+/// @return The number of targets shifted, which the caller counts as added without another pass over the post.
+size_t shift_state_post(StatePost& state_post, const State offset) {
+	size_t num_of_targets{0};
 	for (SymbolPost& symbol_post : state_post) {
+		num_of_targets += symbol_post.targets.size();
 		for (State& target : symbol_post.targets) { target += offset; }
 	}
+	return num_of_targets;
 }
 
 /// Make room for @p needed number of state posts, growing at least geometrically.
@@ -304,10 +308,10 @@ Delta& Delta::append_shifted(const Delta& other, const State offset) {
 	if (num_of_states() < offset) { state_posts_.resize(offset); }
 	for (const StatePost& other_post : other.state_posts_) {
 		StatePost shifted_post{other_post};
-		shift_state_post(shifted_post, offset);
+		const size_t num_of_targets{shift_state_post(shifted_post, offset)};
 		state_posts_.push_back(std::move(shifted_post));
 		// Counted only once appended: a throwing push_back must not leave its transitions counted.
-		if (!count_dirty_.load(std::memory_order_relaxed)) { note_added(posts::count_targets(state_posts_.back())); }
+		note_added(num_of_targets);
 	}
 	return *this;
 }
@@ -321,9 +325,9 @@ Delta& Delta::append_shifted(Delta&& other, const State offset) {
 	if (num_of_states() < offset) { state_posts_.resize(offset); }
 	for (StatePost& other_post : other.state_posts_) {
 		StatePost shifted_post{std::move(other_post)};
-		shift_state_post(shifted_post, offset);
+		const size_t num_of_targets{shift_state_post(shifted_post, offset)};
 		state_posts_.push_back(std::move(shifted_post));
-		if (!count_dirty_.load(std::memory_order_relaxed)) { note_added(posts::count_targets(state_posts_.back())); }
+		note_added(num_of_targets);
 	}
 	other.clear();
 	return *this;

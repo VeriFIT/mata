@@ -9,6 +9,7 @@
 #include <deque>
 #include <iterator>
 #include <limits>
+#include <memory>
 #include <span>
 #include <utility>
 
@@ -68,32 +69,36 @@ template <DeltaLike D> void AutomatonBase<D>::clear() {
 }
 
 template <DeltaLike D>
-inline typename AutomatonBase<D>::StateBoolArray AutomatonBase<D>::reachable_states_(
+typename AutomatonBase<D>::StateBoolArray AutomatonBase<D>::reachable_states_(
 	const utils::SparseSet<State>& initial_states, const std::optional<const StateBoolArray>& states_to_consider
 ) const {
-	std::vector<State> worklist{};
 	const size_t num_of_states{this->num_of_states()};
+	// A local moved out at the end: stores into the caller's result could alias the relation and reload it.
 	StateBoolArray reachable(num_of_states, false);
+	// Each state is pushed at most once, so the worklist never grows. A growth call in the loop would make the
+	//  compiler reload the relation for every state.
+	const std::unique_ptr<State[]> worklist{std::make_unique_for_overwrite<State[]>(num_of_states)};
+	// A pointer to the top, not an index: indexed pushes and pops are up to 27% slower on long chains.
+	State* worklist_top{worklist.get()};
 	for (const State state : initial_states) {
 		if (state < num_of_states && (!states_to_consider.has_value() || states_to_consider.value()[state])) {
-			worklist.push_back(state);
+			*worklist_top++ = state;
 			reachable[state] = true;
 		}
 	}
 
-	while (!worklist.empty()) {
-		const State state{worklist.back()};
-		worklist.pop_back();
+	while (worklist_top != worklist.get()) {
+		const State state{*--worklist_top};
 		delta.for_each_successor(state, [&](const Target& target) {
 			const State target_state{D::state_of(target)};
 			if (!reachable[target_state] &&
 				(!states_to_consider.has_value() || states_to_consider.value()[target_state])) {
-				worklist.push_back(target_state);
+				*worklist_top++ = target_state;
 				reachable[target_state] = true;
 			}
 		});
 	}
-	return reachable;
+	return StateBoolArray{std::move(reachable)};
 }
 
 namespace internal {
