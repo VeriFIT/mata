@@ -400,7 +400,7 @@ on for the whole file:
 - Without the option, a `loop`, a `recur`, and a function that uses its own name in its body are errors, reported
   before the script runs. `loop` and `recur` cannot be used as names in any script.
 - An interpreter may leave the option unimplemented. It then rejects the `set-option` form before running anything.
-  The first version of the Mata interpreter is planned without it.
+  The `mata` interpreter implements it.
 
 Everything else on this page works without the option, including functions that call other functions and functions
 used as values.
@@ -1829,8 +1829,8 @@ one more position. `examples/rmc/armc.matasc` handles such families with an abst
   values come from `declare-param` and `--param`, options and hint defaults are set in the script only, and `check`
   writes its report to standard error. A script written inline in a shell command or in a `pycobench` job still needs
   care, because both can replace `$1` themselves before the interpreter sees it.
-- **Loops and recursion** are designed as an option that the first interpreter leaves out. Whether two functions
-  should be able to call each other by name is open.
+- **Loops and recursion** are an option that an interpreter may leave out. Whether two functions should be able to
+  call each other by name is open.
 - **Runaway scripts.** A script without the termination guarantee can run forever: an interpreter of the language
   limits the depth of calls to an error, as `mata` does, but does not limit the number of rounds of a loop. A
   script that runs forever has to be stopped from the outside.
