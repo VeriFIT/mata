@@ -19,20 +19,46 @@ results, and interactive sessions, including the playground on the website.
 
 ## A first example
 
-The script below is the `email-filter` benchmark: it intersects the first four input automata and checks, once with
-each inclusion algorithm, whether the intersection is included in the fifth one.
+The smallest scripts need no input file. This one builds an automaton from a regular expression and asks two
+questions about it:
+
+```scheme
+(mata-script "0.1.0")                 ; the language version the script is written for
+(set-option :alphabet "bytes")        ; symbols are bytes, as regular expressions read them
+
+(define greeting (nfa:create-from-regex "hello|hi"))                  ; the language {hello, hi}
+(check "accepts-hi" (nfa:in-language? greeting (word "h" "i")))       ; is "hi" in it?
+(check "accepts-hey" (nfa:in-language? greeting (word "h" "e" "y")))  ; is "hey" in it?
+(echo (nfa:print-to-regex (nfa:minimize greeting) :mode "readable"))  ; the minimal automaton as a regex
+```
+
+Saved as `greeting.matasc`, it runs with `mata script run greeting.matasc` and prints one record for each `check`
+and the regular expression of the minimal automaton:
+
+```text
+accepts-hi: true
+accepts-hey: false
+h(i|ello)
+```
+
+The script below is the `email-filter` benchmark, which takes its automata from files: it intersects the first four
+input automata and checks, once with each inclusion algorithm, whether the intersection is included in the fifth one.
 
 ```scheme
 #!/usr/bin/env -S mata script run
 (mata-script "0.1.0")
-(set-info :name "email-filter")
-(declare-inputs automata (List Nfa))
+(set-info :name "email-filter")              ; information for tools; it does not change what runs
+(declare-inputs automata (List Nfa))         ; every input file, loaded as one list of NFAs
 
+; the intersection of the first four automata: ((a0 & a1) & a2) & a3
 (define filters (list:reduce nfa:intersection (list:take automata 4)))
+
+; a function: one timed check of whether the filters are included in the fifth automaton
 (define (included-with algorithm)
-  (time (concat algorithm "-time")
+  (time (concat algorithm "-time")           ; prints the record "<algorithm>-time: <seconds>"
     (nfa:included? filters (list:nth automata 4) :algorithm algorithm)))
-(check "naive" (included-with "naive"))
+
+(check "naive" (included-with "naive"))      ; prints "naive: true" or "naive: false"
 (check "antichains" (included-with "antichains"))
 ```
 
@@ -168,6 +194,7 @@ Checking is static where the sorts are known and dynamic where they are not.
 
 ```scheme
 (define a (as (automaton:load $1) Nfa)) ; error here if the file holds a transducer
+(nft:determinize a)                     ; rejected before the script runs: `a` is an Nfa from here on
 ```
 
 ## Definitions, functions and conditionals
@@ -179,8 +206,8 @@ Checking is static where the sorts are known and dynamic where they are not.
 (define (image (transducer Nft) (language Nfa))   ; a function; parameter sorts are optional
   (nft:to-nfa (nft:apply transducer language)))
 
-(define deterministic
-  (if (nfa:deterministic? product) product (nfa:determinize product)))
+(define deterministic                             ; a value chosen by a condition:
+  (if (nfa:deterministic? product) product (nfa:determinize product)))   ; only one branch runs
 ```
 
 - `define` binds a name once; binding it again in the same scope is an error. `push` opens a scope, `pop` closes it
@@ -192,20 +219,69 @@ Checking is static where the sorts are known and dynamic where they are not.
   This matters because it decides which library calls are made.
 - `do` evaluates its expressions in order and returns the last value.
 
+A complete script that uses each of these forms:
+
+```scheme
+(mata-script "0.1.0")
+(set-option :alphabet "bytes")
+
+(define language (nfa:create-from-regex "(ab)*"))
+(define size Int (nfa:number-of-states (nfa:minimize language)))   ; 2, checked to be an Int
+
+; cond: the first condition that holds picks the branch, and else catches the rest
+(echo (cond ((= size 0) "no states")
+            ((< size 4) "small")                ; printed, as the minimal automaton has 2 states
+            (else "large")))
+
+; let: the names are visible only in its body, and each binding sees the ones before it
+(check "abab-accepted"
+  (let ((minimal (nfa:minimize language))
+        (abab (word "a" "b" "a" "b")))
+    (nfa:in-language? minimal abab)))           ; abab-accepted: true
+
+; do: evaluates its expressions in order and returns the last value
+(define states (do (echo "minimizing") (nfa:number-of-states (nfa:minimize language))))
+(print states)                                  ; 2
+
+; or: stops at the first true operand, so nfa:universal? runs only for a language that is not empty
+(check "empty-or-universal" (or (nfa:language-empty? language) (nfa:universal? language)))   ; false
+```
+
 ### Functions
 
-A function can call every function that is defined before it. A function is also an ordinary value: it can be defined
-inside another function, passed as an argument, returned as a result, and stored in a list.
+A function can call every function that is defined before it. A simple function is a named expression with
+parameters:
+
+```scheme
+(mata-script "0.1.0")
+(set-option :alphabet "bytes")
+
+; one parameter, with its sort: the number of states of the minimal automaton of a language
+(define (minimal-size (language Nfa))
+  (nfa:number-of-states (nfa:minimize language)))
+
+; two parameters, without sorts: whether two regular expressions denote the same language
+(define (same-language? left right)
+  (nfa:equivalent? (nfa:create-from-regex left) (nfa:create-from-regex right)))
+
+(print (minimal-size (nfa:create-from-regex "a*b")))     ; 2
+(check "star-of-star" (same-language? "(a*)*" "a*"))     ; star-of-star: true
+(check "not-the-same" (same-language? "(ab)*" "a*b*"))   ; not-the-same: false
+```
+
+A function is also an ordinary value: it can be defined inside another function, passed as an argument, returned as
+a result, and stored in a list. Given two automata `lhs` and `rhs`:
 
 ```scheme
 (define (minimal-image (transducer Nft) (language Nfa))
   (define (normalize (automaton Nfa))             ; visible only inside minimal-image
     (-> automaton nfa:determinize nfa:minimize))
-  (normalize (nft:to-nfa (nft:apply transducer language))))
+  (normalize (nft:to-nfa (nft:apply transducer language))))   ; the minimal automaton of the image
 
-(define (included-with (algorithm String))        ; returns a function
-  (lambda (smaller bigger) (nfa:included? smaller bigger :algorithm algorithm)))
+(define (included-with (algorithm String))        ; returns a function of two automata,
+  (lambda (smaller bigger) (nfa:included? smaller bigger :algorithm algorithm)))   ; which keeps `algorithm`
 
+; a list of two functions, and one verdict for each of them: the list true true when lhs is included in rhs
 (define relations (list (included-with "naive") (included-with "antichains")))
 (list:map (lambda (included?) (included? lhs rhs)) relations)
 ```
@@ -230,12 +306,27 @@ inside another function, passed as an argument, returned as a result, and stored
 application gets the value as its first argument.
 
 ```scheme
+; load the file of the first input, determinize and minimize it, and print it in the .mata format
 (-> $1 nfa:load nfa:determinize nfa:minimize nfa:print-to-mata print)
 
+; intersect lhs with rhs, trim the product, and write it to a file
 (-> lhs (nfa:intersection rhs) nfa:trim (write "product.mata"))
 ```
 
 The second pipeline is `(write (nfa:trim (nfa:intersection lhs rhs)) "product.mata")`.
+
+A step may also take keyword arguments, which follow the value:
+
+```scheme
+(mata-script "0.1.0")
+(set-option :alphabet "bytes")
+
+(-> (nfa:create-from-regex "(a|b)*abb")      ; the words over a and b that end in abb
+    nfa:determinize                          ; a deterministic automaton of them
+    nfa:minimize                             ; the minimal one
+    (nfa:print-to-regex :mode "readable")    ; is (nfa:print-to-regex minimal :mode "readable")
+    echo)                                    ; prints (b*a)+bb
+```
 
 ### Lists
 
@@ -243,10 +334,10 @@ The second pipeline is `(write (nfa:trim (nfa:intersection lhs rhs)) "product.ma
 `list:range`, `list:map`, `list:filter`, `list:reduce` and `list:fold`:
 
 ```scheme
-(list:map nfa:determinize automata)
-(list:filter (lambda (a) (not (nfa:language-empty? a))) automata)
-(list:reduce nfa:intersection automata)                    ; error on an empty list
-(list:fold nfa:union-nondeterministic empty-language automata) ; starts from empty-language
+(list:map nfa:determinize automata)                                ; determinize each automaton
+(list:filter (lambda (a) (not (nfa:language-empty? a))) automata)  ; keep those with a non-empty language
+(list:reduce nfa:intersection automata)                    ; intersect all of them; error on an empty list
+(list:fold nfa:union-nondeterministic empty-language automata) ; unite all of them, starting from empty-language
 ```
 
 `list:reduce` and `list:fold` combine from left to right, one call per element. The function gets the value combined
@@ -267,6 +358,32 @@ needs no loop. It is a `list:map` or a `list:fold` over a range:
 (list:fold (lambda (language round) (nft:to-nfa (nft:apply step language)))
            initial
            (list:range 0 4))
+```
+
+A complete script that applies each list function to automata built from a list of regular expressions:
+
+```scheme
+(mata-script "0.1.0")
+(set-option :alphabet "bytes")
+
+(define patterns (list "a*" "(ab)*" "a|b" "b+"))
+(define languages (list:map nfa:create-from-regex patterns))   ; one automaton for each pattern
+(print (list:length languages))                                ; 4
+(echo (to-string (list:take (list:drop patterns 1) 2)))        ; ((ab)* a|b): the second and third
+
+; the number of states of each minimal automaton
+(define sizes
+  (list:map (lambda (language) (nfa:number-of-states (nfa:minimize language))) languages))
+(echo (to-string sizes))                                       ; (1 2 2 2)
+(print (list:fold + 0 sizes))                                  ; 7: their sum
+
+; the languages that contain the word a
+(define with-a (list:filter (lambda (language) (nfa:in-language? language (word "a"))) languages))
+(print (list:length with-a))                                   ; 2: those of a* and a|b
+
+; the union of all of them
+(define all (list:reduce nfa:union-nondeterministic languages))
+(check "union-has-bbb" (nfa:in-language? all (word "b" "b" "b")))   ; union-has-bbb: true
 ```
 
 ### Loops and recursion
@@ -293,7 +410,21 @@ as a fixpoint. A number of rounds that is known in advance needs only [`list:ran
 
 `loop` binds names to initial values and evaluates its body. `(recur value …)` starts the body again with the names
 bound to the new values. When the body finishes without a `recur`, the loop ends and the value of the body is the
-value of the loop.
+value of the loop. A loop that counts its rounds:
+
+```scheme
+(set-option :loops-and-recursion true)
+(set-option :alphabet "bytes")
+
+; the smallest n for which a^n, the n-th power of the language {a}, contains the word aaaa
+(define a (nfa:create-from-regex "a"))
+(echo (loop ((power a) (n 1))                       ; the first round: power is a and n is 1
+  (if (nfa:in-language? power (word "a" "a" "a" "a"))
+      (concat "a^" (to-string n) " contains aaaa")  ; no recur: the loop ends with this value
+      (recur (nfa:concatenate power a) (+ n 1)))))  ; the next round, with power . a and n + 1
+```
+
+It prints `a^4 contains aaaa`. A loop that computes a fixpoint over the input automata:
 
 ```scheme
 (set-option :loops-and-recursion true)
@@ -305,9 +436,9 @@ value of the loop.
 ; the configurations reachable from `initial` under the transition relation `step`
 (define reachable
   (loop ((reached initial))
-    (define next
+    (define next                                    ; those reached so far, and their successors
       (nfa:union-nondeterministic reached (nft:to-nfa (nft:apply step reached))))
-    (if (nfa:included? next reached) reached (recur next))))
+    (if (nfa:included? next reached) reached (recur next))))   ; stop when no new one is reached
 
 (check (nfa:intersection-empty? reachable bad))
 ```
@@ -328,6 +459,19 @@ loop above as a function:
   (if (nfa:included? next reached) reached (saturate next)))
 
 (define reachable (saturate initial))
+```
+
+A function that calls itself, with a parameter that counts down:
+
+```scheme
+(set-option :loops-and-recursion true)
+(set-option :alphabet "bytes")
+
+(define (power (language Nfa) (n Int))   ; the language concatenated with itself n times, for n >= 1
+  (if (= n 1) language (nfa:concatenate language (power language (- n 1)))))
+
+(check "power-3" (nfa:equivalent? (power (nfa:create-from-regex "ab") 3)
+                                  (nfa:create-from-regex "ababab")))    ; power-3: true
 ```
 
 Two functions still cannot call each other by name, because the second one is not visible in the first.
@@ -401,6 +545,33 @@ default makes the parameter optional. Parameters are declarations, so they come 
 reports a value that is not of the sort, and a missing value of a parameter without a default, before any input is
 loaded.
 
+A script that takes inputs and parameters, saved as `compare.matasc`:
+
+```scheme
+; time the inclusion of two automata several times with one algorithm
+(mata-script "0.1.0")
+(declare-param algorithm String "antichains")  ; --param algorithm=naive, or "antichains" without one
+(declare-param rounds Int 3)                   ; --param rounds=…, or 3 without one
+(declare-input smaller Nfa)                    ; --input smaller=…, or else the first positional input
+(declare-input bigger Nfa)                     ; --input bigger=…, or else the next positional input
+
+(define (measure round)                        ; one timed check, labelled naive-0, naive-1, …
+  (time (concat algorithm "-" (to-string round))
+    (nfa:included? smaller bigger :algorithm algorithm)))
+(define verdicts (list:map measure (list:range 0 rounds)))
+(check "included" (list:nth verdicts 0))
+```
+
+```console
+$ mata script run --param algorithm=naive --param rounds=2 compare.matasc small.mata big.mata
+naive-0: 0.000049
+naive-1: 0.000006
+included: true
+```
+
+`mata script run --input bigger=big.mata compare.matasc small.mata` gives `bigger` by name and `smaller` by
+position. A third positional input is an error, as no declaration takes it.
+
 **Paths written in the script** are loaded with the same operations: `(nfa:load "automata/a.mata")`. A relative path
 is resolved against the directory of the script, so a script and the automata beside it move together. A path given on
 the command line is resolved against the current directory, as for any other command: when the script is in a file
@@ -410,16 +581,20 @@ absolute path.
 **Literals** make a script complete without any file:
 
 ```scheme
+; from an RE2 regular expression; its symbols are bytes
 (nfa:create-from-regex "a(b|c)*")
 
+; from .mata text; a string may span several lines
 (nfa:parse "@NFA-explicit
 %Initial q0
 %Final q1
 q0 a q1")
 
+; from states and transitions written in the script; epsilon is an ε-transition
 (nfa:literal :initial (q0) :final (q1)
              :transitions ((q0 a q1) (q1 b q1) (q0 epsilon q1)))
 
+; a transducer of two levels: q0 is on level 0 and q1 on level 1, so it maps a to b, letter by letter
 (nft:literal :levels 2 :initial (q0) :final (q0)
              :states ((q0 0) (q1 1))
              :transitions ((q0 a q1) (q1 b q0)))
@@ -449,6 +624,19 @@ error.
 The steps are available separately as `intermediate:parse-from-mata`, `intermediate:mintermize` and `nfa:construct` /
 `nft:construct`.
 
+```scheme
+(mata-script "0.1.0" :requires (intermediate))
+(define text "@NFA-explicit
+%Initial q0
+%Final q1
+q0 a q1
+q1 b q1")
+
+(define parsed (intermediate:parse-from-mata text))   ; one intermediate automaton for each section
+(define nfa (nfa:construct (list:nth parsed 0)))      ; constructed over the script alphabet
+(check "same-as-parse" (nfa:equivalent? nfa (nfa:parse text)))   ; same-as-parse: true
+```
+
 (script-alphabets)=
 
 ## Alphabets
@@ -471,6 +659,31 @@ before the alphabet is first used.
 
 `(script-alphabet)` returns the script alphabet as a value, for operations that take one. `nfa:create-alphabet`
 builds the alphabet of the symbols that occur in the given automata.
+
+Under the default alphabet, a name gets its symbol when it is first seen:
+
+```scheme
+(mata-script "0.1.0")                       ; no :alphabet option: "on-the-fly"
+(define ab (nfa:literal :initial (q0) :final (q2) :transitions ((q0 a q1) (q1 b q2))))
+(check "accepts-ab" (nfa:in-language? ab (word "a" "b")))              ; accepts-ab: true
+(echo (to-string (alphabet:get-alphabet-symbols (script-alphabet))))   ; (a b): the names seen so far
+```
+
+A literal and a regular expression that spell the same words denote the same language only under `"bytes"`:
+
+```scheme
+(mata-script "0.1.0")
+(set-option :alphabet "bytes")              ; without this line, same-language prints false
+
+(define from-regex (nfa:create-from-regex "ab"))                  ; reads the bytes a and b
+(define from-literal                                              ; reads the names a and b, translated
+  (nfa:literal :initial (q0) :final (q2)                          ; through the script alphabet
+               :transitions ((q0 a q1) (q1 b q2))))
+(check "same-language" (nfa:equivalent? from-regex from-literal))  ; same-language: true
+```
+
+Under `"on-the-fly"`, the names `a` and `b` of the literal are the symbols 0 and 1, which are not the bytes that the
+regular expression reads.
 
 ## Operations
 
@@ -517,6 +730,7 @@ The namespace tells where the function lives:
 A hint value is an ordinary expression, so one script can compare algorithms:
 
 ```scheme
+; one timed inclusion check per algorithm; the label of each record is the algorithm
 (list:map (lambda (algorithm)
             (time algorithm (nfa:included? lhs rhs :algorithm algorithm)))
           (list "naive" "antichains"))
@@ -526,7 +740,33 @@ The default of a hint can be changed for the rest of the scope. A hint written i
 changed default, which wins over the default of the library:
 
 ```scheme
+(set-option :default (nfa:included? :algorithm "naive"))   ; nfa:included? without :algorithm is now naive
+```
+
+A complete script with an optional parameter, hints, and a changed default inside a scope. The trace shows the hints
+of each call on standard error:
+
+```scheme
+(mata-script "0.1.0")
+(set-option :alphabet "bytes")
+(define lhs (nfa:create-from-regex "(ab)*"))
+(define rhs (nfa:create-from-regex "(a|b)*"))
+
+; an optional parameter of the library function: join the two automata with an ε-transition
+(define joined (nfa:concatenate lhs rhs :use-epsilon true))
+(check "joined-accepts-abba" (nfa:in-language? joined (word "a" "b" "b" "a")))   ; true
+
+; a hint, an entry of the ParameterMap: reduce the automaton by simulation
+(print (nfa:number-of-states (nfa:reduce joined :algorithm "simulation")))       ; 3
+
+(push)                                                      ; a scope for the changed default
 (set-option :default (nfa:included? :algorithm "naive"))
+(set-option :trace true)
+(check "included-naive" (nfa:included? lhs rhs))            ; trace: nfa:included? :algorithm "naive"
+(check "included-antichains"
+  (nfa:included? lhs rhs :algorithm "antichains"))          ; the hint in the application wins
+(pop)                                                       ; drops the default and the trace
+(check "included-default" (nfa:included? lhs rhs))          ; the library default again, untraced
 ```
 
 ### One call per application
@@ -604,6 +844,46 @@ Each application is one library call, with these exceptions:
 | `nfa:print-to-regex`                    | `Nfa::print_to_regex`; returns a string; `:mode` is `fast` or `readable` |
 | `nfa:load`, `nfa:parse`, `nfa:literal`  | No single library counterpart                                            |
 
+The operations on one language, with the results as comments:
+
+```scheme
+(mata-script "0.1.0")
+(set-option :alphabet "bytes")
+
+(define even-as (nfa:create-from-regex "(b*ab*a)*b*"))   ; words over a and b with an even number of a
+(define rest (nfa:complement even-as))                   ; all other words over all 256 bytes
+(check "a-is-in-rest" (nfa:in-language? rest (word "a")))           ; true
+(check "aa-is-in-rest" (nfa:in-language? rest (word "a" "a")))      ; false
+(check "disjoint" (nfa:intersection-empty? even-as rest))           ; true
+(echo (to-string (nfa:get-shortest-word rest)))   ; \x00: the complement is over the script alphabet
+```
+
+Several languages combined, compared and searched for words:
+
+```scheme
+(mata-script "0.1.0")
+(set-option :alphabet "bytes")
+
+(define identifiers (nfa:create-from-regex "[a-z][a-z0-9]*"))
+(define keywords (nfa:create-from-regex "if|in|let"))
+(define names (nfa:language-difference identifiers keywords))   ; the identifiers that are no keyword
+
+(check "keywords-are-identifiers" (nfa:included? keywords identifiers))    ; true
+(check "let-is-a-name" (nfa:in-language? names (word "l" "e" "t")))        ; false
+(check "lets-is-a-name" (nfa:in-language? names (word "l" "e" "t" "s")))   ; true
+
+; a word of the identifiers that is not a name, and a name
+(echo (to-string (nfa:get-word-from-language-difference identifiers names)))   ; l e t
+(echo (to-string (nfa:get-word names)))                                        ; a
+
+; the names of two letters that start with i: the 36 pairs minus if and in
+(print (list:length (nfa:get-words (nfa:intersection names (nfa:create-from-regex "i[a-z0-9]")) 2)))   ; 34
+
+; the minimal automaton of the keywords and of their reversal, as regular expressions
+(echo (nfa:print-to-regex (nfa:minimize keywords) :mode "readable"))              ; let|i[fn]
+(check "tel" (nfa:in-language? (nfa:revert keywords) (word "t" "e" "l")))         ; true
+```
+
 ### NFT operations
 
 | Script                                 | Library                                           |
@@ -652,6 +932,56 @@ Each application is one library call, with these exceptions:
 
 There is no `nft:minimize`: the library declares `nft::minimize` only under `MATA_NFT_NOT_IMPLEMENTED`.
 
+A transducer reads a pair of words, one on each level. `nft:apply` gives the image of a word or a language, and
+`nft:to-nfa` makes the image, a transducer of one level, an `Nfa`:
+
+```scheme
+(mata-script "0.1.0" :requires (transducers))
+(set-option :alphabet "bytes")
+
+; replace every a by b, and keep b: level-0 states read the input, level-1 states write the output
+(define a-to-b
+  (nft:literal :levels 2 :initial (q) :final (q)
+               :states ((on-a 1) (on-b 1))
+               :transitions ((q a on-a) (on-a b q)
+                             (q b on-b) (on-b b q))))
+
+(define image (nft:to-nfa (nft:apply a-to-b (nfa:create-from-regex "a*ba"))))
+(echo (nfa:print-to-regex (nfa:minimize image) :mode "readable"))       ; bb+
+(check "ab-to-bb" (nft:in-language-by-levels? a-to-b (list (word "a" "b") (word "b" "b"))))   ; true
+(check "interleaved" (nft:in-language? a-to-b (word "a" "b" "b" "b")))  ; the same pair, level by level
+```
+
+Transducers compose, invert and project:
+
+```scheme
+(mata-script "0.1.0" :requires (transducers))
+(set-option :alphabet "bytes")
+
+; a Caesar shift on a, b and c: a to b, b to c, c to a
+(define shift
+  (nft:literal :levels 2 :initial (q) :final (q)
+               :states ((read-a 1) (read-b 1) (read-c 1))
+               :transitions ((q a read-a) (read-a b q)
+                             (q b read-b) (read-b c q)
+                             (q c read-c) (read-c a q))))
+
+(define shift-twice (nft:compose shift shift))
+(check "inverse-is-shift-twice" (nft:equivalent? (nft:invert-levels shift) shift-twice))   ; true
+
+; three shifts give every word back
+(define words (nfa:create-from-regex "[abc]*"))
+(check "identity" (nfa:equivalent? (nft:to-nfa (nft:apply (nft:compose shift shift shift) words)) words))
+
+; the domain is level 0 kept, the codomain level 0 projected out; both are every word over a, b and c
+(define domain (nft:to-nfa (nft:project-to shift (list 0))))
+(define codomain (nft:to-nfa (nft:project-out shift (list 0))))
+(echo (nfa:print-to-regex (nfa:minimize domain) :mode "readable"))       ; [a-c]*
+(echo (nfa:print-to-regex (nfa:minimize codomain) :mode "readable"))     ; [a-c]*
+
+(echo (nfa:print-to-regex (nft:to-nfa (nft:apply shift-twice (word "c" "a" "b")))))   ; bca
+```
+
 ### The `automaton:` namespace
 
 For every operation that exists under the same name in both `nfa:` and `nft:`, there is an operation of that name in
@@ -661,6 +991,16 @@ when the script runs. Operands of different kinds are an error; convert explicit
 `nft:from-nfa-with-levels-zero` or `nft:to-nfa`.
 
 `automaton:load` and `automaton:parse` accept either kind and return an `Automaton`.
+
+```scheme
+(mata-script "0.1.0" :requires (automaton))
+(declare-input given Automaton)                        ; a file with an NFA or with a transducer
+
+(define smaller (automaton:determinize (automaton:trim given)))   ; nfa: or nft: operations, by the kind
+(echo (concat "states: " (to-string (automaton:number-of-states given))
+              " -> " (to-string (automaton:number-of-states smaller))))
+(check "same-language" (automaton:equivalent? given smaller))     ; true for either kind
+```
 
 (script-lazy)=
 
@@ -677,10 +1017,10 @@ library:
 ```scheme
 (mata-script "0.1.0" :requires (lazy))
 (set-option :alphabet "bytes")
-(define a (lazy:leaf (nfa:create-from-regex "a(a|b)*")))
-(define b (lazy:leaf (nfa:create-from-regex "(a|b)*b")))
+(define a (lazy:leaf (nfa:create-from-regex "a(a|b)*")))         ; words that start with a
+(define b (lazy:leaf (nfa:create-from-regex "(a|b)*b")))         ; words that end in b
 (check (lazy:included? a b))                                     ; false
-(print (lazy:witness (lazy:intersection a (lazy:complement b))))  ; a
+(print (lazy:witness (lazy:intersection a (lazy:complement b))))  ; a: starts with a, does not end in b
 ```
 
 | Builder                                           | `mata::lazy`                | Arities                     |
@@ -744,6 +1084,46 @@ library:
 - **Timing and tracing.** `:time-operations` and `:trace` report the queries, which are the calls; builders make none.
   `:optimize` neither remembers nor rewrites `lazy:` applications.
 
+A complete script on a relation: one token passed between processes, letter by letter, as in regular model checking:
+
+```scheme
+(mata-script "0.1.0" :requires (lazy transducers))
+(set-option :alphabet "bytes")
+
+; one token t among processes n; a step passes the token to the right neighbour
+(define step
+  (nft:literal :levels 2 :initial (p) :final (q)
+               :states ((p-n 1) (p-t 1) (give 1) (take 1) (q-n 1) (q-t 1))
+               :transitions ((p n p-n) (p-n n p) (p t p-t) (p-t t p)    ; copy before the move
+                             (p t give) (give n r) (r n take) (take t q) ; tn becomes nt
+                             (q n q-n) (q-n n q) (q t q-t) (q-t t q))))  ; copy after the move
+(define relation (lazy:leaf step))                                 ; arity 2: one tape per level
+(define one-token (lazy:leaf (nfa:create-from-regex "n*tn*")))     ; arity 1
+
+; the successors of one-token configurations still hold one token
+(define successors (lazy:post-image one-token relation))
+(check "keeps-one-token" (lazy:included? successors one-token :alphabet "n t"))   ; true
+
+; a shortest configuration from which one step puts the token at the end
+(print (lazy:witness (lazy:pre-image (lazy:leaf (nfa:create-from-regex "n*t")) relation)
+                     :shortest true))                              ; t n
+
+; a shortest pair of configurations two steps apart: one word per tape
+(print (lazy:witness (lazy:compose relation relation) :shortest true))   ; t n n, then n n t
+
+; no step leaves a configuration as it is: the relation meets the identity nowhere
+(check "every-step-moves"
+  (lazy:empty? (lazy:intersection relation (lazy:identity one-token)) :alphabet "n t"))   ; true
+
+; the same kind of query, with its counters: post.explored, post.macrostates, …
+(check "token-leaves-the-start"
+  (lazy:stats "post"
+    (lazy:empty? (lazy:intersection successors (lazy:leaf (nfa:create-from-regex "tn*"))))))
+
+; the successors built as an automaton
+(echo (nfa:print-to-regex (lazy:materialize successors) :mode "readable"))   ; n+tn*
+```
+
 #### Plans and policies
 
 Plans change how a query evaluates a formula, never which relation it denotes. They can therefore change its cost or
@@ -801,10 +1181,30 @@ Not part of the language yet: synchronized products and composition on chosen ta
 assignment satisfies it. Both parse the formula with `mata::logic::ws1s::Ws1s` and decide it lazily:
 
 ```scheme
-(check "a tautology"
+(check "a tautology"                                     ; true for every x, y and z
   (ws1s:valid? "(x = y + 1 & y = z + 1) => x = z + 2"))  ; true
-(check "has a model"
+(check "has a model"                                     ; some position is 3
   (ws1s:satisfiable? "ex1 x: x = 3"))                    ; true
+```
+
+Quantifiers over positions and over finite sets:
+
+```scheme
+(mata-script "0.1.0")
+
+; every position has a later one
+(check "no-last-position" (ws1s:valid? "all1 x: ex1 y: x < y"))                       ; true
+
+; no finite set holds 0 and is closed under the successor
+(check "no-infinite-set"
+  (ws1s:satisfiable? "ex2 X: 0 in X & all1 x: x in X => x + 1 in X"))                 ; false
+
+; the subset relation is transitive; X, Y and Z are free, so this holds for all sets
+(check "subset-is-transitive" (ws1s:valid? "X sub Y & Y sub Z => X sub Z"))           ; true
+
+; a set that holds 0 and 4, steps by 2 below 4, and does not hold 1: for example {0, 2, 4}
+(check "even-positions"
+  (ws1s:satisfiable? "0 in X & 4 in X & (all1 x: x in X & x < 4 => x + 2 in X) & ~(1 in X)"))   ; true
 ```
 
 The formula uses the MONA-like syntax of `mata::logic::ws1s`: first-order names start with a lowercase letter and
@@ -839,6 +1239,28 @@ second-order ones with an uppercase letter. Both decisions accept `:time-limit`,
 Noodlification (`noodlify`, `noodlify_for_equation`, `noodlify_for_transducer`) is specific to one string solver and
 is not part of the language.
 
+The string operations on a finite language, and a replacement transducer:
+
+```scheme
+(mata-script "0.1.0" :requires (strings transducers))
+(set-option :alphabet "bytes")
+
+(define language (nfa:create-from-regex "ab|ba|abc"))
+(list:map (lambda (w) (echo (to-string w))) (strings:get-shortest-words language))   ; a b, then b a
+(echo (to-string (strings:get-longest-words language)))                             ; (a b c): one word
+(check "has-empty-word" (strings:language-epsilon? language))                       ; false
+
+; replace cat by dog in every word: every occurrence, or only the first one
+(define (replace mode)
+  (strings:replace-reluctant-literal (word "c" "a" "t") (word "d" "o" "g") (script-alphabet)
+                                     :replace-mode mode))
+(define input (nfa:create-from-regex "cat(s|cat)"))
+(define (rewrite transducer)
+  (nfa:print-to-regex (nfa:minimize (nft:to-nfa (nft:apply transducer input))) :mode "readable"))
+(echo (rewrite (replace "all")))       ; dog(s|dog)
+(echo (rewrite (replace "single")))    ; dog(s|cat)
+```
+
 ### Core functions
 
 `not`, `=`, `<`, `<=`, `+`, `-` on `Bool`, `Int`, `String` and `Word` as applicable; `(concat string…)`, which joins
@@ -849,6 +1271,27 @@ and `get` on an `Option`; `list`; `(word "a" "b")` and `(symbol "a")`, which tra
 alphabet; `(script-alphabet)`. `=` is also true of two lists of the same length whose elements are equal in this
 sense, pairwise, so `(= (list 1 (list 2)) (list 1 (list 2)))` is `true`; an interpreter limits how deep a pair it
 compares may nest.
+
+```scheme
+(mata-script "0.1.0")
+(set-option :alphabet "bytes")
+
+(define n (+ 2 3))
+(check "arithmetic" (= (- n 1) 4))                         ; true
+(check "less" (< 2 n))                                     ; true
+(check "strings" (= (concat "ab" "c") "abc"))              ; true
+(print (string->int "42"))                                 ; 42
+(echo (to-string (list 1 (list 2 3) "a")))                 ; (1 (2 3) a)
+(check "lists" (= (list 1 (list 2)) (list 1 (list 2))))    ; true
+(check "words" (= (word "a" "b") (word "a" "b")))          ; true
+
+; an Option: nfa:get-word returns none for an empty language
+(define found (nfa:get-word (nfa:create-from-regex "x+")))
+(if (none? found) (echo "empty") (echo (to-string (get found))))              ; x
+(define nothing (nfa:get-word (nfa:intersection (nfa:create-from-regex "a")
+                                                (nfa:create-from-regex "b"))))
+(echo (to-string nothing))                                                    ; none
+```
 
 ## Reporting results
 
@@ -877,6 +1320,20 @@ kind and size rather than printed in full. When a script is run, the value of a 
 Results and timing records go to standard output, each written as soon as it is printed, so a run stopped by a time
 limit keeps what it printed; errors and the [trace](#options) go to standard error.
 
+```scheme
+(mata-script "0.1.0")
+(set-option :alphabet "bytes")
+(define language (nfa:create-from-regex "a+b"))
+
+(check (nfa:universal? language))                             ; false, without a label
+(check "has-ab" (nfa:in-language? language (word "a" "b")))   ; has-ab: true
+(echo "the minimal automaton:")
+(define minimal (print (nfa:minimize language)))              ; prints it in the .mata format, and names it
+(write minimal "a-plus-b.mata")                               ; the same text, in a file beside the script
+(assert (nfa:in-language? minimal (word "b")))                ; fails: reported on standard error
+(echo "still running after a failed assertion")               ; printed; the script then exits with 1
+```
+
 (script-exit-status)=
 
 ### Exit status
@@ -889,6 +1346,13 @@ limit keeps what it printed; errors and the [trace](#options) go to standard err
 
 `check` never changes the status. A one-off query that should fail a shell command uses `assert`. In an interactive
 session, an error ends the form, not the session, and makes the session end with status `2`.
+
+```console
+$ mata script run --expression '(set-option :alphabet "bytes") (assert (nfa:universal? (nfa:create-from-regex "a*")))'
+mata: assertion failed at 1:32
+$ echo $?
+1
+```
 
 ### Witnesses
 
@@ -905,8 +1369,8 @@ once, so the verdict is not computed separately. The application must be a call 
 error:
 
 ```scheme
-(define counterexample (witness (nfa:included? smaller bigger)))
-(assert (none? counterexample))
+(define counterexample (witness (nfa:included? smaller bigger)))   ; a word of smaller not in bigger, or none
+(assert (none? counterexample))                                    ; fails when there is such a word
 ```
 
 With `(set-option :produce-witnesses true)`, every such call passes the output parameter, and `(get-witness)` returns
@@ -916,12 +1380,35 @@ and `none` when that operation stored none. This is the convenient form in an in
 ```scheme
 (set-option :produce-witnesses true)
 (check (nfa:included? smaller bigger))   ; false
-(get-witness)                            ; a b b
+(get-witness)                            ; a b b: the word that shows it
 ```
 
 Asking for a witness can make a decision procedure slower, so `:produce-witnesses` is off by default. Without it, a
 call outside `witness` computes no witness, and `(get-witness)` returns `none` after it. A witness is a word only: the
 states of an accepting run come from `nfa:get-accepting-run`.
+
+A complete script with both forms:
+
+```scheme
+(mata-script "0.1.0" :requires (witnesses))
+(set-option :alphabet "bytes")
+(define smaller (nfa:create-from-regex "a(b|c)*"))
+(define bigger (nfa:create-from-regex "a(b*|c*)"))
+
+; witness: one call, which returns the word for the verdict that a word can explain
+(define counterexample (witness (nfa:included? smaller bigger)))
+(if (none? counterexample)
+    (echo "included")
+    (echo (concat "not included, for example " (to-string (get counterexample)))))   ; a c b
+(echo (to-string (witness (nfa:included? bigger smaller))))      ; none: bigger is included
+(echo (to-string (witness (nfa:universal? bigger))))             ; ε: the empty word is not in bigger
+(echo (to-string (witness (nfa:language-empty? bigger))))        ; a: a word of bigger
+
+; :produce-witnesses: every decision stores its witness, and get-witness reads the last one
+(set-option :produce-witnesses true)
+(check (nfa:equivalent? smaller bigger))                        ; false
+(echo (to-string (get-witness)))                                ; a c b
+```
 
 ## Timing
 
@@ -948,6 +1435,38 @@ emptiness: 0.0007
   the operation, without any `time` form in the script; a repeated operation gets `#2`, `#3`, … after its name. Set
   before the declarations, it also records their loading, as `parsing`, as the benchmark binaries do.
 
+A script that measures each step of a determinization by hand:
+
+```scheme
+(mata-script "0.1.0")
+(set-option :alphabet "bytes")
+
+; the words whose seventh letter from the end is a: their DFA needs 2^7 states
+(define language (nfa:create-from-regex "(a|b)*a(a|b){6}"))
+(define dfa (time "determinize" (nfa:determinize language)))           ; determinize: 0.000094
+(echo (concat "states: " (to-string (nfa:number-of-states dfa))))      ; states: 128
+(define minimal (time "minimize" (nfa:minimize dfa)))                  ; minimize: 0.000081
+
+; one record for several expressions; time returns the value of the last one
+(time "both-checks"
+  (check "included" (nfa:included? language dfa))                     ; included: true
+  (check "equivalent" (nfa:equivalent? dfa minimal)))                  ; equivalent: true
+
+; three records with labels of their own: inclusion-0, inclusion-1 and inclusion-2
+(list:map (lambda (round) (time (concat "inclusion-" (to-string round)) (nfa:included? language dfa)))
+          (list:range 0 3))
+```
+
+The same measurement without any `time` form, as a benchmark binary does it:
+
+```scheme
+(mata-script "0.1.0")
+(set-option :time-operations true)                  ; before the declarations, so loading is measured too
+(declare-input lhs Nfa)                             ; parsing: …
+(declare-input rhs Nfa)                             ; parsing#2: …
+(check (nfa:included? lhs rhs))                     ; nfa:included?: …, then the verdict
+```
+
 ## Options
 
 | Option                 | Values                              | Meaning                                              |
@@ -961,6 +1480,16 @@ emptiness: 0.0007
 | `:loops-and-recursion` | `false` (default), `true`           | Enables [loops and recursion](#loops-and-recursion)  |
 
 `set-info` attaches information that does not change evaluation; see [Script information](#script-information).
+
+```scheme
+(mata-script "0.1.0")
+(set-option :alphabet "bytes")            ; before the first use of the alphabet
+(set-option :produce-witnesses true)      ; every decision stores its witness
+(set-option :time-operations true)        ; a timing record for every library call
+
+(check (nfa:universal? (nfa:create-from-regex "[a-z]*")))   ; nfa:create-from-regex: …, nfa:universal?: …, false
+(echo (to-string (get-witness)))                            ; \x00: a byte that is not a letter
+```
 
 ## Optimizer
 
@@ -999,6 +1528,28 @@ fast.
 
 A benchmark that measures one specific operation should leave the optimizer off.
 
+A script whose decisions the optimizer rewrites. The `:trace` lines on standard error show the calls that were made:
+
+```scheme
+(mata-script "0.1.0" :requires (optimizer trace))
+(set-option :alphabet "bytes")
+(set-option :optimize true)
+(set-option :trace true)
+
+; the words whose eleventh letter from the end is a, and those whose eleventh letter from the end is b
+(define lhs (nfa:create-from-regex "(a|b)*a(a|b){10}"))
+(define rhs (nfa:create-from-regex "(a|b)*b(a|b){10}"))
+(define unused (nfa:determinize lhs))      ; never read, so never computed
+
+(check "disjoint" (nfa:language-empty? (nfa:intersection lhs rhs)))   ; one call of nfa:intersection-empty?
+(check "included" (nfa:included? lhs (nfa:complement rhs)))           ; one lazy:empty?, no complement built
+(check "again" (nfa:language-empty? (nfa:intersection lhs rhs)))      ; the same call: no call at all
+```
+
+It prints `true` three times. Without `:optimize`, the trace shows `nfa:determinize`, two `nfa:intersection` and
+`nfa:language-empty?` pairs, `nfa:complement` and `nfa:included?`, and the complement builds a deterministic automaton
+of 2049 states.
+
 ## Portable core
 
 The `.emp` programs were interpreted by several automata libraries, to compare them on the same inputs. A script whose
@@ -1017,6 +1568,20 @@ A script in the portable core is always guaranteed to [terminate](#termination).
 
 An interpreter for another library must reject an operation it does not have. It may ignore a hint it does not know,
 with a warning, because a hint only selects how a result is computed.
+
+```scheme
+(mata-script "0.1.0" :profile core)          ; mata script check rejects anything outside of the core
+(declare-input lhs Nfa)
+(declare-input rhs Nfa)
+
+(define union (nfa:union-nondeterministic lhs rhs))
+(define minimal (time "minimize" (-> union nfa:determinize nfa:minimize)))   ; -> and time are in the core
+(check "lhs-in-union" (nfa:included? lhs minimal))
+(check "same-language" (nfa:equivalent? union minimal))
+```
+
+`mata script check` accepts the script and reports `termination: guaranteed`. Adding `(define (f x) x)` makes it
+report `a portable core script cannot define a function`.
 
 (script-information)=
 
@@ -1038,6 +1603,20 @@ fact under the same key:
 
 Any other key is an error, and so is a value of the wrong sort. The profile is not information: it changes what the
 checker accepts, so it is part of the header.
+
+```scheme
+#!/usr/bin/env -S mata script run
+(mata-script "0.1.0")
+(set-info :name "regex-equivalence")
+(set-info :description "Checks that two spellings of one regular expression agree")
+(set-info :expects true)                 ; the verdict a test runner should see
+(set-info :x-timeout 60)                 ; free for a tool of one's own
+(set-option :alphabet "bytes")
+
+(check (nfa:equivalent? (nfa:create-from-regex "(a|b)*") (nfa:create-from-regex "(a*b*)*")))   ; true
+(echo (concat "ran " (get (get-info :name))))   ; ran regex-equivalence: get-info returns an Option
+(echo (to-string (get-info :license)))          ; none: the script did not set it
+```
 
 (versions)=
 
@@ -1084,7 +1663,8 @@ their own, which `mata version` prints beside it.
 
 ## Examples
 
-A regression specification that needs no input file:
+A regression specification that needs no input file. It prints nothing and exits with `0` while every assertion
+holds:
 
 ```scheme
 (mata-script "0.1.0")
@@ -1093,23 +1673,51 @@ A regression specification that needs no input file:
 (define language (nfa:create-from-regex "a(b|c)*"))
 (define minimal (-> language nfa:determinize nfa:minimize))
 
-(assert (nfa:deterministic? minimal))
-(assert (nfa:equivalent? language minimal))
-(assert (nfa:in-language? minimal (word "a" "b" "c")))
-(assert (not (nfa:in-language? minimal (word "b"))))
+(assert (nfa:deterministic? minimal))                     ; minimization keeps it deterministic
+(assert (nfa:equivalent? language minimal))               ; and keeps the language
+(assert (nfa:in-language? minimal (word "a" "b" "c")))    ; a word that must be accepted
+(assert (not (nfa:in-language? minimal (word "b"))))      ; and one that must not
+```
+
+A table of algebraic laws of regular expressions, each checked with its own label:
+
+```scheme
+(mata-script "0.1.0")
+(set-option :alphabet "bytes")
+
+(define (same? left right)
+  (nfa:equivalent? (nfa:create-from-regex left) (nfa:create-from-regex right)))
+
+; each law: a label and two expressions that must denote the same language
+(define laws
+  (list (list "star-of-star"   "(a*)*"   "a*")
+        (list "union-of-stars" "(a|b)*"  "(a*b*)*")
+        (list "shift"          "(ab)*a"  "a(ba)*")
+        (list "distribute"     "a(b|c)"  "ab|ac")))
+
+; check prints star-of-star: true, …; assert makes a broken law fail the run
+(list:map (lambda (law)
+            (assert (check (list:nth law 0) (same? (list:nth law 1) (list:nth law 2)))))
+          laws)
+
+; a law that does not hold, with the word that shows it
+(define not-a-law (witness (nfa:equivalent? (nfa:create-from-regex "(ab)*")
+                                            (nfa:create-from-regex "a*b*"))))
+(echo (concat "(ab)* and a*b* differ on " (to-string (get not-a-law))))   ; a b a b
 ```
 
 The image of a language under a transducer, checked against a specification, with a function:
 
 ```scheme
 (mata-script "0.1.0")
-(declare-input transducer Nft)
+(declare-input transducer Nft)          ; three files, in this order
 (declare-input language Nfa)
 (declare-input specification Nfa)
 
 (define (image (transducer Nft) (language Nfa))
   (nft:to-nfa (nft:apply transducer language)))
 
+; a word of the image outside of the specification, or none
 (define counterexample
   (witness (nfa:included? (image transducer language) specification)))
 (if (none? counterexample)
@@ -1121,12 +1729,99 @@ A script that works on an input of either kind:
 
 ```scheme
 (mata-script "0.1.0" :requires (automaton))
-(declare-input a Automaton)
+(declare-input a Automaton)             ; two NFAs, or two transducers
 (declare-input b Automaton)
 
-(check (automaton:included? a b))
+(check (automaton:included? a b))       ; both checks are nfa:included? or both nft:included?
 (check (automaton:included? b a))
 ```
+
+A benchmark over random automata, with its sizes as parameters. Each seed gives one pair of automata, and each pair
+is checked with both inclusion algorithms:
+
+```scheme
+(mata-script "0.1.0")
+(declare-param states Int 20)          ; --param states=60 for larger automata
+(declare-param symbols Int 2)
+(declare-param seeds Int 3)
+
+; Tabakov and Vardi's model: 1.5 transitions per state and symbol, half of the states final
+(define (random-nfa seed)
+  (nfa:create-random-nfa-tabakov-vardi states symbols "1.5" "0.5" :seed seed))
+
+; the two verdicts for one seed, with records seed-0-naive, seed-0-antichains, …
+(define (measure seed)
+  (let ((lhs (random-nfa seed))
+        (rhs (random-nfa (+ seed 1000)))
+        (label (concat "seed-" (to-string seed))))
+    (list:map (lambda (algorithm)
+                (time (concat label "-" algorithm)
+                  (nfa:included? lhs rhs :algorithm algorithm)))
+              (list "naive" "antichains"))))
+
+; both algorithms must give the same verdict for every seed
+(define verdicts (list:map measure (list:range 0 seeds)))
+(check "algorithms-agree"
+  (list:fold (lambda (agree pair) (and agree (= (list:nth pair 0) (list:nth pair 1))))
+             true
+             verdicts))
+```
+
+```console
+$ mata script run --param states=60 --param seeds=2 random-inclusion.matasc
+seed-0-naive: 0.129378
+seed-0-antichains: 0.037182
+seed-1-naive: 0.072660
+seed-1-antichains: 0.000045
+algorithms-agree: true
+```
+
+Regular model checking of a token-passing protocol, with every automaton written in the script. A configuration is a
+word with one letter per process: `t` holds the token, `n` does not. The loop computes the configurations reachable
+from `tnnnn` and checks that none of them has zero or two tokens:
+
+```scheme
+(mata-script "0.1.0" :requires (transducers loops-and-recursion))
+(set-option :loops-and-recursion true)
+(set-option :alphabet "bytes")
+
+; one step: the token moves one process to the right; every other letter is copied
+(define step
+  (nft:literal :levels 2 :initial (p) :final (q)
+               :states ((p-n 1) (p-t 1) (give 1) (take 1) (q-n 1) (q-t 1))
+               :transitions ((p n p-n) (p-n n p) (p t p-t) (p-t t p)    ; copy before the move
+                             (p t give) (give n r) (r n take) (take t q) ; tn becomes nt
+                             (q n q-n) (q-n n q) (q t q-t) (q-t t q))))  ; copy after the move
+
+(define initial (nfa:create-from-regex "tnnnn"))
+(define bad (nfa:complement (nfa:create-from-regex "n*tn*")))   ; not exactly one token
+(define (post (configurations Nfa))                              ; the successors of configurations
+  (nft:to-nfa (nft:apply step configurations)))
+
+; add successors until nothing new is reached; minimizing keeps the automaton small
+(define reachable
+  (loop ((reached initial) (round 0))
+    (define next (nfa:minimize (nfa:union-nondeterministic reached (post reached))))
+    (if (nfa:included? next reached)
+        (do (echo (concat "fixpoint after " (to-string round) " rounds")) reached)
+        (recur next (+ round 1)))))
+
+(check "safe" (nfa:intersection-empty? reachable bad))                                ; safe: true
+(check "token-reaches-the-end" (nfa:in-language? reachable (word "n" "n" "n" "n" "t")))   ; true
+(echo (nfa:print-to-regex reachable :mode "readable"))
+```
+
+```text
+fixpoint after 4 rounds
+safe: true
+token-reaches-the-end: true
+nnn(tn|nt)|(nnt|(tn|nt)n)nn
+```
+
+A protocol with a bug gives the other verdict: with `(give t r)` in place of `(give n r)`, a step copies the token
+instead of passing it, and `safe` prints `false`. The initial configurations are fixed here because the fixpoint of
+`tn*`, a token at the start of a line of any length, is not reached by adding one step at a time: each round reaches
+one more position. `examples/rmc/armc.matasc` handles such families with an abstraction.
 
 ## Open questions
 
