@@ -490,8 +490,8 @@ used in these ways only:
 
 A script gets no guarantee when it passes a function to a defined function or to a `lambda`, returns a function from
 one, or puts a function into a list. A function can then be passed to itself, as in
-`((lambda (f) (f f)) (lambda (f) (f f)))`, which runs forever without any loop. The example in
-[Functions](@ref functions) is such a script: `included-with` returns a function, and `relations` is a list of functions.
+`((lambda (f) (f f)) (lambda (f) (f f)))`, which runs forever without any loop. The script in
+[Functions](@ref functions) is such a script: `included-with` returns a function, and `relations` lists them.
 
 The checker is conservative, so a script without the guarantee may still terminate.
 
@@ -527,7 +527,8 @@ asks:
   is an error at that point. Declaring an input as `Automaton` accepts either kind.
 - When a script declares inputs, every input given on the command line must be taken by a declaration; an input left
   over is an error, so a mistyped command line is not ignored.
-- The loading done by declarations is part of a [timing record](@ref timing) only under `:time-operations`, as `parsing`.
+- The loading done by declarations is part of a [timing record](@ref timing) only under
+  `:time-operations`, as `parsing`.
 
 **Parameters** are values given on the command line, for a script that is run several times with different sizes,
 seeds or labels:
@@ -1036,6 +1037,7 @@ library:
 | `(lazy:included? t u)`   | `check(t ∩ ¬u)`              | `Bool`                                                         |
 | `(lazy:equivalent? t u)` | `check((t ∩ ¬u) ∪ (u ∩ ¬t))` | `Bool`                                                         |
 | `(lazy:witness t)`       | `check(t)`                   | A tuple of `t`, `none` if `t` is empty                         |
+| `(lazy:materialize t)`   | `materialize(t)` as an `Nft` | An `Nfa` for arity 1, else an `Nft`                            |
 | `(lazy:materialize t)`   | `materialize(t)` as an `Nft` | An `Nfa` for arity 1, else an `Nft`                            |
 
 - **Lock step.** A term of arity n denotes a relation over n-tuples of words, read in lock step: one step reads one
