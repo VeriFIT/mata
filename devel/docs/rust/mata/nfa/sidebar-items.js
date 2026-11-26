@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["DisplayMata","Dot","Nfa","Regex","States","Transitions","Words"]};

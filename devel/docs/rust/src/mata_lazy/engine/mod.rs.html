@@ -1,0 +1,912 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `mata-lazy/src/engine/mod.rs`."><title>mod.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-203241e4.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="mata_lazy" data-themes="" data-resource-suffix="" data-rustdoc-version="1.100.0 (0ef1bc386 2026-11-09)" data-channel="1.100.0" data-search-js="search-b167f383.js" data-stringdex-js="stringdex-b5109af9.js" data-settings-js="settings-170eb4bf.js" ><script src="../../../static.files/storage-41dd4d93.js"></script><script defer src="../../../static.files/src-script-813739b1.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-1814ead3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-9f56287d.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">mata_lazy/engine/</div>mod.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! One query over a formula.
+<a href=#2 id=2 data-nosnippet>2</a>//!
+<a href=#3 id=3 data-nosnippet>3</a>//! # Steps
+<a href=#4 id=4 data-nosnippet>4</a>//!
+<a href=#5 id=5 data-nosnippet>5</a>//! 1. `exec` rewrites the formula into an execution DAG (its docs list the rewrites), builds equal nodes once
+<a href=#6 id=6 data-nosnippet>6</a>//!    and puts the cheaper operand first. Rewrites do not look into explicit nodes.
+<a href=#7 id=7 data-nosnippet>7</a>//! 2. `alphabet` groups the tapes into classes that read the same symbols and gives each class its alphabet.
+<a href=#8 id=8 data-nosnippet>8</a>//! 3. Explicit nodes, children first, are explored completely, numbered densely, trimmed and replaced by the
+<a href=#9 id=9 data-nosnippet>9</a>//!    leaf they give. The formula keeps that leaf for later queries, keyed by the node and the alphabets below
+<a href=#10 id=10 data-nosnippet>10</a>//!    it. A node whose exploration passes its `max_states` stays lazy.
+<a href=#11 id=11 data-nosnippet>11</a>//! 4. The search explores the root's macrostates depth first (breadth first for the fewest steps) until one
+<a href=#12 id=12 data-nosnippet>12</a>//!    accepts, and returns the path to it. Under a length bound it expands no macrostate reached in that many
+<a href=#13 id=13 data-nosnippet>13</a>//!    steps, and expands one again when it reaches it in fewer steps than before.
+<a href=#14 id=14 data-nosnippet>14</a>//!
+<a href=#15 id=15 data-nosnippet>15</a>//! | Node | Macrostate | Accepting | Successors |
+<a href=#16 id=16 data-nosnippet>16</a>//! |---|---|---|---|
+<a href=#17 id=17 data-nosnippet>17</a>//! | leaf, explicit | a state | final | its moves |
+<a href=#18 id=18 data-nosnippet>18</a>//! | union (n-ary) | (branch, state) | that state | the branch's moves |
+<a href=#19 id=19 data-nosnippet>19</a>//! | intersection, sync product, diagonal | (state, state) | both | pairs of moves whose tuples merge, once each when the product drops tapes |
+<a href=#20 id=20 data-nosnippet>20</a>//! | complement | a minimized set of child states | no member | one move per tuple of the alphabets |
+<a href=#21 id=21 data-nosnippet>21</a>//! | identity, projection | the child's | the child's | the child's moves, relabelled |
+<a href=#22 id=22 data-nosnippet>22</a>//! | prefix closure | the child's | it reaches an accepting one (`prefixes`) | the child's moves |
+<a href=#23 id=23 data-nosnippet>23</a>//!
+<a href=#24 id=24 data-nosnippet>24</a>//! # Successors
+<a href=#25 id=25 data-nosnippet>25</a>//!
+<a href=#26 id=26 data-nosnippet>26</a>//! The successors of a macrostate (its post) are built from the children's posts when first needed (`post`)
+<a href=#27 id=27 data-nosnippet>27</a>//! and cached per node, except for identities and along the root. A product joins each left move with the
+<a href=#28 id=28 data-nosnippet>28</a>//! right moves that agree on the synchronized tapes. The post of a complement is a table of all tuples in a
+<a href=#29 id=29 data-nosnippet>29</a>//! fixed order, so the matching moves follow from the letters. A sync product that drops its only synchronized
+<a href=#30 id=30 data-nosnippet>30</a>//! pair, as in a composition or an image, joins groups of moves instead (`join`). A complement over at most 256
+<a href=#31 id=31 data-nosnippet>31</a>//! child states builds its posts from bitset rows (`dense`). Every path gives the same posts and the same
+<a href=#32 id=32 data-nosnippet>32</a>//! macrostate numbers.
+<a href=#33 id=33 data-nosnippet>33</a>//!
+<a href=#34 id=34 data-nosnippet>34</a>//! # Subsumption
+<a href=#35 id=35 data-nosnippet>35</a>//!
+<a href=#36 id=36 data-nosnippet>36</a>//! `s ⊑ t` implies that `s` accepts a subset of what `t` accepts (`subsumption`). Leaves use their maximal
+<a href=#37 id=37 data-nosnippet>37</a>//! direct simulation (the `simulation` module), products compare componentwise, and complement sets
+<a href=#38 id=38 data-nosnippet>38</a>//! `S ⊑ T` when every member of `T` is below a member of `S`. Complement sets drop the members below another
+<a href=#39 id=39 data-nosnippet>39</a>//! member. Each node keeps the results it computed (`memo`), except a complement over a leaf, which compares
+<a href=#40 id=40 data-nosnippet>40</a>//! sets through the closures of the transposed simulation (`closure`). The root keeps an antichain of the
+<a href=#41 id=41 data-nosnippet>41</a>//! macrostates explored, grouped by the shape of the root so that a new macrostate is compared only with those
+<a href=#42 id=42 data-nosnippet>42</a>//! it can be below.
+<a href=#43 id=43 data-nosnippet>43</a>//!
+<a href=#44 id=44 data-nosnippet>44</a>//! # Initial macrostates
+<a href=#45 id=45 data-nosnippet>45</a>//!
+<a href=#46 id=46 data-nosnippet>46</a>//! Intersected unions multiply their initial macrostates (`initial`). A node with at most 2¹⁶ lists them, and
+<a href=#47 id=47 data-nosnippet>47</a>//! one with more numbers them on demand in the same order. The search then takes them one at a time, which can
+<a href=#48 id=48 data-nosnippet>48</a>//! change the witness and the statistics but not the answer.
+<a href=#49 id=49 data-nosnippet>49</a>//!
+<a href=#50 id=50 data-nosnippet>50</a>//! # Memory and limits
+<a href=#51 id=51 data-nosnippet>51</a>//!
+<a href=#52 id=52 data-nosnippet>52</a>//! Most of the memory is cached posts. A post stores its tuples flat and each target as a `u32` with the
+<a href=#53 id=53 data-nosnippet>53</a>//! accepting flag in the top bit, and the posts of one complement share their tuple table. Under a cache budget
+<a href=#54 id=54 data-nosnippet>54</a>//! the query drops posts by GreedyDual-Size with frequency (`cache`) and computes them again when needed.
+<a href=#55 id=55 data-nosnippet>55</a>//! `budget` counts macrostates and steps against the query's limits.
+<a href=#56 id=56 data-nosnippet>56</a>//!
+<a href=#57 id=57 data-nosnippet>57</a>//! Intersections stay binary, so `¬(A₁ ∪ … ∪ Aₙ)` builds quadratically many pair macrostates.
+<a href=#58 id=58 data-nosnippet>58</a>
+<a href=#59 id=59 data-nosnippet>59</a></span><span class="kw">mod </span>alphabet;
+<a href=#60 id=60 data-nosnippet>60</a><span class="kw">mod </span>budget;
+<a href=#61 id=61 data-nosnippet>61</a><span class="kw">mod </span>cache;
+<a href=#62 id=62 data-nosnippet>62</a><span class="kw">mod </span>closure;
+<a href=#63 id=63 data-nosnippet>63</a><span class="kw">mod </span>dense;
+<a href=#64 id=64 data-nosnippet>64</a><span class="kw">mod </span>exec;
+<a href=#65 id=65 data-nosnippet>65</a><span class="kw">mod </span>initial;
+<a href=#66 id=66 data-nosnippet>66</a><span class="kw">mod </span>join;
+<a href=#67 id=67 data-nosnippet>67</a><span class="kw">mod </span>memo;
+<a href=#68 id=68 data-nosnippet>68</a><span class="kw">mod </span>pad;
+<a href=#69 id=69 data-nosnippet>69</a><span class="kw">mod </span>post;
+<a href=#70 id=70 data-nosnippet>70</a><span class="kw">mod </span>prefixes;
+<a href=#71 id=71 data-nosnippet>71</a><span class="kw">mod </span>store;
+<a href=#72 id=72 data-nosnippet>72</a><span class="kw">mod </span>subsumption;
+<a href=#73 id=73 data-nosnippet>73</a>
+<a href=#74 id=74 data-nosnippet>74</a><span class="kw">use </span>std::collections::VecDeque;
+<a href=#75 id=75 data-nosnippet>75</a><span class="kw">use </span>std::collections::hash_map::Entry;
+<a href=#76 id=76 data-nosnippet>76</a><span class="kw">use </span>std::rc::Rc;
+<a href=#77 id=77 data-nosnippet>77</a><span class="kw">use </span>std::sync::Arc;
+<a href=#78 id=78 data-nosnippet>78</a><span class="kw">use </span>std::sync::atomic::AtomicBool;
+<a href=#79 id=79 data-nosnippet>79</a>
+<a href=#80 id=80 data-nosnippet>80</a><span class="kw">use </span>indexmap::IndexSet;
+<a href=#81 id=81 data-nosnippet>81</a><span class="kw">use </span>rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
+<a href=#82 id=82 data-nosnippet>82</a><span class="kw">use </span>typed_index_collections::TiVec;
+<a href=#83 id=83 data-nosnippet>83</a>
+<a href=#84 id=84 data-nosnippet>84</a><span class="kw">use </span><span class="self">self</span>::alphabet::Alphabets;
+<a href=#85 id=85 data-nosnippet>85</a><span class="kw">use </span><span class="self">self</span>::budget::{Budget, Limit};
+<a href=#86 id=86 data-nosnippet>86</a><span class="kw">use </span><span class="self">self</span>::cache::CacheBudget;
+<a href=#87 id=87 data-nosnippet>87</a><span class="kw">use </span><span class="self">self</span>::dense::Dense;
+<a href=#88 id=88 data-nosnippet>88</a><span class="kw">use </span><span class="self">self</span>::exec::{Exec, LeafRef, Op};
+<a href=#89 id=89 data-nosnippet>89</a><span class="kw">use </span><span class="self">self</span>::initial::{INITIAL_BATCH, batches};
+<a href=#90 id=90 data-nosnippet>90</a><span class="kw">use </span><span class="self">self</span>::join::{JoinPlan, Scratch};
+<a href=#91 id=91 data-nosnippet>91</a><span class="kw">use </span><span class="self">self</span>::post::{JoinBuffers, Post, Table, Target};
+<a href=#92 id=92 data-nosnippet>92</a><span class="kw">use </span><span class="self">self</span>::store::Store;
+<a href=#93 id=93 data-nosnippet>93</a><span class="kw">use </span><span class="self">self</span>::subsumption::{Antichain, Subsumption};
+<a href=#94 id=94 data-nosnippet>94</a><span class="kw">use </span><span class="kw">crate</span>::formula::Formula;
+<a href=#95 id=95 data-nosnippet>95</a><span class="kw">use </span><span class="kw">crate</span>::ids::{ExecId, Id, NodeId, StateId};
+<a href=#96 id=96 data-nosnippet>96</a><span class="kw">use </span><span class="kw">crate</span>::leaf::{Leaf, Raw, Stopped};
+<a href=#97 id=97 data-nosnippet>97</a><span class="kw">use </span><span class="kw">crate</span>::options::{ExplicitOptions, Materialized, NodeStats, Stats, Tapes};
+<a href=#98 id=98 data-nosnippet>98</a><span class="kw">use </span><span class="kw">crate</span>::plan::Annotations;
+<a href=#99 id=99 data-nosnippet>99</a><span class="kw">use crate</span>::{Error, Options, Symbol, Witness};
+<a href=#100 id=100 data-nosnippet>100</a>
+<a href=#101 id=101 data-nosnippet>101</a><span class="doccomment">/// Successors, initial macrostates and subsumption recurse once per level of the DAG; the stack grows by
+<a href=#102 id=102 data-nosnippet>102</a>/// this much whenever less than [`RED_ZONE`] is left.
+<a href=#103 id=103 data-nosnippet>103</a></span><span class="kw">const </span>STACK_GROWTH: usize = <span class="number">1 </span>&lt;&lt; <span class="number">20</span>;
+<a href=#104 id=104 data-nosnippet>104</a><span class="kw">const </span>RED_ZONE: usize = <span class="number">64 </span>&lt;&lt; <span class="number">10</span>;
+<a href=#105 id=105 data-nosnippet>105</a>
+<a href=#106 id=106 data-nosnippet>106</a><span class="kw">fn </span>deep&lt;T&gt;(work: <span class="kw">impl </span>FnOnce() -&gt; T) -&gt; T {
+<a href=#107 id=107 data-nosnippet>107</a>	stacker::maybe_grow(RED_ZONE, STACK_GROWTH, work)
+<a href=#108 id=108 data-nosnippet>108</a>}
+<a href=#109 id=109 data-nosnippet>109</a>
+<a href=#110 id=110 data-nosnippet>110</a><span class="doccomment">/// An explored node, or the number of macrostates at which it passed its budget.
+<a href=#111 id=111 data-nosnippet>111</a></span><span class="kw">enum </span>Explored {
+<a href=#112 id=112 data-nosnippet>112</a>	Done(Raw),
+<a href=#113 id=113 data-nosnippet>113</a>	OverBudget(usize),
+<a href=#114 id=114 data-nosnippet>114</a>}
+<a href=#115 id=115 data-nosnippet>115</a>
+<a href=#116 id=116 data-nosnippet>116</a><span class="doccomment">/// What the automaton of an explicit node depends on, which is the alphabet of every tape below it and the keys
+<a href=#117 id=117 data-nosnippet>117</a>/// of the explicit nodes below it.
+<a href=#118 id=118 data-nosnippet>118</a></span><span class="attr">#[derive(Debug, PartialEq, Eq, Hash)]
+<a href=#119 id=119 data-nosnippet>119</a></span><span class="kw">struct </span>Signature {
+<a href=#120 id=120 data-nosnippet>120</a>	<span class="doccomment">/// The distinct alphabets, in the order the tapes first reach them.
+<a href=#121 id=121 data-nosnippet>121</a>	</span>universes: Vec&lt;Box&lt;[Symbol]&gt;&gt;,
+<a href=#122 id=122 data-nosnippet>122</a>	<span class="doccomment">/// The tapes and the explicit nodes below, in an order that only the subterm decides.
+<a href=#123 id=123 data-nosnippet>123</a>	</span>items: Vec&lt;Item&gt;,
+<a href=#124 id=124 data-nosnippet>124</a>}
+<a href=#125 id=125 data-nosnippet>125</a>
+<a href=#126 id=126 data-nosnippet>126</a><span class="doccomment">/// One entry of a [`Signature`].
+<a href=#127 id=127 data-nosnippet>127</a></span><span class="attr">#[derive(Debug, PartialEq, Eq, Hash)]
+<a href=#128 id=128 data-nosnippet>128</a></span><span class="kw">enum </span>Item {
+<a href=#129 id=129 data-nosnippet>129</a>	<span class="doccomment">/// A tape, by the index of its alphabet.
+<a href=#130 id=130 data-nosnippet>130</a>	</span>Tape(u32),
+<a href=#131 id=131 data-nosnippet>131</a>	<span class="doccomment">/// An explicit node below, by the number of its key, so that its own tapes are not copied again.
+<a href=#132 id=132 data-nosnippet>132</a>	</span>Explicit(u64),
+<a href=#133 id=133 data-nosnippet>133</a>}
+<a href=#134 id=134 data-nosnippet>134</a>
+<a href=#135 id=135 data-nosnippet>135</a><span class="doccomment">/// The automata of the explicit nodes of a formula, kept for later queries.
+<a href=#136 id=136 data-nosnippet>136</a></span><span class="attr">#[derive(Debug, Default)]
+<a href=#137 id=137 data-nosnippet>137</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>ExplicitCache {
+<a href=#138 id=138 data-nosnippet>138</a>	<span class="doccomment">/// The number of every key, by which the keys of the explicit nodes above refer to it.
+<a href=#139 id=139 data-nosnippet>139</a>	</span>numbers: FxHashMap&lt;(NodeId, Signature), u64&gt;,
+<a href=#140 id=140 data-nosnippet>140</a>	<span class="doccomment">/// The automata built, by key number.
+<a href=#141 id=141 data-nosnippet>141</a>	</span>leaves: FxHashMap&lt;u64, Arc&lt;Leaf&gt;&gt;,
+<a href=#142 id=142 data-nosnippet>142</a>	<span class="doccomment">/// The next number. Clearing the cache does not reuse numbers, so a query running meanwhile cannot mix keys.
+<a href=#143 id=143 data-nosnippet>143</a>	</span>next: u64,
+<a href=#144 id=144 data-nosnippet>144</a>}
+<a href=#145 id=145 data-nosnippet>145</a>
+<a href=#146 id=146 data-nosnippet>146</a><span class="kw">impl </span>ExplicitCache {
+<a href=#147 id=147 data-nosnippet>147</a>	<span class="doccomment">/// The number of `key`, given now if the key is new.
+<a href=#148 id=148 data-nosnippet>148</a>	</span><span class="kw">fn </span>number(<span class="kw-2">&amp;mut </span><span class="self">self</span>, key: (NodeId, Signature)) -&gt; u64 {
+<a href=#149 id=149 data-nosnippet>149</a>		<span class="kw">match </span><span class="self">self</span>.numbers.entry(key) {
+<a href=#150 id=150 data-nosnippet>150</a>			Entry::Occupied(entry) =&gt; <span class="kw-2">*</span>entry.get(),
+<a href=#151 id=151 data-nosnippet>151</a>			Entry::Vacant(entry) =&gt; {
+<a href=#152 id=152 data-nosnippet>152</a>				<span class="self">self</span>.next += <span class="number">1</span>;
+<a href=#153 id=153 data-nosnippet>153</a>
+<a href=#154 id=154 data-nosnippet>154</a>				<span class="kw-2">*</span>entry.insert(<span class="self">self</span>.next - <span class="number">1</span>)
+<a href=#155 id=155 data-nosnippet>155</a>			}
+<a href=#156 id=156 data-nosnippet>156</a>		}
+<a href=#157 id=157 data-nosnippet>157</a>	}
+<a href=#158 id=158 data-nosnippet>158</a>
+<a href=#159 id=159 data-nosnippet>159</a>	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>clear(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+<a href=#160 id=160 data-nosnippet>160</a>		<span class="self">self</span>.numbers.clear();
+<a href=#161 id=161 data-nosnippet>161</a>		<span class="self">self</span>.leaves.clear();
+<a href=#162 id=162 data-nosnippet>162</a>	}
+<a href=#163 id=163 data-nosnippet>163</a>}
+<a href=#164 id=164 data-nosnippet>164</a>
+<a href=#165 id=165 data-nosnippet>165</a><span class="doccomment">/// How the search reached a macrostate, from `parent` by the tuple at `offset` in its tuple buffer.
+<a href=#166 id=166 data-nosnippet>166</a></span><span class="attr">#[derive(Clone, Copy, Debug)]
+<a href=#167 id=167 data-nosnippet>167</a></span><span class="kw">struct </span>Step {
+<a href=#168 id=168 data-nosnippet>168</a>	parent: StateId,
+<a href=#169 id=169 data-nosnippet>169</a>	offset: usize,
+<a href=#170 id=170 data-nosnippet>170</a>}
+<a href=#171 id=171 data-nosnippet>171</a>
+<a href=#172 id=172 data-nosnippet>172</a><span class="doccomment">/// How the search last reached a macrostate: in `depth` steps, by `step` unless it is initial.
+<a href=#173 id=173 data-nosnippet>173</a></span><span class="attr">#[derive(Clone, Copy, Debug)]
+<a href=#174 id=174 data-nosnippet>174</a></span><span class="kw">struct </span>Reached {
+<a href=#175 id=175 data-nosnippet>175</a>	step: <span class="prelude-ty">Option</span>&lt;Step&gt;,
+<a href=#176 id=176 data-nosnippet>176</a>	depth: usize,
+<a href=#177 id=177 data-nosnippet>177</a>}
+<a href=#178 id=178 data-nosnippet>178</a>
+<a href=#179 id=179 data-nosnippet>179</a><span class="doccomment">/// The state of the search of the root.
+<a href=#180 id=180 data-nosnippet>180</a></span><span class="attr">#[derive(Debug)]
+<a href=#181 id=181 data-nosnippet>181</a></span><span class="kw">struct </span>Search&lt;<span class="lifetime">'f</span>&gt; {
+<a href=#182 id=182 data-nosnippet>182</a>	antichain: <span class="prelude-ty">Option</span>&lt;Antichain&lt;<span class="lifetime">'f</span>&gt;&gt;,
+<a href=#183 id=183 data-nosnippet>183</a>	reached: FxHashMap&lt;StateId, Reached&gt;,
+<a href=#184 id=184 data-nosnippet>184</a>	<span class="doccomment">/// The tuples of the steps, `arity` symbols each.
+<a href=#185 id=185 data-nosnippet>185</a>	</span>tuples: Vec&lt;Symbol&gt;,
+<a href=#186 id=186 data-nosnippet>186</a>	<span class="doccomment">/// The macrostates to expand and the steps that reached them; a stack, or a queue breadth first.
+<a href=#187 id=187 data-nosnippet>187</a>	</span>work: VecDeque&lt;(StateId, usize)&gt;,
+<a href=#188 id=188 data-nosnippet>188</a>	<span class="doccomment">/// Whether a macrostate was left unexpanded at the length bound.
+<a href=#189 id=189 data-nosnippet>189</a>	</span>bounded: bool,
+<a href=#190 id=190 data-nosnippet>190</a>}
+<a href=#191 id=191 data-nosnippet>191</a>
+<a href=#192 id=192 data-nosnippet>192</a><span class="attr">#[derive(Debug)]
+<a href=#193 id=193 data-nosnippet>193</a></span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>Engine&lt;<span class="lifetime">'f</span>&gt; {
+<a href=#194 id=194 data-nosnippet>194</a>	formula: <span class="kw-2">&amp;</span><span class="lifetime">'f </span>Formula,
+<a href=#195 id=195 data-nosnippet>195</a>	exec: Exec&lt;<span class="lifetime">'f</span>&gt;,
+<a href=#196 id=196 data-nosnippet>196</a>	alphabets: Alphabets,
+<a href=#197 id=197 data-nosnippet>197</a>	stores: TiVec&lt;ExecId, Store&gt;,
+<a href=#198 id=198 data-nosnippet>198</a>	posts: TiVec&lt;ExecId, Vec&lt;<span class="prelude-ty">Option</span>&lt;Rc&lt;Post&gt;&gt;&gt;&gt;,
+<a href=#199 id=199 data-nosnippet>199</a>	<span class="doccomment">/// The root and the nodes sharing its macrostates expand each macrostate once, so they keep no posts, down to a
+<a href=#200 id=200 data-nosnippet>200</a>	/// prefix closure, which searches its child. An identity relabels its child's post, which is kept, as a copy
+<a href=#201 id=201 data-nosnippet>201</a>	/// would double it.
+<a href=#202 id=202 data-nosnippet>202</a>	</span>cached: TiVec&lt;ExecId, bool&gt;,
+<a href=#203 id=203 data-nosnippet>203</a>	<span class="doccomment">/// The tuples of the posts of each complement node, and of each identity of one.
+<a href=#204 id=204 data-nosnippet>204</a>	</span>tables: TiVec&lt;ExecId, <span class="prelude-ty">Option</span>&lt;Rc&lt;Table&gt;&gt;&gt;,
+<a href=#205 id=205 data-nosnippet>205</a>	cache_budget: <span class="prelude-ty">Option</span>&lt;CacheBudget&gt;,
+<a href=#206 id=206 data-nosnippet>206</a>	<span class="doccomment">/// The time spent computing the children's posts of the post being computed, under a cache budget.
+<a href=#207 id=207 data-nosnippet>207</a>	</span>nested_nanos: u64,
+<a href=#208 id=208 data-nosnippet>208</a>	<span class="doccomment">/// The number of initial macrostates of each node, once counted.
+<a href=#209 id=209 data-nosnippet>209</a>	</span>initial_counts: TiVec&lt;ExecId, <span class="prelude-ty">Option</span>&lt;usize&gt;&gt;,
+<a href=#210 id=210 data-nosnippet>210</a>	<span class="doccomment">/// The initial macrostates of the nodes that list them.
+<a href=#211 id=211 data-nosnippet>211</a>	</span>initials: TiVec&lt;ExecId, <span class="prelude-ty">Option</span>&lt;Rc&lt;[Target]&gt;&gt;&gt;,
+<a href=#212 id=212 data-nosnippet>212</a>	<span class="doccomment">/// Where each branch's initial macrostates start, for the unions numbered on demand.
+<a href=#213 id=213 data-nosnippet>213</a>	</span>union_starts: TiVec&lt;ExecId, <span class="prelude-ty">Option</span>&lt;Rc&lt;[usize]&gt;&gt;&gt;,
+<a href=#214 id=214 data-nosnippet>214</a>	<span class="doccomment">/// Per node, whether one of its initial macrostates accepts, once asked.
+<a href=#215 id=215 data-nosnippet>215</a>	</span>accepting_initials: TiVec&lt;ExecId, <span class="prelude-ty">Option</span>&lt;bool&gt;&gt;,
+<a href=#216 id=216 data-nosnippet>216</a>	<span class="doccomment">/// Per prefix closure, whether the macrostates of its child it asked about reach an accepting one.
+<a href=#217 id=217 data-nosnippet>217</a>	</span>live: TiVec&lt;ExecId, FxHashMap&lt;StateId, bool&gt;&gt;,
+<a href=#218 id=218 data-nosnippet>218</a>	<span class="doccomment">/// What each product's join may skip.
+<a href=#219 id=219 data-nosnippet>219</a>	</span>plans: TiVec&lt;ExecId, JoinPlan&gt;,
+<a href=#220 id=220 data-nosnippet>220</a>	join_scratch: Scratch,
+<a href=#221 id=221 data-nosnippet>221</a>	join_buffers: JoinBuffers,
+<a href=#222 id=222 data-nosnippet>222</a>	subsumption: Subsumption,
+<a href=#223 id=223 data-nosnippet>223</a>	<span class="doccomment">/// Whether the search keeps an antichain of the root's macrostates.
+<a href=#224 id=224 data-nosnippet>224</a>	</span>antichain: bool,
+<a href=#225 id=225 data-nosnippet>225</a>	<span class="doccomment">/// The most steps of a witness.
+<a href=#226 id=226 data-nosnippet>226</a>	</span>max_length: <span class="prelude-ty">Option</span>&lt;usize&gt;,
+<a href=#227 id=227 data-nosnippet>227</a>	<span class="doccomment">/// Whether the search goes breadth first, for a witness of the fewest steps.
+<a href=#228 id=228 data-nosnippet>228</a>	</span>shortest: bool,
+<a href=#229 id=229 data-nosnippet>229</a>	<span class="doccomment">/// Whether the posts of each complement node use bitsets over its child's states.
+<a href=#230 id=230 data-nosnippet>230</a>	</span>dense: TiVec&lt;ExecId, <span class="prelude-ty">Option</span>&lt;Box&lt;Dense&gt;&gt;&gt;,
+<a href=#231 id=231 data-nosnippet>231</a>	<span class="doccomment">/// The steps and reachability that each pad closure remembers.
+<a href=#232 id=232 data-nosnippet>232</a>	</span>pad_steps: TiVec&lt;ExecId, pad::PadSteps&gt;,
+<a href=#233 id=233 data-nosnippet>233</a>	budget: Budget,
+<a href=#234 id=234 data-nosnippet>234</a>	stats: Stats,
+<a href=#235 id=235 data-nosnippet>235</a>	<span class="doccomment">/// The posts computed per node, for [`NodeStats`].
+<a href=#236 id=236 data-nosnippet>236</a>	</span>post_counts: TiVec&lt;ExecId, usize&gt;,
+<a href=#237 id=237 data-nosnippet>237</a>}
+<a href=#238 id=238 data-nosnippet>238</a>
+<a href=#239 id=239 data-nosnippet>239</a><span class="kw">impl</span>&lt;<span class="lifetime">'f</span>&gt; Engine&lt;<span class="lifetime">'f</span>&gt; {
+<a href=#240 id=240 data-nosnippet>240</a>	<span class="doccomment">/// Prepares the query of `root` and builds its explicit nodes; setting `cancel` stops it.
+<a href=#241 id=241 data-nosnippet>241</a>	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new(
+<a href=#242 id=242 data-nosnippet>242</a>		formula: <span class="kw-2">&amp;</span><span class="lifetime">'f </span>Formula,
+<a href=#243 id=243 data-nosnippet>243</a>		root: NodeId,
+<a href=#244 id=244 data-nosnippet>244</a>		options: <span class="kw-2">&amp;</span>Options,
+<a href=#245 id=245 data-nosnippet>245</a>		cancel: <span class="prelude-ty">Option</span>&lt;Arc&lt;AtomicBool&gt;&gt;,
+<a href=#246 id=246 data-nosnippet>246</a>	) -&gt; <span class="prelude-ty">Result</span>&lt;Engine&lt;<span class="lifetime">'f</span>&gt;, Error&gt; {
+<a href=#247 id=247 data-nosnippet>247</a>		<span class="kw">let </span>budget = Budget::new(options, cancel);
+<a href=#248 id=248 data-nosnippet>248</a>		<span class="kw">let </span>annotations = Annotations::new(formula, options)<span class="question-mark">?</span>;
+<a href=#249 id=249 data-nosnippet>249</a>		<span class="kw">let </span>exec = exec::build(formula, root, <span class="kw-2">&amp;</span>annotations);
+<a href=#250 id=250 data-nosnippet>250</a>		<span class="kw">let </span>alphabets = Alphabets::new(<span class="kw-2">&amp;</span>exec, <span class="kw-2">&amp;</span>root_symbols(options, exec.nodes[exec.root].arity)<span class="question-mark">?</span>);
+<a href=#251 id=251 data-nosnippet>251</a>
+<a href=#252 id=252 data-nosnippet>252</a>		<span class="kw">for </span>(id, node) <span class="kw">in </span>exec.nodes.iter_enumerated() {
+<a href=#253 id=253 data-nosnippet>253</a>			<span class="kw">if </span><span class="macro">matches!</span>(node.op, Op::Complement(<span class="kw">_</span>))
+<a href=#254 id=254 data-nosnippet>254</a>				&amp;&amp; exec.reachable[id]
+<a href=#255 id=255 data-nosnippet>255</a>				&amp;&amp; alphabets.tuple_count(id).is_none()
+<a href=#256 id=256 data-nosnippet>256</a>			{
+<a href=#257 id=257 data-nosnippet>257</a>				<span class="kw">return </span><span class="prelude-val">Err</span>(Error::ComplementTooLarge { arity: node.arity });
+<a href=#258 id=258 data-nosnippet>258</a>			}
+<a href=#259 id=259 data-nosnippet>259</a>		}
+<a href=#260 id=260 data-nosnippet>260</a>
+<a href=#261 id=261 data-nosnippet>261</a>		<span class="kw">let </span>num_nodes = exec.nodes.len();
+<a href=#262 id=262 data-nosnippet>262</a>		<span class="kw">let </span>stores = exec
+<a href=#263 id=263 data-nosnippet>263</a>			.nodes
+<a href=#264 id=264 data-nosnippet>264</a>			.iter()
+<a href=#265 id=265 data-nosnippet>265</a>			.map(|node| <span class="kw">match </span>node.op {
+<a href=#266 id=266 data-nosnippet>266</a>				Op::Union(<span class="kw">_</span>) | Op::PadClosure(..) =&gt; Store::Tagged(IndexSet::default()),
+<a href=#267 id=267 data-nosnippet>267</a>				Op::Intersection(..) | Op::Sync(..) | Op::Diagonal(..) =&gt; {
+<a href=#268 id=268 data-nosnippet>268</a>					Store::Pair(IndexSet::default())
+<a href=#269 id=269 data-nosnippet>269</a>				}
+<a href=#270 id=270 data-nosnippet>270</a>				Op::Complement(<span class="kw">_</span>) =&gt; Store::Set(IndexSet::default()),
+<a href=#271 id=271 data-nosnippet>271</a>				<span class="kw">_ </span>=&gt; Store::None,
+<a href=#272 id=272 data-nosnippet>272</a>			})
+<a href=#273 id=273 data-nosnippet>273</a>			.collect();
+<a href=#274 id=274 data-nosnippet>274</a>		<span class="kw">let </span><span class="kw-2">mut </span>cached: TiVec&lt;ExecId, bool&gt; = exec
+<a href=#275 id=275 data-nosnippet>275</a>			.nodes
+<a href=#276 id=276 data-nosnippet>276</a>			.iter()
+<a href=#277 id=277 data-nosnippet>277</a>			.map(|node| !<span class="macro">matches!</span>(node.op, Op::Identity(<span class="kw">_</span>)))
+<a href=#278 id=278 data-nosnippet>278</a>			.collect();
+<a href=#279 id=279 data-nosnippet>279</a>		<span class="kw">for </span>node <span class="kw">in </span>exec.sharing(exec.root) {
+<a href=#280 id=280 data-nosnippet>280</a>			cached[node] = <span class="bool-val">false</span>;
+<a href=#281 id=281 data-nosnippet>281</a>			<span class="kw">if </span><span class="macro">matches!</span>(exec.nodes[node].op, Op::Prefixes(<span class="kw">_</span>)) {
+<a href=#282 id=282 data-nosnippet>282</a>				<span class="kw">break</span>;
+<a href=#283 id=283 data-nosnippet>283</a>			}
+<a href=#284 id=284 data-nosnippet>284</a>		}
+<a href=#285 id=285 data-nosnippet>285</a>
+<a href=#286 id=286 data-nosnippet>286</a>		<span class="kw">let </span>plans = join::plans(<span class="kw-2">&amp;</span>exec);
+<a href=#287 id=287 data-nosnippet>287</a>		<span class="kw">let </span>dense = exec
+<a href=#288 id=288 data-nosnippet>288</a>			.nodes
+<a href=#289 id=289 data-nosnippet>289</a>			.iter()
+<a href=#290 id=290 data-nosnippet>290</a>			.map(|node| <span class="macro">matches!</span>(node.op, Op::Complement(<span class="kw">_</span>)).then(Box::default))
+<a href=#291 id=291 data-nosnippet>291</a>			.collect();
+<a href=#292 id=292 data-nosnippet>292</a>
+<a href=#293 id=293 data-nosnippet>293</a>		<span class="kw">let </span><span class="kw-2">mut </span>engine = Engine {
+<a href=#294 id=294 data-nosnippet>294</a>			formula,
+<a href=#295 id=295 data-nosnippet>295</a>			exec,
+<a href=#296 id=296 data-nosnippet>296</a>			alphabets,
+<a href=#297 id=297 data-nosnippet>297</a>			stores,
+<a href=#298 id=298 data-nosnippet>298</a>			posts: <span class="macro">vec!</span>[Vec::new(); num_nodes].into(),
+<a href=#299 id=299 data-nosnippet>299</a>			cached,
+<a href=#300 id=300 data-nosnippet>300</a>			tables: <span class="macro">vec!</span>[<span class="prelude-val">None</span>; num_nodes].into(),
+<a href=#301 id=301 data-nosnippet>301</a>			<span class="comment">// Rows of dense complements are keyed after the nodes.
+<a href=#302 id=302 data-nosnippet>302</a>			</span>cache_budget: options
+<a href=#303 id=303 data-nosnippet>303</a>				.cache_budget
+<a href=#304 id=304 data-nosnippet>304</a>				.map(|limit| CacheBudget::new(limit, <span class="number">2 </span>* num_nodes)),
+<a href=#305 id=305 data-nosnippet>305</a>			nested_nanos: <span class="number">0</span>,
+<a href=#306 id=306 data-nosnippet>306</a>			initial_counts: <span class="macro">vec!</span>[<span class="prelude-val">None</span>; num_nodes].into(),
+<a href=#307 id=307 data-nosnippet>307</a>			initials: <span class="macro">vec!</span>[<span class="prelude-val">None</span>; num_nodes].into(),
+<a href=#308 id=308 data-nosnippet>308</a>			union_starts: <span class="macro">vec!</span>[<span class="prelude-val">None</span>; num_nodes].into(),
+<a href=#309 id=309 data-nosnippet>309</a>			accepting_initials: <span class="macro">vec!</span>[<span class="prelude-val">None</span>; num_nodes].into(),
+<a href=#310 id=310 data-nosnippet>310</a>			live: <span class="macro">vec!</span>[FxHashMap::default(); num_nodes].into(),
+<a href=#311 id=311 data-nosnippet>311</a>			plans,
+<a href=#312 id=312 data-nosnippet>312</a>			join_scratch: Scratch::default(),
+<a href=#313 id=313 data-nosnippet>313</a>			join_buffers: JoinBuffers::default(),
+<a href=#314 id=314 data-nosnippet>314</a>			subsumption: Subsumption::new(options.subsumption, num_nodes, budget.until()),
+<a href=#315 id=315 data-nosnippet>315</a>			antichain: options.subsumption &amp;&amp; options.antichain,
+<a href=#316 id=316 data-nosnippet>316</a>			max_length: options.max_length,
+<a href=#317 id=317 data-nosnippet>317</a>			shortest: options.shortest,
+<a href=#318 id=318 data-nosnippet>318</a>			dense,
+<a href=#319 id=319 data-nosnippet>319</a>			pad_steps: (<span class="number">0</span>..num_nodes).map(|<span class="kw">_</span>| pad::PadSteps::default()).collect(),
+<a href=#320 id=320 data-nosnippet>320</a>			budget,
+<a href=#321 id=321 data-nosnippet>321</a>			stats: Stats::default(),
+<a href=#322 id=322 data-nosnippet>322</a>			post_counts: <span class="macro">vec!</span>[<span class="number">0</span>; num_nodes].into(),
+<a href=#323 id=323 data-nosnippet>323</a>		};
+<a href=#324 id=324 data-nosnippet>324</a>
+<a href=#325 id=325 data-nosnippet>325</a>		engine
+<a href=#326 id=326 data-nosnippet>326</a>			.materialize_explicit()
+<a href=#327 id=327 data-nosnippet>327</a>			.map_err(|limit| engine.limit_error(limit))<span class="question-mark">?</span>;
+<a href=#328 id=328 data-nosnippet>328</a>
+<a href=#329 id=329 data-nosnippet>329</a>		<span class="prelude-val">Ok</span>(engine)
+<a href=#330 id=330 data-nosnippet>330</a>	}
+<a href=#331 id=331 data-nosnippet>331</a>
+<a href=#332 id=332 data-nosnippet>332</a>	<span class="doccomment">/// Builds every explicit node, children first.
+<a href=#333 id=333 data-nosnippet>333</a>	</span><span class="kw">fn </span>materialize_explicit(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(), Limit&gt; {
+<a href=#334 id=334 data-nosnippet>334</a>		<span class="kw">let </span><span class="kw-2">mut </span>numbers: FxHashMap&lt;ExecId, u64&gt; = FxHashMap::default();
+<a href=#335 id=335 data-nosnippet>335</a>		<span class="kw">for </span>node <span class="kw">in </span><span class="self">self</span>.exec.nodes.keys() {
+<a href=#336 id=336 data-nosnippet>336</a>			<span class="kw">if let </span>Op::Explicit {
+<a href=#337 id=337 data-nosnippet>337</a>				child,
+<a href=#338 id=338 data-nosnippet>338</a>				options,
+<a href=#339 id=339 data-nosnippet>339</a>				origin,
+<a href=#340 id=340 data-nosnippet>340</a>			} = <span class="self">self</span>.exec.nodes[node].op
+<a href=#341 id=341 data-nosnippet>341</a>				&amp;&amp; <span class="self">self</span>.exec.reachable[node]
+<a href=#342 id=342 data-nosnippet>342</a>			{
+<a href=#343 id=343 data-nosnippet>343</a>				<span class="kw">let </span>key = (origin, <span class="self">self</span>.signature(node, <span class="kw-2">&amp;</span>numbers));
+<a href=#344 id=344 data-nosnippet>344</a>				<span class="kw">let </span>number = <span class="self">self</span>.formula.explicit_cache.lock().number(key);
+<a href=#345 id=345 data-nosnippet>345</a>				numbers.insert(node, number);
+<a href=#346 id=346 data-nosnippet>346</a>				<span class="self">self</span>.materialize_node(node, child, options, origin, number)<span class="question-mark">?</span>;
+<a href=#347 id=347 data-nosnippet>347</a>			}
+<a href=#348 id=348 data-nosnippet>348</a>		}
+<a href=#349 id=349 data-nosnippet>349</a>
+<a href=#350 id=350 data-nosnippet>350</a>		<span class="prelude-val">Ok</span>(())
+<a href=#351 id=351 data-nosnippet>351</a>	}
+<a href=#352 id=352 data-nosnippet>352</a>
+<a href=#353 id=353 data-nosnippet>353</a>	<span class="doccomment">/// Replaces the explicit `node` by its automaton, or by its child once the exploration passes its budget.
+<a href=#354 id=354 data-nosnippet>354</a>	</span><span class="kw">fn </span>materialize_node(
+<a href=#355 id=355 data-nosnippet>355</a>		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
+<a href=#356 id=356 data-nosnippet>356</a>		node: ExecId,
+<a href=#357 id=357 data-nosnippet>357</a>		child: ExecId,
+<a href=#358 id=358 data-nosnippet>358</a>		options: ExplicitOptions,
+<a href=#359 id=359 data-nosnippet>359</a>		origin: NodeId,
+<a href=#360 id=360 data-nosnippet>360</a>		number: u64,
+<a href=#361 id=361 data-nosnippet>361</a>	) -&gt; <span class="prelude-ty">Result</span>&lt;(), Limit&gt; {
+<a href=#362 id=362 data-nosnippet>362</a>		<span class="kw">let </span>term = <span class="self">self</span>.formula.term(origin);
+<a href=#363 id=363 data-nosnippet>363</a>		<span class="comment">// Looked up before the match, whose scrutinee would hold the lock through the insert.
+<a href=#364 id=364 data-nosnippet>364</a>		</span><span class="kw">let </span>hit = <span class="self">self
+<a href=#365 id=365 data-nosnippet>365</a>			</span>.formula
+<a href=#366 id=366 data-nosnippet>366</a>			.explicit_cache
+<a href=#367 id=367 data-nosnippet>367</a>			.lock()
+<a href=#368 id=368 data-nosnippet>368</a>			.leaves
+<a href=#369 id=369 data-nosnippet>369</a>			.get(<span class="kw-2">&amp;</span>number)
+<a href=#370 id=370 data-nosnippet>370</a>			.cloned();
+<a href=#371 id=371 data-nosnippet>371</a>
+<a href=#372 id=372 data-nosnippet>372</a>		<span class="kw">let </span>(leaf, cached) = <span class="kw">match </span>hit {
+<a href=#373 id=373 data-nosnippet>373</a>			<span class="prelude-val">Some</span>(leaf) =&gt; (leaf, <span class="bool-val">true</span>),
+<a href=#374 id=374 data-nosnippet>374</a>			<span class="prelude-val">None </span>=&gt; <span class="kw">match </span><span class="self">self</span>.explore(child, options.max_states)<span class="question-mark">? </span>{
+<a href=#375 id=375 data-nosnippet>375</a>				Explored::Done(raw) =&gt; {
+<a href=#376 id=376 data-nosnippet>376</a>					<span class="comment">// The reduction reads the clock as the exploration does, so a limit stops it too.
+<a href=#377 id=377 data-nosnippet>377</a>					</span><span class="kw">let </span>budget = <span class="kw-2">&amp;mut </span><span class="self">self</span>.budget;
+<a href=#378 id=378 data-nosnippet>378</a>					<span class="kw">let </span>reduced = reduce(<span class="kw-2">&amp;</span>raw, <span class="kw-2">&amp;mut </span>|| {
+<a href=#379 id=379 data-nosnippet>379</a>						budget.step(<span class="number">0</span>);
+<a href=#380 id=380 data-nosnippet>380</a>						budget.passed()
+<a href=#381 id=381 data-nosnippet>381</a>					});
+<a href=#382 id=382 data-nosnippet>382</a>					<span class="kw">let </span><span class="prelude-val">Ok</span>(reduced) = reduced <span class="kw">else </span>{
+<a href=#383 id=383 data-nosnippet>383</a>						<span class="kw">return </span><span class="self">self</span>.budget.check();
+<a href=#384 id=384 data-nosnippet>384</a>					};
+<a href=#385 id=385 data-nosnippet>385</a>					<span class="comment">// A leaf built in full is kept even if the query then passes its limit, so a retry reuses it
+<a href=#386 id=386 data-nosnippet>386</a>					// (only a reduction that a limit cut short is dropped).
+<a href=#387 id=387 data-nosnippet>387</a>					</span><span class="kw">let </span>leaf = Arc::new(Leaf::build(<span class="kw-2">&amp;</span>reduced, Vec::new()));
+<a href=#388 id=388 data-nosnippet>388</a>					<span class="self">self</span>.formula
+<a href=#389 id=389 data-nosnippet>389</a>						.explicit_cache
+<a href=#390 id=390 data-nosnippet>390</a>						.lock()
+<a href=#391 id=391 data-nosnippet>391</a>						.leaves
+<a href=#392 id=392 data-nosnippet>392</a>						.insert(number, Arc::clone(<span class="kw-2">&amp;</span>leaf));
+<a href=#393 id=393 data-nosnippet>393</a>
+<a href=#394 id=394 data-nosnippet>394</a>					(leaf, <span class="bool-val">false</span>)
+<a href=#395 id=395 data-nosnippet>395</a>				}
+<a href=#396 id=396 data-nosnippet>396</a>				Explored::OverBudget(states) =&gt; {
+<a href=#397 id=397 data-nosnippet>397</a>					<span class="self">self</span>.stats.explicit.push(Materialized {
+<a href=#398 id=398 data-nosnippet>398</a>						term,
+<a href=#399 id=399 data-nosnippet>399</a>						states,
+<a href=#400 id=400 data-nosnippet>400</a>						transitions: <span class="number">0</span>,
+<a href=#401 id=401 data-nosnippet>401</a>						cached: <span class="bool-val">false</span>,
+<a href=#402 id=402 data-nosnippet>402</a>						lazy: <span class="bool-val">true</span>,
+<a href=#403 id=403 data-nosnippet>403</a>					});
+<a href=#404 id=404 data-nosnippet>404</a>					<span class="self">self</span>.exec.nodes[node].op = Op::Transparent(child);
+<a href=#405 id=405 data-nosnippet>405</a>
+<a href=#406 id=406 data-nosnippet>406</a>					<span class="kw">return </span><span class="prelude-val">Ok</span>(());
+<a href=#407 id=407 data-nosnippet>407</a>				}
+<a href=#408 id=408 data-nosnippet>408</a>			},
+<a href=#409 id=409 data-nosnippet>409</a>		};
+<a href=#410 id=410 data-nosnippet>410</a>
+<a href=#411 id=411 data-nosnippet>411</a>		<span class="self">self</span>.stats.explicit.push(Materialized {
+<a href=#412 id=412 data-nosnippet>412</a>			term,
+<a href=#413 id=413 data-nosnippet>413</a>			states: leaf.num_states(),
+<a href=#414 id=414 data-nosnippet>414</a>			transitions: leaf.num_moves(),
+<a href=#415 id=415 data-nosnippet>415</a>			cached,
+<a href=#416 id=416 data-nosnippet>416</a>			lazy: <span class="bool-val">false</span>,
+<a href=#417 id=417 data-nosnippet>417</a>		});
+<a href=#418 id=418 data-nosnippet>418</a>		<span class="self">self</span>.exec.nodes[node].op = Op::Leaf(LeafRef::Shared(leaf));
+<a href=#419 id=419 data-nosnippet>419</a>
+<a href=#420 id=420 data-nosnippet>420</a>		<span class="prelude-val">Ok</span>(())
+<a href=#421 id=421 data-nosnippet>421</a>	}
+<a href=#422 id=422 data-nosnippet>422</a>
+<a href=#423 id=423 data-nosnippet>423</a>	<span class="doccomment">/// The alphabets that the language of the explicit `node` depends on, tape by tape.
+<a href=#424 id=424 data-nosnippet>424</a>	</span><span class="kw">fn </span>signature(<span class="kw-2">&amp;</span><span class="self">self</span>, node: ExecId, numbers: <span class="kw-2">&amp;</span>FxHashMap&lt;ExecId, u64&gt;) -&gt; Signature {
+<a href=#425 id=425 data-nosnippet>425</a>		<span class="kw">let </span><span class="kw-2">mut </span>signature = Signature {
+<a href=#426 id=426 data-nosnippet>426</a>			universes: Vec::new(),
+<a href=#427 id=427 data-nosnippet>427</a>			items: Vec::new(),
+<a href=#428 id=428 data-nosnippet>428</a>		};
+<a href=#429 id=429 data-nosnippet>429</a>		<span class="kw">let </span><span class="kw-2">mut </span>positions: FxHashMap&lt;usize, u32&gt; = FxHashMap::default();
+<a href=#430 id=430 data-nosnippet>430</a>		<span class="kw">let </span><span class="kw-2">mut </span>seen: FxHashSet&lt;ExecId&gt; = FxHashSet::default();
+<a href=#431 id=431 data-nosnippet>431</a>		<span class="kw">let </span><span class="kw-2">mut </span>stack = <span class="macro">vec!</span>[node];
+<a href=#432 id=432 data-nosnippet>432</a>		<span class="kw">while let </span><span class="prelude-val">Some</span>(below) = stack.pop() {
+<a href=#433 id=433 data-nosnippet>433</a>			<span class="kw">if </span>!seen.insert(below) {
+<a href=#434 id=434 data-nosnippet>434</a>				<span class="kw">continue</span>;
+<a href=#435 id=435 data-nosnippet>435</a>			}
+<a href=#436 id=436 data-nosnippet>436</a>
+<a href=#437 id=437 data-nosnippet>437</a>			<span class="comment">// An explicit node below, keyed before, stands for its own subterm.
+<a href=#438 id=438 data-nosnippet>438</a>			</span><span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>number) = numbers.get(<span class="kw-2">&amp;</span>below) {
+<a href=#439 id=439 data-nosnippet>439</a>				signature.items.push(Item::Explicit(number));
+<a href=#440 id=440 data-nosnippet>440</a>
+<a href=#441 id=441 data-nosnippet>441</a>				<span class="kw">continue</span>;
+<a href=#442 id=442 data-nosnippet>442</a>			}
+<a href=#443 id=443 data-nosnippet>443</a>
+<a href=#444 id=444 data-nosnippet>444</a>			<span class="kw">for </span>tape <span class="kw">in </span><span class="number">0</span>..<span class="self">self</span>.exec.nodes[below].arity {
+<a href=#445 id=445 data-nosnippet>445</a>				<span class="kw">let </span>class = <span class="self">self</span>.alphabets.class(below, tape);
+<a href=#446 id=446 data-nosnippet>446</a>				<span class="kw">let </span>position = <span class="kw">match </span>positions.entry(class) {
+<a href=#447 id=447 data-nosnippet>447</a>					Entry::Occupied(entry) =&gt; <span class="kw-2">*</span>entry.get(),
+<a href=#448 id=448 data-nosnippet>448</a>					Entry::Vacant(entry) =&gt; {
+<a href=#449 id=449 data-nosnippet>449</a>						<span class="kw">let </span>position = u32::try_from(signature.universes.len())
+<a href=#450 id=450 data-nosnippet>450</a>							.expect(<span class="string">"fewer than 2^32 alphabets"</span>);
+<a href=#451 id=451 data-nosnippet>451</a>						signature
+<a href=#452 id=452 data-nosnippet>452</a>							.universes
+<a href=#453 id=453 data-nosnippet>453</a>							.push(<span class="self">self</span>.alphabets.class_universe(class).into());
+<a href=#454 id=454 data-nosnippet>454</a>
+<a href=#455 id=455 data-nosnippet>455</a>						<span class="kw-2">*</span>entry.insert(position)
+<a href=#456 id=456 data-nosnippet>456</a>					}
+<a href=#457 id=457 data-nosnippet>457</a>				};
+<a href=#458 id=458 data-nosnippet>458</a>
+<a href=#459 id=459 data-nosnippet>459</a>				signature.items.push(Item::Tape(position));
+<a href=#460 id=460 data-nosnippet>460</a>			}
+<a href=#461 id=461 data-nosnippet>461</a>
+<a href=#462 id=462 data-nosnippet>462</a>			stack.extend(<span class="self">self</span>.exec.nodes[below].op.children());
+<a href=#463 id=463 data-nosnippet>463</a>		}
+<a href=#464 id=464 data-nosnippet>464</a>
+<a href=#465 id=465 data-nosnippet>465</a>		signature
+<a href=#466 id=466 data-nosnippet>466</a>	}
+<a href=#467 id=467 data-nosnippet>467</a>
+<a href=#468 id=468 data-nosnippet>468</a>	<span class="doccomment">/// Visits every macrostate of `node` reachable from its initial ones.
+<a href=#469 id=469 data-nosnippet>469</a>	</span><span class="kw">fn </span>explore(<span class="kw-2">&amp;mut </span><span class="self">self</span>, node: ExecId, max_states: <span class="prelude-ty">Option</span>&lt;usize&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Explored, Limit&gt; {
+<a href=#470 id=470 data-nosnippet>470</a>		<span class="kw">fn </span>intern(
+<a href=#471 id=471 data-nosnippet>471</a>			ids: <span class="kw-2">&amp;mut </span>IndexSet&lt;StateId, FxBuildHasher&gt;,
+<a href=#472 id=472 data-nosnippet>472</a>			raw: <span class="kw-2">&amp;mut </span>Raw,
+<a href=#473 id=473 data-nosnippet>473</a>			target: Target,
+<a href=#474 id=474 data-nosnippet>474</a>		) -&gt; StateId {
+<a href=#475 id=475 data-nosnippet>475</a>			<span class="kw">let </span>(index, new) = ids.insert_full(target.state);
+<a href=#476 id=476 data-nosnippet>476</a>			<span class="kw">if </span>new {
+<a href=#477 id=477 data-nosnippet>477</a>				raw.finals.push(target.accepting);
+<a href=#478 id=478 data-nosnippet>478</a>			}
+<a href=#479 id=479 data-nosnippet>479</a>
+<a href=#480 id=480 data-nosnippet>480</a>			StateId::new(index)
+<a href=#481 id=481 data-nosnippet>481</a>		}
+<a href=#482 id=482 data-nosnippet>482</a>
+<a href=#483 id=483 data-nosnippet>483</a>		<span class="kw">let </span><span class="kw-2">mut </span>ids = IndexSet::default();
+<a href=#484 id=484 data-nosnippet>484</a>		<span class="kw">let </span><span class="kw-2">mut </span>raw = Raw::new(<span class="self">self</span>.exec.nodes[node].arity);
+<a href=#485 id=485 data-nosnippet>485</a>		<span class="comment">// The initial macrostates in batches, so that the node's budget stops a node with very many.
+<a href=#486 id=486 data-nosnippet>486</a>		</span><span class="kw">for </span>batch <span class="kw">in </span>batches(<span class="number">0</span>..<span class="self">self</span>.initial_count(node), INITIAL_BATCH) {
+<a href=#487 id=487 data-nosnippet>487</a>			<span class="kw">if </span>max_states.is_some_and(|max| ids.len() &gt; max) {
+<a href=#488 id=488 data-nosnippet>488</a>				<span class="kw">return </span><span class="prelude-val">Ok</span>(Explored::OverBudget(ids.len()));
+<a href=#489 id=489 data-nosnippet>489</a>			}
+<a href=#490 id=490 data-nosnippet>490</a>
+<a href=#491 id=491 data-nosnippet>491</a>			<span class="kw">for </span>index <span class="kw">in </span>batch {
+<a href=#492 id=492 data-nosnippet>492</a>				<span class="kw">let </span>target = <span class="self">self</span>.initial_at(node, index)<span class="question-mark">?</span>;
+<a href=#493 id=493 data-nosnippet>493</a>				<span class="kw">let </span>state = intern(<span class="kw-2">&amp;mut </span>ids, <span class="kw-2">&amp;mut </span>raw, target);
+<a href=#494 id=494 data-nosnippet>494</a>				raw.initial.push(state);
+<a href=#495 id=495 data-nosnippet>495</a>			}
+<a href=#496 id=496 data-nosnippet>496</a>		}
+<a href=#497 id=497 data-nosnippet>497</a>
+<a href=#498 id=498 data-nosnippet>498</a>		<span class="kw">let </span><span class="kw-2">mut </span>next = <span class="number">0</span>;
+<a href=#499 id=499 data-nosnippet>499</a>		<span class="kw">while </span>next &lt; ids.len() {
+<a href=#500 id=500 data-nosnippet>500</a>			<span class="kw">if </span>max_states.is_some_and(|max| ids.len() &gt; max) {
+<a href=#501 id=501 data-nosnippet>501</a>				<span class="kw">return </span><span class="prelude-val">Ok</span>(Explored::OverBudget(ids.len()));
+<a href=#502 id=502 data-nosnippet>502</a>			}
+<a href=#503 id=503 data-nosnippet>503</a>
+<a href=#504 id=504 data-nosnippet>504</a>			<span class="self">self</span>.budget.step(<span class="number">0</span>);
+<a href=#505 id=505 data-nosnippet>505</a>			<span class="self">self</span>.stopped()<span class="question-mark">?</span>;
+<a href=#506 id=506 data-nosnippet>506</a>
+<a href=#507 id=507 data-nosnippet>507</a>			<span class="kw">let </span>source = StateId::new(next);
+<a href=#508 id=508 data-nosnippet>508</a>			<span class="kw">let </span>post = <span class="self">self</span>.post(node, ids[next])<span class="question-mark">?</span>;
+<a href=#509 id=509 data-nosnippet>509</a>			<span class="kw">for </span>(tuple, target) <span class="kw">in </span>post.iter() {
+<a href=#510 id=510 data-nosnippet>510</a>				<span class="kw">let </span>state = intern(<span class="kw-2">&amp;mut </span>ids, <span class="kw-2">&amp;mut </span>raw, target);
+<a href=#511 id=511 data-nosnippet>511</a>				raw.push(source, tuple, state);
+<a href=#512 id=512 data-nosnippet>512</a>			}
+<a href=#513 id=513 data-nosnippet>513</a>
+<a href=#514 id=514 data-nosnippet>514</a>			next += <span class="number">1</span>;
+<a href=#515 id=515 data-nosnippet>515</a>		}
+<a href=#516 id=516 data-nosnippet>516</a>
+<a href=#517 id=517 data-nosnippet>517</a>		<span class="prelude-val">Ok</span>(Explored::Done(raw))
+<a href=#518 id=518 data-nosnippet>518</a>	}
+<a href=#519 id=519 data-nosnippet>519</a>
+<a href=#520 id=520 data-nosnippet>520</a>	<span class="doccomment">/// Searches the root for an accepting macrostate, skipping subsumed macrostates; returns the witness, or `None`
+<a href=#521 id=521 data-nosnippet>521</a>	/// and whether a macrostate was left unexpanded at the length bound.
+<a href=#522 id=522 data-nosnippet>522</a>	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>search(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(<span class="prelude-ty">Option</span>&lt;Witness&gt;, bool), Error&gt; {
+<a href=#523 id=523 data-nosnippet>523</a>		<span class="self">self</span>.find_accepting()
+<a href=#524 id=524 data-nosnippet>524</a>			.map_err(|limit| <span class="self">self</span>.limit_error(limit))
+<a href=#525 id=525 data-nosnippet>525</a>	}
+<a href=#526 id=526 data-nosnippet>526</a>
+<a href=#527 id=527 data-nosnippet>527</a>	<span class="kw">fn </span>find_accepting(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(<span class="prelude-ty">Option</span>&lt;Witness&gt;, bool), Limit&gt; {
+<a href=#528 id=528 data-nosnippet>528</a>		<span class="kw">let </span>root = <span class="self">self</span>.exec.root;
+<a href=#529 id=529 data-nosnippet>529</a>		<span class="kw">let </span>arity = <span class="self">self</span>.exec.nodes[root].arity;
+<a href=#530 id=530 data-nosnippet>530</a>		<span class="comment">// Under a bound or for the fewest steps, a macrostate is only below one reached in at most as many steps.
+<a href=#531 id=531 data-nosnippet>531</a>		</span><span class="kw">let </span>by_depth = <span class="self">self</span>.max_length.is_some() || <span class="self">self</span>.shortest;
+<a href=#532 id=532 data-nosnippet>532</a>		<span class="kw">let </span><span class="kw-2">mut </span>search = Search {
+<a href=#533 id=533 data-nosnippet>533</a>			antichain: <span class="self">self</span>.antichain.then(|| Antichain::new(<span class="kw-2">&amp;</span><span class="self">self</span>.exec, by_depth)),
+<a href=#534 id=534 data-nosnippet>534</a>			reached: FxHashMap::default(),
+<a href=#535 id=535 data-nosnippet>535</a>			tuples: Vec::new(),
+<a href=#536 id=536 data-nosnippet>536</a>			work: VecDeque::new(),
+<a href=#537 id=537 data-nosnippet>537</a>			bounded: <span class="bool-val">false</span>,
+<a href=#538 id=538 data-nosnippet>538</a>		};
+<a href=#539 id=539 data-nosnippet>539</a>
+<a href=#540 id=540 data-nosnippet>540</a>		<span class="comment">// An accepting initial macrostate gives the witness ε; with more than are listed, it is asked for first.
+<a href=#541 id=541 data-nosnippet>541</a>		</span><span class="kw">if </span>!<span class="self">self</span>.is_listed(root) &amp;&amp; <span class="self">self</span>.has_accepting_initial(root)<span class="question-mark">? </span>{
+<a href=#542 id=542 data-nosnippet>542</a>			<span class="kw">return </span><span class="prelude-val">Ok</span>((<span class="prelude-val">Some</span>(Witness::new(arity, Vec::new())), <span class="bool-val">false</span>));
+<a href=#543 id=543 data-nosnippet>543</a>		}
+<a href=#544 id=544 data-nosnippet>544</a>
+<a href=#545 id=545 data-nosnippet>545</a>		<span class="comment">// The initial macrostates in batches, each searched depth first before the next is numbered; breadth first,
+<a href=#546 id=546 data-nosnippet>546</a>		// they all start the first level.
+<a href=#547 id=547 data-nosnippet>547</a>		</span><span class="kw">for </span>batch <span class="kw">in </span><span class="self">self</span>.search_order(root) {
+<a href=#548 id=548 data-nosnippet>548</a>			<span class="kw">for </span>index <span class="kw">in </span>batch {
+<a href=#549 id=549 data-nosnippet>549</a>				<span class="kw">let </span>target = <span class="self">self</span>.initial_at(root, index)<span class="question-mark">?</span>;
+<a href=#550 id=550 data-nosnippet>550</a>				<span class="kw">if </span>target.accepting {
+<a href=#551 id=551 data-nosnippet>551</a>					<span class="kw">return </span><span class="prelude-val">Ok</span>((<span class="prelude-val">Some</span>(Witness::new(arity, Vec::new())), <span class="bool-val">false</span>));
+<a href=#552 id=552 data-nosnippet>552</a>				}
+<a href=#553 id=553 data-nosnippet>553</a>
+<a href=#554 id=554 data-nosnippet>554</a>				<span class="kw">let </span>initial = Reached {
+<a href=#555 id=555 data-nosnippet>555</a>					step: <span class="prelude-val">None</span>,
+<a href=#556 id=556 data-nosnippet>556</a>					depth: <span class="number">0</span>,
+<a href=#557 id=557 data-nosnippet>557</a>				};
+<a href=#558 id=558 data-nosnippet>558</a>				<span class="kw">match </span>search.reached.entry(target.state) {
+<a href=#559 id=559 data-nosnippet>559</a>					Entry::Vacant(entry) =&gt; {
+<a href=#560 id=560 data-nosnippet>560</a>						entry.insert(initial);
+<a href=#561 id=561 data-nosnippet>561</a>					}
+<a href=#562 id=562 data-nosnippet>562</a>					<span class="comment">// Reached from an earlier batch, in more steps.
+<a href=#563 id=563 data-nosnippet>563</a>					</span>Entry::Occupied(<span class="kw-2">mut </span>entry)
+<a href=#564 id=564 data-nosnippet>564</a>						<span class="kw">if </span><span class="self">self</span>.max_length.is_some() &amp;&amp; entry.get().depth &gt; <span class="number">0 </span>=&gt;
+<a href=#565 id=565 data-nosnippet>565</a>					{
+<a href=#566 id=566 data-nosnippet>566</a>						entry.insert(initial);
+<a href=#567 id=567 data-nosnippet>567</a>					}
+<a href=#568 id=568 data-nosnippet>568</a>					Entry::Occupied(<span class="kw">_</span>) =&gt; <span class="kw">continue</span>,
+<a href=#569 id=569 data-nosnippet>569</a>				}
+<a href=#570 id=570 data-nosnippet>570</a>
+<a href=#571 id=571 data-nosnippet>571</a>				<span class="self">self</span>.enqueue(<span class="kw-2">&amp;mut </span>search, target.state, <span class="number">0</span>);
+<a href=#572 id=572 data-nosnippet>572</a>				<span class="self">self</span>.stopped()<span class="question-mark">?</span>;
+<a href=#573 id=573 data-nosnippet>573</a>			}
+<a href=#574 id=574 data-nosnippet>574</a>
+<a href=#575 id=575 data-nosnippet>575</a>			<span class="kw">if </span>!<span class="self">self</span>.shortest
+<a href=#576 id=576 data-nosnippet>576</a>				&amp;&amp; <span class="kw">let </span><span class="prelude-val">Some</span>(witness) = <span class="self">self</span>.expand(<span class="kw-2">&amp;mut </span>search)<span class="question-mark">?
+<a href=#577 id=577 data-nosnippet>577</a>			</span>{
+<a href=#578 id=578 data-nosnippet>578</a>				<span class="kw">return </span><span class="prelude-val">Ok</span>((<span class="prelude-val">Some</span>(witness), <span class="bool-val">false</span>));
+<a href=#579 id=579 data-nosnippet>579</a>			}
+<a href=#580 id=580 data-nosnippet>580</a>		}
+<a href=#581 id=581 data-nosnippet>581</a>
+<a href=#582 id=582 data-nosnippet>582</a>		<span class="kw">let </span>witness = <span class="self">self</span>.expand(<span class="kw-2">&amp;mut </span>search)<span class="question-mark">?</span>;
+<a href=#583 id=583 data-nosnippet>583</a>		<span class="kw">let </span>bounded = witness.is_none() &amp;&amp; search.bounded;
+<a href=#584 id=584 data-nosnippet>584</a>
+<a href=#585 id=585 data-nosnippet>585</a>		<span class="prelude-val">Ok</span>((witness, bounded))
+<a href=#586 id=586 data-nosnippet>586</a>	}
+<a href=#587 id=587 data-nosnippet>587</a>
+<a href=#588 id=588 data-nosnippet>588</a>	<span class="doccomment">/// Expands the macrostates of the search's work until one has an accepting successor, which gives the witness.
+<a href=#589 id=589 data-nosnippet>589</a>	</span><span class="kw">fn </span>expand(<span class="kw-2">&amp;mut </span><span class="self">self</span>, search: <span class="kw-2">&amp;mut </span>Search&lt;<span class="lifetime">'f</span>&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Witness&gt;, Limit&gt; {
+<a href=#590 id=590 data-nosnippet>590</a>		<span class="kw">let </span>root = <span class="self">self</span>.exec.root;
+<a href=#591 id=591 data-nosnippet>591</a>		<span class="kw">loop </span>{
+<a href=#592 id=592 data-nosnippet>592</a>			<span class="kw">let </span>next = <span class="kw">if </span><span class="self">self</span>.shortest {
+<a href=#593 id=593 data-nosnippet>593</a>				search.work.pop_front()
+<a href=#594 id=594 data-nosnippet>594</a>			} <span class="kw">else </span>{
+<a href=#595 id=595 data-nosnippet>595</a>				search.work.pop_back()
+<a href=#596 id=596 data-nosnippet>596</a>			};
+<a href=#597 id=597 data-nosnippet>597</a>			<span class="kw">let </span><span class="prelude-val">Some</span>((state, depth)) = next <span class="kw">else </span>{
+<a href=#598 id=598 data-nosnippet>598</a>				<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
+<a href=#599 id=599 data-nosnippet>599</a>			};
+<a href=#600 id=600 data-nosnippet>600</a>
+<a href=#601 id=601 data-nosnippet>601</a>			<span class="comment">// Reached again in fewer steps since it was pushed, or dropped from the antichain.
+<a href=#602 id=602 data-nosnippet>602</a>			</span><span class="kw">if </span>search.reached[<span class="kw-2">&amp;</span>state].depth &lt; depth
+<a href=#603 id=603 data-nosnippet>603</a>				|| search
+<a href=#604 id=604 data-nosnippet>604</a>					.antichain
+<a href=#605 id=605 data-nosnippet>605</a>					.as_ref()
+<a href=#606 id=606 data-nosnippet>606</a>					.is_some_and(|antichain| antichain.is_pruned(state))
+<a href=#607 id=607 data-nosnippet>607</a>			{
+<a href=#608 id=608 data-nosnippet>608</a>				<span class="kw">continue</span>;
+<a href=#609 id=609 data-nosnippet>609</a>			}
+<a href=#610 id=610 data-nosnippet>610</a>
+<a href=#611 id=611 data-nosnippet>611</a>			<span class="kw">if </span><span class="self">self
+<a href=#612 id=612 data-nosnippet>612</a>				</span>.max_length
+<a href=#613 id=613 data-nosnippet>613</a>				.is_some_and(|max_length| depth &gt;= max_length)
+<a href=#614 id=614 data-nosnippet>614</a>			{
+<a href=#615 id=615 data-nosnippet>615</a>				search.bounded = <span class="bool-val">true</span>;
+<a href=#616 id=616 data-nosnippet>616</a>				<span class="kw">continue</span>;
+<a href=#617 id=617 data-nosnippet>617</a>			}
+<a href=#618 id=618 data-nosnippet>618</a>
+<a href=#619 id=619 data-nosnippet>619</a>			<span class="self">self</span>.budget.step(<span class="number">0</span>);
+<a href=#620 id=620 data-nosnippet>620</a>			<span class="self">self</span>.stopped()<span class="question-mark">?</span>;
+<a href=#621 id=621 data-nosnippet>621</a>
+<a href=#622 id=622 data-nosnippet>622</a>			<span class="kw">let </span>post = <span class="self">self</span>.post(root, state)<span class="question-mark">?</span>;
+<a href=#623 id=623 data-nosnippet>623</a>			<span class="self">self</span>.stats.explored += <span class="number">1</span>;
+<a href=#624 id=624 data-nosnippet>624</a>			<span class="kw">for </span>(tuple, target) <span class="kw">in </span>post.iter() {
+<a href=#625 id=625 data-nosnippet>625</a>				<span class="kw">if </span>target.accepting {
+<a href=#626 id=626 data-nosnippet>626</a>					<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">self</span>.witness(
+<a href=#627 id=627 data-nosnippet>627</a>						<span class="kw-2">&amp;</span>search.reached,
+<a href=#628 id=628 data-nosnippet>628</a>						<span class="kw-2">&amp;</span>search.tuples,
+<a href=#629 id=629 data-nosnippet>629</a>						state,
+<a href=#630 id=630 data-nosnippet>630</a>						tuple,
+<a href=#631 id=631 data-nosnippet>631</a>					)));
+<a href=#632 id=632 data-nosnippet>632</a>				}
+<a href=#633 id=633 data-nosnippet>633</a>
+<a href=#634 id=634 data-nosnippet>634</a>				<span class="kw">let </span>reached = Reached {
+<a href=#635 id=635 data-nosnippet>635</a>					step: <span class="prelude-val">Some</span>(Step {
+<a href=#636 id=636 data-nosnippet>636</a>						parent: state,
+<a href=#637 id=637 data-nosnippet>637</a>						offset: search.tuples.len(),
+<a href=#638 id=638 data-nosnippet>638</a>					}),
+<a href=#639 id=639 data-nosnippet>639</a>					depth: depth + <span class="number">1</span>,
+<a href=#640 id=640 data-nosnippet>640</a>				};
+<a href=#641 id=641 data-nosnippet>641</a>				<span class="kw">match </span>search.reached.entry(target.state) {
+<a href=#642 id=642 data-nosnippet>642</a>					Entry::Vacant(entry) =&gt; {
+<a href=#643 id=643 data-nosnippet>643</a>						entry.insert(reached);
+<a href=#644 id=644 data-nosnippet>644</a>					}
+<a href=#645 id=645 data-nosnippet>645</a>					<span class="comment">// Depth first under a bound, a macrostate reached in fewer steps is expanded again, as more of its
+<a href=#646 id=646 data-nosnippet>646</a>					// successors are within the bound. Breadth first, the first steps are the fewest.
+<a href=#647 id=647 data-nosnippet>647</a>					</span>Entry::Occupied(<span class="kw-2">mut </span>entry)
+<a href=#648 id=648 data-nosnippet>648</a>						<span class="kw">if </span><span class="self">self</span>.max_length.is_some() &amp;&amp; entry.get().depth &gt; depth + <span class="number">1 </span>=&gt;
+<a href=#649 id=649 data-nosnippet>649</a>					{
+<a href=#650 id=650 data-nosnippet>650</a>						entry.insert(reached);
+<a href=#651 id=651 data-nosnippet>651</a>					}
+<a href=#652 id=652 data-nosnippet>652</a>					Entry::Occupied(<span class="kw">_</span>) =&gt; <span class="kw">continue</span>,
+<a href=#653 id=653 data-nosnippet>653</a>				}
+<a href=#654 id=654 data-nosnippet>654</a>
+<a href=#655 id=655 data-nosnippet>655</a>				search.tuples.extend_from_slice(tuple);
+<a href=#656 id=656 data-nosnippet>656</a>				<span class="self">self</span>.enqueue(search, target.state, depth + <span class="number">1</span>);
+<a href=#657 id=657 data-nosnippet>657</a>				<span class="self">self</span>.stopped()<span class="question-mark">?</span>;
+<a href=#658 id=658 data-nosnippet>658</a>			}
+<a href=#659 id=659 data-nosnippet>659</a>		}
+<a href=#660 id=660 data-nosnippet>660</a>	}
+<a href=#661 id=661 data-nosnippet>661</a>
+<a href=#662 id=662 data-nosnippet>662</a>	<span class="doccomment">/// Adds `state`, reached in `depth` steps, to the search's work unless the antichain prunes it.
+<a href=#663 id=663 data-nosnippet>663</a>	</span><span class="kw">fn </span>enqueue(<span class="kw-2">&amp;mut </span><span class="self">self</span>, search: <span class="kw-2">&amp;mut </span>Search&lt;<span class="lifetime">'f</span>&gt;, state: StateId, depth: usize) {
+<a href=#664 id=664 data-nosnippet>664</a>		<span class="kw">let </span>added = <span class="kw">match </span><span class="kw-2">&amp;mut </span>search.antichain {
+<a href=#665 id=665 data-nosnippet>665</a>			<span class="prelude-val">Some</span>(antichain) =&gt; {
+<a href=#666 id=666 data-nosnippet>666</a>				<span class="self">self</span>.budget.step(<span class="number">0</span>);
+<a href=#667 id=667 data-nosnippet>667</a>
+<a href=#668 id=668 data-nosnippet>668</a>				antichain.insert(
+<a href=#669 id=669 data-nosnippet>669</a>					<span class="kw-2">&amp;</span><span class="self">self</span>.exec,
+<a href=#670 id=670 data-nosnippet>670</a>					<span class="kw-2">&amp;</span><span class="self">self</span>.stores,
+<a href=#671 id=671 data-nosnippet>671</a>					<span class="kw-2">&amp;mut </span><span class="self">self</span>.subsumption,
+<a href=#672 id=672 data-nosnippet>672</a>					state,
+<a href=#673 id=673 data-nosnippet>673</a>					depth,
+<a href=#674 id=674 data-nosnippet>674</a>				)
+<a href=#675 id=675 data-nosnippet>675</a>			}
+<a href=#676 id=676 data-nosnippet>676</a>			<span class="prelude-val">None </span>=&gt; <span class="bool-val">true</span>,
+<a href=#677 id=677 data-nosnippet>677</a>		};
+<a href=#678 id=678 data-nosnippet>678</a>
+<a href=#679 id=679 data-nosnippet>679</a>		<span class="kw">if </span>added {
+<a href=#680 id=680 data-nosnippet>680</a>			search.work.push_back((state, depth));
+<a href=#681 id=681 data-nosnippet>681</a>		} <span class="kw">else </span>{
+<a href=#682 id=682 data-nosnippet>682</a>			<span class="self">self</span>.stats.pruned += <span class="number">1</span>;
+<a href=#683 id=683 data-nosnippet>683</a>		}
+<a href=#684 id=684 data-nosnippet>684</a>	}
+<a href=#685 id=685 data-nosnippet>685</a>
+<a href=#686 id=686 data-nosnippet>686</a>	<span class="doccomment">/// The word to `state` and then `last`, with each wildcard as the first symbol of its tape.
+<a href=#687 id=687 data-nosnippet>687</a>	</span><span class="kw">fn </span>witness(
+<a href=#688 id=688 data-nosnippet>688</a>		<span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#689 id=689 data-nosnippet>689</a>		reached: <span class="kw-2">&amp;</span>FxHashMap&lt;StateId, Reached&gt;,
+<a href=#690 id=690 data-nosnippet>690</a>		tuples: <span class="kw-2">&amp;</span>[Symbol],
+<a href=#691 id=691 data-nosnippet>691</a>		<span class="kw-2">mut </span>state: StateId,
+<a href=#692 id=692 data-nosnippet>692</a>		last: <span class="kw-2">&amp;</span>[Symbol],
+<a href=#693 id=693 data-nosnippet>693</a>	) -&gt; Witness {
+<a href=#694 id=694 data-nosnippet>694</a>		<span class="kw">let </span>root = <span class="self">self</span>.exec.root;
+<a href=#695 id=695 data-nosnippet>695</a>		<span class="kw">let </span>arity = <span class="self">self</span>.exec.nodes[root].arity;
+<a href=#696 id=696 data-nosnippet>696</a>		<span class="kw">let </span><span class="kw-2">mut </span>steps = <span class="macro">vec!</span>[last];
+<a href=#697 id=697 data-nosnippet>697</a>		<span class="comment">// Each step leads to a macrostate reached in more steps than its parent, so the walk ends.
+<a href=#698 id=698 data-nosnippet>698</a>		</span><span class="kw">while let </span><span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>Reached {
+<a href=#699 id=699 data-nosnippet>699</a>			step: <span class="prelude-val">Some</span>(Step { parent, offset }),
+<a href=#700 id=700 data-nosnippet>700</a>			..
+<a href=#701 id=701 data-nosnippet>701</a>		}) = reached.get(<span class="kw-2">&amp;</span>state)
+<a href=#702 id=702 data-nosnippet>702</a>		{
+<a href=#703 id=703 data-nosnippet>703</a>			steps.push(<span class="kw-2">&amp;</span>tuples[offset..offset + arity]);
+<a href=#704 id=704 data-nosnippet>704</a>			state = parent;
+<a href=#705 id=705 data-nosnippet>705</a>		}
+<a href=#706 id=706 data-nosnippet>706</a>
+<a href=#707 id=707 data-nosnippet>707</a>		<span class="kw">let </span>symbols = steps
+<a href=#708 id=708 data-nosnippet>708</a>			.into_iter()
+<a href=#709 id=709 data-nosnippet>709</a>			.rev()
+<a href=#710 id=710 data-nosnippet>710</a>			.flat_map(|step| step.iter().enumerate())
+<a href=#711 id=711 data-nosnippet>711</a>			.map(|(tape, <span class="kw-2">&amp;</span>symbol)| {
+<a href=#712 id=712 data-nosnippet>712</a>				<span class="kw">if </span>symbol == Symbol::ANY {
+<a href=#713 id=713 data-nosnippet>713</a>					<span class="kw">let </span>universe = <span class="self">self</span>.alphabets.universe(root, tape);
+<a href=#714 id=714 data-nosnippet>714</a>
+<a href=#715 id=715 data-nosnippet>715</a>					universe.first().copied().unwrap_or(Symbol::ANY)
+<a href=#716 id=716 data-nosnippet>716</a>				} <span class="kw">else </span>{
+<a href=#717 id=717 data-nosnippet>717</a>					symbol
+<a href=#718 id=718 data-nosnippet>718</a>				}
+<a href=#719 id=719 data-nosnippet>719</a>			})
+<a href=#720 id=720 data-nosnippet>720</a>			.collect();
+<a href=#721 id=721 data-nosnippet>721</a>
+<a href=#722 id=722 data-nosnippet>722</a>		Witness::new(arity, symbols)
+<a href=#723 id=723 data-nosnippet>723</a>	}
+<a href=#724 id=724 data-nosnippet>724</a>
+<a href=#725 id=725 data-nosnippet>725</a>	<span class="doccomment">/// Builds the root as an explicit automaton, over the alphabets of its tapes.
+<a href=#726 id=726 data-nosnippet>726</a>	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>materialize_root(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Leaf, Error&gt; {
+<a href=#727 id=727 data-nosnippet>727</a>		<span class="kw">let </span>explored = <span class="self">self
+<a href=#728 id=728 data-nosnippet>728</a>			</span>.explore(<span class="self">self</span>.exec.root, <span class="prelude-val">None</span>)
+<a href=#729 id=729 data-nosnippet>729</a>			.map_err(|limit| <span class="self">self</span>.limit_error(limit))<span class="question-mark">?</span>;
+<a href=#730 id=730 data-nosnippet>730</a>		<span class="kw">let </span>Explored::Done(raw) = explored <span class="kw">else </span>{
+<a href=#731 id=731 data-nosnippet>731</a>			<span class="macro">unreachable!</span>(<span class="string">"exploration without a state budget finishes"</span>)
+<a href=#732 id=732 data-nosnippet>732</a>		};
+<a href=#733 id=733 data-nosnippet>733</a>
+<a href=#734 id=734 data-nosnippet>734</a>		<span class="kw">let </span>root = <span class="self">self</span>.exec.root;
+<a href=#735 id=735 data-nosnippet>735</a>		<span class="kw">let </span>alphabets = (<span class="number">0</span>..<span class="self">self</span>.exec.nodes[root].arity)
+<a href=#736 id=736 data-nosnippet>736</a>			.map(|tape| <span class="self">self</span>.alphabets.universe(root, tape).to_vec())
+<a href=#737 id=737 data-nosnippet>737</a>			.collect();
+<a href=#738 id=738 data-nosnippet>738</a>
+<a href=#739 id=739 data-nosnippet>739</a>		<span class="prelude-val">Ok</span>(Leaf::build(<span class="kw-2">&amp;</span>raw, alphabets))
+<a href=#740 id=740 data-nosnippet>740</a>	}
+<a href=#741 id=741 data-nosnippet>741</a>
+<a href=#742 id=742 data-nosnippet>742</a>	<span class="doccomment">/// The limit that the query passed, if it did. The posts and initial macrostates computed since may then
+<a href=#743 id=743 data-nosnippet>743</a>	/// be partial, and the query stops.
+<a href=#744 id=744 data-nosnippet>744</a>	</span><span class="kw">fn </span>stopped(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(), Limit&gt; {
+<a href=#745 id=745 data-nosnippet>745</a>		<span class="comment">// Late once its `Until` passed: the deadline, or else the cancellation.
+<a href=#746 id=746 data-nosnippet>746</a>		</span><span class="kw">if </span><span class="self">self</span>.subsumption.is_late() {
+<a href=#747 id=747 data-nosnippet>747</a>			<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="kw">if </span><span class="self">self</span>.budget.is_cancelled() {
+<a href=#748 id=748 data-nosnippet>748</a>				Limit::Cancelled
+<a href=#749 id=749 data-nosnippet>749</a>			} <span class="kw">else </span>{
+<a href=#750 id=750 data-nosnippet>750</a>				Limit::Time
+<a href=#751 id=751 data-nosnippet>751</a>			});
+<a href=#752 id=752 data-nosnippet>752</a>		}
+<a href=#753 id=753 data-nosnippet>753</a>
+<a href=#754 id=754 data-nosnippet>754</a>		<span class="self">self</span>.budget.check()
+<a href=#755 id=755 data-nosnippet>755</a>	}
+<a href=#756 id=756 data-nosnippet>756</a>
+<a href=#757 id=757 data-nosnippet>757</a>	<span class="doccomment">/// The error of passing `limit`, with the statistics so far.
+<a href=#758 id=758 data-nosnippet>758</a>	</span><span class="kw">fn </span>limit_error(<span class="kw-2">&amp;</span><span class="self">self</span>, limit: Limit) -&gt; Error {
+<a href=#759 id=759 data-nosnippet>759</a>		<span class="kw">let </span>stats = Box::new(<span class="self">self</span>.stats());
+<a href=#760 id=760 data-nosnippet>760</a>
+<a href=#761 id=761 data-nosnippet>761</a>		<span class="kw">match </span>limit {
+<a href=#762 id=762 data-nosnippet>762</a>			Limit::States =&gt; Error::StateLimit {
+<a href=#763 id=763 data-nosnippet>763</a>				max_states: <span class="self">self</span>.budget.max_states.expect(<span class="string">"only a state limit passes"</span>),
+<a href=#764 id=764 data-nosnippet>764</a>				stats,
+<a href=#765 id=765 data-nosnippet>765</a>			},
+<a href=#766 id=766 data-nosnippet>766</a>			Limit::Time =&gt; Error::TimeLimit {
+<a href=#767 id=767 data-nosnippet>767</a>				limit: <span class="self">self</span>.budget.time_limit().expect(<span class="string">"only a time limit passes"</span>),
+<a href=#768 id=768 data-nosnippet>768</a>				stats,
+<a href=#769 id=769 data-nosnippet>769</a>			},
+<a href=#770 id=770 data-nosnippet>770</a>			Limit::Cancelled =&gt; Error::Cancelled { stats },
+<a href=#771 id=771 data-nosnippet>771</a>		}
+<a href=#772 id=772 data-nosnippet>772</a>	}
+<a href=#773 id=773 data-nosnippet>773</a>
+<a href=#774 id=774 data-nosnippet>774</a>	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>stats(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Stats {
+<a href=#775 id=775 data-nosnippet>775</a>		<span class="kw">let </span>nodes = <span class="self">self
+<a href=#776 id=776 data-nosnippet>776</a>			</span>.exec
+<a href=#777 id=777 data-nosnippet>777</a>			.sources
+<a href=#778 id=778 data-nosnippet>778</a>			.iter()
+<a href=#779 id=779 data-nosnippet>779</a>			.map(|<span class="kw-2">&amp;</span>(node, id)| {
+<a href=#780 id=780 data-nosnippet>780</a>				<span class="kw">let </span><span class="kw-2">mut </span>counted = id;
+<a href=#781 id=781 data-nosnippet>781</a>				<span class="kw">while let </span>Op::Transparent(child) = <span class="self">self</span>.exec.nodes[counted].op {
+<a href=#782 id=782 data-nosnippet>782</a>					counted = child;
+<a href=#783 id=783 data-nosnippet>783</a>				}
+<a href=#784 id=784 data-nosnippet>784</a>
+<a href=#785 id=785 data-nosnippet>785</a>				NodeStats {
+<a href=#786 id=786 data-nosnippet>786</a>					term: <span class="self">self</span>.formula.term(node),
+<a href=#787 id=787 data-nosnippet>787</a>					macrostates: <span class="self">self</span>.stores[<span class="self">self</span>.exec.owner(id)].len(),
+<a href=#788 id=788 data-nosnippet>788</a>					posts: <span class="self">self</span>.post_counts[counted],
+<a href=#789 id=789 data-nosnippet>789</a>				}
+<a href=#790 id=790 data-nosnippet>790</a>			})
+<a href=#791 id=791 data-nosnippet>791</a>			.collect();
+<a href=#792 id=792 data-nosnippet>792</a>
+<a href=#793 id=793 data-nosnippet>793</a>		Stats {
+<a href=#794 id=794 data-nosnippet>794</a>			macrostates: <span class="self">self</span>.stores.iter().map(Store::len).sum(),
+<a href=#795 id=795 data-nosnippet>795</a>			dropped: <span class="self">self
+<a href=#796 id=796 data-nosnippet>796</a>				</span>.cache_budget
+<a href=#797 id=797 data-nosnippet>797</a>				.as_ref()
+<a href=#798 id=798 data-nosnippet>798</a>				.map_or(<span class="number">0</span>, |budget| budget.dropped),
+<a href=#799 id=799 data-nosnippet>799</a>			nodes,
+<a href=#800 id=800 data-nosnippet>800</a>			..<span class="self">self</span>.stats.clone()
+<a href=#801 id=801 data-nosnippet>801</a>		}
+<a href=#802 id=802 data-nosnippet>802</a>	}
+<a href=#803 id=803 data-nosnippet>803</a>}
+<a href=#804 id=804 data-nosnippet>804</a>
+<a href=#805 id=805 data-nosnippet>805</a><span class="doccomment">/// The query's extra symbols of each tape of the root, whose arity is `arity`.
+<a href=#806 id=806 data-nosnippet>806</a></span><span class="kw">fn </span>root_symbols(options: <span class="kw-2">&amp;</span>Options, arity: usize) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Vec&lt;Symbol&gt;&gt;, Error&gt; {
+<a href=#807 id=807 data-nosnippet>807</a>	<span class="kw">let </span><span class="kw-2">mut </span>root_symbols = <span class="macro">vec!</span>[Vec::new(); arity];
+<a href=#808 id=808 data-nosnippet>808</a>	<span class="kw">for </span>extra <span class="kw">in </span><span class="kw-2">&amp;</span>options.alphabets {
+<a href=#809 id=809 data-nosnippet>809</a>		<span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>symbol) = extra.symbols.iter().find(|symbol| !symbol.is_concrete()) {
+<a href=#810 id=810 data-nosnippet>810</a>			<span class="kw">return </span><span class="prelude-val">Err</span>(Error::ReservedSymbol { symbol });
+<a href=#811 id=811 data-nosnippet>811</a>		}
+<a href=#812 id=812 data-nosnippet>812</a>
+<a href=#813 id=813 data-nosnippet>813</a>		<span class="kw">let </span>tapes = <span class="kw">match </span>extra.tapes {
+<a href=#814 id=814 data-nosnippet>814</a>			Tapes::One(tape) <span class="kw">if </span>tape &gt;= arity =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::TapeOutOfRange { tape, arity }),
+<a href=#815 id=815 data-nosnippet>815</a>			Tapes::One(tape) =&gt; tape..tape + <span class="number">1</span>,
+<a href=#816 id=816 data-nosnippet>816</a>			Tapes::Every =&gt; <span class="number">0</span>..arity,
+<a href=#817 id=817 data-nosnippet>817</a>		};
+<a href=#818 id=818 data-nosnippet>818</a>
+<a href=#819 id=819 data-nosnippet>819</a>		<span class="kw">for </span>tape <span class="kw">in </span>tapes {
+<a href=#820 id=820 data-nosnippet>820</a>			root_symbols[tape].extend_from_slice(<span class="kw-2">&amp;</span>extra.symbols);
+<a href=#821 id=821 data-nosnippet>821</a>		}
+<a href=#822 id=822 data-nosnippet>822</a>	}
+<a href=#823 id=823 data-nosnippet>823</a>
+<a href=#824 id=824 data-nosnippet>824</a>	<span class="prelude-val">Ok</span>(root_symbols)
+<a href=#825 id=825 data-nosnippet>825</a>}
+<a href=#826 id=826 data-nosnippet>826</a>
+<a href=#827 id=827 data-nosnippet>827</a><span class="doccomment">/// How many times the states of an explicit node's bisimulation quotient its subset construction may have.
+<a href=#828 id=828 data-nosnippet>828</a></span><span class="kw">const </span>DETERMINIZE_FACTOR: usize = <span class="number">4</span>;
+<a href=#829 id=829 data-nosnippet>829</a>
+<a href=#830 id=830 data-nosnippet>830</a><span class="doccomment">/// How many times the states of the quotient the members of all subsets of its subset construction may be. Few
+<a href=#831 id=831 data-nosnippet>831</a>/// subsets can still hold most states each, as the suffixes of a chain whose states are all initial.
+<a href=#832 id=832 data-nosnippet>832</a></span><span class="kw">const </span>MEMBERS_FACTOR: usize = <span class="number">16</span>;
+<a href=#833 id=833 data-nosnippet>833</a>
+<a href=#834 id=834 data-nosnippet>834</a><span class="doccomment">/// How many times the moves of the quotient the moves of its subset construction may be. Few subsets can still
+<a href=#835 id=835 data-nosnippet>835</a>/// have many moves each, the union of the distinct letters of their members.
+<a href=#836 id=836 data-nosnippet>836</a></span><span class="kw">const </span>MOVES_FACTOR: usize = <span class="number">16</span>;
+<a href=#837 id=837 data-nosnippet>837</a>
+<a href=#838 id=838 data-nosnippet>838</a><span class="doccomment">/// An explicit node's automaton made small: minimal when its subset construction stays within
+<a href=#839 id=839 data-nosnippet>839</a>/// [`DETERMINIZE_FACTOR`] times the states of its bisimulation quotient, [`MEMBERS_FACTOR`] times them in members of
+<a href=#840 id=840 data-nosnippet>840</a>/// all subsets and [`MOVES_FACTOR`] times its moves, that quotient otherwise. An explicit node above another reads
+<a href=#841 id=841 data-nosnippet>841</a>/// the smaller one, so a chain of them (pre-images in regular model checking) does not grow level by level.
+<a href=#842 id=842 data-nosnippet>842</a></span><span class="kw">fn </span>reduce(raw: <span class="kw-2">&amp;</span>Raw, stop: <span class="kw-2">&amp;mut </span><span class="kw">dyn </span>FnMut() -&gt; bool) -&gt; <span class="prelude-ty">Result</span>&lt;Raw, Stopped&gt; {
+<a href=#843 id=843 data-nosnippet>843</a>	<span class="comment">// Trimmed first: a dead successor would tell two states with the same language apart.
+<a href=#844 id=844 data-nosnippet>844</a>	</span><span class="kw">let </span>quotient = raw.trimmed(stop)<span class="question-mark">?</span>.quotient(stop)<span class="question-mark">?</span>;
+<a href=#845 id=845 data-nosnippet>845</a>	<span class="kw">let </span>states = quotient.finals.len();
+<a href=#846 id=846 data-nosnippet>846</a>	<span class="kw">match </span>quotient.determinize(
+<a href=#847 id=847 data-nosnippet>847</a>		states.saturating_mul(DETERMINIZE_FACTOR),
+<a href=#848 id=848 data-nosnippet>848</a>		states.saturating_mul(MEMBERS_FACTOR),
+<a href=#849 id=849 data-nosnippet>849</a>		quotient.num_moves().saturating_mul(MOVES_FACTOR),
+<a href=#850 id=850 data-nosnippet>850</a>		stop,
+<a href=#851 id=851 data-nosnippet>851</a>	)<span class="question-mark">? </span>{
+<a href=#852 id=852 data-nosnippet>852</a>		<span class="prelude-val">Some</span>(dfa) =&gt; dfa.trimmed(stop)<span class="question-mark">?</span>.minimize(stop),
+<a href=#853 id=853 data-nosnippet>853</a>		<span class="prelude-val">None </span>=&gt; <span class="prelude-val">Ok</span>(quotient),
+<a href=#854 id=854 data-nosnippet>854</a>	}
+<a href=#855 id=855 data-nosnippet>855</a>}
+<a href=#856 id=856 data-nosnippet>856</a>
+<a href=#857 id=857 data-nosnippet>857</a><span class="attr">#[cfg(test)]
+<a href=#858 id=858 data-nosnippet>858</a></span><span class="kw">mod </span>tests {
+<a href=#859 id=859 data-nosnippet>859</a>	<span class="kw">use </span>std::sync::Arc;
+<a href=#860 id=860 data-nosnippet>860</a>	<span class="kw">use </span>std::sync::atomic::AtomicBool;
+<a href=#861 id=861 data-nosnippet>861</a>
+<a href=#862 id=862 data-nosnippet>862</a>	<span class="kw">use </span><span class="kw">super</span>::Engine;
+<a href=#863 id=863 data-nosnippet>863</a>	<span class="kw">use crate</span>::{Automaton, Error, Formula, Options, Symbol};
+<a href=#864 id=864 data-nosnippet>864</a>
+<a href=#865 id=865 data-nosnippet>865</a>	<span class="doccomment">/// States `0..size` with `a` to the next one and `b` to the double, all final but 0: a large simulation.
+<a href=#866 id=866 data-nosnippet>866</a>	</span><span class="kw">struct </span>Doubling {
+<a href=#867 id=867 data-nosnippet>867</a>		size: u32,
+<a href=#868 id=868 data-nosnippet>868</a>	}
+<a href=#869 id=869 data-nosnippet>869</a>
+<a href=#870 id=870 data-nosnippet>870</a>	<span class="kw">impl </span>Automaton <span class="kw">for </span>Doubling {
+<a href=#871 id=871 data-nosnippet>871</a>		<span class="kw">type </span>State = u32;
+<a href=#872 id=872 data-nosnippet>872</a>
+<a href=#873 id=873 data-nosnippet>873</a>		<span class="kw">fn </span>arity(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize {
+<a href=#874 id=874 data-nosnippet>874</a>			<span class="number">1
+<a href=#875 id=875 data-nosnippet>875</a>		</span>}
+<a href=#876 id=876 data-nosnippet>876</a>
+<a href=#877 id=877 data-nosnippet>877</a>		<span class="kw">fn </span>initial_states(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw">impl </span>IntoIterator&lt;Item = u32&gt; {
+<a href=#878 id=878 data-nosnippet>878</a>			[<span class="number">0</span>]
+<a href=#879 id=879 data-nosnippet>879</a>		}
+<a href=#880 id=880 data-nosnippet>880</a>
+<a href=#881 id=881 data-nosnippet>881</a>		<span class="kw">fn </span>is_final(<span class="kw-2">&amp;</span><span class="self">self</span>, state: u32) -&gt; bool {
+<a href=#882 id=882 data-nosnippet>882</a>			state != <span class="number">0
+<a href=#883 id=883 data-nosnippet>883</a>		</span>}
+<a href=#884 id=884 data-nosnippet>884</a>
+<a href=#885 id=885 data-nosnippet>885</a>		<span class="kw">fn </span>for_each_move(<span class="kw-2">&amp;</span><span class="self">self</span>, state: u32, <span class="kw-2">mut </span>visit: <span class="kw">impl </span>FnMut(<span class="kw-2">&amp;</span>[Symbol], u32)) {
+<a href=#886 id=886 data-nosnippet>886</a>			visit(<span class="kw-2">&amp;</span>[Symbol::new(<span class="number">0</span>)], (state + <span class="number">1</span>) % <span class="self">self</span>.size);
+<a href=#887 id=887 data-nosnippet>887</a>			visit(<span class="kw-2">&amp;</span>[Symbol::new(<span class="number">1</span>)], (<span class="number">2 </span>* state) % <span class="self">self</span>.size);
+<a href=#888 id=888 data-nosnippet>888</a>		}
+<a href=#889 id=889 data-nosnippet>889</a>	}
+<a href=#890 id=890 data-nosnippet>890</a>
+<a href=#891 id=891 data-nosnippet>891</a>	<span class="attr">#[test]
+<a href=#892 id=892 data-nosnippet>892</a>	</span><span class="kw">fn </span>a_cancelled_simulation_stops_a_query_without_a_time_limit_as_cancelled() -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt;
+<a href=#893 id=893 data-nosnippet>893</a>	{
+<a href=#894 id=894 data-nosnippet>894</a>		<span class="kw">let </span><span class="kw-2">mut </span>formula = Formula::new();
+<a href=#895 id=895 data-nosnippet>895</a>		<span class="kw">let </span>leaf = formula.leaf(<span class="kw-2">&amp;</span>Doubling { size: <span class="number">4000 </span>})<span class="question-mark">?</span>;
+<a href=#896 id=896 data-nosnippet>896</a>		<span class="comment">// Empty, so the search minimizes complement sets, which computes the leaf's simulation first.
+<a href=#897 id=897 data-nosnippet>897</a>		</span><span class="kw">let </span>complement = formula.complement(leaf)<span class="question-mark">?</span>;
+<a href=#898 id=898 data-nosnippet>898</a>		<span class="kw">let </span>empty = formula.intersection(leaf, complement)<span class="question-mark">?</span>;
+<a href=#899 id=899 data-nosnippet>899</a>		<span class="kw">let </span>node = formula.node(empty)<span class="question-mark">?</span>;
+<a href=#900 id=900 data-nosnippet>900</a>		<span class="comment">// Cancelled before it starts: the simulation is the first work to read the flag.
+<a href=#901 id=901 data-nosnippet>901</a>		</span><span class="kw">let </span>cancel = Arc::new(AtomicBool::new(<span class="bool-val">true</span>));
+<a href=#902 id=902 data-nosnippet>902</a>		<span class="kw">let </span><span class="kw-2">mut </span>engine = Engine::new(<span class="kw-2">&amp;</span>formula, node, <span class="kw-2">&amp;</span>Options::new(), <span class="prelude-val">Some</span>(cancel))<span class="question-mark">?</span>;
+<a href=#903 id=903 data-nosnippet>903</a>		<span class="kw">let </span>outcome = engine.search();
+<a href=#904 id=904 data-nosnippet>904</a>		<span class="macro">assert!</span>(
+<a href=#905 id=905 data-nosnippet>905</a>			<span class="macro">matches!</span>(outcome, <span class="prelude-val">Err</span>(Error::Cancelled { .. })),
+<a href=#906 id=906 data-nosnippet>906</a>			<span class="string">"{outcome:?}"
+<a href=#907 id=907 data-nosnippet>907</a>		</span>);
+<a href=#908 id=908 data-nosnippet>908</a>
+<a href=#909 id=909 data-nosnippet>909</a>		<span class="prelude-val">Ok</span>(())
+<a href=#910 id=910 data-nosnippet>910</a>	}
+<a href=#911 id=911 data-nosnippet>911</a>}
+</code></pre></div></section></main></body></html>
