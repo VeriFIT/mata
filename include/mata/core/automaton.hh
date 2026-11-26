@@ -165,9 +165,11 @@ template <DeltaLike D> class AutomatonBase {
 	/**
 	 * @brief Tarjan's SCC discover algorithm.
 	 *
+	 * Only the states reachable from @p initial_states are visited, so an SCC no initial state reaches is not reported.
+	 *
 	 * @param callback Callback class to instantiate callbacks for the Tarjan's algorithm.
-	 * @param initial_states Optional set of initial states to consider when computing SCCs. If @c std::nullopt, uses
-	 * all states in the automaton.
+	 * @param initial_states Optional set of states to start the search from. If @c std::nullopt, uses the automaton's
+	 *  initial states.
 	 */
 	void tarjan_scc_discover(
 		const TarjanDiscoverCallback& callback,
@@ -217,9 +219,11 @@ template <DeltaLike D> class AutomatonBase {
 #endif
 
 	/**
-	 * @brief Is the automaton graph acyclic?
+	 * @brief Is the part of the automaton graph reachable from the initial states acyclic?
 	 *
-	 * @return true iff Automaton graph is acyclic.
+	 * A cycle no initial state reaches does not count.
+	 *
+	 * @return true iff no cycle is reachable from an initial state.
 	 */
 	bool is_acyclic() const;
 
