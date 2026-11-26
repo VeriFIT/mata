@@ -584,6 +584,7 @@ class DeltaBuilder {
 		in_state_ = false;
 	}
 
+	/// Hands over the finished relation and empties the builder, which can then build another one.
 	Delta finish() {
 		MATA_ASSERT(!in_state_ && !in_symbol_ && "finish() called inside an unfinished state or symbol");
 		// A target state needs its own (possibly empty) post, like every other state of the relation.
@@ -592,8 +593,12 @@ class DeltaBuilder {
 		}
 		Delta delta{};
 		delta.state_posts_ = std::move(state_posts_);
-		// Every target was counted as it was pushed, so the relation starts with an exact count.
+		// Every stored target was counted, so the relation starts with an exact count.
 		delta.set_count(num_of_transitions_);
+		// A moved-from vector is only valid, not empty, so it is cleared before the next build.
+		state_posts_.clear();
+		num_of_transitions_ = 0;
+		max_target_ = 0;
 		return delta;
 	}
 

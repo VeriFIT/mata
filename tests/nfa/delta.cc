@@ -911,6 +911,32 @@ TEST_CASE("mata::nfa::DeltaBuilder") {
 		CHECK(DeltaBuilder{}.finish().empty());
 		CHECK(DeltaBuilder{}.finish().num_of_states() == 0);
 	}
+
+	SECTION("finish() empties the builder, which then builds another relation") {
+		DeltaBuilder builder{};
+		builder.begin_state(0);
+		builder.begin_symbol('a');
+		builder.push_sorted_target(4);
+		builder.finish_symbol();
+		builder.finish_state();
+		const Delta first{builder.finish()};
+		CHECK(first.num_of_transitions() == 1);
+		CHECK(first.num_of_states() == 5);
+
+		const Delta again{builder.finish()};
+		CHECK(again.empty());
+		CHECK(again.num_of_states() == 0);
+
+		builder.begin_state(1);
+		builder.begin_symbol('b');
+		builder.push_sorted_target(2);
+		builder.finish_symbol();
+		builder.finish_state();
+		const Delta second{builder.finish()};
+		CHECK(second.num_of_transitions() == 1);
+		CHECK(second.num_of_states() == 3);
+		CHECK(second.contains(1, 'b', 2));
+	}
 }
 
 TEST_CASE("mata::nfa::Delta::add() of a whole symbol post") {
