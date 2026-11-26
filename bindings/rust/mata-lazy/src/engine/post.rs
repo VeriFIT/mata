@@ -216,7 +216,7 @@ pub(crate) struct Post {
 }
 
 impl Post {
-	fn new(arity: usize) -> Post {
+	pub(super) fn new(arity: usize) -> Post {
 		Post {
 			arity,
 			labels: Vec::new(),
@@ -262,8 +262,8 @@ impl Post {
 		})
 	}
 
-	/// The label and target storage; shared symbol arrays are not charged again to each post.
-	fn bytes(&self) -> usize {
+	/// Distinct split symbol arrays are charged once by the cache budget.
+	pub(super) fn bytes(&self) -> usize {
 		size_of::<Post>()
 			+ self.labels.capacity() * size_of::<TapeLabel>()
 			+ self.targets.capacity() * size_of::<u32>()
@@ -553,7 +553,7 @@ impl Engine<'_> {
 
 		slots[index] = Some(Rc::clone(&post));
 		if let Some(budget) = &mut self.cache_budget {
-			let dropped = budget.admit(node.index(), state, nanos, post.bytes());
+			let dropped = budget.admit(node.index(), state, nanos, &post);
 			self.evict(dropped);
 		}
 
@@ -563,7 +563,13 @@ impl Engine<'_> {
 	/// Drops the posts that the cache budget evicted.
 	pub(super) fn evict(&mut self, dropped: Vec<(usize, StateId)>) {
 		for (key, state) in dropped {
-			self.posts[ExecId::new(key)][state.index()] = None;
+			let removed = self.posts[ExecId::new(key)][state.index()].take();
+			if let (Some(budget), Some(post)) = (&mut self.cache_budget, &removed) {
+				budget.retire(post);
+			}
+		}
+		if let Some(budget) = &mut self.cache_budget {
+			budget.reclaim();
 		}
 	}
 
@@ -845,7 +851,7 @@ impl Engine<'_> {
 
 		let mut post = Post::new(arity);
 		let start = self.stores[node].len();
-		self.complement_region(node, child, &mut region, &active, start, &mut post)?;
+		self.complement_region(node, &mut region, &active, start, &mut post, 0)?;
 		self.budget.add(self.stores[node].len() - start);
 
 		Ok(post)
@@ -855,20 +861,23 @@ impl Engine<'_> {
 	fn complement_region(
 		&mut self,
 		node: ExecId,
-		child: ExecId,
 		region: &mut [TapeLabel],
 		active: &[ActiveMove],
 		start: usize,
 		post: &mut Post,
+		next_tape: usize,
 	) -> Result<(), Limit> {
 		self.budget.step(self.stores[node].len() - start);
 		if self.budget.passed() {
 			return Ok(());
 		}
+		let Op::Complement(child) = self.exec.nodes[node].op else {
+			unreachable!("only complements partition concrete regions")
+		};
 
-		// In particular, a moveless child gives one unconstrained region, however many tapes it has.
+		// Earlier tapes are already disjoint minterms of every active move, so they cannot split again.
 		if !active.is_empty() {
-			for tape in 0..region.len() {
+			for tape in next_tape..region.len() {
 				let TapeLabel::Set(current) = &region[tape] else {
 					unreachable!("a complement region is a concrete set on every tape")
 				};
@@ -900,7 +909,7 @@ impl Engine<'_> {
 						.filter(|active_move| active_move.tuple[tape].intersects(&region[tape]))
 						.copied()
 						.collect();
-					self.complement_region(node, child, region, &next, start, post)?;
+					deep(|| self.complement_region(node, region, &next, start, post, tape + 1))?;
 					if self.budget.passed() {
 						break;
 					}

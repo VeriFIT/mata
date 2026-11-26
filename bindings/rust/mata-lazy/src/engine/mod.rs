@@ -270,6 +270,9 @@ impl<'f> Engine<'f> {
 		}
 
 		let plans = join::plans(&exec);
+		let cache_budget = options
+			.cache_budget
+			.map(|limit| CacheBudget::new(limit, num_nodes, alphabets.universe_arrays()));
 
 		let mut engine = Engine {
 			formula,
@@ -278,9 +281,7 @@ impl<'f> Engine<'f> {
 			stores,
 			posts: vec![Vec::new(); num_nodes].into(),
 			cached,
-			cache_budget: options
-				.cache_budget
-				.map(|limit| CacheBudget::new(limit, num_nodes)),
+			cache_budget,
 			nested_nanos: 0,
 			initial_counts: vec![None; num_nodes].into(),
 			initials: vec![None; num_nodes].into(),

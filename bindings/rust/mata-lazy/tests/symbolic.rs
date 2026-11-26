@@ -281,3 +281,30 @@ fn symbolic_posts_can_be_evicted_without_changing_the_witness() {
 	let witness = outcome.witness.expect("a one-step witness");
 	assert_eq!(witness.tape(0), Some(vec![A]));
 }
+
+#[test]
+fn wide_active_complements_grow_their_recursion_stack() -> Result<(), Box<dyn std::error::Error>> {
+	// The covered part recurses once per tape before the first uncovered part splits off.
+	let arity = 1 << 15;
+	std::thread::Builder::new()
+		.stack_size(64 << 10)
+		.spawn(move || -> Result<(), mata_lazy::Error> {
+			let mut formula = Formula::new();
+			let leaf = formula.leaf(&Nfa::word(&[vec![A; arity]]))?;
+			let complement = formula.complement(leaf)?;
+			let explicit = formula.explicit(complement)?;
+			let error = formula
+				.check(explicit, &Options::new().max_states(2))
+				.expect_err("the state budget stops after the deep partition");
+			assert!(matches!(
+				error,
+				mata_lazy::Error::StateLimit { max_states: 2, .. }
+			));
+
+			Ok(())
+		})?
+		.join()
+		.expect("the complement does not overflow its stack")?;
+
+	Ok(())
+}
