@@ -139,12 +139,14 @@ template <typename P> bool insert_target(P& post, const target_of<P>& target) {
 template <typename P, typename K0, typename... Rest>
 bool insert_target(P& post, const target_of<P>& target, const K0& k0, const Rest&... rest) {
 	static_assert(arity_of<P> == sizeof...(Rest) + 1, "the key path must be one key per post");
-	auto entry_it{post.find(k0)};
-	if (entry_it == post.end()) {
-		post.insert(typename P::Entry{k0, typename P::Nested{}});
-		entry_it = post.find(k0); // insert may reallocate, so look the position up again
+	if (const auto entry_it{post.find(k0)}; entry_it != post.end()) {
+		return insert_target(entry_it->nested(), target, rest...);
 	}
-	return insert_target(entry_it->nested(), target, rest...);
+	// A new key is published only with its target: if inserting the target throws, no empty entry is left behind.
+	typename P::Nested nested{};
+	const bool inserted{insert_target(nested, target, rest...)};
+	post.insert(typename P::Entry{k0, std::move(nested)});
+	return inserted;
 }
 
 /**
