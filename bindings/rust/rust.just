@@ -19,7 +19,7 @@ lint:
 	cargo clippy --workspace --all-targets --all-features --jobs '{{ JOBS }}' -- -D warnings
 
 # Build the HTML reference of the crates into 'target/doc/'. DOCS_RS skips building the C++ library, as on docs.rs.
-doc:
+docs:
 	DOCS_RS=1 cargo doc --workspace --no-deps --all-features --jobs '{{ JOBS }}'
 
 # Build the bindings and run their tests.
