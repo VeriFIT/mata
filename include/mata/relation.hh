@@ -54,7 +54,9 @@ struct Transition {
 	 * @param t Transition to get the parts of.
 	 * @return A tuple (source, symbol, target) of @p t.
 	 */
-	static std::tuple<State, Symbol, State> parts(const Transition& t) { return {t.source, t.symbol, t.target}; }
+	static std::tuple<State, Symbol, State> parts(const Transition& t) noexcept {
+		return {t.source, t.symbol, t.target};
+	}
 
 	std::string to_string() const;
 };

@@ -78,7 +78,7 @@ struct Transition {
 	Symbol letter{};
 	State to{};
 	bool operator==(const Transition&) const = default;
-	static auto parts(const Transition& t) {
+	static auto parts(const Transition& t) noexcept {
 		return std::tuple<utils::ArgOf<State>, utils::ArgOf<Symbol>, utils::ArgOf<State>>{t.from, t.letter, t.to};
 	}
 };

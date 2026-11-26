@@ -50,7 +50,7 @@ template <typename St, typename K, typename T> struct Transition {
 	 *  The @c utils::ArgOf decides.
 	 * @param t The transition to take apart.
 	 */
-	static auto parts(const Transition& t) {
+	static auto parts(const Transition& t) noexcept {
 		return std::tuple<utils::ArgOf<St>, utils::ArgOf<K>, utils::ArgOf<T>>{t.source, t.symbol, t.target};
 	}
 
@@ -84,7 +84,7 @@ template <typename St, typename Keys, typename T> struct KeyedTransition {
 	 *  The @c utils::ArgOf decides.
 	 * @param t The transition to take apart.
 	 */
-	static auto parts(const KeyedTransition& t) {
+	static auto parts(const KeyedTransition& t) noexcept {
 		// The keys too go through ArgOf: copying an owning key here could throw from inside the noexcept hash.
 		const auto by_arg = [](const auto&... key) {
 			return std::tuple<utils::ArgOf<std::remove_cvref_t<decltype(key)>>...>{key...};
@@ -104,10 +104,15 @@ template <typename... Ts> struct is_tuple<std::tuple<Ts...>> : std::true_type {}
 
 /**
  * @brief Concept for a transition that has a static @c parts() returning a tuple of references or values.
+ *
+ * @note @c parts() must not throw: the hash built on it is @c noexcept, which lets the unordered containers skip
+ *  storing a hash per element.
  */
 template <typename T>
-concept TransitionLike =
-	requires(const T& t) { requires internal::is_tuple<std::remove_cvref_t<decltype(T::parts(t))>>::value; };
+concept TransitionLike = requires(const T& t) {
+	{ T::parts(t) } noexcept;
+	requires internal::is_tuple<std::remove_cvref_t<decltype(T::parts(t))>>::value;
+};
 
 /**
  * @brief Concept for a type that can be hashed with @c std::hash.
@@ -227,7 +232,7 @@ std::ostream& operator<<(std::ostream& os, const T& t) {
  * struct Transition {
  *     State source{}; Symbol input{}, output{}; State target{};
  *     bool operator==(const Transition&) const = default;
- *     static auto parts(const Transition& t) {
+ *     static auto parts(const Transition& t) noexcept {
  *         using utils::ArgOf;
  *         return std::tuple<ArgOf<State>, ArgOf<Symbol>, ArgOf<Symbol>, ArgOf<State>>{
  *             t.source, t.input, t.output, t.target};
