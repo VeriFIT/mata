@@ -1,4 +1,31 @@
 file (GLOB_RECURSE MATA_TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
+
+# Every header below, relative to include/mata, has to compile on its own.
+#  A header that leans on another being included first fails here
+#  rather than at a user who includes them in a different order.
+foreach (
+	header IN
+	ITEMS core/traits
+		  core/concepts
+		  core/transition
+		  core/visits
+		  core/moves
+		  core/post
+		  core/cursor
+		  core/delta
+		  core/tarjan
+		  core/automaton
+		  relation
+		  synchronized-symbol-post-iterator
+		  types
+		  utils/arg-of
+)
+	set (header_check "${CMAKE_CURRENT_BINARY_DIR}/header-check/${header}.cc")
+	# Rewritten whenever its content changes, so an existing build directory follows edits of this list.
+	file (CONFIGURE OUTPUT "${header_check}" CONTENT "#include \"mata/${header}.hh\"\n")
+	list (APPEND MATA_TEST_SOURCES "${header_check}")
+endforeach ()
+
 add_executable (tests ${MATA_TEST_SOURCES})
 
 target_link_libraries (tests PRIVATE libmata Catch2::Catch2WithMain)

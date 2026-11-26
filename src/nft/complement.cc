@@ -59,17 +59,17 @@ Nft mata::nft::complement(const Nft& nft, const OrdVector<Symbol>& symbols, cons
 	decltype(algorithms::complement_classical)* const algo = algorithms::complement_classical;
 	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(
-			std::to_string(__func__) +
+			std::string{__func__} +
 			" requires setting the 'algorithm' key in the 'params' argument; "
 			"received: " +
-			std::to_string(params)
+			mata::utils::to_string(params)
 		);
 	}
 
 	if (const std::string& str_algo = params.at("algorithm"); "classical" == str_algo) { /* default */
 	} else {
 		throw std::runtime_error(
-			std::to_string(__func__) + " received an unknown value of the 'algorithm' key: " + str_algo
+			std::string{__func__} + " received an unknown value of the 'algorithm' key: " + str_algo
 		);
 	}
 
@@ -78,7 +78,7 @@ Nft mata::nft::complement(const Nft& nft, const OrdVector<Symbol>& symbols, cons
 		const std::string& minimize_arg = params.at("minimize");
 		if ("true" == minimize_arg) {
 			throw std::runtime_error(
-				std::to_string(__func__) +
+				std::string{__func__} +
 				" received unimplemented option 'minimize' = 'true' for the complementation algorithm on NFTs."
 			);
 			// TODO(nft): implement minimization for NFTs.
@@ -88,7 +88,7 @@ Nft mata::nft::complement(const Nft& nft, const OrdVector<Symbol>& symbols, cons
 			minimize_during_determinization = false;
 		} else {
 			throw std::runtime_error(
-				std::to_string(__func__) + " received an unknown value of the 'minimize' key: " + minimize_arg
+				std::string{__func__} + " received an unknown value of the 'minimize' key: " + minimize_arg
 			);
 		}
 	}

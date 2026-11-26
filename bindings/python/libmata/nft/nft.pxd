@@ -6,7 +6,6 @@ from libcpp.vector cimport vector
 from libcpp.memory cimport shared_ptr
 from libcpp.string cimport string
 from libcpp.utility cimport pair
-from libc.stdint cimport uintptr_t
 
 from libmata.utils cimport CSparseSet, COrdVector, CBoolVector, CBinaryRelation, CPairHash
 from libmata.alphabets cimport CAlphabet, CConstAlphabet, CAlphabetLevels, CLazyWordGenerator, Symbol, Level
@@ -14,7 +13,7 @@ from libmata.alphabets cimport CAlphabet, CConstAlphabet, CAlphabetLevels, CLazy
 from libmata.nfa.nfa cimport (
     State, StateSet, StateRenaming, ParameterMap,
     CAutomaton, CDelta, CRun, CTrans, CNfa, CSymbolPost, CEPSILON,
-    ostream, ofstream, stringstream,
+    ostream, ofstream, stringstream, _Version,
 )
 
 cdef extern from "mata/nft/types.hh" namespace "mata::nft":
@@ -38,9 +37,6 @@ cdef extern from "mata/nft/types.hh" namespace "mata::nft":
     cdef const Symbol CNFT_EPSILON "mata::nft::EPSILON"
     cdef const Symbol CDONT_CARE "mata::nft::DONT_CARE"
     cdef const size_t CDEFAULT_NUM_OF_LEVELS "mata::nft::DEFAULT_NUM_OF_LEVELS"
-
-cdef extern from "mata/nfa/types.hh" namespace "mata::nfa::Limits":
-    cdef const State CLIMITS_MAX_STATE "mata::nfa::Limits::max_state"
 
     cdef cppclass CLevels "mata::nft::Levels":
         size_t num_of_levels
@@ -77,6 +73,9 @@ cdef extern from "mata/nfa/types.hh" namespace "mata::nfa::Limits":
 
         @staticmethod
         bool can_follow(Level, Level)
+
+cdef extern from "mata/nfa/types.hh" namespace "mata::nfa::Limits":
+    cdef const State CLIMITS_MAX_STATE "mata::nfa::Limits::max_state"
 
 
 cdef extern from "mata/nft/delta.hh" namespace "mata::nft":
@@ -274,3 +273,4 @@ cdef class Levels:
 cdef class Nft:
     cdef shared_ptr[CNft] thisptr
     cdef label
+    cdef _Version _version

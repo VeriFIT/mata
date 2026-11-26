@@ -31,7 +31,7 @@ bool is_logical_operator(const char ch) { return ch == '&' || ch == '|' || ch ==
 void check_explicit_transition(const mata::parser::BodyLine& tokens, const std::string& automaton_type) {
 	if (tokens.size() != 3) {
 		throw std::runtime_error(
-			"Malformed explicit " + automaton_type + " transition " + std::to_string(tokens) +
+			"Malformed explicit " + automaton_type + " transition " + mata::utils::to_string(tokens) +
 			": expected exactly 3 tokens (state, symbol, state), got " + std::to_string(tokens.size())
 		);
 	}
@@ -44,7 +44,7 @@ void check_explicit_transition(const mata::parser::BodyLine& tokens, const std::
 			throw std::runtime_error(
 				std::format(
 					"Malformed explicit {} transition {}: '{}' is an operator, not a state or a symbol", automaton_type,
-					std::to_string(tokens), token
+					mata::utils::to_string(tokens), token
 				)
 			);
 		}
@@ -368,7 +368,7 @@ std::vector<mata::FormulaNode> add_disjunction_implicitly(std::vector<mata::Form
 void parse_transition(mata::IntermediateAut& aut, const mata::parser::BodyLine& tokens, FormulaBuffers& buffers) {
 	if (tokens.size() < 2) {
 		throw std::runtime_error(
-			"Malformed transition " + std::to_string(tokens) + ": expected at least 2 tokens, got " +
+			"Malformed transition " + mata::utils::to_string(tokens) + ": expected at least 2 tokens, got " +
 			std::to_string(tokens.size())
 		);
 	}
@@ -703,7 +703,7 @@ bool mata::IntermediateAut::is_graph_conjunction_of_negations(FormulaGraphView g
 	return graph.node().is_neg();
 }
 
-std::ostream& std::operator<<(std::ostream& os, const mata::IntermediateAut& inter_aut) {
+std::ostream& mata::operator<<(std::ostream& os, const IntermediateAut& inter_aut) {
 	std::string type;
 	if (inter_aut.is_nfa()) {
 		type = "NFA";

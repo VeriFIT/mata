@@ -549,12 +549,6 @@ class ResidualCoverage {
 };
 } // namespace
 
-std::ostream& std::operator<<(std::ostream& os, const mata::nfa::Transition& trans) { // {{{
-	const std::string result = "(" + std::to_string(trans.source) + ", " + std::to_string(trans.symbol) + ", " +
-							   std::to_string(trans.target) + ")";
-	return os << result;
-}
-
 bool mata::nfa::Nfa::make_complete(const Alphabet* const alphabet, const std::optional<State> sink_state) {
 	OrdVector<Symbol> copied_symbols{};
 	return make_complete(borrow_symbols(*resolve_alphabet(alphabet), copied_symbols), sink_state);
@@ -1024,7 +1018,7 @@ bool mata::nfa::Nfa::is_complete(const OrdVector<Symbol>& symbols) const {
 		while (symbol_post_it != symbol_post_end) {
 			if (symbol_it == symbols_end || symbol_post_it->symbol < *symbol_it) {
 				throw std::runtime_error(
-					std::to_string(__func__) + ": encountered a symbol that is not in the provided alphabet"
+					std::string{__func__} + ": encountered a symbol that is not in the provided alphabet"
 				);
 			}
 			if (*symbol_it < symbol_post_it->symbol) { // The symbol has no transition from this state.
@@ -1178,10 +1172,10 @@ Nfa mata::nfa::minimize(const Nfa& aut, const ParameterMap& params) {
 	decltype(algorithms::minimize_auto)* algo = algorithms::minimize_auto;
 	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(
-			std::to_string(__func__) +
+			std::string{__func__} +
 			" requires setting the \"algorithm\" key in the \"params\" argument; "
 			"received: " +
-			std::to_string(params)
+			mata::utils::to_string(params)
 		);
 	}
 
@@ -1194,7 +1188,7 @@ Nfa mata::nfa::minimize(const Nfa& aut, const ParameterMap& params) {
 		algo = algorithms::minimize_hopcroft_nondet;
 	} else {
 		throw std::runtime_error(
-			std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + str_algo
+			std::string{__func__} + " received an unknown value of the \"algorithm\" key: " + str_algo
 		);
 	}
 
@@ -1859,7 +1853,7 @@ Nfa mata::nfa::product(
 			return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);
 		};
 	} else {
-		throw std::runtime_error(std::to_string(__func__) + " received an unknown value of the \"final_condition\"");
+		throw std::runtime_error(std::string{__func__} + " received an unknown value of the \"final_condition\"");
 	}
 
 	return algorithms::product(lhs, rhs, is_product_state_final_func, first_epsilon, prod_map);
@@ -1915,7 +1909,7 @@ Relation compute_relation_as(const Nfa& aut, const ParameterMap& params, const s
 			caller +
 			" requires setting the \"relation\" key in the \"params\" argument; "
 			"received: " +
-			std::to_string(params)
+			mata::utils::to_string(params)
 		);
 	}
 	if (!haskey(params, "direction")) {
@@ -1923,7 +1917,7 @@ Relation compute_relation_as(const Nfa& aut, const ParameterMap& params, const s
 			caller +
 			" requires setting the \"direction\" key in the \"params\" argument; "
 			"received: " +
-			std::to_string(params)
+			mata::utils::to_string(params)
 		);
 	}
 
@@ -1947,10 +1941,10 @@ Simlib::Util::PartitionRelation
 Nfa mata::nfa::reduce(const Nfa& aut, StateRenaming* state_renaming, const ParameterMap& params) {
 	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(
-			std::to_string(__func__) +
+			std::string{__func__} +
 			" requires setting the \"algorithm\" key in the \"params\" argument; "
 			"received: " +
-			std::to_string(params)
+			mata::utils::to_string(params)
 		);
 	}
 
@@ -1972,19 +1966,19 @@ Nfa mata::nfa::reduce(const Nfa& aut, StateRenaming* state_renaming, const Param
 		// reduce type either 'after' or 'with' creation of residual automaton
 		if (!haskey(params, "type")) {
 			throw std::runtime_error(
-				std::to_string(__func__) +
+				std::string{__func__} +
 				" requires setting the \"type\" key in the \"params\" argument; "
 				"received: " +
-				std::to_string(params)
+				mata::utils::to_string(params)
 			);
 		}
 		// forward or backward canonical residual automaton
 		if (!haskey(params, "direction")) {
 			throw std::runtime_error(
-				std::to_string(__func__) +
+				std::string{__func__} +
 				" requires setting the \"direction\" key in the \"params\" argument; "
 				"received: " +
-				std::to_string(params)
+				mata::utils::to_string(params)
 			);
 		}
 
@@ -2005,7 +1999,7 @@ Nfa mata::nfa::reduce(const Nfa& aut, StateRenaming* state_renaming, const Param
 		// The result is constructed anew, its states do not correspond to the states of the original automaton.
 		if (const std::string type{haskey(params, "type") ? params.at("type") : "nfa"}; type != "nfa") {
 			throw std::runtime_error(
-				std::to_string(__func__) + " received an unknown type of automaton for the \"qbf\" algorithm: " + type
+				std::string{__func__} + " received an unknown type of automaton for the \"qbf\" algorithm: " + type
 			);
 		}
 		result = algorithms::reduce_qbf(
@@ -2014,7 +2008,7 @@ Nfa mata::nfa::reduce(const Nfa& aut, StateRenaming* state_renaming, const Param
 		);
 	} else {
 		throw std::runtime_error(
-			std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + algorithm
+			std::string{__func__} + " received an unknown value of the \"algorithm\" key: " + algorithm
 		);
 	}
 
@@ -2032,7 +2026,7 @@ Nfa mata::nfa::as_dfa(Nfa&& aut) {
 	return determinize(aut);
 }
 
-std::ostream& std::operator<<(std::ostream& os, const Nfa& nfa) {
+std::ostream& mata::nfa::operator<<(std::ostream& os, const Nfa& nfa) {
 	nfa.print_to_mata(os);
 	return os;
 }
@@ -2799,7 +2793,7 @@ Nfa mata::nfa::algorithms::reduce_residual(
 
 	if (direction != "forward" && direction != "backward") {
 		throw std::runtime_error(
-			std::to_string(__func__) + " received an unknown value of the \"direction\" key: " + direction
+			std::string{__func__} + " received an unknown value of the \"direction\" key: " + direction
 		);
 	}
 
@@ -2824,7 +2818,7 @@ Nfa mata::nfa::algorithms::reduce_residual(
 	} else if (type == "after") {
 		result = reduce_residual_after(back_determinized);
 	} else {
-		throw std::runtime_error(std::to_string(__func__) + " received an unknown value of the \"type\" key: " + type);
+		throw std::runtime_error(std::string{__func__} + " received an unknown value of the \"type\" key: " + type);
 	}
 
 	if (direction == "backward") { result = revert(result); }

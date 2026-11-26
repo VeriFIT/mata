@@ -1,6 +1,4 @@
-/** @file
- * @brief Tests for @c mata::nft::complement().
- */
+// Tests for mata::nft::complement().
 
 #include <algorithm>
 #include <unordered_set>
@@ -9,7 +7,6 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "mata/alphabet.hh"
-#include "mata/nfa/nfa.hh"
 #include "mata/nft/algorithms.hh"
 #include "mata/nft/builder.hh"
 #include "mata/nft/types.hh"

@@ -15,15 +15,11 @@
 #include <utility>
 #include <vector>
 
+#include "mata/types.hh"
 #include "utils/ord-vector.hh"
 #include "utils/utils.hh"
 
 namespace mata {
-
-using Symbol = unsigned;
-using Level = unsigned;
-using Word = std::vector<Symbol>;
-using WordName = std::vector<std::string>;
 
 /// The name under which @c EPSILON is printed in the .mata format and in DOT, and which the .mata parser maps back to
 // @c EPSILON. The name is reserved: alphabets map it straight to @c EPSILON and never register it as an ordinary
@@ -55,6 +51,9 @@ std::string quote_symbol_name(const std::string_view name);
  */
 class Alphabet {
   public:
+	/// What the alphabet's symbols are.
+	using Symbol = mata::Symbol;
+
 	/// translates a string into a symbol
 	virtual Symbol translate_symb(std::string_view symb) = 0;
 
@@ -922,7 +921,7 @@ Word decode_word_utf8(const Word& word);
 
 } // namespace mata
 
-namespace std { // {{{
-std::ostream& operator<<(std::ostream& os, const mata::Alphabet& alphabet);
-}
+namespace mata {
+std::ostream& operator<<(std::ostream& os, const Alphabet& alphabet);
+} // namespace mata.
 #endif // MATA_ALPHABET_HH

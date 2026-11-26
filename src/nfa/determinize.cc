@@ -1857,7 +1857,9 @@ template <typename Pruner> class PrunedDeterminizer {
 		result_.initial.insert(find_or_add_macrostate(pruner_.prune(chunks)));
 
 		// Expand the macrostates in the order they are found, up to @p max_macrostates.
-		for (size_t current = 0; current < macrostates_.size() && !aut_.delta.empty(); ++current) {
+		// Asked once: `empty()` scans the delta up to its first transition, and the delta does not change here.
+		const bool has_transitions{!aut_.delta.empty()};
+		for (size_t current = 0; has_transitions && current < macrostates_.size(); ++current) {
 			if (macrostates_.size() > max_macrostates) { return std::nullopt; }
 			if (fixed_block_size_ == 0) { post_.set_block_size(auto_block_size(macrostates_.size())); }
 			// (The macrostate is read before any new macrostate is added.)
@@ -2438,10 +2440,10 @@ Nfa mata::nfa::determinize(
 ) {
 	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(
-			std::to_string(__func__) +
+			std::string{__func__} +
 			" requires setting the \"algorithm\" key in the \"params\" argument; "
 			"received: " +
-			std::to_string(params)
+			mata::utils::to_string(params)
 		);
 	}
 
@@ -2456,7 +2458,7 @@ Nfa mata::nfa::determinize(
 			reduction = algorithms::DeterminizationReduction::Adaptive;
 		} else if ("none" != str_reduction) {
 			throw std::runtime_error(
-				std::to_string(__func__) + " received an unknown value of the \"reduction\" key: " + str_reduction
+				std::string{__func__} + " received an unknown value of the \"reduction\" key: " + str_reduction
 			);
 		}
 	}
@@ -2475,6 +2477,6 @@ Nfa mata::nfa::determinize(
 	}
 
 	throw std::runtime_error(
-		std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + str_algo
+		std::string{__func__} + " received an unknown value of the \"algorithm\" key: " + str_algo
 	);
 }

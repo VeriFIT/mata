@@ -38,7 +38,7 @@ decltype(algorithms::complement_classical)* select_algorithm(const ParameterMap&
 		throw std::runtime_error(
 			"complement requires setting the \"algorithm\" key in the \"params\" argument; "
 			"received: " +
-			std::to_string(params)
+			mata::utils::to_string(params)
 		);
 	}
 	const std::string& str_algo{params.at("algorithm")};

@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <concepts>
 #include <cstdint>
+#include <format>
 #include <functional>
 #include <iostream>
 #include <list>
@@ -302,21 +303,6 @@ Map<T2, T1> invert_map(const Map<T1, T2>& mp) {
 	return result;
 }
 
-template <class Tuple, std::size_t N> struct TuplePrinter;
-
-// Taken from
-//   http://en.cppreference.com/w/cpp/utility/tuple/tuple_cat
-template <class Tuple, size_t N> struct TuplePrinter {
-	static std::string print(const Tuple& t) {
-		const std::string res = TuplePrinter<Tuple, N - 1>::print(t);
-		return res + ", " + std::to_string(std::get<N - 1>(t));
-	}
-};
-
-template <class Tuple> struct TuplePrinter<Tuple, 1> {
-	static std::string print(const Tuple& t) { return std::to_string(std::get<0>(t)); }
-};
-
 // This reserves space in a vector, to be used before push_back or insert.
 // Assuming the doubling extension strategy, it only makes the first reserve large, after that it leaves it to the
 // doubling. The revert speed-ups that once justified it are gone: no revert calls it any more, and #179 measured the
@@ -398,11 +384,16 @@ template <class Vector> void inline sort_and_rmdupl(Vector& vec) {
 } // namespace utils
 } // namespace mata
 
-// Some things that need to go to std
-namespace std { // {{{
+// The to_string family. In mata::utils, not std: a program may not add declarations to namespace
+//  std, and doing so hijacked the standard overloads -- the catch-all template below is an exact
+//  match, so `std::to_string('a')` yielded "a" rather than "97" wherever this header was visible.
+//  Arithmetic still goes to the standard functions, brought in by the using-declaration; the
+//  unqualified calls inside pick the right overload from either family.
+namespace mata::utils {
+using std::to_string;
 
 /*#######################################################
- #                  std::to_string(TYPE)
+ #                  mata::utils::to_string(TYPE)
  #######################################################*/
 
 /*======================================================
@@ -433,6 +424,12 @@ inline std::string to_string(const char ch) { // {{{
 	return str;
 } // to_string(char) }}}
 
+/// A byte-sized integer to its number. Without these two the catch-all streams it, and a stream prints
+///  @c signed and @c unsigned char as a character: `uint8_t{0}` came out as a NUL byte.
+inline std::string to_string(const signed char value) { return std::to_string(static_cast<int>(value)); }
+/// @copydoc to_string(signed char)
+inline std::string to_string(const unsigned char value) { return std::to_string(static_cast<unsigned>(value)); }
+
 /** String to string */
 inline std::string to_string(const std::string& str) { return str; }
 
@@ -443,7 +440,7 @@ template <class A> std::string to_string(const std::vector<A>& vec) { // {{{
 	for (const auto& elem : vec) {
 		if (!first) { result += ", "; }
 		first = false;
-		result += std::to_string(elem);
+		result += to_string(elem);
 	}
 	result += "]";
 
@@ -457,7 +454,7 @@ template <class A> std::string to_string(const std::list<A>& vec) { // {{{
 	for (const auto& elem : vec) {
 		if (!first) { result += ", "; }
 		first = false;
-		result += std::to_string(elem);
+		result += to_string(elem);
 	}
 	result += "]";
 
@@ -473,7 +470,7 @@ template <class A, class B> std::string to_string(const std::unordered_map<A, B>
 	for (const auto& key_val_pair : unmap) {
 		if (!first) { result += ", "; }
 		first = false;
-		result += std::to_string(key_val_pair.first) + " -> " + std::to_string(key_val_pair.second);
+		result += to_string(key_val_pair.first) + " -> " + to_string(key_val_pair.second);
 	}
 	result += "}";
 
@@ -487,7 +484,7 @@ template <class A, class B> std::string to_string(const std::map<A, B>& mp) { //
 	for (const auto& key_val_pair : mp) {
 		if (!first) { result += ", "; }
 		first = false;
-		result += std::to_string(key_val_pair.first) + " -> " + std::to_string(key_val_pair.second);
+		result += to_string(key_val_pair.first) + " -> " + to_string(key_val_pair.second);
 	}
 	result += "}";
 
@@ -501,7 +498,7 @@ template <class A, class B> std::string to_string(const std::unordered_multimap<
 	for (const auto& key_val_pair : unmap) {
 		if (!first) { result += ", "; }
 		first = false;
-		result += std::to_string(key_val_pair.first) + " -> " + std::to_string(key_val_pair.second);
+		result += to_string(key_val_pair.first) + " -> " + to_string(key_val_pair.second);
 	}
 	result += "}";
 
@@ -515,7 +512,7 @@ template <class A> std::string to_string(const std::set<A>& st) { // {{{
 	for (const auto& elem : st) {
 		if (!first) { result += ", "; }
 		first = false;
-		result += std::to_string(elem);
+		result += to_string(elem);
 	}
 	result += "}";
 
@@ -531,13 +528,28 @@ template <class A> std::string to_string(const std::stack<A>& stck) { // {{{
 		copy.pop();
 	}
 	std::reverse(vec.begin(), vec.end());
-	return std::to_string(vec);
+	return to_string(vec);
 } // to_string(std::stack) }}}
 
 /** function to string */
 template <class A> std::string to_string(const std::function<A>& func) { // {{{
-	return std::to_string(static_cast<const void*>(&func));
+	return to_string(static_cast<const void*>(&func));
 } // to_string(std::function) }}}
+
+template <class Tuple, std::size_t N> struct TuplePrinter;
+
+// Taken from
+//   http://en.cppreference.com/w/cpp/utility/tuple/tuple_cat
+template <class Tuple, size_t N> struct TuplePrinter {
+	static std::string print(const Tuple& t) {
+		const std::string res = TuplePrinter<Tuple, N - 1>::print(t);
+		return res + ", " + to_string(std::get<N - 1>(t));
+	}
+};
+
+template <class Tuple> struct TuplePrinter<Tuple, 1> {
+	static std::string print(const Tuple& t) { return to_string(std::get<0>(t)); }
+};
 
 /** tuple to string */
 template <class... Ts> std::string to_string(const std::tuple<Ts...>& tup) { // {{{
@@ -549,7 +561,7 @@ template <class... Ts> std::string to_string(const std::tuple<Ts...>& tup) { // 
 } // to_string(std::tuple) }}}
 
 template <class A, class B> std::string to_string(const std::pair<A, B>& p) { // {{{
-	return std::to_string(std::tuple<A, B>(p.first, p.second));
+	return to_string(std::tuple<A, B>(p.first, p.second));
 } // to_string(std::pair) }}}
 
 /** arbitrary type with the << operator */
@@ -563,6 +575,20 @@ template <class A> std::string to_string(const A& value) { // {{{
 
 // }}}
 
-} // namespace std
+/**
+ * @brief Render a value for an exception message, or "<unprintable>" if its type cannot be printed.
+ *
+ * @param value The value to render.
+ * @return A string representation of the value, or "<unprintable>" if it cannot be printed.
+ */
+template <typename T> std::string format_or_unprintable(const T& value) {
+	if constexpr (std::formattable<const T, char>) {
+		return std::format("{}", value);
+	} else {
+		return "<unprintable>";
+	}
+}
+
+} // namespace mata::utils.
 
 #endif /* MATA_UTIL_HH_ */

@@ -21,14 +21,26 @@
  * The initial and final states are represented using the @c mata::utils::SparseSet class, which allows for efficient
  *  storage and manipulation of sets of states.
  *
- * @c mata::nfa::Delta is a key component of the NFA representation. It stores transitions in a three-level data
- *  structure:
- *  1. A vector indexed by source states, where each entry @c mata::nfa::StatePost contains a vector of symbol posts
- *   @c mata::nfa::SymbolPost.
- *  2. Each mata::nfa::SymbolPost represents a set of transitions labeled with a specific symbol from the source state
- * to a set of target states.
- *  3. Each @c mata::nfa::SymbolPost object contains a set of target states @c std::OrdVector<State> that can be reached
- *   from the source state via the corresponding symbol.
+ * @c mata::nfa::Delta is a key component of the NFA representation. It stores transitions as a
+ *  *chain of posts*: a vector indexed by source state, then one ordered map per key, ending in the
+ *  set of targets that key path leads to. An NFA has one key — the symbol — so its chain is
+ *
+ *  1. @c mata::nfa::Delta, a vector indexed by source state, each entry a @c mata::nfa::StatePost;
+ *  2. @c mata::nfa::StatePost, an ordered map from a symbol to the targets under it, iterated as
+ *     @c mata::nfa::SymbolPost entries;
+ *  3. @c mata::nfa::StateSet, the ordered set of target states reachable over that symbol.
+ *
+ *  The number of *keys* between a source state and a target is @c mata::nfa::Delta::key_arity, and
+ *  it is one for every NFA and NFT in the library. It is not fixed at one by the data structure:
+ *  the relation is templated on its post chain, so one may key transitions by more than one thing (a
+ *  two-tape relation, say) and the chain simply has one more post in it. Counting *posts* instead
+ *  makes the depth depend on where you start counting and collides with an NFT's tape
+ *  @c mata::Level, which is unrelated. Count keys.
+ *  @see @ref arity in @c mata/core/delta.hh.
+ *
+ *  The symbol *type* is fixed: @c mata::Alphabet's virtual interface is stated in @c mata::Symbol,
+ *  so a relation keyed by anything else needs its own alphabet class, declaring its own @c Symbol,
+ *  and cannot use the operations here that take an @c Alphabet.
  *
  *  The main idea behind @c mata::nfa::Nfa is that the members (@c mata::nfa::Nfa::delta, @c mata::nfa::Nfa::initial,
  *   @c mata::nfa::Nfa::alphabet, ...) do not depend on each other.
@@ -82,7 +94,6 @@
 
 #include "delta.hh"
 #include "mata/alphabet.hh"
-#include "mata/automaton.hh"
 #include "mata/parser/inter-aut.hh"
 #include "mata/utils/generator-support.hh"
 #include "mata/utils/ord-vector.hh"
@@ -102,6 +113,11 @@ namespace mata::nfa {
  */
 class Nfa : public Automaton {
   public:
+	using Run = nfa::Run; ///< Through the module seam, like every shared type.
+	// Under their own names, rather than as members of the generic automaton.
+	using State = mata::State;
+	using StateSet = mata::StateSet;
+
 	std::shared_ptr<Alphabet> alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
 	/// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
 	///  are up to the user.
@@ -849,7 +865,7 @@ class Nfa : public Automaton {
 	/**
 	 * @brief Get the set of all words in the language of the automaton whose length is <= @p max_length
 	 *
-	 * If you have an automaton with finite language (can be checked using @ref is_acyclic),
+	 * If you have an automaton with finite language (can be checked using @c is_acyclic()),
 	 * you can get all words by calling
 	 *      get_words(aut.num_of_states())
 	 *
@@ -1668,18 +1684,10 @@ Nfa trim(
 );
 } // namespace mata::nfa
 
-namespace std {
-template <> struct hash<mata::nfa::Transition> {
-	size_t operator()(const mata::nfa::Transition& trans) const noexcept {
-		size_t accum = mata::utils::hash_combine(mata::utils::HASH_SEED, trans.source);
-		accum = mata::utils::hash_combine(accum, trans.symbol);
-		accum = mata::utils::hash_combine(accum, trans.target);
-		return accum;
-	}
-};
-
-std::ostream& operator<<(std::ostream& os, const mata::nfa::Transition& trans);
-std::ostream& operator<<(std::ostream& os, const mata::nfa::Nfa& nfa);
-} // namespace std.
+// A Transition's std::hash, std::formatter and operator<< come from mata/core/delta.hh, for every
+//  instantiation of the shipped shapes at once.
+namespace mata::nfa {
+std::ostream& operator<<(std::ostream& os, const Nfa& nfa);
+} // namespace mata::nfa.
 
 #endif /* MATA_NFA_HH_ */

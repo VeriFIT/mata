@@ -170,10 +170,10 @@ bool mata::nfa::Nfa::is_universal(const Alphabet& alphabet, Run* cex, const Para
 	decltype(algorithms::is_universal_naive)* algo = algorithms::is_universal_naive;
 	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(
-			std::to_string(__func__) +
+			std::string{__func__} +
 			" requires setting the \"algorithm\" key in the \"params\" argument; "
 			"received: " +
-			std::to_string(params)
+			mata::utils::to_string(params)
 		);
 	}
 
@@ -182,7 +182,7 @@ bool mata::nfa::Nfa::is_universal(const Alphabet& alphabet, Run* cex, const Para
 		algo = algorithms::is_universal_antichains;
 	} else {
 		throw std::runtime_error(
-			std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + str_algo
+			std::string{__func__} + " received an unknown value of the \"algorithm\" key: " + str_algo
 		);
 	}
 	// Both algorithms read EPSILON as an ordinary letter, so epsilon has to go before they see the automaton, and it

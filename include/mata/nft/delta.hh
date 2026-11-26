@@ -1,27 +1,30 @@
 /** @file
- * @brief Data structures representing the delta (transition function) of an NFT, mapping states and input symbols to
- *  sets of states where a single NFT transition comprises a sequence of (NFA) transitions in @c mata::nft::Delta.
+ * @brief Transition relation of an NFT.
  */
 
 #ifndef MATA_NFT_DELTA_HH
 #define MATA_NFT_DELTA_HH
 
-#include "mata/nfa/delta.hh"
+#include "mata/nft/types.hh"
+#include "mata/relation.hh"
+#include "mata/synchronized-symbol-post-iterator.hh"
 
 namespace mata::nft {
 
-using Transition = nfa::Transition;
+using Transition = mata::Transition;
+using Move = mata::Move;
+using SymbolPost = mata::SymbolPost;
+using StatePost = mata::StatePost;
+using SuccessorCursor = mata::SuccessorCursor;
+using SynchronizedExistentialSymbolPostIterator = mata::SynchronizedExistentialSymbolPostIterator;
+using Delta = mata::Delta;
 
-using Move = nfa::Move;
+using Automaton = mata::Automaton; ///< The base every NFT derives from.
 
-using SymbolPost = nfa::SymbolPost;
+using mata::defragment;
 
-using StatePost = nfa::StatePost;
-
-using SynchronizedExistentialSymbolPostIterator = nfa::SynchronizedExistentialSymbolPostIterator;
-
-using Delta = nfa::Delta;
+// TODO(nft): Decide whether DONT_CARE is a reserved key: https://github.com/VeriFIT/mata/issues/1143.
 
 } // namespace mata::nft.
 
-#endif
+#endif // MATA_NFT_DELTA_HH

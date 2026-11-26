@@ -324,13 +324,15 @@ class SmallOrdVector {
 	void steal(SmallOrdVector& other) noexcept {
 		// `Buffer` is an implicit-lifetime type, so copying its object representation is well-defined regardless of
 		//  which member is active, and it does not inspect bytes past the active representation.
-		std::memcpy(&buffer_, &other.buffer_, sizeof(buffer_));
+		// __builtin_memcpy, not std::memcpy: under _FORTIFY_SOURCE, a set whose tail padding holds an entry's
+		//  [[no_unique_address]] key gets no static object size, and the copy becomes a __memcpy_chk call.
+		__builtin_memcpy(&buffer_, &other.buffer_, sizeof(buffer_));
 		size_ = other.size_;
 		other.size_ = 0;
 		// Reset the bytes too: GCC otherwise reads the stale block while destroying a moved-from set. Do not
 		//  assign the union: a trivially copyable Key with a const member deletes its assignment.
 		const Buffer empty{};
-		std::memcpy(&other.buffer_, &empty, sizeof(empty));
+		__builtin_memcpy(&other.buffer_, &empty, sizeof(empty));
 	}
 	/// Replace the content with the sorted, duplicate-free @p keys, which must not alias this set.
 	void assign_sorted(const std::span<const Key> keys) {

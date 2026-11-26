@@ -6,6 +6,7 @@
 #define MATA_SYNCHRONIZED_ITERATOR_HH
 
 #include <cstddef>
+#include <stdexcept>
 #include <vector>
 
 #include "assert.hh"

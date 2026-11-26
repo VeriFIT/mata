@@ -292,7 +292,7 @@ AlgoType set_algorithm(const std::string& function_name, const ParameterMap& par
 			function_name +
 			" requires setting the \"algorithm\" key in the \"params\" argument; "
 			"received: " +
-			std::to_string(params)
+			mata::utils::to_string(params)
 		);
 	}
 
@@ -305,7 +305,7 @@ AlgoType set_algorithm(const std::string& function_name, const ParameterMap& par
 		algo = algorithms::is_included_hkc;
 	} else {
 		throw std::runtime_error(
-			std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + str_algo
+			std::string{__func__} + " received an unknown value of the \"algorithm\" key: " + str_algo
 		);
 	}
 
@@ -337,7 +337,7 @@ bool mata::nfa::algorithms::are_equivalent_epsilon_as_symbol(
 	const Nfa& lhs, const Nfa& rhs, const Alphabet* const alphabet, const ParameterMap& params, Run* const cex
 ) {
 	// __func__ names the caller in set_algorithm\'s error message
-	AlgoType algo{set_algorithm(std::to_string(__func__), params)};
+	AlgoType algo{set_algorithm(std::string{__func__}, params)};
 
 	if (params.at("algorithm") == "naive") {
 		if (alphabet == nullptr) {
@@ -357,7 +357,7 @@ bool mata::nfa::is_included(
 	const Alphabet* const alphabet,
 	const ParameterMap& params
 ) { // {{{
-	AlgoType algo{set_algorithm(std::to_string(__func__), params)};
+	AlgoType algo{set_algorithm(std::string{__func__}, params)};
 	// All algorithms read EPSILON as an ordinary letter, so epsilon has to go before they see the automata
 	//  or the alphabet.
 	Nfa smaller_storage{};

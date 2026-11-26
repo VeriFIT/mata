@@ -41,6 +41,6 @@ int main(int argc, char* argv[]) {
 
 	Nfa cmpl = complement(aut, alphabet);
 
-	std::cout << std::to_string(cmpl);
+	std::cout << cmpl;
 	return EXIT_SUCCESS;
 }

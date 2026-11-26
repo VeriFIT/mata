@@ -1,6 +1,7 @@
 """Basic tests for utility package and sanity checks"""
 
 import libmata.nfa.nfa as mata_nfa
+import libmata.nft.nft as mata_nft
 import pytest
 
 __author__ = "Tomas Fiedor"
@@ -596,3 +597,75 @@ def test_delta_iter_transitions_from_consistency():
         streaming = list(nfa.delta.iter_transitions_from(state))
         list_form = nfa.delta.get_transitions_from(state)
         assert streaming == list_form
+
+
+def _nfa_with_transitions():
+    nfa = mata_nfa.Nfa(3)
+    nfa.add_transition(0, ord("a"), 1)
+    nfa.add_transition(0, ord("b"), 2)
+    nfa.add_transition(1, ord("a"), 2)
+    return nfa
+
+
+_GENERATORS = {
+    "Nfa.iterate": lambda nfa: nfa.iterate(),
+    "Nfa.iter_transitions_from": lambda nfa: nfa.iter_transitions_from(0),
+    "Delta.transitions": lambda nfa: nfa.delta.transitions(),
+    "Delta.iter_transitions_from": lambda nfa: nfa.delta.iter_transitions_from(0),
+}
+
+_MODIFICATIONS = {
+    "Nfa.add_transition": lambda nfa: nfa.add_transition(2, ord("c"), 0),
+    "Nfa.remove_trans_raw": lambda nfa: nfa.remove_trans_raw(0, ord("a"), 1),
+    "Nfa.add_new_state": lambda nfa: nfa.add_new_state(),
+    "Nfa.trim": lambda nfa: nfa.trim(),
+    "Nfa.clear": lambda nfa: nfa.clear(),
+    "Delta.add": lambda nfa: nfa.delta.add(2, ord("c"), 0),
+    "Delta.add_transitions": lambda nfa: nfa.delta.add_transitions([2], [ord("c")], [0]),
+    "Delta.remove": lambda nfa: nfa.delta.remove(0, ord("a"), 1),
+    "Delta.clear": lambda nfa: nfa.delta.clear(),
+}
+
+
+@pytest.mark.parametrize("modify", _MODIFICATIONS.values(), ids=_MODIFICATIONS.keys())
+@pytest.mark.parametrize("generator", _GENERATORS.values(), ids=_GENERATORS.keys())
+def test_modification_during_iteration_raises(generator, modify):
+    """Modifying the automaton through the automaton or its Delta invalidates a running transition generator."""
+    nfa = _nfa_with_transitions()
+    it = generator(nfa)
+    next(it)
+    # The modification itself succeeds, as for a dict; only advancing the stale generator fails.
+    modify(nfa)
+    with pytest.raises(RuntimeError, match="modified during iteration"):
+        next(it)
+    # A new generator reads the modified automaton.
+    assert list(generator(nfa)) == list(generator(nfa))
+
+
+@pytest.mark.parametrize("generator", _GENERATORS.values(), ids=_GENERATORS.keys())
+def test_reading_during_iteration_does_not_invalidate(generator):
+    """Queries, other automata and finished generators do not invalidate a running generator."""
+    nfa = _nfa_with_transitions()
+    other = _nfa_with_transitions()
+    expected = list(generator(nfa))
+    it = generator(nfa)
+    result = [next(it)]
+    assert nfa.has_transition(0, ord("a"), 1)
+    assert nfa.delta.contains(0, ord("a"), 1)
+    assert nfa.get_num_of_transitions() == 3
+    other.add_transition(2, ord("c"), 0)
+    result.extend(it)
+    assert result == expected
+
+
+def test_nft_modification_during_iteration_raises():
+    """Nft.iterate() and the Delta view of an Nft are invalidated by modifying the transducer."""
+    nft = mata_nft.Nft(3)
+    nft.delta.add(0, ord("a"), 1)
+    nft.delta.add(1, ord("b"), 2)
+    for generator in (nft.iterate, nft.delta.transitions):
+        it = generator()
+        next(it)
+        nft.add_transition_with_target(2, ord("c"), 0)
+        with pytest.raises(RuntimeError, match="modified during iteration"):
+            next(it)

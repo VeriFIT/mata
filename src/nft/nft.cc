@@ -439,13 +439,13 @@ void Nft::print_to_mata(const std::string& filename) const {
 
 Nft Nft::get_one_letter_aut(const std::set<Level>& levels_to_keep, const Symbol abstract_symbol) const {
 	Nft one_symbol_transducer{with_levels(levels, num_of_states(), initial, final)};
-	for (nfa::State source_state = 0; source_state < delta.num_of_states(); ++source_state) {
-		nfa::StatePost& state_post_of_new_source_state = one_symbol_transducer.delta.mutable_state_post(source_state);
+	for (State source_state = 0; source_state < delta.num_of_states(); ++source_state) {
+		StatePost& state_post_of_new_source_state = one_symbol_transducer.delta.mutable_state_post(source_state);
 		if (levels_to_keep.contains(levels[source_state])) {
 			state_post_of_new_source_state = delta[source_state];
 		} else {
-			nfa::SymbolPost new_transition{abstract_symbol};
-			for (const nfa::SymbolPost& symbol_post : delta[source_state]) {
+			SymbolPost new_transition{abstract_symbol};
+			for (const SymbolPost& symbol_post : delta[source_state]) {
 				if (symbol_post.symbol == EPSILON) {
 					state_post_of_new_source_state.insert(symbol_post);
 				} else {
@@ -465,7 +465,9 @@ StateSet Nft::post(const StateSet& states, const Symbol symbol, const EpsilonClo
 	StateSet res{};
 
 	// If the symbol is EPSILON, we can stay in the same state.
-	if (symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::None) { res = states; }
+	if (symbol == EPSILON && (closes_before(epsilon_closure_opt) || closes_after(epsilon_closure_opt))) {
+		res = states;
+	}
 
 	if (delta.empty()) { return res; }
 
@@ -699,7 +701,9 @@ StateSet Nft::post(
 
 	StateSet result{};
 	// If we want to compute the epsilon cosure and the symbol is EPSILON, we can stay in the same zero states.
-	if (symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::None) { result = states; }
+	if (symbol == EPSILON && (closes_before(epsilon_closure_opt) || closes_after(epsilon_closure_opt))) {
+		result = states;
+	}
 	if (delta.empty()) { return result; }
 
 	StateSet from_states = states;
@@ -1731,7 +1735,7 @@ bool Nft::is_complete(const OrdVector<Symbol>& symbols) const {
 			if (symbol_post.symbol < DONT_CARE) {
 				if (!haskey(symbols, symbol_post.symbol)) {
 					throw std::runtime_error(
-						std::to_string(__func__) + ": encountered a symbol that is not in the provided alphabet"
+						std::string{__func__} + ": encountered a symbol that is not in the provided alphabet"
 					);
 				}
 				++num_of_exact_symbols;

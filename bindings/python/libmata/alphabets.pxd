@@ -1,4 +1,3 @@
-from libc.stdint cimport uintptr_t
 from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector

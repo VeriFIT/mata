@@ -8,9 +8,9 @@
 #include <type_traits>
 #include <vector>
 
-#include "mata/automaton.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/parser/inter-aut.hh"
+#include "mata/relation.hh"
 #include "mata/utils/generator-support.hh"
 #include "rust/cxx.h"
 

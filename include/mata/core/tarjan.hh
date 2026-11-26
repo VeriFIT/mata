@@ -1,6 +1,9 @@
-/* Internal iterative Tarjan SCC traversal, shared by Automaton and Nfa algorithms. */
-#ifndef MATA_AUTOMATON_TARJAN_HH
-#define MATA_AUTOMATON_TARJAN_HH
+/** @file
+ * @brief Iterative Tarjan SCC traversal over any relation, shared by @c mata::AutomatonBase and leaf algorithms.
+ */
+
+#ifndef MATA_CORE_TARJAN_HH
+#define MATA_CORE_TARJAN_HH
 
 #include <algorithm>
 #include <cstddef>
@@ -10,10 +13,12 @@
 #include <utility>
 #include <vector>
 
-#include "mata/nfa/delta.hh"
+#include <iterator>
+
+#include "mata/core/concepts.hh"
 #include "mata/utils/sparse-set.hh"
 
-namespace mata::nfa::internal {
+namespace mata::internal {
 
 /// Calls @p callback unless it is @c nullptr or an empty @c std::function. Returns true iff it asks to stop.
 template <typename Callback, typename... Args> bool call_callback(const Callback& callback, const Args&... args) {
@@ -40,8 +45,12 @@ struct TarjanCallbacks {
 	SccStateDiscover scc_state_discover_{};
 };
 
-struct TarjanNodeData {
-	SuccessorCursor::const_iterator current_successor_it{};
+template <typename Delta> struct TarjanNodeData {
+	using State = typename Delta::State;
+	using Cursor = decltype(std::declval<const Delta&>().successor_cursor(std::declval<State>()));
+	/// The iterator type SuccessorCursorLike checks: by value, from begin() on a const cursor.
+	using SuccessorIterator = CursorIterator<Cursor>;
+	SuccessorIterator current_successor_it{};
 	unsigned long index{0};
 	unsigned long lowlink{0};
 	bool initialized{false};
@@ -49,11 +58,18 @@ struct TarjanNodeData {
 
 	TarjanNodeData() = default;
 	TarjanNodeData(const State state, const Delta& delta, const unsigned long index)
-		: current_successor_it{delta.successor_cursor(state).begin()},
+		: current_successor_it{first_successor(delta, state)},
 		  index{index},
 		  lowlink{index},
 		  initialized{true},
 		  on_stack{true} {}
+
+  private:
+	/// Calls the begin() that SuccessorCursorLike checks. The iterator outlives the cursor, as the concept requires.
+	static SuccessorIterator first_successor(const Delta& delta, const State state) {
+		const Cursor cursor{delta.successor_cursor(state)};
+		return cursor.begin();
+	}
 };
 
 /**
@@ -64,11 +80,15 @@ struct TarjanNodeData {
  *  @c nullptr callbacks are skipped at compile time. The traversal stops when a state- or SCC-level callback returns
  *  true.
  */
-template <typename Callbacks>
+template <typename Delta, typename Callbacks>
 void tarjan_scc_discover(
-	const Delta& delta, const size_t num_of_states, const utils::SparseSet<State>& initial_states, Callbacks&& callbacks
+	const Delta& delta,
+	const size_t num_of_states,
+	const utils::SparseSet<typename Delta::State>& initial_states,
+	Callbacks&& callbacks
 ) {
-	std::vector<TarjanNodeData> node_info(num_of_states);
+	using State = typename Delta::State;
+	std::vector<TarjanNodeData<Delta>> node_info(num_of_states);
 	std::vector<State> program_stack{};
 	std::vector<State> tarjan_stack{};
 	program_stack.reserve(num_of_states);
@@ -78,24 +98,24 @@ void tarjan_scc_discover(
 
 	while (!program_stack.empty()) {
 		const State act_state{program_stack.back()};
-		TarjanNodeData& act_state_data{node_info[act_state]};
+		TarjanNodeData<Delta>& act_state_data{node_info[act_state]};
 		if (act_state_data.initialized && !act_state_data.on_stack) {
 			program_stack.pop_back();
 			continue;
 		}
 		if (!act_state_data.initialized) {
-			act_state_data = TarjanNodeData(act_state, delta, index_cnt++);
+			act_state_data = TarjanNodeData<Delta>(act_state, delta, index_cnt++);
 			tarjan_stack.push_back(act_state);
 			if (call_callback(callbacks.state_discover_, act_state)) { return; }
 		} else {
-			const State act_succ{*act_state_data.current_successor_it};
+			const State act_succ{Delta::state_of(*act_state_data.current_successor_it)};
 			act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[act_succ].lowlink);
 			++act_state_data.current_successor_it;
 		}
 
 		bool rec_call{false};
 		for (; act_state_data.current_successor_it != std::default_sentinel; ++act_state_data.current_successor_it) {
-			const State next_state{*act_state_data.current_successor_it};
+			const State next_state{Delta::state_of(*act_state_data.current_successor_it)};
 			call_callback(callbacks.succ_state_discover_, act_state, next_state);
 			if (!node_info[next_state].initialized) {
 				program_stack.push_back(next_state);
@@ -127,6 +147,6 @@ void tarjan_scc_discover(
 	}
 }
 
-} // namespace mata::nfa::internal
+} // namespace mata::internal
 
-#endif // MATA_AUTOMATON_TARJAN_HH
+#endif // MATA_CORE_TARJAN_HH

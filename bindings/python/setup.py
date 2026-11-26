@@ -53,7 +53,7 @@ project_includes = [
 
 extra_compile_args = ["-std=c++23"]
 if platform.system() == "Darwin":
-    extra_compile_args.append("-mmacosx-version-min=10.15")
+    extra_compile_args.append("-mmacosx-version-min=13.3")
 
 
 extensions = [

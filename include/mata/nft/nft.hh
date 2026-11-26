@@ -76,7 +76,7 @@
  * Words may contain @c DONT_CARE (representing wildcards on the respective level, but not @c EPSILON) and @c EPSILON
  *  (representing reading an empty string on the respective level ).
  *
- * @see @ref examples/nft.cc example.
+ * @see `examples/nft.cc` for a worked example.
  *
  * @note If you find some expected NFT operation or utility function missing, do not hesitate to let us know and we will
  *  implement it. The interface for NFTs is not stable yet, so we are open to any and all feedback.
@@ -88,7 +88,9 @@
 // Static data structures, such as search stack, in algorithms. Might have some effect on some algorithms (like trim).
 // #define _STATIC_STRUCTURES_
 
+#include <algorithm>
 #include <cassert>
+#include <concepts>
 #include <functional>
 #include <limits>
 #include <set>
@@ -109,7 +111,6 @@
 	#include <generator>
 #endif
 
-#include "mata/automaton.hh"
 #include "mata/nfa/nfa.hh"
 
 namespace mata::nft {
@@ -117,11 +118,16 @@ namespace mata::nft {
 /**
  * @brief A class representing an NFT.
  */
-class Nft : public mata::Automaton {
+class Nft : public Automaton {
   private:
-	using super = mata::Automaton;
+	using super = Automaton;
 
   public:
+	using Run = nft::Run; ///< Through the module seam, like every shared type.
+	// Under their own names, rather than as members of the generic automaton.
+	using State = mata::State;
+	using StateSet = mata::StateSet;
+
 	/**
 	 * @brief Vector of levels giving each state a level in range from 0 to @c levels.num_of_levels - 1.
 	 *
@@ -1476,7 +1482,7 @@ class Nft : public mata::Automaton {
 	/**
 	 * @brief Get the set of all words in the language of the automaton whose length is <= @p max_length
 	 *
-	 * If you have an automaton with finite language (can be checked using @ref is_acyclic),
+	 * If you have an automaton with finite language (can be checked using @c is_acyclic()),
 	 * you can get all words by calling
 	 *      aut.get_words(aut.num_of_states())
 	 *
@@ -1563,6 +1569,9 @@ class Nft : public mata::Automaton {
 		bool project_out_applied_level = true,
 		JumpMode jump_mode = JumpMode::RepeatSymbol
 	) const;
+
+	// to_nfa_copy() and to_nfa_move() hand the relation over as it is.
+	static_assert(std::same_as<Delta, nfa::Delta>, "an NFT relation that is not an NFA relation needs a conversion");
 
 	/**
 	 * @brief Copy NFT as NFA.
@@ -2404,8 +2413,8 @@ bool has_epsilon_cycle(const Nft& nft);
 
 } // namespace mata::nft
 
-namespace std {
-std::ostream& operator<<(std::ostream& os, const mata::nft::Nft& nft);
-} // namespace std.
+namespace mata::nft {
+std::ostream& operator<<(std::ostream& os, const Nft& nft);
+} // namespace mata::nft.
 
 #endif /* MATA_NFT_HH_ */

@@ -1,0 +1,245 @@
+/** @file
+ * @brief The contracts a new automaton is written against.
+ */
+
+#ifndef MATA_CORE_CONCEPTS_HH
+#define MATA_CORE_CONCEPTS_HH
+
+#include <algorithm>
+#include <concepts>
+#include <cstddef>
+#include <format>
+#include <iterator>
+#include <ranges>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
+
+#include "mata/core/traits.hh"
+#include "mata/utils/utils.hh"
+
+namespace mata {
+
+/**
+ * @brief A concept for an alphabet that can be *extended* with symbols it has not seen.
+ *
+ * Only some alphabets can: a fixed @c EnumAlphabet cannot grow, an @c OnTheFlyAlphabet can.
+ *  @c mata::posts::DeltaBase::add_keys_to() needs the growing kind.
+ *
+ * The symbol type is the alphabet's own @c Symbol alias, which @c mata::Alphabet supplies. An
+ *  alphabet that is not mata's declares one too: it has to name its members the way this concept
+ *  does anyway, so it is written for mata and has nothing to adapt from outside.
+ */
+template <typename A>
+concept ExtensibleAlphabet = requires(A& alphabet, typename A::Symbol symbol) {
+	{ alphabet.update_next_symbol_value(symbol) };
+	{ alphabet.try_add_new_symbol(std::string{}, symbol) };
+};
+
+/**
+ * @brief A concept for a value with a printed form.
+ *
+ * A user type gets one by specialising @c std::formatter. It is checked as @c const, the way it is printed.
+ *  @see mata::utils::format_or_unprintable.
+ */
+template <typename T>
+concept Printable = std::formattable<const T, char>;
+
+/// @name Post vocabulary
+/// What @c mata::posts::DeltaBase and the visits need of a chain of posts.
+///  @c mata::DeltaLike does not use them: a relation an automaton is built on need not be made of posts.
+///@{
+namespace posts {
+/**
+ * @brief A concept for a reserved-key convention (see @c mata::ReservedKeys).
+ */
+template <typename R>
+concept ReservedKeysLike = requires {
+	typename R::Key;
+	requires std::totally_ordered<typename R::Key>;
+	{ R::min_epsilon } -> std::convertible_to<typename R::Key>;
+	{ R::max_ordinary } -> std::convertible_to<typename R::Key>;
+	{ R::epsilon_is_greatest } -> std::convertible_to<bool>;
+	typename std::bool_constant<R::epsilon_is_greatest>;
+	requires R::max_ordinary < R::min_epsilon;
+};
+
+/**
+ * @brief A concept for a post ordered by key, whose reserved keys are described over that same key.
+ *
+ * Three requirements:
+ *  - the post declares @c sorted_by_key, so a lookup may binary-search it and
+ *    @c mata::posts::Post::first_epsilon_it() may scan back from its end
+ *  - it names a @c Reserved satisfying @c ReservedKeysLike;
+ *  - that @c Reserved is over the post's own @c Key.
+ */
+template <typename L>
+concept SortedWithReservedKeys = requires {
+	typename L::Key;
+	typename L::Reserved;
+	requires ReservedKeysLike<typename L::Reserved>;
+	requires std::same_as<typename L::Key, typename L::Reserved::Key>;
+	requires L::sorted_by_key;
+};
+
+/**
+ * @brief A range that can be iterated and whose emptiness can be tested.
+ */
+template <typename R>
+concept IterableRange = requires(const R r) {
+	{ r.begin() } -> std::input_or_output_iterator;
+	{ r.end() } -> std::sentinel_for<decltype(r.begin())>;
+	{ r.empty() } -> std::convertible_to<bool>;
+	{ r.size() } -> std::convertible_to<size_t>;
+};
+
+/**
+ * @brief A concept for a set of targets that can be iterated, updated, and queried.
+ */
+template <typename T>
+concept TargetSetLike = IterableRange<T> && requires(const T t, const target_of<T>& target) {
+	typename target_of<T>;
+	requires arity_of<T> == 0;
+	// The successor cursors sweep the targets by pointer, which is what makes them fast.
+	requires std::ranges::contiguous_range<const T>;
+	{ std::ranges::is_sorted(t) } -> std::convertible_to<bool>;
+	{ std::declval<T&>().push_back(std::declval<const target_of<T>&>()) };
+	{ std::declval<T&>().insert(std::declval<const target_of<T>&>()) };
+	{ std::declval<T&>().erase(target) };
+	{ t.contains(target) } -> std::convertible_to<bool>;
+};
+
+/**
+ * @brief A concept for a post entry, a single key and the post nested under it.
+ */
+template <typename E>
+concept PostEntryLike = requires(const E e) {
+	typename E::Key;
+	typename E::Nested;
+	requires std::totally_ordered<typename E::Key>;
+	{ e.key() } -> std::convertible_to<typename E::Key>;
+	{ e.nested() } -> std::convertible_to<const typename E::Nested&>;
+	{ std::declval<E&>().nested() } -> std::same_as<typename E::Nested&>;
+};
+
+/**
+ * @brief A concept for a post, a range of entries that can be iterated, updated, and queried.
+ *
+ * @note Moving a post must leave its entries where they are, as moving a @c std::vector does, and must not throw. A
+ *  relation moves its posts whenever it grows, and the targets passed to its @c add() may be borrowed from one of
+ *  them. A @c std::vector that grows moves its elements only if that cannot throw, and copies them otherwise, which
+ *  would leave such borrowed targets dangling.
+ */
+template <typename L>
+concept PostLike =
+	IterableRange<L> && SortedWithReservedKeys<L> && std::is_nothrow_move_constructible_v<L> && requires(const L l) {
+		typename L::Entry;
+		requires PostEntryLike<typename L::Entry>;
+		typename L::Key;
+		typename L::Nested;
+		typename L::Target;
+		{ L::key_arity } -> std::convertible_to<size_t>;
+		requires L::key_arity >= 1;
+		{ l.is_sorted() } -> std::convertible_to<bool>;
+		{ std::declval<L&>().push_back(std::declval<const typename L::Entry&>()) };
+		{ std::declval<L&>().find(std::declval<const typename L::Key&>()) };
+		{ std::declval<L&>().insert(std::declval<const typename L::Entry&>()) };
+		{ l.find(std::declval<const typename L::Key&>()) };
+		{ std::declval<L&>().erase(std::declval<const typename L::Entry&>()) };
+	};
+} // namespace posts
+///@}
+
+/**
+ * @brief A concept for an automaton that can report its runs.
+ */
+template <typename A>
+concept AutomatonWithRuns = requires(const A a, typename A::Run r) {
+	typename A::Run;
+	typename A::State;
+	{ r.path } -> std::same_as<std::vector<typename A::State>&>;
+	{ r.word = a.get_word_for_path(r).first.word };
+};
+
+namespace internal {
+/// The iterator a cursor's @c begin() yields.
+template <typename C> using CursorIterator = std::remove_cvref_t<decltype(std::declval<const C&>().begin())>;
+} // namespace internal
+
+/**
+ * @brief A concept for a cursor over the targets of one state, as Tarjan's SCC traversal walks it.
+ *
+ * The traversal keeps one iterator per state, to resume it after visiting a successor. So the iterator has to be
+ *  default-constructible and copyable, yield the targets, and end at @c std::default_sentinel.
+ *
+ * @note The traversal keeps only the iterator, not the cursor it came from, which is a temporary. So the iterator
+ *  has to stay valid after the cursor is destroyed, for as long as the relation is not modified: it has to point into
+ *  the relation, not into the cursor.
+ */
+template <typename C, typename Target>
+concept SuccessorCursorLike =
+	std::semiregular<internal::CursorIterator<C>> && requires(internal::CursorIterator<C> it) {
+		{ *it } -> std::convertible_to<const Target&>;
+		{ ++it };
+		{ it != std::default_sentinel } -> std::convertible_to<bool>;
+	};
+
+/**
+ * @brief A concept for a transition relation an @c mata::AutomatonBase can be built on.
+ *
+ * Exactly what the structural algorithms use: a graph over states, with no keys and no post. A relation built from
+ *  @c mata::posts::Post satisfies it, but so does a plain adjacency list.
+ *
+ * @note One contract, deliberately whole so the errors are reported immediately, rather
+ *  then at the calls inside functions that need them.
+ * @note The largest @c State is reserved as "no state": a relation never holds it as a state, so it has at most
+ *  that many states.
+ * @note The automaton's states can outnumber the relation's: an initial or final state may have no transitions
+ *  stored. The traversal members (@c for_each_successor(), @c successor_cursor(), @c has_self_loop()) are called for
+ *  every state of the automaton, and have to treat such a state as one without transitions, rather than reject it.
+ */
+template <typename D>
+concept DeltaLike = requires(
+	D d,
+	const D cd,
+	const typename D::State s,
+	const typename D::Target t,
+	const BoolVector& is_staying,
+	const std::vector<typename D::State>& renaming
+) {
+	typename D::Target;
+	typename D::State;
+	// A state indexes the relation and every per-state array of the algorithms over it.
+	requires std::unsigned_integral<typename D::State>;
+	requires std::same_as<typename D::State, typename TargetTraits<typename D::Target>::State>;
+	// Exactly the state, not a type converting to it: the algorithms index and do arithmetic with the result.
+	{ D::state_of(t) } -> std::same_as<typename D::State>;
+
+	// Structure.
+	{ cd.num_of_states() } -> std::convertible_to<size_t>;
+	{ d.allocate(size_t{}) };
+	{ d.clear() };
+
+	// Traversal.
+	{
+		cd.for_each_successor(s, [](const typename D::Target&) {})
+	};
+	{ cd.successor_cursor(s) } -> SuccessorCursorLike<typename D::Target>;
+	{ cd.has_self_loop(s) } -> std::convertible_to<bool>;
+
+	// Defragmentation.
+	{ d.defragment(is_staying, renaming) };
+
+	// Comparison, for @c is_identical().
+	requires std::equality_comparable<D>;
+
+	// Value semantics.
+	requires std::default_initializable<D>;
+	requires std::movable<D>;
+	requires std::constructible_from<D, size_t>;
+};
+
+} // namespace mata.
+
+#endif // MATA_CORE_CONCEPTS_HH

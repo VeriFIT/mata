@@ -12,9 +12,9 @@
 #include <vector>
 
 #include "mata/alphabet.hh"
-#include "mata/automaton.hh"
 #include "mata/nft/types.hh"
 #include "mata/parser/inter-aut.hh"
+#include "mata/relation.hh"
 #include "rust/cxx.h"
 
 namespace mata_sys::detail {

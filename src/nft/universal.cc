@@ -127,23 +127,23 @@ bool mata::nft::Nft::is_universal(const Alphabet& alphabet, Run* cex, const Para
 	// TODO(nft): Revert back to the naive algorithm when implemented for NFTs?
 	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(
-			std::to_string(__func__) +
+			std::string{__func__} +
 			" requires setting the \"algorithm\" key in the \"params\" argument; "
 			"received: " +
-			std::to_string(params)
+			mata::utils::to_string(params)
 		);
 	}
 
 	const std::string& str_algo = params.at("algorithm");
 	decltype(algorithms::is_universal_antichains)* algo;
 	if ("naive" == str_algo) {
-		throw std::runtime_error(std::to_string(__func__) + " naive algorithm is not implemented for NFTs");
+		throw std::runtime_error(std::string{__func__} + " naive algorithm is not implemented for NFTs");
 	}
 	if ("antichains" == str_algo) {
 		algo = algorithms::is_universal_antichains;
 	} else {
 		throw std::runtime_error(
-			std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + str_algo
+			std::string{__func__} + " received an unknown value of the \"algorithm\" key: " + str_algo
 		);
 	}
 	return algo(*this, alphabet, cex);

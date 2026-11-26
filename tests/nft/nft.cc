@@ -248,7 +248,7 @@ TEST_CASE("mata::nft::Nft::add_state() does not reset the level of an existing s
 
 TEST_CASE("mata::nft::Trans::operator<<") {
 	Transition trans(1, 2, 3);
-	REQUIRE(std::to_string(trans) == "(1, 2, 3)");
+	REQUIRE(trans.to_string() == "(1, 2, 3)");
 }
 
 TEST_CASE("mata::nft::create_alphabet()") {

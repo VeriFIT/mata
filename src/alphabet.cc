@@ -283,7 +283,7 @@ std::ostream& mata::EnumAlphabet::print(std::ostream& os) const {
 
 std::ostream& mata::IntAlphabet::print(std::ostream& os) const { return os << "IntAlphabet"; }
 
-std::ostream& std::operator<<(std::ostream& os, const mata::Alphabet& alphabet) { return alphabet.print(os); }
+std::ostream& mata::operator<<(std::ostream& os, const mata::Alphabet& alphabet) { return alphabet.print(os); }
 
 namespace {
 /// Parse the whole of @p text as a decimal Symbol; rejects empty input, signs, white space, trailing characters and

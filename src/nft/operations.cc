@@ -1494,7 +1494,7 @@ std::pair<Run, bool> Nft::get_word_for_path(const Run& run) const {
 std::vector<Word> Nft::mk_level_word_from_word(const Word& word) const {
 	if (word.size() % levels.num_of_levels != 0) {
 		throw std::invalid_argument(
-			std::to_string(__func__) +
+			std::string{__func__} +
 			": received a word whose length does not correspond to the number of levels (not a multiple of number of "
 			"levels); "
 			"word length: " +
@@ -1514,7 +1514,7 @@ std::vector<Word> Nft::mk_level_word_from_word(const Word& word) const {
 Word Nft::mk_word_from_level_word(const std::vector<Word>& level_words) const {
 	if (level_words.size() != levels.num_of_levels) {
 		throw std::invalid_argument(
-			std::to_string(__func__) +
+			std::string{__func__} +
 			": received level_words whose number of levels does not correspond to the number of levels in the NFT; "
 			"number of levels in level_words: " +
 			std::to_string(level_words.size()) +
@@ -1545,10 +1545,10 @@ Nft mata::nft::minimize(const Nft& aut, const ParameterMap& params) {
 	decltype(algorithms::minimize_brzozowski)* algo = algorithms::minimize_brzozowski;
 	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(
-			std::to_string(__func__) +
+			std::string{__func__} +
 			" requires setting the \"algorithm\" key in the \"params\" argument; "
 			"received: " +
-			std::to_string(params)
+			mata::utils::to_string(params)
 		);
 	}
 
@@ -1556,7 +1556,7 @@ Nft mata::nft::minimize(const Nft& aut, const ParameterMap& params) {
 	if ("brzozowski" == str_algo) { /* default */
 	} else {
 		throw std::runtime_error(
-			std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + str_algo
+			std::string{__func__} + " received an unknown value of the \"algorithm\" key: " + str_algo
 		);
 	}
 
@@ -1690,18 +1690,18 @@ Nft& Nft::unite_nondet_with(Nft&& nft) & {
 Simlib::Util::BinaryRelation mata::nft::algorithms::compute_relation(const Nft& aut, const ParameterMap& params) {
 	if (!haskey(params, "relation")) {
 		throw std::runtime_error(
-			std::to_string(__func__) +
+			std::string{__func__} +
 			" requires setting the \"relation\" key in the \"params\" argument; "
 			"received: " +
-			std::to_string(params)
+			mata::utils::to_string(params)
 		);
 	}
 	if (!haskey(params, "direction")) {
 		throw std::runtime_error(
-			std::to_string(__func__) +
+			std::string{__func__} +
 			" requires setting the \"direction\" key in the \"params\" argument; "
 			"received: " +
-			std::to_string(params)
+			mata::utils::to_string(params)
 		);
 	}
 
@@ -1709,18 +1709,16 @@ Simlib::Util::BinaryRelation mata::nft::algorithms::compute_relation(const Nft& 
 	if (const std::string& direction = params.at("direction"); "simulation" == relation && direction == "forward") {
 		return compute_fw_direct_simulation<Simlib::Util::BinaryRelation>(aut);
 	}
-	throw std::runtime_error(
-		std::to_string(__func__) + " received an unknown value of the \"relation\" key: " + relation
-	);
+	throw std::runtime_error(std::string{__func__} + " received an unknown value of the \"relation\" key: " + relation);
 }
 
 Nft mata::nft::reduce(const Nft& aut, StateRenaming* state_renaming, const ParameterMap& params) {
 	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(
-			std::to_string(__func__) +
+			std::string{__func__} +
 			" requires setting the \"algorithm\" key in the \"params\" argument; "
 			"received: " +
-			std::to_string(params)
+			mata::utils::to_string(params)
 		);
 	}
 
@@ -1730,7 +1728,7 @@ Nft mata::nft::reduce(const Nft& aut, StateRenaming* state_renaming, const Param
 		result = reduce_by_merge_and_simulation(aut, reduced_state_map);
 	} else {
 		throw std::runtime_error(
-			std::to_string(__func__) + " received an unknown value of the \"algorithm\" key: " + algorithm
+			std::string{__func__} + " received an unknown value of the \"algorithm\" key: " + algorithm
 		);
 	}
 
@@ -1852,7 +1850,7 @@ Nft nft::determinize(const Nft& nft, std::unordered_map<StateSet, State>* subset
 	return result;
 }
 
-std::ostream& std::operator<<(std::ostream& os, const Nft& nft) {
+std::ostream& mata::nft::operator<<(std::ostream& os, const Nft& nft) {
 	nft.print_to_mata(os);
 	return os;
 }
