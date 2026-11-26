@@ -282,6 +282,10 @@ fn symbolic_posts_can_be_evicted_without_changing_the_witness() {
 	assert_eq!(witness.tape(0), Some(vec![A]));
 }
 
+#[cfg_attr(
+	target_os = "emscripten",
+	ignore = "Rust's standard library for Emscripten cannot spawn threads"
+)]
 #[test]
 fn wide_active_complements_grow_their_recursion_stack() -> Result<(), Box<dyn std::error::Error>> {
 	// The covered part recurses once per tape before the first uncovered part splits off.
