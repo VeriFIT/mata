@@ -64,12 +64,6 @@ pub enum Error {
 		/// The symbol.
 		symbol: Symbol,
 	},
-	/// A complement whose alphabets have more tuples than `usize` can count.
-	#[error("a complement over {arity} tapes has too many tuples to enumerate")]
-	ComplementTooLarge {
-		/// The arity of the complement.
-		arity: usize,
-	},
 	/// Neither one alphabet nor one per tape.
 	#[error("{found} alphabets for {arity} tapes")]
 	AlphabetCount {

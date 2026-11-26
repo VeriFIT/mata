@@ -7,10 +7,9 @@ use crate::{Automaton, Symbol};
 /// The whole relation of a term, as an automaton with numbered states, built by
 /// [`materialize`](crate::Formula::materialize).
 ///
-/// It is trimmed: every state is reachable and reaches a final state. Its moves read one symbol per tape, in lock
-/// step, with [`EPSILON`](Symbol::EPSILON) for padding and [`ANY`](Symbol::ANY) where every operand of a step reads
-/// any symbol. It keeps the alphabet of each tape, over which `ANY` ranges. It is an [`Automaton`] too, so it can be
-/// a leaf of another formula, with the same alphabets.
+/// It is trimmed: every state is reachable and reaches a final state. Its moves read one concrete symbol per tape,
+/// in lock step, with [`EPSILON`](Symbol::EPSILON) for padding. It keeps the alphabet of each tape. It is an
+/// [`Automaton`] too, so it can be a leaf of another formula, with the same alphabets.
 #[derive(Debug)]
 pub struct ExplicitAutomaton(Leaf);
 
@@ -63,8 +62,7 @@ impl ExplicitAutomaton {
 			.map(|(tuple, target)| (tuple, target.index()))
 	}
 
-	/// The concrete symbols of `tape`, ascending: those its moves read and those of the query's alphabets, over
-	/// which an [`ANY`](Symbol::ANY) move ranges.
+	/// The concrete symbols of `tape`, ascending: those its moves read and those of the query's alphabets.
 	///
 	/// # Panics
 	///

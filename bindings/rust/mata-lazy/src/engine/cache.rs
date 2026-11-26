@@ -21,7 +21,7 @@ struct Entry {
 	reads: u64,
 }
 
-/// The cached entries by key and state; a key is a node, or the rows of a dense complement.
+/// The cached entries by node and state.
 #[derive(Debug)]
 pub(crate) struct CacheBudget {
 	limit: usize,
@@ -115,14 +115,6 @@ impl CacheBudget {
 		self.dropped += dropped.len();
 
 		dropped
-	}
-
-	/// Forgets an entry that its owner dropped by itself.
-	pub(crate) fn remove(&mut self, key: usize, state: StateId) {
-		if let Some(entry) = self.entries[key].remove(&state) {
-			self.bytes -= entry.bytes;
-			self.live -= 1;
-		}
 	}
 
 	/// Rebuilds the queue from the entries once most of its pushes are replaced ones.

@@ -1,14 +1,13 @@
 //! The successors of every node, built from those of its children.
 
 use std::hash::BuildHasher;
-use std::ops::Deref;
 use std::rc::Rc;
 use std::time::Instant;
 
 use hashbrown::HashTable;
-use rustc_hash::{FxBuildHasher, FxHashMap};
+use rustc_hash::FxBuildHasher;
 
-use super::budget::{Budget, Limit};
+use super::budget::Limit;
 use super::exec::Op;
 use super::join::{GroupJoin, LetterIndex};
 use super::store::{Pair, Store, Tagged};
@@ -39,267 +38,179 @@ impl Target {
 	}
 }
 
-/// The tuples of a post, stored flat.
-#[derive(Debug)]
-enum Letters {
-	Owned(Vec<Symbol>),
-	/// Every tuple of a complement node (or of its identity), in the order of each of its posts.
-	Shared(Rc<Table>),
+/// One tape of a move. A set denotes every concrete symbol in it, sorted without repetitions.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub(crate) enum TapeLabel {
+	Simple(Symbol),
+	Set(Rc<[Symbol]>),
 }
 
-impl Deref for Letters {
-	type Target = [Symbol];
+impl TapeLabel {
+	fn set(mut symbols: Vec<Symbol>) -> Option<TapeLabel> {
+		symbols.sort_unstable();
+		symbols.dedup();
+		debug_assert!(symbols.iter().all(|symbol| symbol.is_concrete()));
 
-	fn deref(&self) -> &[Symbol] {
+		(!symbols.is_empty()).then(|| TapeLabel::Set(symbols.into()))
+	}
+
+	pub(super) fn symbol(&self) -> Symbol {
 		match self {
-			Letters::Owned(letters) => letters,
-			Letters::Shared(table) => &table.letters,
+			TapeLabel::Simple(symbol) => *symbol,
+			TapeLabel::Set(_) => panic!("a concrete-label join received a set"),
 		}
 	}
-}
 
-/// The tuples of a complement node (or of its identity), flat, in odometer order of its digits.
-#[derive(Debug)]
-pub(crate) struct Table {
-	letters: Box<[Symbol]>,
-	digits: Box<[Digit]>,
-	/// The digit that each tape reads.
-	tapes: Box<[usize]>,
-	len: usize,
-}
+	/// The concrete `position`-th symbol, where padding and the wildcard each have at most one expansion.
+	pub(super) fn symbol_at(&self, universe: &[Symbol], position: usize) -> Option<Symbol> {
+		match self {
+			TapeLabel::Simple(Symbol::ANY) => universe.get(position).copied(),
+			TapeLabel::Simple(symbol) => (position == 0).then_some(*symbol),
+			TapeLabel::Set(symbols) => symbols.get(position).copied(),
+		}
+	}
 
-/// One digit of a [`Table`], a position in a universe.
-#[derive(Clone, Debug)]
-struct Digit {
-	universe: Rc<[Symbol]>,
-	/// How many tuples one step of this digit skips.
-	stride: usize,
-	/// The value of the first symbol of the universe.
-	first: u32,
-	/// The position of each symbol by its value minus `first` (the largest `u32` if absent); empty if too sparse.
-	positions: Box<[u32]>,
-}
-
-impl Digit {
-	fn new(universe: &Rc<[Symbol]>, stride: usize) -> Digit {
-		let (first, last) = match (universe.first(), universe.last()) {
-			(Some(first), Some(last)) => (first.value(), last.value()),
-			_ => (0, 0),
-		};
-
-		let span = (last - first) as usize + 1;
-
-		let positions = if universe.len() > 1 && span <= 4 * universe.len() {
-			let mut positions = vec![u32::MAX; span];
-			for (position, letter) in (0_u32..).zip(universe.iter()) {
-				positions[(letter.value() - first) as usize] = position;
+	fn intersects(&self, other: &TapeLabel) -> bool {
+		match (self, other) {
+			(TapeLabel::Simple(a), TapeLabel::Simple(b)) => merge(*a, *b).is_some(),
+			(TapeLabel::Simple(Symbol::ANY), TapeLabel::Set(_))
+			| (TapeLabel::Set(_), TapeLabel::Simple(Symbol::ANY)) => true,
+			(TapeLabel::Simple(symbol), TapeLabel::Set(symbols))
+			| (TapeLabel::Set(symbols), TapeLabel::Simple(symbol)) => {
+				symbol.is_concrete() && symbols.binary_search(symbol).is_ok()
 			}
-
-			positions.into()
-		} else {
-			Box::default()
-		};
-
-		Digit {
-			universe: Rc::clone(universe),
-			stride,
-			first,
-			positions,
+			(TapeLabel::Set(a), TapeLabel::Set(b)) => {
+				let (short, long) = if a.len() <= b.len() { (a, b) } else { (b, a) };
+				short
+					.iter()
+					.any(|symbol| long.binary_search(symbol).is_ok())
+			}
 		}
 	}
 
-	fn position(&self, letter: Symbol) -> Option<usize> {
-		if self.positions.is_empty() {
-			return self.universe.binary_search(&letter).ok();
+	fn intersection(&self, other: &TapeLabel) -> Option<TapeLabel> {
+		match (self, other) {
+			(TapeLabel::Simple(a), TapeLabel::Simple(b)) => merge(*a, *b).map(TapeLabel::Simple),
+			(TapeLabel::Simple(Symbol::ANY), TapeLabel::Set(symbols))
+			| (TapeLabel::Set(symbols), TapeLabel::Simple(Symbol::ANY)) => {
+				Some(TapeLabel::Set(Rc::clone(symbols)))
+			}
+			(TapeLabel::Simple(symbol), TapeLabel::Set(symbols))
+			| (TapeLabel::Set(symbols), TapeLabel::Simple(symbol)) => (symbol.is_concrete()
+				&& symbols.binary_search(symbol).is_ok())
+			.then_some(TapeLabel::Simple(*symbol)),
+			(TapeLabel::Set(a), TapeLabel::Set(b)) => {
+				let mut symbols = Vec::new();
+				let (mut i, mut j) = (0, 0);
+				while i < a.len() && j < b.len() {
+					match a[i].cmp(&b[j]) {
+						std::cmp::Ordering::Less => i += 1,
+						std::cmp::Ordering::Greater => j += 1,
+						std::cmp::Ordering::Equal => {
+							symbols.push(a[i]);
+							i += 1;
+							j += 1;
+						}
+					}
+				}
+
+				TapeLabel::set(symbols)
+			}
 		}
+	}
 
-		let offset = letter.value().checked_sub(self.first)? as usize;
-		let position = *self.positions.get(offset)?;
+	/// Splits `part`, which this label overlaps, into the covered and uncovered concrete symbols.
+	fn split(&self, part: &[Symbol]) -> (Vec<Symbol>, Vec<Symbol>) {
+		match self {
+			TapeLabel::Simple(Symbol::ANY) => (part.to_vec(), Vec::new()),
+			TapeLabel::Simple(Symbol::EPSILON) => (Vec::new(), part.to_vec()),
+			TapeLabel::Simple(symbol) => {
+				let mut covered = Vec::new();
+				let mut uncovered = Vec::new();
+				for &letter in part {
+					if letter == *symbol {
+						covered.push(letter);
+					} else {
+						uncovered.push(letter);
+					}
+				}
 
-		(position != u32::MAX).then_some(position as usize)
+				(covered, uncovered)
+			}
+			TapeLabel::Set(symbols) => {
+				let mut covered = Vec::new();
+				let mut uncovered = Vec::new();
+				let mut next = 0;
+				for &letter in part {
+					while next < symbols.len() && symbols[next] < letter {
+						next += 1;
+					}
+					if next < symbols.len() && symbols[next] == letter {
+						covered.push(letter);
+					} else {
+						uncovered.push(letter);
+					}
+				}
+
+				(covered, uncovered)
+			}
+		}
 	}
 }
 
-/// Tuples of a table built between two checks of the query's limits.
-const TABLE_CHUNK: usize = 1 << 10;
+/// Calls `visit` for each concrete tuple of `labels`, without collecting their Cartesian product.
+pub(super) fn for_each_concrete(
+	universes: &[Rc<[Symbol]>],
+	labels: &[TapeLabel],
+	mut visit: impl FnMut(&[Symbol]) -> Result<(), Limit>,
+) -> Result<(), Limit> {
+	debug_assert_eq!(universes.len(), labels.len());
+	let mut positions = vec![0; labels.len()];
+	let mut tuple: Vec<Symbol> = match labels
+		.iter()
+		.zip(universes)
+		.map(|(label, universe)| label.symbol_at(universe, 0))
+		.collect()
+	{
+		Some(tuple) => tuple,
+		None => return Ok(()),
+	};
 
-/// The most tuples of a table allocated up front, so that a table the limits cut short is not allocated whole.
-const TABLE_RESERVED: usize = 1 << 16;
-
-impl Table {
-	/// The table of `len` tuples over `universes`; past a limit of `budget` it stops, short.
-	fn new(universes: &[Rc<[Symbol]>], len: usize, budget: &mut Budget) -> Table {
-		let mut letters = Vec::with_capacity(len.min(TABLE_RESERVED) * universes.len());
-		let mut positions = vec![0; universes.len()];
-		for start in (0..len).step_by(TABLE_CHUNK) {
-			budget.step(0);
-			if budget.passed() {
+	loop {
+		visit(&tuple)?;
+		let mut wrapped = true;
+		for tape in (0..labels.len()).rev() {
+			positions[tape] += 1;
+			if let Some(symbol) = labels[tape].symbol_at(&universes[tape], positions[tape]) {
+				tuple[tape] = symbol;
+				wrapped = false;
 				break;
 			}
 
-			for _ in start..len.min(start + TABLE_CHUNK) {
-				letters.extend(
-					positions
-						.iter()
-						.zip(universes)
-						.map(|(&position, universe)| universe[position]),
-				);
-				for (position, universe) in positions.iter_mut().zip(universes).rev() {
-					*position += 1;
-					if *position < universe.len() {
-						break;
-					}
-
-					*position = 0;
-				}
-			}
+			positions[tape] = 0;
+			tuple[tape] = labels[tape]
+				.symbol_at(&universes[tape], 0)
+				.expect("the first concrete tuple exists");
 		}
 
-		let mut strides = vec![1_usize; universes.len()];
-		for tape in (1..universes.len()).rev() {
-			// Saturates only for a table without tuples, which never reads its strides.
-			strides[tape - 1] = strides[tape].saturating_mul(universes[tape].len());
-		}
-
-		Table {
-			letters: letters.into(),
-			digits: universes
-				.iter()
-				.zip(strides)
-				.map(|(universe, stride)| Digit::new(universe, stride))
-				.collect(),
-			tapes: (0..universes.len()).collect(),
-			len,
-		}
-	}
-
-	/// The table of the identity of a post over this table, with each letter on both tapes.
-	fn diagonal(&self) -> Table {
-		debug_assert_eq!(self.tapes.len(), 1);
-
-		Table {
-			letters: self
-				.letters
-				.iter()
-				.flat_map(|&letter| [letter, letter])
-				.collect(),
-			digits: self.digits.clone(),
-			tapes: [0, 0].into(),
-			len: self.len,
-		}
-	}
-
-	/// The index of a concrete tuple of a complement's table, if each letter is in its universe.
-	// Called for every move of the members' posts, so kept inline in the complement's post.
-	#[inline]
-	fn index(&self, tuple: &[Symbol]) -> Option<usize> {
-		debug_assert_eq!(tuple.len(), self.digits.len());
-
-		tuple
-			.iter()
-			.zip(&self.digits)
-			.try_fold(0, |index, (&letter, digit)| {
-				Some(index + digit.position(letter)? * digit.stride)
-			})
-	}
-
-	/// Visits, in increasing order, the tuples whose letters on `tapes` merge with `letters`.
-	pub(super) fn matching(
-		&self,
-		tapes: &[usize],
-		letters: impl Iterator<Item = Symbol>,
-		odometer: &mut Odometer,
-		mut visit: impl FnMut(usize),
-	) {
-		const FREE: usize = usize::MAX;
-
-		if self.len == 0 {
-			return;
-		}
-
-		odometer.positions.clear();
-		odometer.positions.resize(self.digits.len(), FREE);
-		for (&tape, letter) in tapes.iter().zip(letters) {
-			if letter == Symbol::ANY {
-				continue;
-			}
-
-			let digit = self.tapes[tape];
-			let Some(position) = self.digits[digit].position(letter) else {
-				return;
-			};
-
-			if odometer.positions[digit] != FREE && odometer.positions[digit] != position {
-				return;
-			}
-
-			odometer.positions[digit] = position;
-		}
-
-		// The free digits after the last fixed one vary fastest, so their tuples are consecutive.
-		let fixed_end = odometer
-			.positions
-			.iter()
-			.rposition(|&position| position != FREE)
-			.map_or(0, |digit| digit + 1);
-		let run = match fixed_end {
-			0 => self.len,
-			end => self.digits[end - 1].stride,
-		};
-
-		let mut start: usize = (0..fixed_end)
-			.filter(|&digit| odometer.positions[digit] != FREE)
-			.map(|digit| odometer.positions[digit] * self.digits[digit].stride)
-			.sum();
-
-		// The other free digits count in `positions`, from 0.
-		odometer.free.clear();
-		odometer
-			.free
-			.extend((0..fixed_end).filter(|&digit| odometer.positions[digit] == FREE));
-		for &digit in &odometer.free {
-			odometer.positions[digit] = 0;
-		}
-
-		loop {
-			(start..start + run).for_each(&mut visit);
-
-			// The free digits step like an odometer, and the tuples end when they all wrap.
-			let mut wrapped = true;
-			for &digit in odometer.free.iter().rev() {
-				odometer.positions[digit] += 1;
-				start += self.digits[digit].stride;
-				if odometer.positions[digit] < self.digits[digit].universe.len() {
-					wrapped = false;
-
-					break;
-				}
-
-				start -= odometer.positions[digit] * self.digits[digit].stride;
-				odometer.positions[digit] = 0;
-			}
-
-			if wrapped {
-				return;
-			}
+		if wrapped {
+			return Ok(());
 		}
 	}
 }
 
-/// Scratch space of [`matching`](Table::matching).
-#[derive(Debug, Default)]
-pub(super) struct Odometer {
-	/// The position of each digit, or the largest `usize` while it is free.
-	positions: Vec<usize>,
-	/// The free digits before the last fixed one.
-	free: Vec<usize>,
+/// One child move that overlaps the concrete region being partitioned.
+#[derive(Clone, Copy)]
+struct ActiveMove<'a> {
+	tuple: &'a [TapeLabel],
+	target: Target,
 }
 
-/// The moves from one macrostate, with the tuples stored flat, `arity` letters each, and their targets.
+/// The moves from one macrostate, with symbolic Cartesian labels of `arity` tape labels each.
 #[derive(Debug)]
 pub(crate) struct Post {
 	arity: usize,
-	letters: Letters,
+	labels: Vec<TapeLabel>,
 	/// A target's state and whether it accepts, packed by [`pack`](StateId::pack).
 	targets: Vec<u32>,
 }
@@ -308,7 +219,7 @@ impl Post {
 	fn new(arity: usize) -> Post {
 		Post {
 			arity,
-			letters: Letters::Owned(Vec::new()),
+			labels: Vec::new(),
 			targets: Vec::new(),
 		}
 	}
@@ -316,17 +227,8 @@ impl Post {
 	pub(super) fn with_capacity(arity: usize, moves: usize) -> Post {
 		Post {
 			arity,
-			letters: Letters::Owned(Vec::with_capacity(moves * arity)),
+			labels: Vec::with_capacity(moves * arity),
 			targets: Vec::with_capacity(moves),
-		}
-	}
-
-	/// A post whose tuples are `table`; its targets follow with [`push_target`](Post::push_target).
-	pub(super) fn with_table(arity: usize, table: Rc<Table>) -> Post {
-		Post {
-			arity,
-			targets: Vec::with_capacity(table.len),
-			letters: Letters::Shared(table),
 		}
 	}
 
@@ -334,15 +236,17 @@ impl Post {
 		self.targets.len()
 	}
 
+	pub(super) fn wholly_simple(&self) -> bool {
+		self.labels
+			.iter()
+			.all(|label| matches!(label, TapeLabel::Simple(_)))
+	}
+
 	/// The same moves, each target accepting as `accepting` decides, or the limit that it passed.
 	pub(super) fn reflagged(
 		&self,
 		mut accepting: impl FnMut(Target) -> Result<bool, Limit>,
 	) -> Result<Post, Limit> {
-		let letters = match &self.letters {
-			Letters::Owned(letters) => Letters::Owned(letters.clone()),
-			Letters::Shared(table) => Letters::Shared(Rc::clone(table)),
-		};
 		let targets = (0..self.len())
 			.map(|index| {
 				let target = self.target(index);
@@ -353,41 +257,33 @@ impl Post {
 
 		Ok(Post {
 			arity: self.arity,
-			letters,
+			labels: self.labels.clone(),
 			targets,
 		})
 	}
 
-	/// The bytes it takes, without a shared table.
+	/// The label and target storage; shared symbol arrays are not charged again to each post.
 	fn bytes(&self) -> usize {
-		let letters = match &self.letters {
-			Letters::Owned(letters) => letters.capacity() * size_of::<Symbol>(),
-			Letters::Shared(_) => 0,
-		};
-
-		size_of::<Post>() + letters + self.targets.capacity() * size_of::<u32>()
+		size_of::<Post>()
+			+ self.labels.capacity() * size_of::<TapeLabel>()
+			+ self.targets.capacity() * size_of::<u32>()
 	}
 
 	fn shrink_to_fit(&mut self) {
-		if let Letters::Owned(letters) = &mut self.letters {
-			letters.shrink_to_fit();
-		}
-
+		self.labels.shrink_to_fit();
 		self.targets.shrink_to_fit();
 	}
 
 	pub(super) fn push(&mut self, tuple: &[Symbol], target: Target) {
 		debug_assert_eq!(tuple.len(), self.arity);
-		let Letters::Owned(letters) = &mut self.letters else {
-			unreachable!("a post with a shared table gets only targets")
-		};
-
-		letters.extend_from_slice(tuple);
-		self.push_target(target);
+		self.labels
+			.extend(tuple.iter().copied().map(TapeLabel::Simple));
+		self.targets.push(target.state.pack(target.accepting));
 	}
 
-	/// The target of the next tuple of a shared table.
-	pub(super) fn push_target(&mut self, target: Target) {
+	pub(super) fn push_labels(&mut self, tuple: &[TapeLabel], target: Target) {
+		debug_assert_eq!(tuple.len(), self.arity);
+		self.labels.extend_from_slice(tuple);
 		self.targets.push(target.state.pack(target.accepting));
 	}
 
@@ -407,7 +303,7 @@ impl Post {
 		&mut self,
 		seen: &mut HashTable<(u32, Pair)>,
 		store: &mut Store,
-		tuple: &[Symbol],
+		tuple: &[TapeLabel],
 		pair: Pair,
 		accepting: bool,
 	) {
@@ -425,23 +321,22 @@ impl Post {
 		seen.insert_unique(hash, (index, pair), rehash);
 
 		let state = store.intern_pair(pair);
-		self.push(tuple, Target { state, accepting });
+		self.push_labels(tuple, Target { state, accepting });
 	}
 
-	/// The arity and the tuples stored flat.
-	pub(super) fn flat(&self) -> (usize, &[Symbol]) {
-		(self.arity, &self.letters)
+	pub(super) fn symbol(&self, index: usize, tape: usize) -> Symbol {
+		self.tuple(index)[tape].symbol()
 	}
 
-	pub(super) fn tuple(&self, index: usize) -> &[Symbol] {
-		&self.letters[index * self.arity..(index + 1) * self.arity]
+	pub(super) fn tuple(&self, index: usize) -> &[TapeLabel] {
+		&self.labels[index * self.arity..(index + 1) * self.arity]
 	}
 
-	pub(crate) fn iter(&self) -> impl Iterator<Item = (&[Symbol], Target)> {
+	pub(crate) fn iter(&self) -> impl Iterator<Item = (&[TapeLabel], Target)> {
 		(0..self.len()).map(|index| (self.tuple(index), self.target(index)))
 	}
 
-	/// Sorts the moves by tuple and target, without repeats.
+	/// Sorts the moves by exact structural label and target, without repeats.
 	pub(super) fn dedup(&mut self) {
 		let key = |index: usize| (self.tuple(index), self.state(index));
 		let mut order: Vec<usize> = (0..self.len()).collect();
@@ -450,7 +345,7 @@ impl Post {
 
 		let mut unique = Post::with_capacity(self.arity, order.len());
 		for index in order {
-			unique.push(self.tuple(index), self.target(index));
+			unique.push_labels(self.tuple(index), self.target(index));
 		}
 
 		*self = unique;
@@ -477,7 +372,7 @@ impl ByKey {
 		let mut keyed: Vec<(u64, u32)> = Vec::with_capacity(post.len());
 		let mut any = Vec::new();
 		for (index, (tuple, _)) in (0_u32..).zip(post.iter()) {
-			match key(tapes.iter().map(|&tape| tuple[tape])) {
+			match key(tapes.iter().map(|&tape| tuple[tape].symbol())) {
 				Some(key) => keyed.push((key, index)),
 				None => any.push(index),
 			}
@@ -539,47 +434,49 @@ enum Product<'s> {
 }
 
 impl Product<'_> {
-	/// Writes the tuple that `lhs` and `rhs` read together into `out`, if they agree.
-	fn merge(self, lhs: &[Symbol], rhs: &[Symbol], out: &mut Vec<Symbol>) -> bool {
+	/// Writes the symbolic tuple that `lhs` and `rhs` read together into `out`, if they overlap.
+	fn merge(self, lhs: &[TapeLabel], rhs: &[TapeLabel], out: &mut Vec<TapeLabel>) -> bool {
 		out.clear();
 		match self {
 			Product::Intersection => {
-				for (&a, &b) in lhs.iter().zip(rhs) {
-					let Some(letter) = merge(a, b) else {
+				for (a, b) in lhs.iter().zip(rhs) {
+					let Some(label) = a.intersection(b) else {
 						return false;
 					};
 
-					out.push(letter);
+					out.push(label);
 				}
 			}
 			Product::Sync(spec) => {
 				if !spec
 					.pairs
 					.iter()
-					.all(|pair| merge(lhs[pair.lhs], rhs[pair.rhs]).is_some())
+					.all(|pair| lhs[pair.lhs].intersects(&rhs[pair.rhs]))
 				{
 					return false;
 				}
 
 				for tape in &spec.layout {
-					let letter = match (tape.source, tape.peer) {
-						(Tape::Lhs(i), None) => lhs[i],
-						(Tape::Rhs(j), None) => rhs[j],
-						(Tape::Lhs(i), Some(j)) | (Tape::Rhs(j), Some(i)) => {
-							merge(lhs[i], rhs[j]).unwrap_or(Symbol::ANY)
-						}
+					let label = match (tape.source, tape.peer) {
+						(Tape::Lhs(i), None) => lhs[i].clone(),
+						(Tape::Rhs(j), None) => rhs[j].clone(),
+						(Tape::Lhs(i), Some(j)) | (Tape::Rhs(j), Some(i)) => lhs[i]
+							.intersection(&rhs[j])
+							.expect("every synchronized pair overlaps"),
 					};
 
-					out.push(letter);
+					out.push(label);
 				}
 			}
 			Product::Diagonal => {
-				let Some(letter) = merge(lhs[0], rhs[0]).and_then(|letter| merge(letter, rhs[1]))
+				let Some(label) = lhs[0]
+					.intersection(&rhs[0])
+					.and_then(|label| label.intersection(&rhs[1]))
 				else {
 					return false;
 				};
 
-				out.push(letter);
+				out.push(label);
 			}
 		}
 
@@ -588,45 +485,25 @@ impl Product<'_> {
 }
 
 /// How a product finds the moves of its right operand that may merge with a left move.
-enum Candidates<'a> {
-	/// The right operand's shared table, read on `tapes`; it needs no index.
-	Table {
-		table: &'a Table,
-		tapes: &'a [usize],
-		scratch: &'a mut Odometer,
-	},
+enum Candidates {
 	ByKey(ByKey),
 	/// Every move of the right operand.
 	All(usize),
 }
 
-impl<'a> Candidates<'a> {
-	/// The candidates of `right` on `tapes`, indexed by key if `indexed` and it has no table.
-	fn new(
-		right: &'a Post,
-		tapes: &'a [usize],
-		indexed: bool,
-		scratch: &'a mut Odometer,
-	) -> Candidates<'a> {
-		match &right.letters {
-			Letters::Shared(table) => Candidates::Table {
-				table,
-				tapes,
-				scratch,
-			},
-			Letters::Owned(_) if indexed => Candidates::ByKey(ByKey::new(right, tapes)),
-			Letters::Owned(_) => Candidates::All(right.len()),
+impl Candidates {
+	/// The candidates of `right` on `tapes`, indexed by key if `indexed` and wholly simple.
+	fn new(right: &Post, tapes: &[usize], indexed: bool) -> Candidates {
+		if indexed {
+			Candidates::ByKey(ByKey::new(right, tapes))
+		} else {
+			Candidates::All(right.len())
 		}
 	}
 
 	/// Visits the moves that may merge with `letters`, and maybe others; the caller merges them.
 	fn visit(&mut self, letters: impl Iterator<Item = Symbol>, visit: impl FnMut(usize)) {
 		match self {
-			Candidates::Table {
-				table,
-				tapes,
-				scratch,
-			} => table.matching(tapes, letters, scratch, visit),
 			Candidates::ByKey(by_key) => by_key.candidates(letters, visit),
 			Candidates::All(len) => (0..*len).for_each(visit),
 		}
@@ -639,8 +516,7 @@ const INDEX_THRESHOLD: usize = 8;
 /// Buffers of the pair join, kept between posts.
 #[derive(Debug, Default)]
 pub(crate) struct JoinBuffers {
-	tuple: Vec<Symbol>,
-	odometer: Odometer,
+	tuple: Vec<TapeLabel>,
 }
 
 impl Engine<'_> {
@@ -684,15 +560,10 @@ impl Engine<'_> {
 		Ok(post)
 	}
 
-	/// Drops the posts and the rows of dense complements (keyed after the nodes) that the cache budget evicted.
+	/// Drops the posts that the cache budget evicted.
 	pub(super) fn evict(&mut self, dropped: Vec<(usize, StateId)>) {
-		let num_nodes = self.exec.nodes.len();
 		for (key, state) in dropped {
-			if key < num_nodes {
-				self.posts[ExecId::new(key)][state.index()] = None;
-			} else {
-				self.evict_row(ExecId::new(key - num_nodes), state);
-			}
+			self.posts[ExecId::new(key)][state.index()] = None;
 		}
 	}
 
@@ -763,7 +634,7 @@ impl Engine<'_> {
 		let start = self.stores[node].len();
 		let mut post = Post::with_capacity(self.exec.nodes[node].arity, child.len());
 		for (tuple, target) in child.iter() {
-			post.push(tuple, self.tagged_target(node, branch, target));
+			post.push_labels(tuple, self.tagged_target(node, branch, target));
 		}
 
 		self.budget.add(self.stores[node].len() - start);
@@ -780,7 +651,7 @@ impl Engine<'_> {
 		Target { state, ..target }
 	}
 
-	/// The child's moves with each letter on both tapes; a wildcard stands for every letter of the universe.
+	/// The child's moves with each concrete letter on both tapes. Sets expand on one tape, never as a product.
 	fn identity_post(
 		&mut self,
 		node: ExecId,
@@ -788,25 +659,21 @@ impl Engine<'_> {
 		state: StateId,
 	) -> Result<Post, Limit> {
 		let child_post = self.post(child, state)?;
-		if let Letters::Shared(table) = &child_post.letters {
-			let diagonal = self.tables[node].get_or_insert_with(|| Rc::new(table.diagonal()));
-
-			return Ok(Post {
-				arity: 2,
-				letters: Letters::Shared(Rc::clone(diagonal)),
-				targets: child_post.targets.clone(),
-			});
-		}
-
 		let universe = self.alphabets.universe(node, 0);
 		let mut post = Post::with_capacity(2, child_post.len());
 		for (tuple, target) in child_post.iter() {
-			if tuple[0] == Symbol::ANY {
-				for &letter in universe.iter() {
-					post.push(&[letter, letter], target);
+			match &tuple[0] {
+				TapeLabel::Simple(Symbol::ANY) => {
+					for &symbol in universe.iter() {
+						post.push(&[symbol, symbol], target);
+					}
 				}
-			} else {
-				post.push(&[tuple[0], tuple[0]], target);
+				TapeLabel::Set(symbols) => {
+					for &symbol in symbols.iter() {
+						post.push(&[symbol, symbol], target);
+					}
+				}
+				TapeLabel::Simple(symbol) => post.push(&[*symbol, *symbol], target),
 			}
 		}
 
@@ -826,8 +693,8 @@ impl Engine<'_> {
 		let mut projected = Vec::with_capacity(arity);
 		for (tuple, target) in child_post.iter() {
 			projected.clear();
-			projected.extend(tapes.iter().map(|&tape| tuple[tape]));
-			post.push(&projected, target);
+			projected.extend(tapes.iter().map(|&tape| tuple[tape].clone()));
+			post.push_labels(&projected, target);
 		}
 
 		post.dedup();
@@ -846,9 +713,12 @@ impl Engine<'_> {
 		let pair = self.stores[node].pair(state);
 		let (left, right) = (self.post(lhs, pair.lhs)?, self.post(rhs, pair.rhs)?);
 		let plan = &self.plans[node];
-		let indexed = !plan.keys.is_empty() && left.len() > 1 && right.len() > INDEX_THRESHOLD;
+		let simple = left.wholly_simple() && right.wholly_simple();
+		let indexed =
+			simple && !plan.keys.is_empty() && left.len() > 1 && right.len() > INDEX_THRESHOLD;
 
-		if let Product::Sync(spec) = product
+		if simple
+			&& let Product::Sync(spec) = product
 			&& let Some(post) = self.group_join(node, lhs, &left, &right, spec, indexed)
 		{
 			return Ok(post);
@@ -903,12 +773,7 @@ impl Engine<'_> {
 			.dedup
 			.then(|| HashTable::with_capacity(left.len().min(SEEN_CAPACITY)));
 		let mut post = Post::new(self.exec.nodes[node].arity);
-		let mut candidates = Candidates::new(
-			right,
-			&plan.right_tapes,
-			indexed,
-			&mut self.join_buffers.odometer,
-		);
+		let mut candidates = Candidates::new(right, &plan.right_tapes, indexed);
 		let store = &mut self.stores[node];
 		let start = store.len();
 
@@ -918,7 +783,7 @@ impl Engine<'_> {
 				break;
 			}
 
-			let letters = plan.keys.iter().map(|pair| left_tuple[pair.lhs]);
+			let letters = plan.keys.iter().map(|pair| left_tuple[pair.lhs].symbol());
 			candidates.visit(letters, |index| {
 				if !product.merge(left_tuple, right.tuple(index), &mut self.join_buffers.tuple) {
 					return;
@@ -934,7 +799,7 @@ impl Engine<'_> {
 					post.push_new(seen, store, &self.join_buffers.tuple, pair, accepting);
 				} else {
 					let state = store.intern_pair(pair);
-					post.push(&self.join_buffers.tuple, Target { state, accepting });
+					post.push_labels(&self.join_buffers.tuple, Target { state, accepting });
 				}
 			});
 		}
@@ -944,7 +809,7 @@ impl Engine<'_> {
 		post
 	}
 
-	/// One move per tuple of the tapes' alphabets, to the minimized set of the members' successors.
+	/// Partitions the concrete tuples into symbolic Cartesian regions, each to its minimized successor set.
 	fn complement_post(
 		&mut self,
 		node: ExecId,
@@ -956,93 +821,107 @@ impl Engine<'_> {
 		let universes: Vec<Rc<[Symbol]>> = (0..arity)
 			.map(|tape| Rc::clone(self.alphabets.universe(node, tape)))
 			.collect();
-		let num_tuples = self
-			.alphabets
-			.tuple_count(node)
-			.expect("the tuple count is checked when the query starts");
-		if let Some(post) = self.dense_post(node, child, &members, &universes, num_tuples)? {
-			return Ok(post);
+		if universes.iter().any(|universe| universe.is_empty()) {
+			return Ok(Post::new(arity));
 		}
 
 		let posts = members
 			.iter()
 			.map(|&member| self.post(child, member))
 			.collect::<Result<Vec<Rc<Post>>, Limit>>()?;
-		let table = self.tuple_table(node, &universes, num_tuples)?;
-		let mut exact: FxHashMap<usize, Vec<Target>> = FxHashMap::default();
-		let mut wildcards: Vec<(&[Symbol], Target)> = Vec::new();
-		for (tuple, target) in posts.iter().flat_map(|post| post.iter()) {
-			if tuple.contains(&Symbol::EPSILON) {
-				continue;
-			}
+		let mut region: Vec<TapeLabel> = universes.into_iter().map(TapeLabel::Set).collect();
+		let active: Vec<ActiveMove> = posts
+			.iter()
+			.flat_map(|post| post.iter())
+			.filter(|(tuple, _)| !tuple.contains(&TapeLabel::Simple(Symbol::EPSILON)))
+			.filter(|(tuple, _)| {
+				tuple
+					.iter()
+					.zip(&region)
+					.all(|(label, region)| label.intersects(region))
+			})
+			.map(|(tuple, target)| ActiveMove { tuple, target })
+			.collect();
 
-			if tuple.contains(&Symbol::ANY) {
-				wildcards.push((tuple, target));
-			} else if let Some(index) = table.index(tuple) {
-				exact.entry(index).or_default().push(target);
-			}
-		}
-
-		let mut post = Post::with_table(arity, Rc::clone(&table));
-		let mut successors = Vec::new();
+		let mut post = Post::new(arity);
 		let start = self.stores[node].len();
-		for index in 0..num_tuples {
-			self.budget.step(self.stores[node].len() - start);
-			if self.budget.passed() {
-				break;
-			}
-
-			let tuple = &table.letters[index * arity..(index + 1) * arity];
-			let wildcard_targets = wildcards
-				.iter()
-				.filter(|(letters, _)| {
-					letters
-						.iter()
-						.zip(tuple)
-						.all(|(&letter, &concrete)| letter == Symbol::ANY || letter == concrete)
-				})
-				.map(|(_, target)| target);
-			let targets = exact
-				.get(&index)
-				.into_iter()
-				.flatten()
-				.chain(wildcard_targets);
-
-			successors.clear();
-			let mut accepting = true;
-			for target in targets {
-				successors.push(target.state);
-				accepting &= !target.accepting;
-			}
-
-			self.subsumption
-				.minimize(&self.exec, &self.stores, child, &mut successors);
-			let state = self.stores[node].intern_set(&successors);
-			post.push_target(Target { state, accepting });
-		}
-
+		self.complement_region(node, child, &mut region, &active, start, &mut post)?;
 		self.budget.add(self.stores[node].len() - start);
 
 		Ok(post)
 	}
 
-	/// Every tuple of the universes of the complement `node`, in odometer order (last tape fastest), built once;
-	/// or the limit that the query passed while building it.
-	pub(super) fn tuple_table(
+	/// Splits one tape at a time into the minterms of the active moves; no product of tape minterms is built.
+	fn complement_region(
 		&mut self,
 		node: ExecId,
-		universes: &[Rc<[Symbol]>],
-		num_tuples: usize,
-	) -> Result<Rc<Table>, Limit> {
-		if let Some(table) = &self.tables[node] {
-			return Ok(Rc::clone(table));
+		child: ExecId,
+		region: &mut [TapeLabel],
+		active: &[ActiveMove],
+		start: usize,
+		post: &mut Post,
+	) -> Result<(), Limit> {
+		self.budget.step(self.stores[node].len() - start);
+		if self.budget.passed() {
+			return Ok(());
 		}
 
-		let table = Rc::new(Table::new(universes, num_tuples, &mut self.budget));
-		// A table that a limit cut short is not kept.
-		self.stopped()?;
-		self.tables[node] = Some(Rc::clone(&table));
+		// In particular, a moveless child gives one unconstrained region, however many tapes it has.
+		if !active.is_empty() {
+			for tape in 0..region.len() {
+				let TapeLabel::Set(current) = &region[tape] else {
+					unreachable!("a complement region is a concrete set on every tape")
+				};
+				let mut parts = vec![Rc::clone(current)];
+				for active_move in active {
+					let mut next = Vec::with_capacity(parts.len() + 1);
+					for part in &parts {
+						let (covered, uncovered) = active_move.tuple[tape].split(part);
+						if covered.is_empty() || uncovered.is_empty() {
+							next.push(Rc::clone(part));
+							continue;
+						}
 
-		Ok(table)
+						next.push(covered.into());
+						next.push(uncovered.into());
+					}
+					parts = next;
+				}
+
+				if parts.len() == 1 {
+					continue;
+				}
+
+				let previous = region[tape].clone();
+				for part in parts {
+					region[tape] = TapeLabel::Set(part);
+					let next: Vec<ActiveMove> = active
+						.iter()
+						.filter(|active_move| active_move.tuple[tape].intersects(&region[tape]))
+						.copied()
+						.collect();
+					self.complement_region(node, child, region, &next, start, post)?;
+					if self.budget.passed() {
+						break;
+					}
+				}
+				region[tape] = previous;
+
+				return Ok(());
+			}
+		}
+
+		let mut successors = Vec::with_capacity(active.len());
+		let mut accepting = true;
+		for active_move in active {
+			successors.push(active_move.target.state);
+			accepting &= !active_move.target.accepting;
+		}
+		self.subsumption
+			.minimize(&self.exec, &self.stores, child, &mut successors);
+		let state = self.stores[node].intern_set(&successors);
+		post.push_labels(region, Target { state, accepting });
+
+		Ok(())
 	}
 }

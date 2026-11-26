@@ -84,7 +84,8 @@ fn alphabets_reject_reserved_symbols() -> Result<(), Box<dyn std::error::Error>>
 }
 
 #[test]
-fn complements_too_large_to_enumerate_are_errors() -> Result<(), Box<dyn std::error::Error>> {
+fn complements_of_uncountable_concrete_tuple_spaces_respect_limits()
+-> Result<(), Box<dyn std::error::Error>> {
 	let mut formula = Formula::new();
 	let bytes = formula.leaf(&Regex::new("(?s).*")?)?;
 	let two = formula.identity(bytes)?;
@@ -98,11 +99,17 @@ fn complements_too_large_to_enumerate_are_errors() -> Result<(), Box<dyn std::er
 	let eight = formula.sync_product(four, four, &[], &all)?;
 	let complement = formula.complement(eight)?;
 
-	// 256 symbols on each of 8 tapes give 2^64 tuples per step.
-	assert_eq!(
-		formula.is_empty(complement),
-		Err(Error::ComplementTooLarge { arity: 8 })
-	);
+	// Each of four identity constraints has 256 steps. Product targets are states themselves, hence the query limit.
+	assert!(matches!(
+		formula.check(
+			complement,
+			&Options::new()
+				.max_length(1)
+				.max_states(1_000_000)
+				.time_limit(std::time::Duration::from_millis(10)),
+		),
+		Err(Error::TimeLimit { .. } | Error::StateLimit { .. })
+	));
 
 	Ok(())
 }

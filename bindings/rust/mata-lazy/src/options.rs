@@ -105,8 +105,8 @@ impl Options {
 
 	/// Fails with [`StateLimit`](crate::Error::StateLimit) once the query holds more than `max_states` macrostates,
 	/// so a query that answers holds at most `max_states`. The successors of a macrostate are counted step by step, a
-	/// step being a move of a product's left operand or a tuple of a complement. A query stops after the step that
-	/// passes the limit, and a step of a product can create one macrostate per matching move of the right operand.
+	/// step being a move of a product's left operand or a symbolic region of a complement. A query stops after the
+	/// step that passes the limit, and a step of a product can create one macrostate per matching right move.
 	#[must_use]
 	pub fn max_states(mut self, max_states: usize) -> Options {
 		self.max_states = Some(max_states);
