@@ -14,7 +14,7 @@ SCRIPT_TARGET := BUILD_ROOT / "wasm-script"
 SCRIPT_RELEASE := SCRIPT_TARGET / "wasm32-unknown-emscripten" / "release"
 
 # Serve the current checkout under VERSION at http://localhost:PORT, with the documentation once `just docs`,
-# `just bindings python docs` and `just bindings rust doc` have built it. The pages are linked rather than copied, so
+# `just bindings python docs` and `just bindings rust docs` have built it. The pages are linked rather than copied, so
 # edits show on reload. The playground needs `just site playground`.
 [default]
 serve PORT="8000" VERSION="master":
@@ -41,6 +41,7 @@ serve PORT="8000" VERSION="master":
 		echo "The C++ documentation is not built, so its links will not work; run 'just docs' first."
 	fi
 	if [ -d '{{ ROOT }}/bindings/python/docs/_build/html' ]; then
+		MATA_WEBSITE_URL='http://127.0.0.1:{{ PORT }}/{{ VERSION }}/' just bindings::python::html
 		ln -s '{{ ROOT }}/bindings/python/docs/_build/html' "$docs/python"
 	else
 		echo "The Python reference is not built; run 'just bindings python docs' first."
@@ -48,7 +49,7 @@ serve PORT="8000" VERSION="master":
 	if [ -d '{{ ROOT }}/bindings/rust/target/doc' ]; then
 		ln -s '{{ ROOT }}/bindings/rust/target/doc' "$docs/rust"
 	else
-		echo "The Rust reference is not built; run 'just bindings rust doc' first."
+		echo "The Rust reference is not built; run 'just bindings rust docs' first."
 	fi
 	python3 '{{ ROOT }}/site/serve.py' "$root" '{{ PORT }}'
 
