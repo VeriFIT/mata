@@ -562,16 +562,20 @@ class DeltaBuilder {
 		MATA_ASSERT(in_symbol_ && "push_sorted_target() called outside of a symbol");
 		MATA_ASSERT((targets_.empty() || target > targets_.back()) && "targets must be strictly increasing");
 		targets_.push_back(target);
-		max_target_ = std::max(max_target_, target);
-		++num_of_transitions_;
 	}
 
 	void finish_symbol() {
 		MATA_ASSERT(in_symbol_ && "finish_symbol() without begin_symbol()");
-		in_symbol_ = false;
-		if (targets_.empty()) { return; }
-		has_symbol_ = true;
+		if (targets_.empty()) {
+			in_symbol_ = false;
+			return;
+		}
 		state_posts_[source_].emplace_back(symbol_, std::span<const State>{targets_});
+		// Committed only once the symbol post is stored, so a throwing emplace_back() leaves the builder as it was.
+		num_of_transitions_ += targets_.size();
+		max_target_ = std::max(max_target_, targets_.back()); // Sorted, so the last target is the largest.
+		has_symbol_ = true;
+		in_symbol_ = false;
 	}
 
 	void finish_state() {
@@ -599,7 +603,7 @@ class DeltaBuilder {
 	Symbol symbol_{0};
 	State source_{0};
 	State max_target_{0};
-	size_t num_of_transitions_{0}; ///< Targets pushed so far, which finish() hands over as the exact count.
+	size_t num_of_transitions_{0}; ///< Targets of the stored symbol posts, which finish() hands over as the exact count.
 	bool in_state_{false};
 	bool in_symbol_{false};
 	bool has_symbol_{false}; ///< Has the current state emitted a symbol post already?
