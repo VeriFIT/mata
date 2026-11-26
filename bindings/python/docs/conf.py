@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.abspath(".."))
 os.environ["SPHINX_AUTODOC_IGNORE_NATIVE_MODULE_TYPE_STUBS"] = "1"
 
 project = "libmata"
-copyright = "Mata authors"
+project_copyright = "Mata authors"
 extensions = ["sphinx.ext.autodoc"]
 autodoc_default_options = {
     "members": True,
