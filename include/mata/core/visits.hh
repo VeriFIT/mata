@@ -278,8 +278,10 @@ P defragmented(const P& post, const BoolVector& is_staying, const Renaming& rena
  *  (see @c mata::TargetTraits). Entries left without targets are erased.
  *
  * @param post The post to filter. @c mata::arity_of is used to recurse down to the innermost post.
- * @param is_staying A boolean vector indicating which states are staying.
- * @param renaming A vector indicating the new state for each staying state.
+ * @param is_staying Indexed by old state, true for a state that stays. It must cover the state of every target in
+ *  @p post.
+ * @param renaming Indexed by old state, the new state of a staying one. It must cover every staying state of a target
+ *  in @p post.
  */
 template <typename P, typename Renaming>
 inline void defragment_in_place(P& post, const BoolVector& is_staying, const Renaming& renaming) {
@@ -315,10 +317,10 @@ inline void defragment_in_place(P& post, const BoolVector& is_staying, const Ren
  * @brief Rebuild @p post keeping only the targets @p is_staying admits, and renaming their states.
  *
  * @param post The post to rebuild. @c mata::arity_of is used to recurse down to the innermost post.
- * @param is_staying A boolean vector indicating which states are staying.
- *  Its size must be equal to the number of states in the innermost post.
- * @param renaming A vector indicating the new state for each staying state.
- *  Its size must be equal to the number of states in the innermost post.
+ * @param is_staying Indexed by old state, true for a state that stays. It must cover the state of every target in
+ *  @p post.
+ * @param renaming Indexed by old state, the new state of a staying one. It must cover every staying state of a target
+ *  in @p post.
  * @return A new post with the same structure as @p post, but with only the targets whose states are staying,
  *  and with their states renamed according to @p renaming.
  */
