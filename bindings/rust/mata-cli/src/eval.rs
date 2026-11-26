@@ -2055,7 +2055,10 @@ fn value_sort_depth(value: &Value, depth: usize) -> String {
 		Value::String(_) => "String".into(),
 		Value::Nfa(_) => "Nfa".into(),
 		Value::Nft(_) => "Nft".into(),
-		Value::Automaton(_) => "Automaton".into(),
+		Value::Automaton(automaton) => match &**automaton {
+			AutomatonKind::Nfa(_) => "Nfa".into(),
+			AutomatonKind::Nft(_) => "Nft".into(),
+		},
 		Value::Intermediate(_) => "IntermediateAutomaton".into(),
 		Value::List(list) => {
 			if depth > MAX_NESTING {
@@ -2094,7 +2097,7 @@ fn fits_depth(value: &Value, sort: &str, depth: usize) -> bool {
 		return matches!(value, Value::None) || fits_depth(value, inner, depth + 1);
 	}
 	match (sort, value) {
-		("Any", _) | ("Automaton", Value::Nfa(_) | Value::Nft(_)) => true,
+		("Any", _) | ("Automaton", Value::Nfa(_) | Value::Nft(_) | Value::Automaton(_)) => true,
 		("Nfa", Value::Automaton(automaton)) => matches!(**automaton, AutomatonKind::Nfa(_)),
 		("Nft", Value::Automaton(automaton)) => matches!(**automaton, AutomatonKind::Nft(_)),
 		(_, Value::List(_)) => false,
