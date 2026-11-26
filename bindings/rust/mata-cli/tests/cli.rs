@@ -2034,12 +2034,43 @@ fn as_checks_compound_sorts_and_narrows_an_automaton() {
 	let a = workspace.file("a.mata", NFA);
 	let output = run_script(
 		"(declare-input u Automaton)\n(print (nfa:number-of-states (as u Nfa)))\n\
+		 (print (automaton:number-of-states (as u Automaton)))\n\
 		 (print (as (list 1 2) (List Int)))\n(print (as none (Option Int)))",
 		true,
 		&[&a],
 	);
 	assert_eq!(status(&output), 0, "{}", stderr(&output));
-	assert_eq!(stdout(&output), "2\n1\n2\nnone\n");
+	assert_eq!(stdout(&output), "2\n2\n1\n2\nnone\n");
+}
+
+#[test]
+fn a_failed_runtime_sort_check_names_the_concrete_automaton_kind() {
+	let workspace = Workspace::new("as-actual-sort");
+	let t = workspace.file("t.mata", NFT);
+	let output = run_script(
+		&format!("(print (as (automaton:load \"{t}\") Nfa))"),
+		true,
+		&[],
+	);
+	assert_eq!(status(&output), 2);
+	assert!(
+		stderr(&output).contains("expected Nfa, found Nft"),
+		"{}",
+		stderr(&output)
+	);
+
+	let a = workspace.file("a.mata", NFA);
+	let output = run_script(
+		&format!("(define a Nft (automaton:load \"{a}\"))"),
+		true,
+		&[],
+	);
+	assert_eq!(status(&output), 2);
+	assert!(
+		stderr(&output).contains("expected Nft, found Nfa"),
+		"{}",
+		stderr(&output)
+	);
 }
 
 #[test]
