@@ -1,0 +1,57 @@
+From db2c521de38f8f4f9bb057f2754edbdcf0cd2b7c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Thu, 24 Aug 2023 07:32:58 +0200
+Subject: [PATCH] Create script to uninstall Mata installed with 'make install'
+
+---
+ Makefile             | 8 +++++---
+ scripts/uninstall.sh | 9 +++++++++
+ 2 files changed, 14 insertions(+), 3 deletions(-)
+ create mode 100755 scripts/uninstall.sh
+
+diff --git a/Makefile b/Makefile
+index 1dfc0f1ec..d51107e6a 100644
+--- a/Makefile
++++ b/Makefile
+@@ -2,10 +2,9 @@ BUILD_DIR=build
+ MAKE_FLAGS=-j 6
+ TEST_FLAGS=-j 50 --output-on-failure
+ 
+-.PHONY: all debug debug-werror release release-werror coverage doc clean test test-coverage test-performance
++.PHONY: all debug debug-werror release release-werror coverage doc clean test test-coverage test-performance install uninstall
+ 
+ all:
+-	./clean_gcda.sh
+ 	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && $(MAKE) $(MAKE_FLAGS) || echo "Type either \"make debug\" or \"make release\"!"
+ 
+ debug:
+@@ -43,7 +42,10 @@ check:
+ 	cd $(BUILD_DIR) && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .. && cppcheck --project=compile_commands.json --quiet --error-exitcode=1
+ 
+ install:
+-	cd $(BUILD_DIR) && $(MAKE) install
++	cd $(BUILD_DIR) && sudo $(MAKE) install
++
++uninstall:
++	./scripts/uninstall.sh
+ 
+ clean:
+ 	cd $(BUILD_DIR) && rm -rf *
+diff --git a/scripts/uninstall.sh b/scripts/uninstall.sh
+new file mode 100755
+index 000000000..fc94b226a
+--- /dev/null
++++ b/scripts/uninstall.sh
+@@ -0,0 +1,9 @@
++#!/usr/bin/env sh
++
++# Uninstall libMata installed with 'make install'.
++#
++# Requires sudo privilages. Run at your own risk.
++
++sudo rm -rf /usr/local/lib/libmata.a
++sudo rm -rf /usr/local/include/mata/
++
+-- 
+2.56.0
+

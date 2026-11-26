@@ -8,17 +8,18 @@ Before starting a performance or design change, check here whether it has been t
 
 ## Index
 
-| id                                      | title                                               | status   |
-| --------------------------------------- | --------------------------------------------------- | -------- |
-| [EXP-1](1-ordvector-flat-set/README.md) | Replace `OrdVector` with `std::flat_set`            | rejected |
-| [EXP-1](1-ordvector-flat-set/README.md) | Change `OrdVector` merge, search, and storage       | rejected |
-| [EXP-2](2-nft-bdd-automata/README.md)   | Use NFT levels as BDDs on automaton transitions     | rejected |
-| [EXP-3][exp-3]                          | Adaptive merging and universality through inclusion | rejected |
-| [EXP-4][exp-4]                          | Index residual-after subset candidates              | rejected |
-| [EXP-5][exp-5]                          | Shared SCC-based epsilon closure                    | rejected |
-| [EXP-6][exp-6]                          | Scan for already-contained OrdVector ranges         | rejected |
-| [EXP-7][exp-7]                          | Build composition posts by appending and sorting    | rejected |
-| [EXP-8][exp-8]                          | NFT quotient renaming with a state-indexed vector   | rejected |
+| id                                            | title                                               | status     |
+| --------------------------------------------- | --------------------------------------------------- | ---------- |
+| [EXP-1](1-ordvector-flat-set/README.md)       | Replace `OrdVector` with `std::flat_set`            | rejected   |
+| [EXP-1](1-ordvector-flat-set/README.md)       | Change `OrdVector` merge, search, and storage       | rejected   |
+| [EXP-2](2-nft-bdd-automata/README.md)         | Use NFT levels as BDDs on automaton transitions     | rejected   |
+| [EXP-3][exp-3]                                | Adaptive merging and universality through inclusion | rejected   |
+| [EXP-4][exp-4]                                | Index residual-after subset candidates              | rejected   |
+| [EXP-5][exp-5]                                | Shared SCC-based epsilon closure                    | rejected   |
+| [EXP-6][exp-6]                                | Scan for already-contained OrdVector ranges         | rejected   |
+| [EXP-7][exp-7]                                | Build composition posts by appending and sorting    | rejected   |
+| [EXP-8][exp-8]                                | NFT quotient renaming with a state-indexed vector   | rejected   |
+| [EXP-9](9-branch-salvage-2022-2024/README.md) | Salvage audit of retired fork branches (2022–2024)  | superseded |
 
 [exp-3]: 3-antichain-iterator-universality/README.md
 [exp-4]: 4-residual-after-subset-index/README.md
@@ -26,6 +27,7 @@ Before starting a performance or design change, check here whether it has been t
 [exp-6]: 6-ordvector-subset-guard/README.md
 [exp-7]: 7-composition-posts-sorting/README.md
 [exp-8]: 8-nft-quotient-vector-map/README.md
+[exp-9]: 9-branch-salvage-2022-2024/README.md
 
 ## Adding a record
 

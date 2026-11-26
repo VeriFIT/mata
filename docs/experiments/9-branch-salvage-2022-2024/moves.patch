@@ -1,0 +1,3342 @@
+From a6e4c23955fd8e8c345bce8c6525e9bcd1e41fdc Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Wed, 16 Aug 2023 12:17:25 +0200
+Subject: [PATCH 01/15] Add instance of 'Transitions' as an owned member of
+ 'Delta'
+
+---
+ include/mata/nfa/delta.hh | 66 +++++++++++++++++++++++++--------------
+ include/mata/nfa/nfa.hh   |  3 +-
+ src/nfa/delta.cc          |  5 +++
+ src/nfa/nfa.cc            |  6 ++--
+ src/nfa/operations.cc     |  2 +-
+ tests/nfa/delta.cc        |  4 +--
+ tests/nfa/nfa.cc          | 23 +++++++-------
+ 7 files changed, 66 insertions(+), 43 deletions(-)
+
+diff --git a/include/mata/nfa/delta.hh b/include/mata/nfa/delta.hh
+index 3ef403141..b58fa51ef 100644
+--- a/include/mata/nfa/delta.hh
++++ b/include/mata/nfa/delta.hh
+@@ -195,14 +195,14 @@ public:
+  *  the state number.
+  */
+ class Delta {
+-private:
+-    std::vector<StatePost> state_posts_;
+-
+ public:
+     inline static const StatePost empty_state_post; // When posts[q] is not allocated, then delta[q] returns this.
+ 
+-    Delta() : state_posts_() {}
+-    explicit Delta(size_t n) : state_posts_(n) {}
++    Delta(): state_posts_{} {}
++    Delta(const Delta& other): state_posts_{ other.state_posts_ } {}
++    explicit Delta(size_t n): state_posts_{ n } {}
++
++    Delta& operator=(const Delta& other);
+ 
+     void reserve(size_t n) {
+         state_posts_.reserve(n);
+@@ -327,6 +327,12 @@ public:
+      */
+     void add(const State state_from, const Symbol symbol, const StateSet& states);
+ 
++    using const_iterator = std::vector<StatePost>::const_iterator;
++    const_iterator cbegin() const { return state_posts_.cbegin(); }
++    const_iterator cend() const { return state_posts_.cend(); }
++    const_iterator begin() const { return state_posts_.begin(); }
++    const_iterator end() const { return state_posts_.end(); }
++
+     /**
+      * Iterator over transitions. It iterates over triples (lhs, symbol, rhs) where lhs and rhs are states.
+      */
+@@ -366,29 +372,39 @@ public:
+         bool operator!=(const transitions_const_iterator& other) const { return !(*this == other); };
+     }; // class transitions_const_iterator.
+ 
+-    transitions_const_iterator transitions_cbegin() const { return transitions_const_iterator(state_posts_); }
+-    transitions_const_iterator transitions_cend() const { return transitions_const_iterator(state_posts_, true); }
+-    transitions_const_iterator transitions_begin() const { return transitions_cbegin(); }
+-    transitions_const_iterator transitions_end() const { return transitions_cend(); }
+-
+-    struct Transitions {
+-        transitions_const_iterator begin_;
+-        transitions_const_iterator end_;
+-        transitions_const_iterator begin() const { return begin_; }
+-        transitions_const_iterator end() const { return end_; }
+-    };
++    /**
++     * Iterator over transitions represented as 'Transition' instances.
++     */
++    class Transitions {
++    private:
++        const Delta& delta_;
++    public:
++        explicit Transitions(const Delta& delta): delta_{ delta } {}
++        transitions_const_iterator begin() const { return delta_.transitions_cbegin(); }
++        transitions_const_iterator end() const { return delta_.transitions_cend(); }
++
++        /**
++         * @brief Get a number of transitions in delta.
++         *
++         * The operation has a linear time complexity to the number of 'SymbolPost's in the delta.
++         */
++        size_t count() const { return delta_.size(); }
++
++        /**
++         * Whether there are no transitions in the delta.
++         */
++        bool empty() const { return count() == 0; }
++    }; // class Transitions.
+ 
+     /**
+-     * Iterate over transitions represented as 'Trans' instances.
+-     * @return Iterator over transitions.
++     * Iterator over transitions represented as 'Transition' instances.
+      */
+-    Transitions transitions() const { return { .begin_ = transitions_begin(), .end_ = transitions_end() }; }
++    Transitions transitions() { return Transitions{ *this }; }
+ 
+-    using const_iterator = std::vector<StatePost>::const_iterator;
+-    const_iterator cbegin() const { return state_posts_.cbegin(); }
+-    const_iterator cend() const { return state_posts_.cend(); }
+-    const_iterator begin() const { return state_posts_.begin(); }
+-    const_iterator end() const { return state_posts_.end(); }
++    transitions_const_iterator transitions_cbegin() const { return transitions_const_iterator(*this); }
++    transitions_const_iterator transitions_cend() const { return transitions_const_iterator(*this, true); }
++    transitions_const_iterator transitions_begin() const { return transitions_cbegin(); }
++    transitions_const_iterator transitions_end() const { return transitions_cend(); }
+ 
+     /**
+      * Iterate over @p epsilon symbol posts under the given @p state.
+@@ -405,6 +421,8 @@ public:
+      * @return An iterator to @c SymbolPost with epsilon symbol. End iterator when there are no epsilon transitions.
+      */
+     static StatePost::const_iterator epsilon_symbol_posts(const StatePost& state_post, Symbol epsilon = EPSILON);
++private:
++    std::vector<StatePost> state_posts_;
+ }; // struct Delta.
+ 
+ } // namespace Mata::Nfa.
+diff --git a/include/mata/nfa/nfa.hh b/include/mata/nfa/nfa.hh
+index 06c5eeb79..1c898a808 100644
+--- a/include/mata/nfa/nfa.hh
++++ b/include/mata/nfa/nfa.hh
+@@ -229,8 +229,7 @@ public:
+      *
+      * The operation has constant time complexity.
+      */
+-    size_t get_num_of_trans() const { return static_cast<size_t>(std::distance(delta.transitions_begin(),
+-                                                                               delta.transitions_end())); }
++    size_t get_num_of_trans() const { return std::distance(delta.transitions.begin(), delta.transitions.end()); }
+ 
+     /**
+      * Get transitions as a sequence of @c Trans.
+diff --git a/src/nfa/delta.cc b/src/nfa/delta.cc
+index 9bb9b3bcb..d28219a43 100644
+--- a/src/nfa/delta.cc
++++ b/src/nfa/delta.cc
+@@ -67,6 +67,11 @@ size_t Delta::size() const {
+     return size;
+ }
+ 
++Delta& Delta::operator=(const Delta& other) {
++    this->state_posts_ = other.state_posts_;
++    return *this;
++}
++
+ void Delta::add(State source, Symbol symbol, State target) {
+     const State max_state{ std::max(source, target) };
+     if (max_state >= state_posts_.size()) {
+diff --git a/src/nfa/nfa.cc b/src/nfa/nfa.cc
+index 968a27a4b..ad36930b0 100644
+--- a/src/nfa/nfa.cc
++++ b/src/nfa/nfa.cc
+@@ -394,7 +394,7 @@ void Nfa::print_to_mata(std::ostream &output) const {
+         output << std::endl;
+     }
+ 
+-    for (Transition trans : delta.transitions()) {
++    for (const Transition& trans: delta.transitions()) {
+         output << "q" << trans.source << " " << trans.symbol << " q" << trans.target << std::endl;
+     }
+ }
+@@ -483,7 +483,7 @@ Nfa::const_iterator Nfa::const_iterator::for_begin(const Nfa* nfa)
+ 
+     const_iterator result;
+ 
+-    if (nfa->delta.transitions_begin() == nfa->delta.transitions_end()) {
++    if (nfa->delta.transitions.begin() == nfa->delta.transitions.end()) {
+         result.is_end = true;
+         return result;
+     }
+@@ -546,7 +546,7 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
+ 
+     // out of transition list
+     ++this->trIt;
+-    assert(this->nfa->delta.transitions_begin() != this->nfa->delta.transitions_end());
++    assert(this->nfa->delta.transitions.begin() != this->nfa->delta.transitions.end());
+ 
+     while (this->trIt < this->nfa->delta.num_of_states() &&
+            this->nfa->delta.state_post(this->trIt).empty())
+diff --git a/src/nfa/operations.cc b/src/nfa/operations.cc
+index 18710b862..5cc4b6993 100644
+--- a/src/nfa/operations.cc
++++ b/src/nfa/operations.cc
+@@ -42,7 +42,7 @@ namespace {
+         const size_t state_num = aut.size();
+         Simlib::ExplicitLTS LTSforSimulation(state_num);
+ 
+-        for (const auto& transition : aut.delta.transitions()) {
++        for (const Transition& transition : aut.delta.transitions) {
+             LTSforSimulation.add_transition(transition.source, transition.symbol, transition.target);
+             if (transition.symbol > maxSymbol) {
+                 maxSymbol = transition.symbol;
+diff --git a/tests/nfa/delta.cc b/tests/nfa/delta.cc
+index 1697462a6..55a17ab1c 100644
+--- a/tests/nfa/delta.cc
++++ b/tests/nfa/delta.cc
+@@ -219,7 +219,7 @@ TEST_CASE("Mata::Nfa::Delta iteration over transitions") {
+         nfa.delta.add(2, 0, 1);
+         nfa.delta.add(2, 0, 3);
+ 
+-        Mata::Nfa::Delta::Transitions transitions{ nfa.delta.transitions() };
++        Mata::Nfa::Delta::Transitions transitions{ nfa.delta.transitions };
+         iterated_transitions.clear();
+         for (auto transitions_it{ transitions.begin() };
+              transitions_it != transitions.end(); ++transitions_it) {
+@@ -234,7 +234,7 @@ TEST_CASE("Mata::Nfa::Delta iteration over transitions") {
+         CHECK(iterated_transitions == expected_transitions);
+ 
+         iterated_transitions.clear();
+-        for (const Transition& transition: nfa.delta.transitions()) { iterated_transitions.push_back(transition); }
++        for (const Transition& transition: nfa.delta.transitions) { iterated_transitions.push_back(transition); }
+         CHECK(iterated_transitions == expected_transitions);
+     }
+ }
+diff --git a/tests/nfa/nfa.cc b/tests/nfa/nfa.cc
+index 8eb75a028..bbf577804 100644
+--- a/tests/nfa/nfa.cc
++++ b/tests/nfa/nfa.cc
+@@ -123,7 +123,8 @@ TEST_CASE("Mata::Nfa::Nfa::delta.add()/delta.contains()")
+         size_t transitions_cnt{ 0 };
+         std::vector<Transition> expected_transitions{ t1, t2, t3, t4 };
+         std::vector<Transition> iterated_transitions{};
+-        for (auto trans_it{ a.delta.transitions_begin()}; trans_it != a.delta.transitions_end(); ++trans_it) {
++        for (Delta::transitions_const_iterator trans_it{ a.delta.transitions.begin()}; 
++             trans_it != a.delta.transitions.end(); ++trans_it) {
+             iterated_transitions.push_back(*trans_it);
+             ++transitions_cnt;
+         }
+@@ -132,7 +133,7 @@ TEST_CASE("Mata::Nfa::Nfa::delta.add()/delta.contains()")
+ 
+         transitions_cnt = 0;
+         iterated_transitions.clear();
+-        for (const Transition& trans: a.delta.transitions()) {
++        for (const Transition& trans: a.delta.transitions) {
+             iterated_transitions.push_back(trans);
+             ++transitions_cnt;
+         }
+@@ -181,25 +182,25 @@ TEST_CASE("Mata::Nfa::Nfa iteration")
+     {
+         aut.delta.add('q', 'a', 'r');
+         aut.delta.add('q', 'b', 'r');
+-        auto it = aut.delta.transitions_begin();
+-        auto jt = aut.delta.transitions_begin();
++        auto it = aut.delta.transitions.begin();
++        auto jt = aut.delta.transitions.begin();
+         REQUIRE(it == jt);
+         ++it;
+         REQUIRE(it != jt);
+-        REQUIRE((it != aut.delta.transitions_begin() && it != aut.delta.transitions_end()));
+-        REQUIRE(jt == aut.delta.transitions_begin());
++        REQUIRE((it != aut.delta.transitions.begin() && it != aut.delta.transitions.end()));
++        REQUIRE(jt == aut.delta.transitions.begin());
+ 
+         ++jt;
+         REQUIRE(it == jt);
+-        REQUIRE((jt != aut.delta.transitions_begin() && jt != aut.delta.transitions_end()));
++        REQUIRE((jt != aut.delta.transitions.begin() && jt != aut.delta.transitions.end()));
+ 
+-        jt = aut.delta.transitions_end();
++        jt = aut.delta.transitions.end();
+         REQUIRE(it != jt);
+-        REQUIRE((jt != aut.delta.transitions_begin() && jt == aut.delta.transitions_end()));
++        REQUIRE((jt != aut.delta.transitions.begin() && jt == aut.delta.transitions.end()));
+ 
+-        it = aut.delta.transitions_end();
++        it = aut.delta.transitions.end();
+         REQUIRE(it == jt);
+-        REQUIRE((it != aut.delta.transitions_begin() && it == aut.delta.transitions_end()));
++        REQUIRE((it != aut.delta.transitions.begin() && it == aut.delta.transitions.end()));
+     }
+ } // }}}
+ 
+-- 
+2.56.0
+
+
+From 7164ebe9d1c8f5f688cfb7c4c7e81738dcf89c34 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Wed, 16 Aug 2023 14:27:10 +0200
+Subject: [PATCH 02/15] Move get_transitions_from_as_sequence() to
+ Delta::Transitions::from()
+
+---
+ include/mata/nfa/delta.hh     |  57 ++++++++++++++----
+ include/mata/nfa/nfa.hh       |   7 ---
+ src/nfa/delta.cc              | 105 ++++++++++++++++++----------------
+ src/nfa/nfa.cc                |  15 -----
+ tests/nfa/delta.cc            |  19 ++++++
+ tests/nfa/nfa-intersection.cc |  26 ++++-----
+ 6 files changed, 134 insertions(+), 95 deletions(-)
+
+diff --git a/include/mata/nfa/delta.hh b/include/mata/nfa/delta.hh
+index b58fa51ef..02a79919f 100644
+--- a/include/mata/nfa/delta.hh
++++ b/include/mata/nfa/delta.hh
+@@ -336,13 +336,13 @@ public:
+     /**
+      * Iterator over transitions. It iterates over triples (lhs, symbol, rhs) where lhs and rhs are states.
+      */
+-    struct transitions_const_iterator {
++    class transitions_const_iterator {
+     private:
+-        const std::vector<StatePost>& post_;
++        const Delta* delta_ = nullptr;
+         size_t current_state_;
+-        StatePost::const_iterator post_iterator_{};
+-        StateSet::const_iterator targets_position_{};
+-        bool is_end_;
++        StatePost::const_iterator state_post_it_{};
++        StateSet::const_iterator symbol_post_it_{};
++        bool is_end_{ false };
+         Transition transition_{};
+ 
+     public:
+@@ -352,12 +352,12 @@ public:
+         using pointer = Transition*;
+         using reference = Transition&;
+ 
+-        explicit transitions_const_iterator(const std::vector<StatePost>& post_p, bool ise = false);
+-
+-        transitions_const_iterator(const std::vector<StatePost>& post_p, size_t as,
+-                                   StatePost::const_iterator pi, StateSet::const_iterator ti, bool ise = false);
++        transitions_const_iterator() = default;
++        explicit transitions_const_iterator(const Delta& delta, bool is_end = false);
++        transitions_const_iterator(const Delta& delta, State current_state, bool is_end = false);
+ 
+-        transitions_const_iterator(const transitions_const_iterator& other) = default;
++        transitions_const_iterator(const transitions_const_iterator& other) noexcept = default;
++        transitions_const_iterator(transitions_const_iterator&&) = default;
+ 
+         const Transition& operator*() const { return transition_; }
+ 
+@@ -366,12 +366,30 @@ public:
+         // Postfix increment
+         const transitions_const_iterator operator++(int);
+ 
+-        transitions_const_iterator& operator=(const transitions_const_iterator& x);
++        transitions_const_iterator& operator=(const transitions_const_iterator& other) noexcept = default;
++        transitions_const_iterator& operator=(transitions_const_iterator&&) = default;
+ 
+         bool operator==(const transitions_const_iterator& other) const;
+         bool operator!=(const transitions_const_iterator& other) const { return !(*this == other); };
+     }; // class transitions_const_iterator.
+ 
++    class TransitionsView {
++    private:
++        transitions_const_iterator begin_;
++        transitions_const_iterator end_;
++    public:
++        TransitionsView() = default;
++        TransitionsView(const TransitionsView&) = default;
++        TransitionsView(TransitionsView&&) = default;
++        TransitionsView(transitions_const_iterator begin, transitions_const_iterator end): begin_{ begin }, end_{ end } {}
++        TransitionsView& operator=(const TransitionsView&) = default;
++        TransitionsView& operator=(TransitionsView&&) = default;
++        transitions_const_iterator begin() const { return begin_; }
++        transitions_const_iterator end() const { return end_; }
++        size_t count() const { return std::distance( begin(), end() ); }
++        size_t empty() const { return count() == 0; }
++    };
++
+     /**
+      * Iterator over transitions represented as 'Transition' instances.
+      */
+@@ -383,6 +401,19 @@ public:
+         transitions_const_iterator begin() const { return delta_.transitions_cbegin(); }
+         transitions_const_iterator end() const { return delta_.transitions_cend(); }
+ 
++        /**
++         * @brief Get a number of transitions in delta.
++         *
++         * The operation has a linear time complexity to the number of transitions in the delta.
++         */
++        size_t count() const { return std::distance(begin(), end()); }
++
++        size_t empty() const { return count() == 0; }
++
++        // TODO: Is 'from_source()' than 'from()'?
++        TransitionsView from(State source) const;
++    };
++
+         /**
+          * @brief Get a number of transitions in delta.
+          *
+@@ -423,6 +454,10 @@ public:
+     static StatePost::const_iterator epsilon_symbol_posts(const StatePost& state_post, Symbol epsilon = EPSILON);
+ private:
+     std::vector<StatePost> state_posts_;
++    transitions_const_iterator transitions_cbegin() const { return transitions_const_iterator(*this); }
++    transitions_const_iterator transitions_cend() const { return transitions_const_iterator(*this, true); }
++    transitions_const_iterator transitions_begin() const { return transitions_cbegin(); }
++    transitions_const_iterator transitions_end() const { return transitions_cend(); }
+ }; // struct Delta.
+ 
+ } // namespace Mata::Nfa.
+diff --git a/include/mata/nfa/nfa.hh b/include/mata/nfa/nfa.hh
+index 1c898a808..ab0cfc974 100644
+--- a/include/mata/nfa/nfa.hh
++++ b/include/mata/nfa/nfa.hh
+@@ -237,13 +237,6 @@ public:
+      */
+     std::vector<Transition> get_trans_as_sequence() const;
+ 
+-    /**
+-     * Get transitions from @p state_from as a sequence of @c Trans.
+-     * @param state_from[in] Source state_from of transitions to get.
+-     * @return Sequence of transitions as @c Trans from @p state_from.
+-     */
+-    std::vector<Transition> get_trans_from_as_sequence(State state_from) const;
+-
+     /**
+      * Get transitions leading to @p state_to.
+      * @param state_to[in] Target state for transitions to get.
+diff --git a/src/nfa/delta.cc b/src/nfa/delta.cc
+index d28219a43..c9208e8cf 100644
+--- a/src/nfa/delta.cc
++++ b/src/nfa/delta.cc
+@@ -72,6 +72,12 @@ Delta& Delta::operator=(const Delta& other) {
+     return *this;
+ }
+ 
++Delta::TransitionsView Delta::Transitions::from(const State source) const {
++    transitions_const_iterator begin_it{ delta_, source };
++    transitions_const_iterator end_it{ delta_, source + 1 };
++    return TransitionsView{ begin_it, end_it };
++}
++
+ void Delta::add(State source, Symbol symbol, State target) {
+     const State max_state{ std::max(source, target) };
+     if (max_state >= state_posts_.size()) {
+@@ -188,17 +194,17 @@ bool Delta::empty() const
+     return this->transitions_begin() == this->transitions_end();
+ }
+ 
+-Delta::transitions_const_iterator::transitions_const_iterator(const std::vector<StatePost>& post_p, bool ise)
+-    : post_(post_p), current_state_(0), is_end_{ ise } {
+-    const size_t post_size = post_.size();
++Delta::transitions_const_iterator::transitions_const_iterator(const Delta& delta, bool is_end)
++    : delta_{ &delta }, current_state_{ 0 }, is_end_{ is_end } {
++    const size_t post_size = delta_->num_of_states();
+     for (size_t i = 0; i < post_size; ++i) {
+-        if (!post_[i].empty()) {
++        if (!(*delta_)[i].empty()) {
+             current_state_ = i;
+-            post_iterator_ = post_[i].begin();
+-            targets_position_ = post_iterator_->targets.begin();
++            state_post_it_ = (*delta_)[i].begin();
++            symbol_post_it_ = state_post_it_->targets.begin();
+             transition_.source = current_state_;
+-            transition_.symbol = post_iterator_->symbol;
+-            transition_.target = *targets_position_;
++            transition_.symbol = state_post_it_->symbol;
++            transition_.target = *symbol_post_it_;
+             return;
+         }
+     }
+@@ -208,45 +214,59 @@ Delta::transitions_const_iterator::transitions_const_iterator(const std::vector<
+ }
+ 
+ Delta::transitions_const_iterator::transitions_const_iterator(
+-    const std::vector<StatePost>& post_p, size_t as, StatePost::const_iterator pi, StateSet::const_iterator ti,
+-    bool ise)
+-    : post_(post_p), current_state_(as), post_iterator_(pi), targets_position_(ti), is_end_(ise) {
+-    transition_.source = current_state_;
+-    transition_.symbol = post_iterator_->symbol;
+-    transition_.target = *targets_position_;
+-};
++        const Delta& delta, State current_state, bool is_end)
++    : delta_{ &delta }, current_state_{ current_state }, is_end_{ is_end } {
++    const size_t post_size = delta_->num_of_states();
++    for (State source{ current_state_ }; source < post_size; ++source) {
++        const StatePost& state_post{ delta_->state_post(source) };
++        if (!state_post.empty()) {
++            current_state_ = source;
++            state_post_it_ = state_post.begin();
++            symbol_post_it_ = state_post_it_->targets.begin();
++            transition_.source = current_state_;
++            transition_.symbol = state_post_it_->symbol;
++            transition_.target = *symbol_post_it_;
++            return;
++        }
++    }
++
++    // no transition found, an empty post
++    is_end_ = true;
++}
+ 
+ Delta::transitions_const_iterator& Delta::transitions_const_iterator::operator++() {
+-    assert(post_.begin() != post_.end());
++    assert(delta_->begin() != delta_->end());
+ 
+-    ++targets_position_;
+-    if (targets_position_ != post_iterator_->targets.end()) {
+-        transition_.target = *targets_position_;
++    ++symbol_post_it_;
++    if (symbol_post_it_ != state_post_it_->targets.end()) {
++        transition_.target = *symbol_post_it_;
+         return *this;
+     }
+ 
+-    ++post_iterator_;
+-    if (post_iterator_ != post_[current_state_].cend()) {
+-        targets_position_ = post_iterator_->targets.begin();
+-        transition_.symbol = post_iterator_->symbol;
+-        transition_.target = *targets_position_;
++    ++state_post_it_;
++    if (state_post_it_ != (*delta_)[current_state_].cend()) {
++        symbol_post_it_ = state_post_it_->targets.begin();
++        transition_.symbol = state_post_it_->symbol;
++        transition_.target = *symbol_post_it_;
+         return *this;
+     }
+ 
+-    ++current_state_;
+-    while (current_state_ < post_.size() && post_[current_state_].empty()) // skip empty posts
+-        current_state_++;
+-
+-    if (current_state_ >= post_.size())
++    const size_t state_posts_size{ delta_->num_of_states() };
++    do { // Skip empty posts.
++        ++current_state_;
++    } while (current_state_ < state_posts_size && (*delta_)[current_state_].empty());
++    if (current_state_ >= state_posts_size) {
+         is_end_ = true;
+-    else {
+-        post_iterator_ = post_[current_state_].begin();
+-        targets_position_ = post_iterator_->targets.begin();
++        return *this;
+     }
+ 
++    const StatePost& state_post{ (*delta_)[current_state_] };
++    state_post_it_ = state_post.begin();
++    symbol_post_it_ = state_post_it_->targets.begin();
++
+     transition_.source = current_state_;
+-    transition_.symbol = post_iterator_->symbol;
+-    transition_.target = *targets_position_;
++    transition_.symbol = state_post_it_->symbol;
++    transition_.target = *symbol_post_it_;
+ 
+     return *this;
+ }
+@@ -257,27 +277,14 @@ const Delta::transitions_const_iterator Delta::transitions_const_iterator::opera
+     return tmp;
+ }
+ 
+-Delta::transitions_const_iterator& Delta::transitions_const_iterator::operator=(const Delta::transitions_const_iterator& x) {
+-    // FIXME: this->post is never updated, because it is a const reference to std::vector which does not have assignment
+-    //  operator defined.
+-    this->post_iterator_ = x.post_iterator_;
+-    this->targets_position_ = x.targets_position_;
+-    this->current_state_ = x.current_state_;
+-    this->is_end_ = x.is_end_;
+-    transition_.source = x.transition_.source;
+-    transition_.symbol = x.transition_.symbol;
+-    transition_.target = x.transition_.target;
+-    return *this;
+-}
+-
+ bool Mata::Nfa::Delta::transitions_const_iterator::operator==(const Delta::transitions_const_iterator& other) const {
+     if (is_end_ && other.is_end_) {
+         return true;
+     } else if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) {
+         return false;
+     } else {
+-        return current_state_ == other.current_state_ && post_iterator_ == other.post_iterator_
+-               && targets_position_ == other.targets_position_;
++        return current_state_ == other.current_state_ && state_post_it_ == other.state_post_it_
++               && symbol_post_it_ == other.symbol_post_it_;
+     }
+ }
+ 
+diff --git a/src/nfa/nfa.cc b/src/nfa/nfa.cc
+index ad36930b0..2911845e0 100644
+--- a/src/nfa/nfa.cc
++++ b/src/nfa/nfa.cc
+@@ -417,21 +417,6 @@ std::vector<Transition> Nfa::get_trans_as_sequence() const
+     return trans_sequence;
+ }
+ 
+-std::vector<Transition> Nfa::get_trans_from_as_sequence(State state_from) const
+-{
+-    std::vector<Transition> trans_sequence{};
+-
+-    for (const auto& transition_from_state: delta[state_from])
+-    {
+-        for (State state_to: transition_from_state.targets)
+-        {
+-            trans_sequence.emplace_back(state_from, transition_from_state.symbol, state_to);
+-        }
+-    }
+-
+-    return trans_sequence;
+-}
+-
+ Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
+     Nfa digraph{size(), StateSet(initial), StateSet(final) };
+     // Add directed transitions for digraph.
+diff --git a/tests/nfa/delta.cc b/tests/nfa/delta.cc
+index 55a17ab1c..43776c9c1 100644
+--- a/tests/nfa/delta.cc
++++ b/tests/nfa/delta.cc
+@@ -238,3 +238,22 @@ TEST_CASE("Mata::Nfa::Delta iteration over transitions") {
+         CHECK(iterated_transitions == expected_transitions);
+     }
+ }
++TEST_CASE("Mata::Nfa::Delta::TransitionsView") {
++    Nfa nfa{};
++    nfa.initial.insert(0);
++    nfa.final.insert(5);
++    nfa.delta.add(0, 'a', 1);
++    nfa.delta.add(1, 'b', 2);
++    nfa.delta.add(1, 'c', 2);
++    nfa.delta.add(1, 'd', 2);
++    nfa.delta.add(2, 'e', 3);
++    nfa.delta.add(3, 'e', 4);
++    nfa.delta.add(4, 'f', 5);
++    Delta::TransitionsView transitions_from_source{ nfa.delta.transitions.from(0) };
++    CHECK(std::vector<Transition>{ transitions_from_source.begin(), transitions_from_source.end() } == std::vector<Transition>{ { 0, 'a', 1 }});
++    transitions_from_source = nfa.delta.transitions.from(1);
++    CHECK(std::vector<Transition>{ transitions_from_source.begin(), transitions_from_source.end() } ==
++        std::vector<Transition>{ { 1, 'b', 2 }, { 1, 'c', 2 }, { 1, 'd', 2 } });
++    transitions_from_source = nfa.delta.transitions.from(12);
++    CHECK(std::vector<Transition>{ transitions_from_source.begin(), transitions_from_source.end() }.empty());
++}
+diff --git a/tests/nfa/nfa-intersection.cc b/tests/nfa/nfa-intersection.cc
+index c1930319d..2c2236605 100644
+--- a/tests/nfa/nfa-intersection.cc
++++ b/tests/nfa/nfa-intersection.cc
+@@ -246,45 +246,45 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
+     CHECK(result.get_num_of_trans() == 15);
+ 
+     CHECK(result.delta.contains(prod_map[{0, 0}], EPSILON, prod_map[{1, 0}]));
+-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 0, 0 }]).size() == 1);
++    CHECK(result.delta.transitions.from(prod_map[{ 0, 0 }]).count() == 1);
+ 
+     CHECK(result.delta.contains(prod_map[{1, 0}], 'b', prod_map[{1, 1}]));
+     CHECK(result.delta.contains(prod_map[{1, 0}], 'a', prod_map[{1, 2}]));
+     CHECK(result.delta.contains(prod_map[{1, 0}], 'c', prod_map[{2, 5}]));
+-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 0 }]).size() == 3);
++    CHECK(result.delta.transitions.from(prod_map[{ 1, 0 }]).count() == 3);
+ 
+-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 1 }]).empty());
++    CHECK(result.delta.transitions.from(prod_map[{ 1, 1 }]).empty());
+ 
+     CHECK(result.delta.contains(prod_map[{1, 2}], EPSILON, prod_map[{1, 3}]));
+     CHECK(result.delta.contains(prod_map[{1, 2}], 'a', prod_map[{1, 4}]));
+-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 2 }]).size() == 2);
++    CHECK(result.delta.transitions.from(prod_map[{ 1, 2 }]).count() == 2);
+ 
+     CHECK(result.delta.contains(prod_map[{1, 3}], 'b', prod_map[{1, 4}]));
+-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 3 }]).size() == 1);
++    CHECK(result.delta.transitions.from(prod_map[{ 1, 3 }]).count() == 1);
+ 
+-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 4 }]).empty());
++    CHECK(result.delta.transitions.from(prod_map[{ 1, 4 }]).empty());
+ 
+     CHECK(result.delta.contains(prod_map[{2, 5}], EPSILON, prod_map[{3, 5}]));
+     CHECK(result.delta.contains(prod_map[{2, 5}], EPSILON, prod_map[{2, 6}]));
+     CHECK(result.delta.contains(prod_map[{2, 5}], EPSILON, prod_map[{3, 6}]));
+-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 2, 5 }]).size() == 3);
++    CHECK(result.delta.transitions.from(prod_map[{ 2, 5 }]).count() == 3);
+ 
+     CHECK(result.delta.contains(prod_map[{3, 5}], 'a', prod_map[{5, 8}]));
+     CHECK(result.delta.contains(prod_map[{3, 5}], EPSILON, prod_map[{3, 6}]));
+-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 3, 5 }]).size() == 2);
++    CHECK(result.delta.transitions.from(prod_map[{ 3, 5 }]).count() == 2);
+ 
+     CHECK(result.delta.contains(prod_map[{2, 6}], 'b', prod_map[{4, 7}]));
+     CHECK(result.delta.contains(prod_map[{2, 6}], EPSILON, prod_map[{3, 6}]));
+-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 2, 6 }]).size() == 2);
++    CHECK(result.delta.transitions.from(prod_map[{ 2, 6 }]).count() == 2);
+ 
+     CHECK(result.delta.contains(prod_map[{3, 6}], 'a', prod_map[{5, 9}]));
+-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 3, 6 }]).size() == 1);
++    CHECK(result.delta.transitions.from(prod_map[{ 3, 6 }]).count() == 1);
+ 
+-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 4, 7 }]).empty());
++    CHECK(result.delta.transitions.from(prod_map[{ 4, 7 }]).empty());
+ 
+-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 5, 9 }]).empty());
++    CHECK(result.delta.transitions.from(prod_map[{ 5, 9 }]).empty());
+ 
+-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 5, 8 }]).empty());
++    CHECK(result.delta.transitions.from(prod_map[{ 5, 8 }]).empty());
+ }
+ 
+ TEST_CASE("Mata::Nfa::intersection() for profiling", "[.profiling],[intersection]")
+-- 
+2.56.0
+
+
+From 37962ddbe4d2c1978796a7508139fc9b5b265cfd Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Thu, 17 Aug 2023 09:16:52 +0200
+Subject: [PATCH 03/15] Update Python binding to use transitions iterators
+
+---
+ bindings/python/libmata/nfa/nfa.pxd | 23 ++++++++++++++++++++---
+ bindings/python/libmata/nfa/nfa.pyx | 22 +++++++++++++++++-----
+ 2 files changed, 37 insertions(+), 8 deletions(-)
+
+diff --git a/bindings/python/libmata/nfa/nfa.pxd b/bindings/python/libmata/nfa/nfa.pxd
+index 927f2a937..aad28b3de 100644
+--- a/bindings/python/libmata/nfa/nfa.pxd
++++ b/bindings/python/libmata/nfa/nfa.pxd
+@@ -51,8 +51,24 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
+         COrdVector[CSymbolPost].const_iterator cbegin()
+         COrdVector[CSymbolPost].const_iterator cend()
+ 
++    cdef cppclass Ctransitions_const_iterator "Mata::Nfa::Delta::transitions_const_iterator":
++            bool operator==(Ctransitions_const_iterator&)
++            bool operator!=(Ctransitions_const_iterator&)
++            CTrans& operator*()
++            Ctransitions_const_iterator& operator++()
++
++    cdef cppclass CTransitionsView "Mata::Nfa::Delta::TransitionsView":
++        Ctransitions_const_iterator begin()
++        Ctransitions_const_iterator end()
++
++    cdef cppclass CTransitions "Mata::Nfa::Delta::Transitions":
++        Ctransitions_const_iterator begin()
++        Ctransitions_const_iterator end()
++        size_t count()
++
+     cdef cppclass CDelta "Mata::Nfa::Delta":
+-        vector[CStatePost] post
++        vector[CStatePost] state_posts
++        CTransitions transitions
+ 
+         void reserve(size_t)
+         CStatePost& state_post(State)
+@@ -109,6 +125,9 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
+         bool operator>(CSymbolPost)
+         bool operator>=(CSymbolPost)
+ 
++        COrdVector[State].const_iterator begin()
++        COrdVector[State].const_iterator end()
++
+     cdef cppclass CNfa "Mata::Nfa::Nfa":
+         # Nested iterator
+         cppclass const_iterator:
+@@ -146,7 +165,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
+         void unify_final()
+         COrdVector[Symbol] get_used_symbols()
+         bool is_state(State)
+-        size_t get_num_of_trans()
+         StateSet post(StateSet&, Symbol)
+         CNfa.const_iterator begin()
+         CNfa.const_iterator end()
+@@ -155,7 +173,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
+         void print_to_DOT(ostream)
+         vector[CTrans] get_transitions_to(State)
+         vector[CTrans] get_trans_as_sequence()
+-        vector[CTrans] get_trans_from_as_sequence(State)
+         CNfa& trim(StateRenaming*)
+         void get_one_letter_aut(CNfa&)
+         bool is_epsilon(Symbol)
+diff --git a/bindings/python/libmata/nfa/nfa.pyx b/bindings/python/libmata/nfa/nfa.pyx
+index 348c7a97d..9e61f63db 100644
+--- a/bindings/python/libmata/nfa/nfa.pyx
++++ b/bindings/python/libmata/nfa/nfa.pyx
+@@ -384,7 +384,7 @@ cdef class Nfa:
+ 
+         :return: number of transitions in automaton
+         """
+-        return self.thisptr.get().get_num_of_trans()
++        return self.thisptr.get().delta.transitions.count()
+ 
+     def clear(self):
+         """Clears all of the internals in the automaton"""
+@@ -444,6 +444,8 @@ cdef class Nfa:
+     def get_trans_as_sequence(self):
+         """Get automaton transitions as a sequence.
+ 
++        TODO: Refactor into a generator.
++
+         :return: List of automaton transitions.
+         """
+         cdef vector[CTrans] c_transitions = self.thisptr.get().get_trans_as_sequence()
+@@ -452,15 +454,25 @@ cdef class Nfa:
+             transitions.append(Transition(c_transition.source, c_transition.symbol, c_transition.target))
+         return transitions
+ 
+-    def get_trans_from_state_as_sequence(self, State state_from):
++    def get_trans_from_state_as_sequence(self, State source) -> list[Transition]:
+         """Get automaton transitions from state_from as a sequence.
+ 
++        TODO: Refactor into a generator.
++
+         :return: List of automaton transitions.
+         """
+-        cdef vector[CTrans] c_transitions = self.thisptr.get().get_trans_from_as_sequence(state_from)
+         transitions = []
+-        for c_transition in c_transitions:
+-            transitions.append(Transition(c_transition.source, c_transition.symbol, c_transition.target))
++        cdef CStatePost c_state_post = self.thisptr.get().delta[source]
++        cdef COrdVector[CSymbolPost].const_iterator c_state_post_it = c_state_post.cbegin()
++        cdef CSymbolPost c_symbol_post
++        cdef COrdVector[State].const_iterator c_symbol_post_it
++        while c_state_post_it != c_state_post.cend():
++            c_symbol_post = dereference(c_state_post_it)
++            c_symbol_post_it = c_symbol_post.begin()
++            while c_symbol_post_it != c_symbol_post.end():
++                transitions.append(Transition(source, c_symbol_post.symbol, dereference(c_symbol_post_it)))
++                preinc(c_symbol_post_it)
++            preinc(c_state_post_it)
+         return transitions
+ 
+     def get_useful_states(self):
+-- 
+2.56.0
+
+
+From fdc5438629b91dcdfa80e2a4b2551b8eed49afc4 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Thu, 17 Aug 2023 10:03:19 +0200
+Subject: [PATCH 04/15] Check corrent functionality of Delta::operator=
+
+---
+ tests/nfa/delta.cc | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/tests/nfa/delta.cc b/tests/nfa/delta.cc
+index 43776c9c1..06c82317e 100644
+--- a/tests/nfa/delta.cc
++++ b/tests/nfa/delta.cc
+@@ -238,6 +238,19 @@ TEST_CASE("Mata::Nfa::Delta iteration over transitions") {
+         CHECK(iterated_transitions == expected_transitions);
+     }
+ }
++
++TEST_CASE("Mata::Nfa::Delta::operator=()") {
++    Nfa nfa{};
++    nfa.initial.insert(0);
++    nfa.final.insert(1);
++    nfa.delta.add(0, 'a', 1);
++
++    Nfa copied_nfa{ nfa };
++    nfa.delta.add(1, 'b', 0);
++    CHECK(nfa.delta.transitions.count() == 2);
++    CHECK(copied_nfa.delta.transitions.count() == 1);
++}
++
+ TEST_CASE("Mata::Nfa::Delta::TransitionsView") {
+     Nfa nfa{};
+     nfa.initial.insert(0);
+-- 
+2.56.0
+
+
+From 98217f6afffa005a3d45826ddc99bf7293b57b90 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Thu, 17 Aug 2023 12:14:55 +0200
+Subject: [PATCH 05/15] Remove iterator over Delta
+
+---
+ bindings/python/libmata/nfa/nfa.pxd |  11 ---
+ bindings/python/libmata/nfa/nfa.pyx |   4 +-
+ include/mata/nfa/nfa.hh             |  27 -------
+ src/nfa/nfa.cc                      | 108 +---------------------------
+ tests/nfa/delta.cc                  |  32 +++++++++
+ tests/nfa/nfa.cc                    |  39 ----------
+ 6 files changed, 35 insertions(+), 186 deletions(-)
+
+diff --git a/bindings/python/libmata/nfa/nfa.pxd b/bindings/python/libmata/nfa/nfa.pxd
+index aad28b3de..48374cc36 100644
+--- a/bindings/python/libmata/nfa/nfa.pxd
++++ b/bindings/python/libmata/nfa/nfa.pxd
+@@ -129,15 +129,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
+         COrdVector[State].const_iterator end()
+ 
+     cdef cppclass CNfa "Mata::Nfa::Nfa":
+-        # Nested iterator
+-        cppclass const_iterator:
+-            const_iterator()
+-            CTrans operator*()
+-            const_iterator& operator++()
+-            bool operator==(const_iterator&)
+-            bool operator!=(const_iterator&)
+-            void refresh_trans()
+-
+         # Public Attributes
+         CSparseSet[State] initial
+         CSparseSet[State] final
+@@ -166,8 +157,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
+         COrdVector[Symbol] get_used_symbols()
+         bool is_state(State)
+         StateSet post(StateSet&, Symbol)
+-        CNfa.const_iterator begin()
+-        CNfa.const_iterator end()
+         State add_state()
+         State add_state(State)
+         void print_to_DOT(ostream)
+diff --git a/bindings/python/libmata/nfa/nfa.pyx b/bindings/python/libmata/nfa/nfa.pyx
+index 9e61f63db..32480cfef 100644
+--- a/bindings/python/libmata/nfa/nfa.pyx
++++ b/bindings/python/libmata/nfa/nfa.pyx
+@@ -401,8 +401,8 @@ cdef class Nfa:
+ 
+         :return: stream of transitions
+         """
+-        iterator = self.thisptr.get().begin()
+-        while iterator != self.thisptr.get().end():
++        iterator = self.thisptr.get().delta.transitions.begin()
++        while iterator != self.thisptr.get().delta.transitions.end():
+             trans = Transition()
+             lhs = dereference(iterator)
+             trans.copy_from(lhs)
+diff --git a/include/mata/nfa/nfa.hh b/include/mata/nfa/nfa.hh
+index ab0cfc974..e12c9130d 100644
+--- a/include/mata/nfa/nfa.hh
++++ b/include/mata/nfa/nfa.hh
+@@ -303,33 +303,6 @@ public:
+     // TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
+     StateSet post(const StateSet& states, const Symbol& symbol) const;
+ 
+-    struct const_iterator {
+-        const Nfa* nfa;
+-        size_t trIt;
+-        StatePost::const_iterator tlIt;
+-        StateSet::const_iterator ssIt;
+-        Transition trans;
+-        bool is_end = { false };
+-
+-        const_iterator() : nfa(), trIt(0), tlIt(), ssIt(), trans() { };
+-        static const_iterator for_begin(const Nfa* nfa);
+-        static const_iterator for_end(const Nfa* nfa);
+-
+-        // FIXME: He, what is this? Some comment would help.
+-        // I am thinking about that removing everything having to do with Transition might be a good thing. Transition
+-        //  adds clutter and makes people write inefficient code.
+-        void refresh_trans() { this->trans = {trIt, this->tlIt->symbol, *(this->ssIt)}; }
+-
+-        const Transition& operator*() const { return this->trans; }
+-
+-        bool operator==(const const_iterator& rhs) const;
+-        bool operator!=(const const_iterator& rhs) const { return !(*this == rhs);}
+-        const_iterator& operator++();
+-    }; // }}}
+-
+-    const_iterator begin() const { return const_iterator::for_begin(this); }
+-    const_iterator end() const { return const_iterator::for_end(this); }
+-
+     /**
+      * @brief Expand alphabet by symbols from this automaton to given alphabet
+      *
+diff --git a/src/nfa/nfa.cc b/src/nfa/nfa.cc
+index 2911845e0..f0745b9af 100644
+--- a/src/nfa/nfa.cc
++++ b/src/nfa/nfa.cc
+@@ -462,107 +462,6 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
+     return res;
+ }
+ 
+-Nfa::const_iterator Nfa::const_iterator::for_begin(const Nfa* nfa)
+-{ // {{{
+-    assert(nullptr != nfa);
+-
+-    const_iterator result;
+-
+-    if (nfa->delta.transitions.begin() == nfa->delta.transitions.end()) {
+-        result.is_end = true;
+-        return result;
+-    }
+-
+-    result.nfa = nfa;
+-
+-    for (size_t trIt{ 0 }; trIt < nfa->delta.num_of_states(); ++trIt) {
+-        auto& moves{ nfa->delta.state_post(trIt) };
+-        if (!moves.empty()) {
+-            auto move{ moves.begin() };
+-            while (move != moves.end()) {
+-                if (!move->targets.empty()) {
+-                    result.trIt = trIt;
+-                    result.tlIt = moves.begin();
+-                    result.ssIt = result.tlIt->targets.begin();
+-                    break;
+-                }
+-                ++move;
+-            }
+-            break;
+-        }
+-    }
+-
+-    result.refresh_trans();
+-
+-    return result;
+-} // for_begin }}}
+-
+-Nfa::const_iterator Nfa::const_iterator::for_end(const Nfa* /* nfa*/)
+-{ // {{{
+-    const_iterator result;
+-    result.is_end = true;
+-    return result;
+-} // for_end }}}
+-
+-Nfa::const_iterator& Nfa::const_iterator::operator++()
+-{ // {{{
+-    assert(nullptr != nfa);
+-
+-    ++(this->ssIt);
+-    const StateSet& state_set = this->tlIt->targets;
+-    assert(!state_set.empty());
+-    if (this->ssIt != state_set.end())
+-    {
+-        this->refresh_trans();
+-        return *this;
+-    }
+-
+-    // out of state set
+-    ++(this->tlIt);
+-    const StatePost& tlist = this->nfa->delta.state_post(this->trIt);
+-    assert(!tlist.empty());
+-    if (this->tlIt != tlist.end())
+-    {
+-        this->ssIt = this->tlIt->targets.begin();
+-
+-        this->refresh_trans();
+-        return *this;
+-    }
+-
+-    // out of transition list
+-    ++this->trIt;
+-    assert(this->nfa->delta.transitions.begin() != this->nfa->delta.transitions.end());
+-
+-    while (this->trIt < this->nfa->delta.num_of_states() &&
+-           this->nfa->delta.state_post(this->trIt).empty())
+-    {
+-        ++this->trIt;
+-    }
+-
+-    if (this->trIt < this->nfa->delta.num_of_states())
+-    {
+-        this->tlIt = this->nfa->delta.state_post(this->trIt).begin();
+-        assert(!this->nfa->delta.state_post(this->trIt).empty());
+-        const StateSet& new_state_set = this->tlIt->targets;
+-        assert(!new_state_set.empty());
+-        this->ssIt = new_state_set.begin();
+-
+-        this->refresh_trans();
+-        return *this;
+-    }
+-
+-    // out of transitions
+-    this->is_end = true;
+-
+-    return *this;
+-}
+-
+-bool Nfa::const_iterator::operator==(const Nfa::const_iterator& rhs) const {
+-    if (this->is_end && rhs.is_end) { return true; }
+-    if ((this->is_end && !rhs.is_end) || (!this->is_end && rhs.is_end)) { return false; }
+-    return ssIt == rhs.ssIt && tlIt == rhs.tlIt && trIt == rhs.trIt;
+-}
+-
+ // Other versions, maybe an interesting experiment with speed of data structures.
+ // Returns symbols appearing in Delta, pushes back to vector and then sorts
+ Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_vec() const {
+@@ -772,12 +671,7 @@ bool Nfa::is_identical(const Nfa& aut) {
+     if (Util::OrdVector<State>(final) != Util::OrdVector<State>(aut.final)) {
+         return false;
+     }
+-
+-    std::vector<Transition> this_trans;
+-    for (auto trans: *this) { this_trans.push_back(trans); }
+-    std::vector<Transition> aut_trans;
+-    for (auto trans: aut) { aut_trans.push_back(trans); }
+-    return this_trans == aut_trans;
++    return delta == aut.delta;
+ }
+ 
+ OrdVector<Symbol> Nfa::get_used_symbols() const {
+diff --git a/tests/nfa/delta.cc b/tests/nfa/delta.cc
+index 06c82317e..8795a78be 100644
+--- a/tests/nfa/delta.cc
++++ b/tests/nfa/delta.cc
+@@ -209,6 +209,11 @@ TEST_CASE("Mata::Nfa::Delta iteration over transitions") {
+     std::vector<Transition> iterated_transitions{};
+     std::vector<Transition> expected_transitions{};
+ 
++    SECTION("empty automaton") {
++        Mata::Nfa::Delta::transitions_const_iterator it = nfa.delta.transitions.begin();
++        REQUIRE(it == nfa.delta.transitions.end());
++    }
++
+     SECTION("Simple NFA") {
+         nfa.initial.insert(0);
+         nfa.final.insert(3);
+@@ -237,6 +242,33 @@ TEST_CASE("Mata::Nfa::Delta iteration over transitions") {
+         for (const Transition& transition: nfa.delta.transitions) { iterated_transitions.push_back(transition); }
+         CHECK(iterated_transitions == expected_transitions);
+     }
++
++    SECTION("Sparse automaton") {
++        const size_t state_num = 'r'+1;
++        nfa.delta.increase_size(state_num);
++
++        nfa.delta.add('q', 'a', 'r');
++        nfa.delta.add('q', 'b', 'r');
++        Delta::transitions_const_iterator it = nfa.delta.transitions.begin();
++        Delta::transitions_const_iterator jt = nfa.delta.transitions.begin();
++        CHECK(it == jt);
++        ++it;
++        CHECK(it != jt);
++        CHECK((it != nfa.delta.transitions.begin() && it != nfa.delta.transitions.end()));
++        CHECK(jt == nfa.delta.transitions.begin());
++
++        ++jt;
++        CHECK(it == jt);
++        CHECK((jt != nfa.delta.transitions.begin() && jt != nfa.delta.transitions.end()));
++
++        jt = nfa.delta.transitions.end();
++        CHECK(it != jt);
++        CHECK((jt != nfa.delta.transitions.begin() && jt == nfa.delta.transitions.end()));
++
++        it = nfa.delta.transitions.end();
++        CHECK(it == jt);
++        CHECK((it != nfa.delta.transitions.begin() && it == nfa.delta.transitions.end()));
++    }
+ }
+ 
+ TEST_CASE("Mata::Nfa::Delta::operator=()") {
+diff --git a/tests/nfa/nfa.cc b/tests/nfa/nfa.cc
+index bbf577804..92d011541 100644
+--- a/tests/nfa/nfa.cc
++++ b/tests/nfa/nfa.cc
+@@ -165,45 +165,6 @@ TEST_CASE("Mata::Nfa::Delta.transform/append")
+ 
+ } // }}}
+ 
+-TEST_CASE("Mata::Nfa::Nfa iteration")
+-{ // {{{
+-    Nfa aut;
+-
+-    SECTION("empty automaton")
+-    {
+-        auto it = aut.begin();
+-        REQUIRE(it == aut.end());
+-    }
+-
+-    const size_t state_num = 'r'+1;
+-    aut.delta.increase_size(state_num);
+-
+-    SECTION("a non-empty automaton")
+-    {
+-        aut.delta.add('q', 'a', 'r');
+-        aut.delta.add('q', 'b', 'r');
+-        auto it = aut.delta.transitions.begin();
+-        auto jt = aut.delta.transitions.begin();
+-        REQUIRE(it == jt);
+-        ++it;
+-        REQUIRE(it != jt);
+-        REQUIRE((it != aut.delta.transitions.begin() && it != aut.delta.transitions.end()));
+-        REQUIRE(jt == aut.delta.transitions.begin());
+-
+-        ++jt;
+-        REQUIRE(it == jt);
+-        REQUIRE((jt != aut.delta.transitions.begin() && jt != aut.delta.transitions.end()));
+-
+-        jt = aut.delta.transitions.end();
+-        REQUIRE(it != jt);
+-        REQUIRE((jt != aut.delta.transitions.begin() && jt == aut.delta.transitions.end()));
+-
+-        it = aut.delta.transitions.end();
+-        REQUIRE(it == jt);
+-        REQUIRE((it != aut.delta.transitions.begin() && it == aut.delta.transitions.end()));
+-    }
+-} // }}}
+-
+ TEST_CASE("Mata::Nfa::is_lang_empty()")
+ { // {{{
+     Nfa aut(14);
+-- 
+2.56.0
+
+
+From 0f558f7d988ccd870978f3096b78bff49c0fee27 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Thu, 17 Aug 2023 12:15:22 +0200
+Subject: [PATCH 06/15] Compare Delta by their transitions as 'Transition'
+
+---
+ include/mata/nfa/delta.hh |  2 ++
+ src/nfa/delta.cc          | 15 +++++++++++++++
+ tests/nfa/delta.cc        | 21 +++++++++++++++++++++
+ 3 files changed, 38 insertions(+)
+
+diff --git a/include/mata/nfa/delta.hh b/include/mata/nfa/delta.hh
+index 02a79919f..49316e00a 100644
+--- a/include/mata/nfa/delta.hh
++++ b/include/mata/nfa/delta.hh
+@@ -204,6 +204,8 @@ public:
+ 
+     Delta& operator=(const Delta& other);
+ 
++    bool operator==(const Delta& other) const;
++
+     void reserve(size_t n) {
+         state_posts_.reserve(n);
+     };
+diff --git a/src/nfa/delta.cc b/src/nfa/delta.cc
+index c9208e8cf..cd7ecff09 100644
+--- a/src/nfa/delta.cc
++++ b/src/nfa/delta.cc
+@@ -431,3 +431,18 @@ bool Mata::Nfa::StatePost::moves_const_iterator::operator==(const StatePost::mov
+         return symbol_post_it_ == other.symbol_post_it_ && target_states_it_ == other.target_states_it_;
+     }
+ }
++
++bool Delta::operator==(const Delta& other) const {
++    transitions_const_iterator this_transitions_it{ transitions_begin() };
++    const transitions_const_iterator this_transitions_end{ transitions_end() };
++    transitions_const_iterator other_transitions_it{ other.transitions_begin() };
++    const transitions_const_iterator other_transitions_end{ other.transitions_end() };
++    while (this_transitions_it != this_transitions_end) {
++        if (other_transitions_it == other_transitions_end || *this_transitions_it != *other_transitions_it) {
++            return false;
++        }
++        ++this_transitions_it;
++        ++other_transitions_it;
++    }
++    return other_transitions_it == other_transitions_end;
++}
+diff --git a/tests/nfa/delta.cc b/tests/nfa/delta.cc
+index 8795a78be..eb7169058 100644
+--- a/tests/nfa/delta.cc
++++ b/tests/nfa/delta.cc
+@@ -302,3 +302,24 @@ TEST_CASE("Mata::Nfa::Delta::TransitionsView") {
+     transitions_from_source = nfa.delta.transitions.from(12);
+     CHECK(std::vector<Transition>{ transitions_from_source.begin(), transitions_from_source.end() }.empty());
+ }
++
++TEST_CASE("Mata::Nfa::Delta::operator==()") {
++    Delta delta{};
++    Delta delta2{};
++    CHECK(delta == delta2);
++    delta.add(0, 0, 0);
++    CHECK(delta != delta2);
++    delta2.add(0, 0, 0);
++    CHECK(delta == delta2);
++    delta.add(0, 0, 1);
++    delta2.add(0, 0, 2);
++    CHECK(delta != delta2);
++    delta2.add(0, 0, 1);
++    CHECK(delta != delta2);
++    delta.add(0, 0, 2);
++    CHECK(delta == delta2);
++    delta2.add(0, 0, 3);
++    CHECK(delta != delta2);
++    delta.add(0, 0, 3);
++    CHECK(delta == delta2);
++}
+-- 
+2.56.0
+
+
+From 25be4d8cfef1f6fa6078c88aacbb05df0c36c0f0 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Mon, 21 Aug 2023 08:02:32 +0200
+Subject: [PATCH 07/15] Refactor moves
+
+---
+ include/mata/nfa/delta.hh | 24 ++++++++++-------
+ src/nfa/delta.cc          | 55 +++++++++++++++++++--------------------
+ 2 files changed, 42 insertions(+), 37 deletions(-)
+
+diff --git a/include/mata/nfa/delta.hh b/include/mata/nfa/delta.hh
+index 49316e00a..0b24dec5f 100644
+--- a/include/mata/nfa/delta.hh
++++ b/include/mata/nfa/delta.hh
+@@ -125,8 +125,8 @@ public:
+      */
+     struct moves_const_iterator {
+     private:
+-        const std::vector<SymbolPost>& symbol_posts_{};
+-        std::vector<SymbolPost>::const_iterator symbol_post_it_{};
++        const StatePost* state_post_{};
++        StatePost::const_iterator state_post_it_{};
+         StateSet::const_iterator target_states_it_{};
+         bool is_end_{ false };
+         Move move_{};
+@@ -138,10 +138,11 @@ public:
+         using pointer = Move*;
+         using reference = Move&;
+ 
+-        explicit moves_const_iterator(const std::vector<SymbolPost>& symbol_posts, bool is_end = false);
++        moves_const_iterator() = default;
++        explicit moves_const_iterator(const StatePost* const state_post, bool is_end = false);
+ 
+-        moves_const_iterator(const std::vector<SymbolPost>& symbol_posts,
+-                             std::vector<SymbolPost>::const_iterator symbol_posts_it,
++        moves_const_iterator(const StatePost* const symbol_posts,
++                             StatePost::const_iterator state_post_it,
+                              StateSet::const_iterator target_states_it, bool is_end = false);
+ 
+         moves_const_iterator(const moves_const_iterator& other) = default;
+@@ -153,14 +154,14 @@ public:
+         // Postfix increment
+         const moves_const_iterator operator++(int);
+ 
+-        moves_const_iterator& operator=(const moves_const_iterator& x);
++        moves_const_iterator& operator=(const moves_const_iterator& other);
+ 
+         bool operator==(const moves_const_iterator& other) const;
+         bool operator!=(const moves_const_iterator& other) const { return !(*this == other); };
+     };
+ 
+-    moves_const_iterator moves_cbegin() const { return moves_const_iterator(ToVector()); }
+-    moves_const_iterator moves_cend() const { return moves_const_iterator(ToVector(), true); }
++    moves_const_iterator moves_cbegin() const { return moves_const_iterator(this); }
++    moves_const_iterator moves_cend() const { return moves_const_iterator(this, true); }
+     moves_const_iterator moves_begin() const { return moves_cbegin(); }
+     moves_const_iterator moves_end() const { return moves_cend(); }
+ 
+@@ -277,6 +278,11 @@ public:
+      */
+     size_t num_of_states() const { return state_posts_.size(); }
+ 
++    /**
++     * @return Number of transitions in Delta.
++     */
++    size_t num_of_transitions() const;
++
+     void add(State state_from, Symbol symbol, State state_to);
+     void add(const Transition& trans) { add(trans.source, trans.symbol, trans.target); }
+     void remove(State src, Symbol symb, State tgt);
+@@ -432,7 +438,7 @@ public:
+     /**
+      * Iterator over transitions represented as 'Transition' instances.
+      */
+-    Transitions transitions() { return Transitions{ *this }; }
++    Transitions transitions()  const { return Transitions{ *this }; }
+ 
+     transitions_const_iterator transitions_cbegin() const { return transitions_const_iterator(*this); }
+     transitions_const_iterator transitions_cend() const { return transitions_const_iterator(*this, true); }
+diff --git a/src/nfa/delta.cc b/src/nfa/delta.cc
+index cd7ecff09..1b4b4e1a4 100644
+--- a/src/nfa/delta.cc
++++ b/src/nfa/delta.cc
+@@ -352,30 +352,30 @@ void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& r
+     }
+ }
+ 
+-StatePost::moves_const_iterator::moves_const_iterator(const std::vector<SymbolPost>& symbol_posts, bool is_end)
+-    : symbol_posts_{ symbol_posts }, symbol_post_it_{ symbol_posts_.cbegin() }, is_end_{ is_end } {
+-    while (symbol_post_it_ != symbol_posts_.cend()) {
+-        if (!symbol_post_it_->empty()) {
+-            target_states_it_ = symbol_post_it_->targets.begin();
+-            move_.symbol = symbol_post_it_->symbol;
++StatePost::moves_const_iterator::moves_const_iterator(const StatePost* state_post, bool is_end)
++    : state_post_{ state_post }, state_post_it_{ state_post_->cbegin() }, is_end_{ is_end } {
++    while (state_post_it_ != state_post_->cend()) {
++        if (!state_post_it_->empty()) {
++            target_states_it_ = state_post_it_->targets.begin();
++            move_.symbol = state_post_it_->symbol;
+             move_.target = *target_states_it_;
+             return;
+         }
+-        ++symbol_post_it_;
++        ++state_post_it_;
+     }
+     // No move found. We are at the end of moves.
+     is_end_ = true;
+ }
+ 
+ StatePost::moves_const_iterator::moves_const_iterator(
+-    const std::vector<SymbolPost>& symbol_posts, std::vector<SymbolPost>::const_iterator symbol_posts_it,
++    const StatePost* const symbol_posts, std::vector<SymbolPost>::const_iterator symbol_posts_it,
+     StateSet::const_iterator target_states_it, bool is_end)
+-    : symbol_posts_{ symbol_posts }, symbol_post_it_{ symbol_posts_it }, target_states_it_{ target_states_it },
++    : state_post_{ symbol_posts }, state_post_it_{ symbol_posts_it }, target_states_it_{ target_states_it },
+       is_end_{ is_end } {
+-        while (symbol_post_it_ != symbol_posts_.cend()) {
+-            if (!symbol_post_it_->empty()) {
+-                target_states_it_ = symbol_post_it_->targets.begin();
+-                move_.symbol = symbol_post_it_->symbol;
++        while (state_post_it_ != state_post_->cend()) {
++            if (!state_post_it_->empty()) {
++                target_states_it_ = state_post_it_->targets.begin();
++                move_.symbol = state_post_it_->symbol;
+                 move_.target = *target_states_it_;
+                 return;
+             }
+@@ -385,18 +385,18 @@ StatePost::moves_const_iterator::moves_const_iterator(
+ }
+ 
+ StatePost::moves_const_iterator& StatePost::moves_const_iterator::operator++() {
+-    assert(symbol_posts_.begin() != symbol_posts_.end());
++    assert(state_post_->begin() != state_post_->end());
+ 
+     ++target_states_it_;
+-    if (target_states_it_ != symbol_post_it_->targets.end()) {
++    if (target_states_it_ != state_post_it_->targets.end()) {
+         move_.target = *target_states_it_;
+         return *this;
+     }
+ 
+-    ++symbol_post_it_;
+-    if (symbol_post_it_ != symbol_posts_.cend()) {
+-        target_states_it_ = symbol_post_it_->targets.begin();
+-        move_.symbol = symbol_post_it_->symbol;
++    ++state_post_it_;
++    if (state_post_it_ != state_post_->cend()) {
++        target_states_it_ = state_post_it_->targets.begin();
++        move_.symbol = state_post_it_->symbol;
+         move_.target = *target_states_it_;
+         return *this;
+     }
+@@ -411,14 +411,13 @@ const StatePost::moves_const_iterator StatePost::moves_const_iterator::operator+
+     return tmp;
+ }
+ 
+-StatePost::moves_const_iterator& StatePost::moves_const_iterator::operator=(const StatePost::moves_const_iterator& x) {
+-    // FIXME: this->symbol_posts is never updated, because it is a const reference to std::vector which does not have
+-    //  assignment operator defined.
+-    is_end_ = x.is_end_;
+-    move_.symbol = x.move_.symbol;
+-    move_.target = x.move_.target;
+-    symbol_post_it_ = x.symbol_post_it_;
+-    target_states_it_ = x.target_states_it_;
++StatePost::moves_const_iterator& StatePost::moves_const_iterator::operator=(const StatePost::moves_const_iterator& other) {
++    state_post_ = other.state_post_;
++    is_end_ = other.is_end_;
++    move_.symbol = other.move_.symbol;
++    move_.target = other.move_.target;
++    state_post_it_ = other.state_post_it_;
++    target_states_it_ = other.target_states_it_;
+     return *this;
+ }
+ 
+@@ -428,7 +427,7 @@ bool Mata::Nfa::StatePost::moves_const_iterator::operator==(const StatePost::mov
+     } else if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) {
+         return false;
+     } else {
+-        return symbol_post_it_ == other.symbol_post_it_ && target_states_it_ == other.target_states_it_;
++        return state_post_it_ == other.state_post_it_ && target_states_it_ == other.target_states_it_;
+     }
+ }
+ 
+-- 
+2.56.0
+
+
+From 1dc3483ccfc7466499613cdcb1c53211ddb6fc4a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Mon, 21 Aug 2023 09:07:31 +0200
+Subject: [PATCH 08/15] Move getting number of transitions to Delta
+
+---
+ include/mata/nfa/delta.hh         |  5 -----
+ include/mata/nfa/nfa.hh           |  7 -------
+ src/nfa/delta.cc                  | 28 +++++++++++++++-------------
+ src/strings/nfa-noodlification.cc |  4 ++--
+ tests/nfa/nfa-concatenation.cc    | 12 ++++++------
+ tests/nfa/nfa-intersection.cc     |  2 +-
+ tests/nfa/nfa.cc                  | 19 ++++++++++---------
+ tests/parser.cc                   |  2 +-
+ 8 files changed, 35 insertions(+), 44 deletions(-)
+
+diff --git a/include/mata/nfa/delta.hh b/include/mata/nfa/delta.hh
+index 0b24dec5f..4feae49fc 100644
+--- a/include/mata/nfa/delta.hh
++++ b/include/mata/nfa/delta.hh
+@@ -211,11 +211,6 @@ public:
+         state_posts_.reserve(n);
+     };
+ 
+-    /**
+-     * Size of delta is number of all transitions, i.e. triples of form (state, symbol, state)
+-     */
+-    size_t size() const;
+-
+     /**
+      * @brief Get constant reference to the state post of @p src_state.
+      *
+diff --git a/include/mata/nfa/nfa.hh b/include/mata/nfa/nfa.hh
+index e12c9130d..7eec8450e 100644
+--- a/include/mata/nfa/nfa.hh
++++ b/include/mata/nfa/nfa.hh
+@@ -224,13 +224,6 @@ public:
+      */
+     Mata::Nfa::Nfa& concatenate(const Mata::Nfa::Nfa& aut);
+ 
+-    /**
+-     * @brief Get a number of transitions in the whole automaton.
+-     *
+-     * The operation has constant time complexity.
+-     */
+-    size_t get_num_of_trans() const { return std::distance(delta.transitions.begin(), delta.transitions.end()); }
+-
+     /**
+      * Get transitions as a sequence of @c Trans.
+      * @return Sequence of transitions as @c Trans.
+diff --git a/src/nfa/delta.cc b/src/nfa/delta.cc
+index 1b4b4e1a4..47ba0ab56 100644
+--- a/src/nfa/delta.cc
++++ b/src/nfa/delta.cc
+@@ -59,14 +59,6 @@ StatePost::const_iterator Delta::epsilon_symbol_posts(const StatePost& state_pos
+     return state_post.end();
+ }
+ 
+-size_t Delta::size() const {
+-    size_t size = 0;
+-    for (State q = 0; q < num_of_states(); ++q) {
+-        for (const SymbolPost & m: (*this)[q]) { size = size + m.size(); }
+-    }
+-    return size;
+-}
+-
+ Delta& Delta::operator=(const Delta& other) {
+     this->state_posts_ = other.state_posts_;
+     return *this;
+@@ -189,13 +181,23 @@ bool Delta::contains(const Transition& transition) const {
+     return contains(transition.source, transition.symbol, transition.target);
+ }
+ 
+-bool Delta::empty() const
+-{
+-    return this->transitions_begin() == this->transitions_end();
++size_t Delta::num_of_transitions() const {
++    size_t number_of_transitions{ 0 };
++    for (const StatePost& state_post: state_posts_) {
++        for (const SymbolPost& symbol_post: state_post) {
++            number_of_transitions += symbol_post.size();
++        }
++    }
++    return number_of_transitions;
++}
++
++bool Delta::empty() const {
++    for (const StatePost& state_post: state_posts_) {
++        if (!state_post.empty()) { return false; }
++    }
++    return true;
+ }
+ 
+-Delta::transitions_const_iterator::transitions_const_iterator(const Delta& delta, bool is_end)
+-    : delta_{ &delta }, current_state_{ 0 }, is_end_{ is_end } {
+     const size_t post_size = delta_->num_of_states();
+     for (size_t i = 0; i < post_size; ++i) {
+         if (!(*delta_)[i].empty()) {
+diff --git a/src/strings/nfa-noodlification.cc b/src/strings/nfa-noodlification.cc
+index 65b482cef..083235fcd 100644
+--- a/src/strings/nfa-noodlification.cc
++++ b/src/strings/nfa-noodlification.cc
+@@ -207,7 +207,7 @@ std::vector<SegNfa::NoodleWithEpsilonsCounter> SegNfa::noodlify_mult_eps(const S
+     for(const State& fn : segments[0].final) {
+         SegItem new_item;
+         std::shared_ptr<Nfa::Nfa> seg = segments_one_initial_final[{unused_state, fn}];
+-        if(seg->final.size() != 1 || seg->get_num_of_trans() > 0) { // L(seg_iter) != {epsilon}
++        if(seg->final.size() != 1 || seg->delta.num_of_transitions() > 0) { // L(seg_iter) != {epsilon}
+             new_item.noodle.emplace_back(seg, def_eps_vector);
+         }
+         new_item.seg_id = 0;
+@@ -247,7 +247,7 @@ std::vector<SegNfa::NoodleWithEpsilonsCounter> SegNfa::noodlify_mult_eps(const S
+                 SegItem new_item = item; // deep copy
+                 new_item.seg_id++;
+                 // do not include segmets with trivial epsilon language
+-                if(seg_iter->second->final.size() != 1 || seg_iter->second->get_num_of_trans() > 0) { // L(seg_iter) != {epsilon}
++                if(seg_iter->second->final.size() != 1 || seg_iter->second->delta.num_of_transitions() > 0) { // L(seg_iter) != {epsilon}
+                     new_item.noodle.emplace_back(seg_iter->second, process_eps_map(visited_eps[tr.target]));
+                 }
+                 new_item.fin = fn;
+diff --git a/tests/nfa/nfa-concatenation.cc b/tests/nfa/nfa-concatenation.cc
+index 7f5078c44..e5498476b 100644
+--- a/tests/nfa/nfa-concatenation.cc
++++ b/tests/nfa/nfa-concatenation.cc
+@@ -419,7 +419,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
+         CHECK(result.initial[0]);
+         CHECK(result.final[1]);
+         CHECK(result.size() == 2);
+-        CHECK(result.get_num_of_trans() == 1);
++        CHECK(result.delta.num_of_transitions() == 1);
+         CHECK(result.delta.contains(0, EPSILON, 1));
+     }
+ 
+@@ -437,7 +437,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
+         CHECK(result.initial[0]);
+         CHECK(result.final[2]);
+         CHECK(result.size() == 3);
+-        CHECK(result.get_num_of_trans() == 1);
++        CHECK(result.delta.num_of_transitions() == 1);
+         CHECK(result.delta.contains(0, EPSILON, 1));
+     }
+ 
+@@ -456,7 +456,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
+         CHECK(result.initial[0]);
+         CHECK(result.final[2]);
+         CHECK(result.size() == 3);
+-        CHECK(result.get_num_of_trans() == 2);
++        CHECK(result.delta.num_of_transitions() == 2);
+         CHECK(result.delta.contains(1, 'a', 2));
+         CHECK(result.delta.contains(0, EPSILON, 1));
+     }
+@@ -477,7 +477,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
+         CHECK(result.initial[0]);
+         CHECK(result.final[3]);
+         CHECK(result.size() == 4);
+-        CHECK(result.get_num_of_trans() == 3);
++        CHECK(result.delta.num_of_transitions() == 3);
+         CHECK(result.delta.contains(0, 'b', 1));
+         CHECK(result.delta.contains(2, 'a', 3));
+         CHECK(result.delta.contains(1, EPSILON, 2));
+@@ -504,7 +504,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
+         CHECK(result.initial[0]);
+         CHECK(result.final[3]);
+         CHECK(result.size() == 6);
+-        CHECK(result.get_num_of_trans() == 4);
++        CHECK(result.delta.num_of_transitions() == 4);
+         CHECK(result.delta.contains(0, 'b', 1));
+         CHECK(result.delta.contains(2, 'a', 3));
+         CHECK(result.delta.contains(2, 'c', 5));
+@@ -535,7 +535,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
+         CHECK(result.initial[0]);
+         CHECK(result.final[2]);
+         CHECK(result.size() == 3);
+-        CHECK(result.get_num_of_trans() == 3);
++        CHECK(result.delta.num_of_transitions() == 3);
+         CHECK(result.delta.contains(0, 'b', 1));
+         CHECK(result.delta.contains(2, 'a', 2));
+         CHECK(result.delta.contains(1, EPSILON, 2));
+diff --git a/tests/nfa/nfa-intersection.cc b/tests/nfa/nfa-intersection.cc
+index 2c2236605..c365603f7 100644
+--- a/tests/nfa/nfa-intersection.cc
++++ b/tests/nfa/nfa-intersection.cc
+@@ -243,7 +243,7 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
+     CHECK(result.final.size() == 4);
+ 
+     // Check transitions.
+-    CHECK(result.get_num_of_trans() == 15);
++    CHECK(result.delta.num_of_transitions() == 15);
+ 
+     CHECK(result.delta.contains(prod_map[{0, 0}], EPSILON, prod_map[{1, 0}]));
+     CHECK(result.delta.transitions.from(prod_map[{ 0, 0 }]).count() == 1);
+diff --git a/tests/nfa/nfa.cc b/tests/nfa/nfa.cc
+index 92d011541..03425a040 100644
+--- a/tests/nfa/nfa.cc
++++ b/tests/nfa/nfa.cc
+@@ -4,6 +4,7 @@
+ 
+ #include "../3rdparty/catch.hpp"
+ 
++#include "mata/nfa/delta.hh"
+ #include "nfa-util.hh"
+ 
+ #include "mata/utils/sparse-set.hh"
+@@ -972,7 +973,7 @@ TEST_CASE("Mata::Nfa::complement()")
+         REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["b"], alph["b"], alph["a"]},{}}));
+         REQUIRE(cmpl.initial.size() == 1);
+         REQUIRE(cmpl.final.size() == 1);
+-        REQUIRE(cmpl.get_num_of_trans() == 4);
++        REQUIRE(cmpl.delta.num_of_transitions() == 4);
+     }
+ 
+     SECTION("non-empty automaton accepting a*b*")
+@@ -998,7 +999,7 @@ TEST_CASE("Mata::Nfa::complement()")
+ 
+         REQUIRE(cmpl.initial.size() == 1);
+         REQUIRE(cmpl.final.size() == 1);
+-        REQUIRE(cmpl.get_num_of_trans() == 6);
++        REQUIRE(cmpl.delta.num_of_transitions() == 6);
+     }
+ 
+     SECTION("empty automaton, empty alphabet, minimization")
+@@ -1675,7 +1676,7 @@ TEST_CASE("Mata::Nfa::revert()")
+         REQUIRE(result.initial[2]);
+         REQUIRE(result.final[1]);
+         REQUIRE(result.delta.contains(2, 'a', 1));
+-        REQUIRE(result.delta.size() == aut.delta.size());
++        REQUIRE(result.delta.num_of_transitions() == aut.delta.num_of_transitions());
+     }
+ 
+     SECTION("bigger automaton")
+@@ -1716,7 +1717,7 @@ TEST_CASE("Mata::Nfa::revert()")
+         CHECK(res.initial[5]);
+         CHECK(res.final[1]);
+         CHECK(res.final[3]);
+-        CHECK(res.get_num_of_trans() == 15);
++        CHECK(res.delta.num_of_transitions() == 15);
+         CHECK(res.delta.contains(5, 'a', 5));
+         CHECK(res.delta.contains(5, 'a', 7));
+         CHECK(res.delta.contains(9, 'a', 9));
+@@ -1741,7 +1742,7 @@ TEST_CASE("Mata::Nfa::revert()")
+         CHECK(res.initial[2]);
+         CHECK(res.initial[12]);
+         CHECK(res.final[4]);
+-        CHECK(res.get_num_of_trans() == 12);
++        CHECK(res.delta.num_of_transitions() == 12);
+         CHECK(res.delta.contains(8, 'a', 4));
+         CHECK(res.delta.contains(8, 'c', 4));
+         CHECK(res.delta.contains(4, 'b', 8));
+@@ -2088,7 +2089,7 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
+         CHECK(result.size() == 3);
+         CHECK(result.initial == SparseSet<Mata::Nfa::State>{ 0, 1 });
+         CHECK(result.final == SparseSet<Mata::Nfa::State>{ 2 });
+-        CHECK(result.delta.size() == 6);
++        CHECK(result.delta.num_of_transitions() == 6);
+         CHECK(result.delta.contains(state_renaming[0], 'a', state_renaming[2]));
+         CHECK(result.delta.contains(state_renaming[0], 'a', state_renaming[1]));
+         CHECK(result.delta.contains(state_renaming[1], 'a', state_renaming[1]));
+@@ -2245,7 +2246,7 @@ TEST_CASE("Mata::Nfa::get_num_of_trans()")
+ {
+     Nfa aut{20};
+     FILL_WITH_AUT_A(aut);
+-    REQUIRE(aut.get_num_of_trans() == 15);
++    REQUIRE(aut.delta.num_of_transitions() == 15);
+ }
+ 
+ TEST_CASE("Mata::Nfa::get_one_letter_aut()")
+@@ -2257,7 +2258,7 @@ TEST_CASE("Mata::Nfa::get_one_letter_aut()")
+     Nfa digraph{aut.get_one_letter_aut() };
+ 
+     REQUIRE(digraph.size() == aut.size());
+-    REQUIRE(digraph.get_num_of_trans() == 12);
++    REQUIRE(digraph.delta.num_of_transitions() == 12);
+     REQUIRE(digraph.delta.contains(1, abstract_symbol, 10));
+     REQUIRE(digraph.delta.contains(10, abstract_symbol, 7));
+     REQUIRE(!digraph.delta.contains(10, 'a', 7));
+@@ -2466,7 +2467,7 @@ TEST_CASE("Mata::Nfa::delta.operator[]")
+ {
+     Nfa aut{20};
+     FILL_WITH_AUT_A(aut);
+-    REQUIRE(aut.get_num_of_trans() == 15);
++    REQUIRE(aut.delta.num_of_transitions() == 15);
+     aut.delta[25];
+     REQUIRE(aut.size() == 20);
+ 
+diff --git a/tests/parser.cc b/tests/parser.cc
+index 5df257259..8aae2e319 100644
+--- a/tests/parser.cc
++++ b/tests/parser.cc
+@@ -436,7 +436,7 @@ TEST_CASE("correct use of Mata::Parser::parse_mf_section()")
+         CHECK(aut.final.size() == 1);
+         CHECK(aut.initial.contains(0));
+         CHECK(aut.delta.contains(0, 0, 0) == 1);
+-        CHECK(aut.delta.size() == 1);
++        CHECK(aut.delta.num_of_transitions() == 1);
+     }
+ } // parse_mf_section correct }}}
+ 
+-- 
+2.56.0
+
+
+From 49b860964a9b222e9eb770c113ee4ae574b64c46 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Mon, 21 Aug 2023 09:09:40 +0200
+Subject: [PATCH 09/15] Move const iterator over transitions into Transitions
+ class
+
+---
+ include/mata/nfa/delta.hh         | 150 +++++++++++-------------------
+ src/nfa/delta.cc                  |  32 +++----
+ src/nfa/operations.cc             |   2 +-
+ tests/nfa/delta.cc                |  50 +++++-----
+ tests/strings/nfa-segmentation.cc |   6 +-
+ 5 files changed, 98 insertions(+), 142 deletions(-)
+
+diff --git a/include/mata/nfa/delta.hh b/include/mata/nfa/delta.hh
+index 4feae49fc..b1d23d118 100644
+--- a/include/mata/nfa/delta.hh
++++ b/include/mata/nfa/delta.hh
+@@ -337,108 +337,68 @@ public:
+     const_iterator end() const { return state_posts_.end(); }
+ 
+     /**
+-     * Iterator over transitions. It iterates over triples (lhs, symbol, rhs) where lhs and rhs are states.
+-     */
+-    class transitions_const_iterator {
+-    private:
+-        const Delta* delta_ = nullptr;
+-        size_t current_state_;
+-        StatePost::const_iterator state_post_it_{};
+-        StateSet::const_iterator symbol_post_it_{};
+-        bool is_end_{ false };
+-        Transition transition_{};
+-
+-    public:
+-        using iterator_category = std::forward_iterator_tag;
+-        using value_type = Transition;
+-        using difference_type = unsigned;
+-        using pointer = Transition*;
+-        using reference = Transition&;
+-
+-        transitions_const_iterator() = default;
+-        explicit transitions_const_iterator(const Delta& delta, bool is_end = false);
+-        transitions_const_iterator(const Delta& delta, State current_state, bool is_end = false);
+-
+-        transitions_const_iterator(const transitions_const_iterator& other) noexcept = default;
+-        transitions_const_iterator(transitions_const_iterator&&) = default;
+-
+-        const Transition& operator*() const { return transition_; }
+-
+-        // Prefix increment
+-        transitions_const_iterator& operator++();
+-        // Postfix increment
+-        const transitions_const_iterator operator++(int);
+-
+-        transitions_const_iterator& operator=(const transitions_const_iterator& other) noexcept = default;
+-        transitions_const_iterator& operator=(transitions_const_iterator&&) = default;
+-
+-        bool operator==(const transitions_const_iterator& other) const;
+-        bool operator!=(const transitions_const_iterator& other) const { return !(*this == other); };
+-    }; // class transitions_const_iterator.
+-
+-    class TransitionsView {
+-    private:
+-        transitions_const_iterator begin_;
+-        transitions_const_iterator end_;
+-    public:
+-        TransitionsView() = default;
+-        TransitionsView(const TransitionsView&) = default;
+-        TransitionsView(TransitionsView&&) = default;
+-        TransitionsView(transitions_const_iterator begin, transitions_const_iterator end): begin_{ begin }, end_{ end } {}
+-        TransitionsView& operator=(const TransitionsView&) = default;
+-        TransitionsView& operator=(TransitionsView&&) = default;
+-        transitions_const_iterator begin() const { return begin_; }
+-        transitions_const_iterator end() const { return end_; }
+-        size_t count() const { return std::distance( begin(), end() ); }
+-        size_t empty() const { return count() == 0; }
+-    };
+-
+-    /**
+-     * Iterator over transitions represented as 'Transition' instances.
++     * @brief Iterator over transitions represented as @c Transition instances.
++     *
++     * It iterates over triples (source, symbol, target).
+      */
+     class Transitions {
+-    private:
+-        const Delta& delta_;
+     public:
+-        explicit Transitions(const Delta& delta): delta_{ delta } {}
+-        transitions_const_iterator begin() const { return delta_.transitions_cbegin(); }
+-        transitions_const_iterator end() const { return delta_.transitions_cend(); }
+-
+-        /**
+-         * @brief Get a number of transitions in delta.
+-         *
+-         * The operation has a linear time complexity to the number of transitions in the delta.
+-         */
+-        size_t count() const { return std::distance(begin(), end()); }
+-
+-        size_t empty() const { return count() == 0; }
+-
+-        // TODO: Is 'from_source()' than 'from()'?
+-        TransitionsView from(State source) const;
+-    };
+-
+         /**
+-         * @brief Get a number of transitions in delta.
+-         *
+-         * The operation has a linear time complexity to the number of 'SymbolPost's in the delta.
++         * Iterator over transitions. 
+          */
+-        size_t count() const { return delta_.size(); }
+-
+-        /**
+-         * Whether there are no transitions in the delta.
+-         */
+-        bool empty() const { return count() == 0; }
++        class const_iterator {
++        private:
++            const Delta* delta_ = nullptr;
++            size_t current_state_;
++            StatePost::const_iterator state_post_it_{};
++            StateSet::const_iterator symbol_post_it_{};
++            bool is_end_{ false };
++            Transition transition_{};
++
++        public:
++            using iterator_category = std::forward_iterator_tag;
++            using value_type = Transition;
++            using difference_type = unsigned;
++            using pointer = Transition*;
++            using reference = Transition&;
++
++            const_iterator() = default;
++            explicit const_iterator(const Delta* delta, bool is_end = false);
++            const_iterator(const Delta* delta, State current_state, bool is_end = false);
++
++            const_iterator(const const_iterator& other) noexcept = default;
++            const_iterator(const_iterator&&) = default;
++
++            const Transition& operator*() const { return transition_; }
++
++            // Prefix increment
++            const_iterator& operator++();
++            // Postfix increment
++            const const_iterator operator++(int);
++
++            const_iterator& operator=(const const_iterator& other) noexcept = default;
++            const_iterator& operator=(const_iterator&&) = default;
++
++            bool operator==(const const_iterator& other) const;
++            bool operator!=(const const_iterator& other) const { return !(*this == other); };
++        }; // class const_const_iterator.
++
++        explicit Transitions(const Delta* delta): delta_{ delta } {}
++        Transitions(Transitions&&) = default;
++        Transitions(Transitions&) = default;
++        Transitions& operator=(Transitions&&) = default;
++        Transitions& operator=(Transitions&) = default;
++
++        const_iterator begin() const { return const_iterator{ delta_ }; };
++        const_iterator end() const { return const_iterator{ delta_, true}; };
++    private:
++        const Delta* delta_;
+     }; // class Transitions.
+ 
+     /**
+      * Iterator over transitions represented as 'Transition' instances.
+      */
+-    Transitions transitions()  const { return Transitions{ *this }; }
+-
+-    transitions_const_iterator transitions_cbegin() const { return transitions_const_iterator(*this); }
+-    transitions_const_iterator transitions_cend() const { return transitions_const_iterator(*this, true); }
+-    transitions_const_iterator transitions_begin() const { return transitions_cbegin(); }
+-    transitions_const_iterator transitions_end() const { return transitions_cend(); }
++    Transitions transitions()  const { return Transitions{ this }; }
+ 
+     /**
+      * Iterate over @p epsilon symbol posts under the given @p state.
+@@ -457,11 +417,7 @@ public:
+     static StatePost::const_iterator epsilon_symbol_posts(const StatePost& state_post, Symbol epsilon = EPSILON);
+ private:
+     std::vector<StatePost> state_posts_;
+-    transitions_const_iterator transitions_cbegin() const { return transitions_const_iterator(*this); }
+-    transitions_const_iterator transitions_cend() const { return transitions_const_iterator(*this, true); }
+-    transitions_const_iterator transitions_begin() const { return transitions_cbegin(); }
+-    transitions_const_iterator transitions_end() const { return transitions_cend(); }
+-}; // struct Delta.
++}; // class Delta.
+ 
+ } // namespace Mata::Nfa.
+ 
+diff --git a/src/nfa/delta.cc b/src/nfa/delta.cc
+index 47ba0ab56..24398cd19 100644
+--- a/src/nfa/delta.cc
++++ b/src/nfa/delta.cc
+@@ -64,12 +64,6 @@ Delta& Delta::operator=(const Delta& other) {
+     return *this;
+ }
+ 
+-Delta::TransitionsView Delta::Transitions::from(const State source) const {
+-    transitions_const_iterator begin_it{ delta_, source };
+-    transitions_const_iterator end_it{ delta_, source + 1 };
+-    return TransitionsView{ begin_it, end_it };
+-}
+-
+ void Delta::add(State source, Symbol symbol, State target) {
+     const State max_state{ std::max(source, target) };
+     if (max_state >= state_posts_.size()) {
+@@ -198,6 +192,8 @@ bool Delta::empty() const {
+     return true;
+ }
+ 
++Delta::Transitions::const_iterator::const_iterator(const Delta* delta, bool is_end)
++    : delta_{ delta }, current_state_{ 0 }, is_end_{ is_end } {
+     const size_t post_size = delta_->num_of_states();
+     for (size_t i = 0; i < post_size; ++i) {
+         if (!(*delta_)[i].empty()) {
+@@ -215,9 +211,9 @@ bool Delta::empty() const {
+     is_end_ = true;
+ }
+ 
+-Delta::transitions_const_iterator::transitions_const_iterator(
+-        const Delta& delta, State current_state, bool is_end)
+-    : delta_{ &delta }, current_state_{ current_state }, is_end_{ is_end } {
++Delta::Transitions::const_iterator::const_iterator(
++        const Delta* delta, State current_state, bool is_end)
++    : delta_{ delta }, current_state_{ current_state }, is_end_{ is_end } {
+     const size_t post_size = delta_->num_of_states();
+     for (State source{ current_state_ }; source < post_size; ++source) {
+         const StatePost& state_post{ delta_->state_post(source) };
+@@ -236,7 +232,7 @@ Delta::transitions_const_iterator::transitions_const_iterator(
+     is_end_ = true;
+ }
+ 
+-Delta::transitions_const_iterator& Delta::transitions_const_iterator::operator++() {
++Delta::Transitions::const_iterator& Delta::Transitions::const_iterator::operator++() {
+     assert(delta_->begin() != delta_->end());
+ 
+     ++symbol_post_it_;
+@@ -273,13 +269,13 @@ Delta::transitions_const_iterator& Delta::transitions_const_iterator::operator++
+     return *this;
+ }
+ 
+-const Delta::transitions_const_iterator Delta::transitions_const_iterator::operator++(int) {
+-    const transitions_const_iterator tmp = *this;
++const Delta::Transitions::const_iterator Delta::Transitions::const_iterator::operator++(int) {
++    const Delta::Transitions::const_iterator tmp{ *this };
+     ++(*this);
+     return tmp;
+ }
+ 
+-bool Mata::Nfa::Delta::transitions_const_iterator::operator==(const Delta::transitions_const_iterator& other) const {
++bool Delta::Transitions::const_iterator::operator==(const Delta::Transitions::const_iterator& other) const {
+     if (is_end_ && other.is_end_) {
+         return true;
+     } else if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) {
+@@ -434,10 +430,12 @@ bool Mata::Nfa::StatePost::moves_const_iterator::operator==(const StatePost::mov
+ }
+ 
+ bool Delta::operator==(const Delta& other) const {
+-    transitions_const_iterator this_transitions_it{ transitions_begin() };
+-    const transitions_const_iterator this_transitions_end{ transitions_end() };
+-    transitions_const_iterator other_transitions_it{ other.transitions_begin() };
+-    const transitions_const_iterator other_transitions_end{ other.transitions_end() };
++    Delta::Transitions this_transitions{ transitions() };
++    Delta::Transitions::const_iterator this_transitions_it{ this_transitions.begin() };
++    const Delta::Transitions::const_iterator this_transitions_end{ this_transitions.end() };
++    Delta::Transitions other_transitions{ other.transitions() };
++    Delta::Transitions::const_iterator other_transitions_it{ other_transitions.begin() };
++    const Delta::Transitions::const_iterator other_transitions_end{ other_transitions.end() };
+     while (this_transitions_it != this_transitions_end) {
+         if (other_transitions_it == other_transitions_end || *this_transitions_it != *other_transitions_it) {
+             return false;
+diff --git a/src/nfa/operations.cc b/src/nfa/operations.cc
+index 5cc4b6993..db8fe1242 100644
+--- a/src/nfa/operations.cc
++++ b/src/nfa/operations.cc
+@@ -42,7 +42,7 @@ namespace {
+         const size_t state_num = aut.size();
+         Simlib::ExplicitLTS LTSforSimulation(state_num);
+ 
+-        for (const Transition& transition : aut.delta.transitions) {
++        for (const Transition& transition : aut.delta.transitions()) {
+             LTSforSimulation.add_transition(transition.source, transition.symbol, transition.target);
+             if (transition.symbol > maxSymbol) {
+                 maxSymbol = transition.symbol;
+diff --git a/tests/nfa/delta.cc b/tests/nfa/delta.cc
+index eb7169058..651447703 100644
+--- a/tests/nfa/delta.cc
++++ b/tests/nfa/delta.cc
+@@ -73,7 +73,7 @@ TEST_CASE("Mata::Nfa::Delta::state_post()") {
+         CHECK_NOTHROW(aut.delta.add(0, 1, { 3, 4, 5, 6 }));
+         CHECK_NOTHROW(aut.delta.add(26, 1, StateSet{}));
+         CHECK_NOTHROW(aut.delta.add(42, 1, StateSet{ 43 }));
+-        CHECK(aut.get_num_of_trans() == 5);
++        CHECK(aut.delta.num_of_transitions() == 5);
+     }
+ }
+ 
+@@ -210,8 +210,8 @@ TEST_CASE("Mata::Nfa::Delta iteration over transitions") {
+     std::vector<Transition> expected_transitions{};
+ 
+     SECTION("empty automaton") {
+-        Mata::Nfa::Delta::transitions_const_iterator it = nfa.delta.transitions.begin();
+-        REQUIRE(it == nfa.delta.transitions.end());
++        Mata::Nfa::Delta::Transitions transitions{ nfa.delta.transitions() };
++        REQUIRE(transitions.begin() == transitions.end());
+     }
+ 
+     SECTION("Simple NFA") {
+@@ -224,7 +224,7 @@ TEST_CASE("Mata::Nfa::Delta iteration over transitions") {
+         nfa.delta.add(2, 0, 1);
+         nfa.delta.add(2, 0, 3);
+ 
+-        Mata::Nfa::Delta::Transitions transitions{ nfa.delta.transitions };
++        Mata::Nfa::Delta::Transitions transitions{ nfa.delta.transitions() };
+         iterated_transitions.clear();
+         for (auto transitions_it{ transitions.begin() };
+              transitions_it != transitions.end(); ++transitions_it) {
+@@ -239,7 +239,7 @@ TEST_CASE("Mata::Nfa::Delta iteration over transitions") {
+         CHECK(iterated_transitions == expected_transitions);
+ 
+         iterated_transitions.clear();
+-        for (const Transition& transition: nfa.delta.transitions) { iterated_transitions.push_back(transition); }
++        for (const Transition& transition: nfa.delta.transitions()) { iterated_transitions.push_back(transition); }
+         CHECK(iterated_transitions == expected_transitions);
+     }
+ 
+@@ -249,25 +249,26 @@ TEST_CASE("Mata::Nfa::Delta iteration over transitions") {
+ 
+         nfa.delta.add('q', 'a', 'r');
+         nfa.delta.add('q', 'b', 'r');
+-        Delta::transitions_const_iterator it = nfa.delta.transitions.begin();
+-        Delta::transitions_const_iterator jt = nfa.delta.transitions.begin();
++        const Delta::Transitions transitions{ nfa.delta.transitions() };
++        Delta::Transitions::const_iterator it{ transitions.begin() };
++        Delta::Transitions::const_iterator jt{ transitions.begin() };
+         CHECK(it == jt);
+         ++it;
+         CHECK(it != jt);
+-        CHECK((it != nfa.delta.transitions.begin() && it != nfa.delta.transitions.end()));
+-        CHECK(jt == nfa.delta.transitions.begin());
++        CHECK((it != transitions.begin() && it != transitions.end()));
++        CHECK(jt == transitions.begin());
+ 
+         ++jt;
+         CHECK(it == jt);
+-        CHECK((jt != nfa.delta.transitions.begin() && jt != nfa.delta.transitions.end()));
++        CHECK((jt != transitions.begin() && jt != transitions.end()));
+ 
+-        jt = nfa.delta.transitions.end();
++        jt = transitions.end();
+         CHECK(it != jt);
+-        CHECK((jt != nfa.delta.transitions.begin() && jt == nfa.delta.transitions.end()));
++        CHECK((jt != transitions.begin() && jt == transitions.end()));
+ 
+-        it = nfa.delta.transitions.end();
++        it = transitions.end();
+         CHECK(it == jt);
+-        CHECK((it != nfa.delta.transitions.begin() && it == nfa.delta.transitions.end()));
++        CHECK((it != transitions.begin() && it == transitions.end()));
+     }
+ }
+ 
+@@ -279,11 +280,11 @@ TEST_CASE("Mata::Nfa::Delta::operator=()") {
+ 
+     Nfa copied_nfa{ nfa };
+     nfa.delta.add(1, 'b', 0);
+-    CHECK(nfa.delta.transitions.count() == 2);
+-    CHECK(copied_nfa.delta.transitions.count() == 1);
++    CHECK(nfa.delta.num_of_transitions() == 2);
++    CHECK(copied_nfa.delta.num_of_transitions() == 1);
+ }
+ 
+-TEST_CASE("Mata::Nfa::Delta::TransitionsView") {
++TEST_CASE("Mata::Nfa::StatePost::Moves") {
+     Nfa nfa{};
+     nfa.initial.insert(0);
+     nfa.final.insert(5);
+@@ -294,13 +295,14 @@ TEST_CASE("Mata::Nfa::Delta::TransitionsView") {
+     nfa.delta.add(2, 'e', 3);
+     nfa.delta.add(3, 'e', 4);
+     nfa.delta.add(4, 'f', 5);
+-    Delta::TransitionsView transitions_from_source{ nfa.delta.transitions.from(0) };
+-    CHECK(std::vector<Transition>{ transitions_from_source.begin(), transitions_from_source.end() } == std::vector<Transition>{ { 0, 'a', 1 }});
+-    transitions_from_source = nfa.delta.transitions.from(1);
+-    CHECK(std::vector<Transition>{ transitions_from_source.begin(), transitions_from_source.end() } ==
+-        std::vector<Transition>{ { 1, 'b', 2 }, { 1, 'c', 2 }, { 1, 'd', 2 } });
+-    transitions_from_source = nfa.delta.transitions.from(12);
+-    CHECK(std::vector<Transition>{ transitions_from_source.begin(), transitions_from_source.end() }.empty());
++    // TODO: rewrite in a check of moves.
++    StatePost::Moves moves_from_source{ nfa.delta[0].moves() };
++    CHECK(std::vector<Move>{ moves_from_source.begin(), moves_from_source.end() } == std::vector<Move>{ { 'a', 1 }});
++    moves_from_source = nfa.delta[1].moves();
++    CHECK(std::vector<Move>{ moves_from_source.begin(), moves_from_source.end() } ==
++        std::vector<Move>{ { 'b', 2 }, { 'c', 2 }, { 'd', 2 } });
++    moves_from_source = nfa.delta[12].moves();
++    CHECK(std::vector<Move>{ moves_from_source.begin(), moves_from_source.end() }.empty());
+ }
+ 
+ TEST_CASE("Mata::Nfa::Delta::operator==()") {
+diff --git a/tests/strings/nfa-segmentation.cc b/tests/strings/nfa-segmentation.cc
+index 77a8654c1..804077ed0 100644
+--- a/tests/strings/nfa-segmentation.cc
++++ b/tests/strings/nfa-segmentation.cc
+@@ -180,7 +180,7 @@ TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()") {
+         CHECK(segments[0].final.size() == 2);
+         CHECK(segments[0].final[0]);
+         CHECK(segments[0].final[1]);
+-        CHECK(segments[0].get_num_of_trans() == 1);
++        CHECK(segments[0].delta.num_of_transitions() == 1);
+         CHECK(segments[0].delta.contains(0, 'a', 1));
+ 
+         CHECK(segments[1].initial.size() == 2);
+@@ -189,7 +189,7 @@ TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()") {
+         CHECK(segments[1].final.size() == 2);
+         CHECK(segments[1].final[0]);
+         CHECK(segments[1].final[2]);
+-        CHECK(segments[1].get_num_of_trans() == 1);
++        CHECK(segments[1].delta.num_of_transitions() == 1);
+         CHECK(segments[1].delta.contains(1, 'b', 2));
+ 
+         CHECK(segments[2].initial.size() == 2);
+@@ -198,6 +198,6 @@ TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()") {
+         CHECK(segments[2].final.size() == 2);
+         CHECK(segments[2].final[0]);
+         CHECK(segments[2].final[1]);
+-        CHECK(segments[2].get_num_of_trans() == 0);
++        CHECK(segments[2].delta.num_of_transitions() == 0);
+     }
+ }
+-- 
+2.56.0
+
+
+From 5d992180653f02641e50cbc82a8bd3f260fffeeb Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Mon, 21 Aug 2023 09:10:14 +0200
+Subject: [PATCH 10/15] Remove getting transtions as sequence
+
+---
+ include/mata/nfa/nfa.hh |  6 ------
+ src/nfa/nfa.cc          | 18 ------------------
+ tests/nfa/nfa.cc        | 10 ++++++----
+ 3 files changed, 6 insertions(+), 28 deletions(-)
+
+diff --git a/include/mata/nfa/nfa.hh b/include/mata/nfa/nfa.hh
+index 7eec8450e..018b003aa 100644
+--- a/include/mata/nfa/nfa.hh
++++ b/include/mata/nfa/nfa.hh
+@@ -224,12 +224,6 @@ public:
+      */
+     Mata::Nfa::Nfa& concatenate(const Mata::Nfa::Nfa& aut);
+ 
+-    /**
+-     * Get transitions as a sequence of @c Trans.
+-     * @return Sequence of transitions as @c Trans.
+-     */
+-    std::vector<Transition> get_trans_as_sequence() const;
+-
+     /**
+      * Get transitions leading to @p state_to.
+      * @param state_to[in] Target state for transitions to get.
+diff --git a/src/nfa/nfa.cc b/src/nfa/nfa.cc
+index f0745b9af..680c90f5f 100644
+--- a/src/nfa/nfa.cc
++++ b/src/nfa/nfa.cc
+@@ -399,24 +399,6 @@ void Nfa::print_to_mata(std::ostream &output) const {
+     }
+ }
+ 
+-std::vector<Transition> Nfa::get_trans_as_sequence() const
+-{
+-    std::vector<Transition> trans_sequence{};
+-
+-    for (State state_from{ 0 }; state_from < delta.num_of_states(); ++state_from)
+-    {
+-        for (const auto& transition_from_state: delta[state_from])
+-        {
+-            for (State state_to: transition_from_state.targets)
+-            {
+-                trans_sequence.push_back(Transition{ state_from, transition_from_state.symbol, state_to });
+-            }
+-        }
+-    }
+-
+-    return trans_sequence;
+-}
+-
+ Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
+     Nfa digraph{size(), StateSet(initial), StateSet(final) };
+     // Add directed transitions for digraph.
+diff --git a/tests/nfa/nfa.cc b/tests/nfa/nfa.cc
+index 03425a040..9ed9633b8 100644
+--- a/tests/nfa/nfa.cc
++++ b/tests/nfa/nfa.cc
+@@ -124,8 +124,9 @@ TEST_CASE("Mata::Nfa::Nfa::delta.add()/delta.contains()")
+         size_t transitions_cnt{ 0 };
+         std::vector<Transition> expected_transitions{ t1, t2, t3, t4 };
+         std::vector<Transition> iterated_transitions{};
+-        for (Delta::transitions_const_iterator trans_it{ a.delta.transitions.begin()}; 
+-             trans_it != a.delta.transitions.end(); ++trans_it) {
++        const Delta::Transitions transitions{ a.delta.transitions() };
++        const Delta::Transitions::const_iterator transitions_end{ transitions.end() };
++        for (Delta::Transitions::const_iterator trans_it{ transitions.begin()}; trans_it != transitions_end; ++trans_it) {
+             iterated_transitions.push_back(*trans_it);
+             ++transitions_cnt;
+         }
+@@ -134,7 +135,7 @@ TEST_CASE("Mata::Nfa::Nfa::delta.add()/delta.contains()")
+ 
+         transitions_cnt = 0;
+         iterated_transitions.clear();
+-        for (const Transition& trans: a.delta.transitions) {
++        for (const Transition& trans: a.delta.transitions()) {
+             iterated_transitions.push_back(trans);
+             ++transitions_cnt;
+         }
+@@ -2212,7 +2213,8 @@ TEST_CASE("Mata::Nfa::get_trans_as_sequence(}") {
+     expected.emplace_back(2, 3, 4);
+ 
+ 
+-    REQUIRE(aut.get_trans_as_sequence() == expected);
++    const Delta::Transitions transitions{ aut.delta.transitions() };
++    REQUIRE(std::vector<Transition>{ transitions.begin(), transitions.end() } == expected);
+ }
+ 
+ TEST_CASE("Mata::Nfa::remove_epsilon()")
+-- 
+2.56.0
+
+
+From ec5d83dfc7dc14bcc8ec5b7e852a61df8c540801 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Mon, 21 Aug 2023 09:12:15 +0200
+Subject: [PATCH 11/15] Ignore generated integration test files
+
+---
+ .gitignore | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/.gitignore b/.gitignore
+index 70d37fb63..988f5d099 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -71,4 +71,10 @@ tests-performance/inputs/single-automata.input
+ tests-performance/jobs/corr-double-param-jobs.yaml
+ tests-performance/jobs/corr-single-param-jobs.yaml
+ tests-performance/jobs/corr-test-jobs.yaml
+-tests-performance/src/utils/config.hh
+\ No newline at end of file
++tests-performance/src/utils/config.hh
++tests-integration/inputs/double-automata.input
++tests-integration/inputs/single-automata.input
++tests-integration/jobs/corr-double-param-jobs.yaml
++tests-integration/jobs/corr-single-param-jobs.yaml
++tests-integration/jobs/corr-test-jobs.yaml
++tests-integration/src/utils/config.hh
+-- 
+2.56.0
+
+
+From 2a6e77eea3a0a97c3440ffd544e0d2bc62f14a05 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Mon, 21 Aug 2023 10:53:36 +0200
+Subject: [PATCH 12/15] Refactor Moves to reflect structure of Transitions
+
+---
+ include/mata/nfa/delta.hh     | 101 +++++++++++++++++----------------
+ src/nfa/delta.cc              | 104 +++++++++++++---------------------
+ tests/nfa/nfa-intersection.cc |  26 ++++-----
+ 3 files changed, 106 insertions(+), 125 deletions(-)
+
+diff --git a/include/mata/nfa/delta.hh b/include/mata/nfa/delta.hh
+index b1d23d118..85248f181 100644
+--- a/include/mata/nfa/delta.hh
++++ b/include/mata/nfa/delta.hh
+@@ -120,65 +120,70 @@ public:
+     const_iterator find(const Symbol symbol) const { return super::find({ symbol, {} }); }
+ 
+     /**
+-     * Iterator over moves. It iterates over pairs (symbol, target state) for a current source state whose state post
+-     *  we iterate.
++     * @brief Iterator over moves represented as @c Move instances.
++     *
++     * It iterates over pairs (symbol, target) for the given @c StatePost.
+      */
+-    struct moves_const_iterator {
+-    private:
+-        const StatePost* state_post_{};
+-        StatePost::const_iterator state_post_it_{};
+-        StateSet::const_iterator target_states_it_{};
+-        bool is_end_{ false };
+-        Move move_{};
+-
++    class Moves {
+     public:
+-        using iterator_category = std::forward_iterator_tag;
+-        using value_type = Move;
+-        using difference_type = unsigned;
+-        using pointer = Move*;
+-        using reference = Move&;
++        /**
++         * Iterator over moves.
++         */
++        class const_iterator {
++        private:
++            const StatePost* state_post_ = nullptr;
++            StatePost::const_iterator state_post_it_{};
++            StateSet::const_iterator symbol_post_it_{};
++            bool is_end_{ false };
++            Move move_{};
+ 
+-        moves_const_iterator() = default;
+-        explicit moves_const_iterator(const StatePost* const state_post, bool is_end = false);
++        public:
++            using iterator_category = std::forward_iterator_tag;
++            using value_type = Move;
++            using difference_type = unsigned;
++            using pointer = Move*;
++            using reference = Move&;
+ 
+-        moves_const_iterator(const StatePost* const symbol_posts,
+-                             StatePost::const_iterator state_post_it,
+-                             StateSet::const_iterator target_states_it, bool is_end = false);
++            const_iterator(): is_end_{ true } {}
++            const_iterator(const StatePost* state_post);
++            const_iterator(const const_iterator& other) noexcept = default;
++            const_iterator(const_iterator&&) = default;
+ 
+-        moves_const_iterator(const moves_const_iterator& other) = default;
++            const Move& operator*() const { return move_; }
+ 
+-        const Move& operator*() const { return move_; }
++            // Prefix increment
++            const_iterator& operator++();
++            // Postfix increment
++            const const_iterator operator++(int);
+ 
+-        // Prefix increment
+-        moves_const_iterator& operator++();
+-        // Postfix increment
+-        const moves_const_iterator operator++(int);
++            const_iterator& operator=(const const_iterator& other) noexcept = default;
++            const_iterator& operator=(const_iterator&&) = default;
+ 
+-        moves_const_iterator& operator=(const moves_const_iterator& other);
++            bool operator==(const const_iterator& other) const;
++        }; // class const_iterator.
+ 
+-        bool operator==(const moves_const_iterator& other) const;
+-        bool operator!=(const moves_const_iterator& other) const { return !(*this == other); };
+-    };
++        explicit Moves(const StatePost* state_post): state_post_{ state_post } {}
++        Moves(Moves&&) = default;
++        Moves(Moves&) = default;
++        Moves& operator=(Moves&&) = default;
++        Moves& operator=(Moves&) = default;
+ 
+-    moves_const_iterator moves_cbegin() const { return moves_const_iterator(this); }
+-    moves_const_iterator moves_cend() const { return moves_const_iterator(this, true); }
+-    moves_const_iterator moves_begin() const { return moves_cbegin(); }
+-    moves_const_iterator moves_end() const { return moves_cend(); }
++        const_iterator begin() const { return const_iterator{ state_post_ }; };
++        const_iterator end() const { return const_iterator{}; };
++    private:
++        const StatePost* state_post_;
++    }; // class Moves.
+ 
+-    class Moves {
+-    public:
+-        moves_const_iterator begin_;
+-        moves_const_iterator end_;
+-        moves_const_iterator begin() const { return begin_; }
+-        moves_const_iterator end() const { return end_; }
+-    };
++    /**
++     * Iterator over transitions represented as 'Transition' instances.
++     */
++    Moves moves() const { return Moves{ this }; }
+ 
+     /**
+-     * Iterate over moves represented as 'Move' instances.
+-     * @return Iterator over moves.
++     * Count the number of moves in StatePost.
+      */
+-    Moves moves() const { return { .begin_ = moves_begin(), .end_ = moves_end() }; }
+-}; // struct Post.
++    size_t num_of_moves() const;
++}; // class StatePost.
+ 
+ /**
+  * @brief Delta is a data structure for representing transition relation.
+@@ -344,7 +349,7 @@ public:
+     class Transitions {
+     public:
+         /**
+-         * Iterator over transitions. 
++         * Iterator over transitions.
+          */
+         class const_iterator {
+         private:
+@@ -381,7 +386,7 @@ public:
+ 
+             bool operator==(const const_iterator& other) const;
+             bool operator!=(const const_iterator& other) const { return !(*this == other); };
+-        }; // class const_const_iterator.
++        }; // class Transitions::const_iterator.
+ 
+         explicit Transitions(const Delta* delta): delta_{ delta } {}
+         Transitions(Transitions&&) = default;
+@@ -398,7 +403,7 @@ public:
+     /**
+      * Iterator over transitions represented as 'Transition' instances.
+      */
+-    Transitions transitions()  const { return Transitions{ this }; }
++    Transitions transitions() const { return Transitions{ this }; }
+ 
+     /**
+      * Iterate over @p epsilon symbol posts under the given @p state.
+diff --git a/src/nfa/delta.cc b/src/nfa/delta.cc
+index 24398cd19..78e4ca5fd 100644
+--- a/src/nfa/delta.cc
++++ b/src/nfa/delta.cc
+@@ -350,98 +350,74 @@ void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& r
+     }
+ }
+ 
+-StatePost::moves_const_iterator::moves_const_iterator(const StatePost* state_post, bool is_end)
+-    : state_post_{ state_post }, state_post_it_{ state_post_->cbegin() }, is_end_{ is_end } {
+-    while (state_post_it_ != state_post_->cend()) {
+-        if (!state_post_it_->empty()) {
+-            target_states_it_ = state_post_it_->targets.begin();
+-            move_.symbol = state_post_it_->symbol;
+-            move_.target = *target_states_it_;
+-            return;
++bool Delta::operator==(const Delta& other) const {
++    Delta::Transitions this_transitions{ transitions() };
++    Delta::Transitions::const_iterator this_transitions_it{ this_transitions.begin() };
++    const Delta::Transitions::const_iterator this_transitions_end{ this_transitions.end() };
++    Delta::Transitions other_transitions{ other.transitions() };
++    Delta::Transitions::const_iterator other_transitions_it{ other_transitions.begin() };
++    const Delta::Transitions::const_iterator other_transitions_end{ other_transitions.end() };
++    while (this_transitions_it != this_transitions_end) {
++        if (other_transitions_it == other_transitions_end || *this_transitions_it != *other_transitions_it) {
++            return false;
+         }
+-        ++state_post_it_;
++        ++this_transitions_it;
++        ++other_transitions_it;
+     }
+-    // No move found. We are at the end of moves.
+-    is_end_ = true;
++    return other_transitions_it == other_transitions_end;
+ }
+ 
+-StatePost::moves_const_iterator::moves_const_iterator(
+-    const StatePost* const symbol_posts, std::vector<SymbolPost>::const_iterator symbol_posts_it,
+-    StateSet::const_iterator target_states_it, bool is_end)
+-    : state_post_{ symbol_posts }, state_post_it_{ symbol_posts_it }, target_states_it_{ target_states_it },
+-      is_end_{ is_end } {
+-        while (state_post_it_ != state_post_->cend()) {
+-            if (!state_post_it_->empty()) {
+-                target_states_it_ = state_post_it_->targets.begin();
+-                move_.symbol = state_post_it_->symbol;
+-                move_.target = *target_states_it_;
+-                return;
+-            }
+-        }
+-        // No move found. We are at the end of moves.
+-        is_end_ = true;
+-}
++StatePost::Moves::const_iterator::const_iterator(const StatePost* state_post, bool is_end)
++    : state_post_{ state_post }, is_end_{ is_end } {
++    if (!state_post_->empty()) {
++        state_post_it_ = state_post_->begin();
++        symbol_post_it_ = state_post_it_->targets.begin();
++        move_.symbol = state_post_it_->symbol;
++        move_.target = *symbol_post_it_;
++        return;
++    }
+ 
+-StatePost::moves_const_iterator& StatePost::moves_const_iterator::operator++() {
+-    assert(state_post_->begin() != state_post_->end());
++    // No transition found, 'state_post' is an empty state post.
++    is_end_ = true;
++}
+ 
+-    ++target_states_it_;
+-    if (target_states_it_ != state_post_it_->targets.end()) {
+-        move_.target = *target_states_it_;
++StatePost::Moves::const_iterator& StatePost::Moves::const_iterator::operator++() {
++    ++symbol_post_it_;
++    if (symbol_post_it_ != state_post_it_->targets.end()) {
++        move_.target = *symbol_post_it_;
+         return *this;
+     }
+ 
+     ++state_post_it_;
+     if (state_post_it_ != state_post_->cend()) {
+-        target_states_it_ = state_post_it_->targets.begin();
++        symbol_post_it_ = state_post_it_->targets.begin();
+         move_.symbol = state_post_it_->symbol;
+-        move_.target = *target_states_it_;
++        move_.target = *symbol_post_it_;
+         return *this;
+     }
+-
+     is_end_ = true;
+     return *this;
+ }
+ 
+-const StatePost::moves_const_iterator StatePost::moves_const_iterator::operator++(int) {
+-    const moves_const_iterator tmp = *this;
++const StatePost::Moves::const_iterator StatePost::Moves::const_iterator::operator++(int) {
++    const StatePost::Moves::const_iterator tmp{ *this };
+     ++(*this);
+     return tmp;
+ }
+ 
+-StatePost::moves_const_iterator& StatePost::moves_const_iterator::operator=(const StatePost::moves_const_iterator& other) {
+-    state_post_ = other.state_post_;
+-    is_end_ = other.is_end_;
+-    move_.symbol = other.move_.symbol;
+-    move_.target = other.move_.target;
+-    state_post_it_ = other.state_post_it_;
+-    target_states_it_ = other.target_states_it_;
+-    return *this;
+-}
+-
+-bool Mata::Nfa::StatePost::moves_const_iterator::operator==(const StatePost::moves_const_iterator& other) const {
++bool StatePost::Moves::const_iterator::operator==(const StatePost::Moves::const_iterator& other) const {
+     if (is_end_ && other.is_end_) {
+         return true;
+     } else if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) {
+         return false;
+-    } else {
+-        return state_post_it_ == other.state_post_it_ && target_states_it_ == other.target_states_it_;
+     }
++    return state_post_it_ == other.state_post_it_ && symbol_post_it_ == other.symbol_post_it_;
+ }
+ 
+-bool Delta::operator==(const Delta& other) const {
+-    Delta::Transitions this_transitions{ transitions() };
+-    Delta::Transitions::const_iterator this_transitions_it{ this_transitions.begin() };
+-    const Delta::Transitions::const_iterator this_transitions_end{ this_transitions.end() };
+-    Delta::Transitions other_transitions{ other.transitions() };
+-    Delta::Transitions::const_iterator other_transitions_it{ other_transitions.begin() };
+-    const Delta::Transitions::const_iterator other_transitions_end{ other_transitions.end() };
+-    while (this_transitions_it != this_transitions_end) {
+-        if (other_transitions_it == other_transitions_end || *this_transitions_it != *other_transitions_it) {
+-            return false;
+-        }
+-        ++this_transitions_it;
+-        ++other_transitions_it;
++size_t StatePost::num_of_moves() const {
++    size_t counter{ 0 };
++    for (const SymbolPost& symbol_post: *this) {
++        counter += symbol_post.size();
+     }
+-    return other_transitions_it == other_transitions_end;
++    return counter;
+ }
+diff --git a/tests/nfa/nfa-intersection.cc b/tests/nfa/nfa-intersection.cc
+index c365603f7..1390a8a42 100644
+--- a/tests/nfa/nfa-intersection.cc
++++ b/tests/nfa/nfa-intersection.cc
+@@ -246,45 +246,45 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
+     CHECK(result.delta.num_of_transitions() == 15);
+ 
+     CHECK(result.delta.contains(prod_map[{0, 0}], EPSILON, prod_map[{1, 0}]));
+-    CHECK(result.delta.transitions.from(prod_map[{ 0, 0 }]).count() == 1);
++    CHECK(result.delta.state_post(prod_map[{ 0, 0 }]).num_of_moves() == 1);
+ 
+     CHECK(result.delta.contains(prod_map[{1, 0}], 'b', prod_map[{1, 1}]));
+     CHECK(result.delta.contains(prod_map[{1, 0}], 'a', prod_map[{1, 2}]));
+     CHECK(result.delta.contains(prod_map[{1, 0}], 'c', prod_map[{2, 5}]));
+-    CHECK(result.delta.transitions.from(prod_map[{ 1, 0 }]).count() == 3);
++    CHECK(result.delta.state_post(prod_map[{ 1, 0 }]).num_of_moves() == 3);
+ 
+-    CHECK(result.delta.transitions.from(prod_map[{ 1, 1 }]).empty());
++    CHECK(result.delta.state_post(prod_map[{ 1, 1 }]).empty());
+ 
+     CHECK(result.delta.contains(prod_map[{1, 2}], EPSILON, prod_map[{1, 3}]));
+     CHECK(result.delta.contains(prod_map[{1, 2}], 'a', prod_map[{1, 4}]));
+-    CHECK(result.delta.transitions.from(prod_map[{ 1, 2 }]).count() == 2);
++    CHECK(result.delta.state_post(prod_map[{ 1, 2 }]).num_of_moves() == 2);
+ 
+     CHECK(result.delta.contains(prod_map[{1, 3}], 'b', prod_map[{1, 4}]));
+-    CHECK(result.delta.transitions.from(prod_map[{ 1, 3 }]).count() == 1);
++    CHECK(result.delta.state_post(prod_map[{ 1, 3 }]).num_of_moves() == 1);
+ 
+-    CHECK(result.delta.transitions.from(prod_map[{ 1, 4 }]).empty());
++    CHECK(result.delta.state_post(prod_map[{ 1, 4 }]).empty());
+ 
+     CHECK(result.delta.contains(prod_map[{2, 5}], EPSILON, prod_map[{3, 5}]));
+     CHECK(result.delta.contains(prod_map[{2, 5}], EPSILON, prod_map[{2, 6}]));
+     CHECK(result.delta.contains(prod_map[{2, 5}], EPSILON, prod_map[{3, 6}]));
+-    CHECK(result.delta.transitions.from(prod_map[{ 2, 5 }]).count() == 3);
++    CHECK(result.delta.state_post(prod_map[{ 2, 5 }]).num_of_moves() == 3);
+ 
+     CHECK(result.delta.contains(prod_map[{3, 5}], 'a', prod_map[{5, 8}]));
+     CHECK(result.delta.contains(prod_map[{3, 5}], EPSILON, prod_map[{3, 6}]));
+-    CHECK(result.delta.transitions.from(prod_map[{ 3, 5 }]).count() == 2);
++    CHECK(result.delta.state_post(prod_map[{ 3, 5 }]).num_of_moves() == 2);
+ 
+     CHECK(result.delta.contains(prod_map[{2, 6}], 'b', prod_map[{4, 7}]));
+     CHECK(result.delta.contains(prod_map[{2, 6}], EPSILON, prod_map[{3, 6}]));
+-    CHECK(result.delta.transitions.from(prod_map[{ 2, 6 }]).count() == 2);
++    CHECK(result.delta.state_post(prod_map[{ 2, 6 }]).num_of_moves() == 2);
+ 
+     CHECK(result.delta.contains(prod_map[{3, 6}], 'a', prod_map[{5, 9}]));
+-    CHECK(result.delta.transitions.from(prod_map[{ 3, 6 }]).count() == 1);
++    CHECK(result.delta.state_post(prod_map[{ 3, 6 }]).num_of_moves() == 1);
+ 
+-    CHECK(result.delta.transitions.from(prod_map[{ 4, 7 }]).empty());
++    CHECK(result.delta.state_post(prod_map[{ 4, 7 }]).empty());
+ 
+-    CHECK(result.delta.transitions.from(prod_map[{ 5, 9 }]).empty());
++    CHECK(result.delta.state_post(prod_map[{ 5, 9 }]).empty());
+ 
+-    CHECK(result.delta.transitions.from(prod_map[{ 5, 8 }]).empty());
++    CHECK(result.delta.state_post(prod_map[{ 5, 8 }]).empty());
+ }
+ 
+ TEST_CASE("Mata::Nfa::intersection() for profiling", "[.profiling],[intersection]")
+-- 
+2.56.0
+
+
+From 8863ebb5d9577f2461f20eea73e676b4ce7bb4be Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Mon, 21 Aug 2023 11:05:14 +0200
+Subject: [PATCH 13/15] Update Python binding to new moves and transitions
+ implemenentation
+
+---
+ bindings/python/libmata/nfa/nfa.pxd | 23 ++++++++++-------------
+ bindings/python/libmata/nfa/nfa.pyx | 11 ++++++-----
+ bindings/python/tests/test_nfa.py   | 22 +++++++++++-----------
+ bindings/python/tests/test_trans.py | 10 +++++-----
+ include/mata/nfa/delta.hh           |  2 ++
+ 5 files changed, 34 insertions(+), 34 deletions(-)
+
+diff --git a/bindings/python/libmata/nfa/nfa.pxd b/bindings/python/libmata/nfa/nfa.pxd
+index 48374cc36..870306eba 100644
+--- a/bindings/python/libmata/nfa/nfa.pxd
++++ b/bindings/python/libmata/nfa/nfa.pxd
+@@ -51,20 +51,16 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
+         COrdVector[CSymbolPost].const_iterator cbegin()
+         COrdVector[CSymbolPost].const_iterator cend()
+ 
+-    cdef cppclass Ctransitions_const_iterator "Mata::Nfa::Delta::transitions_const_iterator":
+-            bool operator==(Ctransitions_const_iterator&)
+-            bool operator!=(Ctransitions_const_iterator&)
++    cdef cppclass CTransitions "Mata::Nfa::Delta::Transitions":
++        cppclass const_iterator:
++            bool operator==(const_iterator&)
++            bool operator!=(const_iterator&)
+             CTrans& operator*()
+-            Ctransitions_const_iterator& operator++()
+-
+-    cdef cppclass CTransitionsView "Mata::Nfa::Delta::TransitionsView":
+-        Ctransitions_const_iterator begin()
+-        Ctransitions_const_iterator end()
++            const_iterator& operator++()
++        const_iterator begin()
++        const_iterator end()
++        CTransitions()
+ 
+-    cdef cppclass CTransitions "Mata::Nfa::Delta::Transitions":
+-        Ctransitions_const_iterator begin()
+-        Ctransitions_const_iterator end()
+-        size_t count()
+ 
+     cdef cppclass CDelta "Mata::Nfa::Delta":
+         vector[CStatePost] state_posts
+@@ -86,6 +82,8 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
+         bool contains(State, Symbol, State)
+         COrdVector[CSymbolPost].const_iterator epsilon_symbol_posts(State state, Symbol epsilon)
+         COrdVector[CSymbolPost].const_iterator epsilon_symbol_posts(CStatePost& post, Symbol epsilon)
++        size_t num_of_transitions()
++        CTransitions transitions()
+ 
+     cdef cppclass CRun "Mata::Nfa::Run":
+         # Public Attributes
+@@ -161,7 +159,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
+         State add_state(State)
+         void print_to_DOT(ostream)
+         vector[CTrans] get_transitions_to(State)
+-        vector[CTrans] get_trans_as_sequence()
+         CNfa& trim(StateRenaming*)
+         void get_one_letter_aut(CNfa&)
+         bool is_epsilon(Symbol)
+diff --git a/bindings/python/libmata/nfa/nfa.pyx b/bindings/python/libmata/nfa/nfa.pyx
+index 32480cfef..5f2e4fecb 100644
+--- a/bindings/python/libmata/nfa/nfa.pyx
++++ b/bindings/python/libmata/nfa/nfa.pyx
+@@ -379,12 +379,12 @@ cdef class Nfa:
+         """
+         return self.thisptr.get().delta.contains(source, symbol, target)
+ 
+-    def get_num_of_trans(self):
++    def get_num_of_transitions(self):
+         """Returns number of transitions in automaton
+ 
+         :return: number of transitions in automaton
+         """
+-        return self.thisptr.get().delta.transitions.count()
++        return self.thisptr.get().delta.num_of_transitions()
+ 
+     def clear(self):
+         """Clears all of the internals in the automaton"""
+@@ -401,8 +401,9 @@ cdef class Nfa:
+ 
+         :return: stream of transitions
+         """
+-        iterator = self.thisptr.get().delta.transitions.begin()
+-        while iterator != self.thisptr.get().delta.transitions.end():
++        cdef CTransitions transitions = self.thisptr.get().delta.transitions()
++        cdef CTransitions.const_iterator iterator = transitions.begin()
++        while iterator != transitions.end():
+             trans = Transition()
+             lhs = dereference(iterator)
+             trans.copy_from(lhs)
+@@ -448,7 +449,7 @@ cdef class Nfa:
+ 
+         :return: List of automaton transitions.
+         """
+-        cdef vector[CTrans] c_transitions = self.thisptr.get().get_trans_as_sequence()
++        cdef CTransitions c_transitions = self.thisptr.get().delta.transitions()
+         transitions = []
+         for c_transition in c_transitions:
+             transitions.append(Transition(c_transition.source, c_transition.symbol, c_transition.target))
+diff --git a/bindings/python/tests/test_nfa.py b/bindings/python/tests/test_nfa.py
+index d9c367df8..818f4c07b 100644
+--- a/bindings/python/tests/test_nfa.py
++++ b/bindings/python/tests/test_nfa.py
+@@ -502,7 +502,7 @@ def test_intersection_preserving_epsilon_transitions():
+     assert len(result.final_states) == 4
+ 
+     # Check transitions.
+-    assert result.get_num_of_trans() == 15
++    assert result.get_num_of_transitions() == 15
+ 
+     assert result.has_transition(product_map[(0, 0)], mata_nfa.epsilon(), product_map[(1, 0)])
+     assert len(result.get_trans_from_state_as_sequence(product_map[(0, 0)])) == 1
+@@ -591,11 +591,11 @@ def test_minimize(
+         fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
+ ):
+     minimized = mata_nfa.minimize(fa_one_divisible_by_two)
+-    assert minimized.get_num_of_trans() <= fa_one_divisible_by_two.get_num_of_trans()
++    assert minimized.get_num_of_transitions() <= fa_one_divisible_by_two.get_num_of_transitions()
+     minimized = mata_nfa.minimize(fa_one_divisible_by_four)
+-    assert minimized.get_num_of_trans() <= fa_one_divisible_by_four.get_num_of_trans()
++    assert minimized.get_num_of_transitions() <= fa_one_divisible_by_four.get_num_of_transitions()
+     minimized = mata_nfa.minimize(fa_one_divisible_by_eight)
+-    assert minimized.get_num_of_trans() <= fa_one_divisible_by_eight.get_num_of_trans()
++    assert minimized.get_num_of_transitions() <= fa_one_divisible_by_eight.get_num_of_transitions()
+ 
+     lhs = mata_nfa.Nfa(11)
+     lhs.make_initial_state(0)
+@@ -604,10 +604,10 @@ def test_minimize(
+         lhs.make_final_state(i)
+     lhs.add_transition(10, 0, 10)
+     lhs.make_final_state(10)
+-    assert lhs.get_num_of_trans() == 11
++    assert lhs.get_num_of_transitions() == 11
+ 
+     minimized = mata_nfa.minimize(lhs)
+-    assert minimized.get_num_of_trans() == 1
++    assert minimized.get_num_of_transitions() == 1
+ 
+ 
+ def test_to_dot():
+@@ -665,7 +665,7 @@ def test_trim(prepare_automaton_a):
+ 
+     nfa.remove_final_state(2)  # '2' is the new final state in the earlier trimmed automaton.
+     nfa.trim()
+-    assert nfa.get_num_of_trans() == 0
++    assert nfa.get_num_of_transitions() == 0
+     assert nfa.size() == 0
+ 
+ 
+@@ -677,7 +677,7 @@ def test_get_one_letter_automaton(prepare_automaton_a):
+     one_letter_automaton = nfa.get_one_letter_aut()
+ 
+     assert one_letter_automaton.size() == nfa.size()
+-    assert one_letter_automaton.get_num_of_trans() == 12
++    assert one_letter_automaton.get_num_of_transitions() == 12
+     assert one_letter_automaton.has_transition(1, abstract_symbol, 10)
+     assert one_letter_automaton.has_transition(10, abstract_symbol, 7)
+     assert not one_letter_automaton.has_transition(10, ord('a'), 7)
+@@ -896,7 +896,7 @@ def test_reduce():
+ 
+     # Test the reduction of an empty automaton.
+     result, state_map = mata_nfa.reduce_with_state_map(nfa)
+-    assert result.get_num_of_trans() == 0
++    assert result.get_num_of_transitions() == 0
+     assert len(result.initial_states) == 0
+     assert len(result.final_states) == 0
+ 
+@@ -905,7 +905,7 @@ def test_reduce():
+     nfa.make_initial_state(1)
+     nfa.make_final_state(2)
+     result, state_map = mata_nfa.reduce_with_state_map(nfa)
+-    assert result.get_num_of_trans() == 0
++    assert result.get_num_of_transitions() == 0
+     assert result.size() == 2
+     assert result.has_initial_state(state_map[1])
+     assert result.has_final_state(state_map[2])
+@@ -913,7 +913,7 @@ def test_reduce():
+     assert state_map[2] != state_map[0]
+ 
+     result, state_map = mata_nfa.reduce_with_state_map(nfa.trim())
+-    assert result.get_num_of_trans() == 0
++    assert result.get_num_of_transitions() == 0
+     assert result.size() == 0
+ 
+     # Test the reduction of a bigger automaton.
+diff --git a/bindings/python/tests/test_trans.py b/bindings/python/tests/test_trans.py
+index 26db86436..4e68ce4d1 100644
+--- a/bindings/python/tests/test_trans.py
++++ b/bindings/python/tests/test_trans.py
+@@ -98,22 +98,22 @@ def test_transitions():
+     t4 = mata_nfa.Transition(2, 2, 2)
+ 
+     # Test adding transition.
+-    assert lhs.get_num_of_trans() == 0
++    assert lhs.get_num_of_transitions() == 0
+     lhs.add_transition(0, 0, 0)
+-    assert lhs.get_num_of_trans() == 1
++    assert lhs.get_num_of_transitions() == 1
+     assert lhs.has_transition(t1.source, t1.symbol, t1.target)
+ 
+     lhs.add_transition_object(t2)
+-    assert lhs.get_num_of_trans() == 2
++    assert lhs.get_num_of_transitions() == 2
+     assert lhs.has_transition(t2.source, t2.symbol, t2.target)
+ 
+     # Test adding add-hoc transition.
+     lhs.add_transition(1, 1, 1)
+-    assert lhs.get_num_of_trans() == 3
++    assert lhs.get_num_of_transitions() == 3
+     assert lhs.has_transition(t3.source, t3.symbol, t3.target)
+     assert not lhs.has_transition(2, 2, 2)
+     lhs.add_transition_object(t4)
+-    assert lhs.get_num_of_trans() == 4
++    assert lhs.get_num_of_transitions() == 4
+     assert lhs.has_transition(2, 2, 2)
+ 
+     # Test that transitions are not duplicated.
+diff --git a/include/mata/nfa/delta.hh b/include/mata/nfa/delta.hh
+index 85248f181..a61ffc9f0 100644
+--- a/include/mata/nfa/delta.hh
++++ b/include/mata/nfa/delta.hh
+@@ -162,6 +162,7 @@ public:
+             bool operator==(const const_iterator& other) const;
+         }; // class const_iterator.
+ 
++        Moves() = default;
+         explicit Moves(const StatePost* state_post): state_post_{ state_post } {}
+         Moves(Moves&&) = default;
+         Moves(Moves&) = default;
+@@ -388,6 +389,7 @@ public:
+             bool operator!=(const const_iterator& other) const { return !(*this == other); };
+         }; // class Transitions::const_iterator.
+ 
++        Transitions() = default;
+         explicit Transitions(const Delta* delta): delta_{ delta } {}
+         Transitions(Transitions&&) = default;
+         Transitions(Transitions&) = default;
+-- 
+2.56.0
+
+
+From aa56782e5ec85ba30af60798c7917964e4dce81f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Mon, 21 Aug 2023 12:59:58 +0200
+Subject: [PATCH 14/15] Set end to true for default const iterators over moves
+ and transitions
+
+---
+ include/mata/nfa/delta.hh | 11 +++++------
+ src/nfa/delta.cc          | 16 +++++++---------
+ 2 files changed, 12 insertions(+), 15 deletions(-)
+
+diff --git a/include/mata/nfa/delta.hh b/include/mata/nfa/delta.hh
+index a61ffc9f0..f6406b546 100644
+--- a/include/mata/nfa/delta.hh
++++ b/include/mata/nfa/delta.hh
+@@ -355,7 +355,7 @@ public:
+         class const_iterator {
+         private:
+             const Delta* delta_ = nullptr;
+-            size_t current_state_;
++            size_t current_state_{};
+             StatePost::const_iterator state_post_it_{};
+             StateSet::const_iterator symbol_post_it_{};
+             bool is_end_{ false };
+@@ -368,9 +368,9 @@ public:
+             using pointer = Transition*;
+             using reference = Transition&;
+ 
+-            const_iterator() = default;
+-            explicit const_iterator(const Delta* delta, bool is_end = false);
+-            const_iterator(const Delta* delta, State current_state, bool is_end = false);
++            const_iterator(): is_end_{ true } {}
++            explicit const_iterator(const Delta* delta);
++            const_iterator(const Delta* delta, State current_state);
+ 
+             const_iterator(const const_iterator& other) noexcept = default;
+             const_iterator(const_iterator&&) = default;
+@@ -386,7 +386,6 @@ public:
+             const_iterator& operator=(const_iterator&&) = default;
+ 
+             bool operator==(const const_iterator& other) const;
+-            bool operator!=(const const_iterator& other) const { return !(*this == other); };
+         }; // class Transitions::const_iterator.
+ 
+         Transitions() = default;
+@@ -397,7 +396,7 @@ public:
+         Transitions& operator=(Transitions&) = default;
+ 
+         const_iterator begin() const { return const_iterator{ delta_ }; };
+-        const_iterator end() const { return const_iterator{ delta_, true}; };
++        const_iterator end() const { return const_iterator{}; };
+     private:
+         const Delta* delta_;
+     }; // class Transitions.
+diff --git a/src/nfa/delta.cc b/src/nfa/delta.cc
+index 78e4ca5fd..e86c93fd4 100644
+--- a/src/nfa/delta.cc
++++ b/src/nfa/delta.cc
+@@ -192,8 +192,7 @@ bool Delta::empty() const {
+     return true;
+ }
+ 
+-Delta::Transitions::const_iterator::const_iterator(const Delta* delta, bool is_end)
+-    : delta_{ delta }, current_state_{ 0 }, is_end_{ is_end } {
++Delta::Transitions::const_iterator::const_iterator(const Delta* delta): delta_{ delta }, current_state_{ 0 } {
+     const size_t post_size = delta_->num_of_states();
+     for (size_t i = 0; i < post_size; ++i) {
+         if (!(*delta_)[i].empty()) {
+@@ -207,13 +206,12 @@ Delta::Transitions::const_iterator::const_iterator(const Delta* delta, bool is_e
+         }
+     }
+ 
+-    // no transition found, an empty post
++    // No transition found, delta contains only empty state posts.
+     is_end_ = true;
+ }
+ 
+-Delta::Transitions::const_iterator::const_iterator(
+-        const Delta* delta, State current_state, bool is_end)
+-    : delta_{ delta }, current_state_{ current_state }, is_end_{ is_end } {
++Delta::Transitions::const_iterator::const_iterator(const Delta* delta, State current_state)
++    : delta_{ delta }, current_state_{ current_state } {
+     const size_t post_size = delta_->num_of_states();
+     for (State source{ current_state_ }; source < post_size; ++source) {
+         const StatePost& state_post{ delta_->state_post(source) };
+@@ -228,7 +226,7 @@ Delta::Transitions::const_iterator::const_iterator(
+         }
+     }
+ 
+-    // no transition found, an empty post
++    // No transition found, delta from the current state contains only empty state posts.
+     is_end_ = true;
+ }
+ 
+@@ -367,8 +365,8 @@ bool Delta::operator==(const Delta& other) const {
+     return other_transitions_it == other_transitions_end;
+ }
+ 
+-StatePost::Moves::const_iterator::const_iterator(const StatePost* state_post, bool is_end)
+-    : state_post_{ state_post }, is_end_{ is_end } {
++StatePost::Moves::const_iterator::const_iterator(const StatePost* state_post)
++    : state_post_{ state_post } {
+     if (!state_post_->empty()) {
+         state_post_it_ = state_post_->begin();
+         symbol_post_it_ = state_post_it_->targets.begin();
+-- 
+2.56.0
+
+
+From 349b66e9ac01d67ed0aa06d556540bb0bbe1bf89 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?David=20Chocholat=C3=BD?= <chocholaty.david@protonmail.com>
+Date: Tue, 22 Aug 2023 13:08:54 +0200
+Subject: [PATCH 15/15] Add support for iterating over epsilon moves and symbol
+ (non-epsilon) moves
+
+---
+ include/mata/nfa/delta.hh | 49 +++++++++++++++-----
+ src/nfa/delta.cc          | 95 +++++++++++++++++++++++++++++++++------
+ tests/nfa/delta.cc        | 26 +++++++++++
+ 3 files changed, 146 insertions(+), 24 deletions(-)
+
+diff --git a/include/mata/nfa/delta.hh b/include/mata/nfa/delta.hh
+index f6406b546..8f4233989 100644
+--- a/include/mata/nfa/delta.hh
++++ b/include/mata/nfa/delta.hh
+@@ -126,14 +126,20 @@ public:
+      */
+     class Moves {
+     public:
++        enum class FirstSymbolLookupDiretion {
++            Forward,
++            Backward
++        };
++
+         /**
+          * Iterator over moves.
+          */
+         class const_iterator {
+         private:
+-            const StatePost* state_post_ = nullptr;
++            const StatePost* state_post_{ nullptr };
+             StatePost::const_iterator state_post_it_{};
+             StateSet::const_iterator symbol_post_it_{};
++            Symbol last_symbol_{ Limits::max_symbol };
+             bool is_end_{ false };
+             Move move_{};
+ 
+@@ -144,8 +150,14 @@ public:
+             using pointer = Move*;
+             using reference = Move&;
+ 
++             /// Construct end iterator.
+             const_iterator(): is_end_{ true } {}
+-            const_iterator(const StatePost* state_post);
++            /// Construct all symbols iterator.
++            const_iterator(const StatePost& state_post);
++            /// Construct epsilons or normal symbols (excluding epsilons) iterator.
++            const_iterator(const StatePost& state_post, Symbol first_symbol = Limits::min_symbol,
++                           Symbol last_symbol = Limits::max_symbol,
++                           const FirstSymbolLookupDiretion firest_symbol_lookup_direction = FirstSymbolLookupDiretion::Forward);
+             const_iterator(const const_iterator& other) noexcept = default;
+             const_iterator(const_iterator&&) = default;
+ 
+@@ -163,22 +175,39 @@ public:
+         }; // class const_iterator.
+ 
+         Moves() = default;
+-        explicit Moves(const StatePost* state_post): state_post_{ state_post } {}
++        Moves(
++            const StatePost& state_post, Symbol first_symbol = Limits::min_symbol,
++            Symbol last_symbol = Limits::max_symbol,
++            FirstSymbolLookupDiretion lookup_first_symbol_side = FirstSymbolLookupDiretion::Forward)
++            : state_post_{ &state_post }, first_symbol_{ first_symbol }, last_symbol_{ last_symbol },
++              first_symbol_lookup_direction_{ lookup_first_symbol_side } {}
+         Moves(Moves&&) = default;
+         Moves(Moves&) = default;
+-        Moves& operator=(Moves&&) = default;
+-        Moves& operator=(Moves&) = default;
++        Moves& operator=(Moves&& other) noexcept;
++        Moves& operator=(const Moves& other) noexcept;
+ 
+-        const_iterator begin() const { return const_iterator{ state_post_ }; };
+-        const_iterator end() const { return const_iterator{}; };
++        const_iterator begin() const { return const_iterator{ *state_post_, first_symbol_, last_symbol_, first_symbol_lookup_direction_ }; }
++        const_iterator end() const { return const_iterator{}; }
+     private:
+         const StatePost* state_post_;
++        Symbol first_symbol_{ Limits::min_symbol };
++        Symbol last_symbol_{ Limits::max_symbol };
++        FirstSymbolLookupDiretion first_symbol_lookup_direction_{ FirstSymbolLookupDiretion::Forward };
+     }; // class Moves.
+ 
+     /**
+      * Iterator over transitions represented as 'Transition' instances.
+      */
+-    Moves moves() const { return Moves{ this }; }
++    Moves moves() const { return { *this }; }
++
++    /**
++     * Iterator over transitions represented as 'Transition' instances.
++     */
++    Moves epsilon_moves(const Symbol first_epsilon = EPSILON) const;
++    /**
++     * Iterator over moves over normal symbols (not over epsilons) represented as 'Move' instances.
++     */
++    Moves symbol_moves(const Symbol last_symbol = EPSILON - 1) const;
+ 
+     /**
+      * Count the number of moves in StatePost.
+@@ -395,8 +424,8 @@ public:
+         Transitions& operator=(Transitions&&) = default;
+         Transitions& operator=(Transitions&) = default;
+ 
+-        const_iterator begin() const { return const_iterator{ delta_ }; };
+-        const_iterator end() const { return const_iterator{}; };
++        const_iterator begin() const { return const_iterator{ delta_ }; }
++        const_iterator end() const { return const_iterator{}; }
+     private:
+         const Delta* delta_;
+     }; // class Transitions.
+diff --git a/src/nfa/delta.cc b/src/nfa/delta.cc
+index e86c93fd4..fce6c00b3 100644
+--- a/src/nfa/delta.cc
++++ b/src/nfa/delta.cc
+@@ -365,18 +365,48 @@ bool Delta::operator==(const Delta& other) const {
+     return other_transitions_it == other_transitions_end;
+ }
+ 
+-StatePost::Moves::const_iterator::const_iterator(const StatePost* state_post)
+-    : state_post_{ state_post } {
+-    if (!state_post_->empty()) {
+-        state_post_it_ = state_post_->begin();
+-        symbol_post_it_ = state_post_it_->targets.begin();
+-        move_.symbol = state_post_it_->symbol;
+-        move_.target = *symbol_post_it_;
++StatePost::Moves::const_iterator::const_iterator(const StatePost& state_post): state_post_{ &state_post } {
++    if (state_post_->empty()) { // No transition found, 'state_post' is an empty state post.
++        is_end_ = true;
+         return;
+     }
++    state_post_it_ = state_post_->begin();
++    symbol_post_it_ = state_post_it_->targets.begin();
++    move_.symbol = state_post_it_->symbol;
++    move_.target = *symbol_post_it_;
++}
+ 
+-    // No transition found, 'state_post' is an empty state post.
+-    is_end_ = true;
++StatePost::Moves::const_iterator::const_iterator(
++    const StatePost& state_post, const Symbol first_symbol, const Symbol last_symbol,
++    const Moves::FirstSymbolLookupDiretion first_symbol_lookup_direction)
++    : state_post_{ &state_post }, last_symbol_{ last_symbol } {
++    if (state_post_->empty()) {
++        is_end_ = true;
++        return;
++    }
++    const StatePost::const_iterator state_post_begin{ state_post_->begin() };
++    const StatePost::const_iterator state_post_end{ state_post_->end() };
++    if (first_symbol_lookup_direction == Moves::FirstSymbolLookupDiretion::Forward) {
++        state_post_it_ = state_post_begin;
++        while (state_post_it_ != state_post_end && first_symbol > state_post_it_->symbol) { ++state_post_it_; }
++        if (state_post_it_ == state_post_end) {
++            is_end_ = true;
++            return;
++        }
++    } else { // first_symbol_lookup_direction == Moves::FirstSymbolLookupDiretion::Backward.
++        auto previous_state_post_it = std::prev(state_post_end);
++        while (previous_state_post_it != state_post_begin && last_symbol < previous_state_post_it->symbol) {
++            --previous_state_post_it;
++        }
++        if (previous_state_post_it->symbol < first_symbol) {
++            is_end_ = true;
++            return;
++        }
++        state_post_it_ = previous_state_post_it;
++    }
++    symbol_post_it_ = state_post_it_->targets.begin();
++    move_.symbol = state_post_it_->symbol;
++    move_.target = *symbol_post_it_;
+ }
+ 
+ StatePost::Moves::const_iterator& StatePost::Moves::const_iterator::operator++() {
+@@ -386,14 +416,23 @@ StatePost::Moves::const_iterator& StatePost::Moves::const_iterator::operator++()
+         return *this;
+     }
+ 
++    if (state_post_it_->symbol == last_symbol_) {
++        // Last symbol symbol post was reached and fully iterated over. We would now iterate to the next symbol, but
++        //  that would already be over the iteration end specified by 'last_symbol_'.
++        is_end_ = true;
++        return *this;
++    }
++    // Iterate over to the next symbol post, which can be either an end iterator, or symbol post whose
++    //  symbol <= last_symbol_.
+     ++state_post_it_;
+-    if (state_post_it_ != state_post_->cend()) {
+-        symbol_post_it_ = state_post_it_->targets.begin();
+-        move_.symbol = state_post_it_->symbol;
+-        move_.target = *symbol_post_it_;
++    if (state_post_it_ == state_post_->cend()) {
++        is_end_ = true;
+         return *this;
+     }
+-    is_end_ = true;
++    // The current symbol post is valid (not end iterator and symbol <= last_symbol_).
++    symbol_post_it_ = state_post_it_->targets.begin();
++    move_.symbol = state_post_it_->symbol;
++    move_.target = *symbol_post_it_;
+     return *this;
+ }
+ 
+@@ -419,3 +458,31 @@ size_t StatePost::num_of_moves() const {
+     }
+     return counter;
+ }
++
++StatePost::Moves& StatePost::Moves::operator=(StatePost::Moves&& other) noexcept {
++    if (&other != this) {
++        state_post_ = other.state_post_;
++        first_symbol_ = other.first_symbol_;
++        last_symbol_ = other.last_symbol_;
++        first_symbol_lookup_direction_ = other.first_symbol_lookup_direction_;
++    }
++    return *this;
++}
++
++StatePost::Moves& StatePost::Moves::operator=(const Moves& other) noexcept {
++    if (&other != this) {
++        state_post_ = other.state_post_;
++        first_symbol_ = other.first_symbol_;
++        last_symbol_ = other.last_symbol_;
++        first_symbol_lookup_direction_ = other.first_symbol_lookup_direction_;
++    }
++    return *this;
++}
++
++StatePost::Moves StatePost::epsilon_moves(const Symbol first_epsilon) const {
++    return { *this, first_epsilon, Limits::max_symbol, Moves::FirstSymbolLookupDiretion::Backward};
++}
++
++StatePost::Moves StatePost::symbol_moves(const Symbol last_symbol) const {
++    return { *this, Limits::min_symbol, last_symbol };
++}
+diff --git a/tests/nfa/delta.cc b/tests/nfa/delta.cc
+index 651447703..d85ba5c87 100644
+--- a/tests/nfa/delta.cc
++++ b/tests/nfa/delta.cc
+@@ -8,6 +8,7 @@
+ #include "mata/nfa/nfa.hh"
+ 
+ #include "../3rdparty/catch.hpp"
++#include <vector>
+ 
+ using namespace Mata::Nfa;
+ 
+@@ -147,6 +148,9 @@ TEST_CASE("Mata::Nfa::StatePost iteration over moves") {
+         for (const Move& move: state_post.moves()) { iterated_moves.push_back(move); }
+         CHECK(iterated_moves == expected_moves);
+ 
++        StatePost::Moves epsilon_moves{ state_post.epsilon_moves() };
++        CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() }.empty());
++
+ 
+         state_post = nfa.delta.state_post(1);
+         moves = state_post.moves();
+@@ -161,6 +165,8 @@ TEST_CASE("Mata::Nfa::StatePost iteration over moves") {
+         iterated_moves.clear();
+         for (const Move& move: state_post.moves()) { iterated_moves.push_back(move); }
+         CHECK(iterated_moves == expected_moves);
++        epsilon_moves = state_post.epsilon_moves();
++        CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() }.empty());
+ 
+         state_post = nfa.delta.state_post(2);
+         moves = state_post.moves();
+@@ -175,6 +181,8 @@ TEST_CASE("Mata::Nfa::StatePost iteration over moves") {
+         iterated_moves.clear();
+         for (const Move& move: state_post.moves()) { iterated_moves.push_back(move); }
+         CHECK(iterated_moves == expected_moves);
++        epsilon_moves = state_post.epsilon_moves();
++        CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() }.empty());
+ 
+         state_post = nfa.delta.state_post(3);
+         moves = state_post.moves();
+@@ -188,6 +196,8 @@ TEST_CASE("Mata::Nfa::StatePost iteration over moves") {
+         iterated_moves.clear();
+         for (const Move& move: state_post.moves()) { iterated_moves.push_back(move); }
+         CHECK(iterated_moves.empty());
++        epsilon_moves = state_post.epsilon_moves();
++        CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() }.empty());
+ 
+         state_post = nfa.delta.state_post(4);
+         moves = state_post.moves();
+@@ -201,6 +211,22 @@ TEST_CASE("Mata::Nfa::StatePost iteration over moves") {
+         iterated_moves.clear();
+         for (const Move& move: state_post.moves()) { iterated_moves.push_back(move); }
+         CHECK(iterated_moves.empty());
++        epsilon_moves = state_post.epsilon_moves();
++        CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() }.empty());
++
++
++        nfa.delta.add(0, EPSILON, 2);
++        state_post = nfa.delta.state_post(0);
++        epsilon_moves = state_post.epsilon_moves();
++        CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() } == std::vector<Move>{ { EPSILON, 2 } });
++        nfa.delta.add(1, EPSILON, 3);
++        state_post = nfa.delta.state_post(1);
++        epsilon_moves = state_post.epsilon_moves();
++        CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() } == std::vector<Move>{ { EPSILON, 3 } });
++        nfa.delta.add(4, EPSILON, 4);
++        state_post = nfa.delta.state_post(4);
++        epsilon_moves = state_post.epsilon_moves();
++        CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() } == std::vector<Move>{ { EPSILON, 4 } });
+     }
+ }
+ 
+-- 
+2.56.0
+
