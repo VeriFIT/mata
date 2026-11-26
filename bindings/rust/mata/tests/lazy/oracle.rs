@@ -8,7 +8,7 @@ use std::str::FromStr;
 
 use mata::State;
 use mata::lazy::{
-	AllEager, Annotation, Error, Formula, Heuristic, NodeKind, Options, Order, Outcome, Plan,
+	AllEager, Annotation, Error, Formula, Heuristic, NodeKind, Options, Order, Outcome, Pad, Plan,
 	Policy, Symbol, Tape, Term, Witness,
 };
 use mata::nft::{DONT_CARE, Nft};
@@ -104,6 +104,89 @@ impl Eager {
 		}
 
 		self.has_final(&states)
+	}
+
+	/// The words that a suffix of `pad` steps can extend into a word of this automaton.
+	fn pad_closure(&self, pad: &Pad) -> Eager {
+		// Whether `steps` alone can reach an old final state, with zero steps included.
+		let reaches_final = |steps: &[Tuple]| {
+			let mut accepting = self.finals.clone();
+			let mut queue: VecDeque<usize> = accepting
+				.iter()
+				.enumerate()
+				.filter_map(|(state, &is_final)| is_final.then_some(state))
+				.collect();
+
+			while let Some(target) = queue.pop_front() {
+				for (source, moves) in self.moves.iter().enumerate() {
+					if !accepting[source]
+						&& moves
+							.iter()
+							.any(|(tuple, next)| *next == target && steps.contains(tuple))
+					{
+						accepting[source] = true;
+						queue.push_back(source);
+					}
+				}
+			}
+
+			accepting
+		};
+
+		match pad {
+			Pad::Step(step) => {
+				let step: Vec<mata::Symbol> = step
+					.iter()
+					.map(|&symbol| match symbol {
+						Symbol::ANY => DONT_CARE,
+						Symbol::EPSILON => mata::Symbol::EPSILON,
+						symbol => mata::Symbol::new(symbol.value()),
+					})
+					.collect();
+				let mut result = self.clone();
+				result.finals = reaches_final(&expansions(&step));
+				result
+			}
+			Pad::Last => {
+				let tuples = cartesian(&vec![vec![0, 1, PADDING]; self.arity]);
+				let accepting: Vec<Vec<bool>> = tuples
+					.iter()
+					.map(|tuple| reaches_final(std::slice::from_ref(tuple)))
+					.collect();
+				let variants = tuples.len() + 1;
+				let state_id = |state: usize, last: usize| last * self.num_states() + state;
+				let mut result = Eager::new(self.arity);
+
+				// Variant zero has read no step; the other variants remember the last tuple read.
+				for is_final in std::iter::once(&self.finals)
+					.chain(&accepting)
+					.flat_map(|finals| finals.iter().copied())
+				{
+					result.add_state(is_final);
+				}
+
+				result.initial = self
+					.initial
+					.iter()
+					.map(|&state| state_id(state, 0))
+					.collect();
+				for last in 0..variants {
+					for (source, moves) in self.moves.iter().enumerate() {
+						for (tuple, target) in moves {
+							let next = tuples
+								.iter()
+								.position(|candidate| candidate == tuple)
+								.expect("every oracle tuple is concrete")
+								+ 1;
+							result.moves[state_id(source, last)]
+								.push((tuple.clone(), state_id(*target, next)));
+						}
+					}
+				}
+
+				result
+			}
+		}
 	}
 
 	fn union(&self, other: &Eager) -> Eager {
@@ -366,6 +449,14 @@ fn cartesian(choices: &[Vec<u8>]) -> Vec<Tuple> {
 				})
 				.collect()
 		})
+}
+
+fn lazy_symbol(symbol: mata::Symbol) -> Symbol {
+	match symbol {
+		mata::Symbol::EPSILON => Symbol::EPSILON,
+		DONT_CARE => Symbol::ANY,
+		symbol => Symbol::new(symbol.value()),
+	}
 }
 
 /// A wildcard, padding (for a transducer), or a symbol of `SIGMA`.
@@ -714,6 +805,34 @@ fn random_formulas_agree_with_the_oracle() -> Result<(), Error> {
 			non_empty > seeds / 5 && non_empty < seeds * 4 / 5,
 			"{non_empty} of {seeds} non-empty"
 		);
+	}
+
+	Ok(())
+}
+
+#[test]
+fn pad_closures_of_compounds_agree_with_the_oracle() -> Result<(), Error> {
+	let seeds = setting("MATA_LAZY_ORACLE_SEEDS", 200);
+	let depth = depth().max(1);
+
+	for seed in 0..seeds {
+		let mut generator = Generator::new(seed);
+		let arity = generator.rng.random_range(1..=2);
+		let (child, child_eager) = generator.generate(arity, depth)?;
+		let pad = if generator.rng.random_bool(0.5) {
+			Pad::Last
+		} else {
+			Pad::Step(
+				(0..arity)
+					.map(|_| lazy_symbol(random_symbol(&mut generator.rng, arity)))
+					.collect::<Vec<_>>()
+					.into(),
+			)
+		};
+
+		let root = generator.formula.pad_closure(child, pad.clone())?;
+		let eager = child_eager.pad_closure(&pad);
+		assert_agrees(&generator.formula, &generator.terms, root, &eager, seed)?;
 	}
 
 	Ok(())
