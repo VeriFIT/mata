@@ -19,7 +19,6 @@ autodoc_default_options = {
 }
 exclude_patterns = ["_build"]
 templates_path = ["_templates"]
-html_static_path = ["_static"]
 html_theme = "furo"
 
 # Links from the sidebar to the pages built from the same branch. Furo has no extra_nav_links: the links come from
