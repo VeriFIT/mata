@@ -157,7 +157,7 @@ fn hidden_pair(spec: &SyncSpec) -> Option<TapePair> {
 struct Shape {
 	/// No two moves have the same tuple and target.
 	distinct: bool,
-	/// The tapes that may read [`ANY`](Symbol::ANY).
+	/// The tapes that may read more than one concrete symbol (a wildcard or set).
 	wild: Vec<bool>,
 }
 
@@ -188,7 +188,7 @@ fn shapes(exec: &Exec<'_>) -> TiVec<ExecId, Shape> {
 			}
 			Op::Complement(_) => Shape {
 				distinct: true,
-				wild: vec![false; arity],
+				wild: vec![true; arity],
 			},
 			Op::Identity(child) => Shape {
 				distinct: shapes[*child].distinct && !shapes[*child].wild[0],
@@ -230,7 +230,7 @@ fn shapes(exec: &Exec<'_>) -> TiVec<ExecId, Shape> {
 				distinct: shapes[*child].distinct,
 				wild: vec![true; arity],
 			},
-			// One move per move of the child; with the last step, wildcards become concrete steps.
+			// One move per move of the child; with the last step, symbolic labels become concrete steps.
 			Op::PadClosure(child, pad) => match **pad {
 				Pad::Step(_) => shapes[*child].clone(),
 				Pad::Last => Shape {
@@ -513,12 +513,9 @@ impl Recent {
 impl Side {
 	/// Reads the code of each move's letter on `tape`; `None` if one is not indexed.
 	fn read_codes(&mut self, post: &Post, tape: usize, index: &LetterIndex) -> Option<()> {
-		// The flat letters, as `tuple` would reload a shared table's letters after every push.
-		let (arity, letters) = post.flat();
 		self.codes.clear();
 		for move_index in 0..post.len() {
-			self.codes
-				.push(index.code(letters[move_index * arity + tape])?);
+			self.codes.push(index.code(post.symbol(move_index, tape))?);
 		}
 
 		Some(())
@@ -555,7 +552,7 @@ impl Side {
 			for index in 0..post.len() {
 				let letter = kept
 					.first()
-					.map_or(0, |&tape| post.tuple(index)[tape].value());
+					.map_or(0, |&tape| post.symbol(index, tape).value());
 				let key = u64::from(letter) << 32 | u64::from(post.state(index));
 				let group = match keys.entry(key) {
 					Entry::Occupied(entry) => *entry.get(),
@@ -576,7 +573,7 @@ impl Side {
 		let hash = |index: usize| {
 			let mut hasher = FxHasher::default();
 			for &tape in kept {
-				hasher.write_u32(post.tuple(index)[tape].value());
+				hasher.write_u32(post.symbol(index, tape).value());
 			}
 
 			hasher.write_u32(u32::from(post.state(index)));
@@ -587,7 +584,7 @@ impl Side {
 			post.state(a) == post.state(b)
 				&& kept
 					.iter()
-					.all(|&tape| post.tuple(a)[tape] == post.tuple(b)[tape])
+					.all(|&tape| post.symbol(a, tape) == post.symbol(b, tape))
 		};
 		table.clear();
 		for index in 0..post.len() {
@@ -823,11 +820,10 @@ impl GroupJoin<'_> {
 
 			let left_move = lhs.first[left_group as usize] as usize;
 			let right_move = rhs.side.first[right_group as usize] as usize;
-			let (left_tuple, right_tuple) = (left.tuple(left_move), right.tuple(right_move));
 			tuple.clear();
 			tuple.extend(self.spec.layout.iter().map(|tape| match tape.source {
-				Tape::Lhs(i) => left_tuple[i],
-				Tape::Rhs(j) => right_tuple[j],
+				Tape::Lhs(i) => left.symbol(left_move, i),
+				Tape::Rhs(j) => right.symbol(right_move, j),
 			}));
 
 			let (left_target, right_target) = (left.target(left_move), right.target(right_move));

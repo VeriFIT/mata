@@ -655,7 +655,7 @@ impl Formula {
 	///
 	/// # Errors
 	///
-	/// [`ComplementTooLarge`](Error::ComplementTooLarge), or [`ForeignTerm`](Error::ForeignTerm).
+	/// [`ForeignTerm`](Error::ForeignTerm).
 	pub fn is_empty(&self, term: Term) -> Result<bool, Error> {
 		Ok(self.find_word(term)?.is_none())
 	}
@@ -664,7 +664,7 @@ impl Formula {
 	///
 	/// # Errors
 	///
-	/// [`ComplementTooLarge`](Error::ComplementTooLarge), or [`ForeignTerm`](Error::ForeignTerm).
+	/// [`ForeignTerm`](Error::ForeignTerm).
 	pub fn find_word(&self, term: Term) -> Result<Option<Witness>, Error> {
 		Ok(self.check(term, &Options::new())?.witness)
 	}
@@ -675,9 +675,8 @@ impl Formula {
 	///
 	/// [`StateLimit`](Error::StateLimit) or [`TimeLimit`](Error::TimeLimit) (with the statistics so far) if the query
 	/// passes a limit of `options`, [`TapeOutOfRange`](Error::TapeOutOfRange) or
-	/// [`ReservedSymbol`](Error::ReservedSymbol) for an alphabet of `options`,
-	/// [`ComplementTooLarge`](Error::ComplementTooLarge), or [`ForeignTerm`](Error::ForeignTerm) for `term` or an
-	/// explicit term of `options`.
+	/// [`ReservedSymbol`](Error::ReservedSymbol) for an alphabet of `options`, or
+	/// [`ForeignTerm`](Error::ForeignTerm) for `term` or an explicit term of `options`.
 	pub fn check(&self, term: Term, options: &Options) -> Result<Outcome, Error> {
 		let mut engine = engine::Engine::new(self, self.node(term)?, options, None)?;
 		let (witness, bounded) = engine.search()?;

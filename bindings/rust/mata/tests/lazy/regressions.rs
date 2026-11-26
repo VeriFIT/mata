@@ -163,8 +163,8 @@ fn union_chains_of_either_shape() -> Result<(), Error> {
 	Ok(())
 }
 
-/// A complement ranks the members of its sets through the whole product below it, once the product has more states
-/// than a dense complement takes. The lazy explicit node keeps the complement above the product.
+/// A complement ranks the members of its sets through the whole product below it. The lazy explicit node keeps the
+/// complement above the product.
 #[test]
 #[cfg_attr(
 	target_os = "emscripten",

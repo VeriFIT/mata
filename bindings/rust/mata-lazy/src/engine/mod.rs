@@ -17,7 +17,7 @@
 //! | leaf, explicit | a state | final | its moves |
 //! | union (n-ary) | (branch, state) | that state | the branch's moves |
 //! | intersection, sync product, diagonal | (state, state) | both | pairs of moves whose tuples merge, once each when the product drops tapes |
-//! | complement | a minimized set of child states | no member | one move per tuple of the alphabets |
+//! | complement | a minimized set of child states | no member | symbolic Cartesian regions of the alphabets |
 //! | identity, projection | the child's | the child's | the child's moves, relabelled |
 //! | prefix closure | the child's | it reaches an accepting one (`prefixes`) | the child's moves |
 //!
@@ -25,11 +25,10 @@
 //!
 //! The successors of a macrostate (its post) are built from the children's posts when first needed (`post`)
 //! and cached per node, except for identities and along the root. A product joins each left move with the
-//! right moves that agree on the synchronized tapes. The post of a complement is a table of all tuples in a
-//! fixed order, so the matching moves follow from the letters. A sync product that drops its only synchronized
-//! pair, as in a composition or an image, joins groups of moves instead (`join`). A complement over at most 256
-//! child states builds its posts from bitset rows (`dense`). Every path gives the same posts and the same
-//! macrostate numbers.
+//! right moves that agree on the synchronized tapes. Complement posts partition the tape alphabets into
+//! symbolic Cartesian regions, whose concrete products need not be enumerated. A sync product that drops its
+//! only synchronized pair, as in a composition or an image, joins groups of wholly-simple moves instead
+//! (`join`). Every path gives the same posts and the same macrostate numbers.
 //!
 //! # Subsumption
 //!
@@ -49,9 +48,9 @@
 //!
 //! # Memory and limits
 //!
-//! Most of the memory is cached posts. A post stores its tuples flat and each target as a `u32` with the
-//! accepting flag in the top bit, and the posts of one complement share their tuple table. Under a cache budget
-//! the query drops posts by GreedyDual-Size with frequency (`cache`) and computes them again when needed.
+//! Most of the memory is cached posts. A post stores symbolic tape labels flat and each target as a `u32` with
+//! the accepting flag in the top bit. Under a cache budget the query drops posts by GreedyDual-Size with
+//! frequency (`cache`) and computes them again when needed.
 //! `budget` counts macrostates and steps against the query's limits.
 //!
 //! Intersections stay binary, so `¬(A₁ ∪ … ∪ Aₙ)` builds quadratically many pair macrostates.
@@ -60,7 +59,6 @@ mod alphabet;
 mod budget;
 mod cache;
 mod closure;
-mod dense;
 mod exec;
 mod initial;
 mod join;
@@ -84,11 +82,10 @@ use typed_index_collections::TiVec;
 use self::alphabet::Alphabets;
 use self::budget::{Budget, Limit};
 use self::cache::CacheBudget;
-use self::dense::Dense;
 use self::exec::{Exec, LeafRef, Op};
 use self::initial::{INITIAL_BATCH, batches};
 use self::join::{JoinPlan, Scratch};
-use self::post::{JoinBuffers, Post, Table, Target};
+use self::post::{JoinBuffers, Post, Target, for_each_concrete};
 use self::store::Store;
 use self::subsumption::{Antichain, Subsumption};
 use crate::formula::Formula;
@@ -162,7 +159,7 @@ impl ExplicitCache {
 	}
 }
 
-/// How the search reached a macrostate, from `parent` by the tuple at `offset` in its tuple buffer.
+/// How the search reached a macrostate, from `parent` by the concrete tuple at `offset` in its tuple buffer.
 #[derive(Clone, Copy, Debug)]
 struct Step {
 	parent: StateId,
@@ -181,8 +178,10 @@ struct Reached {
 struct Search<'f> {
 	antichain: Option<Antichain<'f>>,
 	reached: FxHashMap<StateId, Reached>,
-	/// The tuples of the steps, `arity` symbols each.
+	/// The concrete tuples of the steps, `arity` symbols each.
 	tuples: Vec<Symbol>,
+	/// The selected label of the current post, resolved to concrete symbols once.
+	tuple: Vec<Symbol>,
 	/// The macrostates to expand and the steps that reached them; a stack, or a queue breadth first.
 	work: VecDeque<(StateId, usize)>,
 	/// Whether a macrostate was left unexpanded at the length bound.
@@ -200,8 +199,6 @@ pub(crate) struct Engine<'f> {
 	/// prefix closure, which searches its child. An identity relabels its child's post, which is kept, as a copy
 	/// would double it.
 	cached: TiVec<ExecId, bool>,
-	/// The tuples of the posts of each complement node, and of each identity of one.
-	tables: TiVec<ExecId, Option<Rc<Table>>>,
 	cache_budget: Option<CacheBudget>,
 	/// The time spent computing the children's posts of the post being computed, under a cache budget.
 	nested_nanos: u64,
@@ -226,8 +223,6 @@ pub(crate) struct Engine<'f> {
 	max_length: Option<usize>,
 	/// Whether the search goes breadth first, for a witness of the fewest steps.
 	shortest: bool,
-	/// Whether the posts of each complement node use bitsets over its child's states.
-	dense: TiVec<ExecId, Option<Box<Dense>>>,
 	/// The steps and reachability that each pad closure remembers.
 	pad_steps: TiVec<ExecId, pad::PadSteps>,
 	budget: Budget,
@@ -248,15 +243,6 @@ impl<'f> Engine<'f> {
 		let annotations = Annotations::new(formula, options)?;
 		let exec = exec::build(formula, root, &annotations);
 		let alphabets = Alphabets::new(&exec, &root_symbols(options, exec.nodes[exec.root].arity)?);
-
-		for (id, node) in exec.nodes.iter_enumerated() {
-			if matches!(node.op, Op::Complement(_))
-				&& exec.reachable[id]
-				&& alphabets.tuple_count(id).is_none()
-			{
-				return Err(Error::ComplementTooLarge { arity: node.arity });
-			}
-		}
 
 		let num_nodes = exec.nodes.len();
 		let stores = exec
@@ -284,11 +270,6 @@ impl<'f> Engine<'f> {
 		}
 
 		let plans = join::plans(&exec);
-		let dense = exec
-			.nodes
-			.iter()
-			.map(|node| matches!(node.op, Op::Complement(_)).then(Box::default))
-			.collect();
 
 		let mut engine = Engine {
 			formula,
@@ -297,11 +278,9 @@ impl<'f> Engine<'f> {
 			stores,
 			posts: vec![Vec::new(); num_nodes].into(),
 			cached,
-			tables: vec![None; num_nodes].into(),
-			// Rows of dense complements are keyed after the nodes.
 			cache_budget: options
 				.cache_budget
-				.map(|limit| CacheBudget::new(limit, 2 * num_nodes)),
+				.map(|limit| CacheBudget::new(limit, num_nodes)),
 			nested_nanos: 0,
 			initial_counts: vec![None; num_nodes].into(),
 			initials: vec![None; num_nodes].into(),
@@ -315,7 +294,6 @@ impl<'f> Engine<'f> {
 			antichain: options.subsumption && options.antichain,
 			max_length: options.max_length,
 			shortest: options.shortest,
-			dense,
 			pad_steps: (0..num_nodes).map(|_| pad::PadSteps::default()).collect(),
 			budget,
 			stats: Stats::default(),
@@ -481,7 +459,11 @@ impl<'f> Engine<'f> {
 		}
 
 		let mut ids = IndexSet::default();
-		let mut raw = Raw::new(self.exec.nodes[node].arity);
+		let arity = self.exec.nodes[node].arity;
+		let universes: Vec<_> = (0..arity)
+			.map(|tape| self.alphabets.universe(node, tape).clone())
+			.collect();
+		let mut raw = Raw::new(arity);
 		// The initial macrostates in batches, so that the node's budget stops a node with very many.
 		for batch in batches(0..self.initial_count(node), INITIAL_BATCH) {
 			if max_states.is_some_and(|max| ids.len() > max) {
@@ -506,9 +488,15 @@ impl<'f> Engine<'f> {
 
 			let source = StateId::new(next);
 			let post = self.post(node, ids[next])?;
-			for (tuple, target) in post.iter() {
+			for (labels, target) in post.iter() {
 				let state = intern(&mut ids, &mut raw, target);
-				raw.push(source, tuple, state);
+				for_each_concrete(&universes, labels, |tuple| {
+					self.budget.step(0);
+					self.stopped()?;
+					raw.push(source, tuple, state);
+
+					Ok(())
+				})?;
 			}
 
 			next += 1;
@@ -533,6 +521,7 @@ impl<'f> Engine<'f> {
 			antichain: self.antichain.then(|| Antichain::new(&self.exec, by_depth)),
 			reached: FxHashMap::default(),
 			tuples: Vec::new(),
+			tuple: Vec::with_capacity(arity),
 			work: VecDeque::new(),
 			bounded: false,
 		};
@@ -621,13 +610,21 @@ impl<'f> Engine<'f> {
 
 			let post = self.post(root, state)?;
 			self.stats.explored += 1;
-			for (tuple, target) in post.iter() {
+			for (labels, target) in post.iter() {
+				search.tuple.clear();
+				search
+					.tuple
+					.extend(labels.iter().enumerate().map(|(tape, label)| {
+						label
+							.symbol_at(self.alphabets.universe(root, tape), 0)
+							.unwrap_or(Symbol::ANY)
+					}));
 				if target.accepting {
 					return Ok(Some(self.witness(
 						&search.reached,
 						&search.tuples,
 						state,
-						tuple,
+						&search.tuple,
 					)));
 				}
 
@@ -652,7 +649,7 @@ impl<'f> Engine<'f> {
 					Entry::Occupied(_) => continue,
 				}
 
-				search.tuples.extend_from_slice(tuple);
+				search.tuples.extend_from_slice(&search.tuple);
 				self.enqueue(search, target.state, depth + 1);
 				self.stopped()?;
 			}
@@ -683,7 +680,7 @@ impl<'f> Engine<'f> {
 		}
 	}
 
-	/// The word to `state` and then `last`, with each wildcard as the first symbol of its tape.
+	/// The word to `state` and then `last`; every symbolic label was resolved before it was saved.
 	fn witness(
 		&self,
 		reached: &FxHashMap<StateId, Reached>,
@@ -707,16 +704,7 @@ impl<'f> Engine<'f> {
 		let symbols = steps
 			.into_iter()
 			.rev()
-			.flat_map(|step| step.iter().enumerate())
-			.map(|(tape, &symbol)| {
-				if symbol == Symbol::ANY {
-					let universe = self.alphabets.universe(root, tape);
-
-					universe.first().copied().unwrap_or(Symbol::ANY)
-				} else {
-					symbol
-				}
-			})
+			.flat_map(|step| step.iter().copied())
 			.collect();
 
 		Witness::new(arity, symbols)

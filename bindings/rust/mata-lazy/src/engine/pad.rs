@@ -10,7 +10,7 @@ use rustc_hash::{FxBuildHasher, FxHashMap, FxHashSet};
 
 use super::Engine;
 use super::budget::Limit;
-use super::post::{Post, Target};
+use super::post::{Post, TapeLabel, Target, for_each_concrete};
 use super::store::Tagged;
 use crate::Symbol;
 use crate::formula::Pad;
@@ -24,14 +24,18 @@ pub(crate) struct PadSteps {
 	reaches: FxHashMap<(StateId, u32), bool>,
 }
 
-/// Whether a move reading `tuple` is a move on `step`.
-fn reads(tuple: &[Symbol], step: &[Symbol]) -> bool {
-	tuple.iter().zip(step).all(|(&read, &padded)| match padded {
-		Symbol::ANY => read != Symbol::EPSILON,
-		Symbol::EPSILON => read == Symbol::EPSILON,
-		// The step's symbols are in the tape's alphabet, so the wildcard reads them.
-		padded => read == padded || read == Symbol::ANY,
-	})
+/// Whether a symbolic move label includes a tape reading `step`.
+fn reads(tuple: &[TapeLabel], step: &[Symbol]) -> bool {
+	tuple
+		.iter()
+		.zip(step)
+		.all(|(read, &padded)| match (read, padded) {
+			(TapeLabel::Simple(Symbol::EPSILON), Symbol::ANY)
+			| (TapeLabel::Set(_), Symbol::EPSILON) => false,
+			(_, Symbol::ANY) => true,
+			(TapeLabel::Simple(read), padded) => *read == padded || *read == Symbol::ANY,
+			(TapeLabel::Set(symbols), padded) => symbols.binary_search(&padded).is_ok(),
+		})
 }
 
 impl Engine<'_> {
@@ -126,46 +130,24 @@ impl Engine<'_> {
 		match pad {
 			Pad::Step(_) => {
 				for (tuple, target) in child_post.iter() {
-					post.push(tuple, self.pad_target(node, child, pad, branch, target)?);
+					post.push_labels(tuple, self.pad_target(node, child, pad, branch, target)?);
 				}
 			}
 			Pad::Last => {
-				// Padding repeats the concrete step, so a wildcard becomes each symbol it reads.
+				// Last-step reachability branches on exact steps, so symbolic dimensions expand incrementally.
 				let universes: Vec<_> = (0..arity)
 					.map(|tape| self.alphabets.universe(node, tape).clone())
 					.collect();
-				let mut steps: Vec<Vec<Symbol>> = Vec::new();
 				for (tuple, target) in child_post.iter() {
-					steps.clear();
-					steps.push(Vec::with_capacity(arity));
-					for (&symbol, universe) in tuple.iter().zip(&universes) {
-						if symbol == Symbol::ANY {
-							steps = steps
-								.iter()
-								.flat_map(|step| {
-									universe.iter().map(|&letter| {
-										let mut step = step.clone();
-										step.push(letter);
-
-										step
-									})
-								})
-								.collect();
-						} else {
-							for step in &mut steps {
-								step.push(symbol);
-							}
-						}
-					}
-
-					for step in &steps {
-						let index = self.pad_steps[node]
-							.steps
-							.insert_full(step.as_slice().into())
-							.0;
+					for_each_concrete(&universes, tuple, |step| {
+						self.budget.step(self.stores[node].len() - start);
+						self.stopped()?;
+						let index = self.pad_steps[node].steps.insert_full(step.into()).0;
 						let branch = u32::try_from(index + 1).expect("fewer than 2^32 steps");
 						post.push(step, self.pad_target(node, child, pad, branch, target)?);
-					}
+
+						Ok(())
+					})?;
 				}
 
 				post.dedup();

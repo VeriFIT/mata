@@ -151,24 +151,22 @@ impl Automaton for EmptyWord {
 }
 
 #[test]
-fn a_time_limit_stops_a_complement_over_too_many_tuples() -> Result<(), Error> {
-	// 2^32 tuples of four tapes would take 64 GiB of letters at once. A 32-bit `usize` cannot count them, which is
-	// `ComplementTooLarge` there, so 32-bit targets take the 2^24 tuples of three tapes.
-	let tapes = if usize::BITS > 32 { 4 } else { 3 };
-	let mut formula = Formula::new();
-	let empty_word = formula.leaf(&EmptyWord { tapes })?;
-	let complement = formula.complement(empty_word)?;
+fn a_moveless_complement_is_symbolic_beyond_the_concrete_tuple_count() -> Result<(), Error> {
+	for tapes in [33, 65] {
+		let mut formula = Formula::new();
+		let empty_word = formula.leaf(&EmptyWord { tapes })?;
+		let complement = formula.complement(empty_word)?;
+		let options = Options::new().alphabet([Symbol::new(0), Symbol::new(1)]);
 
-	let options = Options::new()
-		.alphabet(0..=u8::MAX)
-		.time_limit(Duration::from_millis(10));
-	let start = Instant::now();
-	let outcome = formula.check(complement, &options);
-	assert!(
-		matches!(outcome, Err(Error::TimeLimit { .. })),
-		"{outcome:?}"
-	);
-	assert!(start.elapsed() < Duration::from_secs(5));
+		// One symbolic region covers all 2^tapes tuples, including when usize cannot count them.
+		let witness = formula
+			.check(complement, &options)?
+			.witness
+			.expect("a moveless child complements to every one-step word");
+		for tape in 0..tapes {
+			assert_eq!(witness.tape(tape), Some(vec![Symbol::new(0)]));
+		}
+	}
 
 	Ok(())
 }
