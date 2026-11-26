@@ -1,4 +1,4 @@
-# Mata: The Automata Library
+# Mata: The Automata Library {#readme}
 
 [![GitHub tag](https://img.shields.io/github/tag/VeriFIT/mata.svg)](https://github.com/VeriFIT/mata)
 [![Quality](https://github.com/VeriFIT/mata/actions/workflows/code-quality.yml/badge.svg)](https://github.com/VeriFIT/mata/actions/workflows/code-quality.yml)
@@ -17,9 +17,9 @@ The [website of Mata](https://verifit.github.io/mata/) gives an overview of the 
 [playground](https://verifit.github.io/mata/master/playground/) that runs Mata in the browser. The
 [development website](https://verifit.github.io/mata/devel/) tracks the `devel` branch.
 
-## Installation
+## Installation {#installation}
 
-### Nix
+### Nix {#nix}
 
 Available in [nixpkgs](https://github.com/NixOS/nixpkgs/) (maintained by [@Adda0](https://github.com/Adda0)) as `pkgs.mata`:
 
@@ -51,11 +51,11 @@ The development shell includes Cargo, rustc, Clippy, and rustfmt from a lockfile
 The Python environment of the development shell is built from `uv.lock`, the same versions `uv sync` installs, with the
 bindings installed editable from the checkout. Build their extensions in place with `just bindings python build`.
 
-### Download pre-built binaries from GitHub
+### Download pre-built binaries from GitHub {#download-pre-built-binaries-from-github}
 
 You can download pre-built binaries from the [releases](https://github.com/VeriFIT/mata/releases) page on GitHub.
 
-### Building and installing from sources
+### Building and installing from sources {#building-and-installing-from-sources}
 
 For a successful installation of Mata, `cmake` of version `3.23.0` (or higher) and a C++ compiler with a support of C++-20 standard is required.
 From optional requirements, `doxygen` is required for a generation of the documentation and `catch2` is required for the unit testing (Mata can still be compiled without these optional dependencies).
@@ -137,23 +137,23 @@ Run the following to install the dependencies for Ubuntu:
 sudo apt install -y build-essential lcov gcovr xdg-utils
 ```
 
-## Python binding
+## Python binding {#python-binding}
 
 Mata offers binding of its efficient library to Python. You can install the binding as a Python
 package on your system as follows.
 
-### Installation from PyPI
+### Installation from PyPI {#installation-from-pypi}
 
 To install the latest version from the PyPI repository, run:
 
 ```shell
-# Using uv:
+# Using uv: {#using-uv}
 uv add libmata
-# Or using pip:
+# Or using pip: {#or-using-pip}
 pip3 install libmata
 ```
 
-### Building from sources
+### Building from sources (Python) {#building-from-sources-python}
 
 To build from sources first, install the necessary requirements for Python and your
 system. We recommend using the virtual environemnt (`venv`) to install and use the library.
@@ -195,11 +195,11 @@ Finally, you can verify the binding woks as expected by running the test suite:
 make -C bindings/python test
 ```
 
-## Rust binding
+## Rust binding {#rust-binding}
 
-Mata offers bindings of its library to Rust in [`bindings/rust`](./bindings/rust/): the crate [`mata`](https://crates.io/crates/mata) with a safe API, and the crate [`mata-sys`](https://crates.io/crates/mata-sys), which builds the library. They need Rust 1.95 or newer besides the requirements of the library. The module `mata::lazy` (the crate [`mata-lazy`](./bindings/rust/mata-lazy/)) checks combinations of NFAs and NFTs for emptiness lazily, and the module `mata::logic` (the crate [`mata-logic`](./bindings/rust/mata-logic/)) decides formulas encoded in automata on top of it. The same workspace builds the [`mata` command](https://mata.pages.fit.vutbr.cz/), the command-line interpreter of Mata Script; see [`bindings/rust/README.md`](./bindings/rust/README.md).
+Mata offers bindings of its library to Rust in [`bindings/rust`](https://github.com/VeriFIT/mata/tree/devel/bindings/rust/): the crate [`mata`](https://crates.io/crates/mata) with a safe API, and the crate [`mata-sys`](https://crates.io/crates/mata-sys), which builds the library. They need Rust 1.95 or newer besides the requirements of the library. The module `mata::lazy` (the crate [`mata-lazy`](https://github.com/VeriFIT/mata/tree/devel/bindings/rust/mata-lazy/)) checks combinations of NFAs and NFTs for emptiness lazily, and the module `mata::logic` (the crate [`mata-logic`](https://github.com/VeriFIT/mata/tree/devel/bindings/rust/mata-logic/)) decides formulas encoded in automata on top of it. The same workspace builds the [`mata` command](https://mata.pages.fit.vutbr.cz/), the command-line interpreter of Mata Script; see [`bindings/rust/README.md`](https://github.com/VeriFIT/mata/blob/devel/bindings/rust/README.md).
 
-### Installation from crates.io
+### Installation from crates.io {#installation-from-cratesio}
 
 To add the latest version to a Cargo project, run:
 
@@ -207,7 +207,7 @@ To add the latest version to a Cargo project, run:
 cargo add mata
 ```
 
-### Building from sources
+### Building from sources (Rust) {#building-from-sources-rust}
 
 To build the bindings and run their tests:
 
@@ -216,9 +216,9 @@ cd bindings/rust
 cargo test --workspace --all-features
 ```
 
-## Getting started
+## Getting started {#readme-getting-started}
 
-To get started, we refer to the folder [examples](./examples/) in our repository.
+To get started, we refer to the folder [examples](https://github.com/VeriFIT/mata/tree/devel/examples/) in our repository.
 This directory contains examples of various usage in form of:
 
 1. C/C++ example programs. By default, they are built with the library. To run for example the first example:
@@ -242,7 +242,7 @@ pip3 install jupyter
 jupyter notebook
 ```
 
-### Using the library
+### Using the library {#using-the-library}
 
 The library can be used directly in the C/C++ code. The result of compilation is a static
 or dynamic library, that can be linked to ones project. Note, that the library is dependent
@@ -300,8 +300,8 @@ cmake_minimum_required (VERSION 3.23.0)
 project (my-project)
 set (CMAKE_CXX_STANDARD 20)
 
-# Find an installed Mata, or, if Mata is not installed, fetch the latest version, build it, and make it available in
-#  your project.
+# Find an installed Mata, or, if Mata is not installed, fetch the latest version, build it, and make it available in {#find-an-installed-mata-or-if-mata-is-not-installed-fetch-the-latest-version-build-it-and-make-it-available-in}
+#  your project. {#your-project}
 include(FetchContent)
 find_package(mata QUIET)
 if(NOT mata_FOUND)
@@ -320,7 +320,7 @@ add_executable(my-project
 target_link_libraries(my-project PUBLIC mata::libmata)
 ```
 
-### Using the Python binding
+### Using the Python binding {#using-the-python-binding}
 
 The python binding is installed (by default) to your local python package repository. You can
 either use the binding in your own scripts or in the python interpreter.
@@ -352,7 +352,7 @@ The usage of the binding copies (to certain levels) the usage of the C++ library
 
 You can either run your scripts directly using `python` or compile it using the `cython` project.
 
-### Using the Rust binding
+### Using the Rust binding {#using-the-rust-binding}
 
 The API documentation of the Rust binding is on [docs.rs](https://docs.rs/mata). Its usage follows the C++ library:
 
@@ -374,15 +374,15 @@ fn main() -> Result<(), Error> {
 }
 ```
 
-### Benchmarking, profiling
+### Benchmarking, profiling {#benchmarking-profiling}
 
 For instructions on how to benchmark and profile Mata, see [BENCHMARKING.md](BENCHMARKING.md).
 
-## Supported Automata Models
+## Supported Automata Models {#supported-automata-models}
 
 While we try to keep the provided library interface stable, Mata is still a project in its infancy.
 Hence, the interface is subject to change.
-For further information, see section [Versioning](#versioning).
+For further information, see section [Versioning](@ref versioning).
 
 Mata currently supports (non-)deterministic finite automata (NFAs), defined in `include/mata/nfa/`.
 
@@ -390,7 +390,7 @@ Mata currently supports (non-)deterministic finite automata (NFAs), defined in `
 > Mata provides an experimental (unstable) support for (non-)deterministic finite transducers (NFTs), defined in `include/mata/nft/`.
 > The provided interface may change.
 
-## Versioning
+## Versioning {#versioning}
 
 Mata follows the versioning scheme `GENERATION.MAJOR.MINOR`, e.g. `1.2.3` where `1` is the generation number, and `2` the major version, and `3` the minor version.
 The `MAJOR` and `MINOR` versions follow loosely the [Semantic Versioning](https://semver.org/) scheme.
@@ -402,16 +402,16 @@ The `MAJOR` and `MINOR` versions follow loosely the [Semantic Versioning](https:
 
 Mata publishes releases from the `master` branch, and sometimes development releases from the `devel` branch.
 
-## Publications
+## Publications {#publications}
 
 - Chocholatý, D., Fiedor, T., Havlena, V., Holík, L., Hruška, M., Lengál, O., & Síč, J. (2023). [Mata, a Fast and Simple Finite Automata Library](https://doi.org/10.1007/978-3-031-57249-4_7). In _Proc. of TACAS'24_, volume 14571 of LNCS, pages 130-151, 2024. Springer.
   - Chocholatý, D., Fiedor, T., Havlena, V., Holík, L., Hruška, M., Lengál, O., Síč, J.: [A replication package for reproducing the results of paper “Mata: A fast and simple finite automata library”](https://doi.org/10.5281/zenodo.10044515) (Oct 2023).
 
-## Contributing
+## Contributing {#readme-contributing}
 
 Please refer to our [contributing guidelines](CONTRIBUTING.md).
 
-## Links
+## Links {#links}
 
 - Project (origin) repository: <https://github.com/verifit/mata>
 - Issue tracker: <https://github.com/verifit/mata/issues>
@@ -430,17 +430,17 @@ Also, check out our research group focusing on program analysis, static and dyna
 formal methods, verification and many more:
 <http://www.fit.vutbr.cz/research/groups/verifit/index.php.en>.
 
-## Licensing
+## Licensing {#licensing}
 
 The code of Mata is licensed under MIT licence. See [LICENSE](LICENSE).
 
 The folder [`3rdparty/`](3rdparty) contains 3rd party applications licensed under their own licences, included with the code.
 
-## Contacts
+## Contacts {#contacts}
 
-See [AUTHORS.md](AUTHORS.md).
+See [AUTHORS.md](https://github.com/VeriFIT/mata/blob/devel/AUTHORS.md).
 
-## Acknowledgements
+## Acknowledgements {#acknowledgements}
 
 We thank for the support received from the Brno University of Technology
 ([BUT FIT](https://www.fit.vutbr.cz/)).
@@ -450,6 +450,6 @@ We thank for the support received from the Brno University of Technology
 This tool as well as the information provided on this web page reflects only the author's view and no organization is
 responsible for any use that may be made of the information it contains.
 
-## Branches
+## Branches {#readme-branches}
 
-See [docs/src/branches.md](docs/src/branches.md).
+See [branches](@ref readme-branches).

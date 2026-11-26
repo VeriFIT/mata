@@ -18,15 +18,20 @@ autodoc_default_options = {
     "show-inheritance": True,
 }
 exclude_patterns = ["_build"]
-html_static_path = ["_static"]
-html_theme = "alabaster"
+templates_path = ["_templates"]
+html_theme = "furo"
 
-# Links from the sidebar to the pages built from the same branch.
+# Links from the sidebar to the pages built from the same branch. Furo has no extra_nav_links: the links come from
+#  the custom sidebar template 'links.html', listed in 'html_sidebars' below.
 website_url = os.environ.get("MATA_WEBSITE_URL", "https://verifit.github.io/mata/master/")
-html_theme_options = {
-    "extra_nav_links": {
-        "Mata website": website_url,
-        "All documentation": f"{website_url}docs/",
-        "Playground": f"{website_url}playground/",
-    },
+html_context = {"website_url": website_url}
+html_sidebars = {
+    "**": [
+        "sidebar/brand.html",
+        "sidebar/search.html",
+        "sidebar/scroll-start.html",
+        "sidebar/navigation.html",
+        "links.html",
+        "sidebar/scroll-end.html",
+    ],
 }

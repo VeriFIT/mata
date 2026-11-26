@@ -1,11 +1,11 @@
-# The `mata` command
+# The `mata` command {#cli}
 
 **Status: implemented, with named gaps.** The `mata-cli` crate of the Rust workspace builds this command, a binary named
-`mata` that runs [Mata Script](script-language) scripts and performs one-off automata operations without writing a
+`mata` that runs [Mata Script](@ref script-language) scripts and performs one-off automata operations without writing a
 script. The command is implemented in Rust on top of the
-[Rust bindings](https://mata.pages.fit.vutbr.cz/rust/mata/); see [Why Rust](#why-rust). This page stays the
+[Rust bindings](https://mata.pages.fit.vutbr.cz/rust/mata/); see [Why Rust](@ref why-rust). This page stays the
 specification: where the current interpreter does not reach it, the gap is named under
-[implementation notes](#implementation-notes) and reported by the command itself, never approximated.
+[implementation notes](@ref implementation-notes) and reported by the command itself, never approximated.
 
 ```console
 $ mata script run email-filter.matasc filters/*.mata --input spec=spec.mata
@@ -13,7 +13,7 @@ inclusion-time: 0.012300
 inclusion: true
 ```
 
-## Command tree
+## Command tree {#command-tree}
 
 ```text
 mata <command> [arguments]
@@ -42,9 +42,9 @@ Options and operands are separated by `--` where either side accepts file names;
 operand. A path operand of `-` means standard input, except where a script file name is expected and standard input is
 already used for a script from `-`, or the command writes its result to the path `-`.
 
-## Scripts
+## Scripts {#scripts}
 
-### `mata script run`
+### `mata script run` {#mata-script-run}
 
 ```console
 mata script run [options] [SCRIPT] [INPUT…]
@@ -79,7 +79,7 @@ mata script run [options] [SCRIPT] [INPUT…]
   written to `PATH` instead of standard output. `--output -` is standard output, the default. Errors always go to
   standard error. An output that is the script file or the file of an input is an error, before anything is written.
 
-The whole script is checked, as [`mata script check`](#mata-script-check) does, before its first form runs, so a
+The whole script is checked, as [`mata script check`](@ref mata-script-check) does, before its first form runs, so a
 misspelled operation in the last line stops the run before any output and before any automaton is loaded. Its declared
 inputs are then loaded in order with the `set-option` and `set-info` forms between them, so `(set-option :alphabet
 "bytes")` before the declarations applies to the automata they load.
@@ -119,7 +119,7 @@ $ mata script run --expression '(print (nfa:number-of-states (nfa:load $1)))' a.
 2
 ```
 
-### `mata script check`
+### `mata script check` {#mata-script-check}
 
 ```console
 mata script check [SCRIPT | --script PATH | --expression SCRIPT-TEXT]
@@ -127,7 +127,7 @@ mata script check [SCRIPT | --script PATH | --expression SCRIPT-TEXT]
 
 Checks the script without loading any input or running any operation, in this order:
 
-1. **Version:** the [`mata-script` header](script-language) names a language version this `mata` runs. The header is
+1. **Version:** the [`mata-script` header](@ref script-language) names a language version this `mata` runs. The header is
    read before the rest of the script, so a script for a newer version is rejected with the version it needs, not with
    a syntax error about something added later.
 2. **Syntax:** the script parses as Mata Script.
@@ -138,7 +138,7 @@ Checks the script without loading any input or running any operation, in this or
 4. **Sorts, where known:** an operation of the `nfa:` and `nft:` namespaces is checked against its fixed sorts; a sort
    annotation on `define` or `as` is checked, as are the values of hints and `set-info` keys.
 5. **Termination report:** whether the script is guaranteed to terminate, as described in
-   {ref}`Termination <script-termination>`.
+   [Termination](@ref termination).
 
 `check` takes no inputs: it does not read an automaton and accepts no positional operand and no `--input`. The script
 comes from a file, from standard input as `-`, from `--script PATH`, or from `--expression`.
@@ -147,12 +147,12 @@ The output is one line of the form `checked: <path>` on standard output, `checke
 for a script without a file, followed by report lines on standard error: `termination: guaranteed` or
 `termination: not-guaranteed`, and one line for every warning: an unused declaration, as `unused declaration 'x'`, or a
 script without a `mata-script` header. Anything that would stop the script before its first library call is an error
-instead of a report and sets [exit status](#exit-status) `2`.
+instead of a report and sets [exit status](@ref exit-status) `2`.
 
 `check` does not run the script, so a misspelled input path or a malformed automaton is not found by it, because it
 never reads one. It only checks what can be decided without evaluating the script.
 
-### `mata script repl`
+### `mata script repl` {#mata-script-repl}
 
 ```console
 mata script repl [--output PATH]
@@ -180,7 +180,7 @@ $ printf '%s\n' \
 The session prints `mata>` followed by a space only when standard input is a terminal, so a non-interactive session
 reads without printing prompts and is fit for tests and the website playground.
 
-## Direct operations
+## Direct operations {#direct-operations}
 
 The direct commands are for one operation whose script would be a single form.
 
@@ -207,7 +207,7 @@ determinize`, `mata nfa intersection`, `mata nft compose`, `mata strings get-acc
   its trailing `?`, which a shell would otherwise read as a pattern: `mata nfa included` is `nfa:included?` and
   `mata strings language-epsilon` is `strings:language-epsilon?`.
 - Each operand is read as the sort its position takes. An automaton operand is a file in the
-  [`.mata` format](automata-format), or `-` for standard input, which can be read once; a file with several automata
+  [`.mata` format](@ref automata-format), or `-` for standard input, which can be read once; a file with several automata
   gives one operand each. A `Word` operand is symbol names separated by spaces, as `mata nfa in-language a.mata 'a b'`,
   and an empty operand `''` is the empty word; `ε`, as printed for the empty word, is read as a symbol named `ε`. An
   operand that a script may give as an automaton or a word, as the second one of `nft:apply`, is an automaton file:
@@ -237,14 +237,14 @@ determinize`, `mata nfa intersection`, `mata nft compose`, `mata strings get-acc
 `mata formats` prints every format, every language feature and every script operation one entry per line, prefixed
 `format`, `feature` or `operation`, for programs that read it.
 
-### Direct queries and exit status
+### Direct queries and exit status {#direct-queries-and-exit-status}
 
-A decision operation that returns a value uses the [query status](#exit-status): `0` for `true`, `1` for `false`. A
+A decision operation that returns a value uses the [query status](@ref exit-status): `0` for `true`, `1` for `false`. A
 script's `check` never changes the status, because a script is a program, not a query; the direct commands are
 queries, so they can be used directly in a shell `if`. An assertion in a script uses status `1` for failure, matching
 the query convention.
 
-## Conversion
+## Conversion {#conversion}
 
 ```console
 mata convert [--from mata|dot] [--to mata|dot|regex] [--kind nfa|nft]
@@ -268,7 +268,7 @@ mata convert [--from mata|dot] [--to mata|dot|regex] [--kind nfa|nft]
 - `mata convert --from dot` is the only part that accepts DOT. The DOT it accepts is exactly what
   `print_to_dot` writes, extended only where another writer is documented here.
 
-### Regex conventions
+### Regex conventions {#regex-conventions}
 
 Regex output represents every transition symbol as one character. When the input has an alphabet, the writer uses its
 symbol names: every used symbol's name, or its number if it is unnamed, must be exactly one character, and otherwise
@@ -277,7 +277,7 @@ at most `0x10FFFF` and not a surrogate. `nfa:create-from-regex` is a Latin1 read
 `0xFF` exactly. Larger Unicode scalar values require a UTF-8 reader; decoding that reader's UTF-8 automaton then
 recovers the original symbols.
 
-### DOT conventions
+### DOT conventions {#dot-conventions}
 
 Mata's DOT output is deliberately small: a digraph, one node per state and one edge per transition. Input is parsed
 under fixed conventions, so anything outside them is an error; unsupported constructs are never dropped.
@@ -306,7 +306,7 @@ every state. The library's DOT carries no level count, so `mata convert`, `nfa:p
 add `num_of_levels=N` after the `digraph` line of a transducer; without it the level count is the highest state level
 plus one.
 
-The symbol label is the reverse of the {ref}`script alphabet <script-alphabets>`; `mata convert`, `nfa:print-to-dot` and
+The symbol label is the reverse of the [script alphabet](@ref alphabets); `mata convert`, `nfa:print-to-dot` and
 `nft:print-to-dot` all write symbol names, so their outputs agree:
 
 - A plain name such as `a` or `q0` is looked up, and inserted under the next free symbol if new.
@@ -332,7 +332,7 @@ number, a level not below `num_of_levels`, another graph attribute, a state name
 state numbers, a second graph, a graph without its closing `}`, a marker edge not of the form `iN -> N`, or an edge
 label with no listed symbols. Nothing is skipped, guessed or approximated.
 
-## Output conventions
+## Output conventions {#output-conventions}
 
 - A stream of values: one line per value. An automaton is printed in the `.mata` format, so it can be piped into
   another `mata` command.
@@ -357,7 +357,7 @@ label with no listed symbols. Nothing is skipped, guessed or approximated.
 - No progress output, banners or colours are printed, unless standard error is a terminal and the command is
   interactive; the content of the streams never changes, only the prompt.
 
-## Exit status
+## Exit status {#exit-status}
 
 | Status | Meaning                                                                                        |
 | ------ | ---------------------------------------------------------------------------------------------- |
@@ -371,9 +371,9 @@ for an operational reason, which is status `2`.
 The status is set once, by the command that ends the process. A REPL ends with `2` if any form of the session failed
 with an error, else with `1` once an assertion in the session failed, else with `0`; the session continues after an
 error, so a piped session reports every error, and its status shows that one happened. A script run by
-`mata script run` sets the status described in {ref}`Scripts <script-exit-status>`.
+`mata script run` sets the status described in [Scripts](@ref script-exit-status).
 
-## Versions
+## Versions {#versions}
 
 `mata version` prints three lines: the version of the command, the version of the Mata Script language it runs, and the
 version of the `libmata` it is linked with.
@@ -386,11 +386,11 @@ libmata 1.32.45
 ```
 
 A script declares the language version it is written for in its `mata-script` header; see
-[the script language page](script-language). A script without a header is read as the version of the `mata` that runs
+[the script language page](@ref script-language). A script without a header is read as the version of the `mata` that runs
 it, which suits a one-line `--expression` but not a script that is kept: `mata script check` warns about a file
 without one.
 
-## Why Rust
+## Why Rust {#why-rust}
 
 The command is implemented in Rust on top of the existing Rust bindings because:
 
@@ -413,9 +413,9 @@ The coverage that the current interpreter cannot reach from the existing crates 
 `mata-sys` bridge is the place to add a library call the script language needs; an operation the interpreter does not
 have is rejected by its exact name, and never approximated or served by a placeholder. The operations that the script
 language page specifies but this build does not have are listed in the
-[implementation notes](#implementation-notes).
+[implementation notes](@ref implementation-notes).
 
-## Implementation notes
+## Implementation notes {#implementation-notes}
 
 - The executable lives in `bindings/rust/mata-cli`, a binary crate named `mata` in the existing Rust workspace, so
   `cargo build --release --package mata-cli` builds it against the same Mata build as the bindings. It uses no crates
@@ -427,7 +427,7 @@ language page specifies but this build does not have are listed in the
   mintermized together, and their other sections are parsed by kind. A `.mata` symbol that is a number the alphabet
   has no name for is the symbol of that number in every parse, as it is printed.
 - The DOT reader is a new parser in the CLI crate, because the library has none; it rejects everything outside
-  [DOT conventions](#dot-conventions) and writes only the `.mata` format.
+  [DOT conventions](@ref dot-conventions) and writes only the `.mata` format.
 - `mata nfa`, `mata nft`, `mata strings` and `mata convert` call the same evaluator functions as the script
   interpreter, so a direct command and a one-line script cannot disagree.
 - Every operation of the catalogue records the language version that added it. A script sees the operations of the
@@ -435,8 +435,8 @@ language page specifies but this build does not have are listed in the
   with a name a script defined.
 - The interpreter implements 178 operations: the portable core of the language, the script forms that a direct command
   needs, the NFA, NFT, string-solving, automaton and intermediate-automaton operations `bindings/rust/mata` covers,
-  and the 15 {ref}`lazy: operations <script-lazy>` of `mata::lazy` (with the special form `lazy:stats`),
-  so every operation of the [script language](script-language) page runs. An operation outside that table is rejected
+  and the 15 [`lazy:` operations](@ref the-lazy-namespace) of `mata::lazy` (with the special form `lazy:stats`),
+  so every operation of the [script language](@ref script-language) page runs. An operation outside that table is rejected
   by name and never approximated: a script reports `unknown name 'nft:minimize'` and a direct command reports
   `unknown operation 'nft:minimize'`, both exiting `2`. `nft:minimize` is the one operation name of the page that is
   rejected: the library declares it only under `MATA_NFT_NOT_IMPLEMENTED`.
@@ -458,7 +458,7 @@ language page specifies but this build does not have are listed in the
   the sections of a `.mata` text, `intermediate:mintermize` returns the mintermized automata of one intermediate
   automaton or of a list of them (mintermized together when given together), and `nfa:construct` / `nft:construct`
   build the automaton of an intermediate one over the script alphabet, as
-  {ref}`loading <script-loading>` does. Two automata mintermized together therefore intersect as the
+  [loading](@ref what-loading-does) does. Two automata mintermized together therefore intersect as the
   predicates they came from: the constructed automata read `0` and `1` in the alphabet of the run.
 - The hints are those the bindings expose: `:algorithm` of `nfa:complement` (`"classical"`, `"brzozowski"`),
   `nfa:minimize` (`"hopcroft_nondet"`, `"hopcroft"` for an already trimmed DFA, `"brzozowski"`) and
@@ -492,7 +492,7 @@ language page specifies but this build does not have are listed in the
 - Every script option works: `:alphabet` with `on-the-fly` or `bytes`, `:produce-witnesses`, `:time-operations`,
   `:default`, `:optimize`, `:trace` and `:loops-and-recursion`. `mata formats` lists the features a header can require
   and whether this build has them.
-- `:optimize` rewrites what the [script language](script-language) page lists, and no more: a definition whose value
+- `:optimize` rewrites what the [script language](@ref script-language) page lists, and no more: a definition whose value
   is never read is left out when its value is an `Nfa` computed from library operations that cannot fail, so that
   leaving it out cannot hide an error; the same application of the same values runs once; `(nfa:language-empty?
 (nfa:intersection a b))` calls `nfa:intersection-empty?`; and the last use of a named value is passed on to be

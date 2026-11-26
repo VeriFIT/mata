@@ -1,8 +1,8 @@
-# (Auto)Mata Script Language
+# (Auto)Mata Script Language {#script-language}
 
 **Status: specification, partly implemented.** The page records the agreed design of **Mata Script**, a small,
 library-independent language for describing automata operations, with Mata as its first implementation. The `mata`
-command runs scripts today; [The `mata` command](cli) lists under its implementation notes which operations and
+command runs scripts today; [The `mata` command](@ref cli) lists under its implementation notes which operations and
 options of this page the current interpreter does not have, and it rejects those by name rather than approximating
 them. Mata Script programs use the **`.matasc`** file extension, as in `email-filter.matasc`; `.mata` remains the
 extension for automata files.
@@ -17,7 +17,7 @@ witness, a printed automaton, or timing records. It replaces two things that exi
 The intended uses are benchmark programs, one-off queries from a shell, regression specifications that assert expected
 results, and interactive sessions, including the playground on the website.
 
-## A first example
+## A first example {#a-first-example}
 
 The smallest scripts need no input file. This one builds an automaton from a regular expression and asks two
 questions about it:
@@ -74,15 +74,15 @@ antichains: true
 Every record of a run has its own label, so a program that reads the records, such as `pycobench`, can key them by
 label.
 
-## Design principles
+## Design principles {#design-principles}
 
 1. **A script is a sequence of forms, evaluated in order.** The shape is borrowed from SMT-LIB: parenthesised
    commands, `:keyword` attributes, options, a `check` command. The language is only inspired by SMT-LIB. It is not
    conformant, nothing is solved, and every form runs when it is reached.
 2. **One application is one library call.** `(nfa:determinize a)` calls `mata::nfa::determinize` and nothing else.
    Arguments are evaluated left to right. No call is added, removed, merged or reordered unless the
-   [optimizer](#optimizer) is turned on. The exceptions are listed in
-   [One call per application](#one-call-per-application).
+   [optimizer](@ref optimizer) is turned on. The exceptions are listed in
+   [One call per application](@ref one-call-per-application).
 3. **Values are immutable.** An operation never changes its operands. A name always denotes the value it was bound
    to.
 4. **Operation names are the names of the library.** A name is the C++ name in kebab-case with abbreviations written
@@ -91,15 +91,15 @@ label.
    so a misspelled name is not reported after an hour of determinization. `mata script run` checks the whole script
    before its first form runs, unless it is given `--no-check`.
 6. **Functions are ordinary values.** A function can be defined inside another function, passed as an argument,
-   returned as a result and stored in a list; see [Functions](#functions).
+   returned as a result and stored in a list; see [Functions](@ref functions).
 7. **Loops and recursion are opt-in.** They are off unless the script turns them on, and an interpreter may leave them
-   out; see [Loops and recursion](#loops-and-recursion).
+   out; see [Loops and recursion](@ref loops-and-recursion).
 8. **Evaluation is sequential.** Nothing is evaluated in parallel.
 9. **A script names its language version.** A `mata-script` header declares the version a script is written for, so
    a later version can change the language without changing what an existing script means; see
-   [Versions](#versions).
+   [Versions](@ref script-versions).
 
-## Lexical structure
+## Lexical structure {#lexical-structure}
 
 | Token           | Form                                                             | Examples                     |
 | --------------- | ---------------------------------------------------------------- | ---------------------------- |
@@ -116,7 +116,7 @@ Backslash has no meaning in a string, so regular expressions and `.mata` text ca
 namespaced name always names an operation: a script cannot define one, so an operation added to a later version never
 clashes with a name a script chose.
 
-## Grammar
+## Grammar {#grammar}
 
 ```ebnf
 script      = [ shebang ] [ header ] { form } ;
@@ -157,27 +157,27 @@ literal-data = name | integer | "(" { literal-data } ")" ;
 The header, when present, is the first form. Declarations and directives are allowed only at the top level. A
 definition is allowed at the top level and at the start of a body, where it is local to that body. Everything else is
 an expression and can be nested; `get-option` and `get-info` are expressions, so `(print (get-option :alphabet))`
-works. `loop` and `recur` need the option described in [Loops and recursion](#loops-and-recursion).
+works. `loop` and `recur` need the option described in [Loops and recursion](@ref loops-and-recursion).
 
-## Values and sorts
+## Values and sorts {#values-and-sorts}
 
-| Sort                    | Value                                                                              |
-| ----------------------- | ---------------------------------------------------------------------------------- |
-| `Nfa`                   | `mata::nfa::Nfa`                                                                   |
-| `Nft`                   | `mata::nft::Nft`                                                                   |
-| `Automaton`             | Either an `Nfa` or an `Nft`; which one is known only when the script runs          |
-| `IntermediateAutomaton` | `mata::IntermediateAut`: a parsed automaton that is not constructed yet            |
-| `Alphabet`              | `mata::Alphabet`                                                                   |
-| `Symbol`                | `mata::Symbol`; `epsilon` and `dont-care` are predefined                           |
-| `Word`                  | `mata::Word`                                                                       |
-| `Run`                   | `mata::nfa::Run`: a word and a path                                                |
-| `Bool`, `Int`, `String` |                                                                                    |
-| `(List T)`              | A list of values of sort `T`                                                       |
-| `(Option T)`            | Either a `T` or `none`, for operations that return `std::optional`                 |
-| `Function`              | An operation, a defined function or a `lambda`                                     |
-| `Term`                  | A node of the run's lazy formula; see [The `lazy:` namespace](#the-lazy-namespace) |
+| Sort                    | Value                                                                                  |
+| ----------------------- | -------------------------------------------------------------------------------------- |
+| `Nfa`                   | `mata::nfa::Nfa`                                                                       |
+| `Nft`                   | `mata::nft::Nft`                                                                       |
+| `Automaton`             | Either an `Nfa` or an `Nft`; which one is known only when the script runs              |
+| `IntermediateAutomaton` | `mata::IntermediateAut`: a parsed automaton that is not constructed yet                |
+| `Alphabet`              | `mata::Alphabet`                                                                       |
+| `Symbol`                | `mata::Symbol`; `epsilon` and `dont-care` are predefined                               |
+| `Word`                  | `mata::Word`                                                                           |
+| `Run`                   | `mata::nfa::Run`: a word and a path                                                    |
+| `Bool`, `Int`, `String` |                                                                                        |
+| `(List T)`              | A list of values of sort `T`                                                           |
+| `(Option T)`            | Either a `T` or `none`, for operations that return `std::optional`                     |
+| `Function`              | An operation, a defined function or a `lambda`                                         |
+| `Term`                  | A node of the run's lazy formula; see [The `lazy:` namespace](@ref the-lazy-namespace) |
 
-### Checking
+### Checking {#checking}
 
 Checking is static where the sorts are known and dynamic where they are not.
 
@@ -188,7 +188,7 @@ Checking is static where the sorts are known and dynamic where they are not.
   sorts, so `(nfa:determinize t)` with `t` declared as `Nft` is rejected without running anything.
 - **When the script runs:** the kind of a loaded file, operations in the `automaton:` namespace, function parameters
   without a sort, and every call of a function that arrived as a value.
-- **As a report:** whether the script is guaranteed to terminate; see [Termination](#termination).
+- **As a report:** whether the script is guaranteed to terminate; see [Termination](@ref termination).
 
 `(as value Sort)` narrows a value and fails at that point if the value is of another sort:
 
@@ -197,7 +197,7 @@ Checking is static where the sorts are known and dynamic where they are not.
 (nft:determinize a)                     ; rejected before the script runs: `a` is an Nfa from here on
 ```
 
-## Definitions, functions and conditionals
+## Definitions, functions and conditionals {#definitions-functions-and-conditionals}
 
 ```scheme
 (define alphabet-size 4)                          ; a value
@@ -247,7 +247,7 @@ A complete script that uses each of these forms:
 (check "empty-or-universal" (or (nfa:language-empty? language) (nfa:universal? language)))   ; false
 ```
 
-### Functions
+### Functions {#functions}
 
 A function can call every function that is defined before it. A simple function is a named expression with
 parameters:
@@ -294,13 +294,13 @@ a result, and stored in a list. Given two automata `lhs` and `rhs`:
   knows `algorithm` after `included-with` has returned.
 - **Order.** A name is visible after its definition, and not inside it. A function can therefore call the functions
   defined before it, but it cannot call itself by name, and two functions cannot call each other.
-  [Loops and recursion](#loops-and-recursion) describes the option that lets a function call itself.
+  [Loops and recursion](@ref loops-and-recursion) describes the option that lets a function call itself.
 - **Own name.** Using the name of a function inside its own body is an error without that option, even when an outer
   scope defines the same name. Turning the option on therefore never changes what an accepted script means.
 - **Hiding.** An inner scope may define a name that an outer scope already has. The inner one is used inside that
   scope.
 
-### Pipelines
+### Pipelines {#pipelines}
 
 `->` passes a value through a sequence of steps. A step that is a name is called with the value; a step that is an
 application gets the value as its first argument.
@@ -328,7 +328,7 @@ A step may also take keyword arguments, which follow the value:
     echo)                                    ; prints (b*a)+bb
 ```
 
-### Lists
+### Lists {#lists}
 
 `(list a b c)` builds a list. The list functions are `list:length`, `list:nth` (from 0), `list:take`, `list:drop`,
 `list:range`, `list:map`, `list:filter`, `list:reduce` and `list:fold`:
@@ -386,7 +386,7 @@ A complete script that applies each list function to automata built from a list 
 (check "union-has-bbb" (nfa:in-language? all (word "b" "b" "b")))   ; union-has-bbb: true
 ```
 
-### Loops and recursion
+### Loops and recursion {#loops-and-recursion}
 
 Loops and functions that call themselves are part of the language, but they are off by default. A script turns them
 on for the whole file:
@@ -406,7 +406,7 @@ Everything else on this page works without the option, including functions that 
 used as values.
 
 Loops and recursion are meant for a computation whose number of rounds depends on the automata computed so far, such
-as a fixpoint. A number of rounds that is known in advance needs only [`list:range`](#lists).
+as a fixpoint. A number of rounds that is known in advance needs only [`list:range`](@ref lists).
 
 `loop` binds names to initial values and evaluates its body. `(recur value …)` starts the body again with the names
 bound to the new values. When the body finishes without a `recur`, the loop ends and the value of the body is the
@@ -476,9 +476,7 @@ A function that calls itself, with a parameter that counts down:
 
 Two functions still cannot call each other by name, because the second one is not visible in the first.
 
-(script-termination)=
-
-### Termination
+### Termination {#termination}
 
 The checker reports, for each script, whether it is guaranteed to terminate, provided that the library operations it
 calls do. This is a report, not an error: the script runs either way.
@@ -492,12 +490,12 @@ used in these ways only:
 
 A script gets no guarantee when it passes a function to a defined function or to a `lambda`, returns a function from
 one, or puts a function into a list. A function can then be passed to itself, as in
-`((lambda (f) (f f)) (lambda (f) (f f)))`, which runs forever without any loop. The example in
-[Functions](#functions) is such a script: `included-with` returns a function, and `relations` is a list of functions.
+`((lambda (f) (f f)) (lambda (f) (f f)))`, which runs forever without any loop. The script in
+[Functions](@ref functions) is such a script: `included-with` returns a function, and `relations` lists them.
 
 The checker is conservative, so a script without the guarantee may still terminate.
 
-## Inputs
+## Inputs {#inputs}
 
 A script gets its automata from four sources, and its other values from parameters.
 
@@ -529,7 +527,8 @@ asks:
   is an error at that point. Declaring an input as `Automaton` accepts either kind.
 - When a script declares inputs, every input given on the command line must be taken by a declaration; an input left
   over is an error, so a mistyped command line is not ignored.
-- The loading done by declarations is part of a [timing record](#timing) only under `:time-operations`, as `parsing`.
+- The loading done by declarations is part of a [timing record](@ref timing) only under
+  `:time-operations`, as `parsing`.
 
 **Parameters** are values given on the command line, for a script that is run several times with different sizes,
 seeds or labels:
@@ -600,17 +599,15 @@ q0 a q1")
              :transitions ((q0 a q1) (q1 b q0)))
 ```
 
-In `nfa:literal` and `nft:literal`, states and symbols are names, as in the [`.mata` format](automata-format); they
+In `nfa:literal` and `nft:literal`, states and symbols are names, as in the [`.mata` format](@ref automata-format); they
 are not evaluated. `epsilon` in the symbol position is an ε-transition. `:states` of `nft:literal` gives the level of
 each state that is not on level 0.
 
-(script-loading)=
-
-### What loading does
+### What loading does {#what-loading-does}
 
 `nfa:load`, `nft:load` and `automaton:load` are the one place where a script operation is more than one library call.
 Loading parses the file, mintermizes it if its alphabet is a bitvector alphabet, and constructs the automaton over the
-[script alphabet](#alphabets). This is what `load_automaton()` in `tests-integration/src/utils/` does today. The
+[script alphabet](@ref alphabets). This is what `load_automaton()` in `tests-integration/src/utils/` does today. The
 library function `parse_from_mata()` is not used, because it constructs over `IntAlphabet`, which accepts only numbers
 as symbol names.
 
@@ -637,9 +634,7 @@ q1 b q1")
 (check "same-as-parse" (nfa:equivalent? nfa (nfa:parse text)))   ; same-as-parse: true
 ```
 
-(script-alphabets)=
-
-## Alphabets
+## Alphabets {#alphabets}
 
 A script has one **script alphabet**. Every load, literal, and word made with `(word "a" "b")` or `(symbol "a")`
 translates symbol names through it, so a name means the same symbol everywhere in the script.
@@ -685,9 +680,9 @@ A literal and a regular expression that spell the same words denote the same lan
 Under `"on-the-fly"`, the names `a` and `b` of the literal are the symbols 0 and 1, which are not the bytes that the
 regular expression reads.
 
-## Operations
+## Operations {#operations}
 
-### Names
+### Names {#names}
 
 The name of an operation is the name of the library function, changed by three rules:
 
@@ -703,14 +698,14 @@ The namespace tells where the function lives:
 | --------------- | ------------------------------------------------------------------------ |
 | `nfa:`          | `mata::nfa`, `mata::nfa::builder`, and the member functions of `Nfa`     |
 | `nft:`          | `mata::nft`, `mata::nft::builder`, and the member functions of `Nft`     |
-| `automaton:`    | No library counterpart; see [below](#the-automaton-namespace)            |
+| `automaton:`    | No library counterpart; see [below](@ref the-automaton-namespace)        |
 | `strings:`      | `mata::applications::strings` and its `seg_nfa` and `replace` namespaces |
 | `alphabet:`     | The member functions of `mata::Alphabet`                                 |
 | `intermediate:` | `mata::parser`, `mata::IntermediateAut` and `mata::Mintermization`       |
 | `list:`         | No library counterpart                                                   |
-| `lazy:`         | `mata::lazy` of the Rust bindings; see [below](#the-lazy-namespace)      |
+| `lazy:`         | `mata::lazy` of the Rust bindings; see [below](@ref the-lazy-namespace)  |
 
-### Arguments
+### Arguments {#arguments}
 
 - **Required parameters** are positional, in the order of the library function. For a member function, the object
   comes first.
@@ -725,7 +720,7 @@ The namespace tells where the function lives:
 - **Enumerations** are strings in kebab-case: `:jump-mode "append-dont-cares"` is `JumpMode::AppendDontCares`.
 - **Not available:** callbacks, such as `macrostate_discover`, and output parameters, such as `prod_map`,
   `state_renaming` and `subset_map`. Counterexample output parameters are available through
-  [`witness`](#witnesses).
+  [`witness`](@ref witnesses).
 
 A hint value is an ordinary expression, so one script can compare algorithms:
 
@@ -769,11 +764,11 @@ of each call on standard error:
 (check "included-default" (nfa:included? lhs rhs))          ; the library default again, untraced
 ```
 
-### One call per application
+### One call per application {#one-call-per-application}
 
 Each application is one library call, with these exceptions:
 
-- `load` and `parse`, described in [What loading does](#what-loading-does).
+- `load` and `parse`, described in [What loading does](@ref what-loading-does).
 - A member function that changes its object, such as `Nfa::trim()` or `Nfa::make_complete()`, is applied to a copy
   when the operand is a named value, because values are immutable. An unnamed intermediate result is changed in place.
   Either way, the operation returns the changed automaton.
@@ -785,9 +780,9 @@ Each application is one library call, with these exceptions:
   for every operation whose library function takes two automata and returns one: `union-nondeterministic`,
   `intersection` and `concatenate` of both namespaces, and `nft:compose`.
 - A `lazy:` builder makes no call at all; the query that checks its term is the call. See
-  [The `lazy:` namespace](#the-lazy-namespace).
+  [The `lazy:` namespace](@ref the-lazy-namespace).
 
-### NFA operations
+### NFA operations {#nfa-operations}
 
 | Script                                  | Library                                                                  |
 | --------------------------------------- | ------------------------------------------------------------------------ |
@@ -884,7 +879,7 @@ Several languages combined, compared and searched for words:
 (check "tel" (nfa:in-language? (nfa:revert keywords) (word "t" "e" "l")))         ; true
 ```
 
-### NFT operations
+### NFT operations {#nft-operations}
 
 | Script                                 | Library                                           |
 | -------------------------------------- | ------------------------------------------------- |
@@ -982,7 +977,7 @@ Transducers compose, invert and project:
 (echo (nfa:print-to-regex (nft:to-nfa (nft:apply shift-twice (word "c" "a" "b")))))   ; bca
 ```
 
-### The `automaton:` namespace
+### The `automaton:` namespace {#the-automaton-namespace}
 
 For every operation that exists under the same name in both `nfa:` and `nft:`, there is an operation of that name in
 `automaton:`, for example `automaton:intersection`, `automaton:determinize` and `automaton:included?`. It accepts an
@@ -1002,9 +997,7 @@ when the script runs. Operands of different kinds are an error; convert explicit
 (check "same-language" (automaton:equivalent? given smaller))     ; true for either kind
 ```
 
-(script-lazy)=
-
-### The `lazy:` namespace
+### The `lazy:` namespace {#the-lazy-namespace}
 
 The `lazy:` operations decide properties of Boolean and relational combinations of automata and transducers without
 building the combination: products pair states and complements build subsets on the fly, and a query explores only
@@ -1045,6 +1038,7 @@ library:
 | `(lazy:equivalent? t u)` | `check((t ∩ ¬u) ∪ (u ∩ ¬t))` | `Bool`                                                         |
 | `(lazy:witness t)`       | `check(t)`                   | A tuple of `t`, `none` if `t` is empty                         |
 | `(lazy:materialize t)`   | `materialize(t)` as an `Nft` | An `Nfa` for arity 1, else an `Nft`                            |
+| `(lazy:materialize t)`   | `materialize(t)` as an `Nft` | An `Nfa` for arity 1, else an `Nft`                            |
 
 - **Lock step.** A term of arity n denotes a relation over n-tuples of words, read in lock step: one step reads one
   symbol on every tape, and `epsilon` pads a shorter word. A language has arity 1, and a leaf of an `Nft` has one tape
@@ -1078,7 +1072,7 @@ library:
   it returns `false` both when it finds a witness and when a length bound leaves the search inconclusive. Likewise, a
   bounded `lazy:witness` returning `none` does not by itself prove that a relation is empty. Search for a shortest
   witness with `:shortest true`; without it the default depth-first search returns the first one it finds.
-- **Witnesses.** `lazy:empty?`, `lazy:included?` and `lazy:equivalent?` are [witness](#witnesses) operations: the
+- **Witnesses.** `lazy:empty?`, `lazy:included?` and `lazy:equivalent?` are [witness](@ref witnesses) operations: the
   witness is a tuple of the checked term, so a tuple of `t` not in `u` for `lazy:included?`. A tuple of a language is
   a `Word`, and of a relation a list of one `Word` per tape.
 - **Timing and tracing.** `:time-operations` and `:trace` report the queries, which are the calls; builders make none.
@@ -1124,7 +1118,7 @@ A complete script on a relation: one token passed between processes, letter by l
 (echo (nfa:print-to-regex (lazy:materialize successors) :mode "readable"))   ; n+tn*
 ```
 
-#### Plans and policies
+#### Plans and policies {#plans-and-policies}
 
 Plans change how a query evaluates a formula, never which relation it denotes. They can therefore change its cost or
 which witness it returns; a query limit can still turn an answer into an error. Annotations live for the rest of the
@@ -1158,7 +1152,7 @@ run and do not add formula nodes:
 
 `(lazy:stats label check)` evaluates `check`, an application of `lazy:empty?`, `lazy:empty-within?`, `lazy:witness`,
 `lazy:included?` or `lazy:equivalent?`, returns its value, and prints one record per counter of that query,
-`label.counter: number`, in the form of [timing](#timing) records:
+`label.counter: number`, in the form of [timing](@ref timing) records:
 
 | Counter                | Meaning                                                                   |
 | ---------------------- | ------------------------------------------------------------------------- |
@@ -1175,7 +1169,7 @@ Not part of the language yet: synchronized products and composition on chosen ta
 `lazy:universal?`, `lazy:in-language?`, the remaining options of `mata::lazy` (`:cache-budget`, `:antichain`,
 `:subsumption`), and a direct command `mata lazy`.
 
-### The `ws1s:` namespace
+### The `ws1s:` namespace {#the-ws1s-namespace}
 
 `ws1s:valid?` decides whether a WS1S formula holds under every assignment, and `ws1s:satisfiable?` whether some
 assignment satisfies it. Both parse the formula with `mata::logic::ws1s::Ws1s` and decide it lazily:
@@ -1211,7 +1205,7 @@ The formula uses the MONA-like syntax of `mata::logic::ws1s`: first-order names 
 second-order ones with an uppercase letter. Both decisions accept `:time-limit`, `:max-states`, `:max-length`, and
 `:shortest`, with the meanings above.
 
-### Other namespaces
+### Other namespaces {#other-namespaces}
 
 | Script                                               | Library                                                   |
 | ---------------------------------------------------- | --------------------------------------------------------- |
@@ -1261,7 +1255,7 @@ The string operations on a finite language, and a replacement transducer:
 (echo (rewrite (replace "single")))    ; dog(s|cat)
 ```
 
-### Core functions
+### Core functions {#core-functions}
 
 `not`, `=`, `<`, `<=`, `+`, `-` on `Bool`, `Int`, `String` and `Word` as applicable; `(concat string…)`, which joins
 strings; `(to-string value)`, which shows any value as one line, the way `print` would, with a list on one line as
@@ -1293,7 +1287,7 @@ compares may nest.
 (echo (to-string nothing))                                                    ; none
 ```
 
-## Reporting results
+## Reporting results {#reporting-results}
 
 | Form                        | Effect                                                        | Value         |
 | --------------------------- | ------------------------------------------------------------- | ------------- |
@@ -1303,7 +1297,7 @@ compares may nest.
 | `(print value)`             | Prints the value to standard output                           | The value     |
 | `(write value path)`        | Writes the value to a file                                    | The value     |
 | `(echo string)`             | Prints the string                                             | The string    |
-| `(get-witness)`             | See [Witnesses](#witnesses)                                   | `Option Word` |
+| `(get-witness)`             | See [Witnesses](@ref witnesses)                               | `Option Word` |
 
 `print` and `write` return their argument, so they can stand in the middle of a pipeline. An automaton is printed in
 the `.mata` format; use `nfa:print-to-dot` to print a DOT graph instead, or `nfa:print-to-regex` to print an RE2
@@ -1318,7 +1312,7 @@ In an interactive session, the value of every top-level expression is shown, wit
 kind and size rather than printed in full. When a script is run, the value of a top-level expression is dropped.
 
 Results and timing records go to standard output, each written as soon as it is printed, so a run stopped by a time
-limit keeps what it printed; errors and the [trace](#options) go to standard error.
+limit keeps what it printed; errors and the [trace](@ref options) go to standard error.
 
 ```scheme
 (mata-script "0.1.0")
@@ -1334,9 +1328,7 @@ limit keeps what it printed; errors and the [trace](#options) go to standard err
 (echo "still running after a failed assertion")               ; printed; the script then exits with 1
 ```
 
-(script-exit-status)=
-
-### Exit status
+### Exit status {#script-exit-status}
 
 | Status | Meaning                                                                                |
 | ------ | -------------------------------------------------------------------------------------- |
@@ -1354,7 +1346,7 @@ $ echo $?
 1
 ```
 
-### Witnesses
+### Witnesses {#witnesses}
 
 Several decision procedures of the library can return a word that explains their answer through an output parameter:
 `is_included`, `are_equivalent`, `is_universal`, `is_lang_empty` and `is_intersection_empty`. There are two ways to
@@ -1365,7 +1357,7 @@ do not hold, and the two emptiness checks when the language is not empty. `(witn
 the output parameter and returns the stored `Word` for that verdict, and `none` for the other one. The call is made
 once, so the verdict is not computed separately. The application must be a call of `nfa:included?`,
 `nfa:equivalent?`, `nfa:universal?`, `nfa:language-empty?`, `nfa:intersection-empty?`, or of the
-[`lazy:`](#the-lazy-namespace) decisions `lazy:empty?`, `lazy:included?` and `lazy:equivalent?`; anything else is an
+[`lazy:`](@ref the-lazy-namespace) decisions `lazy:empty?`, `lazy:included?` and `lazy:equivalent?`; anything else is an
 error:
 
 ```scheme
@@ -1410,7 +1402,7 @@ A complete script with both forms:
 (echo (to-string (get-witness)))                                ; a c b
 ```
 
-## Timing
+## Timing {#timing}
 
 Nothing is measured unless the script asks. `(time label expression…)` evaluates the expressions, prints one record,
 and returns the last value:
@@ -1467,19 +1459,19 @@ The same measurement without any `time` form, as a benchmark binary does it:
 (check (nfa:included? lhs rhs))                     ; nfa:included?: …, then the verdict
 ```
 
-## Options
+## Options {#options}
 
-| Option                 | Values                              | Meaning                                              |
-| ---------------------- | ----------------------------------- | ---------------------------------------------------- |
-| `:alphabet`            | `"on-the-fly"` (default), `"bytes"` | The [script alphabet](#alphabets)                    |
-| `:default`             | Hint-only application               | Changes a hint default; see [Arguments](#arguments)  |
-| `:produce-witnesses`   | `false` (default), `true`           | See [Witnesses](#witnesses)                          |
-| `:time-operations`     | `false` (default), `true`           | See [Timing](#timing)                                |
-| `:optimize`            | `false` (default), `true`           | See [Optimizer](#optimizer)                          |
-| `:trace`               | `false` (default), `true`           | Prints each library call and hints to standard error |
-| `:loops-and-recursion` | `false` (default), `true`           | Enables [loops and recursion](#loops-and-recursion)  |
+| Option                 | Values                              | Meaning                                                 |
+| ---------------------- | ----------------------------------- | ------------------------------------------------------- |
+| `:alphabet`            | `"on-the-fly"` (default), `"bytes"` | The [script alphabet](@ref alphabets)                   |
+| `:default`             | Hint-only application               | Changes a hint default; see [Arguments](@ref arguments) |
+| `:produce-witnesses`   | `false` (default), `true`           | See [Witnesses](@ref witnesses)                         |
+| `:time-operations`     | `false` (default), `true`           | See [Timing](@ref timing)                               |
+| `:optimize`            | `false` (default), `true`           | See [Optimizer](@ref optimizer)                         |
+| `:trace`               | `false` (default), `true`           | Prints each library call and hints to standard error    |
+| `:loops-and-recursion` | `false` (default), `true`           | Enables [loops and recursion](@ref loops-and-recursion) |
 
-`set-info` attaches information that does not change evaluation; see [Script information](#script-information).
+`set-info` attaches information that does not change evaluation; see [Script information](@ref script-information).
 
 ```scheme
 (mata-script "0.1.0")
@@ -1491,7 +1483,7 @@ The same measurement without any `time` form, as a benchmark binary does it:
 (echo (to-string (get-witness)))                            ; \x00: a byte that is not a letter
 ```
 
-## Optimizer
+## Optimizer {#optimizer}
 
 By default a script runs exactly as written. `(set-option :optimize true)` allows the interpreter to replace the
 calls a script asks for with cheaper ones.
@@ -1550,7 +1542,7 @@ It prints `true` three times. Without `:optimize`, the trace shows `nfa:determin
 `nfa:language-empty?` pairs, `nfa:complement` and `nfa:included?`, and the complement builds a deterministic automaton
 of 2049 states.
 
-## Portable core
+## Portable core {#portable-core}
 
 The `.emp` programs were interpreted by several automata libraries, to compare them on the same inputs. A script whose
 header says `:profile core`, as `(mata-script "0.1.0" :profile core)`, promises to stay within a subset that another
@@ -1564,7 +1556,7 @@ library can implement, and the checker rejects anything outside of it, before `c
   `nfa:determinize`, `nfa:minimize`, `nfa:language-empty?`, `nfa:included?`, `nfa:equivalent?`, `nfa:universal?`,
   `(script-alphabet)`, and the `list:` functions.
 
-A script in the portable core is always guaranteed to [terminate](#termination).
+A script in the portable core is always guaranteed to [terminate](@ref termination).
 
 An interpreter for another library must reject an operation it does not have. It may ignore a hint it does not know,
 with a warning, because a hint only selects how a result is computed.
@@ -1585,7 +1577,7 @@ report `a portable core script cannot define a function`.
 
 (script-information)=
 
-## Script information
+## Script information {#script-information}
 
 `set-info` attaches information to a script that does not change what it computes; `get-info` reads it back, and is
 `none` for a key the script did not set. The keys are fixed, so that a tool reading a set of scripts finds the same
@@ -1620,7 +1612,7 @@ checker accepts, so it is part of the header.
 
 (versions)=
 
-## Versions
+## Versions {#script-versions}
 
 A script names the version of the language it is written for in a header, the first form of the file:
 
@@ -1650,7 +1642,7 @@ A script names the version of the language it is written for in a header, the fi
   `loops-and-recursion`, `optimizer`, `trace`, `automaton`, `strings`, `intermediate` and `lazy`. An interpreter
   without one of them rejects the script before running it, naming the feature, rather than failing at the first form
   that needs it. `mata formats` lists the features and whether the build implements them.
-- **`:profile`** selects a [profile](#portable-core); `core` is the only one, and any other name is an error.
+- **`:profile`** selects a [profile](@ref portable-core); `core` is the only one, and any other name is an error.
 - **A script without a header** is read as the version of the interpreter that runs it. That suits a one-line
   `--expression` and an interactive session, but a script kept in a file should name its version; `mata script check`
   warns about one that does not.
@@ -1661,7 +1653,7 @@ The language starts at `0.1.0`. The version describes the language only: the beh
 numbering of states or the default algorithm of an operation, and the options of the `mata` command have versions of
 their own, which `mata version` prints beside it.
 
-## Examples
+## Examples {#examples}
 
 A regression specification that needs no input file. It prints nothing and exits with `0` while every assertion
 holds:
@@ -1823,9 +1815,9 @@ instead of passing it, and `safe` prints `false`. The initial configurations are
 `tn*`, a token at the start of a line of any length, is not reached by adding one step at a time: each round reaches
 one more position. `examples/rmc/armc.matasc` handles such families with an abstraction.
 
-## Open questions
+## Open questions {#open-questions}
 
-- **Command-line interface.** Settled in [The `mata` command](cli): inputs are positional or named with `--input`,
+- **Command-line interface.** Settled in [The `mata` command](@ref cli): inputs are positional or named with `--input`,
   values come from `declare-param` and `--param`, options and hint defaults are set in the script only, and `check`
   writes its report to standard error. A script written inline in a shell command or in a `pycobench` job still needs
   care, because both can replace `$1` themselves before the interpreter sees it.

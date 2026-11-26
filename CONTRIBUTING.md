@@ -1,12 +1,12 @@
-# Contributing guidelines
+# Contributing guidelines {#contributing}
 
 Thank you for your interest in contributing to `mata`.
 
 We welcome contributions from the community and appreciate your help in improving this project.
 
-For information on contributing to the Python bindings, refer to [bindings/python/CONTRIBUTING.md](bindings/python/CONTRIBUTING.md).
+For information on contributing to the Python bindings, refer to [`bindings/python/CONTRIBUTING.md`](https://github.com/VeriFIT/mata/blob/devel/bindings/python/CONTRIBUTING.md).
 
-## Getting started
+## Getting started {#getting-started}
 
 1. If you'd like to contribute to the Mata project, please [fork the repository](https://github.com/VeriFIT/mata/fork).
 2. Clone your fork locally:
@@ -32,7 +32,7 @@ For information on contributing to the Python bindings, refer to [bindings/pytho
    Optionally, you can tag `@Adda0` (and any other contributors you explicitly want to review the PR) to request the
    review directly, be it an open PR or a draft.
 
-## Getting Help
+## Getting Help {#getting-help}
 
 In case you run into some unexpected behaviour, error or anything suspicious, either contact us directly through mail or
 [create a new issue](https://github.com/VeriFIT/mata/issues/new/choose).
@@ -43,7 +43,7 @@ system, etc.) so we can sucessfully replicate the issue.
 - Look at existing issues and discussions for similar problems or questions.
 - Feel free to ask questions in new issues or discussions.
 
-## Bug Fixes
+## Bug Fixes {#bug-fixes}
 
 **Bug fix pull requests are always welcome.**
 If you have found a bug and have a fix for it, feel free to submit a pull request directly.
@@ -53,7 +53,7 @@ Please include:
 - Steps to reproduce the issue (if applicable).
 - Your solution and why it fixes the problem.
 
-## New Features
+## New Features {#new-features}
 
 For new features, we prefer a discussion-first approach:
 
@@ -68,16 +68,17 @@ This process helps ensure that:
 - We avoid duplicate work.
 - The implementation follows the project's patterns and conventions.
 
-Before working on a performance or design change, check [docs/experiments/](docs/experiments/README.md): it records
-experiments that did not make it into the code, with their results and when they would be worth revisiting. When your
-own experiment does not land, add a record there.
+Before working on a performance or design change, check
+[docs/experiments/](https://github.com/VeriFIT/mata/blob/devel/docs/experiments/README.md): it records experiments
+that did not make it into the code, with their results and when they would be worth revisiting. When your own
+experiment does not land, add a record there.
 
-## Pull Request Process
+## Pull Request Process {#pull-request-process}
 
 1. Ensure your code builds successfully.
 2. (Optional) Submit your pull request with screenshots (if applicable).
 
-### Commit messages
+### Commit messages {#commit-messages}
 
 Commit subjects follow the format `scope[,scope...]: +tag [+tag...] Message`, e.g.,
 `nfa: +perf Store the element and set metadata of Hopcroft's refinable partition together`.
@@ -86,31 +87,31 @@ Commit subjects follow the format `scope[,scope...]: +tag [+tag...] Message`, e.
 - **tag**: the kind of change: `+feat`, `+fix`, `+perf`, `+refactor`, `+test`, `+docs`, `+fmt`, `+lint`, `+chore`.
 - **Message**: an imperative sentence starting with a capital letter, without a trailing period.
 
-### Referencing issues
+### Referencing issues {#referencing-issues}
 
 In commit messages and pull request descriptions, use `Part of #<issue>` when the change resolves an issue only
 partially. Use a closing keyword (`Fixes #<issue>`, `Resolves #<issue>`, `Closes #<issue>`, etc.) only when the change
 resolves the whole issue completely, including all its optional tasks, as GitHub closes the issue on merge.
 
-## Code and design style
+## Code and design style {#code-and-design-style}
 
 Mata is built around the idea of providing a clean high-level API, but allowing users to access low-level details
 when needed, for example for performance optimizations.
 
 Follow standard C++ conventions and formatting.
 
-### Code Formatting
+### Code Formatting {#code-formatting}
 
 Do not forget to format your code.
 This project uses [treefmt](https://github.com/numtide/treefmt) to format the code.
 
-#### With Nix
+#### With Nix {#with-nix}
 
 ```shell
 nix fmt
 ```
 
-#### Without Nix
+#### Without Nix {#without-nix}
 
 Install `treefmt` and the required formatters, then run:
 
@@ -120,7 +121,7 @@ treefmt
 
 For required formatters, refer to [.treefmt.toml](.treefmt.toml).
 
-### Naming Conventions
+### Naming Conventions {#naming-conventions}
 
 - **private** attributes of classes/structs should use `snake_case_` (note the trailing `_`).
 - **public but internal** attributes of classes/structs should use `snake_case_` (note the trailing `_`).
@@ -136,7 +137,7 @@ For required formatters, refer to [.treefmt.toml](.treefmt.toml).
   - constructors and destructors, and
   - elements of the type `enum` (prefer using `enum class`).
 
-### TODO and similar message format
+### TODO and similar message format {#todo-and-similar-message-format}
 
 When commenting on a future TODO, an unresolved issue to be fixed, a bug or an unresolved note which is to be
 resolved later on, use one of the following comment formats:
@@ -155,7 +156,7 @@ and which is to be removed afterwards.
 Optionally, to limit the scope of the comment, `// TYPE(<scope>): <message>` can be used, e.g., `// TODO(nfa): Add a
 new function.`.
 
-### Code quality
+### Code quality {#code-quality}
 
 If possible, go over the code and extract all repeatedly computed code in {for, while, do-while} loop bodies,
 but also in loop declarations (headers) such as:
@@ -179,7 +180,7 @@ const auto xyz_end{ xyz.end() };
 for (auto it{ xyz.begin() }; it < xyz_end ; ++it) // Note: Using prefix is more performant. Use whenever possible.
 ```
 
-### Testing
+### Testing {#testing}
 
 - Write unit tests for multiple cases, including edge cases.
 - Do not test for a specific automaton structure (specific states, transition, initial/final states being present, etc.).
@@ -188,17 +189,17 @@ for (auto it{ xyz.begin() }; it < xyz_end ; ++it) // Note: Using prefix is more 
   automaton satisfies the property of being deterministic (for no state, there are more than 1 outgoing transitions over
   the same symbol).
 
-## Development Tips
+## Development Tips {#development-tips}
 
 - The main entry point is `include/mata/nfa/nfa.hh`, `include/mata/nft/nft.hh`, etc.
 
 <!-- TODO: - Set `DEBUG=1` environment variable for printing debug messages to `debug.log` file -->
 
-## For maintainers
+## For maintainers {#for-maintainers}
 
 The information in this section concerns only maintainers of the project.
 
-### Versioning during PR merge
+### Versioning during PR merge {#versioning-during-pr-merge}
 
 By default (or when using a tag `#minor`), each merge automatically increases the `minor` version of the library
 (i.e., `v0.0.0 -> v0.0.1` ).
