@@ -210,7 +210,8 @@ concept DeltaLike = requires(
 	// A state indexes the relation and every per-state array of the algorithms over it.
 	requires std::unsigned_integral<typename D::State>;
 	requires std::same_as<typename D::State, typename TargetTraits<typename D::Target>::State>;
-	{ D::state_of(t) } -> std::convertible_to<typename D::State>;
+	// Exactly the state, not a type converting to it: the algorithms index and do arithmetic with the result.
+	{ D::state_of(t) } -> std::same_as<typename D::State>;
 
 	// Structure.
 	{ cd.num_of_states() } -> std::convertible_to<size_t>;
