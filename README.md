@@ -11,8 +11,9 @@ Mata is an open source automata library that offers interface for different kind
 2. A flexible wrapper implemented in Python that uses the efficient library, and
 3. Rust bindings with a safe API over the efficient library.
 
-The [website of Mata](https://verifit.github.io/mata/) gives an overview of the library, its
-[documentation](https://verifit.github.io/mata/master/docs/), and a
+The [website of Mata](https://verifit.github.io/mata/) gives an overview of the library, its documentation
+([C++](https://verifit.github.io/mata/master/docs/cpp/), [Python](https://verifit.github.io/mata/master/docs/python/),
+[Rust](https://verifit.github.io/mata/master/docs/rust/mata/)), and a
 [playground](https://verifit.github.io/mata/master/playground/) that runs Mata in the browser. The
 [development website](https://verifit.github.io/mata/devel/) tracks the `devel` branch.
 
@@ -418,8 +419,8 @@ Please refer to our [contributing guidelines](CONTRIBUTING.md).
     please contact us directly, instead of using issue tracker.
     We value your effort to improve the security and privacy of this project!
 - Website: <https://verifit.github.io/mata/>
-- Project documentation: <https://verifit.github.io/mata/docs/>
-- Playground: <https://verifit.github.io/mata/playground/>
+- Project documentation: <https://verifit.github.io/mata/master/docs/>
+- Playground: <https://verifit.github.io/mata/master/playground/>
 - Jupyter notebooks demonstrating `mata` usage: <https://github.com/VeriFIT/mata/tree/devel/examples/notebooks>
   - [Example 01: WS1S Logic](https://github.com/VeriFIT/mata/tree/devel/examples/notebooks/example-01-ws1s-formulae.ipynb)
   - [Example 02: ReDoS Attacks](https://github.com/VeriFIT/mata/tree/devel/examples/notebooks/example-02-redos-attacks.ipynb)

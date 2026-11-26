@@ -76,6 +76,7 @@ website_url = os.environ.get("MATA_WEBSITE_URL", "https://verifit.github.io/mata
 html_theme_options = {
     "extra_nav_links": {
         "Mata website": website_url,
+        "All documentation": f"{website_url}docs/",
         "Playground": f"{website_url}playground/",
     },
 }

@@ -33,6 +33,7 @@ on:
     paths:
       - site/**
       - bindings/wasm/**
+      - bindings/python/docs/**
       - bindings/rust/mata-cli/**
       - .github/workflows/website.yml
 permissions:
@@ -59,6 +60,41 @@ jobs:
         with:
           name: docs
           path: docs/_build/html
+  docs-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ env.WEBSITE_SOURCE_REF }}
+      - uses: ./.github/workflows/actions/setup
+      - uses: ./.github/workflows/actions/setup-python
+        with:
+          python-version: "3.13"
+      - name: Build the reference of the Python bindings
+        run: |
+          python3 -m pip install sphinx
+          make -C bindings/python build-ext
+          python3 -m sphinx -b html bindings/python/docs bindings/python/docs/_build/html
+      - uses: actions/upload-artifact@v7
+        with:
+          name: docs-python
+          path: bindings/python/docs/_build/html
+  docs-rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.WEBSITE_SOURCE_REF }}
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build the reference of the Rust bindings
+        working-directory: bindings/rust
+        # DOCS_RS skips building the C++ library, as on docs.rs.
+        run: DOCS_RS=1 cargo doc --workspace --no-deps --all-features
+      - uses: actions/upload-artifact@v7
+        with:
+          name: docs-rust
+          path: bindings/rust/target/doc
   playground:
     runs-on: ubuntu-latest
     steps:
@@ -114,7 +150,7 @@ jobs:
           name: playground
           path: ${{ runner.temp }}/playground
   site:
-    needs: [docs, playground]
+    needs: [docs, docs-python, docs-rust, playground]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -125,7 +161,8 @@ jobs:
           mkdir -p "_site/$WEBSITE_VERSION"
           cp -r site/. "_site/$WEBSITE_VERSION/"
           sed --in-place "s|https://verifit.github.io/mata/master/|$MATA_WEBSITE_URL|g" \
-            "_site/$WEBSITE_VERSION/index.html" "_site/$WEBSITE_VERSION/playground/index.html"
+            "_site/$WEBSITE_VERSION/index.html" "_site/$WEBSITE_VERSION/playground/index.html" \
+            "_site/$WEBSITE_VERSION/docs/index.html"
           rm "_site/$WEBSITE_VERSION/site.just" "_site/$WEBSITE_VERSION/serve.py" \
             "_site/$WEBSITE_VERSION/selector.html" "_site/$WEBSITE_VERSION/404.html"
           cp site/selector.html _site/index.html
@@ -133,7 +170,15 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: docs
-          path: _site/${{ env.WEBSITE_VERSION }}/docs
+          path: _site/${{ env.WEBSITE_VERSION }}/docs/cpp
+      - uses: actions/download-artifact@v8
+        with:
+          name: docs-python
+          path: _site/${{ env.WEBSITE_VERSION }}/docs/python
+      - uses: actions/download-artifact@v8
+        with:
+          name: docs-rust
+          path: _site/${{ env.WEBSITE_VERSION }}/docs/rust
       - uses: actions/download-artifact@v8
         with:
           name: playground

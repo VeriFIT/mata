@@ -14,6 +14,16 @@
             ? "/" + segments[0] + "/"
             : "/";
         var rest = location.pathname.slice(base.length);
+        // The C++ documentation moved from docs/ to docs/cpp/, next to the references of the bindings.
+        var moved = /^(master|devel)\/docs\/(?!(cpp|python|rust)\/)(.+)$/.exec(
+          rest,
+        );
+        if (moved) {
+          location.replace(
+            base + moved[1] + "/docs/cpp/" + moved[3] + location.hash,
+          );
+          return;
+        }
         if (rest !== "" && !/^(master|devel|assets)(\/|$)/.test(rest)) {
           location.replace(base);
         }
