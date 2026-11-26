@@ -126,11 +126,14 @@ concept PostEntryLike = requires(const E e) {
 /**
  * @brief A concept for a post, a range of entries that can be iterated, updated, and queried.
  *
- * @note Moving a post must leave its entries where they are, as moving a @c std::vector does. A relation moves its
- *  posts whenever it grows, and the targets passed to its @c add() may be borrowed from one of them.
+ * @note Moving a post must leave its entries where they are, as moving a @c std::vector does, and must not throw. A
+ *  relation moves its posts whenever it grows, and the targets passed to its @c add() may be borrowed from one of
+ *  them. A @c std::vector that grows moves its elements only if that cannot throw, and copies them otherwise, which
+ *  would leave such borrowed targets dangling.
  */
 template <typename L>
-concept PostLike = IterableRange<L> && SortedWithReservedKeys<L> && requires(const L l) {
+concept PostLike = IterableRange<L> && SortedWithReservedKeys<L> && std::is_nothrow_move_constructible_v<L> &&
+	requires(const L l) {
 	typename L::Entry;
 	requires PostEntryLike<typename L::Entry>;
 	typename L::Key;

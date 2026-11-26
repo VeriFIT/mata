@@ -289,6 +289,12 @@ TEST_CASE("mata::posts::DeltaBase::add - writing a key path at any arity") {
 		CHECK_FALSE(delta.contains(0, 1, 2, 3, 4, 5));
 		CHECK_THROWS_AS(delta.remove(0, 1, 2, 9, 4, 5), std::invalid_argument);
 
+		// The transitions in source, then key order, against literals: a round trip alone would pass if iteration
+		//  swapped two keys and add() swapped them back.
+		std::vector<D4::TransitionType> emitted{};
+		for (const auto& transition : delta.transitions()) { emitted.push_back(transition); }
+		CHECK(emitted == std::vector<D4::TransitionType>{{0, {1, 2, 3, 6}, 7}, {2, {1, 2, 3, 4}, 8}, {2, {1, 2, 3, 4}, 9}});
+
 		D4 copy{};
 		for (const auto& transition : delta.transitions()) { copy.add(transition); }
 		// The relation's == compares every key and target, unlike all_targets().

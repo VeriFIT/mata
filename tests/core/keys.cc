@@ -320,6 +320,26 @@ TEST_CASE("mata::Delta's symbol members are the key members under the NFA's name
 		static_assert(std::same_as<decltype(delta.get_max_symbol()), Symbol>);
 	}
 
+	SECTION("the used symbols stay exact past the 64 distinct ones kept sorted incrementally") {
+		// 64 distinct symbols fill the incremental accumulation, so the next new one switches it to a final sort.
+		Delta delta{};
+		std::set<Symbol> expected{};
+		for (Symbol symbol{10}; symbol < 10 + 2 * 64; symbol += 2) {
+			delta.add(0, symbol, 0);
+			expected.insert(symbol);
+		}
+		// At the switch, a new symbol below the collected ones, then a duplicate, another new one and a new greatest.
+		for (const Symbol symbol : {Symbol{11}, Symbol{12}, Symbol{13}, Symbol{500}}) {
+			delta.add(1, symbol, 0);
+			expected.insert(symbol);
+		}
+		REQUIRE(expected.size() == 64 + 3);
+		const utils::OrdVector<Symbol> expected_symbols(expected);
+		CHECK(delta.get_used_symbols() == expected_symbols);
+		CHECK(delta.get_used_symbols_set() == expected);
+		CHECK(utils::OrdVector<Symbol>{delta.get_used_symbols_sps()} == expected_symbols);
+	}
+
 	SECTION("an empty relation has no symbols, and its maximum is still zero") {
 		const Delta delta{};
 		CHECK(delta.get_used_symbols().empty());
