@@ -18,6 +18,7 @@ autodoc_default_options = {
     "show-inheritance": True,
 }
 exclude_patterns = ["_build"]
+html_static_path = ["_static"]
 html_theme = "alabaster"
 
 # Links from the sidebar to the pages built from the same branch.
