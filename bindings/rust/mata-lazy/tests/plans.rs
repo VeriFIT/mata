@@ -52,6 +52,15 @@ impl Automaton for Tuples {
 }
 
 impl Tuples {
+	fn one_step(tuple: [Symbol; 2]) -> Tuples {
+		Tuples {
+			arity: 2,
+			initial: vec![0],
+			finals: vec![false, true],
+			moves: vec![(0, tuple.to_vec(), 1)],
+		}
+	}
+
 	fn random(rng: &mut StdRng, arity: usize) -> Tuples {
 		let num_states = rng.random_range(1..=3u32);
 		let moves = (0..rng.random_range(0..=6))
@@ -596,6 +605,57 @@ fn plans_override_explicit_nodes_and_options() -> Result<(), Error> {
 			.any(|node| node.term == ab && node.posts > 0)
 	);
 	assert_eq!(built(&Options::new().plan(tight), abc)?, [(ab, true)]);
+
+	Ok(())
+}
+
+#[test]
+fn composition_association_preserves_noncommutative_and_padded_relations() -> Result<(), Error> {
+	let pairs = [
+		[Symbol::new(0), Symbol::new(1)],
+		[Symbol::ANY, Symbol::new(2)],
+		[Symbol::new(2), Symbol::EPSILON],
+		[Symbol::EPSILON, Symbol::new(4)],
+	];
+	for left_associated in [true, false] {
+		let mut formula = Formula::new();
+		let leaves: Vec<Term> = pairs
+			.iter()
+			.map(|&pair| {
+				formula
+					.leaf(&Tuples::one_step(pair))
+					.expect("a one-step relation")
+			})
+			.collect();
+		let mut compositions = Vec::new();
+		let root = if left_associated {
+			(1..leaves.len()).fold(leaves[0], |root, index| {
+				let root = formula
+					.compose(root, leaves[index])
+					.expect("binary compositions");
+				compositions.push(root);
+				root
+			})
+		} else {
+			let mut root = leaves[leaves.len() - 1];
+			for &leaf in leaves[..leaves.len() - 1].iter().rev() {
+				root = formula.compose(leaf, root).expect("binary compositions");
+				compositions.push(root);
+			}
+			root
+		};
+		let written = compositions.into_iter().fold(Plan::new(), |plan, term| {
+			plan.annotate(term, Annotation::lazy().order(Order::AsWritten))
+		});
+		for options in [Options::new(), Options::new().plan(written)] {
+			let outcome = formula.check(root, &options)?;
+			let witness = outcome.witness.expect("one accepted relation");
+			assert_eq!(
+				witness.steps().collect::<Vec<_>>(),
+				[vec![Symbol::new(0), Symbol::new(4)].as_slice()]
+			);
+		}
+	}
 
 	Ok(())
 }

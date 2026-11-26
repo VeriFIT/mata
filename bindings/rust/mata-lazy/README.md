@@ -152,6 +152,11 @@ changes the cost of a query, never its answer: only a limit of the query can tur
 witness can differ. Plans name terms of one formula; an order on a term that is not a product, or a term of another
 formula, makes the query fail.
 
+A chain of binary compositions is re-associated to minimize the sum of the estimated state bounds of its
+inner products, without reordering the relations. The estimate uses the existing leaf-size bounds, not measured
+visited states. An explicit node or a non-default `Order` stops the rewrite at that composition, so those plan
+choices keep their written subterm boundaries.
+
 `Formula::view(term)` gives the terms below `term`, children first, with their kind, arity, operands, fan-out and
 the size of each leaf. A `Policy` turns that view into a plan:
 

@@ -9,7 +9,11 @@
 //! - `project(id(U) ∩ X, [i])` becomes one diagonal node, or `U ∩ X'` when `X` is a sync product of a tape of
 //!   each operand, where `X'` also synchronizes those two tapes, so it builds only the moves that the diagonal keeps;
 //! - `op(X, X) = X`, `prefixes(prefixes(X)) = prefixes(X)`, and structurally equal nodes are built once;
-//! - the cheaper operand of a union or intersection goes left.
+//! - the cheaper operand of a union or intersection goes left;
+//! - a composition chain is re-associated to minimize its estimated intermediate macrostate bounds, without
+//!   changing the order of the relations.
+//!
+//! Explicit nodes and nodes with a fixed operand order stop composition-chain flattening.
 //!
 //! Explicit nodes stop the rewrites from looking into them. The query's annotations make nodes explicit, keep
 //! explicit nodes of the formula lazy, and fix the operand order of an intersection (not one that De Morgan
@@ -184,6 +188,8 @@ enum Decision {
 	/// `U ∩ X'` for the diagonal of `U` and a sync product, with the product's two tapes synchronized.
 	DiagonalSync(Src, Src, Src, Arc<SyncSpec>),
 	Sync(Src, Src, Arc<SyncSpec>),
+	/// Binary compositions in their original order; explicit and fixed-order nodes are opaque.
+	CompositionChain(Box<[Src]>, Arc<SyncSpec>),
 	Explicit(Src, ExplicitOptions, NodeId),
 	Prefixes(Src),
 }
@@ -203,6 +209,7 @@ impl Decision {
 			| Decision::IdentityOf(_, a, b, _)
 			| Decision::Diagonal(a, b)
 			| Decision::Sync(a, b, _) => vec![*a, *b],
+			Decision::CompositionChain(leaves, _) => leaves.to_vec(),
 			Decision::DiagonalSync(u, a, b, _) => vec![*u, *a, *b],
 		}
 	}
@@ -286,6 +293,9 @@ impl Rewriter<'_> {
 			Node::Identity(child) => Decision::Identity(plain(*child)),
 			Node::Project(child, tapes) => self.decide_project(*child, tapes),
 			Node::PadClosure(child, pad) => Decision::PadClosure(plain(*child), Arc::clone(pad)),
+			Node::Sync(a, b, spec) if self.order(node) == Order::Auto && spec.is_composition() => {
+				self.decide_composition(*a, *b, spec)
+			}
 			Node::Sync(a, b, spec) if self.order(node) == Order::Swapped => {
 				Decision::Sync(plain(*b), plain(*a), Arc::new(spec.swapped()))
 			}
@@ -296,6 +306,43 @@ impl Rewriter<'_> {
 				Decision::Explicit(plain(*child), *options, node)
 			}
 			Node::Prefixes(child) => Decision::Prefixes(plain(*child)),
+		}
+	}
+
+	fn composition_parts(&self, node: NodeId) -> Option<(NodeId, NodeId, &Arc<SyncSpec>)> {
+		if self.is_marked(node) || self.order(node) != Order::Auto {
+			return None;
+		}
+
+		match &self.formula.nodes[node] {
+			Node::Sync(a, b, spec)
+				if spec.is_composition()
+					&& self.formula.arities[*a] == 2
+					&& self.formula.arities[*b] == 2 =>
+			{
+				Some((*a, *b, spec))
+			}
+			_ => None,
+		}
+	}
+
+	/// Flattens a chain without changing the order of its relations. Only a canonical composition may be opened;
+	/// all other operands are opaque leaves.
+	fn decide_composition(&self, a: NodeId, b: NodeId, spec: &Arc<SyncSpec>) -> Decision {
+		let mut pending = vec![b, a];
+		let mut leaves = Vec::new();
+		while let Some(node) = pending.pop() {
+			if let Some((a, b, _)) = self.composition_parts(node) {
+				pending.extend([b, a]);
+			} else {
+				leaves.push(plain(node));
+			}
+		}
+
+		if leaves.len() > 2 {
+			Decision::CompositionChain(leaves.into(), Arc::clone(spec))
+		} else {
+			Decision::Sync(plain(a), plain(b), Arc::clone(spec))
 		}
 	}
 
@@ -498,6 +545,11 @@ impl<'f> Emitter<'f> {
 				self.intersection(built[u], synced, false)
 			}
 			Decision::Sync(a, b, spec) => self.sync(built[a], built[b], spec),
+			Decision::CompositionChain(leaves, spec) => {
+				let leaves: Vec<ExecId> = leaves.iter().map(|src| built[src]).collect();
+
+				self.compose_chain(&leaves, spec)
+			}
 			Decision::Prefixes(src) => self.prefixes(built[src]),
 			Decision::Explicit(src, options, origin) => {
 				self.explicit(built[src], *options, *origin)
@@ -652,6 +704,65 @@ impl<'f> Emitter<'f> {
 		let cost = self.product_cost(u, x);
 
 		self.emit(Key::Diagonal(u, x), Op::Diagonal(u, x), 1, cost)
+	}
+
+	/// Composes the relations in `leaves`, from left to right, minimizing the sum of estimated macrostate bounds of
+	/// every composition below the root. This is optimal under [`Cost`], not necessarily for actual lazy exploration.
+	fn compose_chain(&mut self, leaves: &[ExecId], spec: &Arc<SyncSpec>) -> ExecId {
+		#[derive(Clone, Copy)]
+		struct Choice {
+			work: f64,
+			depth: u32,
+			split: usize,
+		}
+
+		debug_assert!(leaves.len() >= 3);
+		let mut trees: Vec<Vec<ExecId>> = (0..leaves.len())
+			.map(|index| vec![leaves[index]; leaves.len()])
+			.collect();
+		let mut best = vec![
+			vec![
+				Choice {
+					work: f64::INFINITY,
+					depth: 0,
+					split: 0,
+				};
+				leaves.len()
+			];
+			leaves.len()
+		];
+		for (index, &leaf) in leaves.iter().enumerate() {
+			best[index][index].depth = self.costs[leaf].depth;
+		}
+
+		// `work[t]` is log2(sum of internal-node bounds in t); it omits only t's own root. A leaf has none.
+		for len in 2..=leaves.len() {
+			for start in 0..=leaves.len() - len {
+				let end = start + len - 1;
+				for split in start + 1..=end {
+					let (left, right) = (best[start][split - 1], best[split][end]);
+					let candidate = Choice {
+						work: log2_sum([left.work, right.work].into_iter()),
+						depth: left.depth.max(right.depth) + 1,
+						split,
+					};
+					let current = best[start][end];
+					if current.split == 0
+						|| (
+							candidate.work.total_cmp(&current.work),
+							candidate.depth.cmp(&current.depth),
+						) < (Ordering::Equal, Ordering::Equal)
+					{
+						best[start][end] = candidate;
+					}
+				}
+
+				let split = best[start][end].split;
+				trees[start][end] = self.sync(trees[start][split - 1], trees[split][end], spec);
+			}
+		}
+
+		trees[0][leaves.len() - 1]
 	}
 
 	fn sync(&mut self, a: ExecId, b: ExecId, spec: &Arc<SyncSpec>) -> ExecId {
@@ -826,7 +937,7 @@ pub(crate) fn reachable(nodes: &TiVec<ExecId, ExecNode<'_>>, from: ExecId) -> Ti
 mod tests {
 	use super::{Op, build};
 	use crate::plan::Annotations;
-	use crate::{Automaton, Formula, Symbol};
+	use crate::{Annotation, Automaton, Formula, Options, Order, Plan, Symbol};
 
 	/// The empty word.
 	struct Epsilon;
@@ -874,5 +985,101 @@ mod tests {
 			.sum();
 
 		assert_eq!(branches, LEAVES);
+	}
+
+	struct Relation {
+		states: u32,
+	}
+
+	impl Automaton for Relation {
+		type State = u32;
+
+		fn arity(&self) -> usize {
+			2
+		}
+
+		fn initial_states(&self) -> impl IntoIterator<Item = u32> {
+			[0]
+		}
+
+		fn is_final(&self, _: u32) -> bool {
+			true
+		}
+
+		fn for_each_move(&self, _: u32, mut visit: impl FnMut(&[Symbol], u32)) {
+			for target in 0..self.states {
+				visit(&[Symbol::new(0), Symbol::new(0)], target);
+			}
+		}
+	}
+
+	fn composition(sizes: &[u32]) -> (Formula, crate::Term, crate::Term) {
+		let mut formula = Formula::new();
+		let mut root = formula
+			.leaf(&Relation { states: sizes[0] })
+			.expect("a sized relation");
+		let mut inner = root;
+		for (index, &states) in sizes[1..].iter().enumerate() {
+			let next = formula
+				.leaf(&Relation { states })
+				.expect("a sized relation");
+			root = formula.compose(root, next).expect("binary relations");
+			if index == 0 {
+				inner = root;
+			}
+		}
+
+		(formula, root, inner)
+	}
+
+	#[test]
+	fn composition_association_keeps_the_cheapest_inner_product() {
+		let (formula, root, _) = composition(&[256, 16, 1]);
+		let root = formula.node(root).expect("a composition term");
+		let exec = build(&formula, root, &Annotations::default());
+		let Op::Sync(left, right, _) = &exec.nodes[exec.root].op else {
+			panic!("a composition root")
+		};
+		assert!(matches!(exec.nodes[*left].op, Op::Leaf(_)));
+		assert!(matches!(exec.nodes[*right].op, Op::Sync(..)));
+	}
+
+	#[test]
+	fn fixed_order_and_explicit_compositions_are_association_boundaries() {
+		let (formula, root, inner) = composition(&[256, 16, 1]);
+		let options = Options::new()
+			.plan(Plan::new().annotate(inner, Annotation::lazy().order(Order::AsWritten)));
+		let annotations = Annotations::new(&formula, &options).expect("an order annotation");
+		let root = formula.node(root).expect("a composition term");
+		let exec = build(&formula, root, &annotations);
+		let Op::Sync(left, _, _) = &exec.nodes[exec.root].op else {
+			panic!("a composition root")
+		};
+		assert!(matches!(exec.nodes[*left].op, Op::Sync(..)));
+
+		let annotations =
+			Annotations::new(&formula, &Options::new().explicit(inner)).expect("an eager node");
+		let exec = build(&formula, root, &annotations);
+		let Op::Sync(left, _, _) = &exec.nodes[exec.root].op else {
+			panic!("a composition root")
+		};
+		assert!(matches!(exec.nodes[*left].op, Op::Explicit { .. }));
+	}
+
+	#[test]
+	fn only_composition_roots_are_reassociated() {
+		let (mut formula, _, inner) = composition(&[256, 16, 1]);
+		let last = formula
+			.leaf(&Relation { states: 1 })
+			.expect("a sized relation");
+		let root = formula
+			.compose_on(inner, last, &[])
+			.expect("a product without synchronization");
+		let root = formula.node(root).expect("a product term");
+		let exec = build(&formula, root, &Annotations::default());
+		let Op::Sync(left, _, _) = &exec.nodes[exec.root].op else {
+			panic!("a product root")
+		};
+		assert!(matches!(exec.nodes[*left].op, Op::Sync(..)));
 	}
 }
