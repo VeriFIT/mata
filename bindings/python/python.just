@@ -29,6 +29,10 @@ install:
 dist:
 	make build-dist
 
+# Build the HTML reference of the bindings into 'docs/_build/html/' from the in-place build.
+docs: build
+	python3 -m sphinx -b html docs docs/_build/html
+
 # Remove the generated sources, extension modules, and distributions.
 clean:
 	make clean
