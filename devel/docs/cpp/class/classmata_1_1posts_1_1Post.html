@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Class mata::posts::Post &#8212; Mata v0.0.0-dev.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=623e9adf"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Class mata::posts::PostEntry" href="classmata_1_1posts_1_1PostEntry.html" />
+    <link rel="prev" title="Class mata::posts::Move" href="classmata_1_1posts_1_1Move.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="class-mata-posts-post">
+<h1>Class mata::posts::Post<a class="headerlink" href="#class-mata-posts-post" title="Link to this heading">¶</a></h1>
+<dl class="cpp class">
+<dt class="sig sig-object cpp" id="_CPPv4I000EN4mata5posts4PostE">
+<span id="_CPPv3I000EN4mata5posts4PostE"></span><span id="_CPPv2I000EN4mata5posts4PostE"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">E</span></span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">R</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../core.html#_CPPv4I0_1K_1K_bEN4mata12ReservedKeysE" title="mata::ReservedKeys"><span class="n"><span class="pre">ReservedKeys</span></span></a><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I000EN4mata5posts4PostE" title="mata::posts::Post::E"><span class="n"><span class="pre">E</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">Key</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">A</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../namespace/namespacestd.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">allocator</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I000EN4mata5posts4PostE" title="mata::posts::Post::E"><span class="n"><span class="pre">E</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1posts_1_1Post"></span><span class="k"><span class="pre">class</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Post</span></span></span><span class="w"> </span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="k"><span class="pre">private</span></span><span class="w"> </span><a class="reference internal" href="../alphabet.html#_CPPv44mata" title="mata"><span class="n"><span class="pre">mata</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../namespace/namespacemata.html#_CPPv4N4mata5utilsE" title="mata::utils"><span class="n"><span class="pre">utils</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="classmata_1_1utils_1_1OrdVector.html#_CPPv4I00EN4mata5utils9OrdVectorE" title="mata::utils::OrdVector"><span class="n"><span class="pre">OrdVector</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I000EN4mata5posts4PostE" title="mata::posts::Post::E"><span class="n"><span class="pre">E</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../namespace/namespacestd.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">allocator</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4I000EN4mata5posts4PostE" title="mata::posts::Post::E"><span class="n"><span class="pre">E</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><a class="headerlink" href="#_CPPv4I000EN4mata5posts4PostE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>One post of the relation: an ordered map from a key to the post nested under it. </p>
+<p>An ordered vector of <code class="docutils literal notranslate"><span class="pre">E</span></code> kept sorted by key, which is what every lookup binary-searches on. Every step of a chain is one of these. A relation of <code class="docutils literal notranslate"><span class="pre">key_arity</span></code> <code class="docutils literal notranslate"><span class="pre">n</span></code> is <code class="docutils literal notranslate"><span class="pre">n</span></code> of them deep, ending in a <code class="docutils literal notranslate"><a class="reference internal" href="../core.html#conceptmata_1_1posts_1_1TargetSetLike"><span class="std std-ref"><span class="pre">mata::posts::TargetSetLike</span></span></a></code>.</p>
+<p>For relation with <code class="docutils literal notranslate"><span class="pre">key_arity</span></code> 1, the top level post uses a name alias <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1StatePost"><span class="std std-ref">StatePost</span></a>, and the next level down uses <a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1SymbolPost"><span class="std std-ref">SymbolPost</span></a>.</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../struct/structmata_1_1ReservedKeys.html#structmata_1_1ReservedKeys"><span class="std std-ref">mata::ReservedKeys</span></a>. </p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../core.html#conceptmata_1_1posts_1_1PostLike"><span class="std std-ref">mata::posts::PostLike</span></a>. </p>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Template Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>E</strong> – The entry type: one key plus what is nested under it. </p></li>
+<li><p><strong>R</strong> – Where this post’s ordinary keys stop. </p></li>
+<li><p><strong>A</strong> – The allocator of the entries. <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1StatePost"><span class="std std-ref"><span class="pre">mata::StatePost</span></span></a></code> uses <code class="docutils literal notranslate"><a class="reference internal" href="../struct/structmata_1_1utils_1_1DeltaAllocator.html#structmata_1_1utils_1_1DeltaAllocator"><span class="std std-ref"><span class="pre">mata::utils::DeltaAllocator</span></span></a></code>. </p></li>
+</ul>
+</dd>
+</dl>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-post-protocol">Post protocol</p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../core.html#conceptmata_1_1posts_1_1PostLike"><span class="std std-ref">mata::posts::PostLike</span></a>. </p>
+</div>
+</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5posts4Post5EntryE">
+<span id="_CPPv3N4mata5posts4Post5EntryE"></span><span id="_CPPv2N4mata5posts4Post5EntryE"></span><span class="target" id="classmata_1_1posts_1_1Post_1aecf2af5063c6c7272c3a19109de7b936"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Entry</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I000EN4mata5posts4PostE" title="mata::posts::Post::E"><span class="n"><span class="pre">E</span></span></a><a class="headerlink" href="#_CPPv4N4mata5posts4Post5EntryE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>What iterating this post yields. </p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5posts4Post3KeyE">
+<span id="_CPPv3N4mata5posts4Post3KeyE"></span><span id="_CPPv2N4mata5posts4Post3KeyE"></span><span class="target" id="classmata_1_1posts_1_1Post_1ab8b180930da0f0a7506c27e5ae735e2a"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Key</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5posts4Post5EntryE" title="mata::posts::Post::Entry"><span class="n"><span class="pre">Entry</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">Key</span></span><a class="headerlink" href="#_CPPv4N4mata5posts4Post3KeyE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>What this post is keyed by (the symbol, for an NFA). </p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5posts4Post6NestedE">
+<span id="_CPPv3N4mata5posts4Post6NestedE"></span><span id="_CPPv2N4mata5posts4Post6NestedE"></span><span class="target" id="classmata_1_1posts_1_1Post_1a58267a41040a5b5b0720e32885632779"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Nested</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5posts4Post5EntryE" title="mata::posts::Post::Entry"><span class="n"><span class="pre">Entry</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">Nested</span></span><a class="headerlink" href="#_CPPv4N4mata5posts4Post6NestedE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The post (or target set) under one key. </p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5posts4Post6TargetE">
+<span id="_CPPv3N4mata5posts4Post6TargetE"></span><span id="_CPPv2N4mata5posts4Post6TargetE"></span><span class="target" id="classmata_1_1posts_1_1Post_1a0083864d8bf0503ed5e16b6f569e96c5"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Target</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5posts4Post5EntryE" title="mata::posts::Post::Entry"><span class="n"><span class="pre">Entry</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">Target</span></span><a class="headerlink" href="#_CPPv4N4mata5posts4Post6TargetE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>What visiting the successors yields, propagated up. </p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5posts4Post8ReservedE">
+<span id="_CPPv3N4mata5posts4Post8ReservedE"></span><span id="_CPPv2N4mata5posts4Post8ReservedE"></span><span class="target" id="classmata_1_1posts_1_1Post_1ab8d4aede146f7b5d3a3547aa3bc42a01"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Reserved</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I000EN4mata5posts4PostE" title="mata::posts::Post::R"><span class="n"><span class="pre">R</span></span></a><a class="headerlink" href="#_CPPv4N4mata5posts4Post8ReservedE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Where this post’s ordinary keys stop. The innermost post: what is left once every key has been supplied. </p>
+</dd></dl>
+
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5posts4Post9TargetSetE">
+<span id="_CPPv3N4mata5posts4Post9TargetSetE"></span><span id="_CPPv2N4mata5posts4Post9TargetSetE"></span><span class="target" id="classmata_1_1posts_1_1Post_1ac3b92d54757e3453f39e689578311445"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TargetSet</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><a class="reference internal" href="../core.html#_CPPv4N4mata5postsE" title="mata::posts"><span class="n"><span class="pre">posts</span></span></a><span class="p"><span class="pre">::</span></span><a class="reference internal" href="../core.html#_CPPv4I0_6size_tEN4mata5posts6PostAtE" title="mata::posts::PostAt"><span class="n"><span class="pre">PostAt</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4N4mata5posts4Post6NestedE" title="mata::posts::Post::Nested"><span class="n"><span class="pre">Nested</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../core.html#_CPPv4I0EN4mata5posts8arity_ofE" title="mata::posts::arity_of"><span class="n"><span class="pre">arity_of</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4N4mata5posts4Post6NestedE" title="mata::posts::Post::Nested"><span class="n"><span class="pre">Nested</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">&gt;</span></span><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">type</span></span><a class="headerlink" href="#_CPPv4N4mata5posts4Post9TargetSetE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>What iterating this post yields. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5posts4Post9key_arityE">
+<span id="_CPPv3N4mata5posts4Post9key_arityE"></span><span id="_CPPv2N4mata5posts4Post9key_arityE"></span><span id="mata::posts::Post::key_arity__s"></span><span class="target" id="classmata_1_1posts_1_1Post_1ae4cad8afa770e8afec78a7a21fb412ed"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">constexpr</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">key_arity</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><a class="reference internal" href="../core.html#_CPPv4I0EN4mata5posts8arity_ofE" title="mata::posts::arity_of"><span class="n"><span class="pre">arity_of</span></span></a><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4N4mata5posts4Post6NestedE" title="mata::posts::Post::Nested"><span class="n"><span class="pre">Nested</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="o"><span class="pre">+</span></span><span class="w"> </span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata5posts4Post9key_arityE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Number of keys from here down to a target. </p>
+</dd></dl>
+
+<dl class="cpp var">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5posts4Post13sorted_by_keyE">
+<span id="_CPPv3N4mata5posts4Post13sorted_by_keyE"></span><span id="_CPPv2N4mata5posts4Post13sorted_by_keyE"></span><span id="mata::posts::Post::sorted_by_key__b"></span><span class="target" id="classmata_1_1posts_1_1Post_1a15d8348248795b4d2148859119f8849a"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">constexpr</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">sorted_by_key</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="p"><span class="pre">{</span></span><span class="k"><span class="pre">true</span></span><span class="p"><span class="pre">}</span></span><a class="headerlink" href="#_CPPv4N4mata5posts4Post13sorted_by_keyE" title="Link to this definition">¶</a><br /></dt>
+<dd><p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>sortedness. Ordered by the key of the contained entries. </p>
+</div>
+</p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5posts4Post9is_sortedEv">
+<span id="_CPPv3NK4mata5posts4Post9is_sortedEv"></span><span id="_CPPv2NK4mata5posts4Post9is_sortedEv"></span><span id="mata::posts::Post::is_sortedC"></span><span class="target" id="classmata_1_1posts_1_1Post_1a343961e93957293edc0602052f9d9abf"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">is_sorted</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5posts4Post9is_sortedEv" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Teturn whether the post is sorted by key. </p>
+<p><div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>sortedness. </p>
+</div>
+</p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-types">Public Types</p>
+<dl class="cpp type">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5posts4Post15KeyedSuccessorsE">
+<span id="_CPPv3N4mata5posts4Post15KeyedSuccessorsE"></span><span id="_CPPv2N4mata5posts4Post15KeyedSuccessorsE"></span><span class="target" id="classmata_1_1posts_1_1Post_1ae0be65140ceaf350efe3f3c2d95b1b3c"></span><span class="k"><span class="pre">using</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">KeyedSuccessors</span></span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="../namespace/namespacestd.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">conditional_t</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="#_CPPv4N4mata5posts4Post9key_arityE" title="mata::posts::Post::key_arity"><span class="n"><span class="pre">key_arity</span></span></a><span class="w"> </span><span class="o"><span class="pre">==</span></span><span class="w"> </span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5posts4Post9TargetSetE" title="mata::posts::Post::TargetSet"><span class="n"><span class="pre">TargetSet</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5posts4Post9TargetSetE" title="mata::posts::Post::TargetSet"><span class="n"><span class="pre">TargetSet</span></span></a><span class="p"><span class="pre">&gt;</span></span><a class="headerlink" href="#_CPPv4N4mata5posts4Post15KeyedSuccessorsE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The result type of the keyed <code class="docutils literal notranslate"><span class="pre">get_successors</span></code>. </p>
+<p>At <code class="docutils literal notranslate"><span class="pre">key_arity</span></code> 1, the set of targets can be returned by reference. Above that, the set of targets has to be gathered. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-public-functions">Public Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5posts4PosteqERK4Post">
+<span id="_CPPv3NK4mata5posts4PosteqERK4Post"></span><span id="_CPPv2NK4mata5posts4PosteqERK4Post"></span><span id="mata::posts::Post::eq-operator__PostCRC"></span><span class="target" id="classmata_1_1posts_1_1Post_1a04940c16b5845c6ef8a7a35d2b211da6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">==</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I000EN4mata5posts4PostE" title="mata::posts::Post"><span class="n"><span class="pre">Post</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5posts4PosteqERK4Post" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Compares the nested posts too: an entry alone compares only its key, which <code class="docutils literal notranslate"><a class="reference internal" href="../core.html#classmata_1_1posts_1_1Post_1acccebf8f3652b701a06a9512820bb49d"><span class="std std-ref"><span class="pre">find()</span></span></a></code> and <code class="docutils literal notranslate"><a class="reference internal" href="../core.html#classmata_1_1posts_1_1Post_1a29790c28710ec0e64b48c2f4edd0b08c"><span class="std std-ref"><span class="pre">erase()</span></span></a></code> rely on. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5posts4Post16first_epsilon_itEK3Key">
+<span id="_CPPv3NK4mata5posts4Post16first_epsilon_itEK3Key"></span><span id="_CPPv2NK4mata5posts4Post16first_epsilon_itEK3Key"></span><span id="mata::posts::Post::first_epsilon_it__KeyCC"></span><span class="target" id="classmata_1_1posts_1_1Post_1a1e894a6280c81abe0362aa17532c6de2"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../core.html#_CPPv4N4mata5posts4Post14const_iteratorE" title="mata::posts::Post::const_iterator"><span class="n"><span class="pre">const_iterator</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">first_epsilon_it</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5posts4Post3KeyE" title="mata::posts::Post::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">first_epsilon</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5posts4Post8ReservedE" title="mata::posts::Post::Reserved"><span class="n"><span class="pre">Reserved</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">min_epsilon</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5posts4Post16first_epsilon_itEK3Key" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Returns an iterator to the smallest epsilon, or <a class="reference internal" href="../core.html#classmata_1_1posts_1_1Post_1acad38d52497a975bfb6f2f6acd76631f"><span class="std std-ref">end()</span></a> if there is no epsilon. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>first_epsilon</strong> – The first epsilon key to look for. Defaults to the smallest reserved epsilon. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An iterator to the smallest epsilon, or <a class="reference internal" href="../core.html#classmata_1_1posts_1_1Post_1acad38d52497a975bfb6f2f6acd76631f"><span class="std std-ref">end()</span></a> if there is no epsilon. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5posts4Post14get_successorsEv">
+<span id="_CPPv3NK4mata5posts4Post14get_successorsEv"></span><span id="_CPPv2NK4mata5posts4Post14get_successorsEv"></span><span id="mata::posts::Post::get_successorsC"></span><span class="target" id="classmata_1_1posts_1_1Post_1ab6e7105cb44e31343be9491cfabca92c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5posts4Post9TargetSetE" title="mata::posts::Post::TargetSet"><span class="n"><span class="pre">TargetSet</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_successors</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5posts4Post14get_successorsEv" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Returns the set of all target states in the <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1posts.html#classmata_1_1posts_1_1Post"><span class="std std-ref"><span class="pre">Post</span></span></a></code>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5posts4Post14get_successorsEK3Key">
+<span id="_CPPv3NK4mata5posts4Post14get_successorsEK3Key"></span><span id="_CPPv2NK4mata5posts4Post14get_successorsEK3Key"></span><span id="mata::posts::Post::get_successors__KeyCC"></span><span class="target" id="classmata_1_1posts_1_1Post_1a6c65ead4a64b5ab66626a504d93200f6"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5posts4Post15KeyedSuccessorsE" title="mata::posts::Post::KeyedSuccessors"><span class="n"><span class="pre">KeyedSuccessors</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">get_successors</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5posts4Post3KeyE" title="mata::posts::Post::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">symbol</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5posts4Post14get_successorsEK3Key" title="Link to this definition">¶</a><br /></dt>
+<dd><p>The targets reachable from this post under <code class="docutils literal notranslate"><span class="pre">key</span></code>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>symbol</strong> – The key to get the successors for. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The targets under the given key. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5posts4Post5movesEv">
+<span id="_CPPv3NK4mata5posts4Post5movesEv"></span><span id="_CPPv2NK4mata5posts4Post5movesEv"></span><span id="mata::posts::Post::movesC"></span><span class="target" id="classmata_1_1posts_1_1Post_1a62c5d1184181c9f288b678fdaad09203"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../core.html#_CPPv4N4mata5posts4Post5MovesE" title="mata::posts::Post::Moves"><span class="n"><span class="pre">Moves</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">moves</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5posts4Post5movesEv" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Returns an iterator over all moves. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5posts4Post5movesEK13post_iteratorK13post_iterator">
+<span id="_CPPv3NK4mata5posts4Post5movesEK13post_iteratorK13post_iterator"></span><span id="_CPPv2NK4mata5posts4Post5movesEK13post_iteratorK13post_iterator"></span><span id="mata::posts::Post::moves__post_iteratorC.post_iteratorCC"></span><span class="target" id="classmata_1_1posts_1_1Post_1a355ca8df175c66e02ac710d07fdb75fd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../core.html#_CPPv4N4mata5posts4Post5MovesE" title="mata::posts::Post::Moves"><span class="n"><span class="pre">Moves</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">moves</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../core.html#_CPPv4N4mata5posts4Post13post_iteratorE" title="mata::posts::Post::post_iterator"><span class="n"><span class="pre">post_iterator</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">symbol_post_it</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../core.html#_CPPv4N4mata5posts4Post13post_iteratorE" title="mata::posts::Post::post_iterator"><span class="n"><span class="pre">post_iterator</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">symbol_post_end</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5posts4Post5movesEK13post_iteratorK13post_iterator" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Returns an iterator over specified moves. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>symbol_post_it</strong> – <strong>[in]</strong> First iterator over symbol posts to iterate over. </p></li>
+<li><p><strong>symbol_post_end</strong> – <strong>[in]</strong> End iterator over symbol posts. </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An iterator over specified moves in <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1posts.html#classmata_1_1posts_1_1Post"><span class="std std-ref"><span class="pre">Post</span></span></a></code> represented as <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1posts.html#classmata_1_1posts_1_1Move"><span class="std std-ref"><span class="pre">Move</span></span></a></code> instances. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5posts4Post14moves_epsilonsEK3Key">
+<span id="_CPPv3NK4mata5posts4Post14moves_epsilonsEK3Key"></span><span id="_CPPv2NK4mata5posts4Post14moves_epsilonsEK3Key"></span><span id="mata::posts::Post::moves_epsilons__KeyCC"></span><span class="target" id="classmata_1_1posts_1_1Post_1a3bcc74dd22f5a85a2f1b5555ae235e5b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../core.html#_CPPv4N4mata5posts4Post5MovesE" title="mata::posts::Post::Moves"><span class="n"><span class="pre">Moves</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">moves_epsilons</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5posts4Post3KeyE" title="mata::posts::Post::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">first_epsilon</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5posts4Post8ReservedE" title="mata::posts::Post::Reserved"><span class="n"><span class="pre">Reserved</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">min_epsilon</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5posts4Post14moves_epsilonsEK3Key" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Returns an iterator over epsilon moves. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>first_epsilon</strong> – <strong>[in]</strong> The first epsilon key to look for. Defaults to the smallest reserved epsilon. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An iterator over epsilon moves in <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1posts.html#classmata_1_1posts_1_1Post"><span class="std std-ref"><span class="pre">Post</span></span></a></code> represented as <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1posts.html#classmata_1_1posts_1_1Move"><span class="std std-ref"><span class="pre">Move</span></span></a></code> instances </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5posts4Post13moves_symbolsEK3Key">
+<span id="_CPPv3NK4mata5posts4Post13moves_symbolsEK3Key"></span><span id="_CPPv2NK4mata5posts4Post13moves_symbolsEK3Key"></span><span id="mata::posts::Post::moves_symbols__KeyCC"></span><span class="target" id="classmata_1_1posts_1_1Post_1aa899886d3d1a320a2bec05396a8e9ff0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../core.html#_CPPv4N4mata5posts4Post5MovesE" title="mata::posts::Post::Moves"><span class="n"><span class="pre">Moves</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">moves_symbols</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5posts4Post3KeyE" title="mata::posts::Post::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">last_symbol</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5posts4Post8ReservedE" title="mata::posts::Post::Reserved"><span class="n"><span class="pre">Reserved</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">max_ordinary</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5posts4Post13moves_symbolsEK3Key" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Return an Iterator over alphabet (normal) symbols (not over epsilons). </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>last_symbol</strong> – <strong>[in]</strong> The last symbol to iterate over. Defaults to the largest ordinary key. </p>
+</dd>
+<dt class="field-even">Throws<span class="colon">:</span></dt>
+<dd class="field-even"><p><span><span class="cpp-expr sig sig-inline cpp"><a class="reference internal" href="../namespace/namespacestd.html#_CPPv4St" title="std"><span class="n">std</span></a><span class="p">::</span><span class="n">runtime_error</span></span></span> – if <code class="docutils literal notranslate"><span class="pre">last_symbol</span></code> is itself a reserved key, since the range would then have to run past the end of the ordinary keys. </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>An iterator over alphabet moves in <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1posts.html#classmata_1_1posts_1_1Post"><span class="std std-ref"><span class="pre">Post</span></span></a></code> represented as <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1posts.html#classmata_1_1posts_1_1Move"><span class="std std-ref"><span class="pre">Move</span></span></a></code> instances </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5posts4Post12num_of_movesEv">
+<span id="_CPPv3NK4mata5posts4Post12num_of_movesEv"></span><span id="_CPPv2NK4mata5posts4Post12num_of_movesEv"></span><span id="mata::posts::Post::num_of_movesC"></span><span class="target" id="classmata_1_1posts_1_1Post_1a6c1a3d9d8f2756a4da100eda4dbec5fd"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">num_of_moves</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5posts4Post12num_of_movesEv" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Counts the number of all moves in <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1posts.html#classmata_1_1posts_1_1Post"><span class="std std-ref"><span class="pre">Post</span></span></a></code>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of all moves in <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1posts.html#classmata_1_1posts_1_1Post"><span class="std std-ref"><span class="pre">Post</span></span></a></code>. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK4mata5posts4Post15for_each_targetEvRR2Fn">
+<span id="_CPPv3I0ENK4mata5posts4Post15for_each_targetERR2Fn"></span><span id="_CPPv2I0ENK4mata5posts4Post15for_each_targetERR2Fn"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Fn</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1posts_1_1Post_1ad126a9ba68b6c79605d543d0a9d93b6e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">for_each_target</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0ENK4mata5posts4Post15for_each_targetEvRR2Fn" title="mata::posts::Post::for_each_target::Fn"><span class="n"><span class="pre">Fn</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">fn</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK4mata5posts4Post15for_each_targetEvRR2Fn" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Apply <code class="docutils literal notranslate"><span class="pre">fn</span></code> to every target reachable from this post, under any key. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4I0ENK4mata5posts4Post13for_each_moveEvRR2Fn">
+<span id="_CPPv3I0ENK4mata5posts4Post13for_each_moveERR2Fn"></span><span id="_CPPv2I0ENK4mata5posts4Post13for_each_moveERR2Fn"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">Fn</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1posts_1_1Post_1aaa8ea0f98739ae9db30bc40f18ea36fa"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">for_each_move</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I0ENK4mata5posts4Post13for_each_moveEvRR2Fn" title="mata::posts::Post::for_each_move::Fn"><span class="n"><span class="pre">Fn</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">fn</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4I0ENK4mata5posts4Post13for_each_moveEvRR2Fn" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Apply <code class="docutils literal notranslate"><span class="pre">fn</span></code> to every <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1posts.html#classmata_1_1posts_1_1Move"><span class="std std-ref"><span class="pre">Move</span></span></a></code> of this post, as a (key, target) pair. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5posts4Post10has_targetEK6Target">
+<span id="_CPPv3NK4mata5posts4Post10has_targetEK6Target"></span><span id="_CPPv2NK4mata5posts4Post10has_targetEK6Target"></span><span id="mata::posts::Post::has_target__TargetCC"></span><span class="target" id="classmata_1_1posts_1_1Post_1abd3049fb9b13e31d44e666cec2cbe179"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">has_target</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5posts4Post6TargetE" title="mata::posts::Post::Target"><span class="n"><span class="pre">Target</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">target</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5posts4Post10has_targetEK6Target" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Does this post have <code class="docutils literal notranslate"><span class="pre">target</span></code> reachable under any key? </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> – <strong>[in]</strong> <a class="reference internal" href="../namespace/namespacemata_1_1posts.html#classmata_1_1posts_1_1Post_1a0083864d8bf0503ed5e16b6f569e96c5"><span class="std std-ref">Target</span></a> state to check. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if <code class="docutils literal notranslate"><span class="pre">target</span></code> is reachable under any key, false otherwise. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5posts4PostaSERK9OrdVector">
+<span id="_CPPv3N4mata5posts4PostaSERK9OrdVector"></span><span id="_CPPv2N4mata5posts4PostaSERK9OrdVector"></span><span id="mata::posts::Post::assign-operator__OrdVectorCR"></span><span class="target" id="classmata_1_1posts_1_1Post_1a09bc94f737ff9d577bf33031fa9e7d30"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">OrdVector</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">OrdVector</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5posts4PostaSERK9OrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd><p>&lt; The underlying vector of entries. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5posts4PostaSERR9OrdVector">
+<span id="_CPPv3N4mata5posts4PostaSERR9OrdVector"></span><span id="_CPPv2N4mata5posts4PostaSERR9OrdVector"></span><span id="mata::posts::Post::assign-operator__OrdVectorRR"></span><span class="target" id="classmata_1_1posts_1_1Post_1a7d41baa6d8e2170f424cc25863463b39"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">OrdVector</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="sig-name descname"><span class="k"><span class="pre">operator</span></span><span class="o"><span class="pre">=</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">OrdVector</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">other</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5posts4PostaSERR9OrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd><p>&lt; The underlying vector of entries. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5posts4Post4backEv">
+<span id="_CPPv3N4mata5posts4Post4backEv"></span><span id="_CPPv2N4mata5posts4Post4backEv"></span><span id="mata::posts::Post::back"></span><span class="target" id="classmata_1_1posts_1_1Post_1af71e6c1eccbc12e9339c00a86a981a43"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">reference</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">back</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5posts4Post4backEv" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Get reference to the last element in the vector. </p>
+<p>Modifying the underlying value in the reference could break sortedness. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5posts4Post5eraseERK1E">
+<span id="_CPPv3N4mata5posts4Post5eraseERK1E"></span><span id="_CPPv2N4mata5posts4Post5eraseERK1E"></span><span id="mata::posts::Post::erase__ECR"></span><span class="target" id="classmata_1_1posts_1_1Post_1a0602a8434bb0da58c2fadd232d1b4cb0"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I000EN4mata5posts4PostE" title="mata::posts::Post::E"><span class="n"><span class="pre">E</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">k</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5posts4Post5eraseERK1E" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Remove <code class="docutils literal notranslate"><span class="pre">k</span></code> from sorted vector. </p>
+<p>This function expects the vector to be sorted. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5posts4Post6insertERR1E">
+<span id="_CPPv3N4mata5posts4Post6insertERR1E"></span><span id="_CPPv2N4mata5posts4Post6insertERR1E"></span><span id="mata::posts::Post::insert__ERR"></span><span class="target" id="classmata_1_1posts_1_1Post_1aec5d20ab286327bd9da55a7a540364aa"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../namespace/namespacestd.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">pair</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../core.html#_CPPv4N4mata5posts4Post8iteratorE" title="mata::posts::Post::iterator"><span class="n"><span class="pre">iterator</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">insert</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4I000EN4mata5posts4PostE" title="mata::posts::Post::E"><span class="n"><span class="pre">E</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">x</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5posts4Post6insertERR1E" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Insert <code class="docutils literal notranslate"><span class="pre">x</span></code>, moving from it when it is not present yet. </p>
+<p>Without this overload, an <code class="docutils literal notranslate"><span class="pre">insert(std::move(x))</span></code> call binds to <code class="docutils literal notranslate"><span class="pre">insert(const</span> <span class="pre">Key&amp;)</span></code> and copies <code class="docutils literal notranslate"><span class="pre">x</span></code>, which matters for keys that own memory (e.g. <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1SymbolPost"><span class="std std-ref"><span class="pre">SymbolPost</span></span></a></code>). </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5posts4Post6insertEKNSt4spanIK1EEE">
+<span id="_CPPv3N4mata5posts4Post6insertEKNSt4spanIK1EEE"></span><span id="_CPPv2N4mata5posts4Post6insertEKNSt4spanIK1EEE"></span><span id="mata::posts::Post::insert__std::span:EC:C"></span><span class="target" id="classmata_1_1posts_1_1Post_1a20ce1fd07860750b8abeddd899b4e143"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">insert</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../namespace/namespacestd.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">span</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4I000EN4mata5posts4PostE" title="mata::posts::Post::E"><span class="n"><span class="pre">E</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">keys</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5posts4Post6insertEKNSt4spanIK1EEE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Insert the sorted, duplicate-free <code class="docutils literal notranslate"><span class="pre">keys</span></code>, such as another <code class="docutils literal notranslate"><span class="pre">OrdVector</span></code> or a <code class="docutils literal notranslate"><span class="pre">SmallOrdVector</span></code>. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-functions">Private Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5posts4Post6insertERR3Key">
+<span id="_CPPv3N4mata5posts4Post6insertERR3Key"></span><span id="_CPPv2N4mata5posts4Post6insertERR3Key"></span><span id="mata::posts::Post::insert__KeyRR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a90cdd05fb4aa4f731a041951344a616d"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../namespace/namespacestd.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">pair</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../core.html#_CPPv4N4mata5posts4Post8iteratorE" title="mata::posts::Post::iterator"><span class="n"><span class="pre">iterator</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">insert</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4N4mata5posts4Post3KeyE" title="mata::posts::Post::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">x</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5posts4Post6insertERR3Key" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Insert <code class="docutils literal notranslate"><span class="pre">x</span></code>, moving from it when it is not present yet. </p>
+<p>Without this overload, an <code class="docutils literal notranslate"><span class="pre">insert(std::move(x))</span></code> call binds to <code class="docutils literal notranslate"><a class="reference internal" href="../utils.html#classmata_1_1utils_1_1OrdVector_1a8573f7cc9230e8f4efffbc9915b77a82"><span class="std std-ref"><span class="pre">insert(const</span> <span class="pre">Key&amp;)</span></span></a></code> and copies <code class="docutils literal notranslate"><span class="pre">x</span></code>, which matters for keys that own memory (e.g. <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata.html#classmata_1_1SymbolPost"><span class="std std-ref"><span class="pre">SymbolPost</span></span></a></code>). </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5posts4Post6insertEKNSt4spanIK3KeyEE">
+<span id="_CPPv3N4mata5posts4Post6insertEKNSt4spanIK3KeyEE"></span><span id="_CPPv2N4mata5posts4Post6insertEKNSt4spanIK3KeyEE"></span><span id="mata::posts::Post::insert__std::span:KeyC:C"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1ad6ca60f97ab7a2bfbc1d920bcce04184"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">insert</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="../namespace/namespacestd.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">span</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5posts4Post3KeyE" title="mata::posts::Post::Key"><span class="n"><span class="pre">Key</span></span></a><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">keys</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5posts4Post6insertEKNSt4spanIK3KeyEE" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Insert the sorted, duplicate-free <code class="docutils literal notranslate"><span class="pre">keys</span></code>, such as another <code class="docutils literal notranslate"><a class="reference internal" href="../utils.html#classmata_1_1utils_1_1OrdVector"><span class="std std-ref"><span class="pre">OrdVector</span></span></a></code> or a <code class="docutils literal notranslate"><a class="reference internal" href="../namespace/namespacemata_1_1utils.html#classmata_1_1utils_1_1SmallOrdVector"><span class="std std-ref"><span class="pre">SmallOrdVector</span></span></a></code>. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5posts4Post5eraseERK3Key">
+<span id="_CPPv3N4mata5posts4Post5eraseERK3Key"></span><span id="_CPPv2N4mata5posts4Post5eraseERK3Key"></span><span id="mata::posts::Post::erase__KeyCR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a769571751cba2fa78c6b556f2f6d3b94"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">erase</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5posts4Post3KeyE" title="mata::posts::Post::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">k</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5posts4Post5eraseERK3Key" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Remove <code class="docutils literal notranslate"><span class="pre">k</span></code> from sorted vector. </p>
+<p>This function expects the vector to be sorted. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4IDpEN4mata5posts4Post7emplaceENSt4pairI8iteratorbEEDpRR4Args">
+<span id="_CPPv3IDpEN4mata5posts4Post7emplaceEDpRR4Args"></span><span id="_CPPv2IDpEN4mata5posts4Post7emplaceEDpRR4Args"></span><span class="k"><span class="pre">template</span></span><span class="p"><span class="pre">&lt;</span></span><span class="k"><span class="pre">typename</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="sig-name descname"><span class="n"><span class="pre">Args</span></span></span><span class="p"><span class="pre">&gt;</span></span><br /><span class="target" id="classmata_1_1utils_1_1OrdVector_1abd3f9628431e3b1d415058ba5604c17c"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><a class="reference internal" href="../namespace/namespacestd.html#_CPPv4St" title="std"><span class="n"><span class="pre">std</span></span></a><span class="p"><span class="pre">::</span></span><span class="n"><span class="pre">pair</span></span><span class="p"><span class="pre">&lt;</span></span><a class="reference internal" href="../core.html#_CPPv4N4mata5posts4Post8iteratorE" title="mata::posts::Post::iterator"><span class="n"><span class="pre">iterator</span></span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="p"><span class="pre">&gt;</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">emplace</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#_CPPv4IDpEN4mata5posts4Post7emplaceENSt4pairI8iteratorbEEDpRR4Args" title="mata::posts::Post::emplace::Args"><span class="n"><span class="pre">Args</span></span></a><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">&amp;</span></span><span class="p"><span class="pre">...</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">args</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4IDpEN4mata5posts4Post7emplaceENSt4pairI8iteratorbEEDpRR4Args" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Construct a key from <code class="docutils literal notranslate"><span class="pre">args</span></code> and insert it, moving it into place. </p>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5posts4Post10differenceERK9OrdVector">
+<span id="_CPPv3NK4mata5posts4Post10differenceERK9OrdVector"></span><span id="_CPPv2NK4mata5posts4Post10differenceERK9OrdVector"></span><span id="mata::posts::Post::difference__OrdVectorCRC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a76b66e225ae187f3f69d870fd07080d7"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">OrdVector</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">difference</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">OrdVector</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5posts4Post10differenceERK9OrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Compute set difference as <code class="docutils literal notranslate"><span class="pre">this</span></code> minus <code class="docutils literal notranslate"><span class="pre">rhs</span></code>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rhs</strong> – Other vector with symbols to be excluded. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">this</span></code> minus <code class="docutils literal notranslate"><span class="pre">rhs</span></code>. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK4mata5posts4Post8containsERK3Key">
+<span id="_CPPv3NK4mata5posts4Post8containsERK3Key"></span><span id="_CPPv2NK4mata5posts4Post8containsERK3Key"></span><span id="mata::posts::Post::contains__KeyCRC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a4ba0005e319eda1ba871a1a01be7764e"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">contains</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv4N4mata5posts4Post3KeyE" title="mata::posts::Post::Key"><span class="n"><span class="pre">Key</span></span></a><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">key</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK4mata5posts4Post8containsERK3Key" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Check whether <code class="docutils literal notranslate"><span class="pre">key</span></code> exists in the ordered vector. </p>
+</dd></dl>
+
+</div>
+<div class="breathe-sectiondef docutils container">
+<p class="breathe-sectiondef-title rubric" id="breathe-section-title-private-static-functions">Private Static Functions</p>
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5posts4Post13with_reservedEK6size_t">
+<span id="_CPPv3N4mata5posts4Post13with_reservedEK6size_t"></span><span id="_CPPv2N4mata5posts4Post13with_reservedEK6size_t"></span><span id="mata::posts::Post::with_reserved__sC"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a52563bb89bd17a96b35242ecc23af261"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">OrdVector</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">with_reserved</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">capacity</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5posts4Post13with_reservedEK6size_t" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Create <a class="reference internal" href="../utils.html#classmata_1_1utils_1_1OrdVector"><span class="std std-ref">OrdVector</span></a> with reserved <code class="docutils literal notranslate"><span class="pre">capacity</span></code>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>capacity</strong> – <strong>[in]</strong> Capacity of <a class="reference internal" href="../utils.html#classmata_1_1utils_1_1OrdVector"><span class="std std-ref">OrdVector</span></a> to reserve. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Newly create <a class="reference internal" href="../utils.html#classmata_1_1utils_1_1OrdVector"><span class="std std-ref">OrdVector</span></a>. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N4mata5posts4Post9set_unionERK9OrdVectorRK9OrdVectorR9OrdVector">
+<span id="_CPPv3N4mata5posts4Post9set_unionERK9OrdVectorRK9OrdVectorR9OrdVector"></span><span id="_CPPv2N4mata5posts4Post9set_unionERK9OrdVectorRK9OrdVectorR9OrdVector"></span><span id="mata::posts::Post::set_union__OrdVectorCR.OrdVectorCR.OrdVectorR"></span><span class="target" id="classmata_1_1utils_1_1OrdVector_1a71e69ba0b1d06b171266b9494a4c9825"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">set_union</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">OrdVector</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">lhs</span></span>, <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="n"><span class="pre">OrdVector</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">rhs</span></span>, <span class="n"><span class="pre">OrdVector</span></span><span class="w"> </span><span class="p"><span class="pre">&amp;</span></span><span class="n sig-param"><span class="pre">result</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N4mata5posts4Post9set_unionERK9OrdVectorRK9OrdVectorR9OrdVector" title="Link to this definition">¶</a><br /></dt>
+<dd><p>Write the union of <code class="docutils literal notranslate"><span class="pre">lhs</span></code> and <code class="docutils literal notranslate"><span class="pre">rhs</span></code> into <code class="docutils literal notranslate"><span class="pre">result</span></code>. </p>
+<p><code class="docutils literal notranslate"><span class="pre">result</span></code> has to be empty: the elements are appended to it, and the return value counts them against <code class="docutils literal notranslate"><span class="pre">lhs</span></code>. Passing a cleared buffer instead of a fresh vector keeps its capacity across calls, which is what makes this overload worth having next to <code class="docutils literal notranslate"><span class="pre">set_union(lhs,</span> <span class="pre">rhs)</span></code>. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">true</span></code> iff <code class="docutils literal notranslate"><span class="pre">rhs</span></code> has an element that is not in <code class="docutils literal notranslate"><span class="pre">lhs</span></code>. </p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Mata</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../benchmarking.html">Benchmarking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../automata-format.html">Automata Format</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../script-language.html">(Auto)Mata Script Language</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">The <code class="docutils literal notranslate"><span class="pre">mata</span></code> command</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../core.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nfa.html">Nondeterministic Finite automata</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../nft.html">Nondeterministic Finite Transducers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../alphabet.html">Alphabet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../applications.html">Strings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../namespacelist.html">Namespace list</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../classlist.html">Class list</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1Alphabet.html">Class mata::Alphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1AlphabetLevels.html">Class mata::AlphabetLevels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1AutomatonBase.html">Class mata::AutomatonBase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1BoolVector.html">Class mata::BoolVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1Delta.html">Class mata::Delta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1DeltaBuilder.html">Class mata::DeltaBuilder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1EnumAlphabet.html">Class mata::EnumAlphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1FormulaGraph.html">Class mata::FormulaGraph</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1FormulaGraphChildren.html">Class mata::FormulaGraphChildren</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1FormulaGraphView.html">Class mata::FormulaGraphView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1FormulaNode.html">Class mata::FormulaNode</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntAlphabet.html">Class mata::IntAlphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntAlphabet_1_1IntAlphabetSingleton.html">Class mata::IntAlphabet::IntAlphabetSingleton</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1IntermediateAut.html">Class mata::IntermediateAut</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1Mintermization.html">Class mata::Mintermization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1NameStore.html">Class mata::NameStore</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1OnTheFlyAlphabet.html">Class mata::OnTheFlyAlphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1StatePost.html">Class mata::StatePost</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1SymbolPost.html">Class mata::SymbolPost</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1SynchronizedExistentialSymbolPostIterator.html">Class mata::SynchronizedExistentialSymbolPostIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1ShortestWordsMap.html">Class mata::applications::strings::ShortestWordsMap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace.html">Class mata::applications::strings::replace::ReluctantReplace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation.html">Class mata::applications::strings::seg_nfa::Segmentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1LazyView.html">Class mata::applications::strings::seg_nfa::Segmentation::LazyView</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1Nfa.html">Class mata::nfa::Nfa</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1algorithms_1_1ExternalSolverNotFound.html">Class mata::nfa::algorithms::ExternalSolverNotFound</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1builder_1_1BitvectorNfaReader.html">Class mata::nfa::builder::BitvectorNfaReader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nfa_1_1internal_1_1ProcessedAntichain.html">Class mata::nfa::internal::ProcessedAntichain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nft_1_1Levels.html">Class mata::nft::Levels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nft_1_1Levels_1_1Ordering.html">Class mata::nft::Levels::Ordering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1nft_1_1Nft.html">Class mata::nft::Nft</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1parser_1_1ExplicitSectionReader.html">Class mata::parser::ExplicitSectionReader</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1parser_1_1MataWriter.html">Class mata::parser::MataWriter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1parser_1_1NewStates.html">Class mata::parser::NewStates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1parser_1_1StateNameMap.html">Class mata::parser::StateNameMap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1posts_1_1DeltaBase.html">Class mata::posts::DeltaBase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1posts_1_1DeltaTransitions.html">Class mata::posts::DeltaTransitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1posts_1_1DeltaTransitions_1_1const__iterator.html">Class mata::posts::DeltaTransitions::const_iterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1posts_1_1KeyedAccess.html">Class mata::posts::KeyedAccess</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1posts_1_1KeyedAccess_3_01D_00_01P_00_01std_1_1index__sequence_3_010_01_4_01_4.html">Class mata::posts::KeyedAccess&lt; D, P, std::index_sequence&lt; 0 &gt; &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1posts_1_1KeyedAccess_3_01D_00_01P_00_01std_1_1index__sequence_3_01KeyIdx_8_8_8_01_4_01_4.html">Class mata::posts::KeyedAccess&lt; D, P, std::index_sequence&lt; KeyIdx… &gt; &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1posts_1_1Move.html">Class mata::posts::Move</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Class mata::posts::Post</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1posts_1_1PostEntry.html">Class mata::posts::PostEntry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1posts_1_1PostMoves.html">Class mata::posts::PostMoves</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1posts_1_1PostMoves_1_1const__iterator.html">Class mata::posts::PostMoves::const_iterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1posts_1_1SuccessorCursor.html">Class mata::posts::SuccessorCursor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1posts_1_1SuccessorCursor_1_1const__iterator.html">Class mata::posts::SuccessorCursor::const_iterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1posts_1_1SuccessorCursor_3_01P_00_011_01_4.html">Class mata::posts::SuccessorCursor&lt; P, 1 &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1posts_1_1internal_1_1PostEntryCore.html">Class mata::posts::internal::PostEntryCore</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1LazyGenerator.html">Class mata::utils::LazyGenerator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1OrdVector.html">Class mata::utils::OrdVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SmallOrdVector.html">Class mata::utils::SmallOrdVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SparseSet.html">Class mata::utils::SparseSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SynchronizedExistentialIterator.html">Class mata::utils::SynchronizedExistentialIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SynchronizedIterator.html">Class mata::utils::SynchronizedIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1SynchronizedUniversalIterator.html">Class mata::utils::SynchronizedUniversalIterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="classmata_1_1utils_1_1TwoDimensionalMap.html">Class mata::utils::TwoDimensionalMap</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../structlist.html">Struct list</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../unionlist.html">Union list</a></li>
+</ul>
+
+
+<hr />
+<ul>
+    
+    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/">Mata website</a></li>
+    
+    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/docs/">All documentation</a></li>
+    
+    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/playground/">Playground</a></li>
+    
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../classlist.html">Class list</a><ul>
+      <li>Previous: <a href="classmata_1_1posts_1_1Move.html" title="previous chapter">Class mata::posts::Move</a></li>
+      <li>Next: <a href="classmata_1_1posts_1_1PostEntry.html" title="next chapter">Class mata::posts::PostEntry</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2025, Automata@FIT Group, BUT, FIT.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.2.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/class/classmata_1_1posts_1_1Post.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

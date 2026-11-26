@@ -1,0 +1,5 @@
+Class mata::posts::SuccessorCursor< P, 1 >
+==========================================
+
+.. doxygenclass:: mata::posts::SuccessorCursor< P, 1 >
+   :members:

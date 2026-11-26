@@ -1,0 +1,5 @@
+Struct mata::posts::KeyedTransitionTraits
+=========================================
+
+.. doxygenstruct:: mata::posts::KeyedTransitionTraits
+   :members:

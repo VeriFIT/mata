@@ -1,0 +1,5 @@
+Struct mata::posts::PostAt< P, 0 >
+==================================
+
+.. doxygenstruct:: mata::posts::PostAt< P, 0 >
+   :members:

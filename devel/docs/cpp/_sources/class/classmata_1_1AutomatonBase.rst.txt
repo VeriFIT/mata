@@ -1,0 +1,5 @@
+Class mata::AutomatonBase
+=========================
+
+.. doxygenclass:: mata::AutomatonBase
+   :members:

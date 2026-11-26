@@ -1,0 +1,5 @@
+Struct std::tuple_element< 1, mata::posts::PostEntry< K, N > >
+==============================================================
+
+.. doxygenstruct:: std::tuple_element< 1, mata::posts::PostEntry< K, N > >
+   :members:

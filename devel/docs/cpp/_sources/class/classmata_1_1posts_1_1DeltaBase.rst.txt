@@ -1,0 +1,5 @@
+Class mata::posts::DeltaBase
+============================
+
+.. doxygenclass:: mata::posts::DeltaBase
+   :members:

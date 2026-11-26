@@ -16,7 +16,7 @@ Mata automata library
    script-language
    cli
    contributing
-   automaton
+   core
    nfa
    nft
    alphabet

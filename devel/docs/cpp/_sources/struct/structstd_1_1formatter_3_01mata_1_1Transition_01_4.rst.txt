@@ -1,0 +1,5 @@
+Struct std::formatter< mata::Transition >
+=========================================
+
+.. doxygenstruct:: std::formatter< mata::Transition >
+   :members:

@@ -1,0 +1,5 @@
+Class mata::posts::SuccessorCursor::const_iterator
+==================================================
+
+.. doxygenclass:: mata::posts::SuccessorCursor::const_iterator
+   :members:

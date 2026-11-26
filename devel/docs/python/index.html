@@ -2863,6 +2863,8 @@ by jump-free algorithms such as <cite>noodlify_for_transducer</cite>.</p></li>
 <dt class="sig sig-object py" id="libmata.nft.nft.Nft.iterate">
 <span class="sig-name descname"><span class="pre">iterate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#libmata.nft.nft.Nft.iterate" title="Link to this definition">¶</a></dt>
 <dd><p>Iterates over all transitions.</p>
+<p>The transitions are read live: modifying the automaton while the generator runs invalidates the iterator,
+and the next advance raises <cite>RuntimeError</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>stream of transitions</p>

@@ -1,0 +1,5 @@
+Class mata::posts::PostMoves
+============================
+
+.. doxygenclass:: mata::posts::PostMoves
+   :members:

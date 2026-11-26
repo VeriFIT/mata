@@ -1,0 +1,5 @@
+Struct mata::posts::internal::is_tuple
+======================================
+
+.. doxygenstruct:: mata::posts::internal::is_tuple
+   :members:

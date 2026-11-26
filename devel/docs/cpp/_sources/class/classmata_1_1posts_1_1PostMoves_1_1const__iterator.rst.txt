@@ -1,0 +1,5 @@
+Class mata::posts::PostMoves::const_iterator
+============================================
+
+.. doxygenclass:: mata::posts::PostMoves::const_iterator
+   :members:

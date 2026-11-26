@@ -1,0 +1,5 @@
+Struct mata::posts::SuccessorCursor::Positions< std::index_sequence< KeyIdx... > >
+==================================================================================
+
+.. doxygenstruct:: mata::posts::SuccessorCursor::Positions< std::index_sequence< KeyIdx... > >
+   :members:

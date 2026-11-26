@@ -1,8 +1,10 @@
 Nondeterministic Finite Transducers
 ===================================
 
-The structural members and graph-only operations inherited by ``mata::nft::Nft``
-are documented in :doc:`automaton`.
+An ``mata::nft::Nft`` holds the same ``delta``, ``initial`` and ``final`` members as an NFA, all
+three inherited from ``mata::Automaton``, plus ``levels``, which gives each state its tape level,
+and ``alphabets``, which holds one alphabet per level. All of them appear among the members below.
+``mata::nft::Delta`` itself is documented in :doc:`core`.
 
 .. doxygenpage:: nft
 
@@ -12,11 +14,13 @@ Types
 
 NFT
 ---
-.. doxygenfile:: nft/nft.hh
+.. doxygenclass:: mata::nft::Nft
+   :members:
 
-Delta
------
-.. doxygenfile:: nft/delta.hh
+Functions
+---------
+.. doxygenfile:: nft/nft.hh
+   :sections: innernamespace func var typedef enum define
 
 Builder
 -------

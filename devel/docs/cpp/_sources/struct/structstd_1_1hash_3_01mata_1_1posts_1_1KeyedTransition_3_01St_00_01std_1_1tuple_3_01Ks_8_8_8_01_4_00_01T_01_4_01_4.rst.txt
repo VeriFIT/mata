@@ -1,0 +1,5 @@
+Struct std::hash< mata::posts::KeyedTransition< St, std::tuple< Ks... >, T > >
+==============================================================================
+
+.. doxygenstruct:: std::hash< mata::posts::KeyedTransition< St, std::tuple< Ks... >, T > >
+   :members:

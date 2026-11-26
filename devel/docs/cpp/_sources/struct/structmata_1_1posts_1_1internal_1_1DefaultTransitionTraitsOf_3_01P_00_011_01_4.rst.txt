@@ -1,0 +1,5 @@
+Struct mata::posts::internal::DefaultTransitionTraitsOf< P, 1 >
+===============================================================
+
+.. doxygenstruct:: mata::posts::internal::DefaultTransitionTraitsOf< P, 1 >
+   :members:

@@ -1,0 +1,5 @@
+Class mata::DeltaBuilder
+========================
+
+.. doxygenclass:: mata::DeltaBuilder
+   :members:

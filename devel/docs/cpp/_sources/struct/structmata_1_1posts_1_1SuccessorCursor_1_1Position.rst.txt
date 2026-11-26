@@ -1,0 +1,5 @@
+Struct mata::posts::SuccessorCursor::Position
+=============================================
+
+.. doxygenstruct:: mata::posts::SuccessorCursor::Position
+   :members:

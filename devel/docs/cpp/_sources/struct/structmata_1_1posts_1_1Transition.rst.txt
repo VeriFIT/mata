@@ -1,0 +1,5 @@
+Struct mata::posts::Transition
+==============================
+
+.. doxygenstruct:: mata::posts::Transition
+   :members:

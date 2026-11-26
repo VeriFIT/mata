@@ -1,0 +1,5 @@
+Class mata::posts::internal::PostEntryCore
+==========================================
+
+.. doxygenclass:: mata::posts::internal::PostEntryCore
+   :members:

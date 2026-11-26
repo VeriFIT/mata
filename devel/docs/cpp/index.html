@@ -89,14 +89,18 @@
 <li class="toctree-l2"><a class="reference internal" href="contributing.html#contributing-guidelines">Contributing guidelines</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="automaton.html">Automaton Interface</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="automaton.html#_CPPv44mata"><code class="docutils literal notranslate"><span class="pre">mata</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="core.html">Core</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="core.html#types">Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html#delta">Delta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html#automaton">Automaton</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html#the-shipped-relation">The shipped relation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html#concepts">Concepts</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="nfa.html">Nondeterministic Finite automata</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="nfa.html#types">Types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="nfa.html#id1">NFA</a></li>
-<li class="toctree-l2"><a class="reference internal" href="nfa.html#delta">Delta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nfa.html#functions">Functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="nfa.html#builder">Builder</a></li>
 <li class="toctree-l2"><a class="reference internal" href="nfa.html#algorithms">Algorithms</a></li>
 <li class="toctree-l2"><a class="reference internal" href="nfa.html#plumbing">Plumbing</a></li>
@@ -105,7 +109,7 @@
 <li class="toctree-l1"><a class="reference internal" href="nft.html">Nondeterministic Finite Transducers</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="nft.html#types">Types</a></li>
 <li class="toctree-l2"><a class="reference internal" href="nft.html#id1">NFT</a></li>
-<li class="toctree-l2"><a class="reference internal" href="nft.html#delta">Delta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nft.html#functions">Functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="nft.html#builder">Builder</a></li>
 <li class="toctree-l2"><a class="reference internal" href="nft.html#algorithms">Algorithms</a></li>
 <li class="toctree-l2"><a class="reference internal" href="nft.html#plumbing">Plumbing</a></li>
@@ -113,7 +117,6 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="alphabet.html">Alphabet</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="alphabet.html#_CPPv44mata"><code class="docutils literal notranslate"><span class="pre">mata</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="alphabet.html#_CPPv4St"><code class="docutils literal notranslate"><span class="pre">std</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a><ul>
@@ -147,15 +150,20 @@
 <li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1nft_1_1internal.html">Namespace mata::nft::internal</a></li>
 <li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1nft_1_1plumbing.html">Namespace mata::nft::plumbing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1parser.html">Namespace mata::parser</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1posts.html">Namespace mata::posts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1posts_1_1internal.html">Namespace mata::posts::internal</a></li>
 <li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1utils.html">Namespace mata::utils</a></li>
 <li class="toctree-l2"><a class="reference internal" href="namespace/namespacestd.html">Namespace std</a></li>
+<li class="toctree-l2"><a class="reference internal" href="namespace/namespaceutils.html">Namespace utils</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="classlist.html">Class list</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1Alphabet.html">Class mata::Alphabet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1AlphabetLevels.html">Class mata::AlphabetLevels</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1Automaton.html">Class mata::Automaton</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1AutomatonBase.html">Class mata::AutomatonBase</a></li>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1BoolVector.html">Class mata::BoolVector</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1Delta.html">Class mata::Delta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1DeltaBuilder.html">Class mata::DeltaBuilder</a></li>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1EnumAlphabet.html">Class mata::EnumAlphabet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1FormulaGraph.html">Class mata::FormulaGraph</a></li>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1FormulaGraphChildren.html">Class mata::FormulaGraphChildren</a></li>
@@ -167,23 +175,14 @@
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1Mintermization.html">Class mata::Mintermization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1NameStore.html">Class mata::NameStore</a></li>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1OnTheFlyAlphabet.html">Class mata::OnTheFlyAlphabet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1StatePost.html">Class mata::StatePost</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1SymbolPost.html">Class mata::SymbolPost</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1SynchronizedExistentialSymbolPostIterator.html">Class mata::SynchronizedExistentialSymbolPostIterator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1applications_1_1strings_1_1ShortestWordsMap.html">Class mata::applications::strings::ShortestWordsMap</a></li>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace.html">Class mata::applications::strings::replace::ReluctantReplace</a></li>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation.html">Class mata::applications::strings::seg_nfa::Segmentation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1LazyView.html">Class mata::applications::strings::seg_nfa::Segmentation::LazyView</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nfa_1_1Delta.html">Class mata::nfa::Delta</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nfa_1_1DeltaBuilder.html">Class mata::nfa::DeltaBuilder</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nfa_1_1Delta_1_1Transitions.html">Class mata::nfa::Delta::Transitions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nfa_1_1Delta_1_1Transitions_1_1const__iterator.html">Class mata::nfa::Delta::Transitions::const_iterator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nfa_1_1Move.html">Class mata::nfa::Move</a></li>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nfa_1_1Nfa.html">Class mata::nfa::Nfa</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nfa_1_1StatePost.html">Class mata::nfa::StatePost</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nfa_1_1StatePost_1_1Moves.html">Class mata::nfa::StatePost::Moves</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nfa_1_1StatePost_1_1Moves_1_1const__iterator.html">Class mata::nfa::StatePost::Moves::const_iterator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nfa_1_1SuccessorCursor.html">Class mata::nfa::SuccessorCursor</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nfa_1_1SuccessorCursor_1_1const__iterator.html">Class mata::nfa::SuccessorCursor::const_iterator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nfa_1_1SymbolPost.html">Class mata::nfa::SymbolPost</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nfa_1_1SynchronizedExistentialSymbolPostIterator.html">Class mata::nfa::SynchronizedExistentialSymbolPostIterator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nfa_1_1algorithms_1_1ExternalSolverNotFound.html">Class mata::nfa::algorithms::ExternalSolverNotFound</a></li>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nfa_1_1builder_1_1BitvectorNfaReader.html">Class mata::nfa::builder::BitvectorNfaReader</a></li>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nfa_1_1internal_1_1ProcessedAntichain.html">Class mata::nfa::internal::ProcessedAntichain</a></li>
@@ -194,6 +193,21 @@
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1parser_1_1MataWriter.html">Class mata::parser::MataWriter</a></li>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1parser_1_1NewStates.html">Class mata::parser::NewStates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1parser_1_1StateNameMap.html">Class mata::parser::StateNameMap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1DeltaBase.html">Class mata::posts::DeltaBase</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1DeltaTransitions.html">Class mata::posts::DeltaTransitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1DeltaTransitions_1_1const__iterator.html">Class mata::posts::DeltaTransitions::const_iterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1KeyedAccess.html">Class mata::posts::KeyedAccess</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1KeyedAccess_3_01D_00_01P_00_01std_1_1index__sequence_3_010_01_4_01_4.html">Class mata::posts::KeyedAccess&lt; D, P, std::index_sequence&lt; 0 &gt; &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1KeyedAccess_3_01D_00_01P_00_01std_1_1index__sequence_3_01KeyIdx_8_8_8_01_4_01_4.html">Class mata::posts::KeyedAccess&lt; D, P, std::index_sequence&lt; KeyIdx… &gt; &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1Move.html">Class mata::posts::Move</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1Post.html">Class mata::posts::Post</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1PostEntry.html">Class mata::posts::PostEntry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1PostMoves.html">Class mata::posts::PostMoves</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1PostMoves_1_1const__iterator.html">Class mata::posts::PostMoves::const_iterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1SuccessorCursor.html">Class mata::posts::SuccessorCursor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1SuccessorCursor_1_1const__iterator.html">Class mata::posts::SuccessorCursor::const_iterator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1SuccessorCursor_3_01P_00_011_01_4.html">Class mata::posts::SuccessorCursor&lt; P, 1 &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1internal_1_1PostEntryCore.html">Class mata::posts::internal::PostEntryCore</a></li>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1utils_1_1LazyGenerator.html">Class mata::utils::LazyGenerator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1utils_1_1OrdVector.html">Class mata::utils::OrdVector</a></li>
 <li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1utils_1_1SmallOrdVector.html">Class mata::utils::SmallOrdVector</a></li>
@@ -205,33 +219,37 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="structlist.html">Struct list</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1Automaton_1_1TarjanDiscoverCallback.html">Struct mata::Automaton::TarjanDiscoverCallback</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1AutomatonBase_1_1TarjanDiscoverCallback.html">Struct mata::AutomatonBase::TarjanDiscoverCallback</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1ClosedSet.html">Struct mata::ClosedSet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1FormulaGraphEntry.html">Struct mata::FormulaGraphEntry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1Limits.html">Struct mata::Limits</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1Mintermization_1_1Checkpoint.html">Struct mata::Mintermization::Checkpoint</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1Mintermization_1_1MintermPartition.html">Struct mata::Mintermization::MintermPartition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1Move.html">Struct mata::Move</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1NameStore_1_1Chunk.html">Struct mata::NameStore::Chunk</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1NameStore_1_1Range.html">Struct mata::NameStore::Range</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols.html">Struct mata::OnTheFlyAlphabet::SortedSymbols</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1OnTheFlyAlphabet_1_1SymbolNames.html">Struct mata::OnTheFlyAlphabet::SymbolNames</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1PostWorkspace.html">Struct mata::PostWorkspace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1ReservedKeys.html">Struct mata::ReservedKeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1Run.html">Struct mata::Run</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1TargetTraits.html">Struct mata::TargetTraits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1Transition.html">Struct mata::Transition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1TransitionTraits.html">Struct mata::TransitionTraits</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1applications_1_1strings_1_1seg__nfa_1_1NoodleOrder.html">Struct mata::applications::strings::seg_nfa::NoodleOrder</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1applications_1_1strings_1_1seg__nfa_1_1NoodleSegment.html">Struct mata::applications::strings::seg_nfa::NoodleSegment</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1EpsilonTransitionSpan.html">Struct mata::applications::strings::seg_nfa::Segmentation::EpsilonTransitionSpan</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1StateDepthTuple.html">Struct mata::applications::strings::seg_nfa::Segmentation::StateDepthTuple</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1Worklist.html">Struct mata::applications::strings::seg_nfa::Segmentation::Worklist</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement.html">Struct mata::applications::strings::seg_nfa::TransducerNoodleElement</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nfa_1_1Limits.html">Struct mata::nfa::Limits</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nfa_1_1PostWorkspace.html">Struct mata::nfa::PostWorkspace</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nfa_1_1Run.html">Struct mata::nfa::Run</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nfa_1_1Transition.html">Struct mata::nfa::Transition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1internal_1_1TarjanCallbacks.html">Struct mata::internal::TarjanCallbacks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1internal_1_1TarjanNodeData.html">Struct mata::internal::TarjanNodeData</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nfa_1_1algorithms_1_1FourRussiansOptions.html">Struct mata::nfa::algorithms::FourRussiansOptions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nfa_1_1bool__pack.html">Struct mata::nfa::bool_pack</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nfa_1_1internal_1_1Node.html">Struct mata::nfa::internal::Node</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nfa_1_1internal_1_1ProcessedAntichain_1_1Bucket.html">Struct mata::nfa::internal::ProcessedAntichain::Bucket</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nfa_1_1internal_1_1ProcessedAntichain_1_1Entry.html">Struct mata::nfa::internal::ProcessedAntichain::Entry</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nfa_1_1internal_1_1Step.html">Struct mata::nfa::internal::Step</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nfa_1_1internal_1_1TarjanCallbacks.html">Struct mata::nfa::internal::TarjanCallbacks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nfa_1_1internal_1_1TarjanNodeData.html">Struct mata::nfa::internal::TarjanNodeData</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nft_1_1BoolPack.html">Struct mata::nft::BoolPack</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nft_1_1algorithms_1_1CompositionSchedule.html">Struct mata::nft::algorithms::CompositionSchedule</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nft_1_1algorithms_1_1CompositionSchedule_1_1Position.html">Struct mata::nft::algorithms::CompositionSchedule::Position</a></li>
@@ -239,6 +257,25 @@
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1parser_1_1ExplicitToken.html">Struct mata::parser::ExplicitToken</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1parser_1_1ParsedSection.html">Struct mata::parser::ParsedSection</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1parser_1_1Re2Options.html">Struct mata::parser::Re2Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1KeyedTransition.html">Struct mata::posts::KeyedTransition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1KeyedTransitionTraits.html">Struct mata::posts::KeyedTransitionTraits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1PostAt.html">Struct mata::posts::PostAt</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1PostAt_3_01P_00_010_01_4.html">Struct mata::posts::PostAt&lt; P, 0 &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1PostTraits.html">Struct mata::posts::PostTraits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1SuccessorCursor_1_1Position.html">Struct mata::posts::SuccessorCursor::Position</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1SuccessorCursor_1_1Positions.html">Struct mata::posts::SuccessorCursor::Positions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1SuccessorCursor_1_1Positions_3_01std_1_1index__sequence_3_01KeyIdx_8_8_8_01_4_01_4.html">Struct mata::posts::SuccessorCursor::Positions&lt; std::index_sequence&lt; KeyIdx… &gt; &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1SymbolTransitionTraits.html">Struct mata::posts::SymbolTransitionTraits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1Transition.html">Struct mata::posts::Transition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1internal_1_1Chain.html">Struct mata::posts::internal::Chain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1internal_1_1Chain_3_01K_00_01Rest_8_8_8_01_4.html">Struct mata::posts::internal::Chain&lt; K, Rest… &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1internal_1_1Chain_3_01R_00_01Rest_8_8_8_01_4.html">Struct mata::posts::internal::Chain&lt; R, Rest… &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1internal_1_1Chain_3_01Targets_01_4.html">Struct mata::posts::internal::Chain&lt; Targets &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1internal_1_1DefaultTransitionTraitsOf.html">Struct mata::posts::internal::DefaultTransitionTraitsOf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1internal_1_1DefaultTransitionTraitsOf_3_01P_00_011_01_4.html">Struct mata::posts::internal::DefaultTransitionTraitsOf&lt; P, 1 &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1internal_1_1MoveTypeOf.html">Struct mata::posts::internal::MoveTypeOf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1internal_1_1is__tuple.html">Struct mata::posts::internal::is_tuple</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1internal_1_1is__tuple_3_01std_1_1tuple_3_01Ts_8_8_8_01_4_01_4.html">Struct mata::posts::internal::is_tuple&lt; std::tuple&lt; Ts… &gt; &gt;</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1utils_1_1DeltaAllocator.html">Struct mata::utils::DeltaAllocator</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1utils_1_1PairHash.html">Struct mata::utils::PairHash</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1utils_1_1SetHash.html">Struct mata::utils::SetHash</a></li>
@@ -250,11 +287,19 @@
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1utils_1_1TwoDimensionalMap_1_1SparseSlot.html">Struct mata::utils::TwoDimensionalMap::SparseSlot</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1utils_1_1VectorHash.html">Struct mata::utils::VectorHash</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1utils_1_1sorted__unique__t.html">Struct mata::utils::sorted_unique_t</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1hash_3_01mata_1_1nfa_1_1Transition_01_4.html">Struct std::hash&lt; mata::nfa::Transition &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1formatter_3_01mata_1_1Transition_01_4.html">Struct std::formatter&lt; mata::Transition &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1formatter_3_01mata_1_1posts_1_1KeyedTransition_3_01St_00_01std_1_1tuple_3_01Ks_8_8_8_01_4_00_01T_01_4_01_4.html">Struct std::formatter&lt; mata::posts::KeyedTransition&lt; St, std::tuple&lt; Ks… &gt;, T &gt; &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1formatter_3_01mata_1_1posts_1_1Transition_3_01St_00_01K_00_01T_01_4_01_4.html">Struct std::formatter&lt; mata::posts::Transition&lt; St, K, T &gt; &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1hash_3_01mata_1_1Transition_01_4.html">Struct std::hash&lt; mata::Transition &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1hash_3_01mata_1_1posts_1_1KeyedTransition_3_01St_00_01std_1_1tuple_3_01Ks_8_8_8_01_4_00_01T_01_4_01_4.html">Struct std::hash&lt; mata::posts::KeyedTransition&lt; St, std::tuple&lt; Ks… &gt;, T &gt; &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1hash_3_01mata_1_1posts_1_1Transition_3_01St_00_01K_00_01T_01_4_01_4.html">Struct std::hash&lt; mata::posts::Transition&lt; St, K, T &gt; &gt;</a></li>
 <li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1hash_3_01mata_1_1utils_1_1OrdVector_3_01Key_00_01Allocator_01_4_01_4.html">Struct std::hash&lt; mata::utils::OrdVector&lt; Key, Allocator &gt; &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1tuple__element_3_010_00_01mata_1_1nfa_1_1SymbolPost_01_4.html">Struct std::tuple_element&lt; 0, mata::nfa::SymbolPost &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1tuple__element_3_011_00_01mata_1_1nfa_1_1SymbolPost_01_4.html">Struct std::tuple_element&lt; 1, mata::nfa::SymbolPost &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1tuple__size_3_01mata_1_1nfa_1_1SymbolPost_01_4.html">Struct std::tuple_size&lt; mata::nfa::SymbolPost &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1tuple__element_3_010_00_01mata_1_1SymbolPost_01_4.html">Struct std::tuple_element&lt; 0, mata::SymbolPost &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1tuple__element_3_010_00_01mata_1_1posts_1_1PostEntry_3_01K_00_01N_01_4_01_4.html">Struct std::tuple_element&lt; 0, mata::posts::PostEntry&lt; K, N &gt; &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1tuple__element_3_011_00_01mata_1_1SymbolPost_01_4.html">Struct std::tuple_element&lt; 1, mata::SymbolPost &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1tuple__element_3_011_00_01mata_1_1posts_1_1PostEntry_3_01K_00_01N_01_4_01_4.html">Struct std::tuple_element&lt; 1, mata::posts::PostEntry&lt; K, N &gt; &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1tuple__size_3_01mata_1_1SymbolPost_01_4.html">Struct std::tuple_size&lt; mata::SymbolPost &gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1tuple__size_3_01mata_1_1posts_1_1PostEntry_3_01K_00_01N_01_4_01_4.html">Struct std::tuple_size&lt; mata::posts::PostEntry&lt; K, N &gt; &gt;</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="unionlist.html">Union list</a><ul>
@@ -306,7 +351,7 @@
 <li class="toctree-l1"><a class="reference internal" href="script-language.html">(Auto)Mata Script Language</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cli.html">The <code class="docutils literal notranslate"><span class="pre">mata</span></code> command</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="automaton.html">Automaton Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core.html">Core</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nfa.html">Nondeterministic Finite automata</a></li>
 <li class="toctree-l1"><a class="reference internal" href="nft.html">Nondeterministic Finite Transducers</a></li>
 <li class="toctree-l1"><a class="reference internal" href="alphabet.html">Alphabet</a></li>

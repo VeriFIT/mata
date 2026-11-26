@@ -1,0 +1,5 @@
+Class mata::posts::KeyedAccess
+==============================
+
+.. doxygenclass:: mata::posts::KeyedAccess
+   :members:

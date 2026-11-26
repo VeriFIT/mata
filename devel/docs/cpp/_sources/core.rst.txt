@@ -1,0 +1,77 @@
+Core
+====
+
+The generic machinery: the post templates, the visits and the cursor, the concepts, and the
+structural operations that belong to no particular automaton class. Nothing here depends on a
+concrete relation: no header in ``core/`` includes the one this library ships, and its comments name
+it only as an example. A third party building their own relation therefore compiles all of this
+without inheriting ``mata::Delta``. ``tests/core/core-only.cc`` holds ``core/`` to that, and builds an
+automaton from ``core/`` alone over keys and states that are not ``mata::Symbol`` and ``mata::State``.
+
+That one lives in :ref:`relation`, and :doc:`nfa` and :doc:`nft` re-export it through their own
+seams, so ``mata::nfa::Delta`` and ``mata::Delta`` currently name the same type.
+
+Types
+-----
+.. doxygenfile:: mata/types.hh
+
+Delta
+-----
+The relation is split into one header per layer, and ``core/delta.hh`` includes them all, so
+including it is enough.
+
+.. doxygenfile:: core/traits.hh
+.. doxygenfile:: core/transition.hh
+.. doxygenfile:: core/visits.hh
+.. doxygenfile:: core/moves.hh
+.. doxygenfile:: core/post.hh
+.. doxygenfile:: core/cursor.hh
+.. doxygenfile:: core/delta.hh
+
+Automaton
+---------
+``mata::AutomatonBase`` owns ``delta``, ``initial`` and ``final`` together with the graph-only
+operations over them. It is parameterised by the transition relation and reads ``State``, ``Target``
+and ``key_arity`` off it, so the two cannot disagree. It is a base class rather than one
+instantiated directly, and its members are documented as part of :doc:`nfa` and :doc:`nft`, which is
+where you will use them. The alias every automaton in the tree actually derives from,
+``mata::Automaton``, is in :ref:`relation` with the relation it is built on.
+
+.. doxygenfile:: core/automaton.hh
+
+.. _relation:
+
+The shipped relation
+--------------------
+Everything above is generic. This is the one instantiation the library ships — ``mata::Delta`` and
+the aliases around it, depth 2, symbols keying states — kept out of ``core/`` so that "does core
+name a concrete relation?" has an answer, and the answer is no.
+
+.. doxygenfile:: relation.hh
+
+Concepts
+--------
+What a transition relation has to provide for ``mata::AutomatonBase`` to work over it: a graph over
+states, with no keys and no post.
+
+.. doxygenfile:: core/concepts.hh
+
+``doxygenfile`` does not render concept declarations, so each one is named explicitly below.
+
+.. doxygenconcept:: mata::DeltaLike
+.. doxygenconcept:: mata::SuccessorCursorLike
+.. doxygenconcept:: mata::AutomatonWithRuns
+.. doxygenconcept:: mata::ExtensibleAlphabet
+.. doxygenconcept:: mata::Printable
+
+Post vocabulary
+~~~~~~~~~~~~~~~
+What ``mata::posts::DeltaBase`` and the visits need of a chain of posts, including where a post's
+reserved keys begin. A relation built some other way does not need them.
+
+.. doxygenconcept:: mata::posts::IterableRange
+.. doxygenconcept:: mata::posts::TargetSetLike
+.. doxygenconcept:: mata::posts::PostEntryLike
+.. doxygenconcept:: mata::posts::ReservedKeysLike
+.. doxygenconcept:: mata::posts::SortedWithReservedKeys
+.. doxygenconcept:: mata::posts::PostLike

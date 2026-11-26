@@ -1,0 +1,5 @@
+Class mata::posts::PostEntry
+============================
+
+.. doxygenclass:: mata::posts::PostEntry
+   :members:

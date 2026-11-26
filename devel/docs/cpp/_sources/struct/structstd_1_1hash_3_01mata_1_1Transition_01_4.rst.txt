@@ -1,0 +1,5 @@
+Struct std::hash< mata::Transition >
+====================================
+
+.. doxygenstruct:: std::hash< mata::Transition >
+   :members:

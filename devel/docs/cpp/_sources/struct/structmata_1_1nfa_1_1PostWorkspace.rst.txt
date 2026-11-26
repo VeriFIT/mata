@@ -1,5 +1,0 @@
-Struct mata::nfa::PostWorkspace
-===============================
-
-.. doxygenstruct:: mata::nfa::PostWorkspace
-   :members:

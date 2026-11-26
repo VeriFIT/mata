@@ -1,0 +1,5 @@
+Namespace mata::posts::internal
+===============================
+
+.. doxygennamespace:: mata::posts::internal
+   :members:

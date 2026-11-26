@@ -1,0 +1,5 @@
+Class mata::posts::DeltaTransitions
+===================================
+
+.. doxygenclass:: mata::posts::DeltaTransitions
+   :members:

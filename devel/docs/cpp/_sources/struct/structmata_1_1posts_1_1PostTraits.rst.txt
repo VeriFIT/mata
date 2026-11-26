@@ -1,0 +1,5 @@
+Struct mata::posts::PostTraits
+==============================
+
+.. doxygenstruct:: mata::posts::PostTraits
+   :members:
