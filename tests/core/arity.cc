@@ -485,7 +485,9 @@ TEST_CASE("mata::posts::DeltaBase::get_successors - the target set, at any arity
 		Delta delta{};
 		delta.add(0, 1, 5);
 		delta.add(0, 1, 6);
-		CHECK(&delta.get_successors(0, 1) == &delta.state_post(0).find(1)->targets);
+		const auto symbol_post{delta.state_post(0).find(1)};
+		REQUIRE(symbol_post != delta.state_post(0).end());
+		CHECK(&delta.get_successors(0, 1) == &symbol_post->targets);
 		CHECK(delta.get_successors(0, 1) == StateSet{5, 6});
 		CHECK(delta.get_successors(0, 2).empty()); // The static empty set.
 	}
@@ -516,10 +518,17 @@ TEST_CASE("mata::posts::PostEntry - structured bindings at arity 1") {
 	}
 
 	SECTION("a forwarding binding of an rvalue moves") {
+		// An rvalue entry hands out its fields as rvalues, so the binding refers to the field itself.
+		static_assert(std::same_as<decltype(std::move(entry).get<1>()), SmallStateSet&&>);
 		auto&& [symbol, targets] = std::move(entry);
-		StateSet moved{std::move(targets)};
+		static_assert(std::same_as<decltype((targets)), SmallStateSet&>); // A named binding is an lvalue.
+		CHECK(&targets == &entry.targets);
+
+		// Moving into the same type steals the targets, so the entry is left without them.
+		SmallStateSet moved{std::move(targets)};
 		CHECK(symbol == 1);
 		CHECK(moved == StateSet{5, 6});
+		CHECK(entry.targets.empty());
 	}
 
 	SECTION("over a post, as range-for") {
