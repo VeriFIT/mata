@@ -105,8 +105,8 @@
 <a href=#105 id=105 data-nosnippet>105</a>
 <a href=#106 id=106 data-nosnippet>106</a>	<span class="doccomment">/// Fails with [`StateLimit`](crate::Error::StateLimit) once the query holds more than `max_states` macrostates,
 <a href=#107 id=107 data-nosnippet>107</a>	/// so a query that answers holds at most `max_states`. The successors of a macrostate are counted step by step, a
-<a href=#108 id=108 data-nosnippet>108</a>	/// step being a move of a product's left operand or a tuple of a complement. A query stops after the step that
-<a href=#109 id=109 data-nosnippet>109</a>	/// passes the limit, and a step of a product can create one macrostate per matching move of the right operand.
+<a href=#108 id=108 data-nosnippet>108</a>	/// step being a move of a product's left operand or a symbolic region of a complement. A query stops after the
+<a href=#109 id=109 data-nosnippet>109</a>	/// step that passes the limit, and a step of a product can create one macrostate per matching right move.
 <a href=#110 id=110 data-nosnippet>110</a>	</span><span class="attr">#[must_use]
 <a href=#111 id=111 data-nosnippet>111</a>	</span><span class="kw">pub fn </span>max_states(<span class="kw-2">mut </span><span class="self">self</span>, max_states: usize) -&gt; Options {
 <a href=#112 id=112 data-nosnippet>112</a>		<span class="self">self</span>.max_states = <span class="prelude-val">Some</span>(max_states);
