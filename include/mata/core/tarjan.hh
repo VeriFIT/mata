@@ -15,6 +15,7 @@
 
 #include <iterator>
 
+#include "mata/core/concepts.hh"
 #include "mata/utils/sparse-set.hh"
 
 namespace mata::internal {
@@ -46,7 +47,9 @@ struct TarjanCallbacks {
 
 template <typename Delta> struct TarjanNodeData {
 	using State = typename Delta::State;
-	using SuccessorIterator = decltype(std::declval<const Delta&>().successor_cursor(std::declval<State>()).begin());
+	using Cursor = decltype(std::declval<const Delta&>().successor_cursor(std::declval<State>()));
+	/// The iterator type SuccessorCursorLike checks: by value, from begin() on a const cursor.
+	using SuccessorIterator = CursorIterator<Cursor>;
 	SuccessorIterator current_successor_it{};
 	unsigned long index{0};
 	unsigned long lowlink{0};
@@ -55,11 +58,18 @@ template <typename Delta> struct TarjanNodeData {
 
 	TarjanNodeData() = default;
 	TarjanNodeData(const State state, const Delta& delta, const unsigned long index)
-		: current_successor_it{delta.successor_cursor(state).begin()},
+		: current_successor_it{first_successor(delta, state)},
 		  index{index},
 		  lowlink{index},
 		  initialized{true},
 		  on_stack{true} {}
+
+  private:
+	/// Calls the begin() that SuccessorCursorLike checks. The iterator outlives the cursor, as the concept requires.
+	static SuccessorIterator first_successor(const Delta& delta, const State state) {
+		const Cursor cursor{delta.successor_cursor(state)};
+		return cursor.begin();
+	}
 };
 
 /**
