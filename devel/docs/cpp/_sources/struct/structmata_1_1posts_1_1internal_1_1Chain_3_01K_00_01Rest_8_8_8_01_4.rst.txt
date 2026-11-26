@@ -1,5 +1,0 @@
-Struct mata::posts::internal::Chain< K, Rest... >
-=================================================
-
-.. doxygenstruct:: mata::posts::internal::Chain< K, Rest... >
-   :members:

@@ -1,0 +1,28 @@
+var searchData=
+[
+  ['features_0',['New Features',['../contributing.html#new-features',1,'']]],
+  ['file_20format_20for_20automata_20mata_20format_1',['The Mata file format for automata (.mata format)',['../automata-format.html',1,'']]],
+  ['file_20structure_2',['Top-level file structure',['../automata-format.html#top-level-file-structure',1,'']]],
+  ['finite_20automata_3',['finite automata',['../automata-format.html#afa-alternating-finite-automata',1,'AFA (Alternating finite automata)'],['../automata-format.html#nfa-nondeterministic-finite-automata',1,'NFA (Nondeterministic finite automata)']]],
+  ['finite_20automata_20nfas_4',['Nondeterministic Finite Automata (NFAs)',['../nfa.html',1,'']]],
+  ['finite_20transducers_20nfts_5',['Nondeterministic Finite Transducers (NFTs)',['../nft.html',1,'']]],
+  ['first_20example_6',['A first example',['../script-language.html#a-first-example',1,'']]],
+  ['fixes_7',['Bug Fixes',['../contributing.html#bug-fixes',1,'']]],
+  ['for_20automata_20mata_20format_8',['The Mata file format for automata (.mata format)',['../automata-format.html',1,'']]],
+  ['for_20gcov_9',['Instrumenting the benchmarks for gcov',['../benchmarking.html#instrumenting-the-benchmarks-for-gcov',1,'']]],
+  ['for_20maintainers_10',['For maintainers',['../contributing.html#for-maintainers',1,'']]],
+  ['for_20profiling_20performance_20and_20integration_20testing_20of_20the_20mata_20library_11',['Guidelines for Profiling, Performance, and Integration Testing of the Mata library',['../benchmarking.html',1,'']]],
+  ['format_12',['format',['../automata-format.html#how-the-mata-library-reads-the-format',1,'How the Mata library reads the format'],['../automata-format.html',1,'The Mata file format for automata (.mata format)'],['../contributing.html#todo-and-similar-message-format',1,'TODO and similar message format']]],
+  ['format_20for_20automata_20mata_20format_13',['The Mata file format for automata (.mata format)',['../automata-format.html',1,'']]],
+  ['formatting_14',['Code Formatting',['../contributing.html#code-formatting',1,'']]],
+  ['formulas_20and_20relations_20over_20symbols_20and_20transducer_20track_20names_15',['Special formulas and relations over symbols and transducer track names.',['../automata-format.html#special-formulas-and-relations-over-symbols-and-transducer-track-names',1,'']]],
+  ['from_20crates_20io_16',['Installation from crates.io',['../index.html#installation-from-cratesio',1,'']]],
+  ['from_20github_17',['Download pre-built binaries from GitHub',['../index.html#download-pre-built-binaries-from-github',1,'']]],
+  ['from_20pypi_18',['Installation from PyPI',['../index.html#installation-from-pypi',1,'']]],
+  ['from_20sources_19',['Building and installing from sources',['../index.html#building-and-installing-from-sources',1,'']]],
+  ['from_20sources_20python_20',['Building from sources (Python)',['../index.html#building-from-sources-python',1,'']]],
+  ['from_20sources_20rust_21',['Building from sources (Rust)',['../index.html#building-from-sources-rust',1,'']]],
+  ['functions_22',['Functions',['../script-language.html#functions',1,'']]],
+  ['functions_23',['Core functions',['../script-language.html#core-functions',1,'']]],
+  ['functions_20and_20conditionals_24',['Definitions, functions and conditionals',['../script-language.html#definitions-functions-and-conditionals',1,'']]]
+];

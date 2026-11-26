@@ -1,5 +1,0 @@
-Class mata::NameStore
-=====================
-
-.. doxygenclass:: mata::NameStore
-   :members:

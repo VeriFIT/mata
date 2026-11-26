@@ -1,5 +1,0 @@
-Struct mata::utils::DeltaAllocator
-==================================
-
-.. doxygenstruct:: mata::utils::DeltaAllocator
-   :members:

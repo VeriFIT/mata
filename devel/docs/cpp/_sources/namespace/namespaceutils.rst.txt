@@ -1,5 +1,0 @@
-Namespace utils
-===============
-
-.. doxygennamespace:: utils
-   :members:

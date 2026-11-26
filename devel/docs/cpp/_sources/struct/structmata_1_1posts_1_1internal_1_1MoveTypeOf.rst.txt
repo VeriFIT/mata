@@ -1,5 +1,0 @@
-Struct mata::posts::internal::MoveTypeOf
-========================================
-
-.. doxygenstruct:: mata::posts::internal::MoveTypeOf
-   :members:

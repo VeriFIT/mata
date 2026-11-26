@@ -1,0 +1,28 @@
+var namespacemata_1_1applications_1_1strings_1_1seg__nfa =
+[
+    [ "Segmentation", "classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation.html", "classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation" ],
+    [ "NoodleSegment", "structmata_1_1applications_1_1strings_1_1seg__nfa_1_1NoodleSegment.html", "structmata_1_1applications_1_1strings_1_1seg__nfa_1_1NoodleSegment" ],
+    [ "TransducerNoodleElement", "structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement.html", "structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement" ],
+    [ "NoodleOrder", "structmata_1_1applications_1_1strings_1_1seg__nfa_1_1NoodleOrder.html", "structmata_1_1applications_1_1strings_1_1seg__nfa_1_1NoodleOrder" ],
+    [ "Noodle", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#a7cf5285f90b153832df287aa2e4bd24f", null ],
+    [ "NoodleWithEpsilonsCounter", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#a62c74653753a9cd0ab63a797e88293aa", null ],
+    [ "SegmentWithEpsilonsCounter", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#a386e19d95726fd740becbd1aa3866fe8", null ],
+    [ "SegNfa", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#a6ab24ef42999494f3864006e4962607c", null ],
+    [ "TransducerNoodle", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#a11783839c9ff931f3c06fc1c63df32c0", null ],
+    [ "VisitedEpsilonsCounterMap", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#aa47d2a4ae0b3c240e9aea6dd8de61c82", null ],
+    [ "VisitedEpsilonsCounterVector", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#a4d54c4713beda3a0706a81dc0b7b495d", null ],
+    [ "VisitedEpsMap", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#a2418d064f88e93d1b86b4ebc681dedfb", null ],
+    [ "noodlify", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#acfff4e3bd5a08c2836f3908be0c5c2b4", null ],
+    [ "noodlify_for_equation", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#abd6cda9dd44bc1a32b778536fcc83b2d", null ],
+    [ "noodlify_for_equation", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#aead268afaf475559653e4c4ae4d08e60", null ],
+    [ "noodlify_for_equation", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#ada5fb04eff152cc9e0fe58df044a8e3d", null ],
+    [ "noodlify_for_equation_lazy_ptr", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#ab20077aae3811e17e8f8dac1889715d5", null ],
+    [ "noodlify_for_equation_lazy_ptr", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#aa30cac2d7f75786a2543012ba7af08c6", null ],
+    [ "noodlify_for_transducer", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#a6d93ee4d55facee0ee2c8fb66ccc09b2", null ],
+    [ "noodlify_for_transducer_lazy_ptr", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#a020450d17e27523a31aad5e657690106", null ],
+    [ "noodlify_lazy_ptr", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#a3f25295f7494a5817ffb45a524b6547a", null ],
+    [ "noodlify_mult_eps", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#abd5467bf7deb40ad36fc45b20d87226b", null ],
+    [ "noodlify_mult_eps_lazy_ptr", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#a33dbe65c23e9ba408f529a7c26e7fb81", null ],
+    [ "process_eps_map", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#aff7505a18ab635bf1861a49388ed9fe6", null ],
+    [ "segs_one_initial_final", "namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#aa81eb0eadb19ddfc24db3c666fbe2b96", null ]
+];

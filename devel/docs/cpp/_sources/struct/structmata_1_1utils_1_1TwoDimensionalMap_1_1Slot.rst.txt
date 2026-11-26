@@ -1,5 +1,0 @@
-Struct mata::utils::TwoDimensionalMap::Slot
-===========================================
-
-.. doxygenstruct:: mata::utils::TwoDimensionalMap::Slot
-   :members:

@@ -1,0 +1,26 @@
+var searchData=
+[
+  ['valid_0',['valid',['../structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols.html#a6a1c56a30fef59e8f25234c41362acc8',1,'mata::OnTheFlyAlphabet::SortedSymbols']]],
+  ['validate_5fnft_5flevels_1',['validate_nft_levels',['../namespacemata_1_1nft_1_1internal.html#addc7cf75137de11787b97822a323c8b1',1,'mata::nft::internal']]],
+  ['value_2',['value',['../structmata_1_1utils_1_1TwoDimensionalMap_1_1SparseSlot.html#a4fc7f59e3113e19697159919a5aad095',1,'mata::utils::TwoDimensionalMap::SparseSlot::value'],['../structmata_1_1utils_1_1TwoDimensionalMap_1_1Slot.html#a4fc7f59e3113e19697159919a5aad095',1,'mata::utils::TwoDimensionalMap::Slot::value']]],
+  ['value_5f_3',['value_',['../classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1LazyView.html#ae496c0f6edafccdab7ef2e2b9d0c7e03',1,'mata::applications::strings::seg_nfa::Segmentation::LazyView']]],
+  ['value_5ftype_4',['value_type',['../classmata_1_1posts_1_1PostMoves_1_1const__iterator.html#a35d8bffdb74d0ed79aa691d0bee7e6d0',1,'mata::posts::PostMoves::const_iterator::value_type'],['../classmata_1_1posts_1_1DeltaTransitions_1_1const__iterator.html#a71c0955a64c8718760be2de82d4ca579',1,'mata::posts::DeltaTransitions::const_iterator::value_type'],['../structmata_1_1utils_1_1DeltaAllocator.html#afb9ded5f49336ae503bb9f2035ea902b',1,'mata::utils::DeltaAllocator::value_type'],['../classmata_1_1utils_1_1OrdVector.html#a5c1df1ab65750946a228fd036417792e',1,'mata::utils::OrdVector::value_type'],['../classmata_1_1utils_1_1SmallOrdVector.html#a5c1df1ab65750946a228fd036417792e',1,'mata::utils::SmallOrdVector::value_type']]],
+  ['values_20and_20sorts_5',['Values and sorts',['../script-language.html#values-and-sorts',1,'']]],
+  ['vec_5f_6',['vec_',['../classmata_1_1utils_1_1OrdVector.html#aac04a11d284ee967c7122bc253787a73',1,'mata::utils::OrdVector']]],
+  ['vectorhash_7',['VectorHash',['../structmata_1_1utils_1_1VectorHash.html',1,'mata::utils']]],
+  ['vectortype_8',['VectorType',['../classmata_1_1utils_1_1OrdVector.html#aaaa635684206c124a92d23d9e427c47f',1,'mata::utils::OrdVector::VectorType'],['../classmata_1_1posts_1_1Post.html#a4982800166bafe3d1f8e120845a7e2b7',1,'mata::posts::Post::VectorType']]],
+  ['verifit_20mata_9',['Benchmarking in VeriFIT/mata',['../benchmarking.html#benchmarking-in-verifitmata',1,'']]],
+  ['verifit_20mata_20tests_20integration_10',['Benchmarking through VeriFIT/mata &lt;span class=&quot;tt&quot;&gt;./tests-integration/&lt;/span&gt;',['../benchmarking.html#benchmarking-through-verifitmata-tests-integration',1,'']]],
+  ['versioning_11',['Versioning',['../index.html#versioning',1,'']]],
+  ['versioning_20during_20pr_20merge_12',['Versioning during PR merge',['../contributing.html#versioning-during-pr-merge',1,'']]],
+  ['versions_13',['Versions',['../cli.html#versions',1,'Versions'],['../script-language.html#script-versions',1,'Versions']]],
+  ['views_5f_14',['views_',['../classmata_1_1FormulaGraphChildren.html#a5f579989343cc90337fd855d77dc9e09',1,'mata::FormulaGraphChildren']]],
+  ['visit_5fmoves_15',['visit_moves',['../namespacemata_1_1posts.html#a6d8fb9295c990c82cac5e9999fbadedb',1,'mata::posts']]],
+  ['visit_5ftargets_16',['visit_targets',['../namespacemata_1_1posts.html#aca113efbaacf45136e15057e6ac72192',1,'mata::posts']]],
+  ['visited_17',['visited',['../structmata_1_1PostWorkspace.html#a9e4a31684dfeeeaa0798325e6e209419',1,'mata::PostWorkspace']]],
+  ['visited_5feps_5f_18',['visited_eps_',['../classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation.html#aa2a2fd129098e85ac372fb66cc9cc907',1,'mata::applications::strings::seg_nfa::Segmentation']]],
+  ['visitedepsilonscountermap_19',['VisitedEpsilonsCounterMap',['../namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#aa47d2a4ae0b3c240e9aea6dd8de61c82',1,'mata::applications::strings::seg_nfa']]],
+  ['visitedepsilonscountervector_20',['VisitedEpsilonsCounterVector',['../namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#a4d54c4713beda3a0706a81dc0b7b495d',1,'mata::applications::strings::seg_nfa']]],
+  ['visitedepsmap_21',['VisitedEpsMap',['../namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#a2418d064f88e93d1b86b4ebc681dedfb',1,'mata::applications::strings::seg_nfa']]],
+  ['visits_2ehh_22',['visits.hh',['../visits_8hh.html',1,'']]]
+];

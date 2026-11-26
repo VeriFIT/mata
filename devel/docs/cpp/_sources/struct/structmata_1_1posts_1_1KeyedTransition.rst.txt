@@ -1,5 +1,0 @@
-Struct mata::posts::KeyedTransition
-===================================
-
-.. doxygenstruct:: mata::posts::KeyedTransition
-   :members:

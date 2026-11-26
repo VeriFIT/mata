@@ -1,413 +1,366 @@
-<!DOCTYPE html>
-
-<html lang="en" data-content_root="./">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-
-    <title>Mata automata library &#8212; Mata v0.0.0-dev.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
-    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
-    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
-    <script src="_static/documentation_options.js?v=623e9adf"></script>
-    <script src="_static/doctools.js?v=fd6eb6e6"></script>
-    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Introduction" href="introduction.html" />
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-
-  
-  
-
-  </head><body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
-            
-  <section id="mata-automata-library">
-<h1>Mata automata library<a class="headerlink" href="#mata-automata-library" title="Link to this heading">¶</a></h1>
-<div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="introduction.html#mata-the-automata-library">Mata: The Automata Library</a></li>
-<li class="toctree-l2"><a class="reference internal" href="introduction.html#id2">Branches</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="benchmarking.html">Benchmarking</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="benchmarking.html#guidelines-for-profiling-performance-and-integration-testing-of-the-mata-library">Guidelines for Profiling, Performance, and Integration Testing of the Mata library</a></li>
-<li class="toctree-l2"><a class="reference internal" href="benchmarking.html#repositories">Repositories</a></li>
-<li class="toctree-l2"><a class="reference internal" href="benchmarking.html#benchmarking-in-verifit-mata">Benchmarking in VeriFIT/mata</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="automata-format.html">Automata Format</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="automata-format.html#the-mata-file-format-for-automata-mata-format">The Mata file format for automata (.mata format)</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="script-language.html">(Auto)Mata Script Language</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="script-language.html#a-first-example">A first example</a></li>
-<li class="toctree-l2"><a class="reference internal" href="script-language.html#design-principles">Design principles</a></li>
-<li class="toctree-l2"><a class="reference internal" href="script-language.html#lexical-structure">Lexical structure</a></li>
-<li class="toctree-l2"><a class="reference internal" href="script-language.html#grammar">Grammar</a></li>
-<li class="toctree-l2"><a class="reference internal" href="script-language.html#values-and-sorts">Values and sorts</a></li>
-<li class="toctree-l2"><a class="reference internal" href="script-language.html#definitions-functions-and-conditionals">Definitions, functions and conditionals</a></li>
-<li class="toctree-l2"><a class="reference internal" href="script-language.html#inputs">Inputs</a></li>
-<li class="toctree-l2"><a class="reference internal" href="script-language.html#script-alphabets">Alphabets</a></li>
-<li class="toctree-l2"><a class="reference internal" href="script-language.html#operations">Operations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="script-language.html#reporting-results">Reporting results</a></li>
-<li class="toctree-l2"><a class="reference internal" href="script-language.html#timing">Timing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="script-language.html#options">Options</a></li>
-<li class="toctree-l2"><a class="reference internal" href="script-language.html#optimizer">Optimizer</a></li>
-<li class="toctree-l2"><a class="reference internal" href="script-language.html#portable-core">Portable core</a></li>
-<li class="toctree-l2"><a class="reference internal" href="script-language.html#script-information">Script information</a></li>
-<li class="toctree-l2"><a class="reference internal" href="script-language.html#versions">Versions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="script-language.html#examples">Examples</a></li>
-<li class="toctree-l2"><a class="reference internal" href="script-language.html#open-questions">Open questions</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="cli.html">The <code class="docutils literal notranslate"><span class="pre">mata</span></code> command</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="cli.html#command-tree">Command tree</a></li>
-<li class="toctree-l2"><a class="reference internal" href="cli.html#scripts">Scripts</a></li>
-<li class="toctree-l2"><a class="reference internal" href="cli.html#direct-operations">Direct operations</a></li>
-<li class="toctree-l2"><a class="reference internal" href="cli.html#conversion">Conversion</a></li>
-<li class="toctree-l2"><a class="reference internal" href="cli.html#output-conventions">Output conventions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="cli.html#exit-status">Exit status</a></li>
-<li class="toctree-l2"><a class="reference internal" href="cli.html#versions">Versions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="cli.html#why-rust">Why Rust</a></li>
-<li class="toctree-l2"><a class="reference internal" href="cli.html#implementation-notes">Implementation notes</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="contributing.html#contributing-guidelines">Contributing guidelines</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="core.html">Core</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="core.html#types">Types</a></li>
-<li class="toctree-l2"><a class="reference internal" href="core.html#delta">Delta</a></li>
-<li class="toctree-l2"><a class="reference internal" href="core.html#automaton">Automaton</a></li>
-<li class="toctree-l2"><a class="reference internal" href="core.html#the-shipped-relation">The shipped relation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="core.html#concepts">Concepts</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="nfa.html">Nondeterministic Finite automata</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="nfa.html#types">Types</a></li>
-<li class="toctree-l2"><a class="reference internal" href="nfa.html#id1">NFA</a></li>
-<li class="toctree-l2"><a class="reference internal" href="nfa.html#functions">Functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="nfa.html#builder">Builder</a></li>
-<li class="toctree-l2"><a class="reference internal" href="nfa.html#algorithms">Algorithms</a></li>
-<li class="toctree-l2"><a class="reference internal" href="nfa.html#plumbing">Plumbing</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="nft.html">Nondeterministic Finite Transducers</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="nft.html#types">Types</a></li>
-<li class="toctree-l2"><a class="reference internal" href="nft.html#id1">NFT</a></li>
-<li class="toctree-l2"><a class="reference internal" href="nft.html#functions">Functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="nft.html#builder">Builder</a></li>
-<li class="toctree-l2"><a class="reference internal" href="nft.html#algorithms">Algorithms</a></li>
-<li class="toctree-l2"><a class="reference internal" href="nft.html#plumbing">Plumbing</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="alphabet.html">Alphabet</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="alphabet.html#_CPPv44mata"><code class="docutils literal notranslate"><span class="pre">mata</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="utils.html#closed-set">Closed Set</a></li>
-<li class="toctree-l2"><a class="reference internal" href="utils.html#sparse-set">Sparse Set</a></li>
-<li class="toctree-l2"><a class="reference internal" href="utils.html#ordvector">OrdVector</a></li>
-<li class="toctree-l2"><a class="reference internal" href="utils.html#synchronized-iterator">Synchronized Iterator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="utils.html#two-dimensional-map">Two Dimensional Map</a></li>
-<li class="toctree-l2"><a class="reference internal" href="utils.html#other-utils">Other Utils</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="applications.html">Strings</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="applications.html#_CPPv44mata"><code class="docutils literal notranslate"><span class="pre">mata</span></code></a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="namespacelist.html">Namespace list</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata.html">Namespace mata</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1applications.html">Namespace mata::applications</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1applications_1_1strings.html">Namespace mata::applications::strings</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1applications_1_1strings_1_1replace.html">Namespace mata::applications::strings::replace</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1applications_1_1strings_1_1seg__nfa.html">Namespace mata::applications::strings::seg_nfa</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1internal.html">Namespace mata::internal</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1nfa.html">Namespace mata::nfa</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1nfa_1_1algorithms.html">Namespace mata::nfa::algorithms</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1nfa_1_1builder.html">Namespace mata::nfa::builder</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1nfa_1_1internal.html">Namespace mata::nfa::internal</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1nfa_1_1plumbing.html">Namespace mata::nfa::plumbing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1nft.html">Namespace mata::nft</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1nft_1_1algorithms.html">Namespace mata::nft::algorithms</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1nft_1_1builder.html">Namespace mata::nft::builder</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1nft_1_1internal.html">Namespace mata::nft::internal</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1nft_1_1plumbing.html">Namespace mata::nft::plumbing</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1parser.html">Namespace mata::parser</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1posts.html">Namespace mata::posts</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1posts_1_1internal.html">Namespace mata::posts::internal</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacemata_1_1utils.html">Namespace mata::utils</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespacestd.html">Namespace std</a></li>
-<li class="toctree-l2"><a class="reference internal" href="namespace/namespaceutils.html">Namespace utils</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="classlist.html">Class list</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1Alphabet.html">Class mata::Alphabet</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1AlphabetLevels.html">Class mata::AlphabetLevels</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1AutomatonBase.html">Class mata::AutomatonBase</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1BoolVector.html">Class mata::BoolVector</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1Delta.html">Class mata::Delta</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1DeltaBuilder.html">Class mata::DeltaBuilder</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1EnumAlphabet.html">Class mata::EnumAlphabet</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1FormulaGraph.html">Class mata::FormulaGraph</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1FormulaGraphChildren.html">Class mata::FormulaGraphChildren</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1FormulaGraphView.html">Class mata::FormulaGraphView</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1FormulaNode.html">Class mata::FormulaNode</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1IntAlphabet.html">Class mata::IntAlphabet</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1IntAlphabet_1_1IntAlphabetSingleton.html">Class mata::IntAlphabet::IntAlphabetSingleton</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1IntermediateAut.html">Class mata::IntermediateAut</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1Mintermization.html">Class mata::Mintermization</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1NameStore.html">Class mata::NameStore</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1OnTheFlyAlphabet.html">Class mata::OnTheFlyAlphabet</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1StatePost.html">Class mata::StatePost</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1SymbolPost.html">Class mata::SymbolPost</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1SynchronizedExistentialSymbolPostIterator.html">Class mata::SynchronizedExistentialSymbolPostIterator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1applications_1_1strings_1_1ShortestWordsMap.html">Class mata::applications::strings::ShortestWordsMap</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1applications_1_1strings_1_1replace_1_1ReluctantReplace.html">Class mata::applications::strings::replace::ReluctantReplace</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation.html">Class mata::applications::strings::seg_nfa::Segmentation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1LazyView.html">Class mata::applications::strings::seg_nfa::Segmentation::LazyView</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nfa_1_1Nfa.html">Class mata::nfa::Nfa</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nfa_1_1algorithms_1_1ExternalSolverNotFound.html">Class mata::nfa::algorithms::ExternalSolverNotFound</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nfa_1_1builder_1_1BitvectorNfaReader.html">Class mata::nfa::builder::BitvectorNfaReader</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nfa_1_1internal_1_1ProcessedAntichain.html">Class mata::nfa::internal::ProcessedAntichain</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nft_1_1Levels.html">Class mata::nft::Levels</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nft_1_1Levels_1_1Ordering.html">Class mata::nft::Levels::Ordering</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1nft_1_1Nft.html">Class mata::nft::Nft</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1parser_1_1ExplicitSectionReader.html">Class mata::parser::ExplicitSectionReader</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1parser_1_1MataWriter.html">Class mata::parser::MataWriter</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1parser_1_1NewStates.html">Class mata::parser::NewStates</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1parser_1_1StateNameMap.html">Class mata::parser::StateNameMap</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1DeltaBase.html">Class mata::posts::DeltaBase</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1DeltaTransitions.html">Class mata::posts::DeltaTransitions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1DeltaTransitions_1_1const__iterator.html">Class mata::posts::DeltaTransitions::const_iterator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1KeyedAccess.html">Class mata::posts::KeyedAccess</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1KeyedAccess_3_01D_00_01P_00_01std_1_1index__sequence_3_010_01_4_01_4.html">Class mata::posts::KeyedAccess&lt; D, P, std::index_sequence&lt; 0 &gt; &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1KeyedAccess_3_01D_00_01P_00_01std_1_1index__sequence_3_01KeyIdx_8_8_8_01_4_01_4.html">Class mata::posts::KeyedAccess&lt; D, P, std::index_sequence&lt; KeyIdx… &gt; &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1Move.html">Class mata::posts::Move</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1Post.html">Class mata::posts::Post</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1PostEntry.html">Class mata::posts::PostEntry</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1PostMoves.html">Class mata::posts::PostMoves</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1PostMoves_1_1const__iterator.html">Class mata::posts::PostMoves::const_iterator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1SuccessorCursor.html">Class mata::posts::SuccessorCursor</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1SuccessorCursor_1_1const__iterator.html">Class mata::posts::SuccessorCursor::const_iterator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1SuccessorCursor_3_01P_00_011_01_4.html">Class mata::posts::SuccessorCursor&lt; P, 1 &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1posts_1_1internal_1_1PostEntryCore.html">Class mata::posts::internal::PostEntryCore</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1utils_1_1LazyGenerator.html">Class mata::utils::LazyGenerator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1utils_1_1OrdVector.html">Class mata::utils::OrdVector</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1utils_1_1SmallOrdVector.html">Class mata::utils::SmallOrdVector</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1utils_1_1SparseSet.html">Class mata::utils::SparseSet</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1utils_1_1SynchronizedExistentialIterator.html">Class mata::utils::SynchronizedExistentialIterator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1utils_1_1SynchronizedIterator.html">Class mata::utils::SynchronizedIterator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1utils_1_1SynchronizedUniversalIterator.html">Class mata::utils::SynchronizedUniversalIterator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="class/classmata_1_1utils_1_1TwoDimensionalMap.html">Class mata::utils::TwoDimensionalMap</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="structlist.html">Struct list</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1AutomatonBase_1_1TarjanDiscoverCallback.html">Struct mata::AutomatonBase::TarjanDiscoverCallback</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1ClosedSet.html">Struct mata::ClosedSet</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1FormulaGraphEntry.html">Struct mata::FormulaGraphEntry</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1Limits.html">Struct mata::Limits</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1Mintermization_1_1Checkpoint.html">Struct mata::Mintermization::Checkpoint</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1Mintermization_1_1MintermPartition.html">Struct mata::Mintermization::MintermPartition</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1Move.html">Struct mata::Move</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1NameStore_1_1Chunk.html">Struct mata::NameStore::Chunk</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1NameStore_1_1Range.html">Struct mata::NameStore::Range</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols.html">Struct mata::OnTheFlyAlphabet::SortedSymbols</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1OnTheFlyAlphabet_1_1SymbolNames.html">Struct mata::OnTheFlyAlphabet::SymbolNames</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1PostWorkspace.html">Struct mata::PostWorkspace</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1ReservedKeys.html">Struct mata::ReservedKeys</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1Run.html">Struct mata::Run</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1TargetTraits.html">Struct mata::TargetTraits</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1Transition.html">Struct mata::Transition</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1TransitionTraits.html">Struct mata::TransitionTraits</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1applications_1_1strings_1_1seg__nfa_1_1NoodleOrder.html">Struct mata::applications::strings::seg_nfa::NoodleOrder</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1applications_1_1strings_1_1seg__nfa_1_1NoodleSegment.html">Struct mata::applications::strings::seg_nfa::NoodleSegment</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1EpsilonTransitionSpan.html">Struct mata::applications::strings::seg_nfa::Segmentation::EpsilonTransitionSpan</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1StateDepthTuple.html">Struct mata::applications::strings::seg_nfa::Segmentation::StateDepthTuple</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1Worklist.html">Struct mata::applications::strings::seg_nfa::Segmentation::Worklist</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement.html">Struct mata::applications::strings::seg_nfa::TransducerNoodleElement</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1internal_1_1TarjanCallbacks.html">Struct mata::internal::TarjanCallbacks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1internal_1_1TarjanNodeData.html">Struct mata::internal::TarjanNodeData</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nfa_1_1algorithms_1_1FourRussiansOptions.html">Struct mata::nfa::algorithms::FourRussiansOptions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nfa_1_1bool__pack.html">Struct mata::nfa::bool_pack</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nfa_1_1internal_1_1Node.html">Struct mata::nfa::internal::Node</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nfa_1_1internal_1_1ProcessedAntichain_1_1Bucket.html">Struct mata::nfa::internal::ProcessedAntichain::Bucket</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nfa_1_1internal_1_1ProcessedAntichain_1_1Entry.html">Struct mata::nfa::internal::ProcessedAntichain::Entry</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nfa_1_1internal_1_1Step.html">Struct mata::nfa::internal::Step</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nft_1_1BoolPack.html">Struct mata::nft::BoolPack</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nft_1_1algorithms_1_1CompositionSchedule.html">Struct mata::nft::algorithms::CompositionSchedule</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1nft_1_1algorithms_1_1CompositionSchedule_1_1Position.html">Struct mata::nft::algorithms::CompositionSchedule::Position</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1parser_1_1BodyToken.html">Struct mata::parser::BodyToken</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1parser_1_1ExplicitToken.html">Struct mata::parser::ExplicitToken</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1parser_1_1ParsedSection.html">Struct mata::parser::ParsedSection</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1parser_1_1Re2Options.html">Struct mata::parser::Re2Options</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1KeyedTransition.html">Struct mata::posts::KeyedTransition</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1KeyedTransitionTraits.html">Struct mata::posts::KeyedTransitionTraits</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1PostAt.html">Struct mata::posts::PostAt</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1PostAt_3_01P_00_010_01_4.html">Struct mata::posts::PostAt&lt; P, 0 &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1PostTraits.html">Struct mata::posts::PostTraits</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1SuccessorCursor_1_1Position.html">Struct mata::posts::SuccessorCursor::Position</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1SuccessorCursor_1_1Positions.html">Struct mata::posts::SuccessorCursor::Positions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1SuccessorCursor_1_1Positions_3_01std_1_1index__sequence_3_01KeyIdx_8_8_8_01_4_01_4.html">Struct mata::posts::SuccessorCursor::Positions&lt; std::index_sequence&lt; KeyIdx… &gt; &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1SymbolTransitionTraits.html">Struct mata::posts::SymbolTransitionTraits</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1Transition.html">Struct mata::posts::Transition</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1internal_1_1Chain.html">Struct mata::posts::internal::Chain</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1internal_1_1Chain_3_01K_00_01Rest_8_8_8_01_4.html">Struct mata::posts::internal::Chain&lt; K, Rest… &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1internal_1_1Chain_3_01R_00_01Rest_8_8_8_01_4.html">Struct mata::posts::internal::Chain&lt; R, Rest… &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1internal_1_1Chain_3_01Targets_01_4.html">Struct mata::posts::internal::Chain&lt; Targets &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1internal_1_1DefaultTransitionTraitsOf.html">Struct mata::posts::internal::DefaultTransitionTraitsOf</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1internal_1_1DefaultTransitionTraitsOf_3_01P_00_011_01_4.html">Struct mata::posts::internal::DefaultTransitionTraitsOf&lt; P, 1 &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1internal_1_1MoveTypeOf.html">Struct mata::posts::internal::MoveTypeOf</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1internal_1_1is__tuple.html">Struct mata::posts::internal::is_tuple</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1posts_1_1internal_1_1is__tuple_3_01std_1_1tuple_3_01Ts_8_8_8_01_4_01_4.html">Struct mata::posts::internal::is_tuple&lt; std::tuple&lt; Ts… &gt; &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1utils_1_1DeltaAllocator.html">Struct mata::utils::DeltaAllocator</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1utils_1_1PairHash.html">Struct mata::utils::PairHash</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1utils_1_1SetHash.html">Struct mata::utils::SetHash</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1utils_1_1StringHash.html">Struct mata::utils::StringHash</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1utils_1_1TuplePrinter.html">Struct mata::utils::TuplePrinter</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1utils_1_1TuplePrinter_3_01Tuple_00_011_01_4.html">Struct mata::utils::TuplePrinter&lt; Tuple, 1 &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1utils_1_1TwoDimensionalMap_1_1Slot.html">Struct mata::utils::TwoDimensionalMap::Slot</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1utils_1_1TwoDimensionalMap_1_1SparseRow.html">Struct mata::utils::TwoDimensionalMap::SparseRow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1utils_1_1TwoDimensionalMap_1_1SparseSlot.html">Struct mata::utils::TwoDimensionalMap::SparseSlot</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1utils_1_1VectorHash.html">Struct mata::utils::VectorHash</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structmata_1_1utils_1_1sorted__unique__t.html">Struct mata::utils::sorted_unique_t</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1formatter_3_01mata_1_1Transition_01_4.html">Struct std::formatter&lt; mata::Transition &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1formatter_3_01mata_1_1posts_1_1KeyedTransition_3_01St_00_01std_1_1tuple_3_01Ks_8_8_8_01_4_00_01T_01_4_01_4.html">Struct std::formatter&lt; mata::posts::KeyedTransition&lt; St, std::tuple&lt; Ks… &gt;, T &gt; &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1formatter_3_01mata_1_1posts_1_1Transition_3_01St_00_01K_00_01T_01_4_01_4.html">Struct std::formatter&lt; mata::posts::Transition&lt; St, K, T &gt; &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1hash_3_01mata_1_1Transition_01_4.html">Struct std::hash&lt; mata::Transition &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1hash_3_01mata_1_1posts_1_1KeyedTransition_3_01St_00_01std_1_1tuple_3_01Ks_8_8_8_01_4_00_01T_01_4_01_4.html">Struct std::hash&lt; mata::posts::KeyedTransition&lt; St, std::tuple&lt; Ks… &gt;, T &gt; &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1hash_3_01mata_1_1posts_1_1Transition_3_01St_00_01K_00_01T_01_4_01_4.html">Struct std::hash&lt; mata::posts::Transition&lt; St, K, T &gt; &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1hash_3_01mata_1_1utils_1_1OrdVector_3_01Key_00_01Allocator_01_4_01_4.html">Struct std::hash&lt; mata::utils::OrdVector&lt; Key, Allocator &gt; &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1tuple__element_3_010_00_01mata_1_1SymbolPost_01_4.html">Struct std::tuple_element&lt; 0, mata::SymbolPost &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1tuple__element_3_010_00_01mata_1_1posts_1_1PostEntry_3_01K_00_01N_01_4_01_4.html">Struct std::tuple_element&lt; 0, mata::posts::PostEntry&lt; K, N &gt; &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1tuple__element_3_011_00_01mata_1_1SymbolPost_01_4.html">Struct std::tuple_element&lt; 1, mata::SymbolPost &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1tuple__element_3_011_00_01mata_1_1posts_1_1PostEntry_3_01K_00_01N_01_4_01_4.html">Struct std::tuple_element&lt; 1, mata::posts::PostEntry&lt; K, N &gt; &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1tuple__size_3_01mata_1_1SymbolPost_01_4.html">Struct std::tuple_size&lt; mata::SymbolPost &gt;</a></li>
-<li class="toctree-l2"><a class="reference internal" href="struct/structstd_1_1tuple__size_3_01mata_1_1posts_1_1PostEntry_3_01K_00_01N_01_4_01_4.html">Struct std::tuple_size&lt; mata::posts::PostEntry&lt; K, N &gt; &gt;</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="unionlist.html">Union list</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="union/unionmata_1_1utils_1_1SmallOrdVector_1_1Buffer.html">Union mata::utils::SmallOrdVector::Buffer</a></li>
-</ul>
-</li>
-</ul>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=11"/>
+<meta name="generator" content="Doxygen 1.16.1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Mata: Mata: The Automata Library</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<script type="text/javascript" src="clipboard.js"></script>
+<link href="navtree.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="navtreedata.js"></script>
+<script type="text/javascript" src="navtree.js"></script>
+<script type="text/javascript" src="cookie.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+<link href="doxygen-awesome.css" rel="stylesheet" type="text/css"/>
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr id="projectrow">
+  <td id="projectalign">
+   <div id="projectname">Mata<span id="projectnumber">&#160;[unstable] git snapshot</span>
+   </div>
+   <div id="projectbrief">A fast and simple automata library</div>
+  </td>
+ </tr>
+ </tbody>
+</table>
 </div>
-</section>
-<section id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading">¶</a></h1>
-<ul class="simple">
-<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
-<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
-</ul>
-</section>
-
-
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="Main">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="#">Mata</a></h1>
-
-
-
-
-
-
-
-
-
-<search id="searchbox" style="display: none" role="search">
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
-      <input type="submit" value="Go" />
-    </form>
+<!-- end header part -->
+<!-- Generated by Doxygen 1.16.1 -->
+<script type="text/javascript">
+var searchBox = new SearchBox("searchBox", "search/",'.html');
+</script>
+<script type="text/javascript">
+$(function() { codefold.init(); });
+</script>
+<script type="text/javascript" src="menudata.js"></script>
+<script type="text/javascript" src="menu.js"></script>
+<script type="text/javascript">
+$(function() {
+  initMenu('',true,false,'search.php','Search',true);
+  $(function() { init_search(); });
+});
+</script>
+<div id="main-nav"></div>
+</div><!-- top -->
+<div id="side-nav" class="ui-resizable side-nav-resizable">
+  <div id="nav-tree">
+    <div id="nav-tree-contents">
+      <div id="nav-sync" class="sync"></div>
     </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
-<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="benchmarking.html">Benchmarking</a></li>
-<li class="toctree-l1"><a class="reference internal" href="automata-format.html">Automata Format</a></li>
-<li class="toctree-l1"><a class="reference internal" href="script-language.html">(Auto)Mata Script Language</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cli.html">The <code class="docutils literal notranslate"><span class="pre">mata</span></code> command</a></li>
-<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="core.html">Core</a></li>
-<li class="toctree-l1"><a class="reference internal" href="nfa.html">Nondeterministic Finite automata</a></li>
-<li class="toctree-l1"><a class="reference internal" href="nft.html">Nondeterministic Finite Transducers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="alphabet.html">Alphabet</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="applications.html">Strings</a></li>
-<li class="toctree-l1"><a class="reference internal" href="namespacelist.html">Namespace list</a></li>
-<li class="toctree-l1"><a class="reference internal" href="classlist.html">Class list</a></li>
-<li class="toctree-l1"><a class="reference internal" href="structlist.html">Struct list</a></li>
-<li class="toctree-l1"><a class="reference internal" href="unionlist.html">Union list</a></li>
-</ul>
-
-
-<hr />
-<ul>
-    
-    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/">Mata website</a></li>
-    
-    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/docs/">All documentation</a></li>
-    
-    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/playground/">Playground</a></li>
-    
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="#">Documentation overview</a><ul>
-      <li>Next: <a href="introduction.html" title="next chapter">Introduction</a></li>
-  </ul></li>
-</ul>
+  </div>
+  <div id="splitbar" style="-moz-user-select:none;" 
+       class="ui-resizable-handle">
+  </div>
+</div>
+<script type="text/javascript">
+$(function(){initNavTree('index.html','',''); });
+</script>
+<div id="container">
+<div id="doc-content">
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
 </div>
 
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<div id="MSearchResults">
+<div class="SRPage">
+<div id="SRIndex">
+<div id="SRResults"></div>
+<div class="SRStatus" id="Loading">Loading...</div>
+<div class="SRStatus" id="Searching">Searching...</div>
+<div class="SRStatus" id="NoMatches">No Matches</div>
+</div>
+</div>
+</div>
+</div>
 
-
-
-
-
-
-
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &#169;2025, Automata@FIT Group, BUT, FIT.
-      
-      |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.2.0</a>
-      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
-      
-      |
-      <a href="_sources/index.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
-    
-
-    
-  </body>
+<div><div class="header">
+  <div class="headertitle"><div class="title">Mata: The Automata Library </div></div>
+</div><!--header-->
+<div class="contents">
+<div class="textblock"><p><a class="anchor" id="readme"></a></p>
+<p><a href="https://github.com/VeriFIT/mata"><img src="https://img.shields.io/github/tag/VeriFIT/mata.svg" alt="GitHub tag" style="pointer-events: none;" class="inline"/></a> <a href="https://github.com/VeriFIT/mata/actions/workflows/code-quality.yml"><img src="https://github.com/VeriFIT/mata/actions/workflows/code-quality.yml/badge.svg" alt="Quality" style="pointer-events: none;" class="inline"/></a> <a href="https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml"><img src="https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml/badge.svg?branch=master" alt="Python-Binding (build-&-test)" style="pointer-events: none;" class="inline"/></a> <a href="https://codecov.io/gh/VeriFIT/mata"><img src="https://codecov.io/gh/VeriFIT/mata/branch/master/graph/badge.svg?token=9VAVD19N4D" alt="codecov" style="pointer-events: none;" class="inline"/></a></p>
+<p>Mata is an open source automata library that offers interface for different kinds of automata, e.g. (non-)deterministic finite automata (NFAs), (non-)deterministic finite transducers, etc. Currently, Mata offers three interfaces:</p>
+<ol type="1">
+<li>An efficient library implemented in C/C++,</li>
+<li>A flexible wrapper implemented in Python that uses the efficient library, and</li>
+<li>Rust bindings with a safe API over the efficient library.</li>
+</ol>
+<p>The <a href="https://verifit.github.io/mata/">website of Mata</a> gives an overview of the library, its documentation (<a href="https://verifit.github.io/mata/master/docs/cpp/">C++</a>, <a href="https://verifit.github.io/mata/master/docs/python/">Python</a>, <a href="https://verifit.github.io/mata/master/docs/rust/mata/">Rust</a>), and a <a href="https://verifit.github.io/mata/master/playground/">playground</a> that runs Mata in the browser. The <a href="https://verifit.github.io/mata/devel/">development website</a> tracks the <span class="tt">devel</span> branch.</p>
+<h1 class="doxsection"><a class="anchor" id="installation"></a>
+Installation</h1>
+<h2 class="doxsection"><a class="anchor" id="nix"></a>
+Nix</h2>
+<p>Available in <a href="https://github.com/NixOS/nixpkgs/">nixpkgs</a> (maintained by <a href="https://github.com/Adda0">@Adda0</a>) as <span class="tt">pkgs.mata</span>:</p>
+<div class="fragment"><div class="line">nix build nixpkgs#mata</div>
+</div><!-- fragment --><p>This repo also provides a flake (maintained by <a href="https://github.com/Adda0">@Adda0</a>) with <a href="https://github.com/NixOS/flake-compat">flake-compat</a> and an overlay:</p>
+<div class="fragment"><div class="line">nix build github:VeriFIT/mata</div>
+</div><!-- fragment --><p>The flake also packages the Rust bindings with their examples (<span class="tt">mataRust</span>) and the <span class="tt"><a class="el" href="namespacemata.html" title="Main namespace including structs and algorithms for all automata.">mata</a></span> command-line interface (<span class="tt">mataCli</span>):</p>
+<div class="fragment"><div class="line">nix build github:VeriFIT/mata#mataRust</div>
+<div class="line">nix run github:VeriFIT/mata#mataCli -- --help</div>
+</div><!-- fragment --><p>For development:</p>
+<div class="fragment"><div class="line">nix develop github:VeriFIT/mata</div>
+</div><!-- fragment --><p>The development shell includes Cargo, rustc, Clippy, and rustfmt from a lockfile-pinned stable Rust toolchain. The Python environment of the development shell is built from <span class="tt">uv.lock</span>, the same versions <span class="tt">uv sync</span> installs, with the bindings installed editable from the checkout. Build their extensions in place with <span class="tt">just bindings python build</span>.</p>
+<h2 class="doxsection"><a class="anchor" id="download-pre-built-binaries-from-github"></a>
+Download pre-built binaries from GitHub</h2>
+<p>You can download pre-built binaries from the <a href="https://github.com/VeriFIT/mata/releases">releases</a> page on GitHub.</p>
+<h2 class="doxsection"><a class="anchor" id="building-and-installing-from-sources"></a>
+Building and installing from sources</h2>
+<p>For a successful installation of Mata, <span class="tt">cmake</span> of version <span class="tt">3.23.0</span> (or higher) and a C++ compiler with a support of C++-20 standard is required. From optional requirements, <span class="tt">doxygen</span> is required for a generation of the documentation and <span class="tt">catch2</span> is required for the unit testing (Mata can still be compiled without these optional dependencies).</p>
+<p>The Mata library further depends on the following libraries, included in the <span class="tt">./3rdparty/</span> directory:</p>
+<ul>
+<li><span class="tt">cudd</span> for BDD manipulation,</li>
+<li><span class="tt">re2</span> for regular expression parsing and the corresponding automata construction, and</li>
+<li><span class="tt">simlib</span> for a simulation computation.</li>
+</ul>
+<p>The experimental reduction of automata to automata with the minimum number of states (<span class="tt">reduce()</span> with the <span class="tt">"sat"</span> or <span class="tt">"qbf"</span> algorithm) runs an external SAT or QBF solver. Mata finds the solver in <span class="tt">PATH</span> (CaDiCaL, Kissat, CryptoMiniSat, or PicoSAT; DepQBF or CAQE), or uses the command in the environment variable <span class="tt">MATA_SAT_SOLVER</span> or <span class="tt">MATA_QBF_SOLVER</span>. For example, run <span class="tt">apt install cadical depqbf</span> or <span class="tt">brew install cadical depqbf</span>. The solvers are needed only for this reduction, not for building or using the rest of Mata.</p>
+<p>To build the library, run the following:</p>
+<div class="fragment"><div class="line">git clone https://github.com/VeriFIT/mata</div>
+<div class="line">cd mata</div>
+<div class="line">make release</div>
+</div><!-- fragment --><p>For C++ executables, <b>install <a href="https://github.com/microsoft/mimalloc">mimalloc</a></b> and build with <span class="tt">MATA_USE_MIMALLOC=ON</span>:</p>
+<div class="fragment"><div class="line">make release MATA_USE_MIMALLOC=ON</div>
+</div><!-- fragment --><p>The option is off by default and <span class="tt">cmake</span> fails if mimalloc cannot be found. The Nix C++ package enables it. The allocator applies to the final executable, so consumers linking <span class="tt">libmata.a</span> without the exported CMake target must also link mimalloc themselves. A measurement over Mata operations on the automata-lib-bench TACAS'24 experiments and selected NFT programs reduced total runtime by 26.6%; the effect varies by workload.</p>
+<p>Independently of the global allocator, Mata chooses how it allocates the heap blocks of <span class="tt">Delta</span> (the transitions of automata), with <span class="tt">MATA_DELTA_ALLOCATOR</span>:</p>
+<ul>
+<li><span class="tt">std</span> (the default) takes them from the global <span class="tt">operator new</span>/<span class="tt">delete</span>, i.e., whatever allocator the executable uses.</li>
+<li><span class="tt">pool</span> carves them from thread-local 1 MiB chunks in allocation order, so a <span class="tt">Delta</span> built state by state lies in consecutive memory. It is faster on composition-heavy workloads. The chunks are reused, but never returned to the operating system before the process exits.</li>
+</ul>
+<p>Select it per process with the environment variable, without rebuilding:</p>
+<div class="fragment"><div class="line">MATA_DELTA_ALLOCATOR=pool ./my-program</div>
+</div><!-- fragment --><p>The variable is read on the first allocation and fixed for the rest of the process; an unknown value throws <span class="tt">std::invalid_argument</span>. The CMake option of the same name sets the default used when the variable is unset: <span class="tt">make release MATA_DELTA_ALLOCATOR=pool</span>.</p>
+<p>mimalloc, in contrast, replaces the allocator of the whole process, so it is chosen when the executable is linked (<span class="tt">MATA_USE_MIMALLOC=ON</span>) or started (<span class="tt">LD_PRELOAD=/path/to/libmimalloc.so ./my-program</span>), never while it runs. The two combine freely. When the memory runs out, the system allocator makes Mata throw <span class="tt">std::bad_alloc</span>, while mimalloc may abort the process instead.</p>
+<p>In order to install the library, you can run</p>
+<div class="fragment"><div class="line">sudo make install</div>
+</div><!-- fragment --><p>In order to verify the functionality of the library, you can run the test suite:</p>
+<div class="fragment"><div class="line">make test</div>
+</div><!-- fragment --><p>You might, need to install the dependencies to measure the coverage of the tests. Run the following to install the dependencies for macOS:</p>
+<div class="fragment"><div class="line">brew install lcov gcovr</div>
+</div><!-- fragment --><p>Run the following to install the dependencies for Ubuntu:</p>
+<div class="fragment"><div class="line">sudo apt install -y build-essential lcov gcovr xdg-utils</div>
+</div><!-- fragment --><h1 class="doxsection"><a class="anchor" id="python-binding"></a>
+Python binding</h1>
+<p>Mata offers binding of its efficient library to Python. You can install the binding as a Python package on your system as follows.</p>
+<h2 class="doxsection"><a class="anchor" id="installation-from-pypi"></a>
+Installation from PyPI</h2>
+<p>To install the latest version from the PyPI repository, run:</p>
+<div class="fragment"><div class="line"># Using uv: {#using-uv}</div>
+<div class="line">uv add libmata</div>
+<div class="line"># Or using pip: {#or-using-pip}</div>
+<div class="line">pip3 install libmata</div>
+</div><!-- fragment --><h2 class="doxsection"><a class="anchor" id="building-from-sources-python"></a>
+Building from sources (Python)</h2>
+<p>To build from sources first, install the necessary requirements for Python and your system. We recommend using the virtual environemnt (<span class="tt">venv</span>) to install and use the library.</p>
+<p>Using <span class="tt">uv</span>:</p>
+<div class="fragment"><div class="line">uv sync --python 3.13</div>
+</div><!-- fragment --><p>Besides the dependencies of the bindings, <span class="tt">uv sync</span> installs the <span class="tt">dev</span> dependency group: the tools to build the bindings in place, the packages the tests and the notebooks import, and the tools to sync the notebooks and to render the documentation.</p>
+<p>Or using <span class="tt">pip</span>:</p>
+<div class="fragment"><div class="line">python3 -m pip install --upgrade pip</div>
+<div class="line">make -C bindings/python init</div>
+<div class="line"> </div>
+<div class="line">sudo apt -qq update</div>
+<div class="line">sudo apt -qq install -y graphviz graphviz-dev</div>
+</div><!-- fragment --><p><span class="tt">make init</span> installs the bindings with the <span class="tt">dev</span>, <span class="tt">pandas</span> and <span class="tt">plotting</span> extras: Cython, setuptools and CMake for the in-place build, pytest, and the packages the tests import. <span class="tt">pip install libmata</span> alone installs no runtime dependencies; building it from the sdist when no wheel fits still pulls its build dependencies into an isolated environment.</p>
+<p>Now, you can install the library.</p>
+<div class="fragment"><div class="line">make -C bindings/python install</div>
+</div><!-- fragment --><p>Finally, you can verify the binding woks as expected by running the test suite:</p>
+<div class="fragment"><div class="line">make -C bindings/python test</div>
+</div><!-- fragment --><h1 class="doxsection"><a class="anchor" id="rust-binding"></a>
+Rust binding</h1>
+<p>Mata offers bindings of its library to Rust in <a href="https://github.com/VeriFIT/mata/tree/devel/bindings/rust/"><span class="tt">bindings/rust</span></a>: the crate <a href="https://crates.io/crates/mata"><span class="tt">mata</span></a> with a safe API, and the crate <a href="https://crates.io/crates/mata-sys"><span class="tt">mata-sys</span></a>, which builds the library. They need Rust 1.95 or newer besides the requirements of the library. The module <span class="tt">mata::lazy</span> (the crate <a href="https://github.com/VeriFIT/mata/tree/devel/bindings/rust/mata-lazy/"><span class="tt">mata-lazy</span></a>) checks combinations of NFAs and NFTs for emptiness lazily, and the module <span class="tt">mata::logic</span> (the crate <a href="https://github.com/VeriFIT/mata/tree/devel/bindings/rust/mata-logic/"><span class="tt">mata-logic</span></a>) decides formulas encoded in automata on top of it. The same workspace builds the <a href="https://mata.pages.fit.vutbr.cz/"><span class="tt">mata</span> command</a>, the command-line interpreter of Mata Script; see <a href="https://github.com/VeriFIT/mata/blob/devel/bindings/rust/README.md"><span class="tt">bindings/rust/README.md</span></a>.</p>
+<h2 class="doxsection"><a class="anchor" id="installation-from-cratesio"></a>
+Installation from crates.io</h2>
+<p>To add the latest version to a Cargo project, run:</p>
+<div class="fragment"><div class="line">cargo add mata</div>
+</div><!-- fragment --><h2 class="doxsection"><a class="anchor" id="building-from-sources-rust"></a>
+Building from sources (Rust)</h2>
+<p>To build the bindings and run their tests:</p>
+<div class="fragment"><div class="line">cd bindings/rust</div>
+<div class="line">cargo test --workspace --all-features</div>
+</div><!-- fragment --><h1 class="doxsection"><a class="anchor" id="readme-getting-started"></a>
+Getting started</h1>
+<p>To get started, we refer to the folder <a href="https://github.com/VeriFIT/mata/tree/devel/examples/">examples</a> in our repository. This directory contains examples of various usage in form of:</p>
+<ol type="1">
+<li>C/C++ example programs. By default, they are built with the library. To run for example the first example:</li>
+</ol>
+<div class="fragment"><div class="line">./build/examples/example01-simple</div>
+</div><!-- fragment --><ol type="1">
+<li>Python example scripts. To run the scripts run the following.</li>
+</ol>
+<div class="fragment"><div class="line">python3 examples/example01-python-binding.py</div>
+</div><!-- fragment --><ol type="1">
+<li>Python Jupyter notebooks. To run the Jupyter notebook, one needs to have jupyter installed as a prerequisite. The run the Jupyter notebook, that creates an instance on your local server. Navigate to generated link to see the available Jupyter notebooks:</li>
+</ol>
+<div class="fragment"><div class="line">pip3 install jupyter</div>
+<div class="line">jupyter notebook</div>
+</div><!-- fragment --><h2 class="doxsection"><a class="anchor" id="using-the-library"></a>
+Using the library</h2>
+<p>The library can be used directly in the C/C++ code. The result of compilation is a static or dynamic library, that can be linked to ones project. Note, that the library is dependent on several other 3rd party libraries (e.g., <span class="tt">libre2</span> or <span class="tt">libsimlib</span>), which are included in the repository.</p>
+<p>First import the library in your code. If the library is properly installed, you can use the standard include.</p>
+<div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="nfa_8hh.html">mata/nfa/nfa.hh</a>&gt;</span></div>
+<div class="ttc" id="anfa_8hh_html"><div class="ttname"><a href="nfa_8hh.html">nfa.hh</a></div><div class="ttdoc">Nondeterministic Finite Automata including structures, transitions and algorithms.</div></div>
+</div><!-- fragment --><p>We recommend to use the <span class="tt"><a class="el" href="namespacemata_1_1nfa.html">mata::nfa</a></span> namespace for easier usage:</p>
+<div class="fragment"><div class="line"><span class="keyword">using namespace </span><a class="code hl_namespace" href="namespacemata_1_1nfa.html">mata::nfa</a>;</div>
+<div class="ttc" id="anamespacemata_1_1nfa_html"><div class="ttname"><a href="namespacemata_1_1nfa.html">mata::nfa</a></div><div class="ttdef"><b>Definition</b> <a href="nfa_2algorithms_8hh_source.html#l00027">algorithms.hh:27</a></div></div>
+</div><!-- fragment --><p>Start by creating an automaton with fixed number of states.</p>
+<div class="fragment"><div class="line"><span class="keywordtype">int</span> main() {</div>
+<div class="line">    <a class="code hl_class" href="classmata_1_1nfa_1_1Nfa.html">Nfa</a> aut(4);</div>
+<div class="ttc" id="aclassmata_1_1nfa_1_1Nfa_html"><div class="ttname"><a href="classmata_1_1nfa_1_1Nfa.html">mata::nfa::Nfa</a></div><div class="ttdoc">A class representing an NFA.</div><div class="ttdef"><b>Definition</b> <a href="nfa_8hh_source.html#l00114">nfa.hh:114</a></div></div>
+</div><!-- fragment --><p>You can set the initial and final states directly using the initializers.</p>
+<div class="fragment"><div class="line">aut.initial = {0, 1};</div>
+<div class="line">aut.final = {2, 3};</div>
+</div><!-- fragment --><p>Further, you can add transitions in form of tripple <span class="tt">(state_from, symbol, targets)</span>:</p>
+<div class="fragment"><div class="line">aut.delta.add(0, 0, 2);</div>
+<div class="line">aut.delta.add(1, 1, 3);</div>
+</div><!-- fragment --><p>You can verify the state of your automaton by generating the automaton in <span class="tt">.dot</span> format.</p>
+<div class="fragment"><div class="line">    aut.print_to_dot(std::cout);</div>
+<div class="line"> </div>
+<div class="line">    <span class="keywordflow">return</span> 0;</div>
+<div class="line">}</div>
+</div><!-- fragment --><p>We recommend <span class="tt">cmake</span> for building projects using Mata. Provided the Mata is installed in the system directories, the <span class="tt">CMakeLists.txt</span> file for the example may look like:</p>
+<div class="fragment"><div class="line">cmake_minimum_required (VERSION 3.23.0)</div>
+<div class="line">project (my-project)</div>
+<div class="line">set (CMAKE_CXX_STANDARD 20)</div>
+<div class="line"> </div>
+<div class="line"># Find an installed Mata, or, if Mata is not installed, fetch the latest version, build it, and make it available in {#find-an-installed-mata-or-if-mata-is-not-installed-fetch-the-latest-version-build-it-and-make-it-available-in}</div>
+<div class="line">#  your project. {#your-project}</div>
+<div class="line">include(FetchContent)</div>
+<div class="line">find_package(mata QUIET)</div>
+<div class="line">if(NOT mata_FOUND)</div>
+<div class="line">  FetchContent_Declare(</div>
+<div class="line">    mata</div>
+<div class="line">    GIT_REPOSITORY https://github.com/VeriFIT/mata</div>
+<div class="line">    GIT_TAG devel # Branch name, commit hash or a tag.</div>
+<div class="line">    GIT_SUBMODULES &quot;&quot; # Explicitly disables submodule initialization/update.</div>
+<div class="line">    GIT_SUBMODULES_RECURSE OFF # Ensures submodules are not downloaded recursively.</div>
+<div class="line">  )</div>
+<div class="line">  FetchContent_MakeAvailable(mata)</div>
+<div class="line">endif()</div>
+<div class="line"> </div>
+<div class="line">add_executable(my-project</div>
+<div class="line">    my-project-source.cc)</div>
+<div class="line">target_link_libraries(my-project PUBLIC mata::libmata)</div>
+</div><!-- fragment --><h2 class="doxsection"><a class="anchor" id="using-the-python-binding"></a>
+Using the Python binding</h2>
+<p>The python binding is installed (by default) to your local python package repository. You can either use the binding in your own scripts or in the python interpreter.</p>
+<p>You can start using the binding by importing the <span class="tt">libmata</span> package.</p>
+<div class="fragment"><div class="line"><span class="keyword">import</span> libmata.nfa.nfa <span class="keyword">as</span> mata_nfa</div>
+</div><!-- fragment --><p>In your own scripts, we recommend to use the standard guard for running the scripts, as follows.</p>
+<div class="fragment"><div class="line"><span class="keywordflow">if</span> __name__ == <span class="stringliteral">&quot;__main__&quot;</span>:</div>
+</div><!-- fragment --><p>The usage of the binding copies (to certain levels) the usage of the C++ library.</p>
+<div class="fragment"><div class="line">aut = mata_nfa.Nfa(4)</div>
+<div class="line"> </div>
+<div class="line">aut.initial_states = {0, 1}</div>
+<div class="line">aut.final_states = {2, 3}</div>
+<div class="line">aut.add_transition(0, 0, 2)</div>
+<div class="line">aut.add_transition(1, 1, 3)</div>
+<div class="line"> </div>
+<div class="line">print(aut.to_dot_str())</div>
+</div><!-- fragment --><p>You can either run your scripts directly using <span class="tt">python</span> or compile it using the <span class="tt">cython</span> project.</p>
+<h2 class="doxsection"><a class="anchor" id="using-the-rust-binding"></a>
+Using the Rust binding</h2>
+<p>The API documentation of the Rust binding is on <a href="https://docs.rs/mata">docs.rs</a>. Its usage follows the C++ library:</p>
+<div class="fragment"><div class="line">use mata::{Error, Nfa, State, Symbol};</div>
+<div class="line"> </div>
+<div class="line">fn main() -&gt; Result&lt;(), Error&gt; {</div>
+<div class="line">    let mut aut = Nfa::with_states(4);</div>
+<div class="line"> </div>
+<div class="line">    aut.add_initial(State::new(0))?;</div>
+<div class="line">    aut.add_initial(State::new(1))?;</div>
+<div class="line">    aut.add_final(State::new(2))?;</div>
+<div class="line">    aut.add_final(State::new(3))?;</div>
+<div class="line">    aut.add_transition(State::new(0), Symbol::new(0), State::new(2))?;</div>
+<div class="line">    aut.add_transition(State::new(1), Symbol::new(1), State::new(3))?;</div>
+<div class="line"> </div>
+<div class="line">    println!(&quot;{}&quot;, aut.dot());</div>
+<div class="line">    Ok(())</div>
+<div class="line">}</div>
+</div><!-- fragment --><h2 class="doxsection"><a class="anchor" id="benchmarking-profiling"></a>
+Benchmarking, profiling</h2>
+<p>For instructions on how to benchmark and profile Mata, see <a class="el" href="benchmarking.html#md__2home_2runner_2work_2mata_2mata_2BENCHMARKING" title="/home/runner/work/mata/mata/BENCHMARKING.md">BENCHMARKING.md</a>.</p>
+<h1 class="doxsection"><a class="anchor" id="supported-automata-models"></a>
+Supported Automata Models</h1>
+<p>While we try to keep the provided library interface stable, Mata is still a project in its infancy. Hence, the interface is subject to change. For further information, see section <a class="el" href="#versioning" title="Versioning">Versioning</a>.</p>
+<p>Mata currently supports (non-)deterministic finite automata (NFAs), defined in <span class="tt">include/mata/nfa/</span>.</p>
+<dl class="section warning"><dt>Warning</dt><dd>Mata provides an experimental (unstable) support for (non-)deterministic finite transducers (NFTs), defined in <span class="tt">include/mata/nft/</span>. The provided interface may change.</dd></dl>
+<h1 class="doxsection"><a class="anchor" id="versioning"></a>
+Versioning</h1>
+<p>Mata follows the versioning scheme <span class="tt">GENERATION.MAJOR.MINOR</span>, e.g. <span class="tt">1.2.3</span> where <span class="tt">1</span> is the generation number, and <span class="tt">2</span> the major version, and <span class="tt">3</span> the minor version. The <span class="tt">MAJOR</span> and <span class="tt">MINOR</span> versions follow loosely the <a href="https://semver.org/">Semantic Versioning</a> scheme.</p>
+<ul>
+<li>The <span class="tt">GENERATION</span> number represents our subjective generation of the Mata library. Typically, we increment the <span class="tt">GENERATION</span> number when a substantial change to the library is introduced, such as adding support for new automata models, extensive rewrite of (a part of) the Mata library, or to denote a new scientific paper documenting the latest developments in the Mata library is published, etc.</li>
+<li>Generally, the changes in the <span class="tt">MINOR</span> version should not break the existing interface, but exceptions might occur.</li>
+<li>The changes in the <span class="tt">MAJOR</span> version might introduce breaking changes that modify the existing interface and might require changing the code in your projects that use the Mata library.</li>
+</ul>
+<p>Mata publishes releases from the <span class="tt">master</span> branch, and sometimes development releases from the <span class="tt">devel</span> branch.</p>
+<h1 class="doxsection"><a class="anchor" id="publications"></a>
+Publications</h1>
+<ul>
+<li>Chocholatý, D., Fiedor, T., Havlena, V., Holík, L., Hruška, M., Lengál, O., &amp; Síč, J. (2023). <a href="https://doi.org/10.1007/978-3-031-57249-4_7">Mata, a Fast and Simple Finite Automata Library</a>. In <em>Proc. of TACAS'24</em>, volume 14571 of LNCS, pages 130-151, 2024. Springer.<ul>
+<li>Chocholatý, D., Fiedor, T., Havlena, V., Holík, L., Hruška, M., Lengál, O., Síč, J.: <a href="https://doi.org/10.5281/zenodo.10044515">A replication package for reproducing the results of paper “Mata: A fast and simple finite automata library”</a> (Oct 2023).</li>
+</ul>
+</li>
+</ul>
+<h1 class="doxsection"><a class="anchor" id="readme-contributing"></a>
+Contributing</h1>
+<p>Please refer to our <a class="el" href="contributing.html#md__2home_2runner_2work_2mata_2mata_2CONTRIBUTING" title="/home/runner/work/mata/mata/CONTRIBUTING.md">contributing guidelines</a>.</p>
+<h1 class="doxsection"><a class="anchor" id="links"></a>
+Links</h1>
+<ul>
+<li>Project (origin) repository: <a href="https://github.com/verifit/mata">https://github.com/verifit/mata</a></li>
+<li>Issue tracker: <a href="https://github.com/verifit/mata/issues">https://github.com/verifit/mata/issues</a><ul>
+<li>In case of some sensitive bugs (like security vulnerabilities), please contact us directly, instead of using issue tracker. We value your effort to improve the security and privacy of this project!</li>
+</ul>
+</li>
+<li>Website: <a href="https://verifit.github.io/mata/">https://verifit.github.io/mata/</a></li>
+<li>Project documentation: <a href="https://verifit.github.io/mata/master/docs/">https://verifit.github.io/mata/master/docs/</a></li>
+<li>Playground: <a href="https://verifit.github.io/mata/master/playground/">https://verifit.github.io/mata/master/playground/</a></li>
+<li>Jupyter notebooks demonstrating <span class="tt"><a class="el" href="namespacemata.html" title="Main namespace including structs and algorithms for all automata.">mata</a></span> usage: <a href="https://github.com/VeriFIT/mata/tree/devel/examples/notebooks">https://github.com/VeriFIT/mata/tree/devel/examples/notebooks</a><ul>
+<li><a href="https://github.com/VeriFIT/mata/tree/devel/examples/notebooks/example-01-ws1s-formulae.ipynb">Example 01: WS1S Logic</a></li>
+<li><a href="https://github.com/VeriFIT/mata/tree/devel/examples/notebooks/example-02-redos-attacks.ipynb">Example 02: ReDoS Attacks</a></li>
+<li><a href="https://github.com/VeriFIT/mata/tree/devel/examples/notebooks/example-03-exploring-maze.ipynb">Example 03: Exploring Maze</a></li>
+</ul>
+</li>
+</ul>
+<p>Also, check out our research group focusing on program analysis, static and dynamic analysis, formal methods, verification and many more: <a href="http://www.fit.vutbr.cz/research/groups/verifit/index.php.en">http://www.fit.vutbr.cz/research/groups/verifit/index.php.en</a>.</p>
+<h1 class="doxsection"><a class="anchor" id="licensing"></a>
+Licensing</h1>
+<p>The code of Mata is licensed under MIT licence. See [LICENSE](LICENSE).</p>
+<p>The folder [<span class="tt">3rdparty/</span>](3rdparty) contains 3rd party applications licensed under their own licences, included with the code.</p>
+<h1 class="doxsection"><a class="anchor" id="contacts"></a>
+Contacts</h1>
+<p>See <a href="https://github.com/VeriFIT/mata/blob/devel/AUTHORS.md">AUTHORS.md</a>.</p>
+<h1 class="doxsection"><a class="anchor" id="acknowledgements"></a>
+Acknowledgements</h1>
+<p>We thank for the support received from the Brno University of Technology (<a href="https://www.fit.vutbr.cz/">BUT FIT</a>).</p>
+<p>This tool as well as the information provided on this web page reflects only the author's view and no organization is responsible for any use that may be made of the information it contains.</p>
+<h1 class="doxsection"><a class="anchor" id="readme-branches"></a>
+Branches</h1>
+<p>See <a class="el" href="#readme-branches" title="Branches">branches</a>. </p>
+</div></div><!-- PageDoc -->
+<a href="doxygen_crawl.html"></a>
+</div><!-- contents -->
+</div><!-- doc-content -->
+</div><!-- container -->
+<!-- start footer part -->
+<div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
+  <ul>
+    <li class="footer">Generated on <span class="timestamp"></span> for Mata by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.16.1 </li>
+  </ul>
+</div>
+</body>
 </html>

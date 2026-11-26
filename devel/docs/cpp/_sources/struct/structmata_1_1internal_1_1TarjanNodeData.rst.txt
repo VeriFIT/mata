@@ -1,5 +1,0 @@
-Struct mata::internal::TarjanNodeData
-=====================================
-
-.. doxygenstruct:: mata::internal::TarjanNodeData
-   :members:

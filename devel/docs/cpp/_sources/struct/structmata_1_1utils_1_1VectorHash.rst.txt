@@ -1,5 +1,0 @@
-Struct mata::utils::VectorHash
-==============================
-
-.. doxygenstruct:: mata::utils::VectorHash
-   :members:

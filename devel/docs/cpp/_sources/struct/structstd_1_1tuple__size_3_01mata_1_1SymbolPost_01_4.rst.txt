@@ -1,5 +1,0 @@
-Struct std::tuple_size< mata::SymbolPost >
-==========================================
-
-.. doxygenstruct:: std::tuple_size< mata::SymbolPost >
-   :members:

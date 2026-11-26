@@ -1,37 +1,235 @@
-<!DOCTYPE html>
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
 
-<html lang="en" data-content_root="./">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Generated with Sphinx 9.2.0 and Furo 2025.12.19 -->
+        <title>libmata documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
 
-    <title>Python bindings of Mata &#8212; libmata  documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
-    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
-    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
-    <script src="_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="_static/doctools.js?v=fd6eb6e6"></script>
-    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
   
-
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
   
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
   
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
 
-  </head><body>
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="#"><div class="brand">libmata  documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="#">
   
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
-            
-  <section id="python-bindings-of-mata">
+  <span class="sidebar-brand-text">libmata  documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  
+</div><div class="sidebar-donor-section">
+  <a href="https://verifit.github.io/mata/devel/">Mata website</a>
+  <a href="https://verifit.github.io/mata/devel/docs/">All documentation</a>
+  <a href="https://verifit.github.io/mata/devel/playground/">Playground</a>
+</div></div>
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/index.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="python-bindings-of-mata">
 <h1>Python bindings of Mata<a class="headerlink" href="#python-bindings-of-mata" title="Link to this heading">¶</a></h1>
 <p><code class="docutils literal notranslate"><span class="pre">libmata</span></code> is the Python interface of the <a class="reference external" href="https://github.com/VeriFIT/mata">Mata</a> library of finite automata.</p>
 <section id="module-libmata.nfa.nfa">
@@ -4205,77 +4403,524 @@ first states corresponding to a equivalence class?</p>
 </section>
 </section>
 
-
-          </div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
           
         </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="Main">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="#">libmata</a></h1>
-
-
-
-
-
-
-
-
-
-<search id="searchbox" style="display: none" role="search">
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
-      <input type="submit" value="Go" />
-    </form>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; Mata authors
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
     </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
-
-
-<hr />
-<ul>
-    
-    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/">Mata website</a></li>
-    
-    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/docs/">All documentation</a></li>
-    
-    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/playground/">Playground</a></li>
-    
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Python bindings of Mata</a><ul>
+<li><a class="reference internal" href="#module-libmata.nfa.nfa">Nondeterministic finite automata</a><ul>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta"><code class="docutils literal notranslate"><span class="pre">Delta</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta.add"><code class="docutils literal notranslate"><span class="pre">Delta.add()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta.add_transitions"><code class="docutils literal notranslate"><span class="pre">Delta.add_transitions()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta.add_transitions_from"><code class="docutils literal notranslate"><span class="pre">Delta.add_transitions_from()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta.clear"><code class="docutils literal notranslate"><span class="pre">Delta.clear()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta.contains"><code class="docutils literal notranslate"><span class="pre">Delta.contains()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta.empty"><code class="docutils literal notranslate"><span class="pre">Delta.empty()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta.get_transitions_between"><code class="docutils literal notranslate"><span class="pre">Delta.get_transitions_between()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta.get_transitions_from"><code class="docutils literal notranslate"><span class="pre">Delta.get_transitions_from()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta.get_transitions_to"><code class="docutils literal notranslate"><span class="pre">Delta.get_transitions_to()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta.get_used_symbols"><code class="docutils literal notranslate"><span class="pre">Delta.get_used_symbols()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta.iter_transitions_from"><code class="docutils literal notranslate"><span class="pre">Delta.iter_transitions_from()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta.num_of_states"><code class="docutils literal notranslate"><span class="pre">Delta.num_of_states()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta.num_of_transitions"><code class="docutils literal notranslate"><span class="pre">Delta.num_of_transitions()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta.remove"><code class="docutils literal notranslate"><span class="pre">Delta.remove()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta.state_post"><code class="docutils literal notranslate"><span class="pre">Delta.state_post()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta.transitions"><code class="docutils literal notranslate"><span class="pre">Delta.transitions()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta.uses_state"><code class="docutils literal notranslate"><span class="pre">Delta.uses_state()</span></code></a></li>
 </ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="#">Documentation overview</a><ul>
-  </ul></li>
+</li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.DeterminizationReduction"><code class="docutils literal notranslate"><span class="pre">DeterminizationReduction</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.nfa.nfa.DeterminizationReduction.Adaptive"><code class="docutils literal notranslate"><span class="pre">DeterminizationReduction.Adaptive</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.DeterminizationReduction.Bisimulation"><code class="docutils literal notranslate"><span class="pre">DeterminizationReduction.Bisimulation</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.DeterminizationReduction.Simulation"><code class="docutils literal notranslate"><span class="pre">DeterminizationReduction.Simulation</span></code></a></li>
 </ul>
-</div>
+</li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.ExternalSolverNotFound"><code class="docutils literal notranslate"><span class="pre">ExternalSolverNotFound</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa"><code class="docutils literal notranslate"><span class="pre">Nfa</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.add_new_state"><code class="docutils literal notranslate"><span class="pre">Nfa.add_new_state()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.add_state"><code class="docutils literal notranslate"><span class="pre">Nfa.add_state()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.add_transition"><code class="docutils literal notranslate"><span class="pre">Nfa.add_transition()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.add_transition_object"><code class="docutils literal notranslate"><span class="pre">Nfa.add_transition_object()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.alphabet"><code class="docutils literal notranslate"><span class="pre">Nfa.alphabet</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.clear"><code class="docutils literal notranslate"><span class="pre">Nfa.clear()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.clear_final"><code class="docutils literal notranslate"><span class="pre">Nfa.clear_final()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.clear_initial"><code class="docutils literal notranslate"><span class="pre">Nfa.clear_initial()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.concatenate"><code class="docutils literal notranslate"><span class="pre">Nfa.concatenate()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.deepcopy"><code class="docutils literal notranslate"><span class="pre">Nfa.deepcopy()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.delta"><code class="docutils literal notranslate"><span class="pre">Nfa.delta</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.epsilon_symbol_posts"><code class="docutils literal notranslate"><span class="pre">Nfa.epsilon_symbol_posts()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.final_states"><code class="docutils literal notranslate"><span class="pre">Nfa.final_states</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.get_num_of_transitions"><code class="docutils literal notranslate"><span class="pre">Nfa.get_num_of_transitions()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.get_one_letter_aut"><code class="docutils literal notranslate"><span class="pre">Nfa.get_one_letter_aut()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.get_reachable_states"><code class="docutils literal notranslate"><span class="pre">Nfa.get_reachable_states()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.get_symbols"><code class="docutils literal notranslate"><span class="pre">Nfa.get_symbols()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.get_symbols_to_work_with"><code class="docutils literal notranslate"><span class="pre">Nfa.get_symbols_to_work_with()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.get_terminating_states"><code class="docutils literal notranslate"><span class="pre">Nfa.get_terminating_states()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.get_trans_as_sequence"><code class="docutils literal notranslate"><span class="pre">Nfa.get_trans_as_sequence()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.get_trans_from_state_as_sequence"><code class="docutils literal notranslate"><span class="pre">Nfa.get_trans_from_state_as_sequence()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.get_transitions_from_state"><code class="docutils literal notranslate"><span class="pre">Nfa.get_transitions_from_state()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.get_transitions_to_state"><code class="docutils literal notranslate"><span class="pre">Nfa.get_transitions_to_state()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.get_useful_states"><code class="docutils literal notranslate"><span class="pre">Nfa.get_useful_states()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.get_word_for_path"><code class="docutils literal notranslate"><span class="pre">Nfa.get_word_for_path()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.get_words"><code class="docutils literal notranslate"><span class="pre">Nfa.get_words()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.get_words_lazy"><code class="docutils literal notranslate"><span class="pre">Nfa.get_words_lazy()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.has_final_state"><code class="docutils literal notranslate"><span class="pre">Nfa.has_final_state()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.has_initial_state"><code class="docutils literal notranslate"><span class="pre">Nfa.has_initial_state()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.has_transition"><code class="docutils literal notranslate"><span class="pre">Nfa.has_transition()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.initial_states"><code class="docutils literal notranslate"><span class="pre">Nfa.initial_states</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.is_complete"><code class="docutils literal notranslate"><span class="pre">Nfa.is_complete()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.is_deterministic"><code class="docutils literal notranslate"><span class="pre">Nfa.is_deterministic()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.is_epsilon"><code class="docutils literal notranslate"><span class="pre">Nfa.is_epsilon()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.is_in_lang"><code class="docutils literal notranslate"><span class="pre">Nfa.is_in_lang()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.is_lang_empty"><code class="docutils literal notranslate"><span class="pre">Nfa.is_lang_empty()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.is_minimal"><code class="docutils literal notranslate"><span class="pre">Nfa.is_minimal()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.is_state"><code class="docutils literal notranslate"><span class="pre">Nfa.is_state()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.is_universal"><code class="docutils literal notranslate"><span class="pre">Nfa.is_universal()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.iter_transitions_from"><code class="docutils literal notranslate"><span class="pre">Nfa.iter_transitions_from()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.iterate"><code class="docutils literal notranslate"><span class="pre">Nfa.iterate()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.label"><code class="docutils literal notranslate"><span class="pre">Nfa.label</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.make_complete"><code class="docutils literal notranslate"><span class="pre">Nfa.make_complete()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.make_final_state"><code class="docutils literal notranslate"><span class="pre">Nfa.make_final_state()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.make_final_states"><code class="docutils literal notranslate"><span class="pre">Nfa.make_final_states()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.make_initial_state"><code class="docutils literal notranslate"><span class="pre">Nfa.make_initial_state()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.make_initial_states"><code class="docutils literal notranslate"><span class="pre">Nfa.make_initial_states()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.num_of_states"><code class="docutils literal notranslate"><span class="pre">Nfa.num_of_states()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.post_map_of"><code class="docutils literal notranslate"><span class="pre">Nfa.post_map_of()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.post_of"><code class="docutils literal notranslate"><span class="pre">Nfa.post_of()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.read_word"><code class="docutils literal notranslate"><span class="pre">Nfa.read_word()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.read_word_det"><code class="docutils literal notranslate"><span class="pre">Nfa.read_word_det()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.remove_epsilon_inplace"><code class="docutils literal notranslate"><span class="pre">Nfa.remove_epsilon_inplace()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.remove_final_state"><code class="docutils literal notranslate"><span class="pre">Nfa.remove_final_state()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.remove_initial_state"><code class="docutils literal notranslate"><span class="pre">Nfa.remove_initial_state()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.remove_trans"><code class="docutils literal notranslate"><span class="pre">Nfa.remove_trans()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.remove_trans_raw"><code class="docutils literal notranslate"><span class="pre">Nfa.remove_trans_raw()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.resolve_alphabet"><code class="docutils literal notranslate"><span class="pre">Nfa.resolve_alphabet()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.to_dataframe"><code class="docutils literal notranslate"><span class="pre">Nfa.to_dataframe()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.to_dot_file"><code class="docutils literal notranslate"><span class="pre">Nfa.to_dot_file()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.to_dot_str"><code class="docutils literal notranslate"><span class="pre">Nfa.to_dot_str()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.to_mata_str"><code class="docutils literal notranslate"><span class="pre">Nfa.to_mata_str()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.to_networkx_graph"><code class="docutils literal notranslate"><span class="pre">Nfa.to_networkx_graph()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.to_regex_str"><code class="docutils literal notranslate"><span class="pre">Nfa.to_regex_str()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.transitions_as_arrays"><code class="docutils literal notranslate"><span class="pre">Nfa.transitions_as_arrays()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.trim"><code class="docutils literal notranslate"><span class="pre">Nfa.trim()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.trim_with_state_map"><code class="docutils literal notranslate"><span class="pre">Nfa.trim_with_state_map()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.unify_final"><code class="docutils literal notranslate"><span class="pre">Nfa.unify_final()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.unify_initial"><code class="docutils literal notranslate"><span class="pre">Nfa.unify_initial()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.union"><code class="docutils literal notranslate"><span class="pre">Nfa.union()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.RegexPrintMode"><code class="docutils literal notranslate"><span class="pre">RegexPrintMode</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.nfa.nfa.RegexPrintMode.Fast"><code class="docutils literal notranslate"><span class="pre">RegexPrintMode.Fast</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.RegexPrintMode.Readable"><code class="docutils literal notranslate"><span class="pre">RegexPrintMode.Readable</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Run"><code class="docutils literal notranslate"><span class="pre">Run</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Run.path"><code class="docutils literal notranslate"><span class="pre">Run.path</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Run.word"><code class="docutils literal notranslate"><span class="pre">Run.word</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.SymbolPost"><code class="docutils literal notranslate"><span class="pre">SymbolPost</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.nfa.nfa.SymbolPost.symbol"><code class="docutils literal notranslate"><span class="pre">SymbolPost.symbol</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.SymbolPost.targets"><code class="docutils literal notranslate"><span class="pre">SymbolPost.targets</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Transition"><code class="docutils literal notranslate"><span class="pre">Transition</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Transition.source"><code class="docutils literal notranslate"><span class="pre">Transition.source</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Transition.symbol"><code class="docutils literal notranslate"><span class="pre">Transition.symbol</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Transition.target"><code class="docutils literal notranslate"><span class="pre">Transition.target</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.accepts_epsilon"><code class="docutils literal notranslate"><span class="pre">accepts_epsilon()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.complement"><code class="docutils literal notranslate"><span class="pre">complement()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.compute_relation"><code class="docutils literal notranslate"><span class="pre">compute_relation()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.concatenate"><code class="docutils literal notranslate"><span class="pre">concatenate()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.concatenate_with_result_state_maps"><code class="docutils literal notranslate"><span class="pre">concatenate_with_result_state_maps()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.determinize"><code class="docutils literal notranslate"><span class="pre">determinize()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.determinize_four_russians"><code class="docutils literal notranslate"><span class="pre">determinize_four_russians()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.determinize_four_russians_with_subset_map"><code class="docutils literal notranslate"><span class="pre">determinize_four_russians_with_subset_map()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.determinize_with_subset_map"><code class="docutils literal notranslate"><span class="pre">determinize_with_subset_map()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.divisible_by"><code class="docutils literal notranslate"><span class="pre">divisible_by()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.encode_word"><code class="docutils literal notranslate"><span class="pre">encode_word()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.epsilon"><code class="docutils literal notranslate"><span class="pre">epsilon()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.equivalence_check"><code class="docutils literal notranslate"><span class="pre">equivalence_check()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.get_elements_from_bool_vec"><code class="docutils literal notranslate"><span class="pre">get_elements_from_bool_vec()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.intersection"><code class="docutils literal notranslate"><span class="pre">intersection()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.intersection_with_product_map"><code class="docutils literal notranslate"><span class="pre">intersection_with_product_map()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.is_included"><code class="docutils literal notranslate"><span class="pre">is_included()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.is_included_with_cex"><code class="docutils literal notranslate"><span class="pre">is_included_with_cex()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.minimize"><code class="docutils literal notranslate"><span class="pre">minimize()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.reduce"><code class="docutils literal notranslate"><span class="pre">reduce()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.reduce_residual_after"><code class="docutils literal notranslate"><span class="pre">reduce_residual_after()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.reduce_residual_with"><code class="docutils literal notranslate"><span class="pre">reduce_residual_with()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.reduce_with_state_map"><code class="docutils literal notranslate"><span class="pre">reduce_with_state_map()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.remove_epsilon"><code class="docutils literal notranslate"><span class="pre">remove_epsilon()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.revert"><code class="docutils literal notranslate"><span class="pre">revert()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.run_safely_external_command"><code class="docutils literal notranslate"><span class="pre">run_safely_external_command()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.store"><code class="docutils literal notranslate"><span class="pre">store()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.union"><code class="docutils literal notranslate"><span class="pre">union()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.NoodleOrder"><code class="docutils literal notranslate"><span class="pre">NoodleOrder</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.nfa.strings.NoodleOrder.Forward"><code class="docutils literal notranslate"><span class="pre">NoodleOrder.Forward</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.NoodleOrder.LargestFirst"><code class="docutils literal notranslate"><span class="pre">NoodleOrder.LargestFirst</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.NoodleOrder.Random"><code class="docutils literal notranslate"><span class="pre">NoodleOrder.Random</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.NoodleOrder.Reverse"><code class="docutils literal notranslate"><span class="pre">NoodleOrder.Reverse</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.NoodleOrder.SmallestFirst"><code class="docutils literal notranslate"><span class="pre">NoodleOrder.SmallestFirst</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.nfa.strings.ReplaceMode"><code class="docutils literal notranslate"><span class="pre">ReplaceMode</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.nfa.strings.ReplaceMode.All"><code class="docutils literal notranslate"><span class="pre">ReplaceMode.All</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.ReplaceMode.Single"><code class="docutils literal notranslate"><span class="pre">ReplaceMode.Single</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.nfa.strings.Segmentation"><code class="docutils literal notranslate"><span class="pre">Segmentation</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.nfa.strings.Segmentation.get_epsilon_depths"><code class="docutils literal notranslate"><span class="pre">Segmentation.get_epsilon_depths()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.Segmentation.get_segments"><code class="docutils literal notranslate"><span class="pre">Segmentation.get_segments()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.Segmentation.get_untrimmed_segments"><code class="docutils literal notranslate"><span class="pre">Segmentation.get_untrimmed_segments()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.nfa.strings.ShortestWordsMap"><code class="docutils literal notranslate"><span class="pre">ShortestWordsMap</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.nfa.strings.ShortestWordsMap.get_shortest_words_from"><code class="docutils literal notranslate"><span class="pre">ShortestWordsMap.get_shortest_words_from()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.nfa.strings.create_identity"><code class="docutils literal notranslate"><span class="pre">create_identity()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.create_identity_with_single_symbol_replace"><code class="docutils literal notranslate"><span class="pre">create_identity_with_single_symbol_replace()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.get_accepted_symbols"><code class="docutils literal notranslate"><span class="pre">get_accepted_symbols()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.get_shortest_words"><code class="docutils literal notranslate"><span class="pre">get_shortest_words()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.get_word_lengths"><code class="docutils literal notranslate"><span class="pre">get_word_lengths()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.get_words_of_lengths"><code class="docutils literal notranslate"><span class="pre">get_words_of_lengths()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.is_lang_eps"><code class="docutils literal notranslate"><span class="pre">is_lang_eps()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.noodlify"><code class="docutils literal notranslate"><span class="pre">noodlify()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.noodlify_for_equation"><code class="docutils literal notranslate"><span class="pre">noodlify_for_equation()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.noodlify_for_equation_lazy"><code class="docutils literal notranslate"><span class="pre">noodlify_for_equation_lazy()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.noodlify_for_equation_sides"><code class="docutils literal notranslate"><span class="pre">noodlify_for_equation_sides()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.noodlify_for_equation_sides_lazy"><code class="docutils literal notranslate"><span class="pre">noodlify_for_equation_sides_lazy()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.noodlify_for_transducer"><code class="docutils literal notranslate"><span class="pre">noodlify_for_transducer()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.noodlify_for_transducer_lazy"><code class="docutils literal notranslate"><span class="pre">noodlify_for_transducer_lazy()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.noodlify_lazy"><code class="docutils literal notranslate"><span class="pre">noodlify_lazy()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.noodlify_mult_eps"><code class="docutils literal notranslate"><span class="pre">noodlify_mult_eps()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.noodlify_mult_eps_lazy"><code class="docutils literal notranslate"><span class="pre">noodlify_mult_eps_lazy()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.process_eps_map"><code class="docutils literal notranslate"><span class="pre">process_eps_map()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.reluctant_nfa"><code class="docutils literal notranslate"><span class="pre">reluctant_nfa()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.replace_reluctant_literal"><code class="docutils literal notranslate"><span class="pre">replace_reluctant_literal()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.replace_reluctant_regex"><code class="docutils literal notranslate"><span class="pre">replace_reluctant_regex()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.strings.replace_reluctant_single_symbol"><code class="docutils literal notranslate"><span class="pre">replace_reluctant_single_symbol()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-libmata.nft.nft">Nondeterministic finite transducers</a><ul>
+<li><a class="reference internal" href="#libmata.nft.nft.CompositionMode"><code class="docutils literal notranslate"><span class="pre">CompositionMode</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.nft.nft.CompositionMode.Auto"><code class="docutils literal notranslate"><span class="pre">CompositionMode.Auto</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.CompositionMode.FastNoJump"><code class="docutils literal notranslate"><span class="pre">CompositionMode.FastNoJump</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.CompositionMode.General"><code class="docutils literal notranslate"><span class="pre">CompositionMode.General</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.nft.nft.CompositionNormalization"><code class="docutils literal notranslate"><span class="pre">CompositionNormalization</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.nft.nft.CompositionNormalization.Auto"><code class="docutils literal notranslate"><span class="pre">CompositionNormalization.Auto</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.CompositionNormalization.Full"><code class="docutils literal notranslate"><span class="pre">CompositionNormalization.Full</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.CompositionNormalization.GeneratedOnly"><code class="docutils literal notranslate"><span class="pre">CompositionNormalization.GeneratedOnly</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.CompositionNormalization.None_"><code class="docutils literal notranslate"><span class="pre">CompositionNormalization.None_</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.CompositionNormalization.Trim"><code class="docutils literal notranslate"><span class="pre">CompositionNormalization.Trim</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.nft.nft.JumpMode"><code class="docutils literal notranslate"><span class="pre">JumpMode</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.nft.nft.JumpMode.AppendDontCares"><code class="docutils literal notranslate"><span class="pre">JumpMode.AppendDontCares</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.JumpMode.NoJump"><code class="docutils literal notranslate"><span class="pre">JumpMode.NoJump</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.JumpMode.RepeatSymbol"><code class="docutils literal notranslate"><span class="pre">JumpMode.RepeatSymbol</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.nft.nft.Levels"><code class="docutils literal notranslate"><span class="pre">Levels</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.nft.nft.Levels.append"><code class="docutils literal notranslate"><span class="pre">Levels.append()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Levels.can_follow"><code class="docutils literal notranslate"><span class="pre">Levels.can_follow()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Levels.can_follow_for_states"><code class="docutils literal notranslate"><span class="pre">Levels.can_follow_for_states()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Levels.count"><code class="docutils literal notranslate"><span class="pre">Levels.count()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Levels.get_levels_of"><code class="docutils literal notranslate"><span class="pre">Levels.get_levels_of()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Levels.get_minimal_level_of"><code class="docutils literal notranslate"><span class="pre">Levels.get_minimal_level_of()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Levels.get_minimal_next_level_of"><code class="docutils literal notranslate"><span class="pre">Levels.get_minimal_next_level_of()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Levels.map_levels_to"><code class="docutils literal notranslate"><span class="pre">Levels.map_levels_to()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Levels.next_level_after"><code class="docutils literal notranslate"><span class="pre">Levels.next_level_after()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Levels.num_of_levels"><code class="docutils literal notranslate"><span class="pre">Levels.num_of_levels</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Levels.num_of_levels_used"><code class="docutils literal notranslate"><span class="pre">Levels.num_of_levels_used()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Levels.set"><code class="docutils literal notranslate"><span class="pre">Levels.set()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft"><code class="docutils literal notranslate"><span class="pre">Nft</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.add_new_state"><code class="docutils literal notranslate"><span class="pre">Nft.add_new_state()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.add_new_state_with_level"><code class="docutils literal notranslate"><span class="pre">Nft.add_new_state_with_level()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.add_state"><code class="docutils literal notranslate"><span class="pre">Nft.add_state()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.add_state_with_level"><code class="docutils literal notranslate"><span class="pre">Nft.add_state_with_level()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.add_transition"><code class="docutils literal notranslate"><span class="pre">Nft.add_transition()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.add_transition_object"><code class="docutils literal notranslate"><span class="pre">Nft.add_transition_object()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.add_transition_with_length"><code class="docutils literal notranslate"><span class="pre">Nft.add_transition_with_length()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.add_transition_with_same_level_targets"><code class="docutils literal notranslate"><span class="pre">Nft.add_transition_with_same_level_targets()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.add_transition_with_target"><code class="docutils literal notranslate"><span class="pre">Nft.add_transition_with_target()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.alphabets"><code class="docutils literal notranslate"><span class="pre">Nft.alphabets</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.apply"><code class="docutils literal notranslate"><span class="pre">Nft.apply()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.clear"><code class="docutils literal notranslate"><span class="pre">Nft.clear()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.clear_final"><code class="docutils literal notranslate"><span class="pre">Nft.clear_final()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.clear_initial"><code class="docutils literal notranslate"><span class="pre">Nft.clear_initial()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.concatenate"><code class="docutils literal notranslate"><span class="pre">Nft.concatenate()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.contains_jump_transitions"><code class="docutils literal notranslate"><span class="pre">Nft.contains_jump_transitions()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.deepcopy"><code class="docutils literal notranslate"><span class="pre">Nft.deepcopy()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.delta"><code class="docutils literal notranslate"><span class="pre">Nft.delta</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.final_states"><code class="docutils literal notranslate"><span class="pre">Nft.final_states</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.from_nfa"><code class="docutils literal notranslate"><span class="pre">Nft.from_nfa()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.from_nfa_with_levels"><code class="docutils literal notranslate"><span class="pre">Nft.from_nfa_with_levels()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.get_num_of_transitions"><code class="docutils literal notranslate"><span class="pre">Nft.get_num_of_transitions()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.get_one_letter_aut"><code class="docutils literal notranslate"><span class="pre">Nft.get_one_letter_aut()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.get_symbols_to_work_with"><code class="docutils literal notranslate"><span class="pre">Nft.get_symbols_to_work_with()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.get_trans_as_sequence"><code class="docutils literal notranslate"><span class="pre">Nft.get_trans_as_sequence()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.get_used_symbols"><code class="docutils literal notranslate"><span class="pre">Nft.get_used_symbols()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.get_word_for_path"><code class="docutils literal notranslate"><span class="pre">Nft.get_word_for_path()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.get_words"><code class="docutils literal notranslate"><span class="pre">Nft.get_words()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.get_words_lazy"><code class="docutils literal notranslate"><span class="pre">Nft.get_words_lazy()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.has_final_state"><code class="docutils literal notranslate"><span class="pre">Nft.has_final_state()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.has_initial_state"><code class="docutils literal notranslate"><span class="pre">Nft.has_initial_state()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.has_transition"><code class="docutils literal notranslate"><span class="pre">Nft.has_transition()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.initial_states"><code class="docutils literal notranslate"><span class="pre">Nft.initial_states</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.insert_identity"><code class="docutils literal notranslate"><span class="pre">Nft.insert_identity()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.insert_word"><code class="docutils literal notranslate"><span class="pre">Nft.insert_word()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.insert_word_by_levels"><code class="docutils literal notranslate"><span class="pre">Nft.insert_word_by_levels()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.is_complete"><code class="docutils literal notranslate"><span class="pre">Nft.is_complete()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.is_deterministic"><code class="docutils literal notranslate"><span class="pre">Nft.is_deterministic()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.is_epsilon"><code class="docutils literal notranslate"><span class="pre">Nft.is_epsilon()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.is_identical"><code class="docutils literal notranslate"><span class="pre">Nft.is_identical()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.is_in_lang"><code class="docutils literal notranslate"><span class="pre">Nft.is_in_lang()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.is_in_lang_by_levels"><code class="docutils literal notranslate"><span class="pre">Nft.is_in_lang_by_levels()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.is_in_lang_prefix"><code class="docutils literal notranslate"><span class="pre">Nft.is_in_lang_prefix()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.is_in_lang_prefix_by_levels"><code class="docutils literal notranslate"><span class="pre">Nft.is_in_lang_prefix_by_levels()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.is_lang_empty"><code class="docutils literal notranslate"><span class="pre">Nft.is_lang_empty()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.is_state"><code class="docutils literal notranslate"><span class="pre">Nft.is_state()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.is_universal"><code class="docutils literal notranslate"><span class="pre">Nft.is_universal()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.iterate"><code class="docutils literal notranslate"><span class="pre">Nft.iterate()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.label"><code class="docutils literal notranslate"><span class="pre">Nft.label</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.levels"><code class="docutils literal notranslate"><span class="pre">Nft.levels</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.make_complete"><code class="docutils literal notranslate"><span class="pre">Nft.make_complete()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.make_final_state"><code class="docutils literal notranslate"><span class="pre">Nft.make_final_state()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.make_final_states"><code class="docutils literal notranslate"><span class="pre">Nft.make_final_states()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.make_initial_state"><code class="docutils literal notranslate"><span class="pre">Nft.make_initial_state()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.make_initial_states"><code class="docutils literal notranslate"><span class="pre">Nft.make_initial_states()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.mk_level_word_from_word"><code class="docutils literal notranslate"><span class="pre">Nft.mk_level_word_from_word()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.mk_word_from_level_word"><code class="docutils literal notranslate"><span class="pre">Nft.mk_word_from_level_word()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.num_of_states"><code class="docutils literal notranslate"><span class="pre">Nft.num_of_states()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.num_of_states_with_level"><code class="docutils literal notranslate"><span class="pre">Nft.num_of_states_with_level()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.post_of"><code class="docutils literal notranslate"><span class="pre">Nft.post_of()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.remove_epsilon_inplace"><code class="docutils literal notranslate"><span class="pre">Nft.remove_epsilon_inplace()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.remove_final_state"><code class="docutils literal notranslate"><span class="pre">Nft.remove_final_state()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.remove_initial_state"><code class="docutils literal notranslate"><span class="pre">Nft.remove_initial_state()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.remove_trans"><code class="docutils literal notranslate"><span class="pre">Nft.remove_trans()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.remove_trans_raw"><code class="docutils literal notranslate"><span class="pre">Nft.remove_trans_raw()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.resolve_alphabet"><code class="docutils literal notranslate"><span class="pre">Nft.resolve_alphabet()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.to_dot_file"><code class="docutils literal notranslate"><span class="pre">Nft.to_dot_file()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.to_dot_str"><code class="docutils literal notranslate"><span class="pre">Nft.to_dot_str()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.to_mata_file"><code class="docutils literal notranslate"><span class="pre">Nft.to_mata_file()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.to_mata_str"><code class="docutils literal notranslate"><span class="pre">Nft.to_mata_str()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.to_nfa_copy"><code class="docutils literal notranslate"><span class="pre">Nft.to_nfa_copy()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.to_nfa_update_copy"><code class="docutils literal notranslate"><span class="pre">Nft.to_nfa_update_copy()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.trim"><code class="docutils literal notranslate"><span class="pre">Nft.trim()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.trim_with_state_map"><code class="docutils literal notranslate"><span class="pre">Nft.trim_with_state_map()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.union"><code class="docutils literal notranslate"><span class="pre">Nft.union()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.unwind_jumps"><code class="docutils literal notranslate"><span class="pre">Nft.unwind_jumps()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.unwind_jumps_inplace"><code class="docutils literal notranslate"><span class="pre">Nft.unwind_jumps_inplace()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.Nft.with_levels"><code class="docutils literal notranslate"><span class="pre">Nft.with_levels()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.nft.nft.are_equivalent"><code class="docutils literal notranslate"><span class="pre">are_equivalent()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.complement"><code class="docutils literal notranslate"><span class="pre">complement()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.compose"><code class="docutils literal notranslate"><span class="pre">compose()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.compose_alphabets"><code class="docutils literal notranslate"><span class="pre">compose_alphabets()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.compute_relation"><code class="docutils literal notranslate"><span class="pre">compute_relation()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.concatenate"><code class="docutils literal notranslate"><span class="pre">concatenate()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.concatenate_nth_power"><code class="docutils literal notranslate"><span class="pre">concatenate_nth_power()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.concatenate_with_result_state_maps"><code class="docutils literal notranslate"><span class="pre">concatenate_with_result_state_maps()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.create_empty_string_nft"><code class="docutils literal notranslate"><span class="pre">create_empty_string_nft()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.create_sigma_star_nft"><code class="docutils literal notranslate"><span class="pre">create_sigma_star_nft()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.create_single_word_nft"><code class="docutils literal notranslate"><span class="pre">create_single_word_nft()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.determinize"><code class="docutils literal notranslate"><span class="pre">determinize()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.determinize_with_subset_map"><code class="docutils literal notranslate"><span class="pre">determinize_with_subset_map()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.dont_care"><code class="docutils literal notranslate"><span class="pre">dont_care()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.encode_word"><code class="docutils literal notranslate"><span class="pre">encode_word()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.epsilon"><code class="docutils literal notranslate"><span class="pre">epsilon()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.from_nfa_with_levels_advancing"><code class="docutils literal notranslate"><span class="pre">from_nfa_with_levels_advancing()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.from_nfa_with_levels_zero"><code class="docutils literal notranslate"><span class="pre">from_nfa_with_levels_zero()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.has_epsilon_cycle"><code class="docutils literal notranslate"><span class="pre">has_epsilon_cycle()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.insert_level"><code class="docutils literal notranslate"><span class="pre">insert_level()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.insert_levels"><code class="docutils literal notranslate"><span class="pre">insert_levels()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.intersection"><code class="docutils literal notranslate"><span class="pre">intersection()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.intersection_with_product_map"><code class="docutils literal notranslate"><span class="pre">intersection_with_product_map()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.invert_levels"><code class="docutils literal notranslate"><span class="pre">invert_levels()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.is_included"><code class="docutils literal notranslate"><span class="pre">is_included()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.is_included_with_cex"><code class="docutils literal notranslate"><span class="pre">is_included_with_cex()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.parse_from_mata_file"><code class="docutils literal notranslate"><span class="pre">parse_from_mata_file()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.parse_from_mata_string"><code class="docutils literal notranslate"><span class="pre">parse_from_mata_string()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.project_out"><code class="docutils literal notranslate"><span class="pre">project_out()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.project_to"><code class="docutils literal notranslate"><span class="pre">project_to()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.reduce"><code class="docutils literal notranslate"><span class="pre">reduce()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.reduce_with_state_map"><code class="docutils literal notranslate"><span class="pre">reduce_with_state_map()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.remove_epsilon"><code class="docutils literal notranslate"><span class="pre">remove_epsilon()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.revert"><code class="docutils literal notranslate"><span class="pre">revert()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.symbols_match"><code class="docutils literal notranslate"><span class="pre">symbols_match()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nft.nft.union_nondet"><code class="docutils literal notranslate"><span class="pre">union_nondet()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-libmata.alphabets">Alphabets</a><ul>
+<li><a class="reference internal" href="#libmata.alphabets.Alphabet"><code class="docutils literal notranslate"><span class="pre">Alphabet</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.alphabets.Alphabet.clear"><code class="docutils literal notranslate"><span class="pre">Alphabet.clear()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.Alphabet.get_alphabet_symbols"><code class="docutils literal notranslate"><span class="pre">Alphabet.get_alphabet_symbols()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.Alphabet.get_complement"><code class="docutils literal notranslate"><span class="pre">Alphabet.get_complement()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.Alphabet.is_empty"><code class="docutils literal notranslate"><span class="pre">Alphabet.is_empty()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.Alphabet.reverse_translate_symbol"><code class="docutils literal notranslate"><span class="pre">Alphabet.reverse_translate_symbol()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.Alphabet.translate_symbol"><code class="docutils literal notranslate"><span class="pre">Alphabet.translate_symbol()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels.at"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels.at()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels.clear"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels.clear()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels.erase"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels.erase()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels.for_level"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels.for_level()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels.get_alphabet_symbols"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels.get_alphabet_symbols()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels.get_complement"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels.get_complement()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels.global_mode"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels.global_mode()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels.insert"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels.insert()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels.is_empty"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels.is_empty()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels.mode"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels.mode</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels.multi_level_mode"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels.multi_level_mode()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels.pop_back"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels.pop_back()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels.push_back"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels.push_back()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels.reserve"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels.reserve()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels.resize"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels.resize()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels.reverse_translate_symbol"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels.reverse_translate_symbol()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels.set_global_mode"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels.set_global_mode()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels.set_multi_level_mode"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels.set_multi_level_mode()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels.size"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels.size()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevels.translate_symbol"><code class="docutils literal notranslate"><span class="pre">AlphabetLevels.translate_symbol()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevelsMode"><code class="docutils literal notranslate"><span class="pre">AlphabetLevelsMode</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevelsMode.Global"><code class="docutils literal notranslate"><span class="pre">AlphabetLevelsMode.Global</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.AlphabetLevelsMode.MultiLevel"><code class="docutils literal notranslate"><span class="pre">AlphabetLevelsMode.MultiLevel</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.alphabets.EnumAlphabet"><code class="docutils literal notranslate"><span class="pre">EnumAlphabet</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.alphabets.EnumAlphabet.add_new_symbol"><code class="docutils literal notranslate"><span class="pre">EnumAlphabet.add_new_symbol()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.EnumAlphabet.add_symbols_from"><code class="docutils literal notranslate"><span class="pre">EnumAlphabet.add_symbols_from()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.EnumAlphabet.erase"><code class="docutils literal notranslate"><span class="pre">EnumAlphabet.erase()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.EnumAlphabet.get_alphabet_symbols"><code class="docutils literal notranslate"><span class="pre">EnumAlphabet.get_alphabet_symbols()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.EnumAlphabet.get_next_value"><code class="docutils literal notranslate"><span class="pre">EnumAlphabet.get_next_value()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.EnumAlphabet.get_number_of_symbols"><code class="docutils literal notranslate"><span class="pre">EnumAlphabet.get_number_of_symbols()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.alphabets.IntAlphabet"><code class="docutils literal notranslate"><span class="pre">IntAlphabet</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.alphabets.IntAlphabet.reverse_translate_symbol"><code class="docutils literal notranslate"><span class="pre">IntAlphabet.reverse_translate_symbol()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.IntAlphabet.translate_symbol"><code class="docutils literal notranslate"><span class="pre">IntAlphabet.translate_symbol()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.alphabets.OnTheFlyAlphabet"><code class="docutils literal notranslate"><span class="pre">OnTheFlyAlphabet</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.alphabets.OnTheFlyAlphabet.add_symbols_for_names"><code class="docutils literal notranslate"><span class="pre">OnTheFlyAlphabet.add_symbols_for_names()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.OnTheFlyAlphabet.add_symbols_from_symbol_map"><code class="docutils literal notranslate"><span class="pre">OnTheFlyAlphabet.add_symbols_from_symbol_map()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.OnTheFlyAlphabet.for_symbol_names"><code class="docutils literal notranslate"><span class="pre">OnTheFlyAlphabet.for_symbol_names()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.OnTheFlyAlphabet.from_symbol_map"><code class="docutils literal notranslate"><span class="pre">OnTheFlyAlphabet.from_symbol_map()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.OnTheFlyAlphabet.get_alphabet_symbols"><code class="docutils literal notranslate"><span class="pre">OnTheFlyAlphabet.get_alphabet_symbols()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.OnTheFlyAlphabet.get_symbol_map"><code class="docutils literal notranslate"><span class="pre">OnTheFlyAlphabet.get_symbol_map()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.OnTheFlyAlphabet.reverse_translate_symbol"><code class="docutils literal notranslate"><span class="pre">OnTheFlyAlphabet.reverse_translate_symbol()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.alphabets.OnTheFlyAlphabet.translate_symbol"><code class="docutils literal notranslate"><span class="pre">OnTheFlyAlphabet.translate_symbol()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-libmata.parser">Parser</a><ul>
+<li><a class="reference internal" href="#libmata.parser.from_mata"><code class="docutils literal notranslate"><span class="pre">from_mata()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.parser.from_regex"><code class="docutils literal notranslate"><span class="pre">from_regex()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-libmata.plotting">Plotting</a><ul>
+<li><a class="reference internal" href="#libmata.plotting.Condition"><code class="docutils literal notranslate"><span class="pre">Condition</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.plotting.Condition.state_is_final"><code class="docutils literal notranslate"><span class="pre">Condition.state_is_final()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.plotting.Condition.state_is_initial"><code class="docutils literal notranslate"><span class="pre">Condition.state_is_initial()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.plotting.Condition.transition_is_cycle"><code class="docutils literal notranslate"><span class="pre">Condition.transition_is_cycle()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.plotting.Style"><code class="docutils literal notranslate"><span class="pre">Style</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.plotting.Style.colored"><code class="docutils literal notranslate"><span class="pre">Style.colored()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.plotting.Style.dashed"><code class="docutils literal notranslate"><span class="pre">Style.dashed()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.plotting.Style.filled"><code class="docutils literal notranslate"><span class="pre">Style.filled()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.plotting.Style.hidden"><code class="docutils literal notranslate"><span class="pre">Style.hidden()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#libmata.plotting.display_inline"><code class="docutils literal notranslate"><span class="pre">display_inline()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.plotting.get_configuration_for"><code class="docutils literal notranslate"><span class="pre">get_configuration_for()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.plotting.get_interactive_mode"><code class="docutils literal notranslate"><span class="pre">get_interactive_mode()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.plotting.plot"><code class="docutils literal notranslate"><span class="pre">plot()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.plotting.plot_using_graphviz"><code class="docutils literal notranslate"><span class="pre">plot_using_graphviz()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.plotting.setup"><code class="docutils literal notranslate"><span class="pre">setup()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-libmata.utils">Utilities</a><ul>
+<li><a class="reference internal" href="#libmata.utils.BinaryRelation"><code class="docutils literal notranslate"><span class="pre">BinaryRelation</span></code></a><ul>
+<li><a class="reference internal" href="#libmata.utils.BinaryRelation.alloc"><code class="docutils literal notranslate"><span class="pre">BinaryRelation.alloc()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.utils.BinaryRelation.build_equivalence_classes"><code class="docutils literal notranslate"><span class="pre">BinaryRelation.build_equivalence_classes()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.utils.BinaryRelation.build_index"><code class="docutils literal notranslate"><span class="pre">BinaryRelation.build_index()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.utils.BinaryRelation.build_indexes"><code class="docutils literal notranslate"><span class="pre">BinaryRelation.build_indexes()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.utils.BinaryRelation.build_inverse_index"><code class="docutils literal notranslate"><span class="pre">BinaryRelation.build_inverse_index()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.utils.BinaryRelation.get"><code class="docutils literal notranslate"><span class="pre">BinaryRelation.get()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.utils.BinaryRelation.get_quotient_projection"><code class="docutils literal notranslate"><span class="pre">BinaryRelation.get_quotient_projection()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.utils.BinaryRelation.is_symmetric_at"><code class="docutils literal notranslate"><span class="pre">BinaryRelation.is_symmetric_at()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.utils.BinaryRelation.reset"><code class="docutils literal notranslate"><span class="pre">BinaryRelation.reset()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.utils.BinaryRelation.resize"><code class="docutils literal notranslate"><span class="pre">BinaryRelation.resize()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.utils.BinaryRelation.restrict_to_symmetric"><code class="docutils literal notranslate"><span class="pre">BinaryRelation.restrict_to_symmetric()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.utils.BinaryRelation.set"><code class="docutils literal notranslate"><span class="pre">BinaryRelation.set()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.utils.BinaryRelation.size"><code class="docutils literal notranslate"><span class="pre">BinaryRelation.size()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.utils.BinaryRelation.split"><code class="docutils literal notranslate"><span class="pre">BinaryRelation.split()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.utils.BinaryRelation.to_matrix"><code class="docutils literal notranslate"><span class="pre">BinaryRelation.to_matrix()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.utils.BinaryRelation.transpose"><code class="docutils literal notranslate"><span class="pre">BinaryRelation.transpose()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
 
-
-
-
-
-
-
-
+          </div>
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &#169;Mata authors.
       
-      |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.2.0</a>
-      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
       
-      |
-      <a href="_sources/index.rst.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
-    
-
-    
-  </body>
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
 </html>

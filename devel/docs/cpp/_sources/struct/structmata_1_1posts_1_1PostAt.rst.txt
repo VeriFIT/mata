@@ -1,5 +1,0 @@
-Struct mata::posts::PostAt
-==========================
-
-.. doxygenstruct:: mata::posts::PostAt
-   :members:

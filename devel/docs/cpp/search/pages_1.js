@@ -1,0 +1,27 @@
+var searchData=
+[
+  ['backups_0',['Backups',['../branches.html#backups',1,'']]],
+  ['bak_1',['bak',['../branches.html#boost-determinization-inclusion-lackobakhttpsgithubcomverifitmatatreeboost-determinization-inclusion-lackobak',1,'&lt;a href=&quot;https://github.com/VeriFIT/mata/tree/boost-determinization-inclusion-lacko.bak&quot;&gt;&lt;span class=&quot;tt&quot;&gt;boost-determinization-inclusion-lacko.bak&lt;/span&gt;&lt;/a&gt;'],['../branches.html#simulation-reduction-rules-samo538bakhttpsgithubcomverifitmatatreesimulation-reduction-rules-samo538bak',1,'&lt;a href=&quot;https://github.com/VeriFIT/mata/tree/simulation-reduction-rules-samo538.bak&quot;&gt;&lt;span class=&quot;tt&quot;&gt;simulation-reduction-rules-samo538.bak&lt;/span&gt;&lt;/a&gt;'],['../branches.html#simulation-samo538bakhttpsgithubcomverifitmatatreesimulation-samo538bak',1,'&lt;a href=&quot;https://github.com/VeriFIT/mata/tree/simulation-samo538.bak&quot;&gt;&lt;span class=&quot;tt&quot;&gt;simulation-samo538.bak&lt;/span&gt;&lt;/a&gt;']]],
+  ['benchmark_20instance_2',['Run on one benchmark instance',['../benchmarking.html#run-on-one-benchmark-instance',1,'']]],
+  ['benchmarking_20in_20verifit_20mata_3',['Benchmarking in VeriFIT/mata',['../benchmarking.html#benchmarking-in-verifitmata',1,'']]],
+  ['benchmarking_20infrastructure_4',['Structure of the benchmarking infrastructure',['../benchmarking.html#structure-of-the-benchmarking-infrastructure',1,'']]],
+  ['benchmarking_20options_5',['Additional benchmarking options',['../benchmarking.html#additional-benchmarking-options',1,'']]],
+  ['benchmarking_20profiling_6',['Benchmarking, profiling',['../index.html#benchmarking-profiling',1,'']]],
+  ['benchmarking_20tests_7',['Creating new benchmarking tests',['../benchmarking.html#creating-new-benchmarking-tests',1,'']]],
+  ['benchmarking_20through_20verifit_20mata_20tests_20integration_8',['Benchmarking through VeriFIT/mata &lt;span class=&quot;tt&quot;&gt;./tests-integration/&lt;/span&gt;',['../benchmarking.html#benchmarking-through-verifitmata-tests-integration',1,'']]],
+  ['benchmarking_20tool_20pycobench_9',['Run multiple benchmarks through the benchmarking tool &lt;span class=&quot;tt&quot;&gt;pycobench&lt;/span&gt;',['../benchmarking.html#run-multiple-benchmarks-through-the-benchmarking-tool-pycobench',1,'']]],
+  ['benchmarks_20for_20gcov_10',['Instrumenting the benchmarks for gcov',['../benchmarking.html#instrumenting-the-benchmarks-for-gcov',1,'']]],
+  ['benchmarks_20through_20the_20benchmarking_20tool_20pycobench_11',['Run multiple benchmarks through the benchmarking tool &lt;span class=&quot;tt&quot;&gt;pycobench&lt;/span&gt;',['../benchmarking.html#run-multiple-benchmarks-through-the-benchmarking-tool-pycobench',1,'']]],
+  ['between_20states_20symbols_20and_20nodes_12',['Distinguishing between states, symbols, and nodes',['../automata-format.html#distinguishing-between-states-symbols-and-nodes',1,'']]],
+  ['binaries_20from_20github_13',['Download pre-built binaries from GitHub',['../index.html#download-pre-built-binaries-from-github',1,'']]],
+  ['binding_14',['binding',['../index.html#python-binding',1,'Python binding'],['../index.html#rust-binding',1,'Rust binding'],['../index.html#using-the-python-binding',1,'Using the Python binding'],['../index.html#using-the-rust-binding',1,'Using the Rust binding']]],
+  ['boost_20determinization_20inclusion_20lacko_20bak_15',['&lt;a href=&quot;https://github.com/VeriFIT/mata/tree/boost-determinization-inclusion-lacko.bak&quot;&gt;&lt;span class=&quot;tt&quot;&gt;boost-determinization-inclusion-lacko.bak&lt;/span&gt;&lt;/a&gt;',['../branches.html#boost-determinization-inclusion-lackobakhttpsgithubcomverifitmatatreeboost-determinization-inclusion-lackobak',1,'']]],
+  ['branches_16',['Branches',['../branches.html',1,'Branches'],['../index.html#readme-branches',1,'Branches']]],
+  ['branches_17',['Main branches',['../branches.html#main-branches',1,'']]],
+  ['bug_20fixes_18',['Bug Fixes',['../contributing.html#bug-fixes',1,'']]],
+  ['building_20and_20installing_20from_20sources_19',['Building and installing from sources',['../index.html#building-and-installing-from-sources',1,'']]],
+  ['building_20from_20sources_20python_20',['Building from sources (Python)',['../index.html#building-from-sources-python',1,'']]],
+  ['building_20from_20sources_20rust_21',['Building from sources (Rust)',['../index.html#building-from-sources-rust',1,'']]],
+  ['built_20binaries_20from_20github_22',['Download pre-built binaries from GitHub',['../index.html#download-pre-built-binaries-from-github',1,'']]],
+  ['by_20their_20transition_20type_23',['Automata by their transition type',['../automata-format.html#automata-by-their-transition-type',1,'']]]
+];

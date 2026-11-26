@@ -1,5 +1,0 @@
-Class mata::posts::KeyedAccess< D, P, std::index_sequence< KeyIdx... > >
-========================================================================
-
-.. doxygenclass:: mata::posts::KeyedAccess< D, P, std::index_sequence< KeyIdx... > >
-   :members:

@@ -1,0 +1,25 @@
+var searchData=
+[
+  ['_7ealphabet_0',['~Alphabet',['../classmata_1_1Alphabet.html#a9dbe39c3ff6adeeea62bb9751077b4d0',1,'mata::Alphabet']]],
+  ['_7ealphabetlevels_1',['~AlphabetLevels',['../classmata_1_1AlphabetLevels.html#ac234de828b1f163880726297e86e6981',1,'mata::AlphabetLevels']]],
+  ['_7ebitvectornfareader_2',['~BitvectorNfaReader',['../classmata_1_1nfa_1_1builder_1_1BitvectorNfaReader.html#aafbb9e18c11defe43d74863e23f62db1',1,'mata::nfa::builder::BitvectorNfaReader']]],
+  ['_7eboolvector_3',['~BoolVector',['../classmata_1_1BoolVector.html#a4a1435908a7b2419469a055a1516074e',1,'mata::BoolVector']]],
+  ['_7econst_5fiterator_4',['~const_iterator',['../classmata_1_1posts_1_1PostMoves_1_1const__iterator.html#a92f785f7aa63e7e5f9e29075b243eebf',1,'mata::posts::PostMoves::const_iterator']]],
+  ['_7edelta_5',['~Delta',['../classmata_1_1Delta.html#afe3c8534eb7c7ef8139a9953b8e73703',1,'mata::Delta']]],
+  ['_7edeltabase_6',['~DeltaBase',['../classmata_1_1posts_1_1DeltaBase.html#a8ca50095c04711cee121be2cfcbe7d23',1,'mata::posts::DeltaBase']]],
+  ['_7eenumalphabet_7',['~EnumAlphabet',['../classmata_1_1EnumAlphabet.html#a4ab7baa70cb58c5f913fa2dd5de869b8',1,'mata::EnumAlphabet']]],
+  ['_7eformulanode_8',['~FormulaNode',['../classmata_1_1FormulaNode.html#aada3b076da8d0881a415fff06035a9c8',1,'mata::FormulaNode']]],
+  ['_7eintalphabet_9',['~IntAlphabet',['../classmata_1_1IntAlphabet.html#a604d63adb83c4fc5d1cf9784493666ca',1,'mata::IntAlphabet']]],
+  ['_7eintalphabetsingleton_10',['~IntAlphabetSingleton',['../classmata_1_1IntAlphabet_1_1IntAlphabetSingleton.html#a344f1d32162e65175ddda4ab3dbb28c1',1,'mata::IntAlphabet::IntAlphabetSingleton']]],
+  ['_7elazyview_11',['~LazyView',['../classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1LazyView.html#ac92fc8374b4edb61b6a481af417483c4',1,'mata::applications::strings::seg_nfa::Segmentation::LazyView']]],
+  ['_7elevels_12',['~Levels',['../classmata_1_1nft_1_1Levels.html#a5890539ad42fb8f23cfc07adc45d4dfa',1,'mata::nft::Levels']]],
+  ['_7ematawriter_13',['~MataWriter',['../classmata_1_1parser_1_1MataWriter.html#a25c79bd66494b4939ad6cf13b81c297a',1,'mata::parser::MataWriter']]],
+  ['_7enfa_14',['~Nfa',['../classmata_1_1nfa_1_1Nfa.html#a696188c1c738eafcf361edf88bff4911',1,'mata::nfa::Nfa']]],
+  ['_7enft_15',['~Nft',['../classmata_1_1nft_1_1Nft.html#a3d2638d1e89dd959905146474b3bcbea',1,'mata::nft::Nft']]],
+  ['_7eontheflyalphabet_16',['~OnTheFlyAlphabet',['../classmata_1_1OnTheFlyAlphabet.html#a087add38fa5a1c081f8f12319afe8e6e',1,'mata::OnTheFlyAlphabet']]],
+  ['_7eordvector_17',['~OrdVector',['../classmata_1_1utils_1_1OrdVector.html#a1b05ef20f21bfb1ead8f4cda0c57b912',1,'mata::utils::OrdVector']]],
+  ['_7epostmoves_18',['~PostMoves',['../classmata_1_1posts_1_1PostMoves.html#a64c9093212f4e6561451e00b28c080c0',1,'mata::posts::PostMoves']]],
+  ['_7esmallordvector_19',['~SmallOrdVector',['../classmata_1_1utils_1_1SmallOrdVector.html#a2eb2a7106ca50dc24370254ab80b764a',1,'mata::utils::SmallOrdVector']]],
+  ['_7esortedsymbols_20',['~SortedSymbols',['../structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols.html#a12f2b588dbd5fed4370b0f48feb712a7',1,'mata::OnTheFlyAlphabet::SortedSymbols']]],
+  ['_7esparseset_21',['~SparseSet',['../classmata_1_1utils_1_1SparseSet.html#ab54f6bc11189d1128fb621b508323baa',1,'mata::utils::SparseSet']]]
+];

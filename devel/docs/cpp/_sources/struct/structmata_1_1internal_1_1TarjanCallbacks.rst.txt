@@ -1,5 +1,0 @@
-Struct mata::internal::TarjanCallbacks
-======================================
-
-.. doxygenstruct:: mata::internal::TarjanCallbacks
-   :members:

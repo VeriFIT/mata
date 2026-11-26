@@ -1,5 +1,0 @@
-Struct mata::posts::SymbolTransitionTraits
-==========================================
-
-.. doxygenstruct:: mata::posts::SymbolTransitionTraits
-   :members:

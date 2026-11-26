@@ -1,5 +1,0 @@
-Struct mata::parser::ExplicitToken
-==================================
-
-.. doxygenstruct:: mata::parser::ExplicitToken
-   :members:

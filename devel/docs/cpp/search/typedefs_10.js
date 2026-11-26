@@ -1,0 +1,8 @@
+var searchData=
+[
+  ['value_5ftype_0',['value_type',['../classmata_1_1posts_1_1PostMoves_1_1const__iterator.html#a35d8bffdb74d0ed79aa691d0bee7e6d0',1,'mata::posts::PostMoves::const_iterator::value_type'],['../classmata_1_1posts_1_1DeltaTransitions_1_1const__iterator.html#a71c0955a64c8718760be2de82d4ca579',1,'mata::posts::DeltaTransitions::const_iterator::value_type'],['../structmata_1_1utils_1_1DeltaAllocator.html#afb9ded5f49336ae503bb9f2035ea902b',1,'mata::utils::DeltaAllocator::value_type'],['../classmata_1_1utils_1_1OrdVector.html#a5c1df1ab65750946a228fd036417792e',1,'mata::utils::OrdVector::value_type'],['../classmata_1_1utils_1_1SmallOrdVector.html#a5c1df1ab65750946a228fd036417792e',1,'mata::utils::SmallOrdVector::value_type']]],
+  ['vectortype_1',['VectorType',['../classmata_1_1utils_1_1OrdVector.html#aaaa635684206c124a92d23d9e427c47f',1,'mata::utils::OrdVector::VectorType'],['../classmata_1_1posts_1_1Post.html#a4982800166bafe3d1f8e120845a7e2b7',1,'mata::posts::Post::VectorType']]],
+  ['visitedepsilonscountermap_2',['VisitedEpsilonsCounterMap',['../namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#aa47d2a4ae0b3c240e9aea6dd8de61c82',1,'mata::applications::strings::seg_nfa']]],
+  ['visitedepsilonscountervector_3',['VisitedEpsilonsCounterVector',['../namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#a4d54c4713beda3a0706a81dc0b7b495d',1,'mata::applications::strings::seg_nfa']]],
+  ['visitedepsmap_4',['VisitedEpsMap',['../namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#a2418d064f88e93d1b86b4ebc681dedfb',1,'mata::applications::strings::seg_nfa']]]
+];

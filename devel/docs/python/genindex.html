@@ -1,1306 +1,1482 @@
-<!DOCTYPE html>
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="#"><link rel="search" title="Search" href="search.html">
 
-<html lang="en" data-content_root="./">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Index &#8212; libmata  documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
-    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
-    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
-    <script src="_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="_static/doctools.js?v=fd6eb6e6"></script>
-    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
-    <link rel="index" title="Index" href="#" />
-    <link rel="search" title="Search" href="search.html" />
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
+    <!-- Generated with Sphinx 9.2.0 and Furo 2025.12.19 --><title>Index - libmata documentation</title>
+<link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
 
-  
-  
 
-  </head><body>
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
   
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">libmata  documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">libmata  documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  
+</div><div class="sidebar-donor-section">
+  <a href="https://verifit.github.io/mata/devel/">Mata website</a>
+  <a href="https://verifit.github.io/mata/devel/docs/">All documentation</a>
+  <a href="https://verifit.github.io/mata/devel/playground/">Playground</a>
+</div></div>
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
           
+<section class="genindex-section">
+  <h1 id="index">Index</h1>
+  <div class="genindex-jumpbox"><a href="#A"><strong>A</strong></a> | <a href="#B"><strong>B</strong></a> | <a href="#C"><strong>C</strong></a> | <a href="#D"><strong>D</strong></a> | <a href="#E"><strong>E</strong></a> | <a href="#F"><strong>F</strong></a> | <a href="#G"><strong>G</strong></a> | <a href="#H"><strong>H</strong></a> | <a href="#I"><strong>I</strong></a> | <a href="#J"><strong>J</strong></a> | <a href="#L"><strong>L</strong></a> | <a href="#M"><strong>M</strong></a> | <a href="#N"><strong>N</strong></a> | <a href="#O"><strong>O</strong></a> | <a href="#P"><strong>P</strong></a> | <a href="#R"><strong>R</strong></a> | <a href="#S"><strong>S</strong></a> | <a href="#T"><strong>T</strong></a> | <a href="#U"><strong>U</strong></a> | <a href="#W"><strong>W</strong></a></div>
+</section>
+<section id="A" class="genindex-section">
+  <h2>A</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.nfa.accepts_epsilon">accepts_epsilon() (in module libmata.nfa.nfa)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.DeterminizationReduction.Adaptive">Adaptive (libmata.nfa.nfa.DeterminizationReduction attribute)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.Delta.add">add() (libmata.nfa.nfa.Delta method)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.add_new_state">add_new_state() (libmata.nfa.nfa.Nfa method)</a>
 
-          <div class="body" role="main">
-            
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.add_new_state">(libmata.nft.nft.Nft method)</a>
+</li>
+        </ul></li>
+        <li><a href="index.html#libmata.nft.nft.Nft.add_new_state_with_level">add_new_state_with_level() (libmata.nft.nft.Nft method)</a>
+</li>
+        <li><a href="index.html#libmata.alphabets.EnumAlphabet.add_new_symbol">add_new_symbol() (libmata.alphabets.EnumAlphabet method)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.add_state">add_state() (libmata.nfa.nfa.Nfa method)</a>
 
-<h1 id="index">Index</h1>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.add_state">(libmata.nft.nft.Nft method)</a>
+</li>
+        </ul></li>
+        <li><a href="index.html#libmata.nft.nft.Nft.add_state_with_level">add_state_with_level() (libmata.nft.nft.Nft method)</a>
+</li>
+        <li><a href="index.html#libmata.alphabets.OnTheFlyAlphabet.add_symbols_for_names">add_symbols_for_names() (libmata.alphabets.OnTheFlyAlphabet method)</a>
+</li>
+        <li><a href="index.html#libmata.alphabets.EnumAlphabet.add_symbols_from">add_symbols_from() (libmata.alphabets.EnumAlphabet method)</a>
+</li>
+        <li><a href="index.html#libmata.alphabets.OnTheFlyAlphabet.add_symbols_from_symbol_map">add_symbols_from_symbol_map() (libmata.alphabets.OnTheFlyAlphabet method)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.add_transition">add_transition() (libmata.nfa.nfa.Nfa method)</a>
 
-<div class="genindex-jumpbox">
- <a href="#A"><strong>A</strong></a>
- | <a href="#B"><strong>B</strong></a>
- | <a href="#C"><strong>C</strong></a>
- | <a href="#D"><strong>D</strong></a>
- | <a href="#E"><strong>E</strong></a>
- | <a href="#F"><strong>F</strong></a>
- | <a href="#G"><strong>G</strong></a>
- | <a href="#H"><strong>H</strong></a>
- | <a href="#I"><strong>I</strong></a>
- | <a href="#J"><strong>J</strong></a>
- | <a href="#L"><strong>L</strong></a>
- | <a href="#M"><strong>M</strong></a>
- | <a href="#N"><strong>N</strong></a>
- | <a href="#O"><strong>O</strong></a>
- | <a href="#P"><strong>P</strong></a>
- | <a href="#R"><strong>R</strong></a>
- | <a href="#S"><strong>S</strong></a>
- | <a href="#T"><strong>T</strong></a>
- | <a href="#U"><strong>U</strong></a>
- | <a href="#W"><strong>W</strong></a>
- 
-</div>
-<h2 id="A">A</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.nfa.accepts_epsilon">accepts_epsilon() (in module libmata.nfa.nfa)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.add_transition">(libmata.nft.nft.Nft method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.DeterminizationReduction.Adaptive">Adaptive (libmata.nfa.nfa.DeterminizationReduction attribute)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Delta.add">add() (libmata.nfa.nfa.Delta method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.add_new_state">add_new_state() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.add_transition_object">add_transition_object() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.add_new_state">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.add_transition_object">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nft.nft.Nft.add_new_state_with_level">add_new_state_with_level() (libmata.nft.nft.Nft method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nft.nft.Nft.add_transition_with_length">add_transition_with_length() (libmata.nft.nft.Nft method)</a>
 </li>
-      <li><a href="index.html#libmata.alphabets.EnumAlphabet.add_new_symbol">add_new_symbol() (libmata.alphabets.EnumAlphabet method)</a>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nft.nft.Nft.add_transition_with_same_level_targets">add_transition_with_same_level_targets() (libmata.nft.nft.Nft method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.add_state">add_state() (libmata.nfa.nfa.Nfa method)</a>
+        <li><a href="index.html#libmata.nft.nft.Nft.add_transition_with_target">add_transition_with_target() (libmata.nft.nft.Nft method)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.Delta.add_transitions">add_transitions() (libmata.nfa.nfa.Delta method)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.Delta.add_transitions_from">add_transitions_from() (libmata.nfa.nfa.Delta method)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.strings.ReplaceMode.All">All (libmata.nfa.strings.ReplaceMode attribute)</a>
+</li>
+        <li><a href="index.html#libmata.utils.BinaryRelation.alloc">alloc() (libmata.utils.BinaryRelation method)</a>
+</li>
+        <li><a href="index.html#libmata.alphabets.Alphabet">Alphabet (class in libmata.alphabets)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.alphabet">alphabet (libmata.nfa.nfa.Nfa attribute)</a>
+</li>
+        <li><a href="index.html#libmata.alphabets.AlphabetLevels">AlphabetLevels (class in libmata.alphabets)</a>
+</li>
+        <li><a href="index.html#libmata.alphabets.AlphabetLevelsMode">AlphabetLevelsMode (class in libmata.alphabets)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.Nft.alphabets">alphabets (libmata.nft.nft.Nft attribute)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.Levels.append">append() (libmata.nft.nft.Levels method)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.JumpMode.AppendDontCares">AppendDontCares (libmata.nft.nft.JumpMode attribute)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.Nft.apply">apply() (libmata.nft.nft.Nft method)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.are_equivalent">are_equivalent() (in module libmata.nft.nft)</a>
+</li>
+        <li><a href="index.html#libmata.alphabets.AlphabetLevels.at">at() (libmata.alphabets.AlphabetLevels method)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.CompositionMode.Auto">Auto (libmata.nft.nft.CompositionMode attribute)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.add_state">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.CompositionNormalization.Auto">(libmata.nft.nft.CompositionNormalization attribute)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nft.nft.Nft.add_state_with_level">add_state_with_level() (libmata.nft.nft.Nft method)</a>
-</li>
-      <li><a href="index.html#libmata.alphabets.OnTheFlyAlphabet.add_symbols_for_names">add_symbols_for_names() (libmata.alphabets.OnTheFlyAlphabet method)</a>
-</li>
-      <li><a href="index.html#libmata.alphabets.EnumAlphabet.add_symbols_from">add_symbols_from() (libmata.alphabets.EnumAlphabet method)</a>
-</li>
-      <li><a href="index.html#libmata.alphabets.OnTheFlyAlphabet.add_symbols_from_symbol_map">add_symbols_from_symbol_map() (libmata.alphabets.OnTheFlyAlphabet method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.add_transition">add_transition() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.add_transition">(libmata.nft.nft.Nft method)</a>
+<section id="B" class="genindex-section">
+  <h2>B</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.utils.BinaryRelation">BinaryRelation (class in libmata.utils)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.add_transition_object">add_transition_object() (libmata.nfa.nfa.Nfa method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.DeterminizationReduction.Bisimulation">Bisimulation (libmata.nfa.nfa.DeterminizationReduction attribute)</a>
+</li>
+        <li><a href="index.html#libmata.utils.BinaryRelation.build_equivalence_classes">build_equivalence_classes() (libmata.utils.BinaryRelation method)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.utils.BinaryRelation.build_index">build_index() (libmata.utils.BinaryRelation method)</a>
+</li>
+        <li><a href="index.html#libmata.utils.BinaryRelation.build_indexes">build_indexes() (libmata.utils.BinaryRelation method)</a>
+</li>
+        <li><a href="index.html#libmata.utils.BinaryRelation.build_inverse_index">build_inverse_index() (libmata.utils.BinaryRelation method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.add_transition_object">(libmata.nft.nft.Nft method)</a>
+<section id="C" class="genindex-section">
+  <h2>C</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nft.nft.Levels.can_follow">can_follow() (libmata.nft.nft.Levels static method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nft.nft.Nft.add_transition_with_length">add_transition_with_length() (libmata.nft.nft.Nft method)</a>
+        <li><a href="index.html#libmata.nft.nft.Levels.can_follow_for_states">can_follow_for_states() (libmata.nft.nft.Levels method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nft.nft.Nft.add_transition_with_same_level_targets">add_transition_with_same_level_targets() (libmata.nft.nft.Nft method)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.Nft.add_transition_with_target">add_transition_with_target() (libmata.nft.nft.Nft method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Delta.add_transitions">add_transitions() (libmata.nfa.nfa.Delta method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Delta.add_transitions_from">add_transitions_from() (libmata.nfa.nfa.Delta method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.strings.ReplaceMode.All">All (libmata.nfa.strings.ReplaceMode attribute)</a>
-</li>
-      <li><a href="index.html#libmata.utils.BinaryRelation.alloc">alloc() (libmata.utils.BinaryRelation method)</a>
-</li>
-      <li><a href="index.html#libmata.alphabets.Alphabet">Alphabet (class in libmata.alphabets)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.alphabet">alphabet (libmata.nfa.nfa.Nfa attribute)</a>
-</li>
-      <li><a href="index.html#libmata.alphabets.AlphabetLevels">AlphabetLevels (class in libmata.alphabets)</a>
-</li>
-      <li><a href="index.html#libmata.alphabets.AlphabetLevelsMode">AlphabetLevelsMode (class in libmata.alphabets)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.Nft.alphabets">alphabets (libmata.nft.nft.Nft attribute)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.Levels.append">append() (libmata.nft.nft.Levels method)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.JumpMode.AppendDontCares">AppendDontCares (libmata.nft.nft.JumpMode attribute)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.Nft.apply">apply() (libmata.nft.nft.Nft method)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.are_equivalent">are_equivalent() (in module libmata.nft.nft)</a>
-</li>
-      <li><a href="index.html#libmata.alphabets.AlphabetLevels.at">at() (libmata.alphabets.AlphabetLevels method)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.CompositionMode.Auto">Auto (libmata.nft.nft.CompositionMode attribute)</a>
+        <li><a href="index.html#libmata.alphabets.Alphabet.clear">clear() (libmata.alphabets.Alphabet method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.CompositionNormalization.Auto">(libmata.nft.nft.CompositionNormalization attribute)</a>
+        <ul>
+          <li><a href="index.html#libmata.alphabets.AlphabetLevels.clear">(libmata.alphabets.AlphabetLevels method)</a>
 </li>
-      </ul></li>
-  </ul></td>
-</tr></table>
+          <li><a href="index.html#libmata.nfa.nfa.Delta.clear">(libmata.nfa.nfa.Delta method)</a>
+</li>
+          <li><a href="index.html#libmata.nfa.nfa.Nfa.clear">(libmata.nfa.nfa.Nfa method)</a>
+</li>
+          <li><a href="index.html#libmata.nft.nft.Nft.clear">(libmata.nft.nft.Nft method)</a>
+</li>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.clear_final">clear_final() (libmata.nfa.nfa.Nfa method)</a>
 
-<h2 id="B">B</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.utils.BinaryRelation">BinaryRelation (class in libmata.utils)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.clear_final">(libmata.nft.nft.Nft method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.DeterminizationReduction.Bisimulation">Bisimulation (libmata.nfa.nfa.DeterminizationReduction attribute)</a>
-</li>
-      <li><a href="index.html#libmata.utils.BinaryRelation.build_equivalence_classes">build_equivalence_classes() (libmata.utils.BinaryRelation method)</a>
-</li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.utils.BinaryRelation.build_index">build_index() (libmata.utils.BinaryRelation method)</a>
-</li>
-      <li><a href="index.html#libmata.utils.BinaryRelation.build_indexes">build_indexes() (libmata.utils.BinaryRelation method)</a>
-</li>
-      <li><a href="index.html#libmata.utils.BinaryRelation.build_inverse_index">build_inverse_index() (libmata.utils.BinaryRelation method)</a>
-</li>
-  </ul></td>
-</tr></table>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.clear_initial">clear_initial() (libmata.nfa.nfa.Nfa method)</a>
 
-<h2 id="C">C</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nft.nft.Levels.can_follow">can_follow() (libmata.nft.nft.Levels static method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.clear_initial">(libmata.nft.nft.Nft method)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.Levels.can_follow_for_states">can_follow_for_states() (libmata.nft.nft.Levels method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.plotting.Style.colored">colored() (libmata.plotting.Style class method)</a>
 </li>
-      <li><a href="index.html#libmata.alphabets.Alphabet.clear">clear() (libmata.alphabets.Alphabet method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.complement">complement() (in module libmata.nfa.nfa)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.alphabets.AlphabetLevels.clear">(libmata.alphabets.AlphabetLevels method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.complement">(in module libmata.nft.nft)</a>
 </li>
-        <li><a href="index.html#libmata.nfa.nfa.Delta.clear">(libmata.nfa.nfa.Delta method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nft.nft.compose">compose() (in module libmata.nft.nft)</a>
 </li>
-        <li><a href="index.html#libmata.nfa.nfa.Nfa.clear">(libmata.nfa.nfa.Nfa method)</a>
+        <li><a href="index.html#libmata.nft.nft.compose_alphabets">compose_alphabets() (in module libmata.nft.nft)</a>
 </li>
-        <li><a href="index.html#libmata.nft.nft.Nft.clear">(libmata.nft.nft.Nft method)</a>
+        <li><a href="index.html#libmata.nft.nft.CompositionMode">CompositionMode (class in libmata.nft.nft)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.clear_final">clear_final() (libmata.nfa.nfa.Nfa method)</a>
+        <li><a href="index.html#libmata.nft.nft.CompositionNormalization">CompositionNormalization (class in libmata.nft.nft)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.nfa.compute_relation">compute_relation() (in module libmata.nfa.nfa)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.clear_final">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.compute_relation">(in module libmata.nft.nft)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.clear_initial">clear_initial() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.concatenate">concatenate() (in module libmata.nfa.nfa)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.clear_initial">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.concatenate">(in module libmata.nft.nft)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.plotting.Style.colored">colored() (libmata.plotting.Style class method)</a>
+          <li><a href="index.html#libmata.nfa.nfa.Nfa.concatenate">(libmata.nfa.nfa.Nfa method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.complement">complement() (in module libmata.nfa.nfa)</a>
+          <li><a href="index.html#libmata.nft.nft.Nft.concatenate">(libmata.nft.nft.Nft method)</a>
+</li>
+        </ul></li>
+        <li><a href="index.html#libmata.nft.nft.concatenate_nth_power">concatenate_nth_power() (in module libmata.nft.nft)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.concatenate_with_result_state_maps">concatenate_with_result_state_maps() (in module libmata.nfa.nfa)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.complement">(in module libmata.nft.nft)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.concatenate_with_result_state_maps">(in module libmata.nft.nft)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nft.nft.compose">compose() (in module libmata.nft.nft)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.plotting.Condition">Condition (class in libmata.plotting)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.compose_alphabets">compose_alphabets() (in module libmata.nft.nft)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Delta.contains">contains() (libmata.nfa.nfa.Delta method)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.CompositionMode">CompositionMode (class in libmata.nft.nft)</a>
+        <li><a href="index.html#libmata.nft.nft.Nft.contains_jump_transitions">contains_jump_transitions() (libmata.nft.nft.Nft method)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.CompositionNormalization">CompositionNormalization (class in libmata.nft.nft)</a>
+        <li><a href="index.html#libmata.nft.nft.Levels.count">count() (libmata.nft.nft.Levels method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.nfa.compute_relation">compute_relation() (in module libmata.nfa.nfa)</a>
+        <li><a href="index.html#libmata.nft.nft.create_empty_string_nft">create_empty_string_nft() (in module libmata.nft.nft)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.strings.create_identity">create_identity() (in module libmata.nfa.strings)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.strings.create_identity_with_single_symbol_replace">create_identity_with_single_symbol_replace() (in module libmata.nfa.strings)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.create_sigma_star_nft">create_sigma_star_nft() (in module libmata.nft.nft)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.create_single_word_nft">create_single_word_nft() (in module libmata.nft.nft)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.compute_relation">(in module libmata.nft.nft)</a>
+<section id="D" class="genindex-section">
+  <h2>D</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.plotting.Style.dashed">dashed() (libmata.plotting.Style class method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.concatenate">concatenate() (in module libmata.nfa.nfa)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.deepcopy">deepcopy() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.concatenate">(in module libmata.nft.nft)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.deepcopy">(libmata.nft.nft.Nft method)</a>
 </li>
-        <li><a href="index.html#libmata.nfa.nfa.Nfa.concatenate">(libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Delta">Delta (class in libmata.nfa.nfa)</a>
 </li>
-        <li><a href="index.html#libmata.nft.nft.Nft.concatenate">(libmata.nft.nft.Nft method)</a>
-</li>
-      </ul></li>
-      <li><a href="index.html#libmata.nft.nft.concatenate_nth_power">concatenate_nth_power() (in module libmata.nft.nft)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.concatenate_with_result_state_maps">concatenate_with_result_state_maps() (in module libmata.nfa.nfa)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.delta">delta (libmata.nfa.nfa.Nfa attribute)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.concatenate_with_result_state_maps">(in module libmata.nft.nft)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.delta">(libmata.nft.nft.Nft attribute)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.plotting.Condition">Condition (class in libmata.plotting)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.DeterminizationReduction">DeterminizationReduction (class in libmata.nfa.nfa)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Delta.contains">contains() (libmata.nfa.nfa.Delta method)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.Nft.contains_jump_transitions">contains_jump_transitions() (libmata.nft.nft.Nft method)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.Levels.count">count() (libmata.nft.nft.Levels method)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.create_empty_string_nft">create_empty_string_nft() (in module libmata.nft.nft)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.strings.create_identity">create_identity() (in module libmata.nfa.strings)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.strings.create_identity_with_single_symbol_replace">create_identity_with_single_symbol_replace() (in module libmata.nfa.strings)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.create_sigma_star_nft">create_sigma_star_nft() (in module libmata.nft.nft)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.create_single_word_nft">create_single_word_nft() (in module libmata.nft.nft)</a>
-</li>
-  </ul></td>
-</tr></table>
+        <li><a href="index.html#libmata.nfa.nfa.determinize">determinize() (in module libmata.nfa.nfa)</a>
 
-<h2 id="D">D</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.plotting.Style.dashed">dashed() (libmata.plotting.Style class method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.determinize">(in module libmata.nft.nft)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.deepcopy">deepcopy() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.nfa.determinize_four_russians">determinize_four_russians() (in module libmata.nfa.nfa)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.determinize_four_russians_with_subset_map">determinize_four_russians_with_subset_map() (in module libmata.nfa.nfa)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.determinize_with_subset_map">determinize_with_subset_map() (in module libmata.nfa.nfa)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.deepcopy">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.determinize_with_subset_map">(in module libmata.nft.nft)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Delta">Delta (class in libmata.nfa.nfa)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.plotting.display_inline">display_inline() (in module libmata.plotting)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.delta">delta (libmata.nfa.nfa.Nfa attribute)</a>
+        <li><a href="index.html#libmata.nfa.nfa.divisible_by">divisible_by() (in module libmata.nfa.nfa)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.dont_care">dont_care() (in module libmata.nft.nft)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.delta">(libmata.nft.nft.Nft attribute)</a>
+<section id="E" class="genindex-section">
+  <h2>E</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.nfa.Delta.empty">empty() (libmata.nfa.nfa.Delta method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.DeterminizationReduction">DeterminizationReduction (class in libmata.nfa.nfa)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.determinize">determinize() (in module libmata.nfa.nfa)</a>
+        <li><a href="index.html#libmata.nfa.nfa.encode_word">encode_word() (in module libmata.nfa.nfa)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.determinize">(in module libmata.nft.nft)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.encode_word">(in module libmata.nft.nft)</a>
 </li>
-      </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.nfa.determinize_four_russians">determinize_four_russians() (in module libmata.nfa.nfa)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.alphabets.EnumAlphabet">EnumAlphabet (class in libmata.alphabets)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.determinize_four_russians_with_subset_map">determinize_four_russians_with_subset_map() (in module libmata.nfa.nfa)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.determinize_with_subset_map">determinize_with_subset_map() (in module libmata.nfa.nfa)</a>
+        <li><a href="index.html#libmata.nfa.nfa.epsilon">epsilon() (in module libmata.nfa.nfa)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.determinize_with_subset_map">(in module libmata.nft.nft)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.epsilon">(in module libmata.nft.nft)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.plotting.display_inline">display_inline() (in module libmata.plotting)</a>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.epsilon_symbol_posts">epsilon_symbol_posts() (libmata.nfa.nfa.Nfa method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.divisible_by">divisible_by() (in module libmata.nfa.nfa)</a>
+        <li><a href="index.html#libmata.nfa.nfa.equivalence_check">equivalence_check() (in module libmata.nfa.nfa)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.dont_care">dont_care() (in module libmata.nft.nft)</a>
-</li>
-  </ul></td>
-</tr></table>
+        <li><a href="index.html#libmata.alphabets.AlphabetLevels.erase">erase() (libmata.alphabets.AlphabetLevels method)</a>
 
-<h2 id="E">E</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.nfa.Delta.empty">empty() (libmata.nfa.nfa.Delta method)</a>
+        <ul>
+          <li><a href="index.html#libmata.alphabets.EnumAlphabet.erase">(libmata.alphabets.EnumAlphabet method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.encode_word">encode_word() (in module libmata.nfa.nfa)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.ExternalSolverNotFound">ExternalSolverNotFound</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.encode_word">(in module libmata.nft.nft)</a>
+<section id="F" class="genindex-section">
+  <h2>F</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.nfa.RegexPrintMode.Fast">Fast (libmata.nfa.nfa.RegexPrintMode attribute)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.alphabets.EnumAlphabet">EnumAlphabet (class in libmata.alphabets)</a>
+        <li><a href="index.html#libmata.nft.nft.CompositionMode.FastNoJump">FastNoJump (libmata.nft.nft.CompositionMode attribute)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.epsilon">epsilon() (in module libmata.nfa.nfa)</a>
+        <li><a href="index.html#libmata.plotting.Style.filled">filled() (libmata.plotting.Style class method)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.final_states">final_states (libmata.nfa.nfa.Nfa attribute)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.epsilon">(in module libmata.nft.nft)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.final_states">(libmata.nft.nft.Nft attribute)</a>
 </li>
-      </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.epsilon_symbol_posts">epsilon_symbol_posts() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.alphabets.AlphabetLevels.for_level">for_level() (libmata.alphabets.AlphabetLevels method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.equivalence_check">equivalence_check() (in module libmata.nfa.nfa)</a>
+        <li><a href="index.html#libmata.alphabets.OnTheFlyAlphabet.for_symbol_names">for_symbol_names() (libmata.alphabets.OnTheFlyAlphabet class method)</a>
 </li>
-      <li><a href="index.html#libmata.alphabets.AlphabetLevels.erase">erase() (libmata.alphabets.AlphabetLevels method)</a>
+        <li><a href="index.html#libmata.nfa.strings.NoodleOrder.Forward">Forward (libmata.nfa.strings.NoodleOrder attribute)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.parser.from_mata">from_mata() (in module libmata.parser)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.Nft.from_nfa">from_nfa() (libmata.nft.nft.Nft class method)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.Nft.from_nfa_with_levels">from_nfa_with_levels() (libmata.nft.nft.Nft class method)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.from_nfa_with_levels_advancing">from_nfa_with_levels_advancing() (in module libmata.nft.nft)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.from_nfa_with_levels_zero">from_nfa_with_levels_zero() (in module libmata.nft.nft)</a>
+</li>
+        <li><a href="index.html#libmata.parser.from_regex">from_regex() (in module libmata.parser)</a>
+</li>
+        <li><a href="index.html#libmata.alphabets.OnTheFlyAlphabet.from_symbol_map">from_symbol_map() (libmata.alphabets.OnTheFlyAlphabet class method)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.CompositionNormalization.Full">Full (libmata.nft.nft.CompositionNormalization attribute)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
 
-      <ul>
-        <li><a href="index.html#libmata.alphabets.EnumAlphabet.erase">(libmata.alphabets.EnumAlphabet method)</a>
+<section id="G" class="genindex-section">
+  <h2>G</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nft.nft.CompositionMode.General">General (libmata.nft.nft.CompositionMode attribute)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.ExternalSolverNotFound">ExternalSolverNotFound</a>
+        <li><a href="index.html#libmata.nft.nft.CompositionNormalization.GeneratedOnly">GeneratedOnly (libmata.nft.nft.CompositionNormalization attribute)</a>
 </li>
-  </ul></td>
-</tr></table>
+        <li><a href="index.html#libmata.utils.BinaryRelation.get">get() (libmata.utils.BinaryRelation method)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.strings.get_accepted_symbols">get_accepted_symbols() (in module libmata.nfa.strings)</a>
+</li>
+        <li><a href="index.html#libmata.alphabets.Alphabet.get_alphabet_symbols">get_alphabet_symbols() (libmata.alphabets.Alphabet method)</a>
 
-<h2 id="F">F</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.nfa.RegexPrintMode.Fast">Fast (libmata.nfa.nfa.RegexPrintMode attribute)</a>
+        <ul>
+          <li><a href="index.html#libmata.alphabets.AlphabetLevels.get_alphabet_symbols">(libmata.alphabets.AlphabetLevels method)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.CompositionMode.FastNoJump">FastNoJump (libmata.nft.nft.CompositionMode attribute)</a>
+          <li><a href="index.html#libmata.alphabets.EnumAlphabet.get_alphabet_symbols">(libmata.alphabets.EnumAlphabet method)</a>
 </li>
-      <li><a href="index.html#libmata.plotting.Style.filled">filled() (libmata.plotting.Style class method)</a>
+          <li><a href="index.html#libmata.alphabets.OnTheFlyAlphabet.get_alphabet_symbols">(libmata.alphabets.OnTheFlyAlphabet method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.final_states">final_states (libmata.nfa.nfa.Nfa attribute)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.alphabets.Alphabet.get_complement">get_complement() (libmata.alphabets.Alphabet method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.final_states">(libmata.nft.nft.Nft attribute)</a>
+        <ul>
+          <li><a href="index.html#libmata.alphabets.AlphabetLevels.get_complement">(libmata.alphabets.AlphabetLevels method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.alphabets.AlphabetLevels.for_level">for_level() (libmata.alphabets.AlphabetLevels method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.plotting.get_configuration_for">get_configuration_for() (in module libmata.plotting)</a>
 </li>
-      <li><a href="index.html#libmata.alphabets.OnTheFlyAlphabet.for_symbol_names">for_symbol_names() (libmata.alphabets.OnTheFlyAlphabet class method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.get_elements_from_bool_vec">get_elements_from_bool_vec() (in module libmata.nfa.nfa)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.strings.NoodleOrder.Forward">Forward (libmata.nfa.strings.NoodleOrder attribute)</a>
+        <li><a href="index.html#libmata.nfa.strings.Segmentation.get_epsilon_depths">get_epsilon_depths() (libmata.nfa.strings.Segmentation method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.parser.from_mata">from_mata() (in module libmata.parser)</a>
+        <li><a href="index.html#libmata.plotting.get_interactive_mode">get_interactive_mode() (in module libmata.plotting)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.Nft.from_nfa">from_nfa() (libmata.nft.nft.Nft class method)</a>
+        <li><a href="index.html#libmata.nft.nft.Levels.get_levels_of">get_levels_of() (libmata.nft.nft.Levels method)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.Nft.from_nfa_with_levels">from_nfa_with_levels() (libmata.nft.nft.Nft class method)</a>
+        <li><a href="index.html#libmata.nft.nft.Levels.get_minimal_level_of">get_minimal_level_of() (libmata.nft.nft.Levels method)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.from_nfa_with_levels_advancing">from_nfa_with_levels_advancing() (in module libmata.nft.nft)</a>
+        <li><a href="index.html#libmata.nft.nft.Levels.get_minimal_next_level_of">get_minimal_next_level_of() (libmata.nft.nft.Levels method)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.from_nfa_with_levels_zero">from_nfa_with_levels_zero() (in module libmata.nft.nft)</a>
+        <li><a href="index.html#libmata.alphabets.EnumAlphabet.get_next_value">get_next_value() (libmata.alphabets.EnumAlphabet method)</a>
 </li>
-      <li><a href="index.html#libmata.parser.from_regex">from_regex() (in module libmata.parser)</a>
-</li>
-      <li><a href="index.html#libmata.alphabets.OnTheFlyAlphabet.from_symbol_map">from_symbol_map() (libmata.alphabets.OnTheFlyAlphabet class method)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.CompositionNormalization.Full">Full (libmata.nft.nft.CompositionNormalization attribute)</a>
-</li>
-  </ul></td>
-</tr></table>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.get_num_of_transitions">get_num_of_transitions() (libmata.nfa.nfa.Nfa method)</a>
 
-<h2 id="G">G</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nft.nft.CompositionMode.General">General (libmata.nft.nft.CompositionMode attribute)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.get_num_of_transitions">(libmata.nft.nft.Nft method)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.CompositionNormalization.GeneratedOnly">GeneratedOnly (libmata.nft.nft.CompositionNormalization attribute)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.alphabets.EnumAlphabet.get_number_of_symbols">get_number_of_symbols() (libmata.alphabets.EnumAlphabet method)</a>
 </li>
-      <li><a href="index.html#libmata.utils.BinaryRelation.get">get() (libmata.utils.BinaryRelation method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.strings.get_accepted_symbols">get_accepted_symbols() (in module libmata.nfa.strings)</a>
-</li>
-      <li><a href="index.html#libmata.alphabets.Alphabet.get_alphabet_symbols">get_alphabet_symbols() (libmata.alphabets.Alphabet method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.get_one_letter_aut">get_one_letter_aut() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.alphabets.AlphabetLevels.get_alphabet_symbols">(libmata.alphabets.AlphabetLevels method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.get_one_letter_aut">(libmata.nft.nft.Nft method)</a>
 </li>
-        <li><a href="index.html#libmata.alphabets.EnumAlphabet.get_alphabet_symbols">(libmata.alphabets.EnumAlphabet method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.utils.BinaryRelation.get_quotient_projection">get_quotient_projection() (libmata.utils.BinaryRelation method)</a>
 </li>
-        <li><a href="index.html#libmata.alphabets.OnTheFlyAlphabet.get_alphabet_symbols">(libmata.alphabets.OnTheFlyAlphabet method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.get_reachable_states">get_reachable_states() (libmata.nfa.nfa.Nfa method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.alphabets.Alphabet.get_complement">get_complement() (libmata.alphabets.Alphabet method)</a>
+        <li><a href="index.html#libmata.nfa.strings.Segmentation.get_segments">get_segments() (libmata.nfa.strings.Segmentation method)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.strings.get_shortest_words">get_shortest_words() (in module libmata.nfa.strings)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.strings.ShortestWordsMap.get_shortest_words_from">get_shortest_words_from() (libmata.nfa.strings.ShortestWordsMap method)</a>
+</li>
+        <li><a href="index.html#libmata.alphabets.OnTheFlyAlphabet.get_symbol_map">get_symbol_map() (libmata.alphabets.OnTheFlyAlphabet method)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.get_symbols">get_symbols() (libmata.nfa.nfa.Nfa method)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.get_symbols_to_work_with">get_symbols_to_work_with() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.alphabets.AlphabetLevels.get_complement">(libmata.alphabets.AlphabetLevels method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.get_symbols_to_work_with">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.plotting.get_configuration_for">get_configuration_for() (in module libmata.plotting)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.get_terminating_states">get_terminating_states() (libmata.nfa.nfa.Nfa method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.get_elements_from_bool_vec">get_elements_from_bool_vec() (in module libmata.nfa.nfa)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.strings.Segmentation.get_epsilon_depths">get_epsilon_depths() (libmata.nfa.strings.Segmentation method)</a>
-</li>
-      <li><a href="index.html#libmata.plotting.get_interactive_mode">get_interactive_mode() (in module libmata.plotting)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.Levels.get_levels_of">get_levels_of() (libmata.nft.nft.Levels method)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.Levels.get_minimal_level_of">get_minimal_level_of() (libmata.nft.nft.Levels method)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.Levels.get_minimal_next_level_of">get_minimal_next_level_of() (libmata.nft.nft.Levels method)</a>
-</li>
-      <li><a href="index.html#libmata.alphabets.EnumAlphabet.get_next_value">get_next_value() (libmata.alphabets.EnumAlphabet method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.get_num_of_transitions">get_num_of_transitions() (libmata.nfa.nfa.Nfa method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.get_trans_as_sequence">get_trans_as_sequence() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.get_num_of_transitions">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.get_trans_as_sequence">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.alphabets.EnumAlphabet.get_number_of_symbols">get_number_of_symbols() (libmata.alphabets.EnumAlphabet method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.get_trans_from_state_as_sequence">get_trans_from_state_as_sequence() (libmata.nfa.nfa.Nfa method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.get_one_letter_aut">get_one_letter_aut() (libmata.nfa.nfa.Nfa method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Delta.get_transitions_between">get_transitions_between() (libmata.nfa.nfa.Delta method)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.Delta.get_transitions_from">get_transitions_from() (libmata.nfa.nfa.Delta method)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.get_transitions_from_state">get_transitions_from_state() (libmata.nfa.nfa.Nfa method)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.Delta.get_transitions_to">get_transitions_to() (libmata.nfa.nfa.Delta method)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.get_transitions_to_state">get_transitions_to_state() (libmata.nfa.nfa.Nfa method)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.strings.Segmentation.get_untrimmed_segments">get_untrimmed_segments() (libmata.nfa.strings.Segmentation method)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.Delta.get_used_symbols">get_used_symbols() (libmata.nfa.nfa.Delta method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.get_one_letter_aut">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.get_used_symbols">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.utils.BinaryRelation.get_quotient_projection">get_quotient_projection() (libmata.utils.BinaryRelation method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.get_useful_states">get_useful_states() (libmata.nfa.nfa.Nfa method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.get_reachable_states">get_reachable_states() (libmata.nfa.nfa.Nfa method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.strings.Segmentation.get_segments">get_segments() (libmata.nfa.strings.Segmentation method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.strings.get_shortest_words">get_shortest_words() (in module libmata.nfa.strings)</a>
-</li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.strings.ShortestWordsMap.get_shortest_words_from">get_shortest_words_from() (libmata.nfa.strings.ShortestWordsMap method)</a>
-</li>
-      <li><a href="index.html#libmata.alphabets.OnTheFlyAlphabet.get_symbol_map">get_symbol_map() (libmata.alphabets.OnTheFlyAlphabet method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.get_symbols">get_symbols() (libmata.nfa.nfa.Nfa method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.get_symbols_to_work_with">get_symbols_to_work_with() (libmata.nfa.nfa.Nfa method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.get_word_for_path">get_word_for_path() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.get_symbols_to_work_with">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.get_word_for_path">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.get_terminating_states">get_terminating_states() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.strings.get_word_lengths">get_word_lengths() (in module libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.get_trans_as_sequence">get_trans_as_sequence() (libmata.nfa.nfa.Nfa method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.get_words">get_words() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.get_trans_as_sequence">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.get_words">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.get_trans_from_state_as_sequence">get_trans_from_state_as_sequence() (libmata.nfa.nfa.Nfa method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Delta.get_transitions_between">get_transitions_between() (libmata.nfa.nfa.Delta method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Delta.get_transitions_from">get_transitions_from() (libmata.nfa.nfa.Delta method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.get_transitions_from_state">get_transitions_from_state() (libmata.nfa.nfa.Nfa method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Delta.get_transitions_to">get_transitions_to() (libmata.nfa.nfa.Delta method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.get_transitions_to_state">get_transitions_to_state() (libmata.nfa.nfa.Nfa method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.strings.Segmentation.get_untrimmed_segments">get_untrimmed_segments() (libmata.nfa.strings.Segmentation method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Delta.get_used_symbols">get_used_symbols() (libmata.nfa.nfa.Delta method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.get_words_lazy">get_words_lazy() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.get_used_symbols">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.get_words_lazy">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.get_useful_states">get_useful_states() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.strings.get_words_of_lengths">get_words_of_lengths() (in module libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.get_word_for_path">get_word_for_path() (libmata.nfa.nfa.Nfa method)</a>
+        <li><a href="index.html#libmata.alphabets.AlphabetLevelsMode.Global">Global (libmata.alphabets.AlphabetLevelsMode attribute)</a>
+</li>
+        <li><a href="index.html#libmata.alphabets.AlphabetLevels.global_mode">global_mode() (libmata.alphabets.AlphabetLevels static method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.get_word_for_path">(libmata.nft.nft.Nft method)</a>
+<section id="H" class="genindex-section">
+  <h2>H</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nft.nft.has_epsilon_cycle">has_epsilon_cycle() (in module libmata.nft.nft)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.strings.get_word_lengths">get_word_lengths() (in module libmata.nfa.strings)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.get_words">get_words() (libmata.nfa.nfa.Nfa method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.has_final_state">has_final_state() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.get_words">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.has_final_state">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.get_words_lazy">get_words_lazy() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.has_initial_state">has_initial_state() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.get_words_lazy">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.has_initial_state">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.strings.get_words_of_lengths">get_words_of_lengths() (in module libmata.nfa.strings)</a>
-</li>
-      <li><a href="index.html#libmata.alphabets.AlphabetLevelsMode.Global">Global (libmata.alphabets.AlphabetLevelsMode attribute)</a>
-</li>
-      <li><a href="index.html#libmata.alphabets.AlphabetLevels.global_mode">global_mode() (libmata.alphabets.AlphabetLevels static method)</a>
-</li>
-  </ul></td>
-</tr></table>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.has_transition">has_transition() (libmata.nfa.nfa.Nfa method)</a>
 
-<h2 id="H">H</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nft.nft.has_epsilon_cycle">has_epsilon_cycle() (in module libmata.nft.nft)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.has_transition">(libmata.nft.nft.Nft method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.has_final_state">has_final_state() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.plotting.Style.hidden">hidden() (libmata.plotting.Style class method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.has_final_state">(libmata.nft.nft.Nft method)</a>
-</li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.has_initial_state">has_initial_state() (libmata.nfa.nfa.Nfa method)</a>
+<section id="I" class="genindex-section">
+  <h2>I</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.initial_states">initial_states (libmata.nfa.nfa.Nfa attribute)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.has_initial_state">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.initial_states">(libmata.nft.nft.Nft attribute)</a>
 </li>
-      </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.has_transition">has_transition() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.alphabets.AlphabetLevels.insert">insert() (libmata.alphabets.AlphabetLevels method)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.Nft.insert_identity">insert_identity() (libmata.nft.nft.Nft method)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.insert_level">insert_level() (in module libmata.nft.nft)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.insert_levels">insert_levels() (in module libmata.nft.nft)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.Nft.insert_word">insert_word() (libmata.nft.nft.Nft method)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.Nft.insert_word_by_levels">insert_word_by_levels() (libmata.nft.nft.Nft method)</a>
+</li>
+        <li><a href="index.html#libmata.alphabets.IntAlphabet">IntAlphabet (class in libmata.alphabets)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.intersection">intersection() (in module libmata.nfa.nfa)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.has_transition">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.intersection">(in module libmata.nft.nft)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.plotting.Style.hidden">hidden() (libmata.plotting.Style class method)</a>
-</li>
-  </ul></td>
-</tr></table>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.intersection_with_product_map">intersection_with_product_map() (in module libmata.nfa.nfa)</a>
 
-<h2 id="I">I</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.initial_states">initial_states (libmata.nfa.nfa.Nfa attribute)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.intersection_with_product_map">(in module libmata.nft.nft)</a>
+</li>
+        </ul></li>
+        <li><a href="index.html#libmata.nft.nft.invert_levels">invert_levels() (in module libmata.nft.nft)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.is_complete">is_complete() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.initial_states">(libmata.nft.nft.Nft attribute)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.is_complete">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.alphabets.AlphabetLevels.insert">insert() (libmata.alphabets.AlphabetLevels method)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.Nft.insert_identity">insert_identity() (libmata.nft.nft.Nft method)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.insert_level">insert_level() (in module libmata.nft.nft)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.insert_levels">insert_levels() (in module libmata.nft.nft)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.Nft.insert_word">insert_word() (libmata.nft.nft.Nft method)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.Nft.insert_word_by_levels">insert_word_by_levels() (libmata.nft.nft.Nft method)</a>
-</li>
-      <li><a href="index.html#libmata.alphabets.IntAlphabet">IntAlphabet (class in libmata.alphabets)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.intersection">intersection() (in module libmata.nfa.nfa)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.is_deterministic">is_deterministic() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.intersection">(in module libmata.nft.nft)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.is_deterministic">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.intersection_with_product_map">intersection_with_product_map() (in module libmata.nfa.nfa)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.alphabets.Alphabet.is_empty">is_empty() (libmata.alphabets.Alphabet method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.intersection_with_product_map">(in module libmata.nft.nft)</a>
+        <ul>
+          <li><a href="index.html#libmata.alphabets.AlphabetLevels.is_empty">(libmata.alphabets.AlphabetLevels method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nft.nft.invert_levels">invert_levels() (in module libmata.nft.nft)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.is_complete">is_complete() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.is_epsilon">is_epsilon() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.is_complete">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.is_epsilon">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.is_deterministic">is_deterministic() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nft.nft.Nft.is_identical">is_identical() (libmata.nft.nft.Nft method)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.is_in_lang">is_in_lang() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.is_deterministic">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.is_in_lang">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.alphabets.Alphabet.is_empty">is_empty() (libmata.alphabets.Alphabet method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nft.nft.Nft.is_in_lang_by_levels">is_in_lang_by_levels() (libmata.nft.nft.Nft method)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.Nft.is_in_lang_prefix">is_in_lang_prefix() (libmata.nft.nft.Nft method)</a>
+</li>
+        <li><a href="index.html#libmata.nft.nft.Nft.is_in_lang_prefix_by_levels">is_in_lang_prefix_by_levels() (libmata.nft.nft.Nft method)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.is_included">is_included() (in module libmata.nfa.nfa)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.alphabets.AlphabetLevels.is_empty">(libmata.alphabets.AlphabetLevels method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.is_included">(in module libmata.nft.nft)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.is_epsilon">is_epsilon() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.is_included_with_cex">is_included_with_cex() (in module libmata.nfa.nfa)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.is_epsilon">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.is_included_with_cex">(in module libmata.nft.nft)</a>
 </li>
-      </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nft.nft.Nft.is_identical">is_identical() (libmata.nft.nft.Nft method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.is_in_lang">is_in_lang() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.is_lang_empty">is_lang_empty() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.is_in_lang">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.is_lang_empty">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nft.nft.Nft.is_in_lang_by_levels">is_in_lang_by_levels() (libmata.nft.nft.Nft method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.strings.is_lang_eps">is_lang_eps() (in module libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.Nft.is_in_lang_prefix">is_in_lang_prefix() (libmata.nft.nft.Nft method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.is_minimal">is_minimal() (libmata.nfa.nfa.Nfa method)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.Nft.is_in_lang_prefix_by_levels">is_in_lang_prefix_by_levels() (libmata.nft.nft.Nft method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.is_included">is_included() (in module libmata.nfa.nfa)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.is_state">is_state() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.is_included">(in module libmata.nft.nft)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.is_state">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.is_included_with_cex">is_included_with_cex() (in module libmata.nfa.nfa)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.utils.BinaryRelation.is_symmetric_at">is_symmetric_at() (libmata.utils.BinaryRelation method)</a>
+</li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.is_universal">is_universal() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.is_included_with_cex">(in module libmata.nft.nft)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.is_universal">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.is_lang_empty">is_lang_empty() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Delta.iter_transitions_from">iter_transitions_from() (libmata.nfa.nfa.Delta method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.is_lang_empty">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nfa.nfa.Nfa.iter_transitions_from">(libmata.nfa.nfa.Nfa method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.strings.is_lang_eps">is_lang_eps() (in module libmata.nfa.strings)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.is_minimal">is_minimal() (libmata.nfa.nfa.Nfa method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.is_state">is_state() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.iterate">iterate() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.is_state">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.iterate">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.utils.BinaryRelation.is_symmetric_at">is_symmetric_at() (libmata.utils.BinaryRelation method)</a>
-</li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.is_universal">is_universal() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.is_universal">(libmata.nft.nft.Nft method)</a>
+<section id="J" class="genindex-section">
+  <h2>J</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nft.nft.JumpMode">JumpMode (class in libmata.nft.nft)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Delta.iter_transitions_from">iter_transitions_from() (libmata.nfa.nfa.Delta method)</a>
+    </ul></td>
+  </tr></table>
+</section>
 
-      <ul>
-        <li><a href="index.html#libmata.nfa.nfa.Nfa.iter_transitions_from">(libmata.nfa.nfa.Nfa method)</a>
-</li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.iterate">iterate() (libmata.nfa.nfa.Nfa method)</a>
+<section id="L" class="genindex-section">
+  <h2>L</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.label">label (libmata.nfa.nfa.Nfa attribute)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.iterate">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.label">(libmata.nft.nft.Nft attribute)</a>
 </li>
-      </ul></li>
-  </ul></td>
-</tr></table>
-
-<h2 id="J">J</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nft.nft.JumpMode">JumpMode (class in libmata.nft.nft)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.strings.NoodleOrder.LargestFirst">LargestFirst (libmata.nfa.strings.NoodleOrder attribute)</a>
 </li>
-  </ul></td>
-</tr></table>
-
-<h2 id="L">L</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.label">label (libmata.nfa.nfa.Nfa attribute)</a>
-
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.label">(libmata.nft.nft.Nft attribute)</a>
+        <li><a href="index.html#libmata.nft.nft.Levels">Levels (class in libmata.nft.nft)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.strings.NoodleOrder.LargestFirst">LargestFirst (libmata.nfa.strings.NoodleOrder attribute)</a>
+        <li><a href="index.html#libmata.nft.nft.Nft.levels">levels (libmata.nft.nft.Nft attribute)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.Levels">Levels (class in libmata.nft.nft)</a>
-</li>
-      <li><a href="index.html#libmata.nft.nft.Nft.levels">levels (libmata.nft.nft.Nft attribute)</a>
-</li>
-      <li>
+        <li>
     libmata.alphabets
 
-      <ul>
-        <li><a href="index.html#module-libmata.alphabets">module</a>
+        <ul>
+          <li><a href="index.html#module-libmata.alphabets">module</a>
 </li>
-      </ul></li>
-      <li>
+        </ul></li>
+        <li>
     libmata.nfa.nfa
 
-      <ul>
-        <li><a href="index.html#module-libmata.nfa.nfa">module</a>
+        <ul>
+          <li><a href="index.html#module-libmata.nfa.nfa">module</a>
 </li>
-      </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li>
     libmata.nfa.strings
 
-      <ul>
-        <li><a href="index.html#module-libmata.nfa.strings">module</a>
+        <ul>
+          <li><a href="index.html#module-libmata.nfa.strings">module</a>
 </li>
-      </ul></li>
-      <li>
+        </ul></li>
+        <li>
     libmata.nft.nft
 
-      <ul>
-        <li><a href="index.html#module-libmata.nft.nft">module</a>
+        <ul>
+          <li><a href="index.html#module-libmata.nft.nft">module</a>
 </li>
-      </ul></li>
-      <li>
+        </ul></li>
+        <li>
     libmata.parser
 
-      <ul>
-        <li><a href="index.html#module-libmata.parser">module</a>
+        <ul>
+          <li><a href="index.html#module-libmata.parser">module</a>
 </li>
-      </ul></li>
-      <li>
+        </ul></li>
+        <li>
     libmata.plotting
 
-      <ul>
-        <li><a href="index.html#module-libmata.plotting">module</a>
+        <ul>
+          <li><a href="index.html#module-libmata.plotting">module</a>
 </li>
-      </ul></li>
-      <li>
+        </ul></li>
+        <li>
     libmata.utils
 
-      <ul>
-        <li><a href="index.html#module-libmata.utils">module</a>
+        <ul>
+          <li><a href="index.html#module-libmata.utils">module</a>
 </li>
-      </ul></li>
-  </ul></td>
-</tr></table>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
 
-<h2 id="M">M</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.make_complete">make_complete() (libmata.nfa.nfa.Nfa method)</a>
+<section id="M" class="genindex-section">
+  <h2>M</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.make_complete">make_complete() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.make_complete">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.make_complete">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.make_final_state">make_final_state() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.make_final_state">make_final_state() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.make_final_state">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.make_final_state">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.make_final_states">make_final_states() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.make_final_states">make_final_states() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.make_final_states">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.make_final_states">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.make_initial_state">make_initial_state() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.make_initial_state">make_initial_state() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.make_initial_state">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.make_initial_state">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.make_initial_states">make_initial_states() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.make_initial_states">make_initial_states() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.make_initial_states">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.make_initial_states">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nft.nft.Levels.map_levels_to">map_levels_to() (libmata.nft.nft.Levels method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nft.nft.Levels.map_levels_to">map_levels_to() (libmata.nft.nft.Levels method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.minimize">minimize() (in module libmata.nfa.nfa)</a>
+        <li><a href="index.html#libmata.nfa.nfa.minimize">minimize() (in module libmata.nfa.nfa)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nft.nft.Nft.mk_level_word_from_word">mk_level_word_from_word() (libmata.nft.nft.Nft method)</a>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nft.nft.Nft.mk_level_word_from_word">mk_level_word_from_word() (libmata.nft.nft.Nft method)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.Nft.mk_word_from_level_word">mk_word_from_level_word() (libmata.nft.nft.Nft method)</a>
+        <li><a href="index.html#libmata.nft.nft.Nft.mk_word_from_level_word">mk_word_from_level_word() (libmata.nft.nft.Nft method)</a>
 </li>
-      <li><a href="index.html#libmata.alphabets.AlphabetLevels.mode">mode (libmata.alphabets.AlphabetLevels attribute)</a>
+        <li><a href="index.html#libmata.alphabets.AlphabetLevels.mode">mode (libmata.alphabets.AlphabetLevels attribute)</a>
 </li>
-      <li>
+        <li>
     module
 
-      <ul>
-        <li><a href="index.html#module-libmata.alphabets">libmata.alphabets</a>
+        <ul>
+          <li><a href="index.html#module-libmata.alphabets">libmata.alphabets</a>
 </li>
-        <li><a href="index.html#module-libmata.nfa.nfa">libmata.nfa.nfa</a>
+          <li><a href="index.html#module-libmata.nfa.nfa">libmata.nfa.nfa</a>
 </li>
-        <li><a href="index.html#module-libmata.nfa.strings">libmata.nfa.strings</a>
+          <li><a href="index.html#module-libmata.nfa.strings">libmata.nfa.strings</a>
 </li>
-        <li><a href="index.html#module-libmata.nft.nft">libmata.nft.nft</a>
+          <li><a href="index.html#module-libmata.nft.nft">libmata.nft.nft</a>
 </li>
-        <li><a href="index.html#module-libmata.parser">libmata.parser</a>
+          <li><a href="index.html#module-libmata.parser">libmata.parser</a>
 </li>
-        <li><a href="index.html#module-libmata.plotting">libmata.plotting</a>
+          <li><a href="index.html#module-libmata.plotting">libmata.plotting</a>
 </li>
-        <li><a href="index.html#module-libmata.utils">libmata.utils</a>
+          <li><a href="index.html#module-libmata.utils">libmata.utils</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.alphabets.AlphabetLevels.multi_level_mode">multi_level_mode() (libmata.alphabets.AlphabetLevels static method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.alphabets.AlphabetLevels.multi_level_mode">multi_level_mode() (libmata.alphabets.AlphabetLevels static method)</a>
 </li>
-      <li><a href="index.html#libmata.alphabets.AlphabetLevelsMode.MultiLevel">MultiLevel (libmata.alphabets.AlphabetLevelsMode attribute)</a>
+        <li><a href="index.html#libmata.alphabets.AlphabetLevelsMode.MultiLevel">MultiLevel (libmata.alphabets.AlphabetLevelsMode attribute)</a>
 </li>
-  </ul></td>
-</tr></table>
+    </ul></td>
+  </tr></table>
+</section>
 
-<h2 id="N">N</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nft.nft.Levels.next_level_after">next_level_after() (libmata.nft.nft.Levels method)</a>
+<section id="N" class="genindex-section">
+  <h2>N</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nft.nft.Levels.next_level_after">next_level_after() (libmata.nft.nft.Levels method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa">Nfa (class in libmata.nfa.nfa)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa">Nfa (class in libmata.nfa.nfa)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.Nft">Nft (class in libmata.nft.nft)</a>
+        <li><a href="index.html#libmata.nft.nft.Nft">Nft (class in libmata.nft.nft)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.JumpMode.NoJump">NoJump (libmata.nft.nft.JumpMode attribute)</a>
+        <li><a href="index.html#libmata.nft.nft.JumpMode.NoJump">NoJump (libmata.nft.nft.JumpMode attribute)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.CompositionNormalization.None_">None_ (libmata.nft.nft.CompositionNormalization attribute)</a>
+        <li><a href="index.html#libmata.nft.nft.CompositionNormalization.None_">None_ (libmata.nft.nft.CompositionNormalization attribute)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.strings.NoodleOrder">NoodleOrder (class in libmata.nfa.strings)</a>
+        <li><a href="index.html#libmata.nfa.strings.NoodleOrder">NoodleOrder (class in libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.strings.noodlify">noodlify() (in module libmata.nfa.strings)</a>
+        <li><a href="index.html#libmata.nfa.strings.noodlify">noodlify() (in module libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.strings.noodlify_for_equation">noodlify_for_equation() (in module libmata.nfa.strings)</a>
+        <li><a href="index.html#libmata.nfa.strings.noodlify_for_equation">noodlify_for_equation() (in module libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.strings.noodlify_for_equation_lazy">noodlify_for_equation_lazy() (in module libmata.nfa.strings)</a>
+        <li><a href="index.html#libmata.nfa.strings.noodlify_for_equation_lazy">noodlify_for_equation_lazy() (in module libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.strings.noodlify_for_equation_sides">noodlify_for_equation_sides() (in module libmata.nfa.strings)</a>
+        <li><a href="index.html#libmata.nfa.strings.noodlify_for_equation_sides">noodlify_for_equation_sides() (in module libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.strings.noodlify_for_equation_sides_lazy">noodlify_for_equation_sides_lazy() (in module libmata.nfa.strings)</a>
+        <li><a href="index.html#libmata.nfa.strings.noodlify_for_equation_sides_lazy">noodlify_for_equation_sides_lazy() (in module libmata.nfa.strings)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.strings.noodlify_for_transducer">noodlify_for_transducer() (in module libmata.nfa.strings)</a>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.strings.noodlify_for_transducer">noodlify_for_transducer() (in module libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.strings.noodlify_for_transducer_lazy">noodlify_for_transducer_lazy() (in module libmata.nfa.strings)</a>
+        <li><a href="index.html#libmata.nfa.strings.noodlify_for_transducer_lazy">noodlify_for_transducer_lazy() (in module libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.strings.noodlify_lazy">noodlify_lazy() (in module libmata.nfa.strings)</a>
+        <li><a href="index.html#libmata.nfa.strings.noodlify_lazy">noodlify_lazy() (in module libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.strings.noodlify_mult_eps">noodlify_mult_eps() (in module libmata.nfa.strings)</a>
+        <li><a href="index.html#libmata.nfa.strings.noodlify_mult_eps">noodlify_mult_eps() (in module libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.strings.noodlify_mult_eps_lazy">noodlify_mult_eps_lazy() (in module libmata.nfa.strings)</a>
+        <li><a href="index.html#libmata.nfa.strings.noodlify_mult_eps_lazy">noodlify_mult_eps_lazy() (in module libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.Levels.num_of_levels">num_of_levels (libmata.nft.nft.Levels attribute)</a>
+        <li><a href="index.html#libmata.nft.nft.Levels.num_of_levels">num_of_levels (libmata.nft.nft.Levels attribute)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.Levels.num_of_levels_used">num_of_levels_used() (libmata.nft.nft.Levels method)</a>
+        <li><a href="index.html#libmata.nft.nft.Levels.num_of_levels_used">num_of_levels_used() (libmata.nft.nft.Levels method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Delta.num_of_states">num_of_states() (libmata.nfa.nfa.Delta method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Delta.num_of_states">num_of_states() (libmata.nfa.nfa.Delta method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nfa.nfa.Nfa.num_of_states">(libmata.nfa.nfa.Nfa method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nfa.nfa.Nfa.num_of_states">(libmata.nfa.nfa.Nfa method)</a>
 </li>
-        <li><a href="index.html#libmata.nft.nft.Nft.num_of_states">(libmata.nft.nft.Nft method)</a>
+          <li><a href="index.html#libmata.nft.nft.Nft.num_of_states">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nft.nft.Nft.num_of_states_with_level">num_of_states_with_level() (libmata.nft.nft.Nft method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nft.nft.Nft.num_of_states_with_level">num_of_states_with_level() (libmata.nft.nft.Nft method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Delta.num_of_transitions">num_of_transitions() (libmata.nfa.nfa.Delta method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Delta.num_of_transitions">num_of_transitions() (libmata.nfa.nfa.Delta method)</a>
 </li>
-  </ul></td>
-</tr></table>
+    </ul></td>
+  </tr></table>
+</section>
 
-<h2 id="O">O</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.alphabets.OnTheFlyAlphabet">OnTheFlyAlphabet (class in libmata.alphabets)</a>
+<section id="O" class="genindex-section">
+  <h2>O</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.alphabets.OnTheFlyAlphabet">OnTheFlyAlphabet (class in libmata.alphabets)</a>
 </li>
-  </ul></td>
-</tr></table>
+    </ul></td>
+  </tr></table>
+</section>
 
-<h2 id="P">P</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nft.nft.parse_from_mata_file">parse_from_mata_file() (in module libmata.nft.nft)</a>
+<section id="P" class="genindex-section">
+  <h2>P</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nft.nft.parse_from_mata_file">parse_from_mata_file() (in module libmata.nft.nft)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.parse_from_mata_string">parse_from_mata_string() (in module libmata.nft.nft)</a>
+        <li><a href="index.html#libmata.nft.nft.parse_from_mata_string">parse_from_mata_string() (in module libmata.nft.nft)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Run.path">path (libmata.nfa.nfa.Run attribute)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Run.path">path (libmata.nfa.nfa.Run attribute)</a>
 </li>
-      <li><a href="index.html#libmata.plotting.plot">plot() (in module libmata.plotting)</a>
+        <li><a href="index.html#libmata.plotting.plot">plot() (in module libmata.plotting)</a>
 </li>
-      <li><a href="index.html#libmata.plotting.plot_using_graphviz">plot_using_graphviz() (in module libmata.plotting)</a>
+        <li><a href="index.html#libmata.plotting.plot_using_graphviz">plot_using_graphviz() (in module libmata.plotting)</a>
 </li>
-      <li><a href="index.html#libmata.alphabets.AlphabetLevels.pop_back">pop_back() (libmata.alphabets.AlphabetLevels method)</a>
+        <li><a href="index.html#libmata.alphabets.AlphabetLevels.pop_back">pop_back() (libmata.alphabets.AlphabetLevels method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.post_map_of">post_map_of() (libmata.nfa.nfa.Nfa method)</a>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.post_map_of">post_map_of() (libmata.nfa.nfa.Nfa method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.post_of">post_of() (libmata.nfa.nfa.Nfa method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.post_of">post_of() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.post_of">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.post_of">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.strings.process_eps_map">process_eps_map() (in module libmata.nfa.strings)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.strings.process_eps_map">process_eps_map() (in module libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.project_out">project_out() (in module libmata.nft.nft)</a>
+        <li><a href="index.html#libmata.nft.nft.project_out">project_out() (in module libmata.nft.nft)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.project_to">project_to() (in module libmata.nft.nft)</a>
+        <li><a href="index.html#libmata.nft.nft.project_to">project_to() (in module libmata.nft.nft)</a>
 </li>
-      <li><a href="index.html#libmata.alphabets.AlphabetLevels.push_back">push_back() (libmata.alphabets.AlphabetLevels method)</a>
+        <li><a href="index.html#libmata.alphabets.AlphabetLevels.push_back">push_back() (libmata.alphabets.AlphabetLevels method)</a>
 </li>
-  </ul></td>
-</tr></table>
+    </ul></td>
+  </tr></table>
+</section>
 
-<h2 id="R">R</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.strings.NoodleOrder.Random">Random (libmata.nfa.strings.NoodleOrder attribute)</a>
+<section id="R" class="genindex-section">
+  <h2>R</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.strings.NoodleOrder.Random">Random (libmata.nfa.strings.NoodleOrder attribute)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.read_word">read_word() (libmata.nfa.nfa.Nfa method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.read_word">read_word() (libmata.nfa.nfa.Nfa method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.read_word_det">read_word_det() (libmata.nfa.nfa.Nfa method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.read_word_det">read_word_det() (libmata.nfa.nfa.Nfa method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.RegexPrintMode.Readable">Readable (libmata.nfa.nfa.RegexPrintMode attribute)</a>
+        <li><a href="index.html#libmata.nfa.nfa.RegexPrintMode.Readable">Readable (libmata.nfa.nfa.RegexPrintMode attribute)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.reduce">reduce() (in module libmata.nfa.nfa)</a>
+        <li><a href="index.html#libmata.nfa.nfa.reduce">reduce() (in module libmata.nfa.nfa)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.reduce">(in module libmata.nft.nft)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.reduce">(in module libmata.nft.nft)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.reduce_residual_after">reduce_residual_after() (in module libmata.nfa.nfa)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.reduce_residual_after">reduce_residual_after() (in module libmata.nfa.nfa)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.reduce_residual_with">reduce_residual_with() (in module libmata.nfa.nfa)</a>
+        <li><a href="index.html#libmata.nfa.nfa.reduce_residual_with">reduce_residual_with() (in module libmata.nfa.nfa)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.reduce_with_state_map">reduce_with_state_map() (in module libmata.nfa.nfa)</a>
+        <li><a href="index.html#libmata.nfa.nfa.reduce_with_state_map">reduce_with_state_map() (in module libmata.nfa.nfa)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.reduce_with_state_map">(in module libmata.nft.nft)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.reduce_with_state_map">(in module libmata.nft.nft)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.RegexPrintMode">RegexPrintMode (class in libmata.nfa.nfa)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.RegexPrintMode">RegexPrintMode (class in libmata.nfa.nfa)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.strings.reluctant_nfa">reluctant_nfa() (in module libmata.nfa.strings)</a>
+        <li><a href="index.html#libmata.nfa.strings.reluctant_nfa">reluctant_nfa() (in module libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Delta.remove">remove() (libmata.nfa.nfa.Delta method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Delta.remove">remove() (libmata.nfa.nfa.Delta method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.remove_epsilon">remove_epsilon() (in module libmata.nfa.nfa)</a>
+        <li><a href="index.html#libmata.nfa.nfa.remove_epsilon">remove_epsilon() (in module libmata.nfa.nfa)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.remove_epsilon">(in module libmata.nft.nft)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.remove_epsilon">(in module libmata.nft.nft)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.remove_epsilon_inplace">remove_epsilon_inplace() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.remove_epsilon_inplace">remove_epsilon_inplace() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.remove_epsilon_inplace">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.remove_epsilon_inplace">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.remove_final_state">remove_final_state() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.remove_final_state">remove_final_state() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.remove_final_state">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.remove_final_state">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.remove_initial_state">remove_initial_state() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.remove_initial_state">remove_initial_state() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.remove_initial_state">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.remove_initial_state">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.remove_trans">remove_trans() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.remove_trans">remove_trans() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.remove_trans">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.remove_trans">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.remove_trans_raw">remove_trans_raw() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.remove_trans_raw">remove_trans_raw() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.remove_trans_raw">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.remove_trans_raw">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nft.nft.JumpMode.RepeatSymbol">RepeatSymbol (libmata.nft.nft.JumpMode attribute)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nft.nft.JumpMode.RepeatSymbol">RepeatSymbol (libmata.nft.nft.JumpMode attribute)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.strings.replace_reluctant_literal">replace_reluctant_literal() (in module libmata.nfa.strings)</a>
+        <li><a href="index.html#libmata.nfa.strings.replace_reluctant_literal">replace_reluctant_literal() (in module libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.strings.replace_reluctant_regex">replace_reluctant_regex() (in module libmata.nfa.strings)</a>
+        <li><a href="index.html#libmata.nfa.strings.replace_reluctant_regex">replace_reluctant_regex() (in module libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.strings.replace_reluctant_single_symbol">replace_reluctant_single_symbol() (in module libmata.nfa.strings)</a>
+        <li><a href="index.html#libmata.nfa.strings.replace_reluctant_single_symbol">replace_reluctant_single_symbol() (in module libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.strings.ReplaceMode">ReplaceMode (class in libmata.nfa.strings)</a>
+        <li><a href="index.html#libmata.nfa.strings.ReplaceMode">ReplaceMode (class in libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.alphabets.AlphabetLevels.reserve">reserve() (libmata.alphabets.AlphabetLevels method)</a>
+        <li><a href="index.html#libmata.alphabets.AlphabetLevels.reserve">reserve() (libmata.alphabets.AlphabetLevels method)</a>
 </li>
-      <li><a href="index.html#libmata.utils.BinaryRelation.reset">reset() (libmata.utils.BinaryRelation method)</a>
+        <li><a href="index.html#libmata.utils.BinaryRelation.reset">reset() (libmata.utils.BinaryRelation method)</a>
 </li>
-      <li><a href="index.html#libmata.alphabets.AlphabetLevels.resize">resize() (libmata.alphabets.AlphabetLevels method)</a>
+        <li><a href="index.html#libmata.alphabets.AlphabetLevels.resize">resize() (libmata.alphabets.AlphabetLevels method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.utils.BinaryRelation.resize">(libmata.utils.BinaryRelation method)</a>
+        <ul>
+          <li><a href="index.html#libmata.utils.BinaryRelation.resize">(libmata.utils.BinaryRelation method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.resolve_alphabet">resolve_alphabet() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.resolve_alphabet">resolve_alphabet() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.resolve_alphabet">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.resolve_alphabet">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.utils.BinaryRelation.restrict_to_symmetric">restrict_to_symmetric() (libmata.utils.BinaryRelation method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.utils.BinaryRelation.restrict_to_symmetric">restrict_to_symmetric() (libmata.utils.BinaryRelation method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.strings.NoodleOrder.Reverse">Reverse (libmata.nfa.strings.NoodleOrder attribute)</a>
+        <li><a href="index.html#libmata.nfa.strings.NoodleOrder.Reverse">Reverse (libmata.nfa.strings.NoodleOrder attribute)</a>
 </li>
-      <li><a href="index.html#libmata.alphabets.Alphabet.reverse_translate_symbol">reverse_translate_symbol() (libmata.alphabets.Alphabet method)</a>
+        <li><a href="index.html#libmata.alphabets.Alphabet.reverse_translate_symbol">reverse_translate_symbol() (libmata.alphabets.Alphabet method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.alphabets.AlphabetLevels.reverse_translate_symbol">(libmata.alphabets.AlphabetLevels method)</a>
+        <ul>
+          <li><a href="index.html#libmata.alphabets.AlphabetLevels.reverse_translate_symbol">(libmata.alphabets.AlphabetLevels method)</a>
 </li>
-        <li><a href="index.html#libmata.alphabets.IntAlphabet.reverse_translate_symbol">(libmata.alphabets.IntAlphabet method)</a>
+          <li><a href="index.html#libmata.alphabets.IntAlphabet.reverse_translate_symbol">(libmata.alphabets.IntAlphabet method)</a>
 </li>
-        <li><a href="index.html#libmata.alphabets.OnTheFlyAlphabet.reverse_translate_symbol">(libmata.alphabets.OnTheFlyAlphabet method)</a>
+          <li><a href="index.html#libmata.alphabets.OnTheFlyAlphabet.reverse_translate_symbol">(libmata.alphabets.OnTheFlyAlphabet method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.revert">revert() (in module libmata.nfa.nfa)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.revert">revert() (in module libmata.nfa.nfa)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.revert">(in module libmata.nft.nft)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.revert">(in module libmata.nft.nft)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Run">Run (class in libmata.nfa.nfa)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Run">Run (class in libmata.nfa.nfa)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.run_safely_external_command">run_safely_external_command() (in module libmata.nfa.nfa)</a>
+        <li><a href="index.html#libmata.nfa.nfa.run_safely_external_command">run_safely_external_command() (in module libmata.nfa.nfa)</a>
 </li>
-  </ul></td>
-</tr></table>
+    </ul></td>
+  </tr></table>
+</section>
 
-<h2 id="S">S</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.strings.Segmentation">Segmentation (class in libmata.nfa.strings)</a>
+<section id="S" class="genindex-section">
+  <h2>S</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.strings.Segmentation">Segmentation (class in libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.Levels.set">set() (libmata.nft.nft.Levels method)</a>
+        <li><a href="index.html#libmata.nft.nft.Levels.set">set() (libmata.nft.nft.Levels method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.utils.BinaryRelation.set">(libmata.utils.BinaryRelation method)</a>
+        <ul>
+          <li><a href="index.html#libmata.utils.BinaryRelation.set">(libmata.utils.BinaryRelation method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.alphabets.AlphabetLevels.set_global_mode">set_global_mode() (libmata.alphabets.AlphabetLevels method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.alphabets.AlphabetLevels.set_global_mode">set_global_mode() (libmata.alphabets.AlphabetLevels method)</a>
 </li>
-      <li><a href="index.html#libmata.alphabets.AlphabetLevels.set_multi_level_mode">set_multi_level_mode() (libmata.alphabets.AlphabetLevels method)</a>
+        <li><a href="index.html#libmata.alphabets.AlphabetLevels.set_multi_level_mode">set_multi_level_mode() (libmata.alphabets.AlphabetLevels method)</a>
 </li>
-      <li><a href="index.html#libmata.plotting.setup">setup() (in module libmata.plotting)</a>
+        <li><a href="index.html#libmata.plotting.setup">setup() (in module libmata.plotting)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.strings.ShortestWordsMap">ShortestWordsMap (class in libmata.nfa.strings)</a>
+        <li><a href="index.html#libmata.nfa.strings.ShortestWordsMap">ShortestWordsMap (class in libmata.nfa.strings)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.DeterminizationReduction.Simulation">Simulation (libmata.nfa.nfa.DeterminizationReduction attribute)</a>
+        <li><a href="index.html#libmata.nfa.nfa.DeterminizationReduction.Simulation">Simulation (libmata.nfa.nfa.DeterminizationReduction attribute)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.strings.ReplaceMode.Single">Single (libmata.nfa.strings.ReplaceMode attribute)</a>
+        <li><a href="index.html#libmata.nfa.strings.ReplaceMode.Single">Single (libmata.nfa.strings.ReplaceMode attribute)</a>
 </li>
-      <li><a href="index.html#libmata.alphabets.AlphabetLevels.size">size() (libmata.alphabets.AlphabetLevels method)</a>
+        <li><a href="index.html#libmata.alphabets.AlphabetLevels.size">size() (libmata.alphabets.AlphabetLevels method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.utils.BinaryRelation.size">(libmata.utils.BinaryRelation method)</a>
+        <ul>
+          <li><a href="index.html#libmata.utils.BinaryRelation.size">(libmata.utils.BinaryRelation method)</a>
 </li>
-      </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.strings.NoodleOrder.SmallestFirst">SmallestFirst (libmata.nfa.strings.NoodleOrder attribute)</a>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.strings.NoodleOrder.SmallestFirst">SmallestFirst (libmata.nfa.strings.NoodleOrder attribute)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Transition.source">source (libmata.nfa.nfa.Transition attribute)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Transition.source">source (libmata.nfa.nfa.Transition attribute)</a>
 </li>
-      <li><a href="index.html#libmata.utils.BinaryRelation.split">split() (libmata.utils.BinaryRelation method)</a>
+        <li><a href="index.html#libmata.utils.BinaryRelation.split">split() (libmata.utils.BinaryRelation method)</a>
 </li>
-      <li><a href="index.html#libmata.plotting.Condition.state_is_final">state_is_final() (libmata.plotting.Condition class method)</a>
+        <li><a href="index.html#libmata.plotting.Condition.state_is_final">state_is_final() (libmata.plotting.Condition class method)</a>
 </li>
-      <li><a href="index.html#libmata.plotting.Condition.state_is_initial">state_is_initial() (libmata.plotting.Condition class method)</a>
+        <li><a href="index.html#libmata.plotting.Condition.state_is_initial">state_is_initial() (libmata.plotting.Condition class method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Delta.state_post">state_post() (libmata.nfa.nfa.Delta method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Delta.state_post">state_post() (libmata.nfa.nfa.Delta method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.store">store() (in module libmata.nfa.nfa)</a>
+        <li><a href="index.html#libmata.nfa.nfa.store">store() (in module libmata.nfa.nfa)</a>
 </li>
-      <li><a href="index.html#libmata.plotting.Style">Style (class in libmata.plotting)</a>
+        <li><a href="index.html#libmata.plotting.Style">Style (class in libmata.plotting)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.SymbolPost.symbol">symbol (libmata.nfa.nfa.SymbolPost attribute)</a>
+        <li><a href="index.html#libmata.nfa.nfa.SymbolPost.symbol">symbol (libmata.nfa.nfa.SymbolPost attribute)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nfa.nfa.Transition.symbol">(libmata.nfa.nfa.Transition attribute)</a>
+        <ul>
+          <li><a href="index.html#libmata.nfa.nfa.Transition.symbol">(libmata.nfa.nfa.Transition attribute)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.SymbolPost">SymbolPost (class in libmata.nfa.nfa)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.SymbolPost">SymbolPost (class in libmata.nfa.nfa)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.symbols_match">symbols_match() (in module libmata.nft.nft)</a>
+        <li><a href="index.html#libmata.nft.nft.symbols_match">symbols_match() (in module libmata.nft.nft)</a>
 </li>
-  </ul></td>
-</tr></table>
+    </ul></td>
+  </tr></table>
+</section>
 
-<h2 id="T">T</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.nfa.Transition.target">target (libmata.nfa.nfa.Transition attribute)</a>
+<section id="T" class="genindex-section">
+  <h2>T</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.nfa.Transition.target">target (libmata.nfa.nfa.Transition attribute)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.SymbolPost.targets">targets (libmata.nfa.nfa.SymbolPost attribute)</a>
+        <li><a href="index.html#libmata.nfa.nfa.SymbolPost.targets">targets (libmata.nfa.nfa.SymbolPost attribute)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.to_dataframe">to_dataframe() (libmata.nfa.nfa.Nfa method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.to_dataframe">to_dataframe() (libmata.nfa.nfa.Nfa method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.to_dot_file">to_dot_file() (libmata.nfa.nfa.Nfa method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.to_dot_file">to_dot_file() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.to_dot_file">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.to_dot_file">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.to_dot_str">to_dot_str() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.to_dot_str">to_dot_str() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.to_dot_str">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.to_dot_str">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nft.nft.Nft.to_mata_file">to_mata_file() (libmata.nft.nft.Nft method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nft.nft.Nft.to_mata_file">to_mata_file() (libmata.nft.nft.Nft method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.to_mata_str">to_mata_str() (libmata.nfa.nfa.Nfa method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.to_mata_str">to_mata_str() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.to_mata_str">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.to_mata_str">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.utils.BinaryRelation.to_matrix">to_matrix() (libmata.utils.BinaryRelation method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.utils.BinaryRelation.to_matrix">to_matrix() (libmata.utils.BinaryRelation method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.to_networkx_graph">to_networkx_graph() (libmata.nfa.nfa.Nfa method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.to_networkx_graph">to_networkx_graph() (libmata.nfa.nfa.Nfa method)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.Nft.to_nfa_copy">to_nfa_copy() (libmata.nft.nft.Nft method)</a>
+        <li><a href="index.html#libmata.nft.nft.Nft.to_nfa_copy">to_nfa_copy() (libmata.nft.nft.Nft method)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.Nft.to_nfa_update_copy">to_nfa_update_copy() (libmata.nft.nft.Nft method)</a>
+        <li><a href="index.html#libmata.nft.nft.Nft.to_nfa_update_copy">to_nfa_update_copy() (libmata.nft.nft.Nft method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.to_regex_str">to_regex_str() (libmata.nfa.nfa.Nfa method)</a>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.to_regex_str">to_regex_str() (libmata.nfa.nfa.Nfa method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Transition">Transition (class in libmata.nfa.nfa)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Transition">Transition (class in libmata.nfa.nfa)</a>
 </li>
-      <li><a href="index.html#libmata.plotting.Condition.transition_is_cycle">transition_is_cycle() (libmata.plotting.Condition class method)</a>
+        <li><a href="index.html#libmata.plotting.Condition.transition_is_cycle">transition_is_cycle() (libmata.plotting.Condition class method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Delta.transitions">transitions() (libmata.nfa.nfa.Delta method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Delta.transitions">transitions() (libmata.nfa.nfa.Delta method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.transitions_as_arrays">transitions_as_arrays() (libmata.nfa.nfa.Nfa method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.transitions_as_arrays">transitions_as_arrays() (libmata.nfa.nfa.Nfa method)</a>
 </li>
-      <li><a href="index.html#libmata.alphabets.Alphabet.translate_symbol">translate_symbol() (libmata.alphabets.Alphabet method)</a>
+        <li><a href="index.html#libmata.alphabets.Alphabet.translate_symbol">translate_symbol() (libmata.alphabets.Alphabet method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.alphabets.AlphabetLevels.translate_symbol">(libmata.alphabets.AlphabetLevels method)</a>
+        <ul>
+          <li><a href="index.html#libmata.alphabets.AlphabetLevels.translate_symbol">(libmata.alphabets.AlphabetLevels method)</a>
 </li>
-        <li><a href="index.html#libmata.alphabets.IntAlphabet.translate_symbol">(libmata.alphabets.IntAlphabet method)</a>
+          <li><a href="index.html#libmata.alphabets.IntAlphabet.translate_symbol">(libmata.alphabets.IntAlphabet method)</a>
 </li>
-        <li><a href="index.html#libmata.alphabets.OnTheFlyAlphabet.translate_symbol">(libmata.alphabets.OnTheFlyAlphabet method)</a>
+          <li><a href="index.html#libmata.alphabets.OnTheFlyAlphabet.translate_symbol">(libmata.alphabets.OnTheFlyAlphabet method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.utils.BinaryRelation.transpose">transpose() (libmata.utils.BinaryRelation method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.utils.BinaryRelation.transpose">transpose() (libmata.utils.BinaryRelation method)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.CompositionNormalization.Trim">Trim (libmata.nft.nft.CompositionNormalization attribute)</a>
+        <li><a href="index.html#libmata.nft.nft.CompositionNormalization.Trim">Trim (libmata.nft.nft.CompositionNormalization attribute)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.trim">trim() (libmata.nfa.nfa.Nfa method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.trim">trim() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.trim">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.trim">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.trim_with_state_map">trim_with_state_map() (libmata.nfa.nfa.Nfa method)</a>
+        </ul></li>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.trim_with_state_map">trim_with_state_map() (libmata.nfa.nfa.Nfa method)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nft.nft.Nft.trim_with_state_map">(libmata.nft.nft.Nft method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nft.nft.Nft.trim_with_state_map">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-  </ul></td>
-</tr></table>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
 
-<h2 id="U">U</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.unify_final">unify_final() (libmata.nfa.nfa.Nfa method)</a>
+<section id="U" class="genindex-section">
+  <h2>U</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.unify_final">unify_final() (libmata.nfa.nfa.Nfa method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Nfa.unify_initial">unify_initial() (libmata.nfa.nfa.Nfa method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Nfa.unify_initial">unify_initial() (libmata.nfa.nfa.Nfa method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.union">union() (in module libmata.nfa.nfa)</a>
+        <li><a href="index.html#libmata.nfa.nfa.union">union() (in module libmata.nfa.nfa)</a>
 
-      <ul>
-        <li><a href="index.html#libmata.nfa.nfa.Nfa.union">(libmata.nfa.nfa.Nfa method)</a>
+        <ul>
+          <li><a href="index.html#libmata.nfa.nfa.Nfa.union">(libmata.nfa.nfa.Nfa method)</a>
 </li>
-        <li><a href="index.html#libmata.nft.nft.Nft.union">(libmata.nft.nft.Nft method)</a>
+          <li><a href="index.html#libmata.nft.nft.Nft.union">(libmata.nft.nft.Nft method)</a>
 </li>
-      </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nft.nft.union_nondet">union_nondet() (in module libmata.nft.nft)</a>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nft.nft.union_nondet">union_nondet() (in module libmata.nft.nft)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.Nft.unwind_jumps">unwind_jumps() (libmata.nft.nft.Nft method)</a>
+        <li><a href="index.html#libmata.nft.nft.Nft.unwind_jumps">unwind_jumps() (libmata.nft.nft.Nft method)</a>
 </li>
-      <li><a href="index.html#libmata.nft.nft.Nft.unwind_jumps_inplace">unwind_jumps_inplace() (libmata.nft.nft.Nft method)</a>
+        <li><a href="index.html#libmata.nft.nft.Nft.unwind_jumps_inplace">unwind_jumps_inplace() (libmata.nft.nft.Nft method)</a>
 </li>
-      <li><a href="index.html#libmata.nfa.nfa.Delta.uses_state">uses_state() (libmata.nfa.nfa.Delta method)</a>
+        <li><a href="index.html#libmata.nfa.nfa.Delta.uses_state">uses_state() (libmata.nfa.nfa.Delta method)</a>
 </li>
-  </ul></td>
-</tr></table>
+    </ul></td>
+  </tr></table>
+</section>
 
-<h2 id="W">W</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nft.nft.Nft.with_levels">with_levels() (libmata.nft.nft.Nft class method)</a>
+<section id="W" class="genindex-section">
+  <h2>W</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nft.nft.Nft.with_levels">with_levels() (libmata.nft.nft.Nft class method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="index.html#libmata.nfa.nfa.Run.word">word (libmata.nfa.nfa.Run attribute)</a>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="index.html#libmata.nfa.nfa.Run.word">word (libmata.nfa.nfa.Run attribute)</a>
 </li>
-  </ul></td>
-</tr></table>
+    </ul></td>
+  </tr></table>
+</section>
 
 
-
-          </div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
           
         </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="Main">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="index.html">libmata</a></h1>
-
-
-
-
-
-
-
-
-
-<search id="searchbox" style="display: none" role="search">
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
-
-
-<hr />
-<ul>
-    
-    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/">Mata website</a></li>
-    
-    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/docs/">All documentation</a></li>
-    
-    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/playground/">Playground</a></li>
-    
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-  </ul></li>
-</ul>
-</div>
-
-
-
-
-
-
-
-
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; Mata authors
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
         </div>
-      </div>
-      <div class="clearer"></div>
+        
+      </footer>
     </div>
-    <div class="footer">
-      &#169;Mata authors.
+    <aside class="toc-drawer no-toc">
       
-      |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.2.0</a>
-      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
       
-    </div>
-
-    
-
-    
-  </body>
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
 </html>

@@ -1,5 +1,0 @@
-Struct mata::Limits
-===================
-
-.. doxygenstruct:: mata::Limits
-   :members:

@@ -1,0 +1,22 @@
+var searchData=
+[
+  ['target_0',['target',['../classmata_1_1posts_1_1Move.html#a5b99dc9b3d970e0afc9d47da51853012',1,'mata::posts::Move::target'],['../structmata_1_1posts_1_1Transition.html#a5b99dc9b3d970e0afc9d47da51853012',1,'mata::posts::Transition::target'],['../structmata_1_1posts_1_1KeyedTransition.html#a5b99dc9b3d970e0afc9d47da51853012',1,'mata::posts::KeyedTransition::target'],['../structmata_1_1Transition.html#ad29d51e23c4870e586c79c7e47197d08',1,'mata::Transition::target'],['../structmata_1_1Move.html#ad29d51e23c4870e586c79c7e47197d08',1,'mata::Move::target']]],
+  ['target_5fend_5f_1',['target_end_',['../classmata_1_1posts_1_1SuccessorCursor_1_1const__iterator.html#a72c500e6c235a62fd1aabc9db8e5772b',1,'mata::posts::SuccessorCursor::const_iterator']]],
+  ['target_5fit_5f_2',['target_it_',['../classmata_1_1posts_1_1SuccessorCursor_1_1const__iterator.html#aa5a8b63244e07333d52d9be4398dda89',1,'mata::posts::SuccessorCursor::const_iterator::target_it_'],['../classmata_1_1posts_1_1PostMoves_1_1const__iterator.html#ac75a130d46144cb0614a69d449ebb877',1,'mata::posts::PostMoves::const_iterator::target_it_']]],
+  ['targets_3',['targets',['../classmata_1_1posts_1_1internal_1_1PostEntryCore.html#a1afb6cff90d3b5241ad3bdfdffca7d43',1,'mata::posts::internal::PostEntryCore']]],
+  ['targets_5f_4',['targets_',['../classmata_1_1DeltaBuilder.html#a0400a899109e3504fd7a87110b0884d2',1,'mata::DeltaBuilder']]],
+  ['text_5',['text',['../structmata_1_1parser_1_1ExplicitToken.html#ab43737ecee6b757b4e5ed141055d8f2d',1,'mata::parser::ExplicitToken']]],
+  ['text_5f_6',['text_',['../classmata_1_1parser_1_1MataWriter.html#ae79346bdafd79119e9ee948a530790e6',1,'mata::parser::MataWriter']]],
+  ['token_7',['token',['../structmata_1_1parser_1_1BodyToken.html#af0f5d2de7e09cf6e6b3a5e40f784dbab',1,'mata::parser::BodyToken']]],
+  ['tokens_5f_8',['tokens_',['../classmata_1_1parser_1_1ExplicitSectionReader.html#a451e7f22567b00291779de41b4cf2fc8',1,'mata::parser::ExplicitSectionReader']]],
+  ['trans_5fto_5fbddvar_5f_9',['trans_to_bddvar_',['../classmata_1_1Mintermization.html#a83245d37cef82bfb3f94010d652ea81c',1,'mata::Mintermization']]],
+  ['transducer_10',['transducer',['../structmata_1_1applications_1_1strings_1_1seg__nfa_1_1TransducerNoodleElement.html#a54de6de94fd4cc7da9963b3d96eb87bb',1,'mata::applications::strings::seg_nfa::TransducerNoodleElement']]],
+  ['transition_5f_11',['transition_',['../classmata_1_1posts_1_1DeltaTransitions_1_1const__iterator.html#afbf32a30b30e1c41446e15e6dad49c81',1,'mata::posts::DeltaTransitions::const_iterator']]],
+  ['transitions_12',['transitions',['../classmata_1_1IntermediateAut.html#a1a20366a6f2588639627e5cd3da378b7',1,'mata::IntermediateAut']]],
+  ['trim_13',['trim',['../structmata_1_1parser_1_1Re2Options.html#a1eae28f7e72485f5b4d4588a53e1a07c',1,'mata::parser::Re2Options']]],
+  ['true_5fbdd_5f_14',['true_bdd_',['../classmata_1_1Mintermization.html#aa78775f738a581adcc0b594a6363b1b5',1,'mata::Mintermization']]],
+  ['type_15',['type',['../classmata_1_1FormulaNode.html#ab6f4e6d3fde00ce906e46494f60dfe7a',1,'mata::FormulaNode::type'],['../structmata_1_1parser_1_1ParsedSection.html#a75b160f574a0be26114bae2c7686a5e1',1,'mata::parser::ParsedSection::type']]],
+  ['type_5f_16',['type_',['../structmata_1_1ClosedSet.html#a5b2fe81975d5b8345fd15e26c9f2abfb',1,'mata::ClosedSet']]],
+  ['type_5fnfa_17',['TYPE_NFA',['../namespacemata_1_1nfa.html#a0bb30514becdf091b7c18f69a307b774',1,'mata::nfa']]],
+  ['type_5fnft_18',['TYPE_NFT',['../namespacemata_1_1nft.html#a2b14679fff911437179d8992a300a8a5',1,'mata::nft']]]
+];

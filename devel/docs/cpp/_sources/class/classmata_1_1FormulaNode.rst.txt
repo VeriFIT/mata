@@ -1,5 +1,0 @@
-Class mata::FormulaNode
-=======================
-
-.. doxygenclass:: mata::FormulaNode
-   :members:

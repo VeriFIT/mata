@@ -1,5 +1,0 @@
-Struct std::hash< mata::posts::Transition< St, K, T > >
-=======================================================
-
-.. doxygenstruct:: std::hash< mata::posts::Transition< St, K, T > >
-   :members:

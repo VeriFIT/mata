@@ -1,5 +1,0 @@
-Struct std::formatter< mata::posts::KeyedTransition< St, std::tuple< Ks... >, T > >
-===================================================================================
-
-.. doxygenstruct:: std::formatter< mata::posts::KeyedTransition< St, std::tuple< Ks... >, T > >
-   :members:

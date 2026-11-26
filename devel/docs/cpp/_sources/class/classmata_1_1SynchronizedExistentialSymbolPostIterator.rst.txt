@@ -1,5 +1,0 @@
-Class mata::SynchronizedExistentialSymbolPostIterator
-=====================================================
-
-.. doxygenclass:: mata::SynchronizedExistentialSymbolPostIterator
-   :members:

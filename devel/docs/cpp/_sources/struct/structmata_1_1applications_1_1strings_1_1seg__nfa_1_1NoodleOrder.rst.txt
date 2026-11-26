@@ -1,5 +1,0 @@
-Struct mata::applications::strings::seg_nfa::NoodleOrder
-========================================================
-
-.. doxygenstruct:: mata::applications::strings::seg_nfa::NoodleOrder
-   :members:

@@ -1,5 +1,0 @@
-Struct mata::NameStore::Chunk
-=============================
-
-.. doxygenstruct:: mata::NameStore::Chunk
-   :members:

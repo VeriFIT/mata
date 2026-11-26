@@ -1,5 +1,0 @@
-Struct std::hash< mata::utils::OrdVector< Key, Allocator > >
-============================================================
-
-.. doxygenstruct:: std::hash< mata::utils::OrdVector< Key, Allocator > >
-   :members:

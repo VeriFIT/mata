@@ -1,0 +1,5 @@
+var structstd_1_1formatter_3_01mata_1_1posts_1_1KeyedTransition_3_01St_00_01std_1_1tuple_3_01Ks_8_8_8_01_4_00_01T_01_4_01_4 =
+[
+    [ "format", "structstd_1_1formatter_3_01mata_1_1posts_1_1KeyedTransition_3_01St_00_01std_1_1tuple_3_01Ks_8_8_8_01_4_00_01T_01_4_01_4.html#a417bb6b9c53e2ee12cf41628eb1ad259", null ],
+    [ "parse", "structstd_1_1formatter_3_01mata_1_1posts_1_1KeyedTransition_3_01St_00_01std_1_1tuple_3_01Ks_8_8_8_01_4_00_01T_01_4_01_4.html#ac344b328168f72228f02b5eaded621ae", null ]
+];

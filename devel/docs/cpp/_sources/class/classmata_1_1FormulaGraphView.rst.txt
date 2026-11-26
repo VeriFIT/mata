@@ -1,5 +1,0 @@
-Class mata::FormulaGraphView
-============================
-
-.. doxygenclass:: mata::FormulaGraphView
-   :members:

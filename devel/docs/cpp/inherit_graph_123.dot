@@ -1,0 +1,9 @@
+digraph "Graphical Class Hierarchy"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node0 [id="Node000000",label="TwoDimensionalMap\<\l T, TrackInverted, MaxMatrix\lBytes \>::Slot",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$structmata_1_1utils_1_1TwoDimensionalMap_1_1Slot.html",tooltip="A slot of the single hash table used for the largest dimensions: the packed pair of keys and its valu..."];
+}

@@ -1,5 +1,0 @@
-Struct mata::nft::BoolPack
-==========================
-
-.. doxygenstruct:: mata::nft::BoolPack
-   :members:

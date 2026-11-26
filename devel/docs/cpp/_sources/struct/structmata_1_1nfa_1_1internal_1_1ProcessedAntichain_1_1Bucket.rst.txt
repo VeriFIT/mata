@@ -1,5 +1,0 @@
-Struct mata::nfa::internal::ProcessedAntichain::Bucket
-======================================================
-
-.. doxygenstruct:: mata::nfa::internal::ProcessedAntichain::Bucket
-   :members:

@@ -1,5 +1,0 @@
-Class mata::Delta
-=================
-
-.. doxygenclass:: mata::Delta
-   :members:

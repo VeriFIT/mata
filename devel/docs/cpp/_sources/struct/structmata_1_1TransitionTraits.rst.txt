@@ -1,5 +1,0 @@
-Struct mata::TransitionTraits
-=============================
-
-.. doxygenstruct:: mata::TransitionTraits
-   :members:

@@ -1,5 +1,0 @@
-Struct mata::utils::PairHash
-============================
-
-.. doxygenstruct:: mata::utils::PairHash
-   :members:

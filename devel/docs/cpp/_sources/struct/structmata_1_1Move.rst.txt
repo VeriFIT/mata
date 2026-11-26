@@ -1,5 +1,0 @@
-Struct mata::Move
-=================
-
-.. doxygenstruct:: mata::Move
-   :members:

@@ -1,5 +1,0 @@
-Struct std::formatter< mata::posts::Transition< St, K, T > >
-============================================================
-
-.. doxygenstruct:: std::formatter< mata::posts::Transition< St, K, T > >
-   :members:

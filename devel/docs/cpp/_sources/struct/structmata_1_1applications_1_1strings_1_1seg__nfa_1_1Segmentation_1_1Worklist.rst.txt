@@ -1,5 +1,0 @@
-Struct mata::applications::strings::seg_nfa::Segmentation::Worklist
-===================================================================
-
-.. doxygenstruct:: mata::applications::strings::seg_nfa::Segmentation::Worklist
-   :members:

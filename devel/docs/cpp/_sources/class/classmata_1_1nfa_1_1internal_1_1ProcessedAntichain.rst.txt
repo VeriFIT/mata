@@ -1,5 +1,0 @@
-Class mata::nfa::internal::ProcessedAntichain
-=============================================
-
-.. doxygenclass:: mata::nfa::internal::ProcessedAntichain
-   :members:

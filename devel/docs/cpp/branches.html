@@ -1,179 +1,151 @@
-<!DOCTYPE html>
-
-<html lang="en" data-content_root="./">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-
-    <title>Branches &#8212; Mata v0.0.0-dev.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
-    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
-    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
-    <script src="_static/documentation_options.js?v=623e9adf"></script>
-    <script src="_static/doctools.js?v=fd6eb6e6"></script>
-    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-
-  
-  
-
-  </head><body>
-  
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          
-
-          <div class="body" role="main">
-            
-  <section id="branches">
-<h1>Branches<a class="headerlink" href="#branches" title="Link to this heading">¶</a></h1>
-<p>Notable branches in Mata.</p>
-<section id="main-branches">
-<h2>Main branches<a class="headerlink" href="#main-branches" title="Link to this heading">¶</a></h2>
-<section id="master">
-<h3><a class="reference external" href="https://github.com/VeriFIT/mata/tree/master"><code class="docutils literal notranslate"><span class="pre">master</span></code></a><a class="headerlink" href="#master" title="Link to this heading">¶</a></h3>
-<p>The production release branch of Mata.</p>
-</section>
-<section id="devel">
-<h3><a class="reference external" href="https://github.com/VeriFIT/mata/tree/devel"><code class="docutils literal notranslate"><span class="pre">devel</span></code></a><a class="headerlink" href="#devel" title="Link to this heading">¶</a></h3>
-<p>The developement branch of Mata, providing development releases, used to quickly iterate on new features in Mata without
-breaking the userland during development.
-<code class="docutils literal notranslate"><span class="pre">devel</span></code> is always kept in-sync with <code class="docutils literal notranslate"><span class="pre">master</span></code>.</p>
-</section>
-</section>
-<section id="backups">
-<h2>Backups<a class="headerlink" href="#backups" title="Link to this heading">¶</a></h2>
-<p>Backed-up branches with experiments.</p>
-<section id="simulation-samo538-bak">
-<span id="simulation-samo538bak"></span><h3><a class="reference external" href="https://github.com/VeriFIT/mata/tree/simulation-samo538.bak"><code class="docutils literal notranslate"><span class="pre">simulation-samo538.bak</span></code></a><a class="headerlink" href="#simulation-samo538-bak" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Author: <a class="reference external" href="https://github.com/samo538">Samuel Lupták (samo538)</a></p></li>
-<li><p>As part of: <a class="reference external" href="https://www.fit.vut.cz/study/course/IP1/.en">Project Practice 1, BIT</a></p></li>
-<li><p>From: <a class="reference external" href="https://github.com/VeriFIT/mata/pull/434">https://github.com/VeriFIT/mata/pull/434</a></p></li>
-</ul>
-<p>Backup of a NFA reduction algorithm using maximum direct simulation.
-Pseudo-algorithm is taken from <a class="reference external" href="https://github.com/ondrik/iny-fix/blob/master/main.pdf">https://github.com/ondrik/iny-fix/blob/master/main.pdf</a>.
-The experimental results show the algorithm is not outperforming the already existing RT algorithm for simulations.</p>
-</section>
-<section id="simulation-reduction-rules-samo538-bak">
-<span id="simulation-reduction-rules-samo538bak"></span><h3><a class="reference external" href="https://github.com/VeriFIT/mata/tree/simulation-reduction-rules-samo538.bak"><code class="docutils literal notranslate"><span class="pre">simulation-reduction-rules-samo538.bak</span></code></a><a class="headerlink" href="#simulation-reduction-rules-samo538-bak" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Author: <a class="reference external" href="https://github.com/samo538">Samuel Lupták (samo538)</a></p></li>
-<li><p>As part of: <a class="reference external" href="https://www.fit.vut.cz/study/course/IP2/.en">Project Practice 2, BIT</a></p></li>
-<li><p>From: <a class="reference external" href="https://github.com/VeriFIT/mata/pull/487">https://github.com/VeriFIT/mata/pull/487</a></p></li>
-</ul>
-<p>Backup of a NFA reduction algorithm enhancement using maximum direct simulation with support for reduction rules.</p>
-</section>
-<section id="boost-determinization-inclusion-lacko-bak">
-<span id="boost-determinization-inclusion-lackobak"></span><h3><a class="reference external" href="https://github.com/VeriFIT/mata/tree/boost-determinization-inclusion-lacko.bak"><code class="docutils literal notranslate"><span class="pre">boost-determinization-inclusion-lacko.bak</span></code></a><a class="headerlink" href="#boost-determinization-inclusion-lacko-bak" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Author: <a class="reference external" href="https://github.com/Igor-Lacko">Igor Lacko (Igor-Lacko)</a></p></li>
-<li><p>As part of: <a class="reference external" href="https://www.fit.vut.cz/study/course/IP1/.en">Project Practice 1, BIT</a></p></li>
-<li><p>From: <a class="reference external" href="https://github.com/VeriFIT/mata/pull/478">https://github.com/VeriFIT/mata/pull/478</a></p></li>
-</ul>
-<p>Backup of a variant of determinization and inclusion algorithms using the Boost data structures (bit vectors).
-Requires Boost as an external dependency.
-The Boost implmentation of bit vectors can be replaced with a manual implementation of</p>
-</section>
-</section>
-</section>
-
-
-          </div>
-          
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="Main">
-        <div class="sphinxsidebarwrapper">
-<h1 class="logo"><a href="index.html">Mata</a></h1>
-
-
-
-
-
-
-
-
-
-<search id="searchbox" style="display: none" role="search">
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
-      <input type="submit" value="Go" />
-    </form>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=11"/>
+<meta name="generator" content="Doxygen 1.16.1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Mata: Branches</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<script type="text/javascript" src="clipboard.js"></script>
+<link href="navtree.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="navtreedata.js"></script>
+<script type="text/javascript" src="navtree.js"></script>
+<script type="text/javascript" src="cookie.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+<link href="doxygen-awesome.css" rel="stylesheet" type="text/css"/>
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr id="projectrow">
+  <td id="projectalign">
+   <div id="projectname">Mata<span id="projectnumber">&#160;[unstable] git snapshot</span>
+   </div>
+   <div id="projectbrief">A fast and simple automata library</div>
+  </td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- Generated by Doxygen 1.16.1 -->
+<script type="text/javascript">
+var searchBox = new SearchBox("searchBox", "search/",'.html');
+</script>
+<script type="text/javascript">
+$(function() { codefold.init(); });
+</script>
+<script type="text/javascript" src="menudata.js"></script>
+<script type="text/javascript" src="menu.js"></script>
+<script type="text/javascript">
+$(function() {
+  initMenu('',true,false,'search.php','Search',true);
+  $(function() { init_search(); });
+});
+</script>
+<div id="main-nav"></div>
+</div><!-- top -->
+<div id="side-nav" class="ui-resizable side-nav-resizable">
+  <div id="nav-tree">
+    <div id="nav-tree-contents">
+      <div id="nav-sync" class="sync"></div>
     </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
-<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="benchmarking.html">Benchmarking</a></li>
-<li class="toctree-l1"><a class="reference internal" href="automata-format.html">Automata Format</a></li>
-<li class="toctree-l1"><a class="reference internal" href="script-language.html">(Auto)Mata Script Language</a></li>
-<li class="toctree-l1"><a class="reference internal" href="cli.html">The <code class="docutils literal notranslate"><span class="pre">mata</span></code> command</a></li>
-<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="core.html">Core</a></li>
-<li class="toctree-l1"><a class="reference internal" href="nfa.html">Nondeterministic Finite automata</a></li>
-<li class="toctree-l1"><a class="reference internal" href="nft.html">Nondeterministic Finite Transducers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="alphabet.html">Alphabet</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="applications.html">Strings</a></li>
-<li class="toctree-l1"><a class="reference internal" href="namespacelist.html">Namespace list</a></li>
-<li class="toctree-l1"><a class="reference internal" href="classlist.html">Class list</a></li>
-<li class="toctree-l1"><a class="reference internal" href="structlist.html">Struct list</a></li>
-<li class="toctree-l1"><a class="reference internal" href="unionlist.html">Union list</a></li>
-</ul>
-
-
-<hr />
-<ul>
-    
-    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/">Mata website</a></li>
-    
-    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/docs/">All documentation</a></li>
-    
-    <li class="toctree-l1"><a href="https://verifit.github.io/mata/devel/playground/">Playground</a></li>
-    
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-  </ul></li>
-</ul>
+  </div>
+  <div id="splitbar" style="-moz-user-select:none;" 
+       class="ui-resizable-handle">
+  </div>
+</div>
+<script type="text/javascript">
+$(function(){initNavTree('branches.html','',''); });
+</script>
+<div id="container">
+<div id="doc-content">
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
 </div>
 
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<div id="MSearchResults">
+<div class="SRPage">
+<div id="SRIndex">
+<div id="SRResults"></div>
+<div class="SRStatus" id="Loading">Loading...</div>
+<div class="SRStatus" id="Searching">Searching...</div>
+<div class="SRStatus" id="NoMatches">No Matches</div>
+</div>
+</div>
+</div>
+</div>
 
-
-
-
-
-
-
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &#169;2025, Automata@FIT Group, BUT, FIT.
-      
-      |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.2.0</a>
-      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
-      
-      |
-      <a href="_sources/branches.md.txt"
-          rel="nofollow">Page source</a>
-    </div>
-
-    
-
-    
-  </body>
+<div><div class="header">
+  <div class="headertitle"><div class="title">Branches </div></div>
+</div><!--header-->
+<div class="contents">
+<div class="textblock"><p><a class="anchor" id="md__2home_2runner_2work_2mata_2mata_2docs_2src_2branches"></a></p>
+<p>Notable branches in Mata.</p>
+<h1 class="doxsection"><a class="anchor" id="main-branches"></a>
+Main branches</h1>
+<h2 class="doxsection"><a class="anchor" id="masterhttpsgithubcomverifitmatatreemaster"></a>
+<a href="https://github.com/VeriFIT/mata/tree/master"><span class="tt">master</span></a></h2>
+<p>The production release branch of Mata.</p>
+<h2 class="doxsection"><a class="anchor" id="develhttpsgithubcomverifitmatatreedevel"></a>
+<a href="https://github.com/VeriFIT/mata/tree/devel"><span class="tt">devel</span></a></h2>
+<p>The developement branch of Mata, providing development releases, used to quickly iterate on new features in Mata without breaking the userland during development. <span class="tt">devel</span> is always kept in-sync with <span class="tt">master</span>.</p>
+<h1 class="doxsection"><a class="anchor" id="backups"></a>
+Backups</h1>
+<p>Backed-up branches with experiments.</p>
+<h2 class="doxsection"><a class="anchor" id="simulation-samo538bakhttpsgithubcomverifitmatatreesimulation-samo538bak"></a>
+<a href="https://github.com/VeriFIT/mata/tree/simulation-samo538.bak"><span class="tt">simulation-samo538.bak</span></a></h2>
+<ul>
+<li>Author: <a href="https://github.com/samo538">Samuel Lupták (samo538)</a></li>
+<li>As part of: <a href="https://www.fit.vut.cz/study/course/IP1/.en">Project Practice 1, BIT</a></li>
+<li>From: <a href="https://github.com/VeriFIT/mata/pull/434">https://github.com/VeriFIT/mata/pull/434</a></li>
+</ul>
+<p>Backup of a NFA reduction algorithm using maximum direct simulation. Pseudo-algorithm is taken from <a href="https://github.com/ondrik/iny-fix/blob/master/main.pdf">https://github.com/ondrik/iny-fix/blob/master/main.pdf</a>. The experimental results show the algorithm is not outperforming the already existing RT algorithm for simulations.</p>
+<h2 class="doxsection"><a class="anchor" id="simulation-reduction-rules-samo538bakhttpsgithubcomverifitmatatreesimulation-reduction-rules-samo538bak"></a>
+<a href="https://github.com/VeriFIT/mata/tree/simulation-reduction-rules-samo538.bak"><span class="tt">simulation-reduction-rules-samo538.bak</span></a></h2>
+<ul>
+<li>Author: <a href="https://github.com/samo538">Samuel Lupták (samo538)</a></li>
+<li>As part of: <a href="https://www.fit.vut.cz/study/course/IP2/.en">Project Practice 2, BIT</a></li>
+<li>From: <a href="https://github.com/VeriFIT/mata/pull/487">https://github.com/VeriFIT/mata/pull/487</a></li>
+</ul>
+<p>Backup of a NFA reduction algorithm enhancement using maximum direct simulation with support for reduction rules.</p>
+<h2 class="doxsection"><a class="anchor" id="boost-determinization-inclusion-lackobakhttpsgithubcomverifitmatatreeboost-determinization-inclusion-lackobak"></a>
+<a href="https://github.com/VeriFIT/mata/tree/boost-determinization-inclusion-lacko.bak"><span class="tt">boost-determinization-inclusion-lacko.bak</span></a></h2>
+<ul>
+<li>Author: <a href="https://github.com/Igor-Lacko">Igor Lacko (Igor-Lacko)</a></li>
+<li>As part of: <a href="https://www.fit.vut.cz/study/course/IP1/.en">Project Practice 1, BIT</a></li>
+<li>From: <a href="https://github.com/VeriFIT/mata/pull/478">https://github.com/VeriFIT/mata/pull/478</a></li>
+</ul>
+<p>Backup of a variant of determinization and inclusion algorithms using the Boost data structures (bit vectors). Requires Boost as an external dependency. The Boost implmentation of bit vectors can be replaced with a manual implementation of </p>
+</div></div><!-- contents -->
+</div><!-- PageDoc -->
+</div><!-- doc-content -->
+<div id="page-nav" class="page-nav-panel">
+<div id="page-nav-resize-handle"></div>
+<div id="page-nav-tree">
+<div id="page-nav-contents">
+</div><!-- page-nav-contents -->
+</div><!-- page-nav-tree -->
+</div><!-- page-nav -->
+</div><!-- container -->
+<!-- start footer part -->
+<div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
+  <ul>
+    <li class="footer">Generated on <span class="timestamp"></span> for Mata by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.16.1 </li>
+  </ul>
+</div>
+</body>
 </html>

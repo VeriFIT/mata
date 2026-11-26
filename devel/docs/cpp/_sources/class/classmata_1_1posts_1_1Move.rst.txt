@@ -1,5 +1,0 @@
-Class mata::posts::Move
-=======================
-
-.. doxygenclass:: mata::posts::Move
-   :members:

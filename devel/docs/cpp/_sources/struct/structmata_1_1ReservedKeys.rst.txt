@@ -1,5 +1,0 @@
-Struct mata::ReservedKeys
-=========================
-
-.. doxygenstruct:: mata::ReservedKeys
-   :members:

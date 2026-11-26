@@ -1,5 +1,0 @@
-Struct mata::TargetTraits
-=========================
-
-.. doxygenstruct:: mata::TargetTraits
-   :members:

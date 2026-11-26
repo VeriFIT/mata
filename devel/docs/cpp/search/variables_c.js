@@ -1,0 +1,22 @@
+var searchData=
+[
+  ['name_0',['name',['../structmata_1_1OnTheFlyAlphabet_1_1SymbolNames.html#a56a5dfb3f4598979142c7262fcbdb720',1,'mata::OnTheFlyAlphabet::SymbolNames']]],
+  ['name_5fstore_1',['name_store',['../classmata_1_1IntermediateAut.html#a479e5e334b126c62c1c4b6b6be3d5f61',1,'mata::IntermediateAut::name_store'],['../structmata_1_1parser_1_1ParsedSection.html#a479e5e334b126c62c1c4b6b6be3d5f61',1,'mata::parser::ParsedSection::name_store']]],
+  ['new_5fstates_5f_2',['new_states_',['../classmata_1_1parser_1_1StateNameMap.html#a92c6f8935095419ece21bb2ea52132a9',1,'mata::parser::StateNameMap']]],
+  ['next_5fminimum_3',['next_minimum',['../classmata_1_1utils_1_1SynchronizedExistentialIterator.html#acd765c73cca51276ededc23b1ba10111',1,'mata::utils::SynchronizedExistentialIterator']]],
+  ['next_5fsymbol_5fvalue_5f_4',['next_symbol_value_',['../classmata_1_1EnumAlphabet.html#ae5ca0690794f8662bdd97d94b1e68e29',1,'mata::EnumAlphabet::next_symbol_value_'],['../classmata_1_1OnTheFlyAlphabet.html#ae5ca0690794f8662bdd97d94b1e68e29',1,'mata::OnTheFlyAlphabet::next_symbol_value_']]],
+  ['no_5feps_5fcount_5',['no_eps_count',['../classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation.html#a2ed7c2d38eb6a60ee293b8aaa47845cf',1,'mata::applications::strings::seg_nfa::Segmentation']]],
+  ['no_5fstate_6',['NO_STATE',['../classmata_1_1parser_1_1StateNameMap.html#aada74581b43b29c2f2a960f9a0b58d96',1,'mata::parser::StateNameMap']]],
+  ['no_5fstate_5f_7',['no_state_',['../classmata_1_1posts_1_1DeltaBase.html#a315a4130b7ec6be771bd490a614cd1d0',1,'mata::posts::DeltaBase']]],
+  ['no_5fvalue_8',['no_value',['../classmata_1_1utils_1_1TwoDimensionalMap.html#aa9fc9ed2915010ce43ceba5d50e9e2eb',1,'mata::utils::TwoDimensionalMap']]],
+  ['node_9',['node',['../structmata_1_1FormulaGraphEntry.html#a33da4fdd19e82c714a38a32bd2deca37',1,'mata::FormulaGraphEntry::node'],['../structmata_1_1nfa_1_1internal_1_1ProcessedAntichain_1_1Entry.html#a8deb835975545524d2ba27f3dca61e29',1,'mata::nfa::internal::ProcessedAntichain::Entry::node']]],
+  ['node_5fnaming_10',['node_naming',['../classmata_1_1IntermediateAut.html#a26b297286bc7af8bd0e2d87d72da0a36',1,'mata::IntermediateAut']]],
+  ['nodes_5fnames_11',['nodes_names',['../classmata_1_1IntermediateAut.html#a5310e42b3b1070234fa3cef871e1916c',1,'mata::IntermediateAut']]],
+  ['num_5fof_5fdense_5fsymbols_5f_12',['num_of_dense_symbols_',['../classmata_1_1OnTheFlyAlphabet.html#ad7d5e584d01d6ed5cbb8c9db7dcb40c4',1,'mata::OnTheFlyAlphabet']]],
+  ['num_5fof_5fformulas_13',['num_of_formulas',['../structmata_1_1Mintermization_1_1Checkpoint.html#a06897abede1747027c9a1730774100d3',1,'mata::Mintermization::Checkpoint']]],
+  ['num_5fof_5flevels_14',['num_of_levels',['../classmata_1_1nft_1_1Levels.html#a7774bd555c48a436c00bf1b9501c60c2',1,'mata::nft::Levels']]],
+  ['num_5fof_5fnames_15',['num_of_names',['../structmata_1_1OnTheFlyAlphabet_1_1SymbolNames.html#a4b03a814e986eae2ba7f9d20622d6d70',1,'mata::OnTheFlyAlphabet::SymbolNames']]],
+  ['num_5fof_5fsymbols_16',['num_of_symbols',['../structmata_1_1Mintermization_1_1Checkpoint.html#aed96f9550d7ece1d4eea9477955085ad',1,'mata::Mintermization::Checkpoint']]],
+  ['num_5fof_5ftransitions_5f_17',['num_of_transitions_',['../classmata_1_1DeltaBuilder.html#afe0ccacd2099012c25bb19aee0f29cd5',1,'mata::DeltaBuilder']]],
+  ['numbered_5f_18',['numbered_',['../classmata_1_1parser_1_1StateNameMap.html#a8ff4f8cfa0339d0c0a58d4d64e4937ec',1,'mata::parser::StateNameMap']]]
+];

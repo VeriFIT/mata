@@ -1,5 +1,0 @@
-Struct mata::utils::StringHash
-==============================
-
-.. doxygenstruct:: mata::utils::StringHash
-   :members:

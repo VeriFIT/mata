@@ -1,5 +1,0 @@
-Class mata::SymbolPost
-======================
-
-.. doxygenclass:: mata::SymbolPost
-   :members:

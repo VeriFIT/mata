@@ -1,5 +1,0 @@
-Struct mata::Mintermization::MintermPartition
-=============================================
-
-.. doxygenstruct:: mata::Mintermization::MintermPartition
-   :members:

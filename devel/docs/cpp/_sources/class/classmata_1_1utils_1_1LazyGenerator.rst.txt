@@ -1,5 +1,0 @@
-Class mata::utils::LazyGenerator
-================================
-
-.. doxygenclass:: mata::utils::LazyGenerator
-   :members:

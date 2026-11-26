@@ -1,5 +1,0 @@
-Namespace mata::posts
-=====================
-
-.. doxygennamespace:: mata::posts
-   :members:

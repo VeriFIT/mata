@@ -1,5 +1,0 @@
-Struct mata::AutomatonBase::TarjanDiscoverCallback
-==================================================
-
-.. doxygenstruct:: mata::AutomatonBase::TarjanDiscoverCallback
-   :members:

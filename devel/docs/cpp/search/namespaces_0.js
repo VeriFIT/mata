@@ -1,0 +1,23 @@
+var searchData=
+[
+  ['mata_0',['mata',['../namespacemata.html',1,'']]],
+  ['mata_3a_3aapplications_1',['applications',['../namespacemata_1_1applications.html',1,'mata']]],
+  ['mata_3a_3aapplications_3a_3astrings_2',['strings',['../namespacemata_1_1applications_1_1strings.html',1,'mata::applications']]],
+  ['mata_3a_3aapplications_3a_3astrings_3a_3areplace_3',['replace',['../namespacemata_1_1applications_1_1strings_1_1replace.html',1,'mata::applications::strings']]],
+  ['mata_3a_3aapplications_3a_3astrings_3a_3aseg_5fnfa_4',['seg_nfa',['../namespacemata_1_1applications_1_1strings_1_1seg__nfa.html',1,'mata::applications::strings']]],
+  ['mata_3a_3ainternal_5',['internal',['../namespacemata_1_1internal.html',1,'mata']]],
+  ['mata_3a_3anfa_6',['nfa',['../namespacemata_1_1nfa.html',1,'mata']]],
+  ['mata_3a_3anfa_3a_3aalgorithms_7',['algorithms',['../namespacemata_1_1nfa_1_1algorithms.html',1,'mata::nfa']]],
+  ['mata_3a_3anfa_3a_3abuilder_8',['builder',['../namespacemata_1_1nfa_1_1builder.html',1,'mata::nfa']]],
+  ['mata_3a_3anfa_3a_3ainternal_9',['internal',['../namespacemata_1_1nfa_1_1internal.html',1,'mata::nfa']]],
+  ['mata_3a_3anfa_3a_3aplumbing_10',['plumbing',['../namespacemata_1_1nfa_1_1plumbing.html',1,'mata::nfa']]],
+  ['mata_3a_3anft_11',['nft',['../namespacemata_1_1nft.html',1,'mata']]],
+  ['mata_3a_3anft_3a_3aalgorithms_12',['algorithms',['../namespacemata_1_1nft_1_1algorithms.html',1,'mata::nft']]],
+  ['mata_3a_3anft_3a_3abuilder_13',['builder',['../namespacemata_1_1nft_1_1builder.html',1,'mata::nft']]],
+  ['mata_3a_3anft_3a_3ainternal_14',['internal',['../namespacemata_1_1nft_1_1internal.html',1,'mata::nft']]],
+  ['mata_3a_3anft_3a_3aplumbing_15',['plumbing',['../namespacemata_1_1nft_1_1plumbing.html',1,'mata::nft']]],
+  ['mata_3a_3aparser_16',['parser',['../namespacemata_1_1parser.html',1,'mata']]],
+  ['mata_3a_3aposts_17',['posts',['../namespacemata_1_1posts.html',1,'mata']]],
+  ['mata_3a_3aposts_3a_3ainternal_18',['internal',['../namespacemata_1_1posts_1_1internal.html',1,'mata::posts']]],
+  ['mata_3a_3autils_19',['utils',['../namespacemata_1_1utils.html',1,'mata']]]
+];

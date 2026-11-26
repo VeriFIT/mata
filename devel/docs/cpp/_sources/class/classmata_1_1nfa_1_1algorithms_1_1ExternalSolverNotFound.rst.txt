@@ -1,5 +1,0 @@
-Class mata::nfa::algorithms::ExternalSolverNotFound
-===================================================
-
-.. doxygenclass:: mata::nfa::algorithms::ExternalSolverNotFound
-   :members:
