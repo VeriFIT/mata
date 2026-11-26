@@ -135,6 +135,22 @@ pub(crate) struct SyncSpec {
 }
 
 impl SyncSpec {
+	/// Whether this is the canonical binary composition `((u,v), (v,w)) ↦ (u,w)`.
+	pub(crate) fn is_composition(&self) -> bool {
+		self.pairs.as_ref() == [TapePair { lhs: 1, rhs: 0 }]
+			&& self.layout.as_ref()
+				== [
+					ResultTape {
+						source: Tape::Lhs(0),
+						peer: None,
+					},
+					ResultTape {
+						source: Tape::Rhs(1),
+						peer: None,
+					},
+				]
+	}
+
 	/// The same product with its operands swapped.
 	pub(crate) fn swapped(&self) -> SyncSpec {
 		let swap = |tape| match tape {

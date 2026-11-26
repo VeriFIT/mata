@@ -216,7 +216,8 @@ pub enum Eval {
 )]
 pub enum Order {
 	/// The engine's choice: the operand with the smaller bound on its macrostates goes left in an
-	/// intersection, and a synchronized product keeps its order.
+	/// intersection, a synchronized product keeps its order, and a chain of binary compositions is associated to
+	/// minimize the estimated intermediate state bounds without changing the order of its relations.
 	#[default]
 	Auto,
 	/// The operands as they were passed to the builder.
