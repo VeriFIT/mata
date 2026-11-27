@@ -88,6 +88,28 @@ Each JSON line contains the model, zero-based run number, process status, wall-c
 and a `records` object with all phase timings and lazy counters. Available models are `token-passing`, `token-copying`,
 `burns`, `burns-broken` and `rtl`; `rtl` and one run are the defaults.
 
+## Ranked tree model checking
+
+`ta-token.cc` evaluates bottom-up tree automata with nullary rules and final root states (no initial-state set). `@TA-explicit`
+uses rules `a -> q` and `f(q1,q2) -> q`; `%Final` declares the accepting root states. Structure-preserving `@TT-explicit`
+transducers use `t -> n : q1` and `nn(q1,q0) -> tt : q2`. The driver composes concrete posts, computes predicate or
+finite-height abstractions, checks inclusion, and backtracks bad intersections. It preserves concrete posts for real
+versus spurious counterexample checks and detects predicate-refinement cycling.
+
+```sh
+build/release/g++/examples/rmc-ta-token examples/rmc
+```
+
+| Model         | Predicates                                  | Finite height                |
+| ------------- | ------------------------------------------- | ---------------------------- |
+| token-passing | `safe, predicate refinements 0`             | `safe, height 0`             |
+| token-copying | `unsafe, steps: 1, predicate refinements 0` | `unsafe, steps: 1, height 0` |
+| percolate     | `safe, predicate refinements 0`             | `safe, height 1`             |
+
+[`benchmark_ta.py`](benchmark_ta.py) repeats all six runs and emits model, mode, verdict, process status, and post,
+collapse, inclusion, and backtrack timing as JSONL. The default executable and directory are the ones above; override
+them with `--mata` and `--directory`, and set the count with `--runs N`.
+
 ## An inductive invariant
 
 [`inductive-invariant.matasc`](inductive-invariant.matasc) is the proof rule of regular abstraction frameworks
