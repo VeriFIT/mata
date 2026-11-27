@@ -1250,7 +1250,8 @@ void check_lazy_inclusion(
 	}
 
 	// The symbols that replace DONT_CARE: those of both transducers, a full or a partial alphabet, one with EPSILON,
-	//  none, DONT_CARE alone (kept as a letter), and DONT_CARE among others.
+	//  none, DONT_CARE alone (kept as a letter, also when the transducers use no other symbol), and DONT_CARE among
+	//  others.
 	std::shared_ptr<EnumAlphabet> alphabet{};
 	switch (seed % 7) {
 		case 0:
@@ -1279,8 +1280,13 @@ void check_lazy_inclusion(
 	if (alphabet != nullptr) {
 		symbols = alphabet->get_alphabet_symbols();
 	} else {
-		symbols = create_alphabet(lhs, rhs).get_alphabet_symbols();
-		if (symbols.contains(DONT_CARE) && symbols.size() > 1) { symbols.erase(DONT_CARE); }
+		// Mirror unwinding_symbols(): without a concrete symbol, keep DONT_CARE as the marker that every input
+		//  letter behaves alike, so that the replay reads the same words as the inclusion did.
+		symbols = OrdVector<Symbol>::set_union(lhs.delta.get_used_symbols(), rhs.delta.get_used_symbols());
+		while (!symbols.empty() && symbols.back() >= DONT_CARE) { symbols.pop_back(); }
+		if (symbols.empty() && (has_dont_care_transition(lhs) || has_dont_care_transition(rhs))) {
+			symbols.insert(DONT_CARE);
+		}
 	}
 	INFO(describe(seed, lhs) + "\n---\n" + describe(seed, rhs) + "\nalphabet variant " + std::to_string(seed % 7));
 
