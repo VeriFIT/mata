@@ -430,7 +430,6 @@ impl<'f> Antichain<'f> {
 		}
 	}
 
-
 	pub(crate) fn is_pruned(&self, state: StateId) -> bool {
 		!self.alive.contains(&state)
 	}
@@ -520,8 +519,7 @@ impl<'f> Antichain<'f> {
 		// While every member is in `group`, the leaf's simulation, which can take seconds, is not computed.
 		let simulation = match &self.shape {
 			Shape::Pair {
-				leaf: Some(leaf),
-				..
+				leaf: Some(leaf), ..
 			}
 			| Shape::Leftmost { leaf, .. }
 				if self.buckets.keys().any(|&other| other != group) =>

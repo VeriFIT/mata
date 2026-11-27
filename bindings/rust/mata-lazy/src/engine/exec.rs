@@ -650,10 +650,7 @@ impl<'f> Emitter<'f> {
 	/// intersection are fine to reassociate around, an inner node is not (its plan may rely on its position, as
 	/// `Order` does, and its cost feeds the outer one).
 	fn annotated(&self, node: ExecId) -> bool {
-		!matches!(
-			&self.nodes[node].op,
-			Op::Leaf(_) | Op::Intersection(..)
-		)
+		!matches!(&self.nodes[node].op, Op::Leaf(_) | Op::Intersection(..))
 	}
 
 	/// The branches that `node` adds to a union above it.
