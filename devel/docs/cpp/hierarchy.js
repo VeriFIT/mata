@@ -26,7 +26,6 @@ var hierarchy =
       [ "Nft", "classmata_1_1nft_1_1Nft.html", null ]
     ] ],
     [ "ClosedSet&lt; T &gt;", "structmata_1_1ClosedSet.html", null ],
-    [ "DeltaBuilder", "classmata_1_1DeltaBuilder.html", null ],
     [ "FormulaGraph", "classmata_1_1FormulaGraph.html", null ],
     [ "FormulaGraphChildren", "classmata_1_1FormulaGraphChildren.html", null ],
     [ "FormulaGraphEntry", "structmata_1_1FormulaGraphEntry.html", null ],
@@ -66,6 +65,7 @@ var hierarchy =
     [ "ParsedSection", "structmata_1_1parser_1_1ParsedSection.html", null ],
     [ "Re2Options", "structmata_1_1parser_1_1Re2Options.html", null ],
     [ "StateNameMap", "classmata_1_1parser_1_1StateNameMap.html", null ],
+    [ "DeltaBuilder&lt; D &gt;", "classmata_1_1posts_1_1DeltaBuilder.html", null ],
     [ "DeltaTransitions&lt; D &gt;", "classmata_1_1posts_1_1DeltaTransitions.html", null ],
     [ "DeltaTransitions&lt; D &gt;::const_iterator", "classmata_1_1posts_1_1DeltaTransitions_1_1const__iterator.html", null ],
     [ "Chain&lt; Ts &gt;", "structmata_1_1posts_1_1internal_1_1Chain.html", null ],
@@ -82,6 +82,7 @@ var hierarchy =
       [ "PostEntry< K, N >", "classmata_1_1posts_1_1PostEntry.html", null ]
     ] ],
     [ "KeyedAccess&lt; D, P, typename &gt;", "classmata_1_1posts_1_1KeyedAccess.html", [
+      [ "DeltaBase< typename D::PostType, typename D::TransitionTraits >", "classmata_1_1posts_1_1DeltaBase.html", null ],
       [ "DeltaBase< StatePost, TransitionTraits >", "classmata_1_1posts_1_1DeltaBase.html", [
         [ "Delta", "classmata_1_1Delta.html", null ]
       ] ],

@@ -17,6 +17,6 @@ var searchData=
   ['num_5fof_5flevels_14',['num_of_levels',['../classmata_1_1nft_1_1Levels.html#a7774bd555c48a436c00bf1b9501c60c2',1,'mata::nft::Levels']]],
   ['num_5fof_5fnames_15',['num_of_names',['../structmata_1_1OnTheFlyAlphabet_1_1SymbolNames.html#a4b03a814e986eae2ba7f9d20622d6d70',1,'mata::OnTheFlyAlphabet::SymbolNames']]],
   ['num_5fof_5fsymbols_16',['num_of_symbols',['../structmata_1_1Mintermization_1_1Checkpoint.html#aed96f9550d7ece1d4eea9477955085ad',1,'mata::Mintermization::Checkpoint']]],
-  ['num_5fof_5ftransitions_5f_17',['num_of_transitions_',['../classmata_1_1DeltaBuilder.html#afe0ccacd2099012c25bb19aee0f29cd5',1,'mata::DeltaBuilder']]],
+  ['num_5fof_5ftransitions_5f_17',['num_of_transitions_',['../classmata_1_1posts_1_1DeltaBuilder.html#afe0ccacd2099012c25bb19aee0f29cd5',1,'mata::posts::DeltaBuilder']]],
   ['numbered_5f_18',['numbered_',['../classmata_1_1parser_1_1StateNameMap.html#a8ff4f8cfa0339d0c0a58d4d64e4937ec',1,'mata::parser::StateNameMap']]]
 ];

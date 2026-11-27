@@ -5,6 +5,7 @@ var dir_95463c04e3adfb707c42bb2c16f73025 =
     [ "cursor.hh", "cursor_8hh.html", "cursor_8hh" ],
     [ "delta.hh", "core_2delta_8hh.html", "core_2delta_8hh" ],
     [ "moves.hh", "moves_8hh.html", "moves_8hh" ],
+    [ "post-workspace.hh", "post-workspace_8hh.html", "post-workspace_8hh" ],
     [ "post.hh", "post_8hh.html", "post_8hh" ],
     [ "tarjan.hh", "tarjan_8hh.html", "tarjan_8hh" ],
     [ "traits.hh", "traits_8hh.html", "traits_8hh" ],

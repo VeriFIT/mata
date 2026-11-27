@@ -10,7 +10,7 @@ var searchData=
   ['max_5fsize_7',['max_size',['../classmata_1_1utils_1_1SmallOrdVector.html#a3c4ac14bdd07f325fa6656de00bfb960',1,'mata::utils::SmallOrdVector']]],
   ['max_5fstate_8',['max_state',['../structmata_1_1Limits.html#a4b7bce445250c458bda89952f1bae467',1,'mata::Limits']]],
   ['max_5fsymbol_9',['max_symbol',['../structmata_1_1Limits.html#a557178455fdc92179d211ea2fd8847ce',1,'mata::Limits']]],
-  ['max_5ftarget_5f_10',['max_target_',['../classmata_1_1DeltaBuilder.html#a903072a43ed4fef939ee8ca849beb458',1,'mata::DeltaBuilder']]],
+  ['max_5ftarget_5f_10',['max_target_',['../classmata_1_1posts_1_1DeltaBuilder.html#a903072a43ed4fef939ee8ca849beb458',1,'mata::posts::DeltaBuilder']]],
   ['max_5fval_5f_11',['max_val_',['../structmata_1_1ClosedSet.html#acd4ee01241a220cc0444154336159b9f',1,'mata::ClosedSet']]],
   ['max_5fvalue_12',['max_value',['../classmata_1_1utils_1_1TwoDimensionalMap.html#a44d5ef59d4765917e4fd0f321dd2451d',1,'mata::utils::TwoDimensionalMap']]],
   ['min_5fepsilon_13',['min_epsilon',['../structmata_1_1ReservedKeys.html#aef961f7df0d036c61c76589787186671',1,'mata::ReservedKeys']]],

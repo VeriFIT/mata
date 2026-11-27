@@ -115,7 +115,7 @@ $(function(){initNavTree('classmata_1_1nfa_1_1Nfa.html','','classmata_1_1nfa_1_1
 Public Types</h2></td></tr>
 <tr class="memitem:afbcdf1e3c3f31021362c6e1c237b10de" id="r_afbcdf1e3c3f31021362c6e1c237b10de"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#afbcdf1e3c3f31021362c6e1c237b10de">Run</a> = <a class="el" href="namespacemata_1_1nfa.html#adbb5ffbc5045dad53d2ff66aabdaafce">nfa::Run</a></td></tr>
 <tr class="memdesc:afbcdf1e3c3f31021362c6e1c237b10de"><td class="mdescLeft">&#160;</td><td class="mdescRight">Through the module seam, like every shared type.  <br /></td></tr>
-<tr class="memitem:af2ccb30ddd63e3ff5a135eb902f2b934" id="r_af2ccb30ddd63e3ff5a135eb902f2b934"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#af2ccb30ddd63e3ff5a135eb902f2b934">State</a> = <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a></td></tr>
+<tr class="memitem:af2ccb30ddd63e3ff5a135eb902f2b934" id="r_af2ccb30ddd63e3ff5a135eb902f2b934"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#af2ccb30ddd63e3ff5a135eb902f2b934">State</a> = <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a></td></tr>
 <tr class="memitem:a26ca9782c3aca8b018af5e2d7a72365d" id="r_a26ca9782c3aca8b018af5e2d7a72365d"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a> = <a class="el" href="namespacemata.html#a80df479a6368a9ae1edd6b64fd62a70a">mata::StateSet</a></td></tr>
 <tr class="memitem:a3f960adb3e99d7edc1dc37e0fdabe796" id="r_a3f960adb3e99d7edc1dc37e0fdabe796"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="classmata_1_1AutomatonBase.html#a3f960adb3e99d7edc1dc37e0fdabe796">DeltaType</a></td></tr>
 <tr class="memdesc:a3f960adb3e99d7edc1dc37e0fdabe796"><td class="mdescLeft">&#160;</td><td class="mdescRight">The transition relation this automaton is built on.  <br /></td></tr>
@@ -212,6 +212,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:ace530e45be81764bc61d09eba8b8dcfa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prints the language of the automaton to the file as a regular expression.  <br /></td></tr>
 <tr class="memitem:a35b61598d7f3e1d17c5863716fb99ce9" id="r_a35b61598d7f3e1d17c5863716fb99ce9"><td class="memItemLeft"><a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a>&#160;</td><td class="memItemRight"><a class="el" href="#a35b61598d7f3e1d17c5863716fb99ce9">post</a> (const <a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a> &amp;states, <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">Symbol</a> symbol, <a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1">EpsilonClosureOpt</a> epsilon_closure_opt=<a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1a6adf97f83acf6453d4a6a4b1070f3754">EpsilonClosureOpt::None</a>) const</td></tr>
 <tr class="memdesc:a35b61598d7f3e1d17c5863716fb99ce9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the set of states reachable from the given set of states over the given symbol.  <br /></td></tr>
+<tr class="memitem:a917fbdb31ceeaaef94ee68190d44a6e8" id="r_a917fbdb31ceeaaef94ee68190d44a6e8"><td class="memItemLeft"><a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a>&#160;</td><td class="memItemRight"><a class="el" href="#a917fbdb31ceeaaef94ee68190d44a6e8">post</a> (const <a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a> &amp;states, <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">Symbol</a> symbol, <a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1">EpsilonClosureOpt</a> epsilon_closure_opt, <a class="el" href="namespacemata_1_1nfa.html#a8b6f41a8da6c6da56bb27964b15deaec">PostWorkspace</a> &amp;workspace) const</td></tr>
+<tr class="memdesc:a917fbdb31ceeaaef94ee68190d44a6e8"><td class="mdescLeft">&#160;</td><td class="mdescRight">The same as the overloads without a workspace, reusing <code class="param">workspace</code> buffers across calls.  <br /></td></tr>
 <tr class="memitem:a595f0f6810cc8cdaa297c72f1489bc5b" id="r_a595f0f6810cc8cdaa297c72f1489bc5b"><td class="memItemLeft"><a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a>&#160;</td><td class="memItemRight"><a class="el" href="#a595f0f6810cc8cdaa297c72f1489bc5b">post</a> (const <a class="el" href="#af2ccb30ddd63e3ff5a135eb902f2b934">State</a> state, const <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">Symbol</a> symbol, const <a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1">EpsilonClosureOpt</a> epsilon_closure_opt) const</td></tr>
 <tr class="memdesc:a595f0f6810cc8cdaa297c72f1489bc5b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the set of states reachable from the given state over the given symbol.  <br /></td></tr>
 <tr class="memitem:a46d88acc7ff3070eee4802c1221de3e5" id="r_a46d88acc7ff3070eee4802c1221de3e5"><td class="memItemLeft">const <a class="el" href="namespacemata_1_1nfa.html#a4a0d57ebc8fec32663713de4d1965bf8">SmallStateSet</a> &amp;&#160;</td><td class="memItemRight"><a class="el" href="#a46d88acc7ff3070eee4802c1221de3e5">post</a> (const <a class="el" href="#af2ccb30ddd63e3ff5a135eb902f2b934">State</a> state, const <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">Symbol</a> symbol) const</td></tr>
@@ -394,7 +396,7 @@ Private Member Functions</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">using <a class="el" href="#af2ccb30ddd63e3ff5a135eb902f2b934">State</a> = <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a></td>
+          <td class="memname">using <a class="el" href="#af2ccb30ddd63e3ff5a135eb902f2b934">State</a> = <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -914,7 +916,7 @@ Private Member Functions</h2></td></tr>
 <dl class="section return"><dt>Returns</dt><dd>DFA complemented in-place, as a value. </dd></dl>
 <dl class="section pre"><dt>Precondition</dt><dd><code>this</code> is a deterministic automaton. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l01002">1002</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l01012">1012</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>
@@ -1880,7 +1882,7 @@ Private Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True if the word (or its prefix) is in the language of the automaton, false otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00785">785</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00795">795</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>
@@ -1921,7 +1923,7 @@ Private Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True if the prefix of the run is in the language of the automaton, false otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00847">847</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00857">857</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>
@@ -1962,7 +1964,7 @@ Private Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True if the prefix of the word is in the language of the automaton, false otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00859">859</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00869">869</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>
@@ -2069,7 +2071,7 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True if the language is empty, false otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00648">648</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00658">658</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>
@@ -2100,7 +2102,7 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 <dl class="deprecated"><dt><b><a class="el" href="deprecated.html#_deprecated000004">Deprecated</a></b></dt><dd>Kept for source compatibility; the emptiness check no longer uses Tarjan's SCC discovery. Call <code><a class="el" href="#afbf14c77ba56ae2ee696d17a5f2510bc" title="Check whether the language of NFA is empty.">is_lang_empty()</a></code> instead. </dd></dl>
 <dl class="section return"><dt>Returns</dt><dd>Language empty &lt;-&gt; True </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00657">657</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00667">667</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>
@@ -2421,7 +2423,7 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </div>
 </div>
 <a id="a46d88acc7ff3070eee4802c1221de3e5" name="a46d88acc7ff3070eee4802c1221de3e5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a46d88acc7ff3070eee4802c1221de3e5">&#9670;&#160;</a></span>post() <span class="overload">[1/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a46d88acc7ff3070eee4802c1221de3e5">&#9670;&#160;</a></span>post() <span class="overload">[1/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -2458,12 +2460,12 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Set of states reachable from the given state over the given symbol. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00635">635</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00645">645</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>
 <a id="a595f0f6810cc8cdaa297c72f1489bc5b" name="a595f0f6810cc8cdaa297c72f1489bc5b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a595f0f6810cc8cdaa297c72f1489bc5b">&#9670;&#160;</a></span>post() <span class="overload">[2/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a595f0f6810cc8cdaa297c72f1489bc5b">&#9670;&#160;</a></span>post() <span class="overload">[2/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -2505,12 +2507,46 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Set of states reachable from the given state over the given symbol. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00622">622</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00632">632</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+
+</div>
+</div>
+<a id="a917fbdb31ceeaaef94ee68190d44a6e8" name="a917fbdb31ceeaaef94ee68190d44a6e8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a917fbdb31ceeaaef94ee68190d44a6e8">&#9670;&#160;</a></span>post() <span class="overload">[3/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a> post </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>states</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">Symbol</a></td>          <td class="paramname"><span class="paramname"><em>symbol</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1">EpsilonClosureOpt</a></td>          <td class="paramname"><span class="paramname"><em>epsilon_closure_opt</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="namespacemata_1_1nfa.html#a8b6f41a8da6c6da56bb27964b15deaec">PostWorkspace</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>workspace</em></span>&#160;) const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The same as the overloads without a workspace, reusing <code class="param">workspace</code> buffers across calls. </p>
+<p>A loop of steps allocates once. One workspace serves one call at a time; it must not be shared between concurrent calls, and it is written by every call. </p>
 
 </div>
 </div>
 <a id="a35b61598d7f3e1d17c5863716fb99ce9" name="a35b61598d7f3e1d17c5863716fb99ce9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a35b61598d7f3e1d17c5863716fb99ce9">&#9670;&#160;</a></span>post() <span class="overload">[3/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a35b61598d7f3e1d17c5863716fb99ce9">&#9670;&#160;</a></span>post() <span class="overload">[4/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -3010,7 +3046,7 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Set of all reachable states after reading the word. Note: This returns all reachable states, not just final states. Use <a class="el" href="#ab5e3e1794ae760fe801178b6910b36dc" title="Check whether a run over the word (or its prefix) is in the language of an automaton.">is_in_lang()</a> if you need to check language membership, or intersect the result with final states manually if needed. Note: The returned set is empty if the word cannot be read. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00813">813</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00823">823</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>
@@ -3074,7 +3110,7 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The reachable state after reading the word or std::nullopt if the word cannot be read. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00837">837</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00847">847</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>

@@ -11,7 +11,7 @@ digraph "Delta"
   Node3 [id="Node000003",label="KeyedAccess\< D, P,\l typename \>",height=0.2,width=0.4,color="gray40", fillcolor="white", style="filled",URL="$classmata_1_1posts_1_1KeyedAccess.html",tooltip="The keyed writes and lookup of a relation: one member each, at every arity."];
   Node4 -> Node2 [id="edge3_Node000002_Node000004",dir="back",color="orange",style="dashed",tooltip=" ",label=<<TABLE CELLBORDER="0" BORDER="0"><TR><TD VALIGN="top" ALIGN="LEFT" CELLPADDING="1" CELLSPACING="0">&lt; StatePost, TransitionTraits &gt;</TD></TR>
 </TABLE>> ,fontcolor="grey" ];
-  Node4 [id="Node000004",label="DeltaBase\< P, TT \>",height=0.2,width=0.4,color="gray40", fillcolor="white", style="filled",URL="$classmata_1_1posts_1_1DeltaBase.html",tooltip="The generic transition relation: a vector of posts indexed by source state."];
+  Node4 [id="Node000004",label="DeltaBase\< P, TT \>",height=0.2,width=0.4,color="gray40", fillcolor="white", style="filled",URL="$classmata_1_1posts_1_1DeltaBase.html",tooltip=" "];
   Node5 -> Node4 [id="edge4_Node000004_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
   Node5 [id="Node000005",label="KeyedAccess\< D, P,\l typename \>",height=0.2,width=0.4,color="gray40", fillcolor="white", style="filled",URL="$classmata_1_1posts_1_1KeyedAccess.html",tooltip="The keyed writes and lookup of a relation: one member each, at every arity."];
 }

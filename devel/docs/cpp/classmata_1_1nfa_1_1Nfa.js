@@ -71,6 +71,7 @@ var classmata_1_1nfa_1_1Nfa =
     [ "operator=", "classmata_1_1nfa_1_1Nfa.html#a30c9e4c7f261d2b8afa1650d84329633", null ],
     [ "post", "classmata_1_1nfa_1_1Nfa.html#a46d88acc7ff3070eee4802c1221de3e5", null ],
     [ "post", "classmata_1_1nfa_1_1Nfa.html#a595f0f6810cc8cdaa297c72f1489bc5b", null ],
+    [ "post", "classmata_1_1nfa_1_1Nfa.html#a917fbdb31ceeaaef94ee68190d44a6e8", null ],
     [ "post", "classmata_1_1nfa_1_1Nfa.html#a35b61598d7f3e1d17c5863716fb99ce9", null ],
     [ "print_to_dot", "classmata_1_1nfa_1_1Nfa.html#a5a854c725f10c321ba52c97c45f698f6", null ],
     [ "print_to_dot", "classmata_1_1nfa_1_1Nfa.html#af48489cb2669d93c20612e5e1b500489", null ],

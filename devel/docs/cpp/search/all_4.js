@@ -28,7 +28,7 @@ var searchData=
   ['eps_5findex_25',['eps_index',['../structmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation_1_1StateDepthTuple.html#a5b1b2ba1bc1949cb6a13a2ecd263ee94',1,'mata::applications::strings::seg_nfa::Segmentation::StateDepthTuple']]],
   ['epsilon_26',['EPSILON',['../namespacemata.html#a7ab819e148ca173289b95c321befc27e',1,'mata::EPSILON'],['../namespacemata_1_1nfa.html#a7ab819e148ca173289b95c321befc27e',1,'mata::nfa::EPSILON'],['../namespacemata_1_1nft.html#a7ab819e148ca173289b95c321befc27e',1,'mata::nft::EPSILON']]],
   ['epsilon_27',['epsilon',['../structmata_1_1parser_1_1Re2Options.html#a3f5f073a69393ac8fb4a765f8dc102ce',1,'mata::parser::Re2Options']]],
-  ['epsilon_5fclosure_28',['epsilon_closure',['../classmata_1_1Delta.html#af69a6a42bf06ea84a0e62013ec65e1ee',1,'mata::Delta']]],
+  ['epsilon_5fclosure_28',['epsilon_closure',['../classmata_1_1posts_1_1DeltaBase.html#a873bfb520dd9f91ed5773f33920ed887',1,'mata::posts::DeltaBase::epsilon_closure()'],['../classmata_1_1Delta.html#af69a6a42bf06ea84a0e62013ec65e1ee',1,'mata::Delta::epsilon_closure()']]],
   ['epsilon_5fcounts_5f_29',['epsilon_counts_',['../classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation.html#a5b9c99474d29fad2412bca7526e3e9ca',1,'mata::applications::strings::seg_nfa::Segmentation']]],
   ['epsilon_5fdepth_5ftransitions_5f_30',['epsilon_depth_transitions_',['../classmata_1_1applications_1_1strings_1_1seg__nfa_1_1Segmentation.html#afc896a935fc142a55242f420a8a2f933',1,'mata::applications::strings::seg_nfa::Segmentation']]],
   ['epsilon_5fis_5fgreatest_31',['epsilon_is_greatest',['../structmata_1_1ReservedKeys.html#a7e0c41625fb3428df4db17d4ba29e87d',1,'mata::ReservedKeys']]],

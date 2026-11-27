@@ -1,8 +1,8 @@
 var searchData=
 [
   ['impl_5f_0',['impl_',['../classmata_1_1nfa_1_1builder_1_1BitvectorNfaReader.html#a69e38859367087b010f6f249bf944c07',1,'mata::nfa::builder::BitvectorNfaReader']]],
-  ['in_5fstate_5f_1',['in_state_',['../classmata_1_1DeltaBuilder.html#a82f967e9fc0b112ce61522bcedd521d9',1,'mata::DeltaBuilder']]],
-  ['in_5fsymbol_5f_2',['in_symbol_',['../classmata_1_1DeltaBuilder.html#aa330820e8f045b15131e57223644c711',1,'mata::DeltaBuilder']]],
+  ['in_5fkey_5f_1',['in_key_',['../classmata_1_1posts_1_1DeltaBuilder.html#ae721e1712c694d80972a86c424c9de0f',1,'mata::posts::DeltaBuilder']]],
+  ['in_5fstate_5f_2',['in_state_',['../classmata_1_1posts_1_1DeltaBuilder.html#a82f967e9fc0b112ce61522bcedd521d9',1,'mata::posts::DeltaBuilder']]],
   ['index_3',['index',['../structmata_1_1internal_1_1TarjanNodeData.html#a2a94042027892d5d3ad23bac2d7d8207',1,'mata::internal::TarjanNodeData']]],
   ['initial_4',['initial',['../structmata_1_1applications_1_1strings_1_1seg__nfa_1_1NoodleSegment.html#a1ed2d4c8076790bce1101e219ed637f5',1,'mata::applications::strings::seg_nfa::NoodleSegment::initial'],['../classmata_1_1AutomatonBase.html#a86eb9b2cd9b873669e4686ad49cd2077',1,'mata::AutomatonBase::initial']]],
   ['initial_5fcache_5fslots_5',['INITIAL_CACHE_SLOTS',['../classmata_1_1Mintermization.html#a219aab0b768a621efa41fef7d567d3b6',1,'mata::Mintermization']]],

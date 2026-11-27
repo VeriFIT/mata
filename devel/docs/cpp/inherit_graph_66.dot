@@ -6,10 +6,10 @@ digraph "Graphical Class Hierarchy"
   node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
   rankdir="LR";
   Node0 [id="Node000000",label="OrdVector\< Key, Allocator \>",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classmata_1_1utils_1_1OrdVector.html",tooltip="Implementation of a set using ordered vector."];
-  Node0 -> Node1 [id="edge15_Node000000_Node000001",dir="back",color="firebrick4",style="solid",tooltip=" "];
+  Node0 -> Node1 [id="edge16_Node000000_Node000001",dir="back",color="firebrick4",style="solid",tooltip=" "];
   Node1 [id="Node000001",label="Post\< SymbolPost, Reserved\lKeys\< Symbol \>, utils::\lDeltaAllocator\< SymbolPost \> \>",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classmata_1_1posts_1_1Post.html",tooltip=" "];
-  Node1 -> Node2 [id="edge16_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node2 [id="edge17_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
   Node2 [id="Node000002",label="StatePost",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classmata_1_1StatePost.html",tooltip="Symbol posts keyed by states. Their block comes from utils::DeltaAllocator, like a spilled target set..."];
-  Node0 -> Node3 [id="edge17_Node000000_Node000003",dir="back",color="firebrick4",style="solid",tooltip=" "];
+  Node0 -> Node3 [id="edge18_Node000000_Node000003",dir="back",color="firebrick4",style="solid",tooltip=" "];
   Node3 [id="Node000003",label="Post\< E, R, A \>",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classmata_1_1posts_1_1Post.html",tooltip="One post of the relation: an ordered map from a key to the post nested under it."];
 }

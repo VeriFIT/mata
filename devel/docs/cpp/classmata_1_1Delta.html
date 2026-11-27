@@ -127,7 +127,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a70b6a176ba7226013a40951a20faed8b" id="r_a70b6a176ba7226013a40951a20faed8b"><td class="memItemLeft"><a class="el" href="#af7d85ae67543da751a5b3d5f8a183aae">Delta</a> &amp;&#160;</td><td class="memItemRight"><a class="el" href="#a70b6a176ba7226013a40951a20faed8b">operator=</a> (const <a class="el" href="#af7d85ae67543da751a5b3d5f8a183aae">Delta</a> &amp;)=default</td></tr>
 <tr class="memitem:a3eb5d4ccd4db13bad059c3651f676ea9" id="r_a3eb5d4ccd4db13bad059c3651f676ea9"><td class="memItemLeft"><a class="el" href="#af7d85ae67543da751a5b3d5f8a183aae">Delta</a> &amp;&#160;</td><td class="memItemRight"><a class="el" href="#a3eb5d4ccd4db13bad059c3651f676ea9">operator=</a> (<a class="el" href="#af7d85ae67543da751a5b3d5f8a183aae">Delta</a> &amp;&amp;)=default</td></tr>
 <tr class="memitem:afe3c8534eb7c7ef8139a9953b8e73703" id="r_afe3c8534eb7c7ef8139a9953b8e73703"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#afe3c8534eb7c7ef8139a9953b8e73703">~Delta</a> ()=default</td></tr>
-<tr class="memitem:a8ff9b5aebf5dfa2006d35ac7326576b1" id="r_a8ff9b5aebf5dfa2006d35ac7326576b1"><td class="memItemLeft"><a class="el" href="#af7d85ae67543da751a5b3d5f8a183aae">Delta</a> &amp;&#160;</td><td class="memItemRight"><a class="el" href="#a8ff9b5aebf5dfa2006d35ac7326576b1">defragment</a> (const <a class="el" href="classmata_1_1BoolVector.html">BoolVector</a> &amp;is_staying, const std::vector&lt; <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a> &gt; &amp;renaming)</td></tr>
+<tr class="memitem:a8ff9b5aebf5dfa2006d35ac7326576b1" id="r_a8ff9b5aebf5dfa2006d35ac7326576b1"><td class="memItemLeft"><a class="el" href="#af7d85ae67543da751a5b3d5f8a183aae">Delta</a> &amp;&#160;</td><td class="memItemRight"><a class="el" href="#a8ff9b5aebf5dfa2006d35ac7326576b1">defragment</a> (const <a class="el" href="classmata_1_1BoolVector.html">BoolVector</a> &amp;is_staying, const std::vector&lt; <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a> &gt; &amp;renaming)</td></tr>
 <tr class="memdesc:a8ff9b5aebf5dfa2006d35ac7326576b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Defragment the delta.  <br /></td></tr>
 <tr class="memitem:a139a73eab6c7cdee390b51b04a42565b" id="r_a139a73eab6c7cdee390b51b04a42565b"><td class="memTemplParams" colspan="2">template&lt;typename... States&gt; </td></tr>
 <tr class="memitem:a139a73eab6c7cdee390b51b04a42565b template"><td class="memItemLeft"><a class="el" href="#af7d85ae67543da751a5b3d5f8a183aae">Delta</a> &amp;&#160;</td><td class="memItemRight"><a class="el" href="#a139a73eab6c7cdee390b51b04a42565b">resize_for_states</a> (States... states)</td></tr>
@@ -186,7 +186,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a64bcf6fdb41cd8f582e0ccdc00b35283" id="r_a64bcf6fdb41cd8f582e0ccdc00b35283"><td class="memItemLeft"><a class="el" href="classmata_1_1utils_1_1OrdVector.html#a89cce1d1405d57981574f542293d5c7b">PostType::const_iterator</a>&#160;</td><td class="memItemRight"><a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a64bcf6fdb41cd8f582e0ccdc00b35283">epsilon_symbol_posts</a> (<a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a7d1a0c4349b27de7de51d7aef7444779">State</a> state, <a class="el" href="classmata_1_1posts_1_1DeltaBase.html#ac7c7c8afeae297c3cccd58448f0f3be3">Key</a>&lt; 0 &gt; epsilon=<a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a1b771a2e4f36556940cb8c0d245207f0">Reserved</a>&lt; 0 &gt;::min_epsilon) const</td></tr>
 <tr class="memdesc:a64bcf6fdb41cd8f582e0ccdc00b35283"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterate over <code class="param">epsilon</code> symbol posts under the given <code class="param">state</code>.  <br /></td></tr>
 <tr id="pub-methods-0" class="groupHeader"><td colspan="2"><div class="groupHeader">Conversions from the generic relation</div></td></tr>
-<tr><td colspan="2" class="ititle"><div class="groupText"><p>A <span class="tt"><a class="el" href="classmata_1_1posts_1_1DeltaBase.html" title="The generic transition relation: a vector of posts indexed by source state.">posts::DeltaBase</a>&lt;<a class="el" href="classmata_1_1StatePost.html" title="Symbol posts keyed by states. Their block comes from utils::DeltaAllocator, like a spilled target set...">StatePost</a>&gt;</span> is this relation. Moving one in is implicit and cheap; copying one is a copy of every transition, so it is explicit, and there is no copy-assignment from it. </p>
+<tr><td colspan="2" class="ititle"><div class="groupText"><p>A <span class="tt"><a class="el" href="classmata_1_1posts_1_1DeltaBase.html">posts::DeltaBase</a>&lt;<a class="el" href="classmata_1_1StatePost.html" title="Symbol posts keyed by states. Their block comes from utils::DeltaAllocator, like a spilled target set...">StatePost</a>&gt;</span> is this relation. Moving one in is implicit and cheap; copying one is a copy of every transition, so it is explicit, and there is no copy-assignment from it. </p>
 </div></td></tr>
 <tr class="memitem:a5f4e5af65bea19c5a55cd5f9f4140b2b" id="r_a5f4e5af65bea19c5a55cd5f9f4140b2b"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a5f4e5af65bea19c5a55cd5f9f4140b2b">Delta</a> (const <a class="el" href="#a586cd21b6bed18ac0d69e5d7d78fb677">Base</a> &amp;other)</td></tr>
 <tr class="memitem:ac3f70158e2f0ca8735e400047e6a15d3" id="r_ac3f70158e2f0ca8735e400047e6a15d3"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#ac3f70158e2f0ca8735e400047e6a15d3">Delta</a> (<a class="el" href="#a586cd21b6bed18ac0d69e5d7d78fb677">Base</a> &amp;&amp;other) noexcept</td></tr>
@@ -194,23 +194,23 @@ Public Member Functions</h2></td></tr>
 <tr id="pub-methods-1" class="groupHeader"><td colspan="2"><div class="groupHeader">Keyed members in concrete types</div></td></tr>
 <tr><td colspan="2" class="ititle"><div class="groupText"><p>Forwarders, so that diagnostics and IDEs show <span class="tt">add(State, Symbol, State)</span>. Redeclaring a name hides every base overload of it, so every overload is listed here. </p>
 </div></td></tr>
-<tr class="memitem:a001413cf5e8c3d10870eceb8aa3a2d12" id="r_a001413cf5e8c3d10870eceb8aa3a2d12"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a001413cf5e8c3d10870eceb8aa3a2d12">add</a> (const <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a> source, const <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">mata::Symbol</a> symbol, const <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a> target)</td></tr>
+<tr class="memitem:a001413cf5e8c3d10870eceb8aa3a2d12" id="r_a001413cf5e8c3d10870eceb8aa3a2d12"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a001413cf5e8c3d10870eceb8aa3a2d12">add</a> (const <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a> source, const <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">mata::Symbol</a> symbol, const <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a> target)</td></tr>
 <tr class="memdesc:a001413cf5e8c3d10870eceb8aa3a2d12"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a transition from <code class="param">source</code> over <code class="param">symbol</code> to <code class="param">target</code>.  <br /></td></tr>
-<tr class="memitem:aeadc2d863791917d3025d6649ab45799" id="r_aeadc2d863791917d3025d6649ab45799"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#aeadc2d863791917d3025d6649ab45799">add</a> (const <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a> source, const <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">mata::Symbol</a> symbol, const <a class="el" href="namespacemata.html#a80df479a6368a9ae1edd6b64fd62a70a">mata::StateSet</a> &amp;targets)</td></tr>
+<tr class="memitem:aeadc2d863791917d3025d6649ab45799" id="r_aeadc2d863791917d3025d6649ab45799"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#aeadc2d863791917d3025d6649ab45799">add</a> (const <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a> source, const <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">mata::Symbol</a> symbol, const <a class="el" href="namespacemata.html#a80df479a6368a9ae1edd6b64fd62a70a">mata::StateSet</a> &amp;targets)</td></tr>
 <tr class="memdesc:aeadc2d863791917d3025d6649ab45799"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a transition from <code class="param">source</code> over <code class="param">symbol</code> to every one of <code class="param">targets</code>.  <br /></td></tr>
-<tr class="memitem:a945f75e40f65c367692dd53f626f3f54" id="r_a945f75e40f65c367692dd53f626f3f54"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a945f75e40f65c367692dd53f626f3f54">add</a> (<a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a> source, <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">mata::Symbol</a> symbol, std::span&lt; const <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a> &gt; targets)</td></tr>
+<tr class="memitem:a945f75e40f65c367692dd53f626f3f54" id="r_a945f75e40f65c367692dd53f626f3f54"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a945f75e40f65c367692dd53f626f3f54">add</a> (<a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a> source, <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">mata::Symbol</a> symbol, std::span&lt; const <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a> &gt; targets)</td></tr>
 <tr class="memdesc:a945f75e40f65c367692dd53f626f3f54"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add a transition from <code class="param">source</code> over <code class="param">symbol</code> to every one of the sorted, duplicate-free <code class="param">targets</code>.  <br /></td></tr>
-<tr class="memitem:a78f3db42ca13ad3eb2509c9b1bca5154" id="r_a78f3db42ca13ad3eb2509c9b1bca5154"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a78f3db42ca13ad3eb2509c9b1bca5154">add</a> (<a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a> source, <a class="el" href="classmata_1_1SymbolPost.html">SymbolPost</a> &amp;&amp;symbol_post)</td></tr>
+<tr class="memitem:a78f3db42ca13ad3eb2509c9b1bca5154" id="r_a78f3db42ca13ad3eb2509c9b1bca5154"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a78f3db42ca13ad3eb2509c9b1bca5154">add</a> (<a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a> source, <a class="el" href="classmata_1_1SymbolPost.html">SymbolPost</a> &amp;&amp;symbol_post)</td></tr>
 <tr class="memdesc:a78f3db42ca13ad3eb2509c9b1bca5154"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add every transition of <code class="param">symbol_post</code> from <code class="param">source</code>, merging it into an existing post of its symbol.  <br /></td></tr>
 <tr class="memitem:ace488396889392c1de58277ea06606e6" id="r_ace488396889392c1de58277ea06606e6"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ace488396889392c1de58277ea06606e6">add</a> (std::vector&lt; <a class="el" href="structmata_1_1Transition.html">Transition</a> &gt; &amp;&amp;<a class="el" href="classmata_1_1posts_1_1DeltaBase.html#ae859cab402d6959478bd8ac2fe295f8b">transitions</a>)</td></tr>
 <tr class="memdesc:ace488396889392c1de58277ea06606e6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add all <code class="param">transitions</code> at once.  <br /></td></tr>
 <tr class="memitem:ad6fa76a710992598aa4df1ade9883d2a" id="r_ad6fa76a710992598aa4df1ade9883d2a"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ad6fa76a710992598aa4df1ade9883d2a">add</a> (const <a class="el" href="structmata_1_1Transition.html">Transition</a> &amp;transition)</td></tr>
 <tr class="memdesc:ad6fa76a710992598aa4df1ade9883d2a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add the transition <code class="param">transition</code>.  <br /></td></tr>
-<tr class="memitem:a40165ea9ccf7c511de1a033be4a73349" id="r_a40165ea9ccf7c511de1a033be4a73349"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a40165ea9ccf7c511de1a033be4a73349">remove</a> (const <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a> source, const <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">mata::Symbol</a> symbol, const <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a> target)</td></tr>
+<tr class="memitem:a40165ea9ccf7c511de1a033be4a73349" id="r_a40165ea9ccf7c511de1a033be4a73349"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a40165ea9ccf7c511de1a033be4a73349">remove</a> (const <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a> source, const <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">mata::Symbol</a> symbol, const <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a> target)</td></tr>
 <tr class="memdesc:a40165ea9ccf7c511de1a033be4a73349"><td class="mdescLeft">&#160;</td><td class="mdescRight">Remove the transition from <code class="param">source</code> over <code class="param">symbol</code> to <code class="param">target</code>.  <br /></td></tr>
 <tr class="memitem:a1bdee16cea86ef251b31867c676463d7" id="r_a1bdee16cea86ef251b31867c676463d7"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a1bdee16cea86ef251b31867c676463d7">remove</a> (const <a class="el" href="structmata_1_1Transition.html">Transition</a> &amp;transition)</td></tr>
 <tr class="memdesc:a1bdee16cea86ef251b31867c676463d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Remove the transition <code class="param">transition</code>.  <br /></td></tr>
-<tr class="memitem:a72623444d0afbbe709144b448c8e61a2" id="r_a72623444d0afbbe709144b448c8e61a2"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a72623444d0afbbe709144b448c8e61a2">contains</a> (const <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a> source, const <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">mata::Symbol</a> symbol, const <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a> target) const</td></tr>
+<tr class="memitem:a72623444d0afbbe709144b448c8e61a2" id="r_a72623444d0afbbe709144b448c8e61a2"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a72623444d0afbbe709144b448c8e61a2">contains</a> (const <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a> source, const <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">mata::Symbol</a> symbol, const <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a> target) const</td></tr>
 <tr class="memdesc:a72623444d0afbbe709144b448c8e61a2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether the relation contains the transition from <code class="param">source</code> over <code class="param">symbol</code> to <code class="param">target</code>.  <br /></td></tr>
 <tr class="memitem:aa8553f22ce052465873b3de8b8188227" id="r_aa8553f22ce052465873b3de8b8188227"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#aa8553f22ce052465873b3de8b8188227">contains</a> (const <a class="el" href="structmata_1_1Transition.html">Transition</a> &amp;transition) const</td></tr>
 <tr class="memdesc:aa8553f22ce052465873b3de8b8188227"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether the relation contains the transition <code class="param">transition</code>.  <br /></td></tr>
@@ -220,9 +220,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ac737a940cadf4460e63c82455873d5ca" id="r_ac737a940cadf4460e63c82455873d5ca"><td class="memTemplParams" colspan="2">template&lt;ExtensibleAlphabet A&gt; </td></tr>
 <tr class="memitem:ac737a940cadf4460e63c82455873d5ca template"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ac737a940cadf4460e63c82455873d5ca">add_symbols_to</a> (A &amp;target_alphabet) const</td></tr>
 <tr class="memdesc:ac737a940cadf4460e63c82455873d5ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Expand <code class="param">target_alphabet</code> by the symbols used on the transitions.  <br /></td></tr>
-<tr class="memitem:a499022f94bf36cd767a729ec41a0e945" id="r_a499022f94bf36cd767a729ec41a0e945"><td class="memItemLeft"><a class="el" href="#af7d85ae67543da751a5b3d5f8a183aae">Delta</a> &amp;&#160;</td><td class="memItemRight"><a class="el" href="#a499022f94bf36cd767a729ec41a0e945">append_shifted</a> (const <a class="el" href="#af7d85ae67543da751a5b3d5f8a183aae">Delta</a> &amp;other, <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a> offset)</td></tr>
+<tr class="memitem:a499022f94bf36cd767a729ec41a0e945" id="r_a499022f94bf36cd767a729ec41a0e945"><td class="memItemLeft"><a class="el" href="#af7d85ae67543da751a5b3d5f8a183aae">Delta</a> &amp;&#160;</td><td class="memItemRight"><a class="el" href="#a499022f94bf36cd767a729ec41a0e945">append_shifted</a> (const <a class="el" href="#af7d85ae67543da751a5b3d5f8a183aae">Delta</a> &amp;other, <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a> offset)</td></tr>
 <tr class="memdesc:a499022f94bf36cd767a729ec41a0e945"><td class="mdescLeft">&#160;</td><td class="mdescRight">Append the state posts of <code class="param">other</code> with every state shifted by <code class="param">offset</code>.  <br /></td></tr>
-<tr class="memitem:a32d9c918c5285e5e6ba778f6d3cf872c" id="r_a32d9c918c5285e5e6ba778f6d3cf872c"><td class="memItemLeft"><a class="el" href="#af7d85ae67543da751a5b3d5f8a183aae">Delta</a> &amp;&#160;</td><td class="memItemRight"><a class="el" href="#a32d9c918c5285e5e6ba778f6d3cf872c">append_shifted</a> (<a class="el" href="#af7d85ae67543da751a5b3d5f8a183aae">Delta</a> &amp;&amp;other, <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a> offset)</td></tr>
+<tr class="memitem:a32d9c918c5285e5e6ba778f6d3cf872c" id="r_a32d9c918c5285e5e6ba778f6d3cf872c"><td class="memItemLeft"><a class="el" href="#af7d85ae67543da751a5b3d5f8a183aae">Delta</a> &amp;&#160;</td><td class="memItemRight"><a class="el" href="#a32d9c918c5285e5e6ba778f6d3cf872c">append_shifted</a> (<a class="el" href="#af7d85ae67543da751a5b3d5f8a183aae">Delta</a> &amp;&amp;other, <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a> offset)</td></tr>
 <tr class="memdesc:a32d9c918c5285e5e6ba778f6d3cf872c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Append the state posts of <code class="param">other</code> with every state shifted by <code class="param">offset</code>.     <br /></td></tr>
 <tr class="memitem:aaabe753ed5b1a6d04ba7331f4c55bcb8" id="r_aaabe753ed5b1a6d04ba7331f4c55bcb8"><td class="memItemLeft"><a class="el" href="#af7d85ae67543da751a5b3d5f8a183aae">Delta</a>&#160;</td><td class="memItemRight"><a class="el" href="#aaabe753ed5b1a6d04ba7331f4c55bcb8">reverted</a> (size_t <a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a517ccaad5cfcaece95baead025656370">num_of_states</a>) const</td></tr>
 <tr class="memdesc:aaabe753ed5b1a6d04ba7331f4c55bcb8"><td class="mdescLeft">&#160;</td><td class="mdescRight">The reverted relation over (at least) <code class="param">num_of_states</code> states.  <br /></td></tr>
@@ -232,11 +232,11 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:aaa325fb839596693f6cbbe821cca4573"><td class="mdescLeft">&#160;</td><td class="mdescRight">The successors of <code class="param">states</code> over <code class="param">symbol</code>, with the epsilon closures of <code class="param">epsilon_closure_opt</code> over <code class="param">epsilons</code>, using the buffers of <code class="param">workspace</code>.  <br /></td></tr>
 <tr class="memitem:a7236101b98a474bc9e16d0bd7ade8475" id="r_a7236101b98a474bc9e16d0bd7ade8475"><td class="memItemLeft"><a class="el" href="namespacemata.html#a80df479a6368a9ae1edd6b64fd62a70a">StateSet</a>&#160;</td><td class="memItemRight"><a class="el" href="#a7236101b98a474bc9e16d0bd7ade8475">post_adopt_buffer</a> (const <a class="el" href="namespacemata.html#a80df479a6368a9ae1edd6b64fd62a70a">StateSet</a> &amp;states, <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">mata::Symbol</a> symbol, <a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1">EpsilonClosureOpt</a> epsilon_closure_opt, const std::vector&lt; <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">mata::Symbol</a> &gt; &amp;epsilons, <a class="el" href="structmata_1_1PostWorkspace.html">PostWorkspace</a> &amp;workspace) const</td></tr>
 <tr class="memdesc:a7236101b98a474bc9e16d0bd7ade8475"><td class="mdescLeft">&#160;</td><td class="mdescRight"><code><a class="el" href="#aaa325fb839596693f6cbbe821cca4573" title="The successors of states over symbol, with the epsilon closures of epsilon_closure_opt over epsilons,...">post()</a></code> that hands the gathered buffer of <code class="param">workspace</code> to the result instead of copying it.  <br /></td></tr>
-<tr class="memitem:a6146a4898679984240257a6b1f4e22a1" id="r_a6146a4898679984240257a6b1f4e22a1"><td class="memItemLeft"><a class="el" href="namespacemata.html#a80df479a6368a9ae1edd6b64fd62a70a">StateSet</a>&#160;</td><td class="memItemRight"><a class="el" href="#a6146a4898679984240257a6b1f4e22a1">get_successors</a> (const <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a> state) const</td></tr>
+<tr class="memitem:a6146a4898679984240257a6b1f4e22a1" id="r_a6146a4898679984240257a6b1f4e22a1"><td class="memItemLeft"><a class="el" href="namespacemata.html#a80df479a6368a9ae1edd6b64fd62a70a">StateSet</a>&#160;</td><td class="memItemRight"><a class="el" href="#a6146a4898679984240257a6b1f4e22a1">get_successors</a> (const <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a> state) const</td></tr>
 <tr class="memdesc:a6146a4898679984240257a6b1f4e22a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the successors of <code class="param">state</code> over every symbol.  <br /></td></tr>
-<tr class="memitem:a85bb08ce7c68c66513cbd437f5a8616c" id="r_a85bb08ce7c68c66513cbd437f5a8616c"><td class="memItemLeft">const <a class="el" href="namespacemata.html#a307b97c54d8606207779165be720c256">SmallStateSet</a> &amp;&#160;</td><td class="memItemRight"><a class="el" href="#a85bb08ce7c68c66513cbd437f5a8616c">get_successors</a> (const <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a> state, const <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">mata::Symbol</a> symbol) const</td></tr>
+<tr class="memitem:a85bb08ce7c68c66513cbd437f5a8616c" id="r_a85bb08ce7c68c66513cbd437f5a8616c"><td class="memItemLeft">const <a class="el" href="namespacemata.html#a307b97c54d8606207779165be720c256">SmallStateSet</a> &amp;&#160;</td><td class="memItemRight"><a class="el" href="#a85bb08ce7c68c66513cbd437f5a8616c">get_successors</a> (const <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a> state, const <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">mata::Symbol</a> symbol) const</td></tr>
 <tr class="memdesc:a85bb08ce7c68c66513cbd437f5a8616c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the successors of <code class="param">state</code> over <code class="param">symbol</code>.  <br /></td></tr>
-<tr class="memitem:af8cc7e61ba0469adfa12feabf9105b3c" id="r_af8cc7e61ba0469adfa12feabf9105b3c"><td class="memItemLeft"><a class="el" href="namespacemata.html#a80df479a6368a9ae1edd6b64fd62a70a">StateSet</a>&#160;</td><td class="memItemRight"><a class="el" href="#af8cc7e61ba0469adfa12feabf9105b3c">get_successors</a> (<a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a> state, <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">mata::Symbol</a> symbol, <a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1">EpsilonClosureOpt</a> epsilon_closure_opt) const</td></tr>
+<tr class="memitem:af8cc7e61ba0469adfa12feabf9105b3c" id="r_af8cc7e61ba0469adfa12feabf9105b3c"><td class="memItemLeft"><a class="el" href="namespacemata.html#a80df479a6368a9ae1edd6b64fd62a70a">StateSet</a>&#160;</td><td class="memItemRight"><a class="el" href="#af8cc7e61ba0469adfa12feabf9105b3c">get_successors</a> (<a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a> state, <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">mata::Symbol</a> symbol, <a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1">EpsilonClosureOpt</a> epsilon_closure_opt) const</td></tr>
 <tr class="memdesc:af8cc7e61ba0469adfa12feabf9105b3c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the successors of <code class="param">state</code> over <code class="param">symbol</code>, with the epsilon closures of <code class="param">epsilon_closure_opt</code>.  <br /></td></tr>
 <tr class="memitem:a55c3885cbc743336295f3b65a4e6f46e" id="r_a55c3885cbc743336295f3b65a4e6f46e"><td class="memItemLeft"><a class="el" href="classmata_1_1utils_1_1OrdVector.html">utils::OrdVector</a>&lt; <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">mata::Symbol</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a55c3885cbc743336295f3b65a4e6f46e">get_used_symbols</a> () const</td></tr>
 <tr class="memdesc:a55c3885cbc743336295f3b65a4e6f46e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the symbols used on the transitions.  <br /></td></tr>
@@ -252,6 +252,13 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:af877e23316d3d15ffd5efd3bf2dc8eb3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the symbols used on the transitions.  <br /></td></tr>
 <tr class="memitem:a07c9d81a695ebf69f0431448059d5169" id="r_a07c9d81a695ebf69f0431448059d5169"><td class="memItemLeft"><a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">mata::Symbol</a>&#160;</td><td class="memItemRight"><a class="el" href="#a07c9d81a695ebf69f0431448059d5169">get_max_symbol</a> () const</td></tr>
 <tr class="memdesc:a07c9d81a695ebf69f0431448059d5169"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the greatest symbol used on the transitions, epsilons included.  <br /></td></tr>
+<tr id="pub-methods-3" class="groupHeader"><td colspan="2"><div class="groupHeader">Post and epsilon closure with reusable buffers</div></td></tr>
+<tr><td colspan="2" class="ititle"><div class="groupText"><p>Generic in the key arity: the epsilon position is the one whose reserved keys name <code class="param">epsilon</code>. </p>
+</div></td></tr>
+<tr class="memitem:a873bfb520dd9f91ed5773f33920ed887" id="r_a873bfb520dd9f91ed5773f33920ed887"><td class="memItemLeft">std::vector&lt; <a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a7d1a0c4349b27de7de51d7aef7444779">State</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a873bfb520dd9f91ed5773f33920ed887">epsilon_closure</a> (const std::vector&lt; <a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a7d1a0c4349b27de7de51d7aef7444779">State</a> &gt; &amp;states, const std::vector&lt; <a class="el" href="classmata_1_1posts_1_1DeltaBase.html#ac7c7c8afeae297c3cccd58448f0f3be3">Key</a>&lt; 0 &gt; &gt; &amp;epsilons, <a class="el" href="structmata_1_1PostWorkspace.html">PostWorkspace</a> &amp;workspace) const</td></tr>
+<tr class="memdesc:a873bfb520dd9f91ed5773f33920ed887"><td class="mdescLeft">&#160;</td><td class="mdescRight">The epsilon closure of <code class="param">states</code> over <code class="param">epsilons</code>, using the buffers of <code class="param">workspace</code>.  <br /></td></tr>
+<tr class="memitem:afc8d025960f7995c719b259c1d8542e1" id="r_afc8d025960f7995c719b259c1d8542e1"><td class="memItemLeft">std::vector&lt; <a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a7d1a0c4349b27de7de51d7aef7444779">State</a> &gt; &amp;&#160;</td><td class="memItemRight"><a class="el" href="classmata_1_1posts_1_1DeltaBase.html#afc8d025960f7995c719b259c1d8542e1">gather_post</a> (const std::vector&lt; <a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a7d1a0c4349b27de7de51d7aef7444779">State</a> &gt; &amp;states, <a class="el" href="classmata_1_1posts_1_1DeltaBase.html#ac7c7c8afeae297c3cccd58448f0f3be3">Key</a>&lt; 0 &gt; key, <a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1">EpsilonClosureOpt</a> epsilon_closure_opt, const std::vector&lt; <a class="el" href="classmata_1_1posts_1_1DeltaBase.html#ac7c7c8afeae297c3cccd58448f0f3be3">Key</a>&lt; 0 &gt; &gt; &amp;epsilons, <a class="el" href="structmata_1_1PostWorkspace.html">PostWorkspace</a> &amp;workspace) const</td></tr>
+<tr class="memdesc:afc8d025960f7995c719b259c1d8542e1"><td class="mdescLeft">&#160;</td><td class="mdescRight">The successors of <code class="param">states</code> over <code class="param">key</code>, with the epsilon closures of <code class="param">epsilon_closure_opt</code>, gathered into <code class="param">workspace.gathered</code>.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -316,11 +323,6 @@ Static Protected Attributes</h2></td></tr>
 <tr class="memitem:a315a4130b7ec6be771bd490a614cd1d0" id="r_a315a4130b7ec6be771bd490a614cd1d0"><td class="memItemLeft">static constexpr <a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a7d1a0c4349b27de7de51d7aef7444779">State</a>&#160;</td><td class="memItemRight"><a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a315a4130b7ec6be771bd490a614cd1d0">no_state_</a></td></tr>
 <tr class="memdesc:a315a4130b7ec6be771bd490a614cd1d0"><td class="mdescLeft">&#160;</td><td class="mdescRight">The largest <code><a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a7d1a0c4349b27de7de51d7aef7444779">State</a></code> is the "no state" sentinel: states are 0, ..., max - 1.  <br /></td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 id="header-friends" class="groupheader"><a id="friends" name="friends"></a>
-Friends</h2></td></tr>
-<tr class="memitem:a0ede6a8a489716baceda3a489a3e3288" id="r_a0ede6a8a489716baceda3a489a3e3288"><td class="memItemLeft">class&#160;</td><td class="memItemRight"><a class="el" href="#a0ede6a8a489716baceda3a489a3e3288">DeltaBuilder</a></td></tr>
-<tr class="memdesc:a0ede6a8a489716baceda3a489a3e3288"><td class="mdescLeft">&#160;</td><td class="mdescRight">Installs its finished posts in one move.  <br /></td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-member-group" class="groupheader"><a id="member-group" name="member-group"></a>
 Post protocol</h2></td></tr>
 <tr class="memitem:a5d5ca48dfe53c8da08d52f113624f6de" id="r_a5d5ca48dfe53c8da08d52f113624f6de"><td class="memItemLeft">using&#160;</td><td class="memItemRight"><a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a5d5ca48dfe53c8da08d52f113624f6de">PostType</a></td></tr>
@@ -362,7 +364,7 @@ Post protocol</h2></td></tr>
 <div class="textblock"><p>The depth-2 relation: (state, symbol, <a class="el" href="namespacemata.html#a80df479a6368a9ae1edd6b64fd62a70a" title="A set of automaton states/targets. Target states of a SymbolPost: an ordered set that stores small se...">StateSet</a>). </p>
 <dl class="section note"><dt>Note</dt><dd>Exposes the generic relation as a concrete type, so that users are shielded from the template plumbing. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00209">209</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00196">196</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="a586cd21b6bed18ac0d69e5d7d78fb677" name="a586cd21b6bed18ac0d69e5d7d78fb677"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a586cd21b6bed18ac0d69e5d7d78fb677">&#9670;&#160;</a></span>Base</h2>
@@ -378,7 +380,7 @@ Post protocol</h2></td></tr>
 
 <p>The generic relation. </p>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00211">211</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00198">198</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -402,7 +404,7 @@ Post protocol</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00477">477</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00480">480</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -428,7 +430,7 @@ Post protocol</h2></td></tr>
 
 <p>The post reached from one source state. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00223">223</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00226">226</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -454,7 +456,7 @@ Post protocol</h2></td></tr>
 
 <p>The post reached from one source state. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00219">219</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00222">222</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -480,7 +482,7 @@ Post protocol</h2></td></tr>
 
 <p>The key at index <code class="param">I</code>, counted from the outermost one. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00202">202</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00205">205</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -506,7 +508,7 @@ Post protocol</h2></td></tr>
 
 <p>The result type of the keyed <code>get_successors</code>. The result type of the unkeyed <code>get_successors:</code> whatever the post returns, e.g. a <code><a class="el" href="namespacemata.html#a80df479a6368a9ae1edd6b64fd62a70a" title="A set of automaton states/targets. Target states of a SymbolPost: an ordered set that stores small se...">StateSet</a></code> for <code><a class="el" href="classmata_1_1StatePost.html" title="Symbol posts keyed by states. Their block comes from utils::DeltaAllocator, like a spilled target set...">mata::StatePost</a></code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00206">206</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00209">209</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -532,7 +534,7 @@ Post protocol</h2></td></tr>
 
 <p>The post reached from one source state. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00220">220</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00223">223</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -558,7 +560,7 @@ Post protocol</h2></td></tr>
 
 <p>The post at index <code class="param">I</code>, counted from the outermost one. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00200">200</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00203">203</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -584,7 +586,7 @@ Post protocol</h2></td></tr>
 
 <p>The post reached from one source state. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00193">193</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00196">196</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -610,7 +612,7 @@ Post protocol</h2></td></tr>
 
 <p>The reserved keys at index <code class="param">I</code>, counted from the outermost one. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00204">204</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00207">207</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -636,7 +638,7 @@ Post protocol</h2></td></tr>
 
 <p>What indexes this relation. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00196">196</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00199">199</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -662,7 +664,7 @@ Post protocol</h2></td></tr>
 
 <p>The post reached from one source state. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00209">209</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00212">212</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -688,7 +690,7 @@ Post protocol</h2></td></tr>
 
 <p>What visiting the successors yields. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00194">194</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00197">197</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -714,7 +716,7 @@ Post protocol</h2></td></tr>
 
 <p>How the keyed members take a target. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00195">195</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00198">198</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -740,7 +742,7 @@ Post protocol</h2></td></tr>
 
 <p>The post reached from one source state. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00205">205</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00208">208</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -764,7 +766,7 @@ Post protocol</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00483">483</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00486">486</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -790,7 +792,7 @@ Post protocol</h2></td></tr>
 
 <p>The post reached from one source state. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00221">221</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00224">224</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -816,7 +818,7 @@ Post protocol</h2></td></tr>
 
 <p>The post reached from one source state. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00222">222</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00225">225</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -846,7 +848,7 @@ Post protocol</h2></td></tr>
 
 <p>&lt; The constructors of the generic relation, including <span class="tt">explicit Delta(size_t)</span>. </p>
 
-<p class="reference">Referenced by <a class="el" href="relation_8hh_source.html#l00588">DeltaBuilder::finish()</a>, <a class="el" href="nfa_8hh_source.html#l00135">Nfa::Nfa()</a>, and <a class="el" href="nft_8hh_source.html#l00147">Nft::Nft()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="nfa_8hh_source.html#l00135">Nfa::Nfa()</a>, and <a class="el" href="nft_8hh_source.html#l00147">Nft::Nft()</a>.</p>
 
 </div>
 </div>
@@ -948,7 +950,7 @@ Post protocol</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00228">228</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00212">212</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -975,7 +977,7 @@ Post protocol</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00229">229</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00213">213</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -992,7 +994,7 @@ Post protocol</h2></td></tr>
         <tr>
           <td class="memname">void add </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>source</em></span>, </td>
+          <td class="paramtype">const <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>source</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -1002,7 +1004,7 @@ Post protocol</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>target</em></span>&#160;)</td>
+          <td class="paramtype">const <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>target</em></span>&#160;)</td>
         </tr>
       </table>
   </td>
@@ -1022,7 +1024,7 @@ Post protocol</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00284">284</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00268">268</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -1038,7 +1040,7 @@ Post protocol</h2></td></tr>
         <tr>
           <td class="memname">void add </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>source</em></span>, </td>
+          <td class="paramtype">const <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>source</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -1068,7 +1070,7 @@ Post protocol</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00295">295</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00279">279</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -1103,7 +1105,7 @@ Post protocol</h2></td></tr>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00322">322</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00306">306</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -1116,7 +1118,7 @@ Post protocol</h2></td></tr>
         <tr>
           <td class="memname">void add </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>source</em></span>, </td>
+          <td class="paramtype"><a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>source</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -1126,7 +1128,7 @@ Post protocol</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::span&lt; const <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a> &gt;</td>          <td class="paramname"><span class="paramname"><em>targets</em></span>&#160;)</td>
+          <td class="paramtype">std::span&lt; const <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a> &gt;</td>          <td class="paramname"><span class="paramname"><em>targets</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -1145,7 +1147,7 @@ Post protocol</h2></td></tr>
         <tr>
           <td class="memname">void add </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>source</em></span>, </td>
+          <td class="paramtype"><a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>source</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -1241,7 +1243,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00389">389</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00373">373</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -1276,7 +1278,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00330">330</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00333">333</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1311,7 +1313,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00411">411</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00414">414</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1329,7 +1331,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>offset</em></span>&#160;)</td>
+          <td class="paramtype"><a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>offset</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -1353,7 +1355,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>offset</em></span>&#160;)</td>
+          <td class="paramtype"><a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>offset</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -1386,7 +1388,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00480">480</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00483">483</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1413,7 +1415,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00478">478</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00481">481</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1440,7 +1442,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00479">479</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00482">482</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1469,7 +1471,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 
 <p>Throws <code>std::overflow_error</code> unless <code class="param">num_of_states</code> states can be numbered by <code><a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a7d1a0c4349b27de7de51d7aef7444779">State</a></code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00646">646</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00684">684</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1496,7 +1498,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00317">317</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00320">320</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1542,7 +1544,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00628">628</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00666">666</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1558,7 +1560,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
         <tr>
           <td class="memname">bool contains </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>source</em></span>, </td>
+          <td class="paramtype">const <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>source</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -1568,7 +1570,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>target</em></span>&#160;) const</td>
+          <td class="paramtype">const <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>target</em></span>&#160;) const</td>
         </tr>
       </table>
   </td>
@@ -1589,7 +1591,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True if the relation contains the transition, false otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00363">363</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00347">347</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -1625,7 +1627,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True if the relation contains the transition, false otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00373">373</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00357">357</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -1660,7 +1662,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00705">705</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00743">743</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1681,7 +1683,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const std::vector&lt; <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a> &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>renaming</em></span>&#160;)</td>
+          <td class="paramtype">const std::vector&lt; <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a> &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>renaming</em></span>&#160;)</td>
         </tr>
       </table>
   </td>
@@ -1702,7 +1704,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Self with defragmented delta. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00246">246</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00230">230</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -1771,7 +1773,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 
 <p>Append a state post built from <code class="param">args</code>. The returned reference may be used for edits under the same rule as <code><a class="el" href="classmata_1_1posts_1_1DeltaBase.html#aaa24e13cfd85c7efcb3b37f8718d162d">mutable_state_post()</a></code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00311">311</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00314">314</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1802,7 +1804,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 <dl class="section return"><dt>Returns</dt><dd>True if there are no transitions in the automaton, false otherwise. </dd></dl>
 <dl class="section note"><dt>Note</dt><dd><code><a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a4f7cc450c9e01e84fcfa00d56d581578">num_of_transitions()</a></code> == 0, so as cheap as the count and never in disagreement with it. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00404">404</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00407">407</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1829,12 +1831,12 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00481">481</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00484">484</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
 <a id="af69a6a42bf06ea84a0e62013ec65e1ee" name="af69a6a42bf06ea84a0e62013ec65e1ee"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af69a6a42bf06ea84a0e62013ec65e1ee">&#9670;&#160;</a></span>epsilon_closure()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#af69a6a42bf06ea84a0e62013ec65e1ee">&#9670;&#160;</a></span>epsilon_closure() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1858,6 +1860,51 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 </div><div class="memdoc">
 
 <p>The epsilon closure of <code class="param">states</code> over <code class="param">epsilons</code>, using the buffers of <code class="param">workspace</code>. </p>
+
+</div>
+</div>
+<a id="a873bfb520dd9f91ed5773f33920ed887" name="a873bfb520dd9f91ed5773f33920ed887"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a873bfb520dd9f91ed5773f33920ed887">&#9670;&#160;</a></span>epsilon_closure() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt; <a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a7d1a0c4349b27de7de51d7aef7444779">State</a> &gt; <a class="el" href="#af69a6a42bf06ea84a0e62013ec65e1ee">epsilon_closure</a> </td>
+          <td>(</td>
+          <td class="paramtype">const std::vector&lt; <a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a7d1a0c4349b27de7de51d7aef7444779">State</a> &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>states</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::vector&lt; <a class="el" href="classmata_1_1posts_1_1DeltaBase.html#ac7c7c8afeae297c3cccd58448f0f3be3">Key</a>&lt; 0 &gt; &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>epsilons</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structmata_1_1PostWorkspace.html">PostWorkspace</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>workspace</em></span>&#160;) const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inherited">inherited</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>The epsilon closure of <code class="param">states</code> over <code class="param">epsilons</code>, using the buffers of <code class="param">workspace</code>. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">states</td><td>States to take the closure of. </td></tr>
+    <tr><td class="paramname">epsilons</td><td>The epsilon keys to close over. Empty means the relation's own smallest epsilon. </td></tr>
+    <tr><td class="paramname">workspace</td><td>Reusable buffers; a call writes all of them, so a workspace serves one call at a time. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The closure, sorted and duplicate-free. </dd></dl>
 
 </div>
 </div>
@@ -1968,7 +2015,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 
 <p>Apply <code class="param">fn</code> to every <code><a class="el" href="structmata_1_1Move.html" title="A move out of the depth-2 relation: a symbol and one target state.">Move</a></code> leaving <code class="param">source</code>, as a (key, target) pair. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00440">440</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00443">443</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2001,7 +2048,64 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 
 <p>Apply <code class="param">fn</code> to every target reachable from <code class="param">source</code>, under any key. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00433">433</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00436">436</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+
+</div>
+</div>
+<a id="afc8d025960f7995c719b259c1d8542e1" name="afc8d025960f7995c719b259c1d8542e1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afc8d025960f7995c719b259c1d8542e1">&#9670;&#160;</a></span>gather_post()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt; <a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a7d1a0c4349b27de7de51d7aef7444779">State</a> &gt; &amp; gather_post </td>
+          <td>(</td>
+          <td class="paramtype">const std::vector&lt; <a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a7d1a0c4349b27de7de51d7aef7444779">State</a> &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>states</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classmata_1_1posts_1_1DeltaBase.html#ac7c7c8afeae297c3cccd58448f0f3be3">Key</a>&lt; 0 &gt;</td>          <td class="paramname"><span class="paramname"><em>key</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1">EpsilonClosureOpt</a></td>          <td class="paramname"><span class="paramname"><em>epsilon_closure_opt</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::vector&lt; <a class="el" href="classmata_1_1posts_1_1DeltaBase.html#ac7c7c8afeae297c3cccd58448f0f3be3">Key</a>&lt; 0 &gt; &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>epsilons</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structmata_1_1PostWorkspace.html">PostWorkspace</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>workspace</em></span>&#160;) const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inherited">inherited</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>The successors of <code class="param">states</code> over <code class="param">key</code>, with the epsilon closures of <code class="param">epsilon_closure_opt</code>, gathered into <code class="param">workspace.gathered</code>. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">states</td><td>States to step from. </td></tr>
+    <tr><td class="paramname">key</td><td>The key of the step. </td></tr>
+    <tr><td class="paramname">epsilon_closure_opt</td><td>Whether to close over epsilons before and/or after the step. </td></tr>
+    <tr><td class="paramname">epsilons</td><td>The epsilon keys to close over. Empty means the relation's own smallest epsilon. </td></tr>
+    <tr><td class="paramname">workspace</td><td>Reusable buffers; a call writes all of them, so a workspace serves one call at a time. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The gathered targets, unsorted and possibly with duplicates; the caller sorts and deduplicates. </dd></dl>
 
 </div>
 </div>
@@ -2059,7 +2163,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 <p>Get the greatest symbol used on the transitions, epsilons included. </p>
 <dl class="section return"><dt>Returns</dt><dd>The greatest symbol used, or zero when there are no transitions. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00522">522</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00506">506</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -2075,7 +2179,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
         <tr>
           <td class="memname"><a class="el" href="namespacemata.html#a80df479a6368a9ae1edd6b64fd62a70a">StateSet</a> get_successors </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>state</em></span></td><td>)</td>
+          <td class="paramtype">const <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>state</em></span></td><td>)</td>
           <td> const</td>
         </tr>
       </table>
@@ -2095,7 +2199,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The successors of <code class="param">state</code> over every symbol. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00445">445</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00429">429</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -2111,7 +2215,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
         <tr>
           <td class="memname">const <a class="el" href="namespacemata.html#a307b97c54d8606207779165be720c256">SmallStateSet</a> &amp; get_successors </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>state</em></span>, </td>
+          <td class="paramtype">const <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>state</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -2136,7 +2240,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The successors. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00454">454</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00438">438</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -2149,7 +2253,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
         <tr>
           <td class="memname"><a class="el" href="namespacemata.html#a80df479a6368a9ae1edd6b64fd62a70a">StateSet</a> get_successors </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>state</em></span>, </td>
+          <td class="paramtype"><a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>state</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -2528,7 +2632,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 <p>They do not have to equal the symbols of the alphabet used by the automaton.</p>
 <dl class="section return"><dt>Returns</dt><dd>The used symbols, ordered. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00476">476</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00460">460</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -2559,7 +2663,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 <dl class="section note"><dt>Note</dt><dd>Indexed by symbol, so it allocates up to the greatest symbol used, epsilons included.</dd></dl>
 <dl class="section return"><dt>Returns</dt><dd>A bit vector, true at every used symbol. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00506">506</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00490">490</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -2590,7 +2694,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 <dl class="section note"><dt>Note</dt><dd>Indexed by symbol, so it allocates up to the greatest symbol used, epsilons included.</dd></dl>
 <dl class="section return"><dt>Returns</dt><dd>A <code><a class="el" href="classmata_1_1BoolVector.html" title="Representation of a bool vector by a vector of uint8_t. Any nonzero byte is a set element,...">BoolVector</a></code>, true at every used symbol. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00515">515</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00499">499</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -2620,7 +2724,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 <p>Get the symbols used on the transitions. </p>
 <dl class="section return"><dt>Returns</dt><dd>The used symbols, as a <code>std::set</code>. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00490">490</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00474">474</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -2650,7 +2754,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 <p>Get the symbols used on the transitions. </p>
 <dl class="section return"><dt>Returns</dt><dd>The used symbols, as a sparse set. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00497">497</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00481">481</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -2680,7 +2784,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 <p>Get the symbols used on the transitions. </p>
 <dl class="section return"><dt>Returns</dt><dd>The used symbols, ordered. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00483">483</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00467">467</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -2716,7 +2820,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True if <code class="param">state</code> has a transition back to itself under any key, false otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00467">467</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00470">470</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2757,7 +2861,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True if <code class="param">target</code> is among the successors of <code class="param">source</code>, false otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00451">451</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00454">454</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2786,7 +2890,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 
 <p>Mark the cached transition count dirty, so that the next query recounts it. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00662">662</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00700">700</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2856,7 +2960,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00669">669</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00707">707</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2892,7 +2996,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00682">682</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00720">720</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2920,7 +3024,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 </div><div class="memdoc">
 <dl class="section return"><dt>Returns</dt><dd>Number of states in the whole relation, including both source and target states. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00339">339</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00342">342</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2949,7 +3053,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 
 <p>The number of states needed to contain <code class="param">state</code>, throwing <code>std::overflow_error</code> for the sentinel. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00654">654</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00692">692</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -3003,7 +3107,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00230">230</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00214">214</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -3090,7 +3194,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True if both relations have the same transitions, false otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00271">271</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00255">255</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -3142,7 +3246,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00279">279</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00282">282</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -3234,7 +3338,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
         <tr>
           <td class="memname">bool remove </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>source</em></span>, </td>
+          <td class="paramtype">const <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>source</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -3244,7 +3348,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>target</em></span>&#160;)</td>
+          <td class="paramtype">const <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">mata::State</a></td>          <td class="paramname"><span class="paramname"><em>target</em></span>&#160;)</td>
         </tr>
       </table>
   </td>
@@ -3265,7 +3369,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Whether the transition was in the relation. Unlike the generic relation's <code><a class="el" href="#a40165ea9ccf7c511de1a033be4a73349" title="Remove the transition from source over symbol to target.">remove()</a></code>, a missing transition does not throw. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00333">333</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00317">317</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -3301,11 +3405,11 @@ template&lt;ExtensibleAlphabet A&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Whether the transition was in the relation; a missing transition does not throw. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00351">351</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00335">335</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
-<p class="reference">References <a class="el" href="relation_8hh_source.html#l00351">remove()</a>.</p>
+<p class="reference">References <a class="el" href="relation_8hh_source.html#l00335">remove()</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="relation_8hh_source.html#l00351">remove()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="relation_8hh_source.html#l00335">remove()</a>.</p>
 
 </div>
 </div>
@@ -3375,7 +3479,7 @@ template&lt;ExtensibleAlphabet A&gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00263">263</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00266">266</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -3418,7 +3522,7 @@ template&lt;typename... States&gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00259">259</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00243">243</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
 
 </div>
 </div>
@@ -3481,7 +3585,7 @@ template&lt;typename... States&gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00695">695</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00733">733</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -3517,7 +3621,7 @@ template&lt;typename... States&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd><a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a7d1a0c4349b27de7de51d7aef7444779">State</a> denoted by <code class="param">target</code>. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00217">217</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00220">220</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -3554,7 +3658,7 @@ template&lt;typename... States&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd><a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a7d1a0c4349b27de7de51d7aef7444779">State</a> post of <code class="param">source</code>. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00275">275</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00278">278</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -3591,7 +3695,7 @@ template&lt;typename... States&gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>A resumable cursor over the successors of <code class="param">source</code>. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00475">475</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00478">478</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -3620,7 +3724,7 @@ template&lt;typename... States&gt; </div>
 
 <p>Get iterator over transitions represented as <code><a class="el" href="structmata_1_1Transition.html" title="A transition (source, symbol, target).">Transition</a></code> instances. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00488">488</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00491">491</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -3649,34 +3753,7 @@ template&lt;typename... States&gt; </div>
 
 <p>Check whether the <code class="param">state</code> is used in the relation. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00344">344</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
-
-</div>
-</div>
-<a name="doc-related-members" id="doc-related-members"></a><h2 id="header-doc-related-members" class="groupheader">Friends And Related Symbol Documentation</h2>
-<a id="a0ede6a8a489716baceda3a489a3e3288" name="a0ede6a8a489716baceda3a489a3e3288"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0ede6a8a489716baceda3a489a3e3288">&#9670;&#160;</a></span>DeltaBuilder</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">friend class DeltaBuilder</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel friend">friend</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Installs its finished posts in one move. </p>
-
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00222">222</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00347">347</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -3703,7 +3780,7 @@ template&lt;typename... States&gt; </div>
 
 <p>Exact number of transitions whenever <code>count_dirty_</code> is false. Both are atomic because concurrent const queries may recount; mutators run exclusively, so they use relaxed order. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00717">717</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00755">755</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -3729,7 +3806,7 @@ template&lt;typename... States&gt; </div>
 
 <p>Set by edits whose effect on the count is not known, such as through <code><a class="el" href="classmata_1_1posts_1_1DeltaBase.html#aaa24e13cfd85c7efcb3b37f8718d162d">mutable_state_post()</a></code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00719">719</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00757">757</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -3755,7 +3832,7 @@ template&lt;typename... States&gt; </div>
 
 <p>A constant returned when a state post is requested for a source that has no allocated post. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00227">227</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00230">230</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -3781,7 +3858,7 @@ template&lt;typename... States&gt; </div>
 
 <p>The post reached from one source state. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00197">197</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00200">200</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -3807,7 +3884,7 @@ template&lt;typename... States&gt; </div>
 
 <p>The largest <code><a class="el" href="classmata_1_1posts_1_1DeltaBase.html#a7d1a0c4349b27de7de51d7aef7444779">State</a></code> is the "no state" sentinel: states are 0, ..., max - 1. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00644">644</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00682">682</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -3831,7 +3908,7 @@ template&lt;typename... States&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00714">714</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00752">752</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>

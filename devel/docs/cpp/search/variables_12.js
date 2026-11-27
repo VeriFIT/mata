@@ -4,7 +4,7 @@ var searchData=
   ['target_5fend_5f_1',['target_end_',['../classmata_1_1posts_1_1SuccessorCursor_1_1const__iterator.html#a72c500e6c235a62fd1aabc9db8e5772b',1,'mata::posts::SuccessorCursor::const_iterator']]],
   ['target_5fit_5f_2',['target_it_',['../classmata_1_1posts_1_1SuccessorCursor_1_1const__iterator.html#aa5a8b63244e07333d52d9be4398dda89',1,'mata::posts::SuccessorCursor::const_iterator::target_it_'],['../classmata_1_1posts_1_1PostMoves_1_1const__iterator.html#ac75a130d46144cb0614a69d449ebb877',1,'mata::posts::PostMoves::const_iterator::target_it_']]],
   ['targets_3',['targets',['../classmata_1_1posts_1_1internal_1_1PostEntryCore.html#a1afb6cff90d3b5241ad3bdfdffca7d43',1,'mata::posts::internal::PostEntryCore']]],
-  ['targets_5f_4',['targets_',['../classmata_1_1DeltaBuilder.html#a0400a899109e3504fd7a87110b0884d2',1,'mata::DeltaBuilder']]],
+  ['targets_5f_4',['targets_',['../classmata_1_1posts_1_1DeltaBuilder.html#a0400a899109e3504fd7a87110b0884d2',1,'mata::posts::DeltaBuilder']]],
   ['text_5',['text',['../structmata_1_1parser_1_1ExplicitToken.html#ab43737ecee6b757b4e5ed141055d8f2d',1,'mata::parser::ExplicitToken']]],
   ['text_5f_6',['text_',['../classmata_1_1parser_1_1MataWriter.html#ae79346bdafd79119e9ee948a530790e6',1,'mata::parser::MataWriter']]],
   ['token_7',['token',['../structmata_1_1parser_1_1BodyToken.html#af0f5d2de7e09cf6e6b3a5e40f784dbab',1,'mata::parser::BodyToken']]],

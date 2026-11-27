@@ -6,6 +6,7 @@ var namespacemata_1_1posts =
     [ "KeyedAccess", "classmata_1_1posts_1_1KeyedAccess.html", null ],
     [ "KeyedAccess&lt; D, P, std::index_sequence&lt; KeyIdx... &gt; &gt;", "classmata_1_1posts_1_1KeyedAccess_3_01D_00_01P_00_01std_1_1index__sequence_3_01KeyIdx_8_8_8_01_4_01_4.html", "classmata_1_1posts_1_1KeyedAccess_3_01D_00_01P_00_01std_1_1index__sequence_3_01KeyIdx_8_8_8_01_4_01_4" ],
     [ "KeyedAccess&lt; D, P, std::index_sequence&lt; 0 &gt; &gt;", "classmata_1_1posts_1_1KeyedAccess_3_01D_00_01P_00_01std_1_1index__sequence_3_010_01_4_01_4.html", "classmata_1_1posts_1_1KeyedAccess_3_01D_00_01P_00_01std_1_1index__sequence_3_010_01_4_01_4" ],
+    [ "DeltaBuilder", "classmata_1_1posts_1_1DeltaBuilder.html", "classmata_1_1posts_1_1DeltaBuilder" ],
     [ "DeltaBase", "classmata_1_1posts_1_1DeltaBase.html", "classmata_1_1posts_1_1DeltaBase" ],
     [ "Move", "classmata_1_1posts_1_1Move.html", "classmata_1_1posts_1_1Move" ],
     [ "PostMoves", "classmata_1_1posts_1_1PostMoves.html", "classmata_1_1posts_1_1PostMoves" ],

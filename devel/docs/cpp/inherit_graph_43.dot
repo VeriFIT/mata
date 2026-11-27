@@ -7,9 +7,11 @@ digraph "Graphical Class Hierarchy"
   rankdir="LR";
   Node0 [id="Node000000",label="KeyedAccess\< D, P,\l typename \>",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classmata_1_1posts_1_1KeyedAccess.html",tooltip="The keyed writes and lookup of a relation: one member each, at every arity."];
   Node0 -> Node1 [id="edge11_Node000000_Node000001",dir="back",color="steelblue1",style="solid",tooltip=" "];
-  Node1 [id="Node000001",label="DeltaBase\< StatePost,\l TransitionTraits \>",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classmata_1_1posts_1_1DeltaBase.html",tooltip=" "];
-  Node1 -> Node2 [id="edge12_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
-  Node2 [id="Node000002",label="Delta",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classmata_1_1Delta.html",tooltip="The depth-2 relation: (state, symbol, StateSet)."];
-  Node0 -> Node3 [id="edge13_Node000000_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
-  Node3 [id="Node000003",label="DeltaBase\< P, TT \>",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classmata_1_1posts_1_1DeltaBase.html",tooltip="The generic transition relation: a vector of posts indexed by source state."];
+  Node1 [id="Node000001",label="DeltaBase\< typename\l D::PostType, typename\l D::TransitionTraits \>",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classmata_1_1posts_1_1DeltaBase.html",tooltip=" "];
+  Node0 -> Node2 [id="edge12_Node000000_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="DeltaBase\< StatePost,\l TransitionTraits \>",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classmata_1_1posts_1_1DeltaBase.html",tooltip=" "];
+  Node2 -> Node3 [id="edge13_Node000002_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="Delta",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classmata_1_1Delta.html",tooltip="The depth-2 relation: (state, symbol, StateSet)."];
+  Node0 -> Node4 [id="edge14_Node000000_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="DeltaBase\< P, TT \>",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$classmata_1_1posts_1_1DeltaBase.html",tooltip=" "];
 }

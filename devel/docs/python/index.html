@@ -329,6 +329,34 @@ source state of the transition to check.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="libmata.nfa.nfa.Delta.epsilon_closure">
+<span class="sig-name descname"><span class="pre">epsilon_closure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">states</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">State</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#libmata.nfa.nfa.Delta.epsilon_closure" title="Link to this definition">¶</a></dt>
+<dd><p>Compute the epsilon closure of <cite>states</cite> over <cite>epsilons</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>states</strong> – Iterable of source states to close.</p></li>
+<li><p><strong>epsilons</strong> – Epsilon symbols to close over; <cite>None</cite> means the default epsilon symbol.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Set of states reachable from <cite>states</cite> over the epsilon transitions only.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="libmata.nfa.nfa.Delta.get_max_symbol">
+<span class="sig-name descname"><span class="pre">get_max_symbol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Symbol</span></span></span><a class="headerlink" href="#libmata.nfa.nfa.Delta.get_max_symbol" title="Link to this definition">¶</a></dt>
+<dd><p>Get the greatest symbol used on the transitions, epsilons included.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The greatest symbol used, or zero when there are no transitions.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="libmata.nfa.nfa.Delta.get_transitions_between">
 <span class="sig-name descname"><span class="pre">get_transitions_between</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">State</span> <span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">State</span> <span class="pre">target</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#libmata.nfa.nfa.Transition" title="libmata.nfa.nfa.Transition"><span class="pre">Transition</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#libmata.nfa.nfa.Delta.get_transitions_between" title="Link to this definition">¶</a></dt>
 <dd><p>Get the transitions leading from <cite>source</cite> to <cite>target</cite>.</p>
@@ -420,6 +448,25 @@ invalidates the iterator, and the next advance raises <cite>RuntimeError</cite>.
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Number of transitions in Delta.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="libmata.nfa.nfa.Delta.post">
+<span class="sig-name descname"><span class="pre">post</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">states</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Symbol</span> <span class="pre">symbol</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str</span> <span class="pre">epsilon_closure_opt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'none'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilons</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">State</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#libmata.nfa.nfa.Delta.post" title="Link to this definition">¶</a></dt>
+<dd><p>Get the successors of <cite>states</cite> over <cite>symbol</cite>, with epsilon closures applied as requested.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>states</strong> – Iterable of source states to step from.</p></li>
+<li><p><strong>symbol</strong> (<em>Symbol</em>) – Symbol to step over.</p></li>
+<li><p><strong>epsilon_closure_opt</strong> (<em>str</em>) – One of ‘none’, ‘before’, ‘after’, ‘before-and-after’.</p></li>
+<li><p><strong>epsilons</strong> – Epsilon symbols to close over; <cite>None</cite> means the default epsilon symbol.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Set of successor states.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -870,6 +917,18 @@ be too large (or, with <cite>max_length</cite> left unbounded, infinite) to enum
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="libmata.nfa.nfa.Nfa.is_acyclic">
+<span class="sig-name descname"><span class="pre">is_acyclic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#libmata.nfa.nfa.Nfa.is_acyclic" title="Link to this definition">¶</a></dt>
+<dd><p>Check whether the part of the automaton graph reachable from the initial states is acyclic.</p>
+<p>A cycle no initial state reaches does not count.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if no cycle is reachable from an initial state, False otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="libmata.nfa.nfa.Nfa.is_complete">
 <span class="sig-name descname"><span class="pre">is_complete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Alphabet</span> <span class="pre">alphabet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#libmata.nfa.nfa.Nfa.is_complete" title="Link to this definition">¶</a></dt>
 <dd><p>Test if automaton is complete.</p>
@@ -905,6 +964,21 @@ self.alphabet is empty, throws an exception.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>True if the passed symbol is epsilon symbol, False otherwise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="libmata.nfa.nfa.Nfa.is_identical">
+<span class="sig-name descname"><span class="pre">is_identical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Nfa</span> <span class="pre">other</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#libmata.nfa.nfa.Nfa.is_identical" title="Link to this definition">¶</a></dt>
+<dd><p>Check whether this automaton and <cite>other</cite> have the same states and transitions.</p>
+<p>Initial and final states and the transition relation are compared exactly; names and attributes are not.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>other</strong> (<a class="reference internal" href="#libmata.nfa.nfa.Nfa" title="libmata.nfa.nfa.Nfa"><em>Nfa</em></a>) – Automaton to compare with.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the two automata are identical, False otherwise.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -4449,6 +4523,8 @@ first states corresponding to a equivalence class?</p>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Delta.clear"><code class="docutils literal notranslate"><span class="pre">Delta.clear()</span></code></a></li>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Delta.contains"><code class="docutils literal notranslate"><span class="pre">Delta.contains()</span></code></a></li>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Delta.empty"><code class="docutils literal notranslate"><span class="pre">Delta.empty()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta.epsilon_closure"><code class="docutils literal notranslate"><span class="pre">Delta.epsilon_closure()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta.get_max_symbol"><code class="docutils literal notranslate"><span class="pre">Delta.get_max_symbol()</span></code></a></li>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Delta.get_transitions_between"><code class="docutils literal notranslate"><span class="pre">Delta.get_transitions_between()</span></code></a></li>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Delta.get_transitions_from"><code class="docutils literal notranslate"><span class="pre">Delta.get_transitions_from()</span></code></a></li>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Delta.get_transitions_to"><code class="docutils literal notranslate"><span class="pre">Delta.get_transitions_to()</span></code></a></li>
@@ -4456,6 +4532,7 @@ first states corresponding to a equivalence class?</p>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Delta.iter_transitions_from"><code class="docutils literal notranslate"><span class="pre">Delta.iter_transitions_from()</span></code></a></li>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Delta.num_of_states"><code class="docutils literal notranslate"><span class="pre">Delta.num_of_states()</span></code></a></li>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Delta.num_of_transitions"><code class="docutils literal notranslate"><span class="pre">Delta.num_of_transitions()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Delta.post"><code class="docutils literal notranslate"><span class="pre">Delta.post()</span></code></a></li>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Delta.remove"><code class="docutils literal notranslate"><span class="pre">Delta.remove()</span></code></a></li>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Delta.state_post"><code class="docutils literal notranslate"><span class="pre">Delta.state_post()</span></code></a></li>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Delta.transitions"><code class="docutils literal notranslate"><span class="pre">Delta.transitions()</span></code></a></li>
@@ -4501,9 +4578,11 @@ first states corresponding to a equivalence class?</p>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.has_initial_state"><code class="docutils literal notranslate"><span class="pre">Nfa.has_initial_state()</span></code></a></li>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.has_transition"><code class="docutils literal notranslate"><span class="pre">Nfa.has_transition()</span></code></a></li>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.initial_states"><code class="docutils literal notranslate"><span class="pre">Nfa.initial_states</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.is_acyclic"><code class="docutils literal notranslate"><span class="pre">Nfa.is_acyclic()</span></code></a></li>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.is_complete"><code class="docutils literal notranslate"><span class="pre">Nfa.is_complete()</span></code></a></li>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.is_deterministic"><code class="docutils literal notranslate"><span class="pre">Nfa.is_deterministic()</span></code></a></li>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.is_epsilon"><code class="docutils literal notranslate"><span class="pre">Nfa.is_epsilon()</span></code></a></li>
+<li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.is_identical"><code class="docutils literal notranslate"><span class="pre">Nfa.is_identical()</span></code></a></li>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.is_in_lang"><code class="docutils literal notranslate"><span class="pre">Nfa.is_in_lang()</span></code></a></li>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.is_lang_empty"><code class="docutils literal notranslate"><span class="pre">Nfa.is_lang_empty()</span></code></a></li>
 <li><a class="reference internal" href="#libmata.nfa.nfa.Nfa.is_minimal"><code class="docutils literal notranslate"><span class="pre">Nfa.is_minimal()</span></code></a></li>

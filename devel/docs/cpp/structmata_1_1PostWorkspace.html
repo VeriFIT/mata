@@ -94,27 +94,27 @@ $(function(){initNavTree('structmata_1_1PostWorkspace.html','','structmata_1_1Po
 </div><!--header-->
 <div class="contents">
 
-<p>Reusable buffers of <code><a class="el" href="classmata_1_1Delta.html#aaa325fb839596693f6cbbe821cca4573" title="The successors of states over symbol, with the epsilon closures of epsilon_closure_opt over epsilons,...">Delta::post()</a></code> and <code><a class="el" href="classmata_1_1Delta.html#af69a6a42bf06ea84a0e62013ec65e1ee" title="The epsilon closure of states over epsilons, using the buffers of workspace.">Delta::epsilon_closure()</a></code>, so that a loop of steps allocates once.  
+<p>Reusable buffers of <code>post()</code> and <code>epsilon_closure()</code>, so that a loop of steps allocates once.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="relation_8hh_source.html">relation.hh</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="post-workspace_8hh_source.html">post-workspace.hh</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a25c46a9aaf912de7875cb16c2c23d8d8" id="r_a25c46a9aaf912de7875cb16c2c23d8d8"><td class="memItemLeft">std::vector&lt; <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">State</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a25c46a9aaf912de7875cb16c2c23d8d8">sources</a> {}</td></tr>
+<tr class="memitem:a25c46a9aaf912de7875cb16c2c23d8d8" id="r_a25c46a9aaf912de7875cb16c2c23d8d8"><td class="memItemLeft">std::vector&lt; <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">State</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a25c46a9aaf912de7875cb16c2c23d8d8">sources</a> {}</td></tr>
 <tr class="memdesc:a25c46a9aaf912de7875cb16c2c23d8d8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Epsilon closure of the source states of a step.  <br /></td></tr>
-<tr class="memitem:a92883128f1cc0f5a4fbede93d37a0a2e" id="r_a92883128f1cc0f5a4fbede93d37a0a2e"><td class="memItemLeft">std::vector&lt; <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">State</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a92883128f1cc0f5a4fbede93d37a0a2e">gathered</a> {}</td></tr>
+<tr class="memitem:a92883128f1cc0f5a4fbede93d37a0a2e" id="r_a92883128f1cc0f5a4fbede93d37a0a2e"><td class="memItemLeft">std::vector&lt; <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">State</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a92883128f1cc0f5a4fbede93d37a0a2e">gathered</a> {}</td></tr>
 <tr class="memdesc:a92883128f1cc0f5a4fbede93d37a0a2e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Targets of a step, or the closure being built.  <br /></td></tr>
-<tr class="memitem:a1f2db82d5b5701e09910bf0cf00e4725" id="r_a1f2db82d5b5701e09910bf0cf00e4725"><td class="memItemLeft">std::vector&lt; <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">State</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a1f2db82d5b5701e09910bf0cf00e4725">worklist</a> {}</td></tr>
+<tr class="memitem:a1f2db82d5b5701e09910bf0cf00e4725" id="r_a1f2db82d5b5701e09910bf0cf00e4725"><td class="memItemLeft">std::vector&lt; <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">State</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a1f2db82d5b5701e09910bf0cf00e4725">worklist</a> {}</td></tr>
 <tr class="memdesc:a1f2db82d5b5701e09910bf0cf00e4725"><td class="mdescLeft">&#160;</td><td class="mdescRight">Closure states whose epsilon posts are still unread.  <br /></td></tr>
-<tr class="memitem:a9e4a31684dfeeeaa0798325e6e209419" id="r_a9e4a31684dfeeeaa0798325e6e209419"><td class="memItemLeft">std::vector&lt; <a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">State</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a9e4a31684dfeeeaa0798325e6e209419">visited</a> {}</td></tr>
+<tr class="memitem:a9e4a31684dfeeeaa0798325e6e209419" id="r_a9e4a31684dfeeeaa0798325e6e209419"><td class="memItemLeft">std::vector&lt; <a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">State</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a9e4a31684dfeeeaa0798325e6e209419">visited</a> {}</td></tr>
 <tr class="memdesc:a9e4a31684dfeeeaa0798325e6e209419"><td class="mdescLeft">&#160;</td><td class="mdescRight">Open-addressed hash table of the states of the closure being built.  <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Reusable buffers of <code><a class="el" href="classmata_1_1Delta.html#aaa325fb839596693f6cbbe821cca4573" title="The successors of states over symbol, with the epsilon closures of epsilon_closure_opt over epsilons,...">Delta::post()</a></code> and <code><a class="el" href="classmata_1_1Delta.html#af69a6a42bf06ea84a0e62013ec65e1ee" title="The epsilon closure of states over epsilons, using the buffers of workspace.">Delta::epsilon_closure()</a></code>, so that a loop of steps allocates once. </p>
+<div class="textblock"><p>Reusable buffers of <code>post()</code> and <code>epsilon_closure()</code>, so that a loop of steps allocates once. </p>
 <p>A call writes all of its buffers, so one workspace serves one call at a time. Concurrent calls, even const queries of the same delta, each need their own; in particular a workspace must never be a function-local <code>static</code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00197">197</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="post-workspace_8hh_source.html#l00058">58</a> of file <a class="el" href="post-workspace_8hh_source.html">post-workspace.hh</a>.</p>
 </div><a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
 <a id="a92883128f1cc0f5a4fbede93d37a0a2e" name="a92883128f1cc0f5a4fbede93d37a0a2e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a92883128f1cc0f5a4fbede93d37a0a2e">&#9670;&#160;</a></span>gathered</h2>
@@ -123,14 +123,14 @@ Public Attributes</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">std::vector&lt;<a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">State</a>&gt; gathered {}</td>
+          <td class="memname">std::vector&lt;<a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">State</a>&gt; gathered {}</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 <p>Targets of a step, or the closure being built. </p>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00199">199</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="post-workspace_8hh_source.html#l00060">60</a> of file <a class="el" href="post-workspace_8hh_source.html">post-workspace.hh</a>.</p>
 
 </div>
 </div>
@@ -141,14 +141,14 @@ Public Attributes</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">std::vector&lt;<a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">State</a>&gt; sources {}</td>
+          <td class="memname">std::vector&lt;<a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">State</a>&gt; sources {}</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 <p>Epsilon closure of the source states of a step. </p>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00198">198</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="post-workspace_8hh_source.html#l00059">59</a> of file <a class="el" href="post-workspace_8hh_source.html">post-workspace.hh</a>.</p>
 
 </div>
 </div>
@@ -159,14 +159,14 @@ Public Attributes</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">std::vector&lt;<a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">State</a>&gt; visited {}</td>
+          <td class="memname">std::vector&lt;<a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">State</a>&gt; visited {}</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 <p>Open-addressed hash table of the states of the closure being built. </p>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00201">201</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="post-workspace_8hh_source.html#l00062">62</a> of file <a class="el" href="post-workspace_8hh_source.html">post-workspace.hh</a>.</p>
 
 </div>
 </div>
@@ -177,19 +177,19 @@ Public Attributes</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">std::vector&lt;<a class="el" href="namespacemata.html#a2cc405246b934afc9be77a97e5405103">State</a>&gt; worklist {}</td>
+          <td class="memname">std::vector&lt;<a class="el" href="namespacemata.html#a5bda81a831f5c251887389b284acf64e">State</a>&gt; worklist {}</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 <p>Closure states whose epsilon posts are still unread. </p>
 
-<p class="definition">Definition at line <a class="el" href="relation_8hh_source.html#l00200">200</a> of file <a class="el" href="relation_8hh_source.html">relation.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="post-workspace_8hh_source.html#l00061">61</a> of file <a class="el" href="post-workspace_8hh_source.html">post-workspace.hh</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>/home/runner/work/mata/mata/include/mata/<a class="el" href="relation_8hh_source.html">relation.hh</a></li>
+<li>/home/runner/work/mata/mata/include/mata/core/<a class="el" href="post-workspace_8hh_source.html">post-workspace.hh</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

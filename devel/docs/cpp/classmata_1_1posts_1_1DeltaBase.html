@@ -94,9 +94,6 @@ $(function(){initNavTree('classmata_1_1posts_1_1DeltaBase.html','','classmata_1_
 </div><!--header-->
 <div class="contents">
 
-<p>The generic transition relation: a vector of posts indexed by source state.  
- <a href="#details">More...</a></p>
-
 <p><code>#include &lt;<a class="el" href="core_2delta_8hh_source.html">delta.hh</a>&gt;</code></p>
 <div id="dynsection-0" onclick="return dynsection.toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;"><span class="dynarrow"><span class="arrowhead closed"></span></span>Inheritance diagram for DeltaBase&lt; P, TT &gt;:</div>
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
@@ -193,6 +190,13 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a728f450cf1b80fc66df8d39250ea59c0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Remove a transition from the relation.  <br /></td></tr>
 <tr class="memitem:a63199ff36213fb61a72a1c478412975e" id="r_a63199ff36213fb61a72a1c478412975e"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a63199ff36213fb61a72a1c478412975e">contains</a> (const <a class="el" href="#ad1825f9a2fa3e6a6207281e268f17b75">TransitionType</a> &amp;transition) const</td></tr>
 <tr class="memdesc:a63199ff36213fb61a72a1c478412975e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check whether the relation contains a transition.  <br /></td></tr>
+<tr id="pub-methods-1" class="groupHeader"><td colspan="2"><div class="groupHeader">Post and epsilon closure with reusable buffers</div></td></tr>
+<tr><td colspan="2" class="ititle"><div class="groupText"><p>Generic in the key arity: the epsilon position is the one whose reserved keys name <code class="param">epsilon</code>. </p>
+</div></td></tr>
+<tr class="memitem:a873bfb520dd9f91ed5773f33920ed887" id="r_a873bfb520dd9f91ed5773f33920ed887"><td class="memItemLeft">std::vector&lt; <a class="el" href="#a7d1a0c4349b27de7de51d7aef7444779">State</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a873bfb520dd9f91ed5773f33920ed887">epsilon_closure</a> (const std::vector&lt; <a class="el" href="#a7d1a0c4349b27de7de51d7aef7444779">State</a> &gt; &amp;states, const std::vector&lt; <a class="el" href="#ac7c7c8afeae297c3cccd58448f0f3be3">Key</a>&lt; 0 &gt; &gt; &amp;epsilons, <a class="el" href="structmata_1_1PostWorkspace.html">PostWorkspace</a> &amp;workspace) const</td></tr>
+<tr class="memdesc:a873bfb520dd9f91ed5773f33920ed887"><td class="mdescLeft">&#160;</td><td class="mdescRight">The epsilon closure of <code class="param">states</code> over <code class="param">epsilons</code>, using the buffers of <code class="param">workspace</code>.  <br /></td></tr>
+<tr class="memitem:afc8d025960f7995c719b259c1d8542e1" id="r_afc8d025960f7995c719b259c1d8542e1"><td class="memItemLeft">std::vector&lt; <a class="el" href="#a7d1a0c4349b27de7de51d7aef7444779">State</a> &gt; &amp;&#160;</td><td class="memItemRight"><a class="el" href="#afc8d025960f7995c719b259c1d8542e1">gather_post</a> (const std::vector&lt; <a class="el" href="#a7d1a0c4349b27de7de51d7aef7444779">State</a> &gt; &amp;states, <a class="el" href="#ac7c7c8afeae297c3cccd58448f0f3be3">Key</a>&lt; 0 &gt; key, <a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1">EpsilonClosureOpt</a> epsilon_closure_opt, const std::vector&lt; <a class="el" href="#ac7c7c8afeae297c3cccd58448f0f3be3">Key</a>&lt; 0 &gt; &gt; &amp;epsilons, <a class="el" href="structmata_1_1PostWorkspace.html">PostWorkspace</a> &amp;workspace) const</td></tr>
+<tr class="memdesc:afc8d025960f7995c719b259c1d8542e1"><td class="mdescLeft">&#160;</td><td class="mdescRight">The successors of <code class="param">states</code> over <code class="param">key</code>, with the epsilon closures of <code class="param">epsilon_closure_opt</code>, gathered into <code class="param">workspace.gathered</code>.  <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -260,6 +264,9 @@ Static Protected Attributes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-friends" class="groupheader"><a id="friends" name="friends"></a>
 Friends</h2></td></tr>
+<tr class="memitem:a068a9ba331cc68cdbf3ca362d2c3af9d" id="r_a068a9ba331cc68cdbf3ca362d2c3af9d"><td class="memTemplParams" colspan="2">template&lt;typename D&gt; </td></tr>
+<tr class="memitem:a068a9ba331cc68cdbf3ca362d2c3af9d template"><td class="memItemLeft">class&#160;</td><td class="memItemRight"><a class="el" href="#a068a9ba331cc68cdbf3ca362d2c3af9d">DeltaBuilder</a></td></tr>
+<tr class="memdesc:a068a9ba331cc68cdbf3ca362d2c3af9d"><td class="mdescLeft">&#160;</td><td class="mdescRight">The builder installs finished posts directly;.  <br /></td></tr>
 <tr id="friends-0" class="groupHeader"><td colspan="2"><div class="groupHeader">Keyed writes and lookup</div></td></tr>
 <tr><td colspan="2" class="ititle"><div class="groupText"><p>One member each, at every arity.</p>
 <dl class="section see"><dt>See also</dt><dd><a class="el" href="classmata_1_1posts_1_1KeyedAccess.html" title="The keyed writes and lookup of a relation: one member each, at every arity.">mata::posts::KeyedAccess</a>. </dd></dl>
@@ -308,20 +315,8 @@ Post protocol</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt;<br />
-class mata::posts::DeltaBase&lt; P, TT &gt;</div><p>The generic transition relation: a vector of posts indexed by source state. </p>
-<p>A vector of posts indexed by source state, over a chain of posts ending in a set of targets. The depth is deduced from <code class="param">P</code> as <code>key_arity</code>. Posts are named by key index, not by container count: <code><a class="el" href="#ac7c7c8afeae297c3cccd58448f0f3be3" title="The key at index I, counted from the outermost one.">Key&lt;0&gt;</a></code> is the topmost symbol, and <code><a class="el" href="#abbd32a959fc44736c918af7c2e407f91" title="The post at index I, counted from the outermost one.">PostAt&lt;key_arity&gt;</a></code> is the innermost post.</p>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">P</td><td>The post reached from one source state, itself parameterised down to the targets. </td></tr>
-    <tr><td class="paramname">TT</td><td>What one transition of this relation looks like and how to build one: a traits with a <code>Type</code> and a <code>make()</code>. Defaults to the symbol-named triple at arity 1 and to the tuple-keyed transition above it. </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section see"><dt>See also</dt><dd><a class="el" href="namespacemata_1_1posts.html#a53a1eff232bbf3f03010977748ccb4d9" title="The default transition traits for a relation:">mata::posts::DefaultTransitionTraits</a>. </dd>
-<dd>
-<a class="el" href="conceptmata_1_1DeltaLike.html" title="A concept for a transition relation an mata::AutomatonBase can be built on.">mata::DeltaLike</a>. </dd></dl>
-
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00189">189</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+class mata::posts::DeltaBase&lt; P, TT &gt;</div>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00192">192</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 </div><a name="doc-typedef-members" id="doc-typedef-members"></a><h2 id="header-doc-typedef-members" class="groupheader">Member Typedef Documentation</h2>
 <a id="ae820d86ed17326eed8953121b1661c66" name="ae820d86ed17326eed8953121b1661c66"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae820d86ed17326eed8953121b1661c66">&#9670;&#160;</a></span>const_iterator</h2>
@@ -337,7 +332,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00477">477</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00480">480</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -357,7 +352,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>The post reached from one source state. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00223">223</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00226">226</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -377,7 +372,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>The post reached from one source state. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00219">219</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00222">222</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -399,7 +394,7 @@ template&lt;size_t I&gt; </div>
 
 <p>The key at index <code class="param">I</code>, counted from the outermost one. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00202">202</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00205">205</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -419,7 +414,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>The result type of the keyed <code>get_successors</code>. The result type of the unkeyed <code>get_successors:</code> whatever the post returns, e.g. a <code><a class="el" href="namespacemata.html#a80df479a6368a9ae1edd6b64fd62a70a" title="A set of automaton states/targets. Target states of a SymbolPost: an ordered set that stores small se...">StateSet</a></code> for <code><a class="el" href="classmata_1_1StatePost.html" title="Symbol posts keyed by states. Their block comes from utils::DeltaAllocator, like a spilled target set...">mata::StatePost</a></code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00206">206</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00209">209</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -439,7 +434,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>The post reached from one source state. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00220">220</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00223">223</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -461,7 +456,7 @@ template&lt;size_t I&gt; </div>
 
 <p>The post at index <code class="param">I</code>, counted from the outermost one. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00200">200</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00203">203</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -481,7 +476,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>The post reached from one source state. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00193">193</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00196">196</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -503,7 +498,7 @@ template&lt;size_t I&gt; </div>
 
 <p>The reserved keys at index <code class="param">I</code>, counted from the outermost one. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00204">204</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00207">207</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -523,7 +518,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>What indexes this relation. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00196">196</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00199">199</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -543,7 +538,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>The post reached from one source state. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00209">209</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00212">212</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -563,7 +558,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>What visiting the successors yields. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00194">194</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00197">197</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -583,7 +578,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>How the keyed members take a target. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00195">195</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00198">198</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -603,7 +598,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>The post reached from one source state. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00205">205</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00208">208</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -621,7 +616,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00483">483</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00486">486</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -641,7 +636,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>The post reached from one source state. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00221">221</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00224">224</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -661,7 +656,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>The post reached from one source state. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00222">222</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00225">225</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -691,9 +686,9 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00229">229</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00232">232</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00229">DeltaBase&lt; PostChain&lt; Ts... &gt; &gt;::DeltaBase()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00232">DeltaBase&lt; typename D::PostType, typename D::TransitionTraits &gt;::DeltaBase()</a>.</p>
 
 </div>
 </div>
@@ -722,9 +717,9 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00230">230</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00233">233</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00230">DeltaBase&lt; PostChain&lt; Ts... &gt; &gt;::DeltaBase()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00233">DeltaBase&lt; typename D::PostType, typename D::TransitionTraits &gt;::DeltaBase()</a>.</p>
 
 </div>
 </div>
@@ -755,9 +750,9 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>Leaves <code class="param">other</code> empty, so that its count stays true to it. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00232">232</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00235">235</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00232">DeltaBase&lt; PostChain&lt; Ts... &gt; &gt;::DeltaBase()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00235">DeltaBase&lt; typename D::PostType, typename D::TransitionTraits &gt;::DeltaBase()</a>.</p>
 
 </div>
 </div>
@@ -786,9 +781,9 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00236">236</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00239">239</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00236">DeltaBase&lt; PostChain&lt; Ts... &gt; &gt;::DeltaBase()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00239">DeltaBase&lt; typename D::PostType, typename D::TransitionTraits &gt;::DeltaBase()</a>.</p>
 
 </div>
 </div>
@@ -853,7 +848,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00374">374</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00377">377</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -922,7 +917,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00330">330</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00333">333</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -959,7 +954,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00411">411</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00414">414</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -988,7 +983,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00480">480</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00483">483</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1017,7 +1012,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00478">478</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00481">481</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1046,7 +1041,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00479">479</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00482">482</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1077,7 +1072,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>Throws <code>std::overflow_error</code> unless <code class="param">num_of_states</code> states can be numbered by <code><a class="el" href="#a7d1a0c4349b27de7de51d7aef7444779" title="What indexes this relation.">State</a></code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00646">646</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00684">684</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1106,7 +1101,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00317">317</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00320">320</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1154,7 +1149,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00628">628</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00666">666</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1192,7 +1187,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True if the relation contains the transition, false otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00393">393</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00396">396</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1229,9 +1224,9 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00705">705</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00743">743</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00238">DeltaBase&lt; PostChain&lt; Ts... &gt; &gt;::operator=()</a>, and <a class="el" href="core_2delta_8hh_source.html#l00247">DeltaBase&lt; PostChain&lt; Ts... &gt; &gt;::operator=()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00241">DeltaBase&lt; typename D::PostType, typename D::TransitionTraits &gt;::operator=()</a>, and <a class="el" href="core_2delta_8hh_source.html#l00250">DeltaBase&lt; typename D::PostType, typename D::TransitionTraits &gt;::operator=()</a>.</p>
 
 </div>
 </div>
@@ -1298,7 +1293,7 @@ template&lt;typename... Args&gt; </div>
 
 <p>Append a state post built from <code class="param">args</code>. The returned reference may be used for edits under the same rule as <code><a class="el" href="#aaa24e13cfd85c7efcb3b37f8718d162d" title="Get mutable (non-constant) reference to the state post of source.">mutable_state_post()</a></code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00311">311</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00314">314</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1331,7 +1326,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 <dl class="section return"><dt>Returns</dt><dd>True if there are no transitions in the automaton, false otherwise. </dd></dl>
 <dl class="section note"><dt>Note</dt><dd><code><a class="el" href="#a4f7cc450c9e01e84fcfa00d56d581578">num_of_transitions()</a></code> == 0, so as cheap as the count and never in disagreement with it. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00404">404</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00407">407</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1360,7 +1355,46 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00481">481</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00484">484</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+
+</div>
+</div>
+<a id="a873bfb520dd9f91ed5773f33920ed887" name="a873bfb520dd9f91ed5773f33920ed887"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a873bfb520dd9f91ed5773f33920ed887">&#9670;&#160;</a></span>epsilon_closure()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt; <a class="el" href="#a7d1a0c4349b27de7de51d7aef7444779">State</a> &gt; epsilon_closure </td>
+          <td>(</td>
+          <td class="paramtype">const std::vector&lt; <a class="el" href="#a7d1a0c4349b27de7de51d7aef7444779">State</a> &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>states</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::vector&lt; <a class="el" href="#ac7c7c8afeae297c3cccd58448f0f3be3">Key</a>&lt; 0 &gt; &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>epsilons</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structmata_1_1PostWorkspace.html">PostWorkspace</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>workspace</em></span>&#160;) const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The epsilon closure of <code class="param">states</code> over <code class="param">epsilons</code>, using the buffers of <code class="param">workspace</code>. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">states</td><td>States to take the closure of. </td></tr>
+    <tr><td class="paramname">epsilons</td><td>The epsilon keys to close over. Empty means the relation's own smallest epsilon. </td></tr>
+    <tr><td class="paramname">workspace</td><td>Reusable buffers; a call writes all of them, so a workspace serves one call at a time. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The closure, sorted and duplicate-free. </dd></dl>
 
 </div>
 </div>
@@ -1471,7 +1505,7 @@ template&lt;typename Fn&gt; </div>
 
 <p>Apply <code class="param">fn</code> to every <code><a class="el" href="classmata_1_1posts_1_1Move.html" title="A move is a (key, target) pair, as yielded by PostMoves.">Move</a></code> leaving <code class="param">source</code>, as a (key, target) pair. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00440">440</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00443">443</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1508,7 +1542,58 @@ template&lt;typename Fn&gt; </div>
 
 <p>Apply <code class="param">fn</code> to every target reachable from <code class="param">source</code>, under any key. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00433">433</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00436">436</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+
+</div>
+</div>
+<a id="afc8d025960f7995c719b259c1d8542e1" name="afc8d025960f7995c719b259c1d8542e1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afc8d025960f7995c719b259c1d8542e1">&#9670;&#160;</a></span>gather_post()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt; <a class="el" href="#a7d1a0c4349b27de7de51d7aef7444779">State</a> &gt; &amp; gather_post </td>
+          <td>(</td>
+          <td class="paramtype">const std::vector&lt; <a class="el" href="#a7d1a0c4349b27de7de51d7aef7444779">State</a> &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>states</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="#ac7c7c8afeae297c3cccd58448f0f3be3">Key</a>&lt; 0 &gt;</td>          <td class="paramname"><span class="paramname"><em>key</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1">EpsilonClosureOpt</a></td>          <td class="paramname"><span class="paramname"><em>epsilon_closure_opt</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::vector&lt; <a class="el" href="#ac7c7c8afeae297c3cccd58448f0f3be3">Key</a>&lt; 0 &gt; &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>epsilons</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structmata_1_1PostWorkspace.html">PostWorkspace</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>workspace</em></span>&#160;) const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The successors of <code class="param">states</code> over <code class="param">key</code>, with the epsilon closures of <code class="param">epsilon_closure_opt</code>, gathered into <code class="param">workspace.gathered</code>. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">states</td><td>States to step from. </td></tr>
+    <tr><td class="paramname">key</td><td>The key of the step. </td></tr>
+    <tr><td class="paramname">epsilon_closure_opt</td><td>Whether to close over epsilons before and/or after the step. </td></tr>
+    <tr><td class="paramname">epsilons</td><td>The epsilon keys to close over. Empty means the relation's own smallest epsilon. </td></tr>
+    <tr><td class="paramname">workspace</td><td>Reusable buffers; a call writes all of them, so a workspace serves one call at a time. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The gathered targets, unsorted and possibly with duplicates; the caller sorts and deduplicates. </dd></dl>
 
 </div>
 </div>
@@ -1888,7 +1973,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True if <code class="param">state</code> has a transition back to itself under any key, false otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00467">467</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00470">470</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -1931,9 +2016,9 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True if <code class="param">target</code> is among the successors of <code class="param">source</code>, false otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00451">451</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00454">454</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00467">DeltaBase&lt; PostChain&lt; Ts... &gt; &gt;::has_self_loop()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00470">DeltaBase&lt; typename D::PostType, typename D::TransitionTraits &gt;::has_self_loop()</a>.</p>
 
 </div>
 </div>
@@ -1964,9 +2049,9 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>Mark the cached transition count dirty, so that the next query recounts it. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00662">662</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00700">700</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00311">DeltaBase&lt; PostChain&lt; Ts... &gt; &gt;::emplace_back()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00314">DeltaBase&lt; typename D::PostType, typename D::TransitionTraits &gt;::emplace_back()</a>.</p>
 
 </div>
 </div>
@@ -2032,7 +2117,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00669">669</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00707">707</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2070,7 +2155,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00682">682</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00720">720</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2100,7 +2185,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 </div><div class="memdoc">
 <dl class="section return"><dt>Returns</dt><dd>Number of states in the whole relation, including both source and target states. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00339">339</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00342">342</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2131,7 +2216,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>The number of states needed to contain <code class="param">state</code>, throwing <code>std::overflow_error</code> for the sentinel. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00654">654</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00692">692</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2181,7 +2266,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00238">238</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00241">241</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2212,7 +2297,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>Leaves <code class="param">other</code> empty, so that its count stays true to it. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00247">247</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00250">250</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2260,7 +2345,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00279">279</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00282">282</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2297,7 +2382,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00383">383</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00386">386</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2363,7 +2448,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00263">263</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00266">266</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2408,7 +2493,7 @@ template&lt;typename... States&gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00517">517</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00520">520</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2445,7 +2530,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00695">695</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00733">733</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2483,9 +2568,9 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 </dl>
 <dl class="section return"><dt>Returns</dt><dd><a class="el" href="#a7d1a0c4349b27de7de51d7aef7444779" title="What indexes this relation.">State</a> denoted by <code class="param">target</code>. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00217">217</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00220">220</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00451">DeltaBase&lt; PostChain&lt; Ts... &gt; &gt;::is_successor()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00454">DeltaBase&lt; typename D::PostType, typename D::TransitionTraits &gt;::is_successor()</a>.</p>
 
 </div>
 </div>
@@ -2524,9 +2609,9 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 </dl>
 <dl class="section return"><dt>Returns</dt><dd><a class="el" href="#a7d1a0c4349b27de7de51d7aef7444779" title="What indexes this relation.">State</a> post of <code class="param">source</code>. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00275">275</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00278">278</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00628">DeltaBase&lt; PostChain&lt; Ts... &gt; &gt;::collect_transitions_to_()</a>, <a class="el" href="core_2delta_8hh_source.html#l00440">DeltaBase&lt; PostChain&lt; Ts... &gt; &gt;::for_each_move()</a>, <a class="el" href="core_2delta_8hh_source.html#l00433">DeltaBase&lt; PostChain&lt; Ts... &gt; &gt;::for_each_successor()</a>, <a class="el" href="core_2delta_8hh_source.html#l00451">DeltaBase&lt; PostChain&lt; Ts... &gt; &gt;::is_successor()</a>, and <a class="el" href="core_2delta_8hh_source.html#l00279">DeltaBase&lt; PostChain&lt; Ts... &gt; &gt;::operator[]()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00666">DeltaBase&lt; typename D::PostType, typename D::TransitionTraits &gt;::collect_transitions_to_()</a>, <a class="el" href="core_2delta_8hh_source.html#l00443">DeltaBase&lt; typename D::PostType, typename D::TransitionTraits &gt;::for_each_move()</a>, <a class="el" href="core_2delta_8hh_source.html#l00436">DeltaBase&lt; typename D::PostType, typename D::TransitionTraits &gt;::for_each_successor()</a>, <a class="el" href="core_2delta_8hh_source.html#l00454">DeltaBase&lt; typename D::PostType, typename D::TransitionTraits &gt;::is_successor()</a>, and <a class="el" href="core_2delta_8hh_source.html#l00282">DeltaBase&lt; typename D::PostType, typename D::TransitionTraits &gt;::operator[]()</a>.</p>
 
 </div>
 </div>
@@ -2565,7 +2650,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>A resumable cursor over the successors of <code class="param">source</code>. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00475">475</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00478">478</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2596,7 +2681,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>Get iterator over transitions represented as <code><a class="el" href="structmata_1_1posts_1_1Transition.html" title="Transition with a source state, a key, and a target.">Transition</a></code> instances. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00488">488</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00491">491</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2627,11 +2712,45 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>Check whether the <code class="param">state</code> is used in the relation. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00344">344</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00347">347</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
 <a name="doc-related-members" id="doc-related-members"></a><h2 id="header-doc-related-members" class="groupheader">Friends And Related Symbol Documentation</h2>
+<a id="a068a9ba331cc68cdbf3ca362d2c3af9d" name="a068a9ba331cc68cdbf3ca362d2c3af9d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a068a9ba331cc68cdbf3ca362d2c3af9d">&#9670;&#160;</a></span>DeltaBuilder</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div>
+<div class="memtemplate">
+template&lt;typename D&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class DeltaBuilder</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel friend">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>The builder installs finished posts directly;. </p>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="classmata_1_1posts_1_1DeltaBuilder.html" title="The generic transition relation: a vector of posts indexed by source state.">DeltaBuilder</a>.</dd></dl>
+<p>The builder installs finished posts directly;.</p>
+<p>Every symbol post is created once with exact capacity, instead of being grown target by target.</p>
+<p>The builder is the generic <code><a class="el" href="classmata_1_1posts_1_1DeltaBuilder.html" title="The generic transition relation: a vector of posts indexed by source state.">posts::DeltaBuilder</a></code> over this relation; </p><dl class="section see"><dt>See also</dt><dd><code><a class="el" href="classmata_1_1posts_1_1DeltaBuilder.html" title="The generic transition relation: a vector of posts indexed by source state.">mata::posts::DeltaBuilder</a></code>. </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00759">759</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+
+</div>
+</div>
 <a id="a620bf97f4ff378e6b91e43baaa61c205" name="a620bf97f4ff378e6b91e43baaa61c205"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a620bf97f4ff378e6b91e43baaa61c205">&#9670;&#160;</a></span>KeyedAccess&lt; DeltaBase, P &gt;</h2>
 
@@ -2654,7 +2773,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00353">353</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00356">356</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2683,7 +2802,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>Exact number of transitions whenever <code>count_dirty_</code> is false. Both are atomic because concurrent const queries may recount; mutators run exclusively, so they use relaxed order. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00717">717</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00755">755</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2711,7 +2830,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>Set by edits whose effect on the count is not known, such as through <code><a class="el" href="#aaa24e13cfd85c7efcb3b37f8718d162d" title="Get mutable (non-constant) reference to the state post of source.">mutable_state_post()</a></code>. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00719">719</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00757">757</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2739,9 +2858,9 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>A constant returned when a state post is requested for a source that has no allocated post. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00227">227</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00230">230</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00275">DeltaBase&lt; PostChain&lt; Ts... &gt; &gt;::state_post()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00278">DeltaBase&lt; typename D::PostType, typename D::TransitionTraits &gt;::state_post()</a>.</p>
 
 </div>
 </div>
@@ -2769,7 +2888,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>The post reached from one source state. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00197">197</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00200">200</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>
@@ -2797,9 +2916,9 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 
 <p>The largest <code><a class="el" href="#a7d1a0c4349b27de7de51d7aef7444779" title="What indexes this relation.">State</a></code> is the "no state" sentinel: states are 0, ..., max - 1. </p>
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00644">644</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00682">682</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
-<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00646">DeltaBase&lt; PostChain&lt; Ts... &gt; &gt;::check_num_of_states_()</a>, and <a class="el" href="core_2delta_8hh_source.html#l00654">DeltaBase&lt; PostChain&lt; Ts... &gt; &gt;::num_of_states_for_()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="core_2delta_8hh_source.html#l00684">DeltaBase&lt; typename D::PostType, typename D::TransitionTraits &gt;::check_num_of_states_()</a>, and <a class="el" href="core_2delta_8hh_source.html#l00692">DeltaBase&lt; typename D::PostType, typename D::TransitionTraits &gt;::num_of_states_for_()</a>.</p>
 
 </div>
 </div>
@@ -2825,7 +2944,7 @@ template&lt;typename P, typename TT = DefaultTransitionTraits&lt;P&gt;&gt; </div
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00714">714</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="core_2delta_8hh_source.html#l00752">752</a> of file <a class="el" href="core_2delta_8hh_source.html">delta.hh</a>.</p>
 
 </div>
 </div>

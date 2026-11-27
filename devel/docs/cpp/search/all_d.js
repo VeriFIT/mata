@@ -51,7 +51,7 @@ var searchData=
   ['nondeterministic_20finite_20automata_48',['NFA (Nondeterministic finite automata)',['../automata-format.html#nfa-nondeterministic-finite-automata',1,'']]],
   ['nondeterministic_20finite_20automata_20nfas_49',['Nondeterministic Finite Automata (NFAs)',['../nfa.html',1,'']]],
   ['nondeterministic_20finite_20transducers_20nfts_50',['Nondeterministic Finite Transducers (NFTs)',['../nft.html',1,'']]],
-  ['none_51',['None',['../namespacemata_1_1nfa_1_1algorithms.html#adcb1146524a3f9f4a614e30b3f484ec1a6adf97f83acf6453d4a6a4b1070f3754',1,'mata::nfa::algorithms::None'],['../namespacemata_1_1nft.html#aeecc568362baae739ae9eb23b32650e4a6adf97f83acf6453d4a6a4b1070f3754',1,'mata::nft::None'],['../namespacemata.html#a0fba67d07394ceb378cf331acbd458a1a6adf97f83acf6453d4a6a4b1070f3754',1,'mata::None']]],
+  ['none_51',['None',['../namespacemata.html#a0fba67d07394ceb378cf331acbd458a1a6adf97f83acf6453d4a6a4b1070f3754',1,'mata::None'],['../namespacemata_1_1nfa_1_1algorithms.html#adcb1146524a3f9f4a614e30b3f484ec1a6adf97f83acf6453d4a6a4b1070f3754',1,'mata::nfa::algorithms::None'],['../namespacemata_1_1nft.html#aeecc568362baae739ae9eb23b32650e4a6adf97f83acf6453d4a6a4b1070f3754',1,'mata::nft::None']]],
   ['noodle_52',['Noodle',['../namespacemata_1_1applications_1_1strings_1_1seg__nfa.html#a7cf5285f90b153832df287aa2e4bd24f',1,'mata::applications::strings::seg_nfa']]],
   ['noodleorder_53',['NoodleOrder',['../structmata_1_1applications_1_1strings_1_1seg__nfa_1_1NoodleOrder.html',1,'mata::applications::strings::seg_nfa']]],
   ['noodlesegment_54',['NoodleSegment',['../structmata_1_1applications_1_1strings_1_1seg__nfa_1_1NoodleSegment.html',1,'mata::applications::strings::seg_nfa']]],
@@ -83,7 +83,7 @@ var searchData=
   ['num_5fof_5fsymbols_80',['num_of_symbols',['../structmata_1_1Mintermization_1_1Checkpoint.html#aed96f9550d7ece1d4eea9477955085ad',1,'mata::Mintermization::Checkpoint']]],
   ['num_5fof_5ftargets_81',['num_of_targets',['../classmata_1_1posts_1_1internal_1_1PostEntryCore.html#a1a3176c8d3fa12b6a5bec81c331a8079',1,'mata::posts::internal::PostEntryCore']]],
   ['num_5fof_5ftransitions_82',['num_of_transitions',['../classmata_1_1posts_1_1DeltaBase.html#a4f7cc450c9e01e84fcfa00d56d581578',1,'mata::posts::DeltaBase']]],
-  ['num_5fof_5ftransitions_5f_83',['num_of_transitions_',['../classmata_1_1DeltaBuilder.html#afe0ccacd2099012c25bb19aee0f29cd5',1,'mata::DeltaBuilder']]],
+  ['num_5fof_5ftransitions_5f_83',['num_of_transitions_',['../classmata_1_1posts_1_1DeltaBuilder.html#afe0ccacd2099012c25bb19aee0f29cd5',1,'mata::posts::DeltaBuilder']]],
   ['number_5fof_84',['number_of',['../classmata_1_1parser_1_1StateNameMap.html#acf056716c124c6f6ebc5b6e5793c0923',1,'mata::parser::StateNameMap']]],
   ['numbered_5f_85',['numbered_',['../classmata_1_1parser_1_1StateNameMap.html#a8ff4f8cfa0339d0c0a58d4d64e4937ec',1,'mata::parser::StateNameMap']]]
 ];
