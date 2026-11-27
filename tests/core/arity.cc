@@ -640,4 +640,34 @@ TEST_CASE("mata::posts::DeltaBase::epsilon_closure / gather_post - generic in th
 		CHECK(chained.front() == 0);
 		CHECK(std::is_permutation(chained.begin(), chained.end(), std::vector<State>{0, 1, 2, 1, 2}.begin()));
 	}
+	SECTION("gather_post over a symbol with an aliased input and a before-closure") {
+		// An epsilon step must precede the symbol step: the aliased input was gathered without a closure, so the
+		//  before-closure has to expand it, and the step loop must read the expanded states, not the aliased copy.
+		D2 delta{};
+		delta.add(0, EPSILON, 1, StateSet{1});
+		delta.add(1, 7, 2, StateSet{2});
+		workspace.gathered = {0};
+		CHECK(
+			delta.gather_post(workspace.gathered, 7, EpsilonClosureOpt::Before, {}, workspace) == std::vector<State>{2}
+		);
+		workspace.gathered = {0};
+		CHECK(
+			delta.gather_post(workspace.gathered, 7, EpsilonClosureOpt::BeforeAndAfter, {}, workspace) ==
+			std::vector<State>{2}
+		);
+		// Chaining over the previous result: state 2 has no 7-edge, so the empty result is correct.
+		CHECK(delta.gather_post(workspace.gathered, 7, EpsilonClosureOpt::Before, {}, workspace).empty());
+	}
+	SECTION("epsilon_closure with an aliased input") {
+		// The aliased input is the output buffer itself; the call must not assign a vector onto itself, and the
+		//  closure must still expand and normalize the input it keeps.
+		D2 delta{};
+		delta.add(0, EPSILON, 1, StateSet{1});
+		delta.add(1, EPSILON, 2, StateSet{2});
+		workspace.gathered = {2};
+		CHECK(delta.epsilon_closure(workspace.gathered, {}, workspace) == std::vector<State>{2});
+		workspace.gathered = {0};
+		CHECK(delta.epsilon_closure(workspace.gathered, {}, workspace) == std::vector<State>{0, 1, 2});
+		CHECK(delta.epsilon_closure(workspace.gathered, {}, workspace) == std::vector<State>{0, 1, 2});
+	}
 }
