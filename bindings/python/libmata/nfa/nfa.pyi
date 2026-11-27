@@ -92,17 +92,34 @@ class Delta:
     @overload
     def add(self, source: Transition) -> None: ...
     @overload
-    def add(self, source: State, symbol: Symbol | str, target: State, alphabet: alph.Alphabet = None) -> None: ...
+    def add(
+        self,
+        source: State,
+        symbol: Symbol | str,
+        target: State,
+        alphabet: alph.Alphabet = None,
+    ) -> None: ...
     @overload
     def add(
-        self, source: State, symbol: Symbol | str, target: Iterable[State], alphabet: alph.Alphabet = None
+        self,
+        source: State,
+        symbol: Symbol | str,
+        target: Iterable[State],
+        alphabet: alph.Alphabet = None,
     ) -> None: ...
-    def add_transitions(self, sources: Iterable[State], symbols: Iterable[Symbol], targets: Iterable[State]) -> None:
+    def add_transitions(
+        self,
+        sources: Iterable[State],
+        symbols: Iterable[Symbol],
+        targets: Iterable[State],
+    ) -> None:
         """Add multiple transitions from sequences of sources, symbols, and targets.
 
         All three sequences must have equal length. Invalid input raises without modifying the automaton.
         """
-    def add_transitions_from(self, triples: Iterable[tuple[State, Symbol, State]]) -> None:
+    def add_transitions_from(
+        self, triples: Iterable[tuple[State, Symbol, State]]
+    ) -> None:
         """Add multiple transitions from an iterable of (source, symbol, target) triples.
 
         Equivalent to add_transitions() but accepting a single iterable. Invalid input raises without modifying.
@@ -146,6 +163,30 @@ class Delta:
         """Get the transitions leading from `source` to `target`."""
     def get_used_symbols(self) -> set[Symbol]:
         """Get the set of symbols used on the transitions in Delta."""
+    def get_max_symbol(self) -> Symbol:
+        """Get the greatest symbol used on the transitions, epsilons included."""
+    def epsilon_closure(
+        self, states: Iterable[State], epsilons: Iterable[Symbol] | None = None
+    ) -> set[State]:
+        """Compute the epsilon closure of `states` over `epsilons`.
+
+        :param states: Iterable of source states to close.
+        :param epsilons: Epsilon symbols to close over; `None` means the default epsilon symbol.
+        """
+    def post(
+        self,
+        states: Iterable[State],
+        symbol: Symbol,
+        epsilon_closure_opt: str = "none",
+        epsilons: Iterable[Symbol] | None = None,
+    ) -> set[State]:
+        """Get the successors of `states` over `symbol`, with epsilon closures applied as requested.
+
+        :param states: Iterable of source states to step from.
+        :param symbol: Symbol to step over.
+        :param epsilon_closure_opt: One of 'none', 'before', 'after', 'before-and-after'.
+        :param epsilons: Epsilon symbols to close over; `None` means the default epsilon symbol.
+        """
     def __eq__(self, other: Self) -> bool: ...
 
 class RegexPrintMode(IntEnum):
@@ -159,7 +200,9 @@ class Nfa:
 
     Note: In order to add more properties to Nfa, see `nfa.pxd`, where there is forward declaration
     """
-    def __init__(self, state_number: int = 0, alphabet: alph.Alphabet = None, label: Any = None) -> None:
+    def __init__(
+        self, state_number: int = 0, alphabet: alph.Alphabet = None, label: Any = None
+    ) -> None:
         """Constructor of the NFA.
 
         :param int state_number: number of states in automaton
@@ -270,7 +313,13 @@ class Nfa:
         :param Transition tr: added transition
         """
     @overload
-    def add_transition(self, source: State, symbol: Symbol, target: State, alphabet: alph.Alphabet = None) -> None:
+    def add_transition(
+        self,
+        source: State,
+        symbol: Symbol,
+        target: State,
+        alphabet: alph.Alphabet = None,
+    ) -> None:
         """Constructs transition and adds it to automaton
 
         :param State source: source state
@@ -279,7 +328,9 @@ class Nfa:
         :param alph.Alphabet alphabet: alphabet of the transition
         """
     @overload
-    def add_transition(self, source: State, symbol: str, target: State, alphabet: alph.Alphabet) -> None:
+    def add_transition(
+        self, source: State, symbol: str, target: State, alphabet: alph.Alphabet
+    ) -> None:
         """Constructs transition and adds it to automaton
 
         :param State source: source state
@@ -405,6 +456,10 @@ class Nfa:
 
         :return: true if the NFA is deterministic.
         """
+    def is_acyclic(self) -> bool:
+        """Check whether the part of the automaton graph reachable from the initial states is acyclic."""
+    def is_identical(self, other: Nfa) -> bool:
+        """Check whether this automaton and `other` have the same states and transitions."""
     def is_minimal(self) -> bool:
         """Tests if the NFA is a minimal deterministic automaton of its language, as returned by minimize().
 
@@ -429,14 +484,20 @@ class Nfa:
         :param Symbol symbol: The symbol to check.
         :return: True if the passed symbol is epsilon symbol, False otherwise.
         """
-    def to_regex_str(self, mode: RegexPrintMode = RegexPrintMode.Fast, alphabet: alph.Alphabet | None = None) -> str:
+    def to_regex_str(
+        self,
+        mode: RegexPrintMode = RegexPrintMode.Fast,
+        alphabet: alph.Alphabet | None = None,
+    ) -> str:
         """Transforms the language of the automaton to a regular expression string.
 
         :param RegexPrintMode mode: `Fast` to optimize conversion speed, `Readable` to optimize readability.
         :param alph.Alphabet alphabet: Alphabet to name the symbols with; the automaton's own alphabet when `None`.
         :return: The language of the automaton as an RE2 regular expression.
         """
-    def to_mata_str(self, alphabet: alph.Alphabet | None = None, encoding: str = "utf-8") -> str:
+    def to_mata_str(
+        self, alphabet: alph.Alphabet | None = None, encoding: str = "utf-8"
+    ) -> str:
         """Transforms the automaton to a mata-format string.
 
         :param alph.Alphabet alphabet: Alphabet to name the symbols with; the automaton's own alphabet when `None`.
@@ -509,7 +570,9 @@ class Nfa:
 
         :return:
         """
-    def post_map_of(self, st: State, alphabet: alph.Alphabet) -> dict[Symbol, set[State]]:
+    def post_map_of(
+        self, st: State, alphabet: alph.Alphabet
+    ) -> dict[Symbol, set[State]]:
         """Returns mapping of symbols to set of states.
 
         :param State st: source state
@@ -530,14 +593,20 @@ class Nfa:
 
         :param Symbol epsilon: Symbol representing the epsilon symbol.
         """
-    def epsilon_symbol_posts(self, state: State, epsilon: Symbol = ...) -> SymbolPost | None:
+    def epsilon_symbol_posts(
+        self, state: State, epsilon: Symbol = ...
+    ) -> SymbolPost | None:
         """Get epsilon transitions for a state.
 
         :param state: State to get epsilon transitions for.
         :param epsilon: Epsilon symbol.
         :return: Epsilon transitions if there are any epsilon transitions for the passed state. None otherwise.
         """
-    def is_universal(self, alphabet: alph.Alphabet, params: dict[Literal["algorithm"], str] | None = None) -> bool:
+    def is_universal(
+        self,
+        alphabet: alph.Alphabet,
+        params: dict[Literal["algorithm"], str] | None = None,
+    ) -> bool:
         """Tests if NFA is universal with regard to the given alphabet.
 
         :param OnTheFlyAlphabet alphabet: on the fly alphabet.
@@ -545,7 +614,9 @@ class Nfa:
             which determines used universality test.
         :return: true if NFA is universal.
         """
-    def is_in_lang(self, word: list[Symbol], use_epsilon: bool = False, match_prefix: bool = False) -> bool:
+    def is_in_lang(
+        self, word: list[Symbol], use_epsilon: bool = False, match_prefix: bool = False
+    ) -> bool:
         """Tests if word is in language.
 
         :param vector[Symbol] word: tested word.
@@ -584,7 +655,9 @@ class Nfa:
         """
     def get_words(self, max_length: int) -> set[tuple[Symbol, ...]]:
         """Get the set of all words in the language of the automaton whose length is <= `max_length`."""
-    def get_words_lazy(self, max_length: int | None = None) -> Iterator[tuple[Symbol, ...]]:
+    def get_words_lazy(
+        self, max_length: int | None = None
+    ) -> Iterator[tuple[Symbol, ...]]:
         """Lazily enumerate the words in the language of the automaton whose length is <= `max_length`."""
     def make_complete(self, sink_state: State, alphabet: alph.Alphabet) -> bool:
         """Makes NFA complete.
@@ -665,7 +738,9 @@ class DeterminizationReduction(IntEnum):
     Simulation = 2
     Adaptive = 3
 
-def determinize_four_russians(lhs: Nfa, block_size: int = 0, reduction: DeterminizationReduction | None = None) -> Nfa:
+def determinize_four_russians(
+    lhs: Nfa, block_size: int = 0, reduction: DeterminizationReduction | None = None
+) -> Nfa:
     """Determinize the lhs automaton by the "Four Russians" subset construction.
 
     The same construction as the default of `determinize()`, with its options. With a reduction, gives a smaller DFA
@@ -758,7 +833,8 @@ def concatenate_with_result_state_maps(
 def complement(
     nfa: Nfa,
     alphabet: alph.Alphabet,
-    params: dict[Literal["algorithm"], Literal["classical", "brzozowski"]] | None = None,
+    params: dict[Literal["algorithm"], Literal["classical", "brzozowski"]]
+    | None = None,
 ) -> Nfa:
     """Computes the complement of the nfa.
 
@@ -788,7 +864,10 @@ def remove_epsilon(lhs: Nfa, epsilon: Symbol = ...) -> Nfa:
     :return: Nfa: Automaton with epsilon transitions removed.
     """
 
-def minimize(lhs: Nfa, params: dict[Literal["algorithm"], Literal["brzozowski", "hopcroft"]] | None = None) -> Nfa:
+def minimize(
+    lhs: Nfa,
+    params: dict[Literal["algorithm"], Literal["brzozowski", "hopcroft"]] | None = None,
+) -> Nfa:
     """Minimizes the automaton lhs
 
     :param Nfa lhs: automaton to be minimized
@@ -887,7 +966,10 @@ def compute_relation(lhs: Nfa, params: dict[str, str] | None = None) -> BinaryRe
 
 # Tests
 def is_included_with_cex(
-    lhs: Nfa, rhs: Nfa, alphabet: alph.Alphabet = None, params: dict[str, str] | None = None
+    lhs: Nfa,
+    rhs: Nfa,
+    alphabet: alph.Alphabet = None,
+    params: dict[str, str] | None = None,
 ) -> tuple[bool, Run]:
     """Test inclusion between two automata
 
@@ -898,7 +980,12 @@ def is_included_with_cex(
     :return: true if lhs is included by rhs, counter example word if not
     """
 
-def is_included(lhs: Nfa, rhs: Nfa, alphabet: alph.Alphabet = None, params: dict[str, str] | None = None) -> bool:
+def is_included(
+    lhs: Nfa,
+    rhs: Nfa,
+    alphabet: alph.Alphabet = None,
+    params: dict[str, str] | None = None,
+) -> bool:
     """Test inclusion between two automata
 
     :param Nfa lhs: smaller automaton
@@ -908,7 +995,12 @@ def is_included(lhs: Nfa, rhs: Nfa, alphabet: alph.Alphabet = None, params: dict
     :return: true if lhs is included by rhs, counter example word if not
     """
 
-def equivalence_check(lhs: Nfa, rhs: Nfa, alphabet: alph.Alphabet = None, params: dict[str, str] | None = None) -> bool:
+def equivalence_check(
+    lhs: Nfa,
+    rhs: Nfa,
+    alphabet: alph.Alphabet = None,
+    params: dict[str, str] | None = None,
+) -> bool:
     """Test equivalence of two automata.
 
     :param Nfa lhs: Smaller automaton.
@@ -943,7 +1035,11 @@ def divisible_by(k: int) -> Nfa:
     """Constructs automaton accepting strings containing ones divisible by "k"."""
 
 def run_safely_external_command(
-    cmd: str, check_results: bool = True, quiet: bool = True, timeout: int | None = None, **kwargs
+    cmd: str,
+    check_results: bool = True,
+    quiet: bool = True,
+    timeout: int | None = None,
+    **kwargs,
 ) -> tuple[str, str] | tuple[bytes, bytes]:
     """Safely runs the piped command, without executing of the shell
 

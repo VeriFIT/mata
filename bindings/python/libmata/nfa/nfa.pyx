@@ -599,6 +599,56 @@ cdef class Delta:
         cdef COrdVector[Symbol] symbols = self.automaton_ptr.get().delta.get_used_symbols()
         return {s for s in symbols}
 
+    def get_max_symbol(self) -> Symbol:
+        """Get the greatest symbol used on the transitions, epsilons included.
+
+        :return: The greatest symbol used, or zero when there are no transitions.
+        """
+        return self.automaton_ptr.get().delta.get_max_symbol()
+
+    def epsilon_closure(self, states, epsilons=None) -> set[State]:
+        """Compute the epsilon closure of `states` over `epsilons`.
+
+        :param states: Iterable of source states to close.
+        :param epsilons: Epsilon symbols to close over; `None` means the default epsilon symbol.
+        :return: Set of states reachable from `states` over the epsilon transitions only.
+        """
+        cdef CPostWorkspace workspace
+        cdef StateSet c_states = StateSet(states)
+        cdef vector[Symbol] c_epsilons
+        if epsilons is not None:
+            c_epsilons = epsilons
+        return {v for v in self.automaton_ptr.get().delta.epsilon_closure(c_states, c_epsilons, workspace)}
+
+    def post(self, states, Symbol symbol, str epsilon_closure_opt = "none", epsilons=None) -> set[State]:
+        """Get the successors of `states` over `symbol`, with epsilon closures applied as requested.
+
+        :param states: Iterable of source states to step from.
+        :param Symbol symbol: Symbol to step over.
+        :param str epsilon_closure_opt: One of 'none', 'before', 'after', 'before-and-after'.
+        :param epsilons: Epsilon symbols to close over; `None` means the default epsilon symbol.
+        :return: Set of successor states.
+        """
+        cdef CEpsilonClosureOpt c_opt
+        if epsilon_closure_opt == "none":
+            c_opt = CEpsilonClosureOpt_None
+        elif epsilon_closure_opt == "before":
+            c_opt = CEpsilonClosureOpt_Before
+        elif epsilon_closure_opt == "after":
+            c_opt = CEpsilonClosureOpt_After
+        elif epsilon_closure_opt == "before-and-after":
+            c_opt = CEpsilonClosureOpt_BeforeAndAfter
+        else:
+            raise ValueError(f"Unknown epsilon closure option: '{epsilon_closure_opt}'")
+        cdef CPostWorkspace workspace
+        cdef StateSet c_states = StateSet(states)
+        cdef vector[Symbol] c_epsilons
+        if epsilons is not None:
+            c_epsilons = epsilons
+        return {
+            v for v in self.automaton_ptr.get().delta.post(c_states, symbol, c_opt, c_epsilons, workspace)
+        }
+
     def __eq__(self, other) -> bool:
         if not isinstance(other, Delta):
             return NotImplemented
@@ -1092,6 +1142,25 @@ cdef class Nfa:
         :return: true if the NFA is deterministic.
         """
         return self.thisptr.get().is_deterministic()
+
+    def is_acyclic(self) -> bool:
+        """Check whether the part of the automaton graph reachable from the initial states is acyclic.
+
+        A cycle no initial state reaches does not count.
+
+        :return: True if no cycle is reachable from an initial state, False otherwise.
+        """
+        return self.thisptr.get().is_acyclic()
+
+    def is_identical(self, Nfa other) -> bool:
+        """Check whether this automaton and `other` have the same states and transitions.
+
+        Initial and final states and the transition relation are compared exactly; names and attributes are not.
+
+        :param Nfa other: Automaton to compare with.
+        :return: True if the two automata are identical, False otherwise.
+        """
+        return self.thisptr.get().is_identical(dereference(other.thisptr.get()))
 
     def is_minimal(self):
         """Tests if the NFA is a minimal deterministic automaton of its language, as returned by minimize().
