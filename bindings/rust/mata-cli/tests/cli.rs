@@ -3948,7 +3948,9 @@ fn the_regular_model_checking_examples_reach_their_verdicts() {
 	assert!(text.ends_with("safe, length 1\n"), "{text}");
 	let burns_records = self::records(&text);
 	assert!(
-		burns_records.keys().any(|label| label.ends_with(".reduction")),
+		burns_records
+			.keys()
+			.any(|label| label.ends_with(".reduction")),
 		"{text}"
 	);
 }
