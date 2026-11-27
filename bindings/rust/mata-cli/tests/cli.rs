@@ -2257,6 +2257,69 @@ fn nfa_operations_take_their_optional_parameters_as_keywords() {
 }
 
 #[test]
+fn predicate_abstraction_uses_nfa_lists_and_language_options() {
+	let script = "(set-option :alphabet \"bytes\")\n\
+	              (define subject (nfa:create-from-regex \"(a|b)*a(a|b)\"))\n\
+	              (define bad (nfa:create-from-regex \"(a|b)*b(a|b)\"))\n\
+	              (define abstraction (nfa:collapse-by-predicates subject \
+	              (list bad (nfa:create-from-regex \"b*\"))))\n\
+	              (print (nfa:included? subject abstraction))\n\
+	              (print (nfa:intersection-empty? abstraction bad))\n\
+	              (print (nfa:included? subject (nfa:collapse-by-predicates subject (list))))\n\
+	              (define suffix (nfa:create-from-regex \"ac\"))\n\
+	              (define predicate (nfa:create-from-regex \"ac\"))\n\
+	              (define states (nfa:collapse-by-predicates suffix (list predicate)))\n\
+	              (print (nfa:equivalent? suffix states))\n\
+	              (define languages (nfa:collapse-by-predicates suffix (list predicate) \
+	              :granularity \"languages\" :direction \"forward\"))\n\
+	              (print (nfa:in-language? languages (word \"a\")))\n\
+	              (print (nfa:in-language? languages (word \"a\" \"c\" \"c\")))\n\
+	              (print (nfa:in-language? states (word \"a\")))\n\
+	              (define prefix (nfa:create-from-regex \"ca\"))\n\
+	              (define backward (nfa:collapse-by-predicates prefix (list (nfa:create-from-regex \"ca\")) \
+	              :granularity \"languages\" :direction \"backward\"))\n\
+	              (print (nfa:in-language? backward (word \"a\")))\n\
+	              (print (nfa:in-language? backward (word \"c\" \"c\" \"a\")))\n\
+	              (print (nfa:in-language? backward (word \"c\")))";
+	let output = run_script(script, true, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(
+		stdout(&output),
+		"true\ntrue\ntrue\ntrue\ntrue\ntrue\nfalse\ntrue\ntrue\nfalse\n"
+	);
+}
+
+#[test]
+fn predicate_abstraction_rejects_bad_options_and_predicate_list_elements() {
+	for (keyword, value) in [("granularity", "residuals"), ("direction", "upward")] {
+		let script = format!(
+			"(nfa:collapse-by-predicates (nfa:create-empty-string-nfa) (list) :{keyword} \"{value}\")"
+		);
+		let output = run_script(&script, true, &[]);
+		assert_eq!(status(&output), 2);
+		assert!(
+			stderr(&output).contains(&format!("nfa:collapse-by-predicates: :{keyword} is")),
+			"{}",
+			stderr(&output)
+		);
+		assert!(stderr(&output).contains(value), "{}", stderr(&output));
+	}
+
+	let output = run_script(
+		"(nfa:collapse-by-predicates (nfa:create-empty-string-nfa) \
+		 (list (nfa:create-empty-string-nfa) 3))",
+		true,
+		&[],
+	);
+	assert_eq!(status(&output), 2);
+	assert!(
+		stderr(&output).contains("expected an Nfa, found Int"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
 fn nfa_queries_of_the_whole_bridge_report_their_words() {
 	let workspace = Workspace::new("nfa-whole-bridge");
 	let a = workspace.file("a.mata", NFA);

@@ -433,7 +433,7 @@ language page specifies but this build does not have are listed in the
 - Every operation of the catalogue records the language version that added it. A script sees the operations of the
   version its header declares, and the names of all of them are reserved, so an operation added later can never clash
   with a name a script defined.
-- The interpreter implements 178 operations: the portable core of the language, the script forms that a direct command
+- The interpreter implements 188 operations: the portable core of the language, the script forms that a direct command
   needs, the NFA, NFT, string-solving, automaton and intermediate-automaton operations `bindings/rust/mata` covers,
   and the 15 {ref}`lazy: operations <script-lazy>` of `mata::lazy` (with the special form `lazy:stats`),
   so every operation of the [script language](script-language) page runs. An operation outside that table is rejected
@@ -478,6 +478,8 @@ language page specifies but this build does not have are listed in the
   `:final-condition` (`"and"` or `"or"`) and `:first-epsilon` of `nfa:product`, `:first-epsilon` of
   `nfa:left-quotient` and of `nfa:right-quotient`, `:abstract-symbol` of `nfa:get-one-letter-automaton`,
   `:languages` (`"words"` or `"traces"`) and `:direction` (`"forward"` or `"backward"`) of `nfa:collapse-by-length`,
+  `:granularity` (`"states"` or `"languages"`) and `:direction` (`"forward"` or `"backward"`) of
+  `nfa:collapse-by-predicates`,
   `:seed` of `nfa:create-random-nfa-tabakov-vardi`, `:match-prefix` and `:has-epsilon-cycles` of `nft:in-language?`, and
   `:num-of-levels` of `strings:create-identity` (2 when omitted), `:begin-marker` of
   `strings:replace-reluctant-regex` and `:end-marker` of `strings:replace-reluctant-literal`. `:has-epsilon-cycles`

@@ -9,8 +9,26 @@
 
 #include "mata/nfa/nfa.hh"
 
+mata::nfa::Nfa mata::nfa::collapse_by_predicates(
+	const Nfa& aut, std::initializer_list<Nfa> predicates, const ParameterMap& params
+) {
+	auto view = std::vector<const Nfa*>{};
+	view.reserve(predicates.size());
+	for (const Nfa& predicate : predicates) { view.push_back(&predicate); }
+	return collapse_by_predicates(aut, std::span<const Nfa* const>{view.data(), view.size()}, params);
+}
+
 mata::nfa::Nfa
 	mata::nfa::collapse_by_predicates(const Nfa& aut, const std::vector<Nfa>& predicates, const ParameterMap& params) {
+	auto view = std::vector<const Nfa*>{};
+	view.reserve(predicates.size());
+	for (const Nfa& predicate : predicates) { view.push_back(&predicate); }
+	return collapse_by_predicates(aut, std::span<const Nfa* const>{view.data(), view.size()}, params);
+}
+
+mata::nfa::Nfa mata::nfa::collapse_by_predicates(
+	const Nfa& aut, std::span<const Nfa* const> predicates, const ParameterMap& params
+) {
 	const std::string granularity{params.contains("granularity") ? params.at("granularity") : "states"};
 	const std::string direction{params.contains("direction") ? params.at("direction") : "forward"};
 	if (granularity != "states" && granularity != "languages") {
@@ -18,6 +36,9 @@ mata::nfa::Nfa
 	}
 	if (direction != "forward" && direction != "backward") {
 		throw std::invalid_argument(std::string(__func__) + ": unknown \"direction\": " + direction);
+	}
+	if (std::ranges::any_of(predicates, [](const Nfa* predicate) { return predicate == nullptr; })) {
+		throw std::invalid_argument(std::string(__func__) + ": null predicate");
 	}
 	const bool backward{direction == "backward"};
 	const bool all_predicate_states{granularity == "states"};
@@ -37,7 +58,8 @@ mata::nfa::Nfa
 	using Fingerprint = std::vector<size_t>;
 	std::vector<Fingerprint> fingerprints(dfa.num_of_states());
 	size_t predicate_state_offset{0};
-	for (const Nfa& predicate : predicates) {
+	for (const Nfa* predicate_ptr : predicates) {
+		const Nfa& predicate{*predicate_ptr};
 		// Reversal preserves state numbers. Backward mode orients the predicate for prefixes and uses the original
 		// transition relation for predecessor steps; forward mode uses these relations the other way around.
 		const Nfa reversed_predicate{revert(predicate)};

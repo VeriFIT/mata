@@ -446,6 +446,14 @@ pub mod ffi {
 			traces: bool,
 			direction: Direction,
 		) -> Result<UniquePtr<Nfa>>;
+		/// The predicate-state abstraction. `predicates` borrows non-null automaton pointers for this call;
+		/// `whole_languages` compares only initial predicate states instead of every predicate state.
+		unsafe fn collapse_by_predicates(
+			nfa: &Nfa,
+			predicates: &[*const Nfa],
+			whole_languages: bool,
+			direction: Direction,
+		) -> Result<UniquePtr<Nfa>>;
 		/// Whether every strongly connected component is a simple cycle.
 		fn is_flat(nfa: &Nfa) -> Result<bool>;
 		/// Whether some prefix of `word` is accepted; `use_epsilon` follows epsilon transitions.

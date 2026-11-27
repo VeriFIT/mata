@@ -73,9 +73,11 @@
 
 #include <cassert>
 #include <functional>
+#include <initializer_list>
 #include <memory>
 #include <optional>
 #include <set>
+#include <span>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -1430,7 +1432,24 @@ Nfa collapse_by_length(
  */
 Nfa collapse_by_predicates(
 	const Nfa& aut,
+	std::initializer_list<Nfa> predicates,
+	const ParameterMap& params = {{"granularity", "states"}, {"direction", "forward"}}
+);
+
+Nfa collapse_by_predicates(
+	const Nfa& aut,
 	const std::vector<Nfa>& predicates,
+	const ParameterMap& params = {{"granularity", "states"}, {"direction", "forward"}}
+);
+
+/**
+ * @overload
+ * @param[in] predicates Non-owning pointers to the predicate automata. Every pointer must be non-null and remain valid
+ * for the duration of the call; the pointed-to automata are not copied.
+ */
+Nfa collapse_by_predicates(
+	const Nfa& aut,
+	std::span<const Nfa* const> predicates,
 	const ParameterMap& params = {{"granularity", "states"}, {"direction", "forward"}}
 );
 

@@ -5143,6 +5143,18 @@ TEST_CASE("mata::nfa::collapse_by_predicates()") {
 		CHECK(!states.is_in_lang(Run{{'a'}, {}}));
 	}
 
+	SECTION("a borrowed predicate span computes the same abstraction") {
+		const Nfa aut{builder::create_from_regex("ab")};
+		const Nfa predicate{builder::create_from_regex("ab")};
+		const Nfa* predicates[]{&predicate};
+		const Nfa abstraction{collapse_by_predicates(aut, std::span<const Nfa* const>{predicates})};
+		CHECK(are_equivalent(abstraction, aut));
+		const Nfa* null_predicate[]{nullptr};
+		CHECK_THROWS_AS(
+			collapse_by_predicates(aut, std::span<const Nfa* const>{null_predicate}), std::invalid_argument
+		);
+	}
+
 	SECTION("EPSILON is synchronized as an ordinary symbol") {
 		Nfa aut{2, {0}, {1}};
 		aut.delta.add(0, EPSILON, 1);

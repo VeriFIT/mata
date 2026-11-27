@@ -979,6 +979,30 @@ std::unique_ptr<Nfa>
 	);
 }
 
+std::unique_ptr<Nfa> collapse_by_predicates(
+	const Nfa& nfa,
+	const rust::Slice<const Nfa* const> predicates,
+	const bool whole_languages,
+	const Direction direction
+) {
+	auto storage = std::optional<Nfa>();
+	auto predicate_storage = std::vector<std::optional<Nfa>>(predicates.size());
+	auto view = std::vector<const Nfa*>{};
+	view.reserve(predicates.size());
+	for (std::size_t index{0}; index < predicates.size(); ++index) {
+		const Nfa* predicate = predicates[index];
+		if (predicate == nullptr) { throw std::invalid_argument("collapse_by_predicates: null predicate"); }
+		view.push_back(&without_epsilon(*predicate, predicate_storage[index]));
+	}
+	return boxed(
+		mata::nfa::collapse_by_predicates(
+			without_epsilon(nfa, storage), std::span<const Nfa* const>{view.data(), view.size()},
+			{{"granularity", whole_languages ? "languages" : "states"},
+			 {"direction", direction == Direction::Backward ? "backward" : "forward"}}
+		)
+	);
+}
+
 bool is_flat(const Nfa& nfa) { return nfa.is_flat(); }
 
 bool accepts_prefix(const Nfa& nfa, const rust::Slice<const Symbol> word, const bool use_epsilon) {
