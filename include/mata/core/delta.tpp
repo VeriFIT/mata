@@ -345,13 +345,16 @@ std::vector<typename DeltaBase<P, TT>::State>& DeltaBase<P, TT>::gather_post(
 	const std::vector<State>& sources{closes_before(epsilon_closure_opt) ? workspace.sources : states};
 
 	std::vector<State>& gathered{workspace.gathered};
-	// A caller may chain steps by passing the result of an earlier call over the same workspace as @p states; copy
-	//  the aliased input into @c workspace.worklist, the one buffer no earlier stage of this call still needs: the
-	//  before-closure has drained it, and the after-closure rebuilds it only after the step loop has read the copy.
+	// A caller may chain steps by passing the result of an earlier call over the same workspace as @p states; the
+	//  aliased input must be copied before @c gathered is cleared. Without a before-closure, @c workspace.worklist
+	//  is the one buffer no earlier stage of this call still needs. With one, the before-closure has already
+	//  expanded the aliased input into @c workspace.sources, which the step loop reads instead.
 	const bool aliased_states{&gathered == &states};
 	if (aliased_states) { workspace.worklist.assign(states.begin(), states.end()); }
 	gathered.clear();
-	const std::vector<State>& step_sources{aliased_states ? workspace.worklist : sources};
+	const std::vector<State>& step_sources{
+		aliased_states ? (closes_before(epsilon_closure_opt) ? workspace.sources : workspace.worklist) : sources
+	};
 	// Stepping over epsilon with a closure requested means the input states are reachable as well; the output
 	//  seeds with the input states, while the step reads the closure or the aliased copy of the input.
 	if (key == Reserved<0>::min_epsilon && (closes_before(epsilon_closure_opt) || closes_after(epsilon_closure_opt))) {
@@ -375,7 +378,7 @@ std::vector<typename DeltaBase<P, TT>::State> DeltaBase<P, TT>::epsilon_closure(
 	const std::vector<State>& states, const std::vector<Key<0>>& epsilons, PostWorkspace& workspace
 ) const {
 	std::vector<State>& closure{workspace.gathered};
-	closure.assign(states.begin(), states.end());
+	if (&closure != &states) { closure.assign(states.begin(), states.end()); }
 	close_over_epsilons(*this, epsilons, closure, workspace);
 	// The declaration promises a sorted, duplicate-free closure; the traversal order and duplicate input states
 	//  would otherwise leak to the caller.
