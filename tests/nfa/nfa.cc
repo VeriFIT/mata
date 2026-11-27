@@ -6,6 +6,7 @@
 #include <random>
 #include <sstream>
 #include <unordered_set>
+#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
@@ -7887,6 +7888,20 @@ TEST_CASE("mata::nfa::Nfa::post() with epsilon closure options") {
 		multi.delta.add(2, 'a', 3);
 		CHECK(multi.mk_epsilon_closure(StateSet{0}) == StateSet{0, 1});
 		CHECK(multi.mk_epsilon_closure(StateSet{0}, {EPSILON, EPSILON - 1}) == StateSet{0, 1, 2});
+	}
+
+	SECTION("an empty epsilon list selects no epsilon, not the default one") {
+		// The shared closure treats an empty list as the relation's own smallest epsilon; the wrapper's contract
+		//  says an empty selection considers no symbols as epsilons.
+		Nfa with_epsilon(2);
+		with_epsilon.delta.add(0, EPSILON, 1);
+		CHECK(with_epsilon.mk_epsilon_closure(StateSet{0}, {}) == StateSet{0});
+		CHECK(with_epsilon.mk_epsilon_closure(StateSet{0}, std::vector<Symbol>{}) == StateSet{0});
+
+		Nfa without_epsilon(2);
+		without_epsilon.delta.add(0, 'a', 1);
+		CHECK(without_epsilon.mk_epsilon_closure(StateSet{0}, {}) == StateSet{0});
+		CHECK(without_epsilon.mk_epsilon_closure(StateSet{}, {}) == StateSet{});
 	}
 
 	SECTION("a closure from several states follows every path and the cycles back into its sources") {

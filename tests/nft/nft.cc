@@ -8,6 +8,7 @@
 #include <ranges>
 #include <sstream>
 #include <unordered_set>
+#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
@@ -7480,5 +7481,51 @@ TEST_CASE("mata::nft::Nft::to_nfa_update_copy() flattens exactly as unwind_jumps
 		nft.delta.add(0, 'b', 3);
 		require_flattened_as_unwound(nft, symbols);
 		CHECK(nft.to_nfa_update_copy(symbols).num_of_states() == 6);
+	}
+}
+
+TEST_CASE("mata::nft::Nft::mk_epsilon_closure() matches the shared Delta closure") {
+	SECTION("an epsilon cycle terminates and closes over every state of the cycle") {
+		Nft cyclic(3);
+		cyclic.delta.add(0, EPSILON, 1);
+		cyclic.delta.add(1, EPSILON, 2);
+		cyclic.delta.add(2, EPSILON, 0);
+		CHECK(cyclic.mk_epsilon_closure(StateSet{0}) == StateSet{0, 1, 2});
+	}
+
+	SECTION("a closure from several states follows every path and the cycles back into its sources") {
+		// 0 has no epsilon post; 4 -> 6 -> {1, 5} -> 7 -> {3, 4}, and 3 -> 6 closes a second cycle.
+		Nft paths(8);
+		paths.delta.add(4, EPSILON, 6);
+		paths.delta.add(6, EPSILON, 1);
+		paths.delta.add(6, EPSILON, 5);
+		paths.delta.add(1, EPSILON, 7);
+		paths.delta.add(5, EPSILON, 7);
+		paths.delta.add(7, EPSILON, 3);
+		paths.delta.add(7, EPSILON, 4);
+		paths.delta.add(3, EPSILON, 6);
+		CHECK(paths.mk_epsilon_closure(StateSet{0, 4}) == StateSet{0, 1, 3, 4, 5, 6, 7});
+	}
+
+	SECTION("closures over several epsilon symbols") {
+		Nft multi(4);
+		multi.delta.add(0, EPSILON, 1);
+		multi.delta.add(1, EPSILON - 1, 2);
+		CHECK(multi.mk_epsilon_closure(StateSet{0}) == StateSet{0, 1});
+		CHECK(multi.mk_epsilon_closure(StateSet{0}, {EPSILON, EPSILON - 1}) == StateSet{0, 1, 2});
+	}
+
+	SECTION("an empty epsilon list selects no epsilon, not the default one") {
+		// The shared closure treats an empty list as the relation's own smallest epsilon; the wrapper's contract
+		//  says an empty selection considers no symbols as epsilons.
+		Nft with_epsilon(2);
+		with_epsilon.delta.add(0, EPSILON, 1);
+		CHECK(with_epsilon.mk_epsilon_closure(StateSet{0}, {}) == StateSet{0});
+		CHECK(with_epsilon.mk_epsilon_closure(StateSet{0}, std::vector<Symbol>{}) == StateSet{0});
+
+		Nft without_epsilon(2);
+		without_epsilon.delta.add(0, 'a', 1);
+		CHECK(without_epsilon.mk_epsilon_closure(StateSet{0}, {}) == StateSet{0});
+		CHECK(without_epsilon.mk_epsilon_closure(StateSet{}, {}) == StateSet{});
 	}
 }

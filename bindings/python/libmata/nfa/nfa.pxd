@@ -41,6 +41,16 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
     ctypedef umap[State, State] StateRenaming
     ctypedef umap[string, string] ParameterMap
 
+    cdef extern from "mata/core/post-workspace.hh" namespace "mata":
+        cdef enum CEpsilonClosureOpt "mata::EpsilonClosureOpt":
+            CEpsilonClosureOpt_None "mata::EpsilonClosureOpt::None"
+            CEpsilonClosureOpt_Before "mata::EpsilonClosureOpt::Before"
+            CEpsilonClosureOpt_After "mata::EpsilonClosureOpt::After"
+            CEpsilonClosureOpt_BeforeAndAfter "mata::EpsilonClosureOpt::BeforeAndAfter"
+
+        cdef cppclass CPostWorkspace "mata::PostWorkspace":
+            CPostWorkspace() except +
+
     cdef const Symbol CEPSILON "mata::nfa::EPSILON"
     cdef const State CMAX_STATE "mata::nfa::Limits::max_state"
 
@@ -98,6 +108,9 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         CStatePost.const_iterator epsilon_symbol_posts(CStatePost& post, Symbol epsilon)
         void add(vector[CTrans]&) except +
         COrdVector[Symbol] get_used_symbols()
+        Symbol get_max_symbol()
+        StateSet epsilon_closure(StateSet&, vector[Symbol]&, CPostWorkspace&) except +
+        StateSet post(StateSet&, Symbol, CEpsilonClosureOpt, vector[Symbol]&, CPostWorkspace&) except +
 
 
     cdef cppclass CRun "mata::nfa::Run":
@@ -184,6 +197,8 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         CNfa& trim(StateRenaming*)
         CNfa& concatenate(CNfa&) except +
         CNfa& unite_nondet_with(CNfa&) except +
+        bool is_acyclic()
+        bool is_identical(CNfa&)
         void get_one_letter_aut(CNfa&)
         bool is_epsilon(Symbol)
         CBoolVector get_useful_states()

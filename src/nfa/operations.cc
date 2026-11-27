@@ -1066,15 +1066,16 @@ std::pair<Run, bool> mata::nfa::Nfa::get_word_for_path(const Run& run) const {
 // TODO: this is not efficient
 StateSet mata::nfa::Nfa::read_word(const Run& run, const bool use_epsilon) const {
 	StateSet current_post(this->initial);
+	PostWorkspace workspace{};
 
 	if (use_epsilon) {
 		// Compute epsilon closure from the initial states.
-		current_post = this->post(current_post, EPSILON, EpsilonClosureOpt::Before);
+		current_post = this->post(current_post, EPSILON, EpsilonClosureOpt::Before, workspace);
 	}
 
 	const EpsilonClosureOpt epsilon_closure_opt = use_epsilon ? EpsilonClosureOpt::After : EpsilonClosureOpt::None;
 	for (const Symbol sym : run.word) {
-		current_post = this->post(current_post, sym, epsilon_closure_opt);
+		current_post = this->post(current_post, sym, epsilon_closure_opt, workspace);
 		if (current_post.empty()) { return current_post; }
 	}
 
@@ -1110,24 +1111,25 @@ bool Nfa::is_in_lang(const Run& run, const bool use_epsilon, const bool match_pr
 		}
 		if (prefix_len == word_len) { return final.contains(state); }
 		StateSet current_post{state};
+		PostWorkspace workspace{};
 		for (; prefix_len < word_len; ++prefix_len) {
-			current_post = post(current_post, run.word[prefix_len]);
+			current_post = post(current_post, run.word[prefix_len], EpsilonClosureOpt::None, workspace);
 			if (current_post.empty()) { return false; }
 		}
-		return final.intersects_with(current_post);
 	}
 	if (match_prefix) {
 		StateSet current_post(this->initial);
+		PostWorkspace workspace{};
 
 		if (use_epsilon) {
 			// Compute epsilon closure from the initial states.
-			current_post = this->post(current_post, EPSILON, EpsilonClosureOpt::Before);
+			current_post = this->post(current_post, EPSILON, EpsilonClosureOpt::Before, workspace);
 		}
 
 		const EpsilonClosureOpt epsilon_closure_opt = use_epsilon ? EpsilonClosureOpt::After : EpsilonClosureOpt::None;
 		for (const Symbol sym : run.word) {
 			if (this->final.intersects_with(current_post)) { return true; }
-			current_post = this->post(current_post, sym, epsilon_closure_opt);
+			current_post = this->post(current_post, sym, epsilon_closure_opt, workspace);
 			if (current_post.empty()) { return false; }
 		}
 

@@ -208,6 +208,55 @@ def test_post(binary_alphabet):
     assert lhs.post_map_of(2, binary_alphabet) == {0: {2}, 1: {2}}
 
 
+def test_delta_post_and_epsilon_closure():
+    """Delta.post() and Delta.epsilon_closure() forward the C++ relation members."""
+    aut = mata_nfa.Nfa(4)
+    aut.make_initial_state(0)
+    aut.delta.add(0, mata_nfa.epsilon(), 1)
+    aut.delta.add(1, ord("a"), 2)
+    aut.delta.add(2, mata_nfa.epsilon(), 3)
+
+    delta = aut.delta
+    assert delta.epsilon_closure({0}) == {0, 1}
+    assert delta.epsilon_closure({0}, [mata_nfa.epsilon()]) == {0, 1}
+    # An empty list means the relation's own default epsilon, same as None: the automaton-level
+    #  "empty selects no epsilon" contract of mk_epsilon_closure() is not exposed to Python.
+    assert delta.epsilon_closure({0}, []) == {0, 1}
+    assert delta.post({0}, ord("a")) == set()
+    assert delta.post({0}, ord("a"), "before") == {2}
+    assert delta.post({0}, ord("a"), "before-and-after") == {2, 3}
+    assert delta.post({1}, ord("a"), "none", [mata_nfa.epsilon()]) == {2}
+    assert delta.get_max_symbol() == max(ord("a"), mata_nfa.epsilon())
+
+    with pytest.raises(ValueError):
+        delta.post({0}, ord("a"), "bogus")
+
+
+def test_is_acyclic_and_is_identical():
+    """Nfa.is_acyclic() and Nfa.is_identical() forward the C++ automaton members."""
+    acyclic = mata_nfa.Nfa(3)
+    acyclic.make_initial_state(0)
+    acyclic.delta.add(0, ord("a"), 1)
+    acyclic.delta.add(1, ord("b"), 2)
+    acyclic.make_final_state(2)
+    assert acyclic.is_acyclic()
+
+    cyclic = mata_nfa.Nfa(2)
+    cyclic.make_initial_state(0)
+    cyclic.delta.add(0, ord("a"), 1)
+    cyclic.delta.add(1, ord("a"), 0)
+    cyclic.make_final_state(1)
+    assert not cyclic.is_acyclic()
+
+    other = mata_nfa.Nfa(3)
+    other.make_initial_state(0)
+    other.delta.add(0, ord("a"), 1)
+    other.delta.add(1, ord("b"), 2)
+    other.make_final_state(2)
+    assert acyclic.is_identical(other)
+    assert not acyclic.is_identical(cyclic)
+
+
 def test_determinisation(nfa_two_states_uni, dfa_one_state_uni):
     """Tests determinisation."""
     lhs = nfa_two_states_uni

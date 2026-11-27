@@ -884,24 +884,24 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
 		if (copied_from[src_state] != Limits::max_state) {
 			const State copied_state{copied_from[src_state]};
 			for (const SymbolPost& move : nft.delta[copied_state]) {
-				delta_builder.begin_symbol(move.symbol);
+				delta_builder.begin_key(move.symbol);
 				for (const State target : move.targets) {
 					const State new_target{old_to_new[target]};
 					if (new_target != Limits::max_state) { delta_builder.push_sorted_target(new_target); }
 				}
-				delta_builder.finish_symbol();
+				delta_builder.finish_key();
 			}
 		} else {
 			const size_t moves_stop{moves_end[src_state]};
 			for (size_t move_idx{moves_begin[src_state]}; move_idx < moves_stop;) {
 				const Symbol symbol{stored_moves[move_idx].first};
-				delta_builder.begin_symbol(symbol);
+				delta_builder.begin_key(symbol);
 				while (move_idx < moves_stop && stored_moves[move_idx].first == symbol) {
 					const State new_target{old_to_new[stored_moves[move_idx].second]};
 					if (new_target != Limits::max_state) { delta_builder.push_sorted_target(new_target); }
 					++move_idx;
 				}
-				delta_builder.finish_symbol();
+				delta_builder.finish_key();
 			}
 		}
 		delta_builder.finish_state();

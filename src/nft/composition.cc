@@ -3172,12 +3172,12 @@ class DirectGeneralComposer {
 		delta_builder_.begin_state(source);
 		for (size_t index{0}; index < moves_.size(); ++index) {
 			if (index == 0 || moves_[index - 1].first != moves_[index].first) {
-				if (index != 0) { delta_builder_.finish_symbol(); }
-				delta_builder_.begin_symbol(moves_[index].first);
+				if (index != 0) { delta_builder_.finish_key(); }
+				delta_builder_.begin_key(moves_[index].first);
 			}
 			delta_builder_.push_sorted_target(moves_[index].second);
 		}
-		delta_builder_.finish_symbol();
+		delta_builder_.finish_key();
 		delta_builder_.finish_state();
 	}
 
