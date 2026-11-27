@@ -722,6 +722,15 @@ class Nft : public Automaton {
 	 * @return Epsilon closure of the given set of states.
 	 */
 	StateSet mk_epsilon_closure(const StateSet& source_states, const std::vector<Symbol>& epsilons = {EPSILON}) const;
+	/**
+	 * @brief Get the epsilon closure of the given set of states, reusing the buffers of @p workspace.
+	 *
+	 * One workspace serves one call at a time; it is written by the call and must not be shared between
+	 *  concurrent calls.
+	 */
+	StateSet mk_epsilon_closure(
+		const StateSet& source_states, const std::vector<Symbol>& epsilons, PostWorkspace& workspace
+	) const;
 
 	/**
 	 * @brief Clear the underlying NFT to a blank NFT.
@@ -1004,6 +1013,17 @@ class Nft : public Automaton {
 	StateSet post(
 		const StateSet& states, Symbol symbol, EpsilonClosureOpt epsilon_closure_opt = EpsilonClosureOpt::None
 	) const;
+	/**
+	 * @brief The same as the overload without a workspace, reusing @p workspace buffers across calls.
+	 *
+	 * A loop of steps allocates once. One workspace serves one call at a time; it must not be shared
+	 *  between concurrent calls, and it is written by every call.
+	 *
+	 * @warning Like the overload without a workspace, computes epsilon closures over multiple levels.
+	 */
+	StateSet post(
+		const StateSet& states, Symbol symbol, EpsilonClosureOpt epsilon_closure_opt, PostWorkspace& workspace
+	) const;
 
 	/**
 	 * @brief Get the set of states reachable from the given state over the given symbol.
@@ -1021,6 +1041,15 @@ class Nft : public Automaton {
 	 */
 	StateSet post(const State state, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
 		return post(StateSet{state}, symbol, epsilon_closure_opt);
+	}
+	/**
+	 * @brief Get the set of states reachable from the given state over the given symbol, reusing the buffers of
+	 *  @p workspace across calls.
+	 */
+	StateSet post(
+		const State state, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt, PostWorkspace& workspace
+	) const {
+		return post(StateSet{state}, symbol, epsilon_closure_opt, workspace);
 	}
 
 	/**
