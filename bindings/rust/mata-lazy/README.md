@@ -148,7 +148,8 @@ A few things are worth knowing.
 A query can run the same formula with different per-term choices, given as a `Plan` in `Options::plan`. An
 `Annotation` makes a term lazy or eager (`Eval::Lazy`, `Eval::Eager` with an optional budget, like
 `explicit_with`) and fixes the operand order of an intersection or a synchronized product (`Order::AsWritten`,
-`Order::Swapped`; by default the engine puts the operand with fewer macrostates left in an intersection). A plan
+`Order::Swapped`; by default the engine puts the operand with fewer macrostates left in an intersection, and an
+automatic `(A ∩ B) ∩ C` also reassociates to the cheapest of the three pairwise shapes). A plan
 changes the cost of a query, never its answer: only a limit of the query can turn an answer into an error, and the
 witness can differ. Plans name terms of one formula; an order on a term that is not a product, or a term of another
 formula, makes the query fail.

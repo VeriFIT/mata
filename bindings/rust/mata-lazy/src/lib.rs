@@ -19,7 +19,8 @@
 //! [`check`](Formula::check)) explores only the macrostates it needs. Products pair states and complements
 //! build subsets on the fly, and simulation-based subsumption prunes macrostates that are below others. A term
 //! marked [`explicit`](Formula::explicit) is built as an automaton when a query starts and read like a leaf.
-//! A [`Plan`] chooses per query and term between lazy and explicit, and the operand order of products; a
+//! A [`Plan`] chooses per query and term between lazy and explicit, and the operand order of products; an
+//! automatic intersection also reassociates to the cheapest pairwise shape. A
 //! [`Policy`] computes one from the [`view`](Formula::view) of a formula. A plan changes the cost of a query,
 //! never its answer. With the feature `serde`, plans, views and statistics are JSON.
 //!
