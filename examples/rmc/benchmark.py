@@ -37,6 +37,7 @@ def run(
     run_number: int,
     abstraction: str,
     predicate_seed: str,
+    predicate_granularity: str,
     verification_direction: str,
     reduce_before_collapse: bool,
     reduction_min_states: int,
@@ -59,6 +60,8 @@ def run(
         f"abstraction={abstraction}",
         "--param",
         f"predicate-seed={predicate_seed}",
+        "--param",
+        f"predicate-granularity={predicate_granularity}",
         "--param",
         f"verification-direction={verification_direction}",
         "--param",
@@ -94,6 +97,7 @@ def run(
         "instrument": True,
         "predicate_seed": predicate_seed,
         "model": model,
+        "predicate_granularity": predicate_granularity,
         "reduce_before_collapse": reduce_before_collapse,
         "reduction_min_states": reduction_min_states,
         "records": records,
@@ -117,6 +121,7 @@ def main() -> int:
         choices=("bad", "none", "actions", "bad-actions", "adaptive"),
         default="adaptive",
     )
+    parser.add_argument("--predicate-granularity", choices=("states", "languages"), default="states")
     parser.add_argument("--verification-direction", choices=("forward", "backward"), default="forward")
     parser.add_argument("--reduce-before-collapse", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--reduction-min-states", type=int, default=32)
@@ -130,6 +135,7 @@ def main() -> int:
             run_number,
             arguments.abstraction,
             arguments.predicate_seed,
+            arguments.predicate_granularity,
             arguments.verification_direction,
             arguments.reduce_before_collapse,
             arguments.reduction_min_states,

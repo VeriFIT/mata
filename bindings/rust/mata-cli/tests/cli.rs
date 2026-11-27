@@ -3839,13 +3839,27 @@ fn the_regular_model_checking_examples_reach_their_verdicts() {
 		}
 	}
 	// No initial predicates needs a refinement, while transducer guards/actions avoid all refinements on this model.
-	for (seed, expected) in [
-		("none", "unsafe, steps: 10, predicate refinements 4"),
-		("actions", "unsafe, steps: 10, predicate refinements 0"),
+	for (seed, granularity, expected) in [
+		(
+			"none",
+			"states",
+			"unsafe, steps: 10, predicate refinements 4",
+		),
+		(
+			"actions",
+			"states",
+			"unsafe, steps: 10, predicate refinements 0",
+		),
+		(
+			"adaptive",
+			"languages",
+			"unsafe, steps: 10, predicate refinements 1",
+		),
 	] {
 		let input = format!("{examples}/burns-broken.mata");
 		let script = format!("{examples}/armc.matasc");
 		let predicate_seed = format!("predicate-seed={seed}");
+		let granularity = format!("predicate-granularity={granularity}");
 		let mut arguments = vec![
 			"script",
 			"run",
@@ -3853,6 +3867,8 @@ fn the_regular_model_checking_examples_reach_their_verdicts() {
 			"abstraction=predicates",
 			"--param",
 			&predicate_seed,
+			"--param",
+			&granularity,
 		];
 		arguments.extend(burns);
 		arguments.extend([script.as_str(), input.as_str()]);

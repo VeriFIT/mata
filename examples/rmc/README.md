@@ -10,7 +10,9 @@ backward counterexample analysis as new predicates, and stops with `unknown, abs
 no new predicate language. By default (`predicate-seed=adaptive`), the initial predicate is the bad-language automaton;
 all its states contribute fingerprints, and the first spurious counterexample adds the transducer's domain and range.
 Change `predicate-seed` to `none` to start without predicates, `actions` to use the transducer domain and range, or
-`bad-actions` to use all of them. With `verification-direction=backward`, the script starts from the original bad
+`bad-actions` to use all of them. `predicate-granularity=languages` compares only whole predicate languages instead of
+all state residuals; this is faster on broken Burns but slower on safe Burns and is therefore not the default. With
+`verification-direction=backward`, the script starts from the original bad
 configurations, uses the inverted transition relation, and tests reachability of the original initial configurations.
 
 | System                                     | Letters             | Result                      |

@@ -18,6 +18,7 @@
 (declare-param abstraction String "length") ; finite-length or predicate abstraction
 (declare-param verification-direction String "forward") ; verify forwards from Init or backwards from Bad
 (declare-param predicate-seed String "adaptive") ; start bad-only and add transducer actions after a spurious hit
+(declare-param predicate-granularity String "states") ; compare every predicate state or whole predicate languages
 (declare-param reduce-before-collapse Bool true) ; simulation-reduce sufficiently large unions before abstraction
 (declare-param reduction-min-states Int 32)       ; when reduction is enabled, require this many union states
 
@@ -102,7 +103,7 @@
         (if (if reduce-before-collapse (not (< (nfa:number-of-states uni) reduction-min-states)) false)
           (measure (round-label refinements round "reduction") (lambda () (nfa:reduce uni)))
           uni)
-        (list predicates)))))
+        (list predicates) :granularity predicate-granularity))))
 
 ; The second result component is the predicate to install after a spurious counterexample.
 (define (predicate-fixpoint (predicates Nfa) (reached Nfa) history (refinements Int) (round Int))
@@ -127,7 +128,7 @@
     (nft:to-nfa (nft:project-to step (list 1)))))
 
 (define (predicate-cegar (predicates Nfa) (refinements Int))
-  (let ((result (predicate-fixpoint predicates (nfa:collapse-by-predicates initial (list predicates)) (list) refinements 0)))
+  (let ((result (predicate-fixpoint predicates (nfa:collapse-by-predicates initial (list predicates) :granularity predicate-granularity) (list) refinements 0)))
     (if (= (list:nth result 0) "spurious")
       (let ((candidate-predicates (nfa:union-nondeterministic predicates (list:nth result 1))))
         (let ((refined (if (if (= predicate-seed "adaptive") (= refinements 0) false)
