@@ -1765,21 +1765,10 @@ bool Nft::is_complete(const OrdVector<Symbol>& symbols) const {
 }
 
 StateSet Nft::mk_epsilon_closure(const StateSet& source_states, const std::vector<Symbol>& epsilons) const {
-	StateSet closure{source_states};
-	std::queue<State> worklist;
-	for (const State state : source_states) { worklist.push(state); }
-	while (!worklist.empty()) {
-		const State state = worklist.front();
-		worklist.pop();
-		for (const Symbol epsilon : epsilons) {
-			if (auto move_it{delta[state].find(epsilon)}; move_it != delta[state].end()) {
-				for (const State target : move_it->targets) {
-					if (closure.insert(target).second) { worklist.push(target); }
-				}
-			}
-		}
-	}
-	return closure;
+	// The shared closure of mata::Delta reuses its buffers and keeps the visited states in a hash table sized to
+	//  the closure, so the cost follows the closure instead of the number of states of the delta.
+	PostWorkspace workspace{};
+	return delta.epsilon_closure(source_states, epsilons, workspace);
 }
 
 void Nft::fill_alphabet(OnTheFlyAlphabet& alphabet_to_fill) const {
