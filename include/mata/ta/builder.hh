@@ -40,6 +40,9 @@ using NameStateMap = utils::StringMap<State>;
 Ta construct(const parser::ParsedSection& section, Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr);
 
 Ta parse_from_mata(const std::string& input, Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr);
+inline Ta parse_from_mata(const char* input, Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr) {
+	return parse_from_mata(std::string{input}, alphabet, state_map);
+}
 Ta parse_from_mata(std::istream& input, Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr);
 Ta parse_from_mata(const std::filesystem::path& input, Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr);
 

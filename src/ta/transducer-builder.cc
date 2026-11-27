@@ -16,6 +16,11 @@ namespace {
 	throw std::runtime_error("TT transition " + std::to_string(line) + ": " + reason);
 }
 
+bool is_reserved_name(const std::string_view name) {
+	return name.empty() || name == "(" || name == ")" || name == "&" || name == "|" || name == "!" || name == "->" ||
+		   name == ":";
+}
+
 parser::BodyLine split_syntax(const parser::BodyLine& input) {
 	parser::BodyLine result{};
 	for (const parser::BodyToken& token : input) {
@@ -55,6 +60,7 @@ std::vector<std::string_view>
 		const parser::BodyToken& token{line[token_index]};
 		if (token.quoted) {
 			if (!expecting_child) { invalid_transition(line_index, "missing comma between child states"); }
+			if (is_reserved_name(token.token)) { invalid_transition(line_index, "invalid child state name"); }
 			children.push_back(token.token);
 			expecting_child = false;
 			continue;
@@ -147,9 +153,9 @@ TreeTransducer construct(const parser::ParsedSection& section, Alphabet* alphabe
 		if (line.size() - arrow_index != 4 || (arrow + 2)->quoted || (arrow + 2)->token != ":") {
 			invalid_transition(line_index, "expected output -> symbol : target");
 		}
-		if (line.front().token.empty()) { invalid_transition(line_index, "empty input symbol"); }
-		if ((arrow + 1)->token.empty()) { invalid_transition(line_index, "empty output symbol"); }
-		if ((arrow + 3)->token.empty()) { invalid_transition(line_index, "empty target state"); }
+		if (is_reserved_name(line.front().token)) { invalid_transition(line_index, "invalid input symbol"); }
+		if (is_reserved_name((arrow + 1)->token)) { invalid_transition(line_index, "invalid output symbol"); }
+		if (is_reserved_name((arrow + 3)->token)) { invalid_transition(line_index, "invalid target state"); }
 
 		std::vector<State> children{};
 		if (arrow_index != 1) {

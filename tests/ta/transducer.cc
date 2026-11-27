@@ -224,9 +224,24 @@ TEST_CASE("mata::ta::transducer_builder parses the shipped TT-explicit token fix
 
 	std::istringstream stream{token_transducer_source()};
 	CHECK_NOTHROW(transducer_builder::parse_from_mata(stream));
+	const TreeTransducer from_literal{transducer_builder::parse_from_mata("@TT-explicit\n%Final p\nf(q)->g:p\n")};
+	CHECK(from_literal.final.size() == 1);
+	CHECK(from_literal.delta.size() == 1);
 	CHECK_THROWS_AS(
 		transducer_builder::parse_from_mata(std::string{"@TT-explicit\nf(q)->g:p\nf(p,p)->g:p\n"}),
 		std::invalid_argument
 	);
 	CHECK_THROWS_AS(transducer_builder::parse_from_mata(std::string{"@TT-explicit\nf(q)->g p\n"}), std::runtime_error);
+}
+
+TEST_CASE("mata::ta::transducer_builder rejects empty and structural names") {
+	for (const std::string source : {
+			 "@TT-explicit\n%Final p\nf(\"\") -> g : p\n",
+			 "@TT-explicit\n%Final q\n( -> a : q\n",
+			 "@TT-explicit\n%Final q\na -> ( : q\n",
+			 "@TT-explicit\n%Final q\na -> b : )\n",
+		 }) {
+		INFO(source);
+		CHECK_THROWS_AS(transducer_builder::parse_from_mata(source), std::runtime_error);
+	}
 }

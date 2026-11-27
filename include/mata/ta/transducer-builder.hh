@@ -26,6 +26,10 @@ TreeTransducer
 	construct(const parser::ParsedSection& section, Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr);
 TreeTransducer
 	parse_from_mata(const std::string& input, Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr);
+inline TreeTransducer
+	parse_from_mata(const char* input, Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr) {
+	return parse_from_mata(std::string{input}, alphabet, state_map);
+}
 TreeTransducer parse_from_mata(std::istream& input, Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr);
 TreeTransducer parse_from_mata(
 	const std::filesystem::path& input, Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr

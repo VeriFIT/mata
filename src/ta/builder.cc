@@ -136,7 +136,9 @@ Ta construct(const parser::ParsedSection& section, Alphabet* alphabet, NameState
 			}) != line.end()) {
 			invalid_transition(line_index, "multiple -> tokens");
 		}
-		if (arrow + 2 != line.end()) { invalid_transition(line_index, "expected exactly one target state"); }
+		if (arrow + 1 == line.end() || arrow + 2 != line.end()) {
+			invalid_transition(line_index, "expected exactly one target state");
+		}
 		if (is_reserved_name((arrow + 1)->token)) { invalid_transition(line_index, "invalid or empty target state"); }
 		if (arrow == line.begin()) { invalid_transition(line_index, "missing symbol"); }
 		const size_t symbol_tokens{static_cast<size_t>(arrow - line.begin())};

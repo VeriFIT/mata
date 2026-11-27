@@ -60,6 +60,8 @@ TEST_CASE("mata::ta::builder accepts streams and ParsedSection input") {
 	const Tree tree{alphabet.translate_symb("a")};
 	CHECK(from_stream.accepts(tree));
 	CHECK(from_section.accepts(tree));
+	const Ta from_literal{builder::parse_from_mata("@TA-explicit\n%Final r\na -> r\n")};
+	CHECK(from_literal.final.size() == 1);
 }
 
 TEST_CASE("mata::ta::builder rejects inconsistent ranked symbols") {
@@ -82,6 +84,7 @@ TEST_CASE("mata::ta::builder rejects malformed protocol inputs") {
 		"@TA-explicit\n%Final q\na q\n",
 		"@TA-explicit\n%Final q\na -> q r\n",
 		"@TA-explicit\n%Final q\nf(q q) -> q\n",
+		"@TA-explicit\n%Final q\nf(q) ->\n",
 		"@TA-explicit\n%Final q\nf(q,,q) -> q\n",
 		"@TA-explicit\n%Final q\nf(q,) -> q\n",
 		"@TA-explicit\n%Final q\nf() -> q\n",
