@@ -1,7 +1,7 @@
 @TA-explicit
 # Bad token configurations: no token or at least two tokens.
 %Alphabet-auto
-%Final p2
+%Final p0 p2
 n -> p0
 t -> p1
 nn(p0,p0) -> p0

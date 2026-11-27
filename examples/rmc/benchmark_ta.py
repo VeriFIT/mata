@@ -21,6 +21,10 @@ EXPECTED = {
         "predicates": "safe, predicate refinements 0",
         "height": "safe, height 1",
     },
+    "lone-leaf": {
+        "predicates": "safe, predicate refinements 1",
+        "height": "safe, height 0",
+    },
 }
 PHASES = ("post", "collapse", "reduction", "inclusion", "backtrack")
 

@@ -121,13 +121,23 @@ class Cegar {
 		return timed(timings_.collapse, [&] { return collapse_by_height(aut, refinement_); });
 	}
 
-	bool real_error(Ta candidate) const {
+	/// On a spurious error, stores the last pre-image that the concrete posts miss: the abstraction added it.
+	bool real_error(Ta candidate) {
 		for (size_t index{concrete_posts_.size()}; index > 0; --index) {
-			candidate = timed(timings_.backtrack, [&] { return intersection(concrete_posts_[index - 1], candidate); });
-			if (candidate.is_lang_empty()) { return false; }
-			candidate = timed(timings_.backtrack, [&] { return backward_.apply(candidate); });
+			Ta reachable{timed(timings_.backtrack, [&] {
+				return intersection(concrete_posts_[index - 1], candidate);
+			})};
+			if (reachable.is_lang_empty()) {
+				refinement_candidate_ = std::move(candidate);
+				return false;
+			}
+			candidate = timed(timings_.backtrack, [&] { return backward_.apply(reachable); });
 		}
-		return timed(timings_.backtrack, [&] { return !intersection(initial_, candidate).is_lang_empty(); });
+		if (timed(timings_.backtrack, [&] { return !intersection(initial_, candidate).is_lang_empty(); })) {
+			return true;
+		}
+		refinement_candidate_ = std::move(candidate);
+		return false;
 	}
 
 	std::string fixpoint() {
@@ -136,12 +146,10 @@ class Cegar {
 		for (size_t round{0};; ++round) {
 			Ta candidate{intersection(reached, bad_)};
 			if (!candidate.is_lang_empty()) {
-				const bool real{real_error(candidate)};
-				if (real) {
+				if (real_error(std::move(candidate))) {
 					return "unsafe, steps: " + std::to_string(round) + ", " +
 						   (use_predicates_ ? "predicate refinements " : "height ") + std::to_string(refinement_);
 				}
-				refinement_candidate_ = std::move(candidate);
 				return "spurious";
 			}
 			Ta next_post{timed(timings_.post, [&] { return step_->apply(reached); })};
@@ -188,6 +196,7 @@ int main(int argc, char** argv) {
 			{"token-passing", "ta-token", "ta-token-step.mata"},
 			{"token-copying", "ta-token", "ta-token-copying-step.mata"},
 			{"percolate", "ta-percolate", "ta-percolate-step.mata"},
+			{"lone-leaf", "ta-lone-leaf", "ta-lone-leaf-step.mata"},
 		};
 		for (const bool predicates : {true, false}) {
 			for (const Model& model : models) {
