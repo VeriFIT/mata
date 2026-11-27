@@ -8,12 +8,13 @@ import time
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+# The complement, over valid configurations s[ifdehro]*, of the source bad automaton s[ifdeo]*r[ifdro]*h[ifdero]*.
 RTL_SAFE = (
     "s[ifdeo]*"
-    "|s[ifdeor]*h[ifdehro]*"
-    "|s[ifdeor]*r[ifdro]*"
-    "|s[ifdeor]*r[ifdro]*e[ifdehro]*"
-    "|s[ifdeor]*r[ifdro]*h[ifdero]*h[ifdehro]*"
+    "|s[ifdeo]*h[ifdehro]*"
+    "|s[ifdeo]*r[ifdro]*"
+    "|s[ifdeo]*r[ifdro]*e[ifdehro]*"
+    "|s[ifdeo]*r[ifdro]*h[ifdero]*h[ifdehro]*"
 )
 MODELS = {
     "token-passing": ("tn*", "n*tn*", "n t"),

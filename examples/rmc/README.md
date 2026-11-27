@@ -60,9 +60,16 @@ the condition of `4` to `5`.
 an identity letter; `i`, `f`, `d`, `e`, `r` and `o` are the processor stages, and `h` is the original model's `eh`
 exception-handler letter. The seven level-zero states track the source transducer state. Each of its 47 rules is a
 level-zero/level-one pair, so every step preserves the word length; this includes all 24 identity rules and 23 changing
-rules. The safe expression used by the runner is the complement, over valid configurations, of the source bad automaton
-`s[ifdeor]*r[ifdro]*h[ifdero]*`. The observed verdict is `safe, length 1`: at abstraction length zero the first round
-is spurious, and length one closes after rounds 0 through 6 without a concrete `r`-then-`h` trace.
+rules. The source bad automaton is `s[ifdeo]*r[ifdro]*h[ifdero]*`: exactly one `h`, an `r` before it, and no `e`
+between the first `r` and the `h`. The safe expression used by the runner is its complement over valid configurations
+`s[ifdehro]*`:
+
+```text
+s[ifdeo]*|s[ifdeo]*h[ifdehro]*|s[ifdeo]*r[ifdro]*|s[ifdeo]*r[ifdro]*e[ifdehro]*|s[ifdeo]*r[ifdro]*h[ifdero]*h[ifdehro]*
+```
+
+The observed verdict is `safe, length 1`: at abstraction length zero the first round is spurious, and length one closes
+after rounds 0 through 6 without a concrete `r`-then-`h` trace.
 
 ## Instrumentation and repeatable benchmarks
 
@@ -94,7 +101,8 @@ and a `records` object with all phase timings and lazy counters. Available model
 uses rules `a -> q` and `f(q1,q2) -> q`; `%Final` declares the accepting root states. Structure-preserving `@TT-explicit`
 transducers use `t -> n : q1` and `nn(q1,q0) -> tt : q2`. The driver composes concrete posts, computes predicate or
 finite-height abstractions, checks inclusion, and backtracks bad intersections. It preserves concrete posts for real
-versus spurious counterexample checks and detects predicate-refinement cycling.
+versus spurious counterexample checks, refines predicates with the pre-image that a concrete post misses, and detects
+predicate-refinement cycling.
 
 ```sh
 build/release/g++/examples/rmc-ta-token examples/rmc
@@ -105,8 +113,9 @@ build/release/g++/examples/rmc-ta-token examples/rmc
 | token-passing | `safe, predicate refinements 0`             | `safe, height 0`             |
 | token-copying | `unsafe, steps: 1, predicate refinements 0` | `unsafe, steps: 1, height 0` |
 | percolate     | `safe, predicate refinements 0`             | `safe, height 1`             |
+| lone-leaf     | `safe, predicate refinements 1`             | `safe, height 0`             |
 
-[`benchmark_ta.py`](benchmark_ta.py) repeats all six runs and emits model, mode, verdict, process status, per-model wall
+[`benchmark_ta.py`](benchmark_ta.py) repeats all eight runs and emits model, mode, verdict, process status, per-model wall
 time, and post, collapse, reduction, inclusion, and backtrack timing as JSONL. The default executable and directory are
 the ones above; override them with `--mata` and `--directory`, and set the count with `--runs N`. Each batch has a
 60-second timeout by default; change it with `--timeout N`. Malformed, incomplete, mismatched, and timed-out runs are

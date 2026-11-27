@@ -3781,14 +3781,16 @@ const BURNS_PARAMETERS: [&str; 6] = [
 	"symbols=0 1 2 3 4 5",
 ];
 
+/// The safe configurations are the complement, over valid configurations `s[ifdehro]*`, of the source bad automaton
+/// `s[ifdeo]*r[ifdro]*h[ifdero]*`.
 const RTL_PARAMETERS: [&str; 6] = [
 	"--param",
 	"initial-regex=si*",
 	"--param",
 	concat!(
-		"bad-regex=s[ifdeo]*|s[ifdeor]*h[ifdehro]*|s[ifdeor]*r[ifdro]*",
-		"|s[ifdeor]*r[ifdro]*e[ifdehro]*",
-		"|s[ifdeor]*r[ifdro]*h[ifdero]*h[ifdehro]*"
+		"bad-regex=s[ifdeo]*|s[ifdeo]*h[ifdehro]*|s[ifdeo]*r[ifdro]*",
+		"|s[ifdeo]*r[ifdro]*e[ifdehro]*",
+		"|s[ifdeo]*r[ifdro]*h[ifdero]*h[ifdehro]*"
 	),
 	"--param",
 	"symbols=s i f d e h r o",
@@ -3858,6 +3860,57 @@ fn the_regular_model_checking_examples_reach_their_verdicts() {
 	let output = mata(["script", "run", invariant.as_str()]);
 	assert_eq!(status(&output), 0, "{}", stderr(&output));
 	assert_eq!(stdout(&output), "no reachable 0: true\n");
+}
+
+#[test]
+fn the_rtl_safety_property_rejects_an_r_then_h_configuration() {
+	// `srh` is in the source bad language, so an initial configuration containing it is an immediate error.
+	let initial = "initial-regex=si*|srh";
+	let model = [
+		"--param",
+		initial,
+		"--param",
+		RTL_PARAMETERS[3],
+		"--param",
+		RTL_PARAMETERS[5],
+	];
+	for (abstraction, expected) in [
+		("length", "unsafe, steps: 0, length 0"),
+		("predicates", "unsafe, steps: 0, predicate refinements 0"),
+	] {
+		let abstraction_parameter = format!("abstraction={abstraction}");
+		assert_eq!(
+			run_armc("rtl", &["--param", &abstraction_parameter], model),
+			format!("{expected}\n"),
+			"{abstraction}"
+		);
+	}
+}
+
+#[test]
+fn regular_model_checking_runs_more_rounds_than_the_call_depth_limit() {
+	// A 9-bit binary counter, least significant bit first, needs 511 abstract rounds to reach all ones.
+	let workspace = Workspace::new("armc-counter");
+	let counter = workspace.file(
+		"counter.mata",
+		"@NFT-explicit\n%Alphabet-auto\n%Initial c\n%Final d\n%Levels c:0 d:0 c0:1 c1:1 d0:1 d1:1\n%LevelsNum 2\n\
+		 c 1 c1\nc1 0 c\nc 0 c0\nc0 1 d\nd 0 d0\nd0 0 d\nd 1 d1\nd1 1 d\n",
+	);
+	let script = format!("{}/armc.matasc", rmc_examples());
+	let output = mata([
+		"script",
+		"run",
+		"--param",
+		"initial-regex=000000000",
+		"--param",
+		"bad-regex=(0|1)*0(0|1)*",
+		"--param",
+		"symbols=0 1",
+		script.as_str(),
+		counter.as_str(),
+	]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "unsafe, steps: 511, length 8\n");
 }
 
 #[test]

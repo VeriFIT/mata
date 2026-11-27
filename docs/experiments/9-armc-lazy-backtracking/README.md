@@ -54,8 +54,12 @@ helped only the small token-copying counterexample and was not generally useful.
 
 On Burns, the unminimized backward pass expands intermediate automata severely; it also times out on broken Burns. Lazy
 backtracking times out on both Burns variants. Early checking adds one inclusion test per preceding round and saves only
-the final collapse, which loses on both Burns models. Lazy backtracking saves about 146 ms in median `backtrack` time on
-token copying (0.409 ms to 0.264 ms), but only about 0.219 ms in median whole-process time and does not generalize.
+the final collapse, which loses on both Burns models. Lazy backtracking saves about 0.145 ms in median `backtrack` time
+on token copying (0.409 ms to 0.264 ms), but only about 0.219 ms in median whole-process time and does not generalize.
+
+The RTL rows were measured with an earlier safe expression that accepted every valid configuration, including the bad
+`srh`. With the corrected expression now in [`harness.py`](harness.py), the current `armc.matasc` reaches the same
+`safe, length 1` verdict after the same rounds.
 
 ## Reproducing
 
@@ -66,17 +70,17 @@ git am docs/experiments/9-armc-lazy-backtracking/rejected.patch
 just bindings rust build --release
 ```
 
-Run each configuration through the supplied harness, interleaving invocations of the variants:
+Run the variants alternately, one invocation per variant and sample, pinned to CPU 0. Each harness line has `"run": 0`;
+the line order of the output file records the executed order:
 
 ```sh
-python3 docs/experiments/9-armc-lazy-backtracking/harness.py \
-  --mata bindings/rust/target/release/mata --model burns --backtracking eager --repeats 15
-python3 docs/experiments/9-armc-lazy-backtracking/harness.py \
-  --mata bindings/rust/target/release/mata --model burns --backtracking eager-unminimized --repeats 15
-python3 docs/experiments/9-armc-lazy-backtracking/harness.py \
-  --mata bindings/rust/target/release/mata --model burns --backtracking lazy --repeats 15
-python3 docs/experiments/9-armc-lazy-backtracking/harness.py \
-  --mata bindings/rust/target/release/mata --model burns --early-fixpoint --repeats 15
+model=burns
+for sample in $(seq 15); do
+  for variant in '--backtracking eager' '--backtracking eager-unminimized' '--backtracking lazy' '--early-fixpoint'; do
+    taskset --cpu-list 0 python3 docs/experiments/9-armc-lazy-backtracking/harness.py \
+      --mata bindings/rust/target/release/mata --model "$model" $variant --repeats 1
+  done
+done > "$model.jsonl"
 ```
 
 Substitute `burns-broken`, `rtl`, or `token-copying` for the other rows. The expected verdicts are `safe, length 1` for

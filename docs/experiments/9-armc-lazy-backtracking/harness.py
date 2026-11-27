@@ -8,8 +8,8 @@ import time
 from pathlib import Path
 
 SAFE = (
-    "s[ifdeo]*|s[ifdeor]*h[ifdehro]*|s[ifdeor]*r[ifdro]*"
-    "|s[ifdeor]*r[ifdro]*e[ifdehro]*|s[ifdeor]*r[ifdro]*h[ifdero]*h[ifdehro]*"
+    "s[ifdeo]*|s[ifdeo]*h[ifdehro]*|s[ifdeo]*r[ifdro]*"
+    "|s[ifdeo]*r[ifdro]*e[ifdehro]*|s[ifdeo]*r[ifdro]*h[ifdero]*h[ifdehro]*"
 )
 MODELS = {
     "token-passing": ("tn*", "n*tn*", "n t"),
@@ -58,7 +58,8 @@ for run in range(args.repeats):
         code = completed.returncode
         stdout, stderr = completed.stdout, completed.stderr
     except subprocess.TimeoutExpired as error:
-        code, stdout, stderr = 124, error.stdout or "", error.stderr or ""
+        # Captured output of a timed-out run is bytes even with text=True.
+        code, stdout, stderr = 124, (error.stdout or b"").decode(), (error.stderr or b"").decode()
     lines = stdout.splitlines()
     verdict = "TIMEOUT" if code == 124 else (lines[-1] if lines else "")
     records = {}
