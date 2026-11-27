@@ -2,9 +2,16 @@
 
 [`armc.matasc`](armc.matasc) is abstract regular model checking (Bouajjani, Habermehl, Vojnar, CAV 2004) as a Mata
 Script. A configuration of a parameterised system is a word with one letter per process, the transition relation a
-length-preserving two-level transducer. The script over-approximates the reachable configurations with
+length-preserving two-level transducer. By default, the script over-approximates the reachable configurations with
 `nfa:collapse-by-length`, checks them against the bad configurations lazily, decides with a backward search whether a
-bad configuration it meets is really reachable, and refines a spurious one by a larger length.
+bad configuration it meets is really reachable, and refines a spurious one by a larger length. With
+`--param 'abstraction=predicates'`, it instead uses `nfa:collapse-by-predicates`, retains the intersections found by
+backward counterexample analysis as new predicates, and stops with `unknown, abstraction cycling` if refinement adds
+no new predicate language. By default (`predicate-seed=adaptive`), the initial predicate is the bad-language automaton;
+all its states contribute fingerprints, and the first spurious counterexample adds the transducer's domain and range.
+Change `predicate-seed` to `none` to start without predicates, `actions` to use the transducer domain and range, or
+`bad-actions` to use all of them. With `verification-direction=backward`, the script starts from the original bad
+configurations, uses the inverted transition relation, and tests reachability of the original initial configurations.
 
 | System                                     | Letters             | Result                      |
 | ------------------------------------------ | ------------------- | --------------------------- |
@@ -19,6 +26,8 @@ Run, from the repository root:
 ```sh
 mata script run --param 'initial-regex=tn*' --param 'bad-regex=n*tn*' --param 'symbols=n t' \
   examples/rmc/armc.matasc examples/rmc/token-passing.mata
+mata script run --param 'initial-regex=tn*' --param 'bad-regex=n*tn*' --param 'symbols=n t' \
+  --param 'abstraction=predicates' examples/rmc/armc.matasc examples/rmc/token-passing.mata
 mata script run --param 'initial-regex=0*' --param 'bad-regex=[0-4]*(5[0-4]*)?' --param 'symbols=0 1 2 3 4 5' \
   examples/rmc/armc.matasc examples/rmc/burns.mata
 ```

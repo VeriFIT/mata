@@ -3790,21 +3790,97 @@ fn the_regular_model_checking_examples_reach_their_verdicts() {
 		"--param",
 		"symbols=s i f d e h r o",
 	];
-	for (system, parameters, verdict) in [
-		("token-passing", token, "safe, length 1"),
-		("token-copying", token, "unsafe, steps: 1, length 1"),
-		("burns", burns, "safe, length 1"),
-		("burns-broken", burns, "unsafe, steps: 10, length 1"),
-		("rtl", rtl, "safe, length 1"),
+	for (system, parameters, verdict, predicate_verdict) in [
+		(
+			"token-passing",
+			token,
+			"safe, length 1",
+			"safe, predicate refinements 0",
+		),
+		(
+			"token-copying",
+			token,
+			"unsafe, steps: 1, length 1",
+			"unsafe, steps: 1, predicate refinements 0",
+		),
+		(
+			"burns",
+			burns,
+			"safe, length 1",
+			"safe, predicate refinements 0",
+		),
+		(
+			"burns-broken",
+			burns,
+			"unsafe, steps: 10, length 1",
+			"unsafe, steps: 10, predicate refinements 1",
+		),
+		(
+			"rtl",
+			rtl,
+			"safe, length 1",
+			"safe, predicate refinements 0",
+		),
 	] {
 		let script = format!("{examples}/armc.matasc");
 		let input = format!("{examples}/{system}.mata");
-		let mut arguments = vec!["script", "run"];
-		arguments.extend(parameters);
+		for (abstraction, expected) in [("length", verdict), ("predicates", predicate_verdict)] {
+			let abstraction_parameter = format!("abstraction={abstraction}");
+			let mut arguments = vec!["script", "run", "--param", &abstraction_parameter];
+			arguments.extend(parameters);
+			arguments.extend([script.as_str(), input.as_str()]);
+			let output = mata(arguments);
+			assert_eq!(status(&output), 0, "{system}: {}", stderr(&output));
+			assert_eq!(
+				stdout(&output),
+				format!("{expected}\n"),
+				"{system}: {abstraction}"
+			);
+		}
+	}
+	// No initial predicates needs a refinement, while transducer guards/actions avoid all refinements on this model.
+	for (seed, expected) in [
+		("none", "unsafe, steps: 10, predicate refinements 4"),
+		("actions", "unsafe, steps: 10, predicate refinements 0"),
+	] {
+		let input = format!("{examples}/burns-broken.mata");
+		let script = format!("{examples}/armc.matasc");
+		let predicate_seed = format!("predicate-seed={seed}");
+		let mut arguments = vec![
+			"script",
+			"run",
+			"--param",
+			"abstraction=predicates",
+			"--param",
+			&predicate_seed,
+		];
+		arguments.extend(burns);
 		arguments.extend([script.as_str(), input.as_str()]);
 		let output = mata(arguments);
-		assert_eq!(status(&output), 0, "{system}: {}", stderr(&output));
-		assert_eq!(stdout(&output), format!("{verdict}\n"), "{system}");
+		assert_eq!(status(&output), 0, "{}", stderr(&output));
+		assert_eq!(stdout(&output), format!("{expected}\n"), "{seed}");
+	}
+	// Backward verification swaps both the checked languages and the transducer direction.
+	for (abstraction, expected) in [
+		("length", "safe, length 1"),
+		("predicates", "safe, predicate refinements 1"),
+	] {
+		let input = format!("{examples}/burns.mata");
+		let script = format!("{examples}/armc.matasc");
+		let mode = format!("abstraction={abstraction}");
+		let mut arguments = vec![
+			"script",
+			"run",
+			"--param",
+			"verification-direction=backward",
+			"--param",
+			&mode,
+		];
+		arguments.extend(burns);
+		arguments.extend([script.as_str(), input.as_str()]);
+		let output = mata(arguments);
+		assert_eq!(status(&output), 0, "{}", stderr(&output));
+		assert_eq!(stdout(&output), format!("{expected}\n"), "{abstraction}");
 	}
 	let invariant = format!("{examples}/inductive-invariant.matasc");
 	let output = mata(["script", "run", invariant.as_str()]);

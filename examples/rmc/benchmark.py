@@ -35,6 +35,9 @@ def run(
     mata: str,
     model: str,
     run_number: int,
+    abstraction: str,
+    predicate_seed: str,
+    verification_direction: str,
     reduce_before_collapse: bool,
     reduction_min_states: int,
     timeout: float,
@@ -52,6 +55,12 @@ def run(
         f"symbols={symbols}",
         "--param",
         "instrument=true",
+        "--param",
+        f"abstraction={abstraction}",
+        "--param",
+        f"predicate-seed={predicate_seed}",
+        "--param",
+        f"verification-direction={verification_direction}",
         "--param",
         f"reduce-before-collapse={'true' if reduce_before_collapse else 'false'}",
         "--param",
@@ -81,7 +90,9 @@ def run(
                 except ValueError:
                     records[label] = value
     return {
+        "abstraction": abstraction,
         "instrument": True,
+        "predicate_seed": predicate_seed,
         "model": model,
         "reduce_before_collapse": reduce_before_collapse,
         "reduction_min_states": reduction_min_states,
@@ -89,6 +100,7 @@ def run(
         "returncode": completed.returncode,
         "run": run_number,
         "seconds": elapsed,
+        "verification_direction": verification_direction,
         "stderr": completed.stderr,
         "verdict": verdict,
     }
@@ -99,6 +111,13 @@ def main() -> int:
     parser.add_argument("--mata", default="mata", help="mata executable (default: mata on PATH)")
     parser.add_argument("--model", choices=MODELS, default="rtl")
     parser.add_argument("--runs", type=positive_int, default=1)
+    parser.add_argument("--abstraction", choices=("length", "predicates"), default="length")
+    parser.add_argument(
+        "--predicate-seed",
+        choices=("bad", "none", "actions", "bad-actions", "adaptive"),
+        default="adaptive",
+    )
+    parser.add_argument("--verification-direction", choices=("forward", "backward"), default="forward")
     parser.add_argument("--reduce-before-collapse", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--reduction-min-states", type=int, default=32)
     parser.add_argument("--timeout", type=positive_int, default=60, help="per-run timeout in seconds")
@@ -109,6 +128,9 @@ def main() -> int:
             arguments.mata,
             arguments.model,
             run_number,
+            arguments.abstraction,
+            arguments.predicate_seed,
+            arguments.verification_direction,
             arguments.reduce_before_collapse,
             arguments.reduction_min_states,
             arguments.timeout,
