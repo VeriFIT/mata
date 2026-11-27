@@ -3715,11 +3715,24 @@ fn the_regular_model_checking_examples_reach_their_verdicts() {
 		"--param",
 		"symbols=0 1 2 3 4 5",
 	];
+	let rtl = [
+		"--param",
+		"initial-regex=si*",
+		"--param",
+		concat!(
+			"bad-regex=s[ifdeo]*|s[ifdeor]*h[ifdehro]*|s[ifdeor]*r[ifdro]*",
+			"|s[ifdeor]*r[ifdro]*e[ifdehro]*",
+			"|s[ifdeor]*r[ifdro]*h[ifdero]*h[ifdehro]*"
+		),
+		"--param",
+		"symbols=s i f d e h r o",
+	];
 	for (system, parameters, verdict) in [
 		("token-passing", token, "safe, length 1"),
 		("token-copying", token, "unsafe, steps: 1, length 1"),
 		("burns", burns, "safe, length 1"),
 		("burns-broken", burns, "unsafe, steps: 10, length 1"),
+		("rtl", rtl, "safe, length 1"),
 	] {
 		let script = format!("{examples}/armc.matasc");
 		let input = format!("{examples}/{system}.mata");
@@ -3734,6 +3747,39 @@ fn the_regular_model_checking_examples_reach_their_verdicts() {
 	let output = mata(["script", "run", invariant.as_str()]);
 	assert_eq!(status(&output), 0, "{}", stderr(&output));
 	assert_eq!(stdout(&output), "no reachable 0: true\n");
+
+	let script = format!("{examples}/armc.matasc");
+	let input = format!("{examples}/token-copying.mata");
+	let mut arguments = vec!["script", "run", "--param", "instrument=true"];
+	arguments.extend(token);
+	arguments.extend([script.as_str(), input.as_str()]);
+	let output = mata(arguments);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	let text = stdout(&output);
+	assert!(text.ends_with("unsafe, steps: 1, length 1\n"), "{text}");
+	let records = records(&text);
+	for label in [
+		"armc.n1.initial-collapse",
+		"armc.n1.r0.post",
+		"armc.n1.r0.collapse",
+		"armc.n1.r0.inclusion",
+		"armc.n1.r0.round",
+		"armc.n1.r1.pre-0",
+	] {
+		assert!(records[label].parse::<f64>().is_ok(), "{label}: {text}");
+	}
+	for counter in [
+		"explored",
+		"pruned",
+		"macrostates",
+		"dropped",
+		"explicit",
+		"explicit-states",
+		"explicit-transitions",
+	] {
+		let label = format!("armc.n1.r1.bad.{counter}");
+		assert!(records[&label].parse::<usize>().is_ok(), "{label}: {text}");
+	}
 }
 
 #[test]
