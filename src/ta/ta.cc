@@ -15,18 +15,17 @@ const std::string TYPE_TA{"TA-explicit"};
 
 namespace {
 
-bool intersects(const StateSet& states, const State concrete_state) { return states.contains(concrete_state); }
-
 bool all_productive(const std::vector<State>& states, const std::vector<bool>& productive) {
 	return std::all_of(states.begin(), states.end(), [&productive](const State state) { return productive[state]; });
 }
 
 struct Productivity {
 	std::vector<bool> productive;
-	std::vector<std::optional<Tree>> witnesses;
+	/// The rule that first made each productive state productive; its children became productive before it.
+	std::vector<const Transition*> generators;
 };
 
-Productivity analyze_productivity(const Ta& aut, const bool with_witnesses) {
+Productivity analyze_productivity(const Ta& aut) {
 	struct PendingRule {
 		const Transition* transition;
 		size_t missing_children;
@@ -35,8 +34,7 @@ Productivity analyze_productivity(const Ta& aut, const bool with_witnesses) {
 	const size_t num_of_states{aut.num_of_states()};
 	Productivity result{
 		.productive = std::vector<bool>(num_of_states, false),
-		.witnesses =
-			with_witnesses ? std::vector<std::optional<Tree>>(num_of_states) : std::vector<std::optional<Tree>>{}
+		.generators = std::vector<const Transition*>(num_of_states, nullptr)
 	};
 	std::vector<PendingRule> pending_rules{};
 	pending_rules.reserve(aut.delta.size());
@@ -62,12 +60,7 @@ Productivity analyze_productivity(const Ta& aut, const bool with_witnesses) {
 		const State target{rule.transition->target};
 		if (result.productive[target]) { return; }
 		result.productive[target] = true;
-		if (with_witnesses) {
-			std::vector<Tree> children{};
-			children.reserve(rule.transition->children.size());
-			for (const State child : rule.transition->children) { children.push_back(*result.witnesses[child]); }
-			result.witnesses[target].emplace(rule.transition->symbol, std::move(children));
-		}
+		result.generators[target] = rule.transition;
 		worklist.push_back(target);
 	}};
 
@@ -86,6 +79,15 @@ Productivity analyze_productivity(const Ta& aut, const bool with_witnesses) {
 	return result;
 }
 
+/// Expands only the generators below @p state, so witnesses of other productive states are never built.
+Tree build_witness(const std::vector<const Transition*>& generators, const State state) {
+	const Transition& rule{*generators[state]};
+	std::vector<Tree> children{};
+	children.reserve(rule.children.size());
+	for (const State child : rule.children) { children.push_back(build_witness(generators, child)); }
+	return Tree{rule.symbol, std::move(children)};
+}
+
 struct RuleKey {
 	Symbol symbol;
 	std::vector<State> children;
@@ -98,12 +100,6 @@ struct RuleKeyHash {
 		for (const State child : key.children) { hash = utils::hash_combine(hash, child); }
 		return hash;
 	}
-};
-
-struct RuleGroup {
-	Symbol symbol;
-	std::vector<State> children;
-	StateSet targets{};
 };
 
 class Evaluator {
@@ -289,10 +285,10 @@ bool Ta::accepts(const Tree& tree) const {
 
 bool Ta::is_lang_empty(Tree* witness) const {
 	validate();
-	const Productivity productivity{analyze_productivity(*this, witness != nullptr)};
+	const Productivity productivity{analyze_productivity(*this)};
 	for (const State state : final) {
 		if (!productivity.productive[state]) { continue; }
-		if (witness != nullptr) { *witness = std::move(*productivity.witnesses[state]); }
+		if (witness != nullptr) { *witness = build_witness(productivity.generators, state); }
 		return false;
 	}
 	return true;
@@ -315,61 +311,70 @@ Ta Ta::determinize(std::unordered_map<StateSet, State>* subset_map) const {
 	Ta result{delta.alphabet()};
 	if (delta.empty()) { return result; }
 
-	std::vector<RuleGroup> groups{};
-	groups.reserve(delta.size());
-	std::unordered_map<RuleKey, size_t, RuleKeyHash> group_indices{};
+	std::unordered_map<Symbol, StateSet> nullary_targets{};
+	std::unordered_map<Symbol, std::vector<const Transition*>> rules_by_symbol{};
 	for (const auto& [target, transitions] : delta) {
 		for (const Transition& transition : transitions) {
-			RuleKey key{transition.symbol, transition.children};
-			const auto [group_it, inserted]{group_indices.emplace(std::move(key), groups.size())};
-			if (inserted) { groups.push_back(RuleGroup{transition.symbol, transition.children, {}}); }
-			groups[group_it->second].targets.insert(transition.target);
+			if (transition.children.empty()) {
+				nullary_targets[transition.symbol].insert(transition.target);
+			} else {
+				rules_by_symbol[transition.symbol].push_back(&transition);
+			}
 		}
 	}
 
 	std::vector<StateSet> macrostates{};
 	std::unordered_map<StateSet, State> macrostate_indices{};
-	const auto discover{[&](const RuleGroup& group, const std::vector<State>& children) {
+	const auto discover{[&](StateSet macrostate, const Symbol symbol, const std::vector<State>& children) {
 		State parent_state{};
-		if (const auto it{macrostate_indices.find(group.targets)}; it != macrostate_indices.end()) {
+		if (const auto it{macrostate_indices.find(macrostate)}; it != macrostate_indices.end()) {
 			parent_state = it->second;
 		} else {
 			parent_state = nfa::to_state(macrostates.size());
-			macrostates.push_back(group.targets);
-			macrostate_indices.emplace(group.targets, parent_state);
 			result.add_state(parent_state);
-			if (!group.targets.is_intersection_empty_with(final)) { result.final.insert(parent_state); }
-			if (subset_map != nullptr) { subset_map->emplace(group.targets, parent_state); }
+			if (!macrostate.is_intersection_empty_with(final)) { result.final.insert(parent_state); }
+			if (subset_map != nullptr) { subset_map->emplace(macrostate, parent_state); }
+			macrostate_indices.emplace(macrostate, parent_state);
+			macrostates.push_back(std::move(macrostate));
 		}
-		result.add_transition(group.symbol, children, parent_state);
+		result.add_transition(symbol, children, parent_state);
 	}};
 
-	for (const RuleGroup& group : groups) {
-		if (group.children.empty()) { discover(group, {}); }
-	}
+	for (const auto& [symbol, targets] : nullary_targets) { discover(targets, symbol, {}); }
 
+	// Each tuple of macrostates is built once: while expanding its highest macrostate, at the first position holding
+	// it. Its target is the union over every rule enabled by the whole tuple, so the result stays deterministic.
+	// enabled[p] holds the rules of the symbol whose first p children lie in the chosen macrostates.
+	std::vector<std::vector<const Transition*>> enabled{};
+	std::vector<State> tuple{};
+	std::vector<State> parent_targets{};
 	for (size_t next_macrostate{0}; next_macrostate < macrostates.size(); ++next_macrostate) {
-		const State current_state{nfa::to_state(next_macrostate)};
-		const StateSet current{macrostates[next_macrostate]};
-		const size_t known_macrostates{macrostates.size()};
-		for (const RuleGroup& group : groups) {
-			const size_t arity{group.children.size()};
-			if (arity == 0) { continue; }
+		for (const auto& symbol_rules : rules_by_symbol) {
+			const Symbol symbol{symbol_rules.first};
+			const std::vector<const Transition*>& rules{symbol_rules.second};
+			const size_t arity{rules.front()->children.size()};
+			enabled.resize(arity + 1);
+			tuple.resize(arity);
 			for (size_t new_position{0}; new_position < arity; ++new_position) {
-				if (!intersects(current, group.children[new_position])) { continue; }
-				std::vector<State> tuple(arity);
-				tuple[new_position] = current_state;
 				const auto enumerate{[&](auto&& self, const size_t position) -> void {
 					if (position == arity) {
-						discover(group, tuple);
+						parent_targets.clear();
+						for (const Transition* rule : enabled[arity]) { parent_targets.push_back(rule->target); }
+						discover(StateSet{parent_targets}, symbol, tuple);
 						return;
 					}
-					if (position == new_position) {
-						self(self, position + 1);
-						return;
-					}
-					for (size_t child_macrostate{0}; child_macrostate < known_macrostates; ++child_macrostate) {
-						if (!intersects(macrostates[child_macrostate], group.children[position])) { continue; }
+					const std::vector<const Transition*>& candidates{position == 0 ? rules : enabled[position]};
+					const size_t first{position == new_position ? next_macrostate : 0};
+					const size_t last{position < new_position ? next_macrostate : next_macrostate + 1};
+					for (size_t child_macrostate{first}; child_macrostate < last; ++child_macrostate) {
+						std::vector<const Transition*>& matching{enabled[position + 1]};
+						matching.clear();
+						for (const Transition* rule : candidates) {
+							if (macrostates[child_macrostate].contains(rule->children[position])) {
+								matching.push_back(rule);
+							}
+						}
+						if (matching.empty()) { continue; }
 						tuple[position] = nfa::to_state(child_macrostate);
 						self(self, position + 1);
 					}
@@ -384,7 +389,7 @@ Ta Ta::determinize(std::unordered_map<StateSet, State>* subset_map) const {
 Ta& Ta::trim(StateRenaming* state_renaming) & {
 	validate();
 	if (state_renaming != nullptr) { state_renaming->clear(); }
-	const Productivity productivity{analyze_productivity(*this, false)};
+	const Productivity productivity{analyze_productivity(*this)};
 	std::vector<bool> useful(num_of_states_, false);
 	std::deque<State> worklist{};
 	for (const State state : final) {

@@ -277,3 +277,48 @@ TEST_CASE("mata::ta token-passing initial trees preserve exactly one token") {
 	CHECK(deterministic.accepts(node(node(token(), nil()), nil())));
 	CHECK_FALSE(deterministic.accepts(node(token(), token())));
 }
+
+TEST_CASE("mata::ta::Ta determinize unions the rules enabled by one child macrostate tuple") {
+	Ta aut{6};
+	aut.final = {3, 5};
+	aut.add_transition(0, 0);
+	aut.add_transition(0, 1);
+	aut.add_transition(1, {0}, 2);
+	aut.add_transition(1, {1}, 3);
+	aut.add_transition(2, {0, 1}, 4);
+	aut.add_transition(2, {1, 0}, 5);
+	const Tree leaf{0};
+	const Tree unary_leaf{1, {leaf}};
+	REQUIRE(aut.accepts(unary_leaf));
+	REQUIRE(aut.accepts(Tree{2, {leaf, leaf}}));
+
+	std::unordered_map<StateSet, State> subset_map{};
+	const Ta deterministic{aut.determinize(&subset_map)};
+	CHECK(deterministic.is_deterministic());
+	CHECK(deterministic.delta.size() == 3);
+	CHECK(subset_map.contains(StateSet{2, 3}));
+	CHECK(subset_map.contains(StateSet{4, 5}));
+	check_same_language(
+		aut, deterministic,
+		{leaf, unary_leaf, Tree{1, {unary_leaf}}, Tree{2, {leaf, leaf}}, Tree{2, {unary_leaf, leaf}}}
+	);
+}
+
+TEST_CASE("mata::ta::Ta witness expands only the selected final state") {
+	constexpr State levels{40};
+	Ta aut{levels + 1};
+	aut.add_transition(0, 0);
+	for (State level{0}; level < levels; ++level) { aut.add_transition(1, {level, level}, level + 1); }
+
+	// The witness of the top state has 2^40 leaves, so building it for a nonfinal state would never finish.
+	aut.final = {0};
+	Tree witness{99};
+	REQUIRE_FALSE(aut.is_lang_empty(&witness));
+	CHECK(witness == Tree{0});
+
+	aut.final = {2};
+	REQUIRE_FALSE(aut.is_lang_empty(&witness));
+	const Tree pair{1, {Tree{0}, Tree{0}}};
+	CHECK(witness == Tree{1, {pair, pair}});
+	CHECK(aut.accepts(witness));
+}
