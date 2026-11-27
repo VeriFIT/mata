@@ -2762,10 +2762,7 @@ fn collapse_by_predicates(
 		.map(expect_nfa)
 		.collect::<Result<Vec<_>, _>>()
 		.map_err(Error::plain)?;
-	let borrowed: Vec<&Nfa> = predicates
-		.iter()
-		.map(|predicate| predicate.as_ref())
-		.collect();
+	let borrowed: Vec<&Nfa> = predicates.iter().map(AsRef::as_ref).collect();
 	Ok(Value::Nfa(Rc::new(
 		expect_nfa(value)?.collapse_by_predicates_with(&borrowed, whole_languages, direction),
 	)))

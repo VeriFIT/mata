@@ -3758,86 +3758,110 @@ fn a_token_passing_step_checks_the_same_lazily_and_eagerly() {
 	);
 }
 
+/// The directory of the regular model checking examples.
+fn rmc_examples() -> String {
+	format!("{}/../../../examples/rmc", env!("CARGO_MANIFEST_DIR"))
+}
+
+const TOKEN_PARAMETERS: [&str; 6] = [
+	"--param",
+	"initial-regex=tn*",
+	"--param",
+	"bad-regex=n*tn*",
+	"--param",
+	"symbols=n t",
+];
+
+const BURNS_PARAMETERS: [&str; 6] = [
+	"--param",
+	"initial-regex=0*",
+	"--param",
+	"bad-regex=[0-4]*(5[0-4]*)?",
+	"--param",
+	"symbols=0 1 2 3 4 5",
+];
+
+const RTL_PARAMETERS: [&str; 6] = [
+	"--param",
+	"initial-regex=si*",
+	"--param",
+	concat!(
+		"bad-regex=s[ifdeo]*|s[ifdeor]*h[ifdehro]*|s[ifdeor]*r[ifdro]*",
+		"|s[ifdeor]*r[ifdro]*e[ifdehro]*",
+		"|s[ifdeor]*r[ifdro]*h[ifdero]*h[ifdehro]*"
+	),
+	"--param",
+	"symbols=s i f d e h r o",
+];
+
+/// Runs `examples/rmc/armc.matasc` on `system` with the script `parameters` and the `model` parameters and returns
+/// the standard output, after checking that it succeeded.
+fn run_armc(system: &str, parameters: &[&str], model: [&str; 6]) -> String {
+	let examples = rmc_examples();
+	let script = format!("{examples}/armc.matasc");
+	let input = format!("{examples}/{system}.mata");
+	let mut arguments = vec!["script", "run"];
+	arguments.extend(parameters);
+	arguments.extend(model);
+	arguments.extend([script.as_str(), input.as_str()]);
+	let output = mata(arguments);
+	assert_eq!(status(&output), 0, "{system}: {}", stderr(&output));
+	stdout(&output)
+}
+
 #[test]
 fn the_regular_model_checking_examples_reach_their_verdicts() {
-	// `examples/rmc/armc.matasc`: abstraction by `nfa:collapse-by-length`, refined when an error is spurious.
-	let examples = format!("{}/../../../examples/rmc", env!("CARGO_MANIFEST_DIR"));
-	let token = [
-		"--param",
-		"initial-regex=tn*",
-		"--param",
-		"bad-regex=n*tn*",
-		"--param",
-		"symbols=n t",
-	];
-	let burns = [
-		"--param",
-		"initial-regex=0*",
-		"--param",
-		"bad-regex=[0-4]*(5[0-4]*)?",
-		"--param",
-		"symbols=0 1 2 3 4 5",
-	];
-	let rtl = [
-		"--param",
-		"initial-regex=si*",
-		"--param",
-		concat!(
-			"bad-regex=s[ifdeo]*|s[ifdeor]*h[ifdehro]*|s[ifdeor]*r[ifdro]*",
-			"|s[ifdeor]*r[ifdro]*e[ifdehro]*",
-			"|s[ifdeor]*r[ifdro]*h[ifdero]*h[ifdehro]*"
-		),
-		"--param",
-		"symbols=s i f d e h r o",
-	];
-	for (system, parameters, verdict, predicate_verdict) in [
+	// `examples/rmc/armc.matasc`: abstraction by `nfa:collapse-by-length` or by predicates, refined when an error
+	// is spurious.
+	for (system, model, verdict, predicate_verdict) in [
 		(
 			"token-passing",
-			token,
+			TOKEN_PARAMETERS,
 			"safe, length 1",
 			"safe, predicate refinements 0",
 		),
 		(
 			"token-copying",
-			token,
+			TOKEN_PARAMETERS,
 			"unsafe, steps: 1, length 1",
 			"unsafe, steps: 1, predicate refinements 0",
 		),
 		(
 			"burns",
-			burns,
+			BURNS_PARAMETERS,
 			"safe, length 1",
 			"safe, predicate refinements 0",
 		),
 		(
 			"burns-broken",
-			burns,
+			BURNS_PARAMETERS,
 			"unsafe, steps: 10, length 1",
 			"unsafe, steps: 10, predicate refinements 1",
 		),
 		(
 			"rtl",
-			rtl,
+			RTL_PARAMETERS,
 			"safe, length 1",
 			"safe, predicate refinements 0",
 		),
 	] {
-		let script = format!("{examples}/armc.matasc");
-		let input = format!("{examples}/{system}.mata");
 		for (abstraction, expected) in [("length", verdict), ("predicates", predicate_verdict)] {
 			let abstraction_parameter = format!("abstraction={abstraction}");
-			let mut arguments = vec!["script", "run", "--param", &abstraction_parameter];
-			arguments.extend(parameters);
-			arguments.extend([script.as_str(), input.as_str()]);
-			let output = mata(arguments);
-			assert_eq!(status(&output), 0, "{system}: {}", stderr(&output));
 			assert_eq!(
-				stdout(&output),
+				run_armc(system, &["--param", &abstraction_parameter], model),
 				format!("{expected}\n"),
 				"{system}: {abstraction}"
 			);
 		}
 	}
+	let invariant = format!("{}/inductive-invariant.matasc", rmc_examples());
+	let output = mata(["script", "run", invariant.as_str()]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "no reachable 0: true\n");
+}
+
+#[test]
+fn predicate_seeds_granularity_and_direction_change_the_refinements() {
 	// No initial predicates needs a refinement, while transducer guards/actions avoid all refinements on this model.
 	for (seed, granularity, expected) in [
 		(
@@ -3856,13 +3880,9 @@ fn the_regular_model_checking_examples_reach_their_verdicts() {
 			"unsafe, steps: 10, predicate refinements 1",
 		),
 	] {
-		let input = format!("{examples}/burns-broken.mata");
-		let script = format!("{examples}/armc.matasc");
 		let predicate_seed = format!("predicate-seed={seed}");
 		let granularity = format!("predicate-granularity={granularity}");
-		let mut arguments = vec![
-			"script",
-			"run",
+		let parameters = [
 			"--param",
 			"abstraction=predicates",
 			"--param",
@@ -3870,47 +3890,39 @@ fn the_regular_model_checking_examples_reach_their_verdicts() {
 			"--param",
 			&granularity,
 		];
-		arguments.extend(burns);
-		arguments.extend([script.as_str(), input.as_str()]);
-		let output = mata(arguments);
-		assert_eq!(status(&output), 0, "{}", stderr(&output));
-		assert_eq!(stdout(&output), format!("{expected}\n"), "{seed}");
+		assert_eq!(
+			run_armc("burns-broken", &parameters, BURNS_PARAMETERS),
+			format!("{expected}\n"),
+			"{seed}"
+		);
 	}
 	// Backward verification swaps both the checked languages and the transducer direction.
 	for (abstraction, expected) in [
 		("length", "safe, length 1"),
 		("predicates", "safe, predicate refinements 1"),
 	] {
-		let input = format!("{examples}/burns.mata");
-		let script = format!("{examples}/armc.matasc");
 		let mode = format!("abstraction={abstraction}");
-		let mut arguments = vec![
-			"script",
-			"run",
+		let parameters = [
 			"--param",
 			"verification-direction=backward",
 			"--param",
 			&mode,
 		];
-		arguments.extend(burns);
-		arguments.extend([script.as_str(), input.as_str()]);
-		let output = mata(arguments);
-		assert_eq!(status(&output), 0, "{}", stderr(&output));
-		assert_eq!(stdout(&output), format!("{expected}\n"), "{abstraction}");
+		assert_eq!(
+			run_armc("burns", &parameters, BURNS_PARAMETERS),
+			format!("{expected}\n"),
+			"{abstraction}"
+		);
 	}
-	let invariant = format!("{examples}/inductive-invariant.matasc");
-	let output = mata(["script", "run", invariant.as_str()]);
-	assert_eq!(status(&output), 0, "{}", stderr(&output));
-	assert_eq!(stdout(&output), "no reachable 0: true\n");
+}
 
-	let script = format!("{examples}/armc.matasc");
-	let input = format!("{examples}/token-copying.mata");
-	let mut arguments = vec!["script", "run", "--param", "instrument=true"];
-	arguments.extend(token);
-	arguments.extend([script.as_str(), input.as_str()]);
-	let output = mata(arguments);
-	assert_eq!(status(&output), 0, "{}", stderr(&output));
-	let text = stdout(&output);
+#[test]
+fn instrumented_regular_model_checking_reports_every_phase() {
+	let text = run_armc(
+		"token-copying",
+		&["--param", "instrument=true"],
+		TOKEN_PARAMETERS,
+	);
 	assert!(text.ends_with("unsafe, steps: 1, length 1\n"), "{text}");
 	let records = records(&text);
 	for label in [
@@ -3938,17 +3950,10 @@ fn the_regular_model_checking_examples_reach_their_verdicts() {
 	}
 
 	// The default 32-state threshold fires on Burns, rather than only adding unused configuration.
-	let input = format!("{examples}/burns.mata");
-	let mut arguments = vec!["script", "run", "--param", "instrument=true"];
-	arguments.extend(burns);
-	arguments.extend([script.as_str(), input.as_str()]);
-	let output = mata(arguments);
-	assert_eq!(status(&output), 0, "{}", stderr(&output));
-	let text = stdout(&output);
+	let text = run_armc("burns", &["--param", "instrument=true"], BURNS_PARAMETERS);
 	assert!(text.ends_with("safe, length 1\n"), "{text}");
-	let burns_records = self::records(&text);
 	assert!(
-		burns_records
+		self::records(&text)
 			.keys()
 			.any(|label| label.ends_with(".reduction")),
 		"{text}"
