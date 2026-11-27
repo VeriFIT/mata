@@ -1404,6 +1404,37 @@ Nfa collapse_by_length(
 );
 
 /**
+ * @brief Compute the predicate-state abstraction of abstract regular model checking.
+ *
+ * The input is trimmed and determinized. States then receive fingerprints containing the predicate states whose
+ * residual languages intersect their own residual language, and states with equal fingerprints are merged. The
+ *  quotient accepts a superset of the language of @p aut and may be nondeterministic. With "states" granularity,
+ *  adding a bad language as a predicate preserves emptiness of its intersection with @p aut.
+ *
+ * @param[in] aut Automaton to abstract. EPSILON is an ordinary symbol.
+ * @param[in] predicates Automata whose state residuals define the fingerprints. Their states need not be trim or
+ *  deterministic.
+ * @param[in] params Optional parameters:
+ * - "granularity": "states" (default) records every intersecting predicate state; "languages" records only initial
+ *    predicate states, thereby comparing whole predicate languages instead of individual state residuals.
+ * - "direction": "forward" (default) compares suffix languages; "backward" compares prefix languages by reversing
+ *    the subject and predicates and reversing the quotient back.
+ * @return The abstraction; an automaton with an empty language becomes a single non-final initial state, keeping the
+ *  alphabet of @p aut.
+ *
+ * @note Complexity: Determinization can exponentially increase the number of subject states. For a resulting DFA with Q
+ * states and a predicate with P states, synchronized backward reachability visits at most QP pairs and examines each
+ * shared-symbol predecessor edge pair once, using O(QP) pair storage. Fingerprint sorting and interning additionally
+ * take O(L log L + L log Q) time and O(L) space for L total label entries across all subject states. Each predicate
+ * is reversed once and no product NFA is materialized.
+ */
+Nfa collapse_by_predicates(
+	const Nfa& aut,
+	const std::vector<Nfa>& predicates,
+	const ParameterMap& params = {{"granularity", "states"}, {"direction", "forward"}}
+);
+
+/**
  * @brief Determinize automaton.
  *
  * @param[in] aut Automaton to determinize.

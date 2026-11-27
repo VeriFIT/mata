@@ -5101,6 +5101,92 @@ TEST_CASE("mata::nfa::collapse_by_length()") {
 	}
 }
 
+TEST_CASE("mata::nfa::collapse_by_predicates()") {
+	SECTION("nondeterministic input is over-approximated and stays disjoint from a bad-language predicate") {
+		// Every accepted word has 'a' in the penultimate position; the bad language requires 'b' there.
+		const Nfa aut{builder::create_from_regex("(a|b)*a(a|b)")};
+		const Nfa bad{builder::create_from_regex("(a|b)*b(a|b)")};
+		REQUIRE(intersection(aut, bad).is_lang_empty());
+		const Nfa languages{collapse_by_predicates(aut, {bad}, {{"granularity", "languages"}})};
+		CHECK(is_included(aut, languages));
+		const Nfa states{collapse_by_predicates(aut, {bad})};
+		CHECK(is_included(aut, states));
+		CHECK(intersection(states, bad).is_lang_empty());
+	}
+
+	SECTION("predicate-state fingerprints are finer than whole-language fingerprints") {
+		const Nfa aut{builder::create_from_regex("ab")};
+		const Nfa predicate{builder::create_from_regex("ab")};
+		const Nfa states{collapse_by_predicates(aut, {predicate})};
+		const Nfa languages{collapse_by_predicates(aut, {predicate}, {{"granularity", "languages"}})};
+		CHECK(are_equivalent(states, aut));
+		CHECK(is_included(aut, languages));
+		CHECK(!languages.is_in_lang(Run{{}, {}}));
+		CHECK(languages.is_in_lang(Run{{'a'}, {}}));
+		CHECK(languages.is_in_lang(Run{{'a', 'b', 'b'}, {}}));
+		CHECK(!states.is_in_lang(Run{{'a'}, {}}));
+		CHECK(!states.is_in_lang(Run{{'a', 'b', 'b'}, {}}));
+	}
+
+	SECTION("backward mode compares prefixes of both subject and predicates") {
+		const Nfa aut{builder::create_from_regex("ba")};
+		const Nfa predicate{builder::create_from_regex("ba")};
+		const ParameterMap backward_states{{"direction", "backward"}};
+		const ParameterMap backward_languages{{"granularity", "languages"}, {"direction", "backward"}};
+		const Nfa states{collapse_by_predicates(aut, {predicate}, backward_states)};
+		const Nfa languages{collapse_by_predicates(aut, {predicate}, backward_languages)};
+		CHECK(are_equivalent(states, aut));
+		CHECK(is_included(aut, languages));
+		CHECK(languages.is_in_lang(Run{{'a'}, {}}));
+		CHECK(languages.is_in_lang(Run{{'b', 'b', 'a'}, {}}));
+		CHECK(!languages.is_in_lang(Run{{'b'}, {}}));
+		CHECK(!states.is_in_lang(Run{{'a'}, {}}));
+	}
+
+	SECTION("EPSILON is synchronized as an ordinary symbol") {
+		Nfa aut{2, {0}, {1}};
+		aut.delta.add(0, EPSILON, 1);
+		const Nfa abstraction{collapse_by_predicates(aut, {aut})};
+		CHECK(algorithms::are_equivalent_epsilon_as_symbol(abstraction, aut));
+		CHECK(abstraction.is_in_lang(Run{{EPSILON}, {}}));
+		CHECK(!abstraction.is_in_lang(Run{{EPSILON, EPSILON}, {}}));
+		CHECK(!abstraction.is_in_lang(Run{{}, {}}));
+	}
+
+	SECTION("empty languages and predicate lists are supported") {
+		const Nfa empty{collapse_by_predicates(Nfa{2, {0}, {1}}, {Nfa{}})};
+		CHECK(empty.num_of_states() == 1);
+		CHECK(empty.initial.size() == 1);
+		CHECK(empty.initial.contains(0));
+		CHECK(empty.final.empty());
+		CHECK(empty.delta.empty());
+
+		const Nfa empty_word{1, {0}, {0}};
+		CHECK(are_equivalent(collapse_by_predicates(empty_word, {}), empty_word));
+		CHECK(are_equivalent(collapse_by_predicates(empty_word, {Nfa{}}), empty_word));
+	}
+
+	SECTION("every result keeps the alphabet of the input") {
+		const auto alphabet{std::make_shared<OnTheFlyAlphabet>()};
+		alphabet->add_new_symbol("a", 'a');
+		alphabet->add_new_symbol("b", 'b');
+		Nfa aut{builder::create_from_regex("ab")};
+		aut.alphabet = alphabet;
+		const Nfa predicate{builder::create_from_regex("ab")};
+		CHECK(collapse_by_predicates(aut, {predicate}).alphabet == alphabet);
+		CHECK(collapse_by_predicates(aut, {predicate}, {{"direction", "backward"}}).alphabet == alphabet);
+		Nfa no_language{2, {0}, {1}};
+		no_language.alphabet = alphabet;
+		CHECK(collapse_by_predicates(no_language, {}).alphabet == alphabet);
+	}
+
+	SECTION("invalid parameters are rejected") {
+		const Nfa aut{builder::create_from_regex("a")};
+		CHECK_THROWS_AS(collapse_by_predicates(aut, {}, {{"granularity", "transitions"}}), std::invalid_argument);
+		CHECK_THROWS_AS(collapse_by_predicates(aut, {}, {{"direction", "both"}}), std::invalid_argument);
+	}
+}
+
 TEST_CASE("mata::nfa::Nfa::is_minimal()") {
 	SECTION("fixed automata") {
 		Nfa minimal(2);
