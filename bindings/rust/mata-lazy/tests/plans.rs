@@ -710,6 +710,52 @@ fn a_fixed_intersection_order_survives_diagonal_rewriting() -> Result<(), Error>
 	Ok(())
 }
 
+/// Four two-state leaves; `((p ∩ q) ∩ r) ∩ s` with `p ∩ q` and `(p ∩ q) ∩ r` as terms.
+fn four_leaves_with_annotated_inner() -> Result<(Formula, [Term; 7]), Error> {
+	let mut formula = Formula::new();
+	let p = formula.leaf(&one_at(0, 2))?;
+	let q = formula.leaf(&one_at(1, 2))?;
+	let r = formula.leaf(&one_at(2, 2))?;
+	let s = formula.leaf(&one_at(3, 2))?;
+	let pq = formula.intersection(p, q)?;
+	let pqr = formula.intersection(pq, r)?;
+	let pqrs = formula.intersection(pqr, s)?;
+
+	Ok((formula, [p, q, r, s, pq, pqr, pqrs]))
+}
+
+/// An intersection annotated with an order keeps its grouping when a query intersects it with another term,
+/// although the cheaper pairwise shape of the reassociation without it would drop the annotated one.
+#[test]
+fn an_ordered_intersection_keeps_its_grouping_under_reassociation() -> Result<(), Error> {
+	let (formula, [_, _, _, _, pq, pqr, pqrs]) = four_leaves_with_annotated_inner()?;
+	let check = |order| {
+		formula.check(
+			pqrs,
+			&Options::new().plan(Plan::new().annotate(pqr, Annotation::default().order(order))),
+		)
+	};
+	let automatic = check(Order::Auto)?;
+	let written = check(Order::AsWritten)?;
+	let swapped = check(Order::Swapped)?;
+
+	assert!(!automatic.is_empty());
+	assert!(!written.is_empty());
+	assert!(!swapped.is_empty());
+	assert_eq!(written.stats, swapped.stats);
+
+	let has_node =
+		|outcome: &Outcome, term| outcome.stats.nodes.iter().any(|node| node.term == term);
+	// `Order::AsWritten` fixes `(p ∩ q) ∩ r`, so both keep a node of their own.
+	assert!(has_node(&written, pqr));
+	assert!(has_node(&written, pq));
+	// Automatic reassociation builds the cheapest pairwise shape instead, so `(p ∩ q) ∩ r` is not a node
+	// of its own there.
+	assert!(!has_node(&automatic, pqr));
+	assert!(has_node(&automatic, pq));
+	Ok(())
+}
+
 #[test]
 fn a_fixed_sync_order_survives_diagonal_fusion() -> Result<(), Error> {
 	let (formula, projection, _, product) = diagonal_projection()?;

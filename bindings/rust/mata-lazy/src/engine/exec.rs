@@ -500,6 +500,8 @@ struct Emitter<'f> {
 	interned: FxHashMap<Key, ExecId>,
 	/// Intersections already reassociated, so that the pairwise shape they chose is not reassociated again.
 	reassociated: FxHashSet<ExecId>,
+	/// Intersections whose operands an annotation ordered, which keep the shape the plan chose in a reassociation.
+	ordered: FxHashSet<ExecId>,
 }
 
 impl<'f> Emitter<'f> {
@@ -604,10 +606,12 @@ impl<'f> Emitter<'f> {
 	/// `(A ∩ B) ∩ C` becomes the cheapest of `(A ∩ B) ∩ C`, `(A ∩ C) ∩ B` and `(B ∩ C) ∩ A`, by the bound on the
 	/// macrostates of the outer product, as the join of a product explores each left move against the right ones,
 	/// so the pairwise shape decides what gets built, not the nesting of the formula. An annotated operand keeps
-	/// the shape the plan chose, and a reassociated subterm is not reassociated again (which would undo it).
+	/// the shape the plan chose, an intersection whose operands the plan ordered keeps its grouping, and a
+	/// reassociated subterm is not reassociated again (which would undo it).
 	fn associative_intersection(&mut self, a: ExecId, b: ExecId) -> ExecId {
 		if let Op::Intersection(c, d) = self.nodes[a].op.clone()
 			&& !self.reassociated.contains(&a)
+			&& !self.ordered.contains(&a)
 			&& let Some((left, right)) = [
 				(a, b),
 				(self.intersection(c, b, false), d),
@@ -642,8 +646,13 @@ impl<'f> Emitter<'f> {
 
 		let cost = self.product_cost(a, b);
 		let arity = self.nodes[a].arity;
+		let id = self.emit(key, Op::Intersection(a, b), arity, cost);
 
-		self.emit(key, Op::Intersection(a, b), arity, cost)
+		if fixed {
+			self.ordered.insert(id);
+		}
+
+		id
 	}
 
 	/// Whether any annotation of the query touches `node`, so that its shape is the plan's choice: a leaf and an
