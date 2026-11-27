@@ -15,10 +15,13 @@
 (declare-param bad-regex String)       ; the safe configurations; their complement is bad
 (declare-param symbols String)         ; the letters of a configuration, space-separated
 (declare-param instrument Bool false)  ; time the rounds and operations, and count the lazy bad-check work
+(declare-param reduce-before-collapse Bool true) ; simulation-reduce sufficiently large unions before abstraction
+(declare-param reduction-min-states Int 32)       ; when reduction is enabled, require this many union states
 
 (define initial (nfa:create-from-regex initial-regex))
 (define bad (nfa:complement (nfa:create-from-regex bad-regex)))
 (define backward (nft:invert-levels step))
+(define lazy-bad (lazy:leaf bad))
 (define (post (r Nfa)) (nft:to-nfa (nft:apply step r)))
 (define (pre (r Nfa)) (nfa:minimize (nft:to-nfa (nft:apply backward r))))
 
@@ -32,14 +35,20 @@
   (measure (concat (round-label n round "pre-") (to-string i)) (lambda () (pre r))))
 (define (measured-collapse (n Int) (round Int) (r Nfa) (next Nfa))
   (measure (round-label n round "collapse")
-    (lambda () (nfa:collapse-by-length (nfa:union-nondeterministic r next) n))))
+    (lambda ()
+      (let ((uni (nfa:union-nondeterministic r next)))
+        (nfa:collapse-by-length
+          (if (if reduce-before-collapse (not (< (nfa:number-of-states uni) reduction-min-states)) false)
+            (measure (round-label n round "reduction") (lambda () (nfa:reduce uni)))
+            uni)
+          n)))))
 (define (measured-inclusion? (n Int) (round Int) (next Nfa) (reached Nfa))
   (measure (round-label n round "inclusion") (lambda () (nfa:included? next reached))))
 (define (bad-check? (n Int) (round Int) (reached Nfa))
   (if instrument
     (lazy:stats (round-label n round "bad")
-      (lazy:empty? (lazy:intersection (lazy:leaf reached) (lazy:leaf bad)) :alphabet symbols))
-    (lazy:empty? (lazy:intersection (lazy:leaf reached) (lazy:leaf bad)) :alphabet symbols)))
+      (lazy:empty? (lazy:intersection (lazy:leaf reached) lazy-bad) :alphabet symbols))
+    (lazy:empty? (lazy:intersection (lazy:leaf reached) lazy-bad) :alphabet symbols)))
 
 ; Whether some initial configuration reaches a bad one in ROUNDS steps.
 (define (real-error? (n Int) (rounds Int))
@@ -57,7 +66,8 @@
           (if (measured-inclusion? n round next reached)
             (lambda () "safe")
             (lambda () (abstract-round n next (+ round 1)))))
-        (let ((verdict (if (real-error? n round) (concat "unsafe, steps: " (to-string round)) "spurious")))
+        (let ((verdict (if (measure (round-label n round "backtrack") (lambda () (real-error? n round)))
+          (concat "unsafe, steps: " (to-string round)) "spurious")))
           (lambda () verdict)))))))
 
 (define (abstract-fixpoint (n Int))

@@ -3765,6 +3765,7 @@ fn the_regular_model_checking_examples_reach_their_verdicts() {
 		"armc.n1.r0.inclusion",
 		"armc.n1.r0.round",
 		"armc.n1.r1.pre-0",
+		"armc.n1.r1.backtrack",
 	] {
 		assert!(records[label].parse::<f64>().is_ok(), "{label}: {text}");
 	}
@@ -3780,6 +3781,21 @@ fn the_regular_model_checking_examples_reach_their_verdicts() {
 		let label = format!("armc.n1.r1.bad.{counter}");
 		assert!(records[&label].parse::<usize>().is_ok(), "{label}: {text}");
 	}
+
+	// The default 32-state threshold fires on Burns, rather than only adding unused configuration.
+	let input = format!("{examples}/burns.mata");
+	let mut arguments = vec!["script", "run", "--param", "instrument=true"];
+	arguments.extend(burns);
+	arguments.extend([script.as_str(), input.as_str()]);
+	let output = mata(arguments);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	let text = stdout(&output);
+	assert!(text.ends_with("safe, length 1\n"), "{text}");
+	let burns_records = self::records(&text);
+	assert!(
+		burns_records.keys().any(|label| label.ends_with(".reduction")),
+		"{text}"
+	);
 }
 
 #[test]

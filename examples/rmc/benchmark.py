@@ -31,7 +31,14 @@ def positive_int(value: str) -> int:
     return number
 
 
-def run(mata: str, model: str, run_number: int) -> dict[str, object]:
+def run(
+    mata: str,
+    model: str,
+    run_number: int,
+    reduce_before_collapse: bool,
+    reduction_min_states: int,
+    timeout: float,
+) -> dict[str, object]:
     initial, safe, symbols = MODELS[model]
     command = [
         mata,
@@ -45,14 +52,23 @@ def run(mata: str, model: str, run_number: int) -> dict[str, object]:
         f"symbols={symbols}",
         "--param",
         "instrument=true",
+        "--param",
+        f"reduce-before-collapse={'true' if reduce_before_collapse else 'false'}",
+        "--param",
+        f"reduction-min-states={reduction_min_states}",
         str(HERE / "armc.matasc"),
         str(HERE / f"{model}.mata"),
     ]
     started = time.perf_counter()
-    completed = subprocess.run(command, capture_output=True, text=True, check=False)
+    try:
+        completed = subprocess.run(command, capture_output=True, text=True, check=False, timeout=timeout)
+    except subprocess.TimeoutExpired as error:
+        stdout = error.stdout.decode() if isinstance(error.stdout, bytes) else (error.stdout or "")
+        stderr = error.stderr.decode() if isinstance(error.stderr, bytes) else (error.stderr or "")
+        completed = subprocess.CompletedProcess(command, 124, stdout, stderr)
     elapsed = time.perf_counter() - started
     lines = completed.stdout.splitlines()
-    verdict = lines[-1] if lines else ""
+    verdict = "TIMEOUT" if completed.returncode == 124 else (lines[-1] if lines else "")
     records: dict[str, int | float | str] = {}
     for line in lines[:-1]:
         label, separator, value = line.partition(": ")
@@ -67,6 +83,8 @@ def run(mata: str, model: str, run_number: int) -> dict[str, object]:
     return {
         "instrument": True,
         "model": model,
+        "reduce_before_collapse": reduce_before_collapse,
+        "reduction_min_states": reduction_min_states,
         "records": records,
         "returncode": completed.returncode,
         "run": run_number,
@@ -81,10 +99,20 @@ def main() -> int:
     parser.add_argument("--mata", default="mata", help="mata executable (default: mata on PATH)")
     parser.add_argument("--model", choices=MODELS, default="rtl")
     parser.add_argument("--runs", type=positive_int, default=1)
+    parser.add_argument("--reduce-before-collapse", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--reduction-min-states", type=int, default=32)
+    parser.add_argument("--timeout", type=positive_int, default=60, help="per-run timeout in seconds")
     arguments = parser.parse_args()
     failed = False
     for run_number in range(arguments.runs):
-        result = run(arguments.mata, arguments.model, run_number)
+        result = run(
+            arguments.mata,
+            arguments.model,
+            run_number,
+            arguments.reduce_before_collapse,
+            arguments.reduction_min_states,
+            arguments.timeout,
+        )
         print(json.dumps(result, sort_keys=True))
         failed |= result["returncode"] != 0
     return int(failed)

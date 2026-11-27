@@ -59,7 +59,10 @@ Instrumentation is off by default, leaving the verdict-only output unchanged. Ad
 `mata script run` to print `armc.nN.initial-collapse`, per-round `post`, `collapse`, `inclusion` and `round` timings,
 and `pre-I` timings during concrete backward checks. `N` is the abstraction length and `R` in `armc.nN.rR` is the round.
 Each `armc.nN.rR.bad.*` group reports the seven `lazy:stats` counters for that round's bad check. All labels are unique
-within a run, and the final verdict is unchanged.
+within a run, and the final verdict is unchanged. The whole concrete counterexample decision also has a `backtrack`
+timer. By default, a union with at least 32 states is simulation-reduced before bounded-length abstraction; set
+`reduce-before-collapse=false` to disable this, or change `reduction-min-states`. The 32-state threshold avoids the
+measured reduction overhead on small token and RTL unions while preserving the larger Burns improvements.
 
 [`benchmark.py`](benchmark.py) supplies the model parameters, enables instrumentation, and writes one JSON object per
 run to standard output. It uses only Python's standard library and accepts any installed `mata` executable:
