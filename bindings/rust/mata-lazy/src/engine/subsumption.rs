@@ -329,12 +329,15 @@ enum Shape<'f> {
 	Size {
 		owner: ExecId,
 	},
-	/// A product whose right operand is a complement, grouped by the left state and the size of the right set.
+	/// A product with a complement on one side, grouped by the state of the other operand and the size of the
+	/// complement's set.
 	Pair {
 		owner: ExecId,
 		complement: ExecId,
-		/// The left operand if it is a leaf, so that related left states are compared too.
-		lhs: Option<LeafRef<'f>>,
+		/// Whether the complement is the product's right operand.
+		rhs: bool,
+		/// The other operand if it is a leaf, so that related states are compared too.
+		leaf: Option<LeafRef<'f>>,
 	},
 	/// Another product whose left operands lead down to a leaf, grouped by the state of that leaf.
 	Leftmost {
@@ -388,9 +391,16 @@ impl<'f> Antichain<'f> {
 			Op::Union(_) => Shape::Branch { owner },
 			Op::Complement(_) => Shape::Size { owner },
 			Op::Intersection(a, b) | Op::Sync(a, b, _) | Op::Diagonal(a, b) => {
-				let complement = exec.owner(b);
-				if matches!(exec.nodes[complement].op, Op::Complement(_)) {
-					let lhs = match &exec.nodes[exec.owner(a)].op {
+				let complement = if matches!(exec.nodes[exec.owner(b)].op, Op::Complement(_)) {
+					Some((exec.owner(b), true))
+				} else if matches!(exec.nodes[exec.owner(a)].op, Op::Complement(_)) {
+					Some((exec.owner(a), false))
+				} else {
+					None
+				};
+
+				if let Some((complement, rhs)) = complement {
+					let leaf = match &exec.nodes[exec.owner(if rhs { a } else { b })].op {
 						Op::Leaf(leaf) => Some(leaf.clone()),
 						_ => None,
 					};
@@ -398,7 +408,8 @@ impl<'f> Antichain<'f> {
 					Shape::Pair {
 						owner,
 						complement,
-						lhs,
+						rhs,
+						leaf,
 					}
 				} else if let Some((spine, leaf)) = left_spine(exec, owner) {
 					Shape::Leftmost { spine, leaf }
@@ -508,7 +519,7 @@ impl<'f> Antichain<'f> {
 		// While every member is in `group`, the leaf's simulation, which can take seconds, is not computed.
 		let simulation = match &self.shape {
 			Shape::Pair {
-				lhs: Some(leaf), ..
+				leaf: Some(leaf), ..
 			}
 			| Shape::Leftmost { leaf, .. }
 				if self.buckets.keys().any(|&other| other != group) =>
@@ -565,13 +576,21 @@ impl<'f> Antichain<'f> {
 				size: size(stores[owner].set(state)),
 			},
 			Shape::Pair {
-				owner, complement, ..
+				owner,
+				complement,
+				rhs,
+				..
 			} => {
 				let pair = stores[owner].pair(state);
+				let (group, complement_state) = if rhs {
+					(pair.lhs, pair.rhs)
+				} else {
+					(pair.rhs, pair.lhs)
+				};
 
 				Fingerprint {
-					group: pair.lhs,
-					size: size(stores[complement].set(pair.rhs)),
+					group,
+					size: size(stores[complement].set(complement_state)),
 				}
 			}
 			Shape::Leftmost { ref spine, .. } => Fingerprint {

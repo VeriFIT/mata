@@ -9,7 +9,8 @@
 //! - `project(id(U) ∩ X, [i])` becomes one diagonal node, or `U ∩ X'` when `X` is a sync product of a tape of
 //!   each operand, where `X'` also synchronizes those two tapes, so it builds only the moves that the diagonal keeps;
 //! - `op(X, X) = X`, `prefixes(prefixes(X)) = prefixes(X)`, and structurally equal nodes are built once;
-//! - the cheaper operand of a union or intersection goes left;
+//! - the operand of the smaller bound on its macrostates goes left, and an automatic intersection reassociates,
+//!   `(A ∩ B) ∩ C` becoming the cheapest of the three pairwise shapes;
 //! - a composition chain is re-associated to minimize its estimated intermediate macrostate bounds, without
 //!   changing the order of the relations.
 //!
@@ -461,7 +462,8 @@ enum Key {
 	Prefixes(ExecId),
 }
 
-/// Depth and log2 of a bound on the number of macrostates, to order operands.
+/// A bound on the number of macrostates, and the depth, to order operands: the smaller bound goes left, depth only
+/// breaking ties, as a shallower operand can still be the larger one in a product join.
 #[derive(Clone, Copy)]
 struct Cost {
 	depth: u32,
@@ -470,9 +472,9 @@ struct Cost {
 
 impl Ord for Cost {
 	fn cmp(&self, other: &Cost) -> Ordering {
-		self.depth
-			.cmp(&other.depth)
-			.then(self.log_states.total_cmp(&other.log_states))
+		self.log_states
+			.total_cmp(&other.log_states)
+			.then(self.depth.cmp(&other.depth))
 	}
 }
 
@@ -496,6 +498,10 @@ struct Emitter<'f> {
 	costs: TiVec<ExecId, Cost>,
 	pads: TiVec<ExecId, bool>,
 	interned: FxHashMap<Key, ExecId>,
+	/// Intersections already reassociated, so that the pairwise shape they chose is not reassociated again.
+	reassociated: FxHashSet<ExecId>,
+	/// Intersections whose operands an annotation ordered, which keep the shape the plan chose in a reassociation.
+	ordered: FxHashSet<ExecId>,
 }
 
 impl<'f> Emitter<'f> {
@@ -586,12 +592,42 @@ impl<'f> Emitter<'f> {
 		self.emit(Key::Leaf(index), op, leaf.arity(), cost)
 	}
 
-	/// `fixed` keeps the order of the operands of an intersection.
+	/// `fixed` keeps the order of the operands of an intersection. An automatic one reassociates over an
+	/// intersection on the left, `(A ∩ B) ∩ C` becoming the cheapest of the three pairwise shapes, below.
 	fn boolean(&mut self, op: Boolean, a: ExecId, b: ExecId, fixed: bool) -> ExecId {
 		match op {
 			Boolean::Union => self.union(a, b),
-			Boolean::Intersection => self.intersection(a, b, fixed),
+			Boolean::Intersection if fixed => self.intersection(a, b, true),
+			Boolean::Intersection => self.associative_intersection(a, b),
 		}
+	}
+
+	/// The intersection of `a` and `b`, the cheaper operand left. An intersection on the left reassociates:
+	/// `(A ∩ B) ∩ C` becomes the cheapest of `(A ∩ B) ∩ C`, `(A ∩ C) ∩ B` and `(B ∩ C) ∩ A`, by the bound on the
+	/// macrostates of the outer product, as the join of a product explores each left move against the right ones,
+	/// so the pairwise shape decides what gets built, not the nesting of the formula. An annotated operand keeps
+	/// the shape the plan chose, an intersection whose operands the plan ordered keeps its grouping, and a
+	/// reassociated subterm is not reassociated again (which would undo it).
+	fn associative_intersection(&mut self, a: ExecId, b: ExecId) -> ExecId {
+		if let Op::Intersection(c, d) = self.nodes[a].op.clone()
+			&& !self.reassociated.contains(&a)
+			&& !self.ordered.contains(&a)
+			&& let Some((left, right)) = [
+				(a, b),
+				(self.intersection(c, b, false), d),
+				(self.intersection(d, b, false), c),
+			]
+			.into_iter()
+			.min_by_key(|&(outer, inner)| self.product_cost(outer, inner))
+			&& !self.annotated(left)
+			&& !self.annotated(right)
+		{
+			self.reassociated.insert(left);
+
+			return self.intersection(left, right, false);
+		}
+
+		self.intersection(a, b, false)
 	}
 
 	/// `fixed` keeps the order of the operands, which otherwise puts the cheaper one left.
@@ -610,8 +646,20 @@ impl<'f> Emitter<'f> {
 
 		let cost = self.product_cost(a, b);
 		let arity = self.nodes[a].arity;
+		let id = self.emit(key, Op::Intersection(a, b), arity, cost);
 
-		self.emit(key, Op::Intersection(a, b), arity, cost)
+		if fixed {
+			self.ordered.insert(id);
+		}
+
+		id
+	}
+
+	/// Whether any annotation of the query touches `node`, so that its shape is the plan's choice: a leaf and an
+	/// intersection are fine to reassociate around, an inner node is not (its plan may rely on its position, as
+	/// `Order` does, and its cost feeds the outer one).
+	fn annotated(&self, node: ExecId) -> bool {
+		!matches!(&self.nodes[node].op, Op::Leaf(_) | Op::Intersection(..))
 	}
 
 	/// The branches that `node` adds to a union above it.
