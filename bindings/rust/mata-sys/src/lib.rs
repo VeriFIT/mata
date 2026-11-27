@@ -133,6 +133,9 @@ pub mod ffi {
 		/// A stream of the words of an automaton up to a length.
 		type WordStream;
 
+		/// Automata borrowed for `'a`, passed together to one operation.
+		type NfaRefs<'a>;
+
 		// Construction.
 
 		/// An automaton with states `0..num_states` and nothing else.
@@ -446,11 +449,15 @@ pub mod ffi {
 			traces: bool,
 			direction: Direction,
 		) -> Result<UniquePtr<Nfa>>;
-		/// The predicate-state abstraction. `predicates` borrows non-null automaton pointers for this call;
-		/// `whole_languages` compares only initial predicate states instead of every predicate state.
-		unsafe fn collapse_by_predicates(
+		/// An empty list of borrowed automata.
+		fn nfa_refs_new<'a>() -> UniquePtr<NfaRefs<'a>>;
+		/// Appends `nfa`.
+		fn nfa_refs_push<'a>(refs: Pin<&mut NfaRefs<'a>>, nfa: &'a Nfa);
+		/// The predicate-state abstraction over the automata of `predicates`; `whole_languages` compares only
+		/// initial predicate states instead of every predicate state.
+		fn collapse_by_predicates(
 			nfa: &Nfa,
-			predicates: &[*const Nfa],
+			predicates: &NfaRefs,
 			whole_languages: bool,
 			direction: Direction,
 		) -> Result<UniquePtr<Nfa>>;
@@ -564,6 +571,12 @@ impl std::fmt::Debug for ffi::ParsedNfas {
 impl std::fmt::Debug for ffi::WordStream {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 		f.debug_struct("WordStream").finish_non_exhaustive()
+	}
+}
+
+impl std::fmt::Debug for ffi::NfaRefs<'_> {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		f.debug_struct("NfaRefs").finish_non_exhaustive()
 	}
 }
 

@@ -979,20 +979,19 @@ std::unique_ptr<Nfa>
 	);
 }
 
+std::unique_ptr<NfaRefs> nfa_refs_new() { return std::make_unique<NfaRefs>(); }
+
+void nfa_refs_push(NfaRefs& refs, const Nfa& nfa) { refs.automata.push_back(&nfa); }
+
 std::unique_ptr<Nfa> collapse_by_predicates(
-	const Nfa& nfa,
-	const rust::Slice<const Nfa* const> predicates,
-	const bool whole_languages,
-	const Direction direction
+	const Nfa& nfa, const NfaRefs& predicates, const bool whole_languages, const Direction direction
 ) {
 	auto storage = std::optional<Nfa>();
-	auto predicate_storage = std::vector<std::optional<Nfa>>(predicates.size());
+	auto predicate_storage = std::vector<std::optional<Nfa>>(predicates.automata.size());
 	auto view = std::vector<const Nfa*>{};
-	view.reserve(predicates.size());
-	for (std::size_t index{0}; index < predicates.size(); ++index) {
-		const Nfa* predicate = predicates[index];
-		if (predicate == nullptr) { throw std::invalid_argument("collapse_by_predicates: null predicate"); }
-		view.push_back(&without_epsilon(*predicate, predicate_storage[index]));
+	view.reserve(predicates.automata.size());
+	for (std::size_t index{0}; index < predicates.automata.size(); ++index) {
+		view.push_back(&without_epsilon(*predicates.automata[index], predicate_storage[index]));
 	}
 	return boxed(
 		mata::nfa::collapse_by_predicates(

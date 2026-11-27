@@ -1213,14 +1213,16 @@ impl Nfa {
 		whole_languages: bool,
 		direction: Direction,
 	) -> Nfa {
-		let predicates: Vec<*const ffi::Nfa> = predicates
-			.iter()
-			.map(|predicate| predicate.raw() as *const ffi::Nfa)
-			.collect();
-		// SAFETY: The shared borrows in `predicates` keep every pointee alive and unmodified for this call.
-		new_nfa(unsafe {
-			ffi::collapse_by_predicates(self.raw(), &predicates, whole_languages, direction.into())
-		})
+		let mut refs = ffi::nfa_refs_new();
+		for predicate in predicates {
+			ffi::nfa_refs_push(refs.pin_mut(), predicate.raw());
+		}
+		new_nfa(ffi::collapse_by_predicates(
+			self.raw(),
+			&refs,
+			whole_languages,
+			direction.into(),
+		))
 	}
 
 	/// Whether no state lies on two cycles (Mata's `is_flat`).
