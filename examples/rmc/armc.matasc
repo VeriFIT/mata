@@ -14,26 +14,150 @@
 (declare-param initial-regex String)   ; the initial configurations
 (declare-param bad-regex String)       ; the safe configurations; their complement is bad
 (declare-param symbols String)         ; the letters of a configuration, space-separated
+(declare-param instrument Bool false)  ; time the rounds and operations, and count the lazy bad-check work
+(declare-param abstraction String "length") ; finite-length or predicate abstraction
+(declare-param verification-direction String "forward") ; verify forwards from Init or backwards from Bad
+(declare-param predicate-seed String "adaptive") ; start bad-only and add transducer actions after a spurious hit
+(declare-param predicate-granularity String "states") ; compare every predicate state or whole predicate languages
+(declare-param reduce-before-collapse Bool true) ; simulation-reduce sufficiently large unions before abstraction
+(declare-param reduction-min-states Int 32)       ; when reduction is enabled, require this many union states
 
-(define initial (nfa:create-from-regex initial-regex))
-(define bad (nfa:complement (nfa:create-from-regex bad-regex)))
+(define original-initial (nfa:create-from-regex initial-regex))
+(define original-bad (nfa:complement (nfa:create-from-regex bad-regex)))
 (define backward (nft:invert-levels step))
-(define (post (r Nfa)) (nft:to-nfa (nft:apply step r)))
-(define (pre (r Nfa)) (nfa:minimize (nft:to-nfa (nft:apply backward r))))
+(define initial (if (= verification-direction "backward") original-bad original-initial))
+(define bad (if (= verification-direction "backward") original-initial original-bad))
+(define step-on (if (= verification-direction "backward") backward step))
+(define step-back (if (= verification-direction "backward") step backward))
+(define lazy-bad (lazy:leaf bad))
+(define (post (r Nfa)) (nft:to-nfa (nft:apply step-on r)))
+(define (pre (r Nfa)) (nfa:minimize (nft:to-nfa (nft:apply step-back r))))
+
+(define (round-label (n Int) (round Int) (operation String))
+  (concat "armc.n" (to-string n) ".r" (to-string round) "." operation))
+(define (measure (label String) (operation Function))
+  (if instrument (time label (operation)) (operation)))
+(define (measured-post (n Int) (round Int) (r Nfa))
+  (measure (round-label n round "post") (lambda () (post r))))
+(define (measured-pre (n Int) (round Int) (i Int) (r Nfa))
+  (measure (concat (round-label n round "pre-") (to-string i)) (lambda () (pre r))))
+(define (measured-collapse (n Int) (round Int) (r Nfa) (next Nfa))
+  (measure (round-label n round "collapse")
+    (lambda ()
+      (let ((uni (nfa:union-nondeterministic r next)))
+        (nfa:collapse-by-length
+          (if (if reduce-before-collapse (not (< (nfa:number-of-states uni) reduction-min-states)) false)
+            (measure (round-label n round "reduction") (lambda () (nfa:reduce uni)))
+            uni)
+          n)))))
+(define (measured-inclusion? (n Int) (round Int) (next Nfa) (reached Nfa))
+  (measure (round-label n round "inclusion") (lambda () (nfa:included? next reached))))
+(define (bad-check? (n Int) (round Int) (reached Nfa))
+  (if instrument
+    (lazy:stats (round-label n round "bad")
+      (lazy:empty? (lazy:intersection (lazy:leaf reached) lazy-bad) :alphabet symbols))
+    (lazy:empty? (lazy:intersection (lazy:leaf reached) lazy-bad) :alphabet symbols)))
 
 ; Whether some initial configuration reaches a bad one in ROUNDS steps.
-(define (real-error? (rounds Int))
+(define (real-error? (n Int) (rounds Int))
   (not (nfa:intersection-empty? initial
-    (loop ((r bad) (i 0)) (if (< i rounds) (recur (pre r) (+ i 1)) r)))))
+    (loop ((r bad) (i 0))
+      (if (< i rounds) (recur (measured-pre n rounds i r) (+ i 1)) r)))))
 
-; One abstract fixpoint at length N: "safe", "unsafe after K steps", or "spurious".
+; One abstract round at length N: (list "next" reached), or (list verdict) with "safe", "unsafe, steps: K" or
+; "spurious". Rounds, backtracking steps and refinements iterate in loops: recursion would hit the call depth limit.
+(define (abstract-round (n Int) (reached Nfa) (round Int))
+  (measure (round-label n round "round")
+    (lambda ()
+      (if (bad-check? n round reached)
+        (let ((next (measured-collapse n round reached (measured-post n round reached))))
+          (if (measured-inclusion? n round next reached) (list "safe") (list "next" next)))
+        (list (if (measure (round-label n round "backtrack") (lambda () (real-error? n round)))
+          (concat "unsafe, steps: " (to-string round)) "spurious"))))))
+
 (define (abstract-fixpoint (n Int))
-  (loop ((reached (nfa:collapse-by-length initial n)) (round 0))
-    (if (not (lazy:empty? (lazy:intersection (lazy:leaf reached) (lazy:leaf bad)) :alphabet symbols))
-      (if (real-error? round) (concat "unsafe, steps: " (to-string round)) "spurious")
-      (let ((next (nfa:collapse-by-length (nfa:union-nondeterministic reached (post reached)) n)))
-        (if (nfa:included? next reached) "safe" (recur next (+ round 1)))))))
+  (loop ((reached (measure (concat "armc.n" (to-string n) ".initial-collapse")
+           (lambda () (nfa:collapse-by-length initial n))))
+         (round 0))
+    (let ((result (abstract-round n reached round)))
+      (if (= (list:nth result 0) "next") (recur (list:nth result 1) (+ round 1)) (list:nth result 0)))))
 
-(echo (loop ((n 0))
-  (let ((verdict (abstract-fixpoint n)))
-    (if (= verdict "spurious") (recur (+ n 1)) (concat verdict ", length " (to-string n))))))
+; Backtrack a bad intersection through the concrete posts. The result is either "unsafe" or "spurious" and the
+; offending intersection becomes the next refinement predicate when it is spurious.
+(define (predicate-backtrack (spurious Nfa) path)
+  (loop ((candidate spurious) (history path))
+    (if (= (list:length history) 0)
+      (if (nfa:intersection-empty? initial candidate)
+        (list "spurious" candidate)
+        (list "unsafe" candidate))
+      (let ((before (nfa:intersection (list:nth history 0) candidate)))
+        (if (nfa:language-empty? before)
+          (list "spurious" candidate)
+          (recur (pre before) (list:nth history 1)))))))
+
+(define (predicate-collapse (predicates Nfa) (uni Nfa) (refinements Int) (round Int))
+  (measure (round-label refinements round "collapse")
+    (lambda ()
+      (nfa:collapse-by-predicates
+        (if (if reduce-before-collapse (not (< (nfa:number-of-states uni) reduction-min-states)) false)
+          (measure (round-label refinements round "reduction") (lambda () (nfa:reduce uni)))
+          uni)
+        (list predicates) :granularity predicate-granularity))))
+
+; The second result component is the predicate to install after a spurious counterexample.
+(define (predicate-fixpoint (predicates Nfa) (refinements Int))
+  (loop ((reached (measure (round-label refinements 0 "initial-collapse")
+           (lambda () (nfa:collapse-by-predicates initial (list predicates) :granularity predicate-granularity))))
+         (history (list))
+         (round 0))
+    (let ((candidate (measure (round-label refinements round "predicate-bad")
+      (lambda () (nfa:intersection reached bad)))))
+      (if (not (nfa:language-empty? candidate))
+        (let ((result (measure (round-label refinements round "predicate-backtrack")
+          (lambda () (predicate-backtrack candidate history)))))
+          (if (= (list:nth result 0) "unsafe")
+            (list (concat "unsafe, steps: " (to-string round)) predicates)
+            (list "spurious" (list:nth result 1))))
+        (let ((next-post (measured-post refinements round reached)))
+          (let ((next (predicate-collapse predicates (nfa:union-nondeterministic reached next-post) refinements round)))
+            (if (measure (round-label refinements round "inclusion") (lambda () (nfa:included? next reached)))
+              (list "safe" predicates)
+              (recur next (list next-post history) (+ round 1)))))))))
+
+; Transition domains and ranges act as the guards/actions of classical predicate abstraction.
+(define (action-predicates)
+  (nfa:union-nondeterministic
+    (nft:to-nfa (nft:project-to step (list 0)))
+    (nft:to-nfa (nft:project-to step (list 1)))))
+
+(define (predicate-cegar (seed Nfa))
+  (loop ((predicates seed) (refinements 0))
+    (let ((result (predicate-fixpoint predicates refinements)))
+      (if (= (list:nth result 0) "spurious")
+        (let ((candidate-predicates (nfa:union-nondeterministic predicates (list:nth result 1))))
+          (let ((refined (if (if (= predicate-seed "adaptive") (= refinements 0) false)
+            (nfa:union-nondeterministic candidate-predicates (action-predicates))
+            candidate-predicates)))
+          (if (measure (round-label refinements 0 "refinement-inclusion")
+              (lambda () (nfa:included? refined predicates)))
+            "unknown, abstraction cycling"
+            (recur refined (+ refinements 1)))))
+        (concat (list:nth result 0) ", predicate refinements " (to-string refinements))))))
+
+(define (initial-predicates)
+  (cond
+    ((= predicate-seed "bad") bad)
+    ((= predicate-seed "adaptive") bad)
+    ((= predicate-seed "none") (nfa:intersection (nfa:create-from-regex "a") (nfa:create-from-regex "b")))
+    ((= predicate-seed "actions") (action-predicates))
+    ((= predicate-seed "bad-actions") (nfa:union-nondeterministic bad (action-predicates)))
+    (else (assert false))))
+
+(assert (or (= abstraction "length") (= abstraction "predicates")))
+(assert (or (= verification-direction "forward") (= verification-direction "backward")))
+(echo
+  (if (= abstraction "predicates")
+    (predicate-cegar (initial-predicates))
+    (loop ((n 0))
+      (let ((verdict (abstract-fixpoint n)))
+        (if (= verdict "spurious") (recur (+ n 1)) (concat verdict ", length " (to-string n)))))))

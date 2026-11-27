@@ -2288,6 +2288,69 @@ fn nfa_operations_take_their_optional_parameters_as_keywords() {
 }
 
 #[test]
+fn predicate_abstraction_uses_nfa_lists_and_language_options() {
+	let script = "(set-option :alphabet \"bytes\")\n\
+	              (define subject (nfa:create-from-regex \"(a|b)*a(a|b)\"))\n\
+	              (define bad (nfa:create-from-regex \"(a|b)*b(a|b)\"))\n\
+	              (define abstraction (nfa:collapse-by-predicates subject \
+	              (list bad (nfa:create-from-regex \"b*\"))))\n\
+	              (print (nfa:included? subject abstraction))\n\
+	              (print (nfa:intersection-empty? abstraction bad))\n\
+	              (print (nfa:included? subject (nfa:collapse-by-predicates subject (list))))\n\
+	              (define suffix (nfa:create-from-regex \"ac\"))\n\
+	              (define predicate (nfa:create-from-regex \"ac\"))\n\
+	              (define states (nfa:collapse-by-predicates suffix (list predicate)))\n\
+	              (print (nfa:equivalent? suffix states))\n\
+	              (define languages (nfa:collapse-by-predicates suffix (list predicate) \
+	              :granularity \"languages\" :direction \"forward\"))\n\
+	              (print (nfa:in-language? languages (word \"a\")))\n\
+	              (print (nfa:in-language? languages (word \"a\" \"c\" \"c\")))\n\
+	              (print (nfa:in-language? states (word \"a\")))\n\
+	              (define prefix (nfa:create-from-regex \"ca\"))\n\
+	              (define backward (nfa:collapse-by-predicates prefix (list (nfa:create-from-regex \"ca\")) \
+	              :granularity \"languages\" :direction \"backward\"))\n\
+	              (print (nfa:in-language? backward (word \"a\")))\n\
+	              (print (nfa:in-language? backward (word \"c\" \"c\" \"a\")))\n\
+	              (print (nfa:in-language? backward (word \"c\")))";
+	let output = run_script(script, true, &[]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(
+		stdout(&output),
+		"true\ntrue\ntrue\ntrue\ntrue\ntrue\nfalse\ntrue\ntrue\nfalse\n"
+	);
+}
+
+#[test]
+fn predicate_abstraction_rejects_bad_options_and_predicate_list_elements() {
+	for (keyword, value) in [("granularity", "residuals"), ("direction", "upward")] {
+		let script = format!(
+			"(nfa:collapse-by-predicates (nfa:create-empty-string-nfa) (list) :{keyword} \"{value}\")"
+		);
+		let output = run_script(&script, true, &[]);
+		assert_eq!(status(&output), 2);
+		assert!(
+			stderr(&output).contains(&format!("nfa:collapse-by-predicates: :{keyword} is")),
+			"{}",
+			stderr(&output)
+		);
+		assert!(stderr(&output).contains(value), "{}", stderr(&output));
+	}
+
+	let output = run_script(
+		"(nfa:collapse-by-predicates (nfa:create-empty-string-nfa) \
+		 (list (nfa:create-empty-string-nfa) 3))",
+		true,
+		&[],
+	);
+	assert_eq!(status(&output), 2);
+	assert!(
+		stderr(&output).contains("expected an Nfa, found Int"),
+		"{}",
+		stderr(&output)
+	);
+}
+
+#[test]
 fn nfa_queries_of_the_whole_bridge_report_their_words() {
 	let workspace = Workspace::new("nfa-whole-bridge");
 	let a = workspace.file("a.mata", NFA);
@@ -3726,45 +3789,259 @@ fn a_token_passing_step_checks_the_same_lazily_and_eagerly() {
 	);
 }
 
+/// The directory of the regular model checking examples.
+fn rmc_examples() -> String {
+	format!("{}/../../../examples/rmc", env!("CARGO_MANIFEST_DIR"))
+}
+
+const TOKEN_PARAMETERS: [&str; 6] = [
+	"--param",
+	"initial-regex=tn*",
+	"--param",
+	"bad-regex=n*tn*",
+	"--param",
+	"symbols=n t",
+];
+
+const BURNS_PARAMETERS: [&str; 6] = [
+	"--param",
+	"initial-regex=0*",
+	"--param",
+	"bad-regex=[0-4]*(5[0-4]*)?",
+	"--param",
+	"symbols=0 1 2 3 4 5",
+];
+
+/// The safe configurations are the complement, over valid configurations `s[ifdehro]*`, of the source bad automaton
+/// `s[ifdeo]*r[ifdro]*h[ifdero]*`.
+const RTL_PARAMETERS: [&str; 6] = [
+	"--param",
+	"initial-regex=si*",
+	"--param",
+	concat!(
+		"bad-regex=s[ifdeo]*|s[ifdeo]*h[ifdehro]*|s[ifdeo]*r[ifdro]*",
+		"|s[ifdeo]*r[ifdro]*e[ifdehro]*",
+		"|s[ifdeo]*r[ifdro]*h[ifdero]*h[ifdehro]*"
+	),
+	"--param",
+	"symbols=s i f d e h r o",
+];
+
+/// Runs `examples/rmc/armc.matasc` on `system` with the script `parameters` and the `model` parameters and returns
+/// the standard output, after checking that it succeeded.
+fn run_armc(system: &str, parameters: &[&str], model: [&str; 6]) -> String {
+	let examples = rmc_examples();
+	let script = format!("{examples}/armc.matasc");
+	let input = format!("{examples}/{system}.mata");
+	let mut arguments = vec!["script", "run"];
+	arguments.extend(parameters);
+	arguments.extend(model);
+	arguments.extend([script.as_str(), input.as_str()]);
+	let output = mata(arguments);
+	assert_eq!(status(&output), 0, "{system}: {}", stderr(&output));
+	stdout(&output)
+}
+
 #[test]
 fn the_regular_model_checking_examples_reach_their_verdicts() {
-	// `examples/rmc/armc.matasc`: abstraction by `nfa:collapse-by-length`, refined when an error is spurious.
-	let examples = format!("{}/../../../examples/rmc", env!("CARGO_MANIFEST_DIR"));
-	let token = [
-		"--param",
-		"initial-regex=tn*",
-		"--param",
-		"bad-regex=n*tn*",
-		"--param",
-		"symbols=n t",
-	];
-	let burns = [
-		"--param",
-		"initial-regex=0*",
-		"--param",
-		"bad-regex=[0-4]*(5[0-4]*)?",
-		"--param",
-		"symbols=0 1 2 3 4 5",
-	];
-	for (system, parameters, verdict) in [
-		("token-passing", token, "safe, length 1"),
-		("token-copying", token, "unsafe, steps: 1, length 1"),
-		("burns", burns, "safe, length 1"),
-		("burns-broken", burns, "unsafe, steps: 10, length 1"),
+	// `examples/rmc/armc.matasc`: abstraction by `nfa:collapse-by-length` or by predicates, refined when an error
+	// is spurious.
+	for (system, model, verdict, predicate_verdict) in [
+		(
+			"token-passing",
+			TOKEN_PARAMETERS,
+			"safe, length 1",
+			"safe, predicate refinements 0",
+		),
+		(
+			"token-copying",
+			TOKEN_PARAMETERS,
+			"unsafe, steps: 1, length 1",
+			"unsafe, steps: 1, predicate refinements 0",
+		),
+		(
+			"burns",
+			BURNS_PARAMETERS,
+			"safe, length 1",
+			"safe, predicate refinements 0",
+		),
+		(
+			"burns-broken",
+			BURNS_PARAMETERS,
+			"unsafe, steps: 10, length 1",
+			"unsafe, steps: 10, predicate refinements 1",
+		),
+		(
+			"rtl",
+			RTL_PARAMETERS,
+			"safe, length 1",
+			"safe, predicate refinements 0",
+		),
 	] {
-		let script = format!("{examples}/armc.matasc");
-		let input = format!("{examples}/{system}.mata");
-		let mut arguments = vec!["script", "run"];
-		arguments.extend(parameters);
-		arguments.extend([script.as_str(), input.as_str()]);
-		let output = mata(arguments);
-		assert_eq!(status(&output), 0, "{system}: {}", stderr(&output));
-		assert_eq!(stdout(&output), format!("{verdict}\n"), "{system}");
+		for (abstraction, expected) in [("length", verdict), ("predicates", predicate_verdict)] {
+			let abstraction_parameter = format!("abstraction={abstraction}");
+			assert_eq!(
+				run_armc(system, &["--param", &abstraction_parameter], model),
+				format!("{expected}\n"),
+				"{system}: {abstraction}"
+			);
+		}
 	}
-	let invariant = format!("{examples}/inductive-invariant.matasc");
+	let invariant = format!("{}/inductive-invariant.matasc", rmc_examples());
 	let output = mata(["script", "run", invariant.as_str()]);
 	assert_eq!(status(&output), 0, "{}", stderr(&output));
 	assert_eq!(stdout(&output), "no reachable 0: true\n");
+}
+
+#[test]
+fn the_rtl_safety_property_rejects_an_r_then_h_configuration() {
+	// `srh` is in the source bad language, so an initial configuration containing it is an immediate error.
+	let initial = "initial-regex=si*|srh";
+	let model = [
+		"--param",
+		initial,
+		"--param",
+		RTL_PARAMETERS[3],
+		"--param",
+		RTL_PARAMETERS[5],
+	];
+	for (abstraction, expected) in [
+		("length", "unsafe, steps: 0, length 0"),
+		("predicates", "unsafe, steps: 0, predicate refinements 0"),
+	] {
+		let abstraction_parameter = format!("abstraction={abstraction}");
+		assert_eq!(
+			run_armc("rtl", &["--param", &abstraction_parameter], model),
+			format!("{expected}\n"),
+			"{abstraction}"
+		);
+	}
+}
+
+#[test]
+fn regular_model_checking_runs_more_rounds_than_the_call_depth_limit() {
+	// A 9-bit binary counter, least significant bit first, needs 511 abstract rounds to reach all ones.
+	let workspace = Workspace::new("armc-counter");
+	let counter = workspace.file(
+		"counter.mata",
+		"@NFT-explicit\n%Alphabet-auto\n%Initial c\n%Final d\n%Levels c:0 d:0 c0:1 c1:1 d0:1 d1:1\n%LevelsNum 2\n\
+		 c 1 c1\nc1 0 c\nc 0 c0\nc0 1 d\nd 0 d0\nd0 0 d\nd 1 d1\nd1 1 d\n",
+	);
+	let script = format!("{}/armc.matasc", rmc_examples());
+	let output = mata([
+		"script",
+		"run",
+		"--param",
+		"initial-regex=000000000",
+		"--param",
+		"bad-regex=(0|1)*0(0|1)*",
+		"--param",
+		"symbols=0 1",
+		script.as_str(),
+		counter.as_str(),
+	]);
+	assert_eq!(status(&output), 0, "{}", stderr(&output));
+	assert_eq!(stdout(&output), "unsafe, steps: 511, length 8\n");
+}
+
+#[test]
+fn predicate_seeds_granularity_and_direction_change_the_refinements() {
+	// No initial predicates needs a refinement, while transducer guards/actions avoid all refinements on this model.
+	for (seed, granularity, expected) in [
+		(
+			"none",
+			"states",
+			"unsafe, steps: 10, predicate refinements 4",
+		),
+		(
+			"actions",
+			"states",
+			"unsafe, steps: 10, predicate refinements 0",
+		),
+		(
+			"adaptive",
+			"languages",
+			"unsafe, steps: 10, predicate refinements 1",
+		),
+	] {
+		let predicate_seed = format!("predicate-seed={seed}");
+		let granularity = format!("predicate-granularity={granularity}");
+		let parameters = [
+			"--param",
+			"abstraction=predicates",
+			"--param",
+			&predicate_seed,
+			"--param",
+			&granularity,
+		];
+		assert_eq!(
+			run_armc("burns-broken", &parameters, BURNS_PARAMETERS),
+			format!("{expected}\n"),
+			"{seed}"
+		);
+	}
+	// Backward verification swaps both the checked languages and the transducer direction.
+	for (abstraction, expected) in [
+		("length", "safe, length 1"),
+		("predicates", "safe, predicate refinements 1"),
+	] {
+		let mode = format!("abstraction={abstraction}");
+		let parameters = [
+			"--param",
+			"verification-direction=backward",
+			"--param",
+			&mode,
+		];
+		assert_eq!(
+			run_armc("burns", &parameters, BURNS_PARAMETERS),
+			format!("{expected}\n"),
+			"{abstraction}"
+		);
+	}
+}
+
+#[test]
+fn instrumented_regular_model_checking_reports_every_phase() {
+	let text = run_armc(
+		"token-copying",
+		&["--param", "instrument=true"],
+		TOKEN_PARAMETERS,
+	);
+	assert!(text.ends_with("unsafe, steps: 1, length 1\n"), "{text}");
+	let records = records(&text);
+	for label in [
+		"armc.n1.initial-collapse",
+		"armc.n1.r0.post",
+		"armc.n1.r0.collapse",
+		"armc.n1.r0.inclusion",
+		"armc.n1.r0.round",
+		"armc.n1.r1.pre-0",
+		"armc.n1.r1.backtrack",
+	] {
+		assert!(records[label].parse::<f64>().is_ok(), "{label}: {text}");
+	}
+	for counter in [
+		"explored",
+		"pruned",
+		"macrostates",
+		"dropped",
+		"explicit",
+		"explicit-states",
+		"explicit-transitions",
+	] {
+		let label = format!("armc.n1.r1.bad.{counter}");
+		assert!(records[&label].parse::<usize>().is_ok(), "{label}: {text}");
+	}
+
+	// The default 32-state threshold fires on Burns, rather than only adding unused configuration.
+	let text = run_armc("burns", &["--param", "instrument=true"], BURNS_PARAMETERS);
+	assert!(text.ends_with("safe, length 1\n"), "{text}");
+	assert!(
+		self::records(&text)
+			.keys()
+			.any(|label| label.ends_with(".reduction")),
+		"{text}"
+	);
 }
 
 #[test]

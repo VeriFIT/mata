@@ -1,0 +1,180 @@
+/** @file
+ * @brief Explicit ranked tree automaton reader.
+ */
+
+#include "mata/ta/builder.hh"
+
+#include <algorithm>
+#include <fstream>
+#include <stdexcept>
+#include <unordered_set>
+
+namespace mata::ta::builder {
+namespace {
+
+[[noreturn]] void invalid_transition(const size_t line, const std::string& reason) {
+	throw std::runtime_error("TA transition " + std::to_string(line) + ": " + reason);
+}
+
+bool is_reserved_name(const std::string_view name) {
+	return name == "(" || name == ")" || name == "&" || name == "|" || name == "!";
+}
+
+/// Quoting strips the syntax meaning of a name, but no name may be empty.
+bool is_invalid_name(const parser::BodyToken& token) {
+	return token.token.empty() || (!token.quoted && is_reserved_name(token.token));
+}
+
+parser::BodyLine split_arrows(const parser::BodyLine& input) {
+	parser::BodyLine result{};
+	for (const parser::BodyToken& token : input) {
+		if (token.quoted) {
+			result.push_back(token);
+			continue;
+		}
+		size_t start{0};
+		size_t arrow{0};
+		while ((arrow = token.token.find("->", start)) != std::string_view::npos) {
+			if (arrow != start) { result.emplace_back(token.token.substr(start, arrow - start), false); }
+			result.emplace_back(token.token.substr(arrow, 2), false);
+			start = arrow + 2;
+		}
+		if (start < token.token.size()) { result.emplace_back(token.token.substr(start), false); }
+	}
+	return result;
+}
+
+std::vector<std::string_view>
+	parse_children(const parser::BodyLine& line, const size_t lhs_tokens, const size_t line_index) {
+	if (lhs_tokens < 4 || line[1].quoted || line[1].token != "(" || line[lhs_tokens - 1].quoted ||
+		line[lhs_tokens - 1].token != ")") {
+		invalid_transition(line_index, "expected symbol(child,...) -> target");
+	}
+
+	std::vector<std::string_view> children{};
+	bool expecting_child{true};
+	for (size_t token_index{2}; token_index + 1 < lhs_tokens; ++token_index) {
+		const parser::BodyToken& token{line[token_index]};
+		if (token.quoted) {
+			if (!expecting_child) { invalid_transition(line_index, "missing comma between child states"); }
+			if (token.token.empty()) { invalid_transition(line_index, "empty child state name"); }
+			children.push_back(token.token);
+			expecting_child = false;
+			continue;
+		}
+
+		size_t start{0};
+		while (start <= token.token.size()) {
+			const size_t comma{token.token.find(',', start)};
+			const std::string_view part{
+				token.token.substr(start, comma == std::string_view::npos ? std::string_view::npos : comma - start)
+			};
+			if (!part.empty()) {
+				if (!expecting_child) { invalid_transition(line_index, "missing comma between child states"); }
+				if (is_reserved_name(part) || part == "->") {
+					invalid_transition(line_index, "invalid child state name");
+				}
+				children.push_back(part);
+				expecting_child = false;
+			}
+			if (comma == std::string_view::npos) { break; }
+			if (expecting_child) { invalid_transition(line_index, "empty child state before comma"); }
+			expecting_child = true;
+			start = comma + 1;
+		}
+	}
+	if (children.empty() || expecting_child) { invalid_transition(line_index, "empty or trailing child state"); }
+	return children;
+}
+
+Ta parse_single(const parser::Parsed& parsed, Alphabet* alphabet, NameStateMap* state_map) {
+	if (parsed.size() != 1) { throw std::runtime_error("TA parser expects exactly one @TA-explicit section"); }
+	return construct(parsed.front(), alphabet, state_map);
+}
+
+} // namespace
+
+Ta construct(const parser::ParsedSection& section, Alphabet* alphabet, NameStateMap* state_map) {
+	if (section.type != TYPE_TA) { throw std::runtime_error("TA parser expects @TA-explicit, got @" + section.type); }
+	OnTheFlyAlphabet local_alphabet{};
+	if (alphabet == nullptr) { alphabet = &local_alphabet; }
+	NameStateMap local_state_map{};
+	if (state_map == nullptr) { state_map = &local_state_map; }
+
+	for (const auto& [key, values] : section.dict) {
+		if (key != "Final" && key != "Alphabet-auto") { throw std::runtime_error("unsupported TA directive %" + key); }
+		if (key == "Alphabet-auto" && !values.empty()) {
+			throw std::runtime_error("%Alphabet-auto does not take values in @TA-explicit");
+		}
+	}
+
+	Ta aut{};
+	std::unordered_set<State> used_states{};
+	for (const auto& [name, state] : *state_map) { used_states.insert(state); }
+	State next_new_state{0};
+	const auto get_state{[&](const std::string_view name) {
+		if (const auto it{state_map->find(name)}; it != state_map->end()) { return aut.add_state(it->second); }
+		while (used_states.contains(next_new_state)) {
+			if (next_new_state == Limits::max_state) { nfa::throw_state_overflow(); }
+			++next_new_state;
+		}
+		const State state{aut.add_state(next_new_state)};
+		used_states.insert(state);
+		state_map->emplace(name, state);
+		return state;
+	}};
+
+	const auto final_it{section.dict.find("Final")};
+	if (final_it != section.dict.end()) {
+		for (const std::string& name : final_it->second) { aut.final.insert(get_state(name)); }
+	}
+
+	for (size_t line_index{0}; line_index < section.body.size(); ++line_index) {
+		const parser::BodyLine line{split_arrows(section.body[line_index])};
+		if (line.size() < 3) { invalid_transition(line_index, "too few tokens"); }
+		const auto arrow{std::find_if(line.begin(), line.end(), [](const parser::BodyToken& token) {
+			return !token.quoted && token.token == "->";
+		})};
+		if (arrow == line.end()) { invalid_transition(line_index, "missing ->"); }
+		if (std::find_if(arrow + 1, line.end(), [](const parser::BodyToken& token) {
+				return !token.quoted && token.token == "->";
+			}) != line.end()) {
+			invalid_transition(line_index, "multiple -> tokens");
+		}
+		if (arrow + 1 == line.end() || arrow + 2 != line.end()) {
+			invalid_transition(line_index, "expected exactly one target state");
+		}
+		if (is_invalid_name(*(arrow + 1))) { invalid_transition(line_index, "invalid or empty target state"); }
+		if (arrow == line.begin()) { invalid_transition(line_index, "missing symbol"); }
+		const size_t symbol_tokens{static_cast<size_t>(arrow - line.begin())};
+		if (symbol_tokens != 1 && symbol_tokens < 4) { invalid_transition(line_index, "invalid left-hand side"); }
+		if (is_invalid_name(line.front())) { invalid_transition(line_index, "invalid or empty symbol"); }
+
+		std::vector<State> children{};
+		if (symbol_tokens != 1) {
+			const std::vector<std::string_view> child_names{parse_children(line, symbol_tokens, line_index)};
+			children.reserve(child_names.size());
+			for (const std::string_view name : child_names) { children.push_back(get_state(name)); }
+		}
+		const Symbol symbol{alphabet->translate_symb(line.front().token)};
+		const State target{get_state((arrow + 1)->token)};
+		aut.add_transition(symbol, std::move(children), target);
+	}
+	return aut;
+}
+
+Ta parse_from_mata(const std::string& input, Alphabet* alphabet, NameStateMap* state_map) {
+	return parse_single(parser::parse_mf(input), alphabet, state_map);
+}
+
+Ta parse_from_mata(std::istream& input, Alphabet* alphabet, NameStateMap* state_map) {
+	return parse_single(parser::parse_mf(input), alphabet, state_map);
+}
+
+Ta parse_from_mata(const std::filesystem::path& input, Alphabet* alphabet, NameStateMap* state_map) {
+	std::ifstream stream{input};
+	if (!stream) { throw std::runtime_error("cannot open TA input file: " + input.string()); }
+	return parse_from_mata(stream, alphabet, state_map);
+}
+
+} // namespace mata::ta::builder

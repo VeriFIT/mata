@@ -1,0 +1,79 @@
+From b1f013c6edd2654b26060a9d77fedbd58d71c3ac Mon Sep 17 00:00:00 2001
+From: David Chocholaty <chocholaty.david@protonmail.com>
+Date: Fri, 27 Nov 2026 10:15:27 +0100
+Subject: [PATCH] examples: +perf Try lazy and early-exit ARMC backtracking
+
+---
+ examples/rmc/armc.matasc | 33 ++++++++++++++++++++++++++-------
+ 1 file changed, 26 insertions(+), 7 deletions(-)
+
+diff --git a/examples/rmc/armc.matasc b/examples/rmc/armc.matasc
+index 5b6f53ff7..f5430fb94 100644
+--- a/examples/rmc/armc.matasc
++++ b/examples/rmc/armc.matasc
+@@ -15,15 +15,22 @@
+ (declare-param bad-regex String)       ; the safe configurations; their complement is bad
+ (declare-param symbols String)         ; the letters of a configuration, space-separated
+ (declare-param instrument Bool false)  ; time the rounds and operations, and count the lazy bad-check work
++(declare-param backtracking String "eager") ; eager, eager-unminimized, or lazy concrete counterexample checks
++(declare-param early-fixpoint Bool false)   ; check inclusion of the concrete post before union and abstraction
+ (declare-param reduce-before-collapse Bool true) ; simulation-reduce sufficiently large unions before abstraction
+ (declare-param reduction-min-states Int 32)       ; when reduction is enabled, require this many union states
+ 
+ (define initial (nfa:create-from-regex initial-regex))
+ (define bad (nfa:complement (nfa:create-from-regex bad-regex)))
+ (define backward (nft:invert-levels step))
++(define lazy-initial (lazy:leaf initial))
+ (define lazy-bad (lazy:leaf bad))
++(define lazy-step (lazy:leaf step))
+ (define (post (r Nfa)) (nft:to-nfa (nft:apply step r)))
+-(define (pre (r Nfa)) (nfa:minimize (nft:to-nfa (nft:apply backward r))))
++(define (pre (r Nfa))
++  (if (= backtracking "eager-unminimized")
++    (nft:to-nfa (nft:apply backward r))
++    (nfa:minimize (nft:to-nfa (nft:apply backward r)))))
+ 
+ (define (round-label (n Int) (round Int) (operation String))
+   (concat "armc.n" (to-string n) ".r" (to-string round) "." operation))
+@@ -52,9 +59,15 @@
+ 
+ ; Whether some initial configuration reaches a bad one in ROUNDS steps.
+ (define (real-error? (n Int) (rounds Int))
+-  (not (nfa:intersection-empty? initial
+-    (loop ((r bad) (i 0))
+-      (if (< i rounds) (recur (measured-pre n rounds i r) (+ i 1)) r)))))
++  (if (= backtracking "lazy")
++    (not (lazy:empty?
++      (lazy:intersection lazy-initial
++        (loop ((r lazy-bad) (i 0))
++          (if (< i rounds) (recur (lazy:pre-image r lazy-step) (+ i 1)) r)))
++      :alphabet symbols))
++    (not (nfa:intersection-empty? initial
++      (loop ((r bad) (i 0))
++        (if (< i rounds) (recur (measured-pre n rounds i r) (+ i 1)) r))))))
+ 
+ ; One abstract fixpoint at length N: "safe", "unsafe after K steps", or "spurious". The continuation
+ ; returned by each round runs outside its timer, so recursive rounds are timed individually.
+@@ -62,10 +75,16 @@
+   ((measure (round-label n round "round")
+     (lambda ()
+       (if (bad-check? n round reached)
+-        (let ((next (measured-collapse n round reached (measured-post n round reached))))
+-          (if (measured-inclusion? n round next reached)
++        (let ((next-post (measured-post n round reached)))
++          (if (if early-fixpoint
++            (measure (round-label n round "early-inclusion")
++              (lambda () (nfa:included? next-post reached)))
++            false)
+             (lambda () "safe")
+-            (lambda () (abstract-round n next (+ round 1)))))
++            (let ((next (measured-collapse n round reached next-post)))
++              (if (measured-inclusion? n round next reached)
++                (lambda () "safe")
++                (lambda () (abstract-round n next (+ round 1)))))))
+         (let ((verdict (if (measure (round-label n round "backtrack") (lambda () (real-error? n round)))
+           (concat "unsafe, steps: " (to-string round)) "spurious")))
+           (lambda () verdict)))))))
+-- 
+2.56.0
+

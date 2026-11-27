@@ -155,6 +155,64 @@ fn collapse_by_length_reads_epsilon_as_the_empty_word() -> Result<(), Error> {
 }
 
 #[test]
+fn collapse_by_predicates_over_approximates_and_preserves_disjointness() -> Result<(), Error> {
+	// Every accepted word has `a` in the penultimate position; the bad predicate requires `b` there.
+	let subject = Nfa::from_regex("(a|b)*a(a|b)")?;
+	let bad = Nfa::from_regex("(a|b)*b(a|b)")?;
+	let abstraction = subject.collapse_by_predicates(&[&bad]);
+	assert!(subject.is_included_in(&abstraction));
+	assert!(abstraction.is_disjoint_from(&bad));
+	Ok(())
+}
+
+#[test]
+fn collapse_by_predicates_granularity_and_direction_control_precision() -> Result<(), Error> {
+	let suffix = Nfa::from_regex("ac")?;
+	let suffix_predicate = Nfa::from_regex("ac")?;
+	let states = suffix.collapse_by_predicates(&[&suffix_predicate]);
+	let languages =
+		suffix.collapse_by_predicates_with(&[&suffix_predicate], true, Direction::Forward);
+	assert!(states.is_equivalent_to(&suffix));
+	assert!(suffix.is_included_in(&languages));
+	assert!(!languages.accepts(&[]) && languages.accepts(&word_from_bytes("a")));
+	assert!(languages.accepts(&word_from_bytes("acc")));
+	assert!(!states.accepts(&word_from_bytes("a")));
+
+	let prefix = Nfa::from_regex("ca")?;
+	let prefix_predicate = Nfa::from_regex("ca")?;
+	let backward =
+		prefix.collapse_by_predicates_with(&[&prefix_predicate], true, Direction::Backward);
+	assert!(prefix.is_included_in(&backward));
+	assert!(backward.accepts(&word_from_bytes("a")));
+	assert!(backward.accepts(&word_from_bytes("cca")));
+	assert!(!backward.accepts(&word_from_bytes("c")));
+	Ok(())
+}
+
+#[test]
+fn collapse_by_predicates_accepts_empty_lists_and_removes_epsilon() -> Result<(), Error> {
+	let empty_word = Nfa::empty_word();
+	assert!(
+		empty_word
+			.collapse_by_predicates(&[])
+			.is_equivalent_to(&empty_word)
+	);
+	let no_states = Nfa::new();
+	assert!(
+		empty_word
+			.collapse_by_predicates(&[&no_states])
+			.is_equivalent_to(&empty_word)
+	);
+
+	let subject = Nfa::from_regex("a")?.concat_over_epsilon(&Nfa::from_regex("b")?);
+	let predicate = Nfa::from_regex("a")?.concat_over_epsilon(&Nfa::from_regex("b")?);
+	let abstraction = subject.collapse_by_predicates(&[&predicate]);
+	assert!(abstraction.is_equivalent_to(&Nfa::from_regex("ab")?));
+	assert!(!abstraction.accepts(&word_from_bytes("b")));
+	Ok(())
+}
+
+#[test]
 fn is_flat_separates_one_cycle_per_state_from_two() -> Result<(), Error> {
 	assert!(Nfa::from_word(&[Symbol::from(b'a'), Symbol::from(b'b')]).is_flat());
 	assert!(!Nfa::from_regex("(a|b)*")?.is_flat());

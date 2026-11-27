@@ -227,6 +227,16 @@ pub(crate) const OPTIONAL_PARAMETERS: &[OptionalParameter] = &[
 		sort: "String",
 	},
 	OptionalParameter {
+		operation: "nfa:collapse-by-predicates",
+		name: "granularity",
+		sort: "String",
+	},
+	OptionalParameter {
+		operation: "nfa:collapse-by-predicates",
+		name: "direction",
+		sort: "String",
+	},
+	OptionalParameter {
 		operation: "nfa:create-random-nfa-tabakov-vardi",
 		name: "seed",
 		sort: "Int",
@@ -1294,6 +1304,14 @@ pub(crate) const OPERATIONS: &[Operation] = &[
 		2,
 		Some(2),
 		"Nfa,Int",
+		"Nfa",
+	),
+	op(
+		"nfa:collapse-by-predicates",
+		"nfa_collapse_by_predicates",
+		2,
+		Some(2),
+		"Nfa,(List Nfa)",
 		"Nfa",
 	),
 	op("nfa:flat?", "nfa_flat", 1, Some(1), "Nfa", "Bool"),
@@ -2678,6 +2696,10 @@ fn dispatch_nfa_bridge_transformations(
 			let [value, bound] = take(arguments, name)?;
 			collapse_by_length(&value, &bound, engine)
 		}
+		"nfa_collapse_by_predicates" => {
+			let [value, predicates] = take(arguments, name)?;
+			collapse_by_predicates(&value, &predicates, engine)
+		}
 		_ => dispatch_nfa_predicates(handler, name, arguments, engine),
 	}
 }
@@ -2708,6 +2730,41 @@ fn collapse_by_length(value: &Value, bound: &Value, engine: &Engine) -> Result<V
 	};
 	Ok(Value::Nfa(Rc::new(
 		expect_nfa(value)?.collapse_by_length(bound, traces, direction),
+	)))
+}
+
+/// `nfa:collapse-by-predicates` with its predicate list, `:granularity`, and `:direction` keywords.
+fn collapse_by_predicates(
+	value: &Value,
+	predicates: &Value,
+	engine: &Engine,
+) -> Result<Value, Error> {
+	let whole_languages = match optional::<String>(engine, "granularity").as_deref() {
+		None | Some("states") => false,
+		Some("languages") => true,
+		Some(other) => {
+			return Err(Error::plain(format!(
+				"nfa:collapse-by-predicates: :granularity is \"states\" or \"languages\", not \"{other}\""
+			)));
+		}
+	};
+	let direction = match optional::<String>(engine, "direction").as_deref() {
+		None | Some("forward") => Direction::Forward,
+		Some("backward") => Direction::Backward,
+		Some(other) => {
+			return Err(Error::plain(format!(
+				"nfa:collapse-by-predicates: :direction is \"forward\" or \"backward\", not \"{other}\""
+			)));
+		}
+	};
+	let predicates = list_len(predicates)?
+		.iter()
+		.map(expect_nfa)
+		.collect::<Result<Vec<_>, _>>()
+		.map_err(Error::plain)?;
+	let borrowed: Vec<&Nfa> = predicates.iter().map(AsRef::as_ref).collect();
+	Ok(Value::Nfa(Rc::new(
+		expect_nfa(value)?.collapse_by_predicates_with(&borrowed, whole_languages, direction),
 	)))
 }
 

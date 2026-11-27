@@ -1187,6 +1187,44 @@ impl Nfa {
 		))
 	}
 
+	/// The all-state predicate abstraction of abstract regular model checking, comparing suffix languages (Mata's
+	/// `collapse_by_predicates`). States of the determinized subject whose intersecting predicate-state residuals agree
+	/// are merged. The result accepts a superset of `self`; adding a bad language as a predicate preserves disjointness
+	/// from it. The predicates are borrowed, not copied.
+	///
+	/// [`Nfa::collapse_by_predicates_with`] compares whole predicate languages or prefixes instead. This default uses
+	/// every predicate state and [`Direction::Forward`].
+	///
+	/// # Complexity
+	///
+	/// Determinizes: exponential in the worst case.
+	#[must_use = "returns a new automaton and leaves `self` unchanged"]
+	pub fn collapse_by_predicates(&self, predicates: &[&Nfa]) -> Nfa {
+		self.collapse_by_predicates_with(predicates, false, Direction::Forward)
+	}
+
+	/// [`Nfa::collapse_by_predicates`], with whole predicate-language fingerprints when `whole_languages` is true,
+	/// and comparison of prefix languages under [`Direction::Backward`]. Epsilon transitions in the subject and
+	/// predicates denote the empty word, as in the other language operations of this crate.
+	#[must_use = "returns a new automaton and leaves `self` unchanged"]
+	pub fn collapse_by_predicates_with(
+		&self,
+		predicates: &[&Nfa],
+		whole_languages: bool,
+		direction: Direction,
+	) -> Nfa {
+		let mut refs = ffi::nfa_refs_new();
+		for predicate in predicates {
+			ffi::nfa_refs_push(refs.pin_mut(), predicate.raw());
+		}
+		new_nfa(ffi::collapse_by_predicates(
+			self.raw(),
+			&refs,
+			whole_languages,
+			direction.into(),
+		))
+	}
+
 	/// Whether no state lies on two cycles (Mata's `is_flat`).
 	#[must_use]
 	pub fn is_flat(&self) -> bool {
