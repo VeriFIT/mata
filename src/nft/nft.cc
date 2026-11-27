@@ -1765,6 +1765,9 @@ bool Nft::is_complete(const OrdVector<Symbol>& symbols) const {
 }
 
 StateSet Nft::mk_epsilon_closure(const StateSet& source_states, const std::vector<Symbol>& epsilons) const {
+	// An empty selection considers no symbols as epsilons; the shared closure would otherwise substitute the
+	//  relation's default epsilon and close over it.
+	if (epsilons.empty()) { return source_states; }
 	// The shared closure of mata::Delta reuses its buffers and keeps the visited states in a hash table sized to
 	//  the closure, so the cost follows the closure instead of the number of states of the delta.
 	PostWorkspace workspace{};

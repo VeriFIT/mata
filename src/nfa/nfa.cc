@@ -695,6 +695,9 @@ Nfa Nfa::decode_utf8() const {
 }
 
 StateSet Nfa::mk_epsilon_closure(const StateSet& source_states, const std::vector<Symbol>& epsilons) const {
+	// An empty selection considers no symbols as epsilons; the shared closure would otherwise substitute the
+	//  relation's default epsilon and close over it.
+	if (epsilons.empty()) { return source_states; }
 	PostWorkspace workspace{};
 	return delta.epsilon_closure(source_states, epsilons, workspace);
 }
