@@ -289,12 +289,12 @@ template <typename State> size_t slot_of(const std::vector<State>& table, const 
 template <typename P, typename TT>
 void close_over_epsilons(
 	const DeltaBase<P, TT>& delta,
-	const std::vector<typename DeltaBase<P, TT>::Key<0>>& epsilons,
+	const std::vector<typename DeltaBase<P, TT>::template Key<0>>& epsilons,
 	std::vector<typename DeltaBase<P, TT>::State>& closure,
 	PostWorkspace& workspace
 ) {
 	using State = typename DeltaBase<P, TT>::State;
-	using Key = typename DeltaBase<P, TT>::Key<0>;
+	using Key = typename DeltaBase<P, TT>::template Key<0>;
 	using Target = typename DeltaBase<P, TT>::Target;
 	std::vector<State>& visited{workspace.visited};
 	std::vector<State>& worklist{workspace.worklist};
