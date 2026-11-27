@@ -205,9 +205,6 @@ class Delta : public posts::DeltaBase<StatePost, TransitionTraits> {
 	Delta& operator=(Delta&&) = default;
 	~Delta() = default;
 
-	/// Installs its finished posts in one move.
-	friend class DeltaBuilder;
-
 	/// @name Conversions from the generic relation
 	/// A `posts::DeltaBase<StatePost>` is this relation. Moving one in is implicit and cheap; copying one is a copy of
 	///  every transition, so it is explicit, and there is no copy-assignment from it.
@@ -515,92 +512,10 @@ class Delta : public posts::DeltaBase<StatePost, TransitionTraits> {
  *  targets of a symbol, each strictly increasing.
  *
  * Every symbol post is created once with exact capacity, instead of being grown target by target.
+ *
+ * The builder is the generic @c posts::DeltaBuilder over this relation; @see @c mata::posts::DeltaBuilder.
  */
-class DeltaBuilder {
-  public:
-	DeltaBuilder() = default;
-	explicit DeltaBuilder(const size_t num_of_states_hint) { state_posts_.reserve(num_of_states_hint); }
-
-	void begin_state(State source) {
-		MATA_ASSERT(!in_state_ && "begin_state() called before finish_state()");
-		MATA_ASSERT((state_posts_.empty() || source >= state_posts_.size()) && "sources must be strictly increasing");
-		// Throws for the "no state" sentinel before the builder changes, instead of wrapping `source + 1` to zero.
-		state_posts_.resize(num_of_states_for(source));
-		source_ = source;
-		in_state_ = true;
-		has_symbol_ = false;
-	}
-
-	void reserve_symbols(const size_t num_of_symbols) {
-		MATA_ASSERT(in_state_ && "reserve_symbols() called outside of a state");
-		state_posts_[source_].reserve(num_of_symbols);
-	}
-
-	void begin_symbol(const Symbol symbol) {
-		MATA_ASSERT(in_state_ && "begin_symbol() called outside of a state");
-		MATA_ASSERT(!in_symbol_ && "begin_symbol() called before finish_symbol()");
-		MATA_ASSERT((!has_symbol_ || symbol > symbol_) && "symbols must be strictly increasing");
-		symbol_ = symbol;
-		targets_.clear();
-		in_symbol_ = true;
-	}
-
-	void push_sorted_target(const State target) {
-		MATA_ASSERT(in_symbol_ && "push_sorted_target() called outside of a symbol");
-		MATA_ASSERT((targets_.empty() || target > targets_.back()) && "targets must be strictly increasing");
-		targets_.push_back(target);
-	}
-
-	void finish_symbol() {
-		MATA_ASSERT(in_symbol_ && "finish_symbol() without begin_symbol()");
-		if (targets_.empty()) {
-			in_symbol_ = false;
-			return;
-		}
-		state_posts_[source_].emplace_back(symbol_, std::span<const State>{targets_});
-		// Committed only once the symbol post is stored, so a throwing emplace_back() leaves the builder as it was.
-		num_of_transitions_ += targets_.size();
-		max_target_ = std::max(max_target_, targets_.back()); // Sorted, so the last target is the largest.
-		has_symbol_ = true;
-		in_symbol_ = false;
-	}
-
-	void finish_state() {
-		MATA_ASSERT(in_state_ && "finish_state() without begin_state()");
-		MATA_ASSERT(!in_symbol_ && "finish_state() called before finish_symbol()");
-		in_state_ = false;
-	}
-
-	/// Hands over the finished relation and empties the builder, which can then build another one.
-	Delta finish() {
-		MATA_ASSERT(!in_state_ && !in_symbol_ && "finish() called inside an unfinished state or symbol");
-		// A target state needs its own (possibly empty) post, like every other state of the relation.
-		if (!state_posts_.empty() && max_target_ >= state_posts_.size()) {
-			state_posts_.resize(num_of_states_for(max_target_));
-		}
-		Delta delta{};
-		delta.state_posts_ = std::move(state_posts_);
-		// Every stored target was counted, so the relation starts with an exact count.
-		delta.set_count(num_of_transitions_);
-		// A moved-from vector is only valid, not empty, so it is cleared before the next build.
-		state_posts_.clear();
-		num_of_transitions_ = 0;
-		max_target_ = 0;
-		return delta;
-	}
-
-  private:
-	std::vector<StatePost> state_posts_{};
-	std::vector<State> targets_{};
-	Symbol symbol_{0};
-	State source_{0};
-	State max_target_{0};
-	/// Targets of the stored symbol posts, which finish() hands over as the exact count.
-	size_t num_of_transitions_{0};
-	bool in_state_{false};
-	bool in_symbol_{false};
-	bool has_symbol_{false}; ///< Has the current state emitted a symbol post already?
-}; // class DeltaBuilder.
+using DeltaBuilder = posts::DeltaBuilder<mata::Delta>;
 
 /**
  * @brief Defragment @p delta, keeping its concrete type. @see mata::posts::defragment.

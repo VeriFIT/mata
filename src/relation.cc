@@ -278,11 +278,11 @@ void Delta::add(std::vector<Transition>&& transitions) {
 		for (size_t index{begin + 1}; index < end; ++index) {
 			if (by_source[index].symbol != by_source[index - 1].symbol) { ++num_of_symbols; }
 		}
-		builder.reserve_symbols(num_of_symbols);
+		builder.reserve_keys(num_of_symbols);
 		size_t index{begin};
 		while (index < end) {
 			const Symbol symbol{by_source[index].symbol};
-			builder.begin_symbol(symbol);
+			builder.begin_key(symbol);
 			builder.push_sorted_target(by_source[index].target);
 			for (++index; index < end && by_source[index].symbol == symbol; ++index) {
 				// Duplicates are skipped.
@@ -290,7 +290,7 @@ void Delta::add(std::vector<Transition>&& transitions) {
 					builder.push_sorted_target(by_source[index].target);
 				}
 			}
-			builder.finish_symbol();
+			builder.finish_key();
 		}
 		builder.finish_state();
 		begin = end;
