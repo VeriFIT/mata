@@ -5,9 +5,12 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "mata/ta/abstraction.hh"
+#include "mata/ta/builder.hh"
 #include "mata/ta/transducer-builder.hh"
 #include "mata/ta/transducer.hh"
 
+#include <filesystem>
+#include <fstream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -25,6 +28,20 @@ constexpr Symbol tt{'T'};
 
 Tree unary(const Symbol symbol, const Tree& child) { return Tree{symbol, {child}}; }
 Tree binary(const Symbol symbol, const Tree& left, const Tree& right) { return Tree{symbol, {left, right}}; }
+
+std::string read_fixture(const std::string& name) {
+	std::filesystem::path directory{std::filesystem::current_path()};
+	while (true) {
+		const std::filesystem::path candidate{directory / "examples/rmc" / name};
+		if (std::ifstream stream{candidate}; stream) {
+			std::ostringstream contents{};
+			contents << stream.rdbuf();
+			return contents.str();
+		}
+		if (directory == directory.root_path()) { throw std::runtime_error{"Cannot find fixture " + name}; }
+		directory = directory.parent_path();
+	}
+}
 
 Ta token_initial() {
 	Ta aut{};
@@ -142,6 +159,33 @@ TEST_CASE("mata::ta::TreeTransducer applies and inverts structure-preserving rel
 		CHECK(!bad_copies.is_lang_empty());
 		CHECK(bad_copies.accepts(binary(nn, Tree{t}, Tree{t})));
 	}
+}
+
+TEST_CASE("mata::ta::TreeTransducer reaches a concrete bad tree with the actual copying fixture") {
+	OnTheFlyAlphabet alphabet{};
+	const Ta initial{builder::parse_from_mata(read_fixture("ta-token-initial.mata"), &alphabet)};
+	const Ta bad{builder::parse_from_mata(read_fixture("ta-token-bad.mata"), &alphabet)};
+	const TreeTransducer step{
+		transducer_builder::parse_from_mata(read_fixture("ta-token-copying-step.mata"), &alphabet)
+	};
+	const Symbol none{alphabet["n"]};
+	const Symbol token{alphabet["t"]};
+	const Symbol join{alphabet["tt"]};
+	const Tree copied_left{binary(join, Tree{none}, Tree{token})};
+	const Tree copied_right{binary(join, Tree{token}, Tree{none})};
+	const Tree copied_twice{binary(join, Tree{token}, Tree{token})};
+	REQUIRE(bad.accepts(copied_left));
+	REQUIRE(bad.accepts(copied_right));
+	REQUIRE(bad.accepts(copied_twice));
+
+	const Ta first_post{step.apply(initial)};
+	const Ta second_post{step.apply(first_post)};
+	CHECK(first_post.accepts(copied_left));
+	CHECK(first_post.accepts(copied_right));
+	CHECK(intersection(first_post, bad).accepts(copied_left));
+	// The input t->n rule cannot produce the right q0 needed to fire tt(q0,q0) on the next application.
+	CHECK(!first_post.accepts(copied_twice));
+	CHECK(!second_post.accepts(copied_twice));
 }
 
 TEST_CASE("mata::ta::TreeTransducer enforces ranked and state invariants") {
