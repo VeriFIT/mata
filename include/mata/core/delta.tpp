@@ -317,11 +317,12 @@ void close_over_epsilons(
 			const auto symbol_post_it{DeltaBase<P, TT>::epsilon_symbol_posts(state_post, epsilon)};
 			if (symbol_post_it == state_post.end()) { continue; }
 			visit_targets(symbol_post_it->nested(), [&](const Target& target) {
-				const size_t slot{slot_of(visited, target)};
-				if (visited[slot] == target) { return; }
-				visited[slot] = target;
-				closure.push_back(target);
-				worklist.push_back(target);
+				const State state{delta.state_of(target)};
+				const size_t slot{slot_of(visited, state)};
+				if (visited[slot] == state) { return; }
+				visited[slot] = state;
+				closure.push_back(state);
+				worklist.push_back(state);
 				if (2 * closure.size() > visited.size()) { rebuild_visited(2 * visited.size()); }
 			});
 		}
@@ -344,12 +345,22 @@ std::vector<typename DeltaBase<P, TT>::State>& DeltaBase<P, TT>::gather_post(
 	const std::vector<State>& sources{closes_before(epsilon_closure_opt) ? workspace.sources : states};
 
 	std::vector<State>& gathered{workspace.gathered};
+	// A caller may chain steps by passing the result of an earlier call over the same workspace as @p states; copy
+	//  the aliased input into @c workspace.worklist, the one buffer no earlier stage of this call still needs: the
+	//  before-closure has drained it, and the after-closure rebuilds it only after the step loop has read the copy.
+	const bool aliased_states{&gathered == &states};
+	if (aliased_states) { workspace.worklist.assign(states.begin(), states.end()); }
 	gathered.clear();
-	// Stepping over epsilon with a closure requested means the source states are reachable as well.
+	const std::vector<State>& step_sources{aliased_states ? workspace.worklist : sources};
+	// Stepping over epsilon with a closure requested means the input states are reachable as well; the output
+	//  seeds with the input states, while the step reads the closure or the aliased copy of the input.
 	if (key == Reserved<0>::min_epsilon && (closes_before(epsilon_closure_opt) || closes_after(epsilon_closure_opt))) {
-		gathered.assign(states.begin(), states.end());
+		gathered.assign(
+			aliased_states ? workspace.worklist.begin() : states.begin(),
+			aliased_states ? workspace.worklist.end() : states.end()
+		);
 	}
-	for (const State state : sources) {
+	for (const State state : step_sources) {
 		const PostType& state_post{this->state_post(state)};
 		const auto symbol_post_it{state_post.find(key)};
 		if (symbol_post_it == state_post.end()) { continue; }
@@ -366,6 +377,10 @@ std::vector<typename DeltaBase<P, TT>::State> DeltaBase<P, TT>::epsilon_closure(
 	std::vector<State>& closure{workspace.gathered};
 	closure.assign(states.begin(), states.end());
 	close_over_epsilons(*this, epsilons, closure, workspace);
+	// The declaration promises a sorted, duplicate-free closure; the traversal order and duplicate input states
+	//  would otherwise leak to the caller.
+	std::sort(closure.begin(), closure.end());
+	closure.erase(std::unique(closure.begin(), closure.end()), closure.end());
 	return closure;
 }
 ///@}
