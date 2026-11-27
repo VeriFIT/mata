@@ -10,7 +10,6 @@
 #include "mata/ta/transducer.hh"
 
 #include <filesystem>
-#include <fstream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -29,19 +28,8 @@ constexpr Symbol tt{'T'};
 Tree unary(const Symbol symbol, const Tree& child) { return Tree{symbol, {child}}; }
 Tree binary(const Symbol symbol, const Tree& left, const Tree& right) { return Tree{symbol, {left, right}}; }
 
-std::string read_fixture(const std::string& name) {
-	std::filesystem::path directory{std::filesystem::current_path()};
-	while (true) {
-		const std::filesystem::path candidate{directory / "examples/rmc" / name};
-		if (std::ifstream stream{candidate}; stream) {
-			std::ostringstream contents{};
-			contents << stream.rdbuf();
-			return contents.str();
-		}
-		if (directory == directory.root_path()) { throw std::runtime_error{"Cannot find fixture " + name}; }
-		directory = directory.parent_path();
-	}
-}
+/// The fixture directory is compiled in, so the tests find it from any build or working directory.
+std::filesystem::path fixture(const std::string& name) { return std::filesystem::path{MATA_RMC_EXAMPLES_DIR} / name; }
 
 Ta token_initial() {
 	Ta aut{};
@@ -163,11 +151,9 @@ TEST_CASE("mata::ta::TreeTransducer applies and inverts structure-preserving rel
 
 TEST_CASE("mata::ta::TreeTransducer reaches a concrete bad tree with the actual copying fixture") {
 	OnTheFlyAlphabet alphabet{};
-	const Ta initial{builder::parse_from_mata(read_fixture("ta-token-initial.mata"), &alphabet)};
-	const Ta bad{builder::parse_from_mata(read_fixture("ta-token-bad.mata"), &alphabet)};
-	const TreeTransducer step{
-		transducer_builder::parse_from_mata(read_fixture("ta-token-copying-step.mata"), &alphabet)
-	};
+	const Ta initial{builder::parse_from_mata(fixture("ta-token-initial.mata"), &alphabet)};
+	const Ta bad{builder::parse_from_mata(fixture("ta-token-bad.mata"), &alphabet)};
+	const TreeTransducer step{transducer_builder::parse_from_mata(fixture("ta-token-copying-step.mata"), &alphabet)};
 	const Symbol none{alphabet["n"]};
 	const Symbol token{alphabet["t"]};
 	const Symbol join{alphabet["tt"]};
@@ -240,8 +226,34 @@ TEST_CASE("mata::ta::transducer_builder rejects empty and structural names") {
 			 "@TT-explicit\n%Final q\n( -> a : q\n",
 			 "@TT-explicit\n%Final q\na -> ( : q\n",
 			 "@TT-explicit\n%Final q\na -> b : )\n",
+			 "@TT-explicit\n%Final q\n! -> a : q\n",
+			 "@TT-explicit\n%Final q\na -> b : |\n",
+			 "@TT-explicit\n%Final q\nf( ! ) -> g : q\n",
+			 "@TT-explicit\n%Final q\n\"\" -> a : q\n",
+			 "@TT-explicit\n%Final q\na -> \"\" : q\n",
+			 "@TT-explicit\n%Final q\na -> b : \"\"\n",
 		 }) {
 		INFO(source);
 		CHECK_THROWS_AS(transducer_builder::parse_from_mata(source), std::runtime_error);
 	}
+}
+
+TEST_CASE("mata::ta::transducer_builder reads quoted syntax characters as plain names") {
+	const std::string source{R"mata(@TT-explicit
+%Final "!"
+"!" -> "&" : "("
+"|" -> ":" : "->"
+f( "(" , "->" ) -> "!" : "!"
+)mata"};
+	OnTheFlyAlphabet alphabet{};
+	transducer_builder::NameStateMap states{};
+	const TreeTransducer transducer{transducer_builder::parse_from_mata(source, &alphabet, &states)};
+	REQUIRE(states.size() == 3);
+	CHECK(transducer.final.contains(states.at("!")));
+	CHECK(transducer.delta.size() == 3);
+	CHECK(transducer.delta.contains(TransducerTransition{alphabet["!"], alphabet["&"], states.at("(")}));
+	CHECK(transducer.delta.contains(TransducerTransition{alphabet["|"], alphabet[":"], states.at("->")}));
+	CHECK(transducer.delta.contains(
+		TransducerTransition{alphabet["f"], {states.at("("), states.at("->")}, alphabet["!"], states.at("!")}
+	));
 }

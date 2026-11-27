@@ -17,8 +17,12 @@ namespace {
 }
 
 bool is_reserved_name(const std::string_view name) {
-	return name.empty() || name == "(" || name == ")" || name == "&" || name == "|" || name == "!" || name == "->" ||
-		   name == ":";
+	return name == "(" || name == ")" || name == "&" || name == "|" || name == "!" || name == "->" || name == ":";
+}
+
+/// Quoting strips the syntax meaning of a name, but no name may be empty.
+bool is_invalid_name(const parser::BodyToken& token) {
+	return token.token.empty() || (!token.quoted && is_reserved_name(token.token));
 }
 
 parser::BodyLine split_syntax(const parser::BodyLine& input) {
@@ -60,7 +64,7 @@ std::vector<std::string_view>
 		const parser::BodyToken& token{line[token_index]};
 		if (token.quoted) {
 			if (!expecting_child) { invalid_transition(line_index, "missing comma between child states"); }
-			if (is_reserved_name(token.token)) { invalid_transition(line_index, "invalid child state name"); }
+			if (token.token.empty()) { invalid_transition(line_index, "empty child state name"); }
 			children.push_back(token.token);
 			expecting_child = false;
 			continue;
@@ -73,9 +77,7 @@ std::vector<std::string_view>
 			};
 			if (!part.empty()) {
 				if (!expecting_child) { invalid_transition(line_index, "missing comma between child states"); }
-				if (part == "->" || part == ":" || part == "(" || part == ")") {
-					invalid_transition(line_index, "invalid child state name");
-				}
+				if (is_reserved_name(part)) { invalid_transition(line_index, "invalid child state name"); }
 				children.push_back(part);
 				expecting_child = false;
 			}
@@ -153,9 +155,9 @@ TreeTransducer construct(const parser::ParsedSection& section, Alphabet* alphabe
 		if (line.size() - arrow_index != 4 || (arrow + 2)->quoted || (arrow + 2)->token != ":") {
 			invalid_transition(line_index, "expected output -> symbol : target");
 		}
-		if (is_reserved_name(line.front().token)) { invalid_transition(line_index, "invalid input symbol"); }
-		if (is_reserved_name((arrow + 1)->token)) { invalid_transition(line_index, "invalid output symbol"); }
-		if (is_reserved_name((arrow + 3)->token)) { invalid_transition(line_index, "invalid target state"); }
+		if (is_invalid_name(line.front())) { invalid_transition(line_index, "invalid input symbol"); }
+		if (is_invalid_name(*(arrow + 1))) { invalid_transition(line_index, "invalid output symbol"); }
+		if (is_invalid_name(*(arrow + 3))) { invalid_transition(line_index, "invalid target state"); }
 
 		std::vector<State> children{};
 		if (arrow_index != 1) {

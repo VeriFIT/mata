@@ -97,6 +97,37 @@ TEST_CASE("mata::ta::builder rejects malformed protocol inputs") {
 	}
 }
 
+TEST_CASE("mata::ta::builder reads quoted syntax characters as plain names") {
+	const std::string input{R"mata(@TA-explicit
+%Final "!"
+"!" -> "("
+"&" -> "->"
+f( "(" , "->" ) -> "!"
+)mata"};
+	OnTheFlyAlphabet alphabet{};
+	builder::NameStateMap state_map{};
+	const Ta aut{builder::parse_from_mata(input, &alphabet, &state_map)};
+	REQUIRE(state_map.size() == 3);
+	CHECK(aut.final.contains(state_map.at("!")));
+	const Tree accepted{
+		alphabet.translate_symb("f"), {Tree{alphabet.translate_symb("!")}, Tree{alphabet.translate_symb("&")}}
+	};
+	CHECK(aut.accepts(accepted));
+
+	for (const std::string source : {
+			 "@TA-explicit\n%Final q\n! -> q\n",
+			 "@TA-explicit\n%Final q\na -> (\n",
+			 "@TA-explicit\n%Final q\na -> |\n",
+			 "@TA-explicit\n%Final q\nf( & ) -> q\n",
+			 "@TA-explicit\n%Final q\n\"\" -> q\n",
+			 "@TA-explicit\n%Final q\na -> \"\"\n",
+			 "@TA-explicit\n%Final q\nf( \"\" ) -> q\n",
+		 }) {
+		INFO(source);
+		CHECK_THROWS_AS(builder::parse_from_mata(source), std::runtime_error);
+	}
+}
+
 TEST_CASE("mata::ta::builder keeps exact duplicate rules deterministic") {
 	const Ta aut{
 		builder::parse_from_mata(std::string{"@TA-explicit\n%Final q\na -> q\na -> q\nf(q,q)->q\nf(q,q)->q\n"})

@@ -3,6 +3,9 @@ add_executable (tests ${MATA_TEST_SOURCES})
 
 target_link_libraries (tests PRIVATE libmata Catch2::Catch2WithMain)
 
+# The tests read the example fixtures from the source tree, so they run from any build or working directory.
+target_compile_definitions (tests PRIVATE MATA_RMC_EXAMPLES_DIR="${PROJECT_SOURCE_DIR}/examples/rmc")
+
 # Add Mata's compile warnings.
 mata_add_warnings (tests)
 

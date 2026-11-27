@@ -17,7 +17,12 @@ namespace {
 }
 
 bool is_reserved_name(const std::string_view name) {
-	return name.empty() || name == "(" || name == ")" || name == "&" || name == "|" || name == "!";
+	return name == "(" || name == ")" || name == "&" || name == "|" || name == "!";
+}
+
+/// Quoting strips the syntax meaning of a name, but no name may be empty.
+bool is_invalid_name(const parser::BodyToken& token) {
+	return token.token.empty() || (!token.quoted && is_reserved_name(token.token));
 }
 
 parser::BodyLine split_arrows(const parser::BodyLine& input) {
@@ -139,11 +144,11 @@ Ta construct(const parser::ParsedSection& section, Alphabet* alphabet, NameState
 		if (arrow + 1 == line.end() || arrow + 2 != line.end()) {
 			invalid_transition(line_index, "expected exactly one target state");
 		}
-		if (is_reserved_name((arrow + 1)->token)) { invalid_transition(line_index, "invalid or empty target state"); }
+		if (is_invalid_name(*(arrow + 1))) { invalid_transition(line_index, "invalid or empty target state"); }
 		if (arrow == line.begin()) { invalid_transition(line_index, "missing symbol"); }
 		const size_t symbol_tokens{static_cast<size_t>(arrow - line.begin())};
 		if (symbol_tokens != 1 && symbol_tokens < 4) { invalid_transition(line_index, "invalid left-hand side"); }
-		if (is_reserved_name(line.front().token)) { invalid_transition(line_index, "invalid or empty symbol"); }
+		if (is_invalid_name(line.front())) { invalid_transition(line_index, "invalid or empty symbol"); }
 
 		std::vector<State> children{};
 		if (symbol_tokens != 1) {
