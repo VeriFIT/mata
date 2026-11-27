@@ -29,6 +29,11 @@ def main() -> int:
     parser.add_argument("--mata", default=str(root / "build/release/g++/examples/rmc-ta-token"))
     parser.add_argument("--directory", type=Path, default=root / "examples/rmc")
     parser.add_argument("--runs", type=int, default=15)
+    parser.add_argument(
+        "--reduction-min-states",
+        default="16",
+        help="Simulation threshold, 0 for always, or off",
+    )
     args = parser.parse_args()
     if args.runs < 1:
         parser.error("--runs must be at least 1")
@@ -37,7 +42,8 @@ def main() -> int:
     for run in range(args.runs):
         started = time.perf_counter()
         completed = subprocess.run(
-            [args.mata, str(args.directory)],
+            [args.mata, str(args.directory)]
+            + ([] if args.reduction_min_states is None else [str(args.reduction_min_states)]),
             capture_output=True,
             text=True,
             check=False,
@@ -50,7 +56,7 @@ def main() -> int:
             timings = {}
             verdict = lines[cursor] if cursor < len(lines) else ""
             cursor += 1
-            for name in ("post", "collapse", "inclusion", "backtrack"):
+            for name in ("post", "collapse", "reduction", "inclusion", "backtrack"):
                 if cursor < len(lines):
                     label, _, value = lines[cursor].partition(": ")
                     timings[label] = float(value) if label == name else None

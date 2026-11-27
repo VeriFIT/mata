@@ -1,13 +1,16 @@
 #include "mata/ta/abstraction.hh"
 #include "mata/ta/builder.hh"
 #include "mata/ta/inclusion.hh"
+#include "mata/ta/simulation.hh"
 #include "mata/ta/transducer-builder.hh"
 
 #include <chrono>
 #include <filesystem>
 #include <iostream>
+#include <limits>
 #include <span>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -43,6 +46,7 @@ bool equivalent(const Ta& lhs, const Ta& rhs) { return is_included(lhs, rhs) && 
 struct Timings {
 	double post{0};
 	double collapse{0};
+	double reduction{0};
 	double inclusion{0};
 	double backtrack{0};
 };
@@ -56,13 +60,21 @@ template <typename F> auto timed(double& total, F&& operation) {
 
 class Cegar {
   public:
-	Cegar(const Ta& initial, const Ta& bad, const TreeTransducer& step, const bool predicates, Timings& timings)
+	Cegar(
+		const Ta& initial,
+		const Ta& bad,
+		const TreeTransducer& step,
+		const bool predicates,
+		Timings& timings,
+		const size_t reduction_min_states
+	)
 		: initial_{initial},
 		  bad_{bad},
 		  backward_{step.invert()},
 		  step_{&step},
 		  use_predicates_{predicates},
-		  timings_{timings} {
+		  timings_{timings},
+		  reduction_min_states_{reduction_min_states} {
 		predicates_ = bad;
 	}
 
@@ -87,6 +99,7 @@ class Cegar {
 	Ta refinement_candidate_;
 	const bool use_predicates_;
 	Timings& timings_;
+	const size_t reduction_min_states_{std::numeric_limits<size_t>::max()};
 	size_t refinement_{0};
 
 	std::string metric() const {
@@ -94,6 +107,12 @@ class Cegar {
 	}
 
 	Ta abstract(const Ta& aut) const {
+		if (aut.num_of_states() < reduction_min_states_) { return collapse(aut); }
+		const Ta reduced{timed(timings_.reduction, [&] { return reduce_by_composed_simulation(aut); })};
+		return collapse(reduced);
+	}
+
+	Ta collapse(const Ta& aut) const {
 		if (use_predicates_) {
 			const Ta* predicate{&predicates_};
 			return timed(timings_.collapse, [&] {
@@ -140,13 +159,14 @@ std::string verify(
 	const std::string& model_prefix,
 	const std::string& step_name,
 	const bool predicates,
-	Timings& timings
+	Timings& timings,
+	const size_t reduction_min_states
 ) {
 	OnTheFlyAlphabet alphabet{};
 	const Ta initial{mata::ta::builder::parse_from_mata(directory / (model_prefix + "-initial.mata"), &alphabet)};
 	const Ta bad{mata::ta::builder::parse_from_mata(directory / (model_prefix + "-bad.mata"), &alphabet)};
 	const TreeTransducer step{mata::ta::transducer_builder::parse_from_mata(directory / step_name, &alphabet)};
-	Cegar checker{initial, bad, step, predicates, timings};
+	Cegar checker{initial, bad, step, predicates, timings, reduction_min_states};
 	return checker.run();
 }
 
@@ -155,6 +175,11 @@ std::string verify(
 int main(int argc, char** argv) {
 	try {
 		const std::filesystem::path directory{argc > 1 ? argv[1] : "examples/rmc"};
+		size_t reduction_min_states{16};
+		if (argc > 2) {
+			reduction_min_states =
+				std::string_view{argv[2]} == "off" ? std::numeric_limits<size_t>::max() : std::stoul(argv[2]);
+		}
 		struct Model {
 			const char* name;
 			const char* prefix;
@@ -168,10 +193,11 @@ int main(int argc, char** argv) {
 		for (const bool predicates : {true, false}) {
 			for (const auto& [name, prefix, step] : models) {
 				Timings timings{};
-				const std::string verdict{verify(directory, prefix, step, predicates, timings)};
+				const std::string verdict{verify(directory, prefix, step, predicates, timings, reduction_min_states)};
 				std::cout << name << ": " << verdict << '\n';
 				std::cout << "post: " << timings.post << "\ncollapse: " << timings.collapse
-						  << "\ninclusion: " << timings.inclusion << "\nbacktrack: " << timings.backtrack << '\n';
+						  << "\nreduction: " << timings.reduction << "\ninclusion: " << timings.inclusion
+						  << "\nbacktrack: " << timings.backtrack << '\n';
 			}
 		}
 	} catch (const std::exception& error) {

@@ -108,7 +108,10 @@ build/release/g++/examples/rmc-ta-token examples/rmc
 
 [`benchmark_ta.py`](benchmark_ta.py) repeats all six runs and emits model, mode, verdict, process status, and post,
 collapse, inclusion, and backtrack timing as JSONL. The default executable and directory are the ones above; override
-them with `--mata` and `--directory`, and set the count with `--runs N`.
+them with `--mata` and `--directory`, and set the count with `--runs N`. Composed simulation runs before collapse on
+automata with at least 16 states by default; append `off` to the native command or pass `--reduction-min-states off` to
+disable it, `0` to force it, or another size to change the threshold. The threshold preserves all verdicts and was
+selected from per-model phase timings, not a blanket reduction on every intermediate automaton.
 
 ## An inductive invariant
 
