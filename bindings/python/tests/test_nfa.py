@@ -219,6 +219,9 @@ def test_delta_post_and_epsilon_closure():
     delta = aut.delta
     assert delta.epsilon_closure({0}) == {0, 1}
     assert delta.epsilon_closure({0}, [mata_nfa.epsilon()]) == {0, 1}
+    # An empty list means the relation's own default epsilon, same as None: the automaton-level
+    #  "empty selects no epsilon" contract of mk_epsilon_closure() is not exposed to Python.
+    assert delta.epsilon_closure({0}, []) == {0, 1}
     assert delta.post({0}, ord("a")) == set()
     assert delta.post({0}, ord("a"), "before") == {2}
     assert delta.post({0}, ord("a"), "before-and-after") == {2, 3}
