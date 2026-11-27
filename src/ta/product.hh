@@ -81,9 +81,8 @@ struct RequirementHash {
 };
 
 /**
- * Discovers only state pairs with a common input tree. Rule pairs are instantiated lazily when one of their ordered
- * child requirements is satisfied. A newly satisfied position expands only tuples containing that new child pair;
- * previously discovered pairs at the other positions make this a complete incremental closure, including repetitions.
+ * Discovers only state pairs with a common input tree. A rule pair fixes the product pair at every child position, so
+ * it yields exactly one product rule, emitted once all of those pairs have been expanded.
  */
 template <typename OnPair, typename OnRule>
 void bottom_up_product(
@@ -152,34 +151,14 @@ void bottom_up_product(
 	struct PendingRulePair {
 		size_t left;
 		size_t right;
-		std::vector<std::vector<State>> candidates;
-		std::vector<State> tuple;
+		/// Child positions whose product pair has not been expanded yet.
+		size_t missing;
 	};
 	std::vector<PendingRulePair> pending_rules{};
 	std::unordered_map<RulePair, size_t, RulePairHash> pending_indices{};
+	std::vector<State> tuple{};
 
-	const auto emit_for_new_position{[&](PendingRulePair& pending, const size_t new_position, const State new_child) {
-		const ProductRule& left{left_rules[pending.left]};
-		const ProductRule& right{right_rules[pending.right]};
-		pending.tuple[new_position] = new_child;
-		const auto enumerate{[&](auto&& self, const size_t position) -> void {
-			if (position == pending.candidates.size()) {
-				const State target{discover(ProductState{left.target, right.target})};
-				on_rule(left, right, std::span<const State>{pending.tuple}, target);
-				return;
-			}
-			if (position == new_position) {
-				self(self, position + 1);
-				return;
-			}
-			for (const State child : pending.candidates[position]) {
-				pending.tuple[position] = child;
-				self(self, position + 1);
-			}
-		}};
-		enumerate(enumerate, 0);
-	}};
-
+	// Product states are numbered in worklist order, so a pair is expanded before @c current iff its index is smaller.
 	for (size_t next_product{0}; next_product < worklist.size(); ++next_product) {
 		const State current{worklist[next_product]};
 		const ProductState state{product_states[static_cast<size_t>(current)]};
@@ -195,28 +174,32 @@ void bottom_up_product(
 
 			for (const RulePosition right_position : right_it->second) {
 				const RulePair key{left_position.rule, right_position.rule};
-				auto [pending_it, inserted]{pending_indices.emplace(key, pending_rules.size())};
+				const auto [pending_it, inserted]{pending_indices.emplace(key, pending_rules.size())};
 				if (inserted) {
-					const ProductRule& right{right_rules[right_position.rule]};
-					PendingRulePair pending{
-						.left = key.left,
-						.right = key.right,
-						.candidates = std::vector<std::vector<State>>(left.children.size()),
-						.tuple = std::vector<State>(left.children.size())
-					};
+					// Every other position is counted down exactly once, when its pair is expanded; the positions
+					// holding @c current are counted down within this loop.
+					const ProductRule& right{right_rules[key.right]};
+					size_t missing{0};
 					for (size_t position{0}; position < left.children.size(); ++position) {
 						const auto known{
 							product_indices.find(ProductState{left.children[position], right.children[position]})
 						};
-						if (known != product_indices.end() && known->second != current) {
-							pending.candidates[position].push_back(known->second);
-						}
+						if (known == product_indices.end() || known->second >= current) { ++missing; }
 					}
-					pending_rules.push_back(std::move(pending));
+					pending_rules.push_back(PendingRulePair{.left = key.left, .right = key.right, .missing = missing});
 				}
 				PendingRulePair& pending{pending_rules[pending_it->second]};
-				pending.candidates[left_position.position].push_back(current);
-				emit_for_new_position(pending, left_position.position, current);
+				if (--pending.missing != 0) { continue; }
+
+				const ProductRule& right{right_rules[pending.right]};
+				tuple.clear();
+				for (size_t position{0}; position < left.children.size(); ++position) {
+					tuple.push_back(
+						product_indices.at(ProductState{left.children[position], right.children[position]})
+					);
+				}
+				const State target{discover(ProductState{left.target, right.target})};
+				on_rule(left, right, std::span<const State>{tuple}, target);
 			}
 		}
 	}

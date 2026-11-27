@@ -98,6 +98,28 @@ TEST_CASE("mata::ta::intersection computes ordered synchronized languages") {
 	CHECK(intersection(lhs, reversed).is_lang_empty());
 }
 
+TEST_CASE("mata::ta::intersection instantiates a wide rule pair once") {
+	// Each child pair is discovered before it is expanded; counting it twice would build 2^29 child tuples.
+	constexpr Symbol width{30};
+	constexpr Symbol root_symbol{width};
+	Ta wide{};
+	std::vector<State> leaves{};
+	std::vector<Tree> leaf_trees{};
+	for (Symbol leaf{0}; leaf < width; ++leaf) {
+		leaves.push_back(wide.add_state());
+		wide.add_transition(leaf, leaves.back());
+		leaf_trees.emplace_back(leaf);
+	}
+	const State root{wide.add_state()};
+	wide.final = {root};
+	wide.add_transition(root_symbol, leaves, root);
+
+	const Ta both{intersection(wide, wide)};
+	CHECK(both.delta.size() == width + 1);
+	CHECK(both.accepts(Tree{root_symbol, leaf_trees}));
+	CHECK_NOTHROW(both.validate());
+}
+
 TEST_CASE("mata::ta::collapse_by_predicates uses exact residual labels") {
 	const Ta subject{ordered_subject()};
 	const Ta predicate{ordered_predicate()};
