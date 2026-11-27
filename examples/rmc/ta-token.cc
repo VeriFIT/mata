@@ -124,11 +124,11 @@ class Cegar {
 
 	bool real_error(Ta candidate) const {
 		for (size_t index{concrete_posts_.size()}; index > 0; --index) {
-			candidate = intersection(concrete_posts_[index - 1], candidate);
+			candidate = timed(timings_.backtrack, [&] { return intersection(concrete_posts_[index - 1], candidate); });
 			if (candidate.is_lang_empty()) { return false; }
 			candidate = timed(timings_.backtrack, [&] { return backward_.apply(candidate); });
 		}
-		return !intersection(initial_, candidate).is_lang_empty();
+		return timed(timings_.backtrack, [&] { return !intersection(initial_, candidate).is_lang_empty(); });
 	}
 
 	std::string fixpoint() {
@@ -137,7 +137,7 @@ class Cegar {
 		for (size_t round{0};; ++round) {
 			Ta candidate{intersection(reached, bad_)};
 			if (!candidate.is_lang_empty()) {
-				const bool real{timed(timings_.backtrack, [&] { return real_error(candidate); })};
+				const bool real{real_error(candidate)};
 				if (real) {
 					return "unsafe, steps: " + std::to_string(round) + ", " +
 						   (use_predicates_ ? "predicate refinements " : "height ") + std::to_string(refinement_);
@@ -192,12 +192,14 @@ int main(int argc, char** argv) {
 		};
 		for (const bool predicates : {true, false}) {
 			for (const auto& [name, prefix, step] : models) {
+				const auto started{std::chrono::steady_clock::now()};
 				Timings timings{};
 				const std::string verdict{verify(directory, prefix, step, predicates, timings, reduction_min_states)};
+				const double seconds{std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count()};
 				std::cout << name << ": " << verdict << '\n';
 				std::cout << "post: " << timings.post << "\ncollapse: " << timings.collapse
 						  << "\nreduction: " << timings.reduction << "\ninclusion: " << timings.inclusion
-						  << "\nbacktrack: " << timings.backtrack << '\n';
+						  << "\nbacktrack: " << timings.backtrack << "\nseconds: " << seconds << '\n';
 			}
 		}
 	} catch (const std::exception& error) {

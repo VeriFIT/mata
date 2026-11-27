@@ -117,7 +117,7 @@
           (list "spurious" (list:nth result 1))))
       (let ((next-post (measured-post refinements round reached)))
         (let ((next (predicate-collapse predicates (nfa:union-nondeterministic reached next-post) refinements round)))
-          (if (nfa:included? next reached)
+          (if (measure (round-label refinements round "inclusion") (lambda () (nfa:included? next reached)))
             (list "safe" predicates)
             (predicate-fixpoint predicates next (list next-post history) refinements (+ round 1))))))))
 
@@ -128,13 +128,17 @@
     (nft:to-nfa (nft:project-to step (list 1)))))
 
 (define (predicate-cegar (predicates Nfa) (refinements Int))
-  (let ((result (predicate-fixpoint predicates (nfa:collapse-by-predicates initial (list predicates) :granularity predicate-granularity) (list) refinements 0)))
+  (let ((result (predicate-fixpoint predicates
+      (measure (round-label refinements 0 "initial-collapse")
+        (lambda () (nfa:collapse-by-predicates initial (list predicates) :granularity predicate-granularity)))
+      (list) refinements 0)))
     (if (= (list:nth result 0) "spurious")
       (let ((candidate-predicates (nfa:union-nondeterministic predicates (list:nth result 1))))
         (let ((refined (if (if (= predicate-seed "adaptive") (= refinements 0) false)
           (nfa:union-nondeterministic candidate-predicates (action-predicates))
           candidate-predicates)))
-        (if (nfa:included? refined predicates)
+        (if (measure (round-label refinements 0 "refinement-inclusion")
+            (lambda () (nfa:included? refined predicates)))
           "unknown, abstraction cycling"
           (predicate-cegar refined (+ refinements 1)))))
       (concat (list:nth result 0) ", predicate refinements " (to-string refinements)))))

@@ -106,9 +106,11 @@ build/release/g++/examples/rmc-ta-token examples/rmc
 | token-copying | `unsafe, steps: 1, predicate refinements 0` | `unsafe, steps: 1, height 0` |
 | percolate     | `safe, predicate refinements 0`             | `safe, height 1`             |
 
-[`benchmark_ta.py`](benchmark_ta.py) repeats all six runs and emits model, mode, verdict, process status, and post,
-collapse, inclusion, and backtrack timing as JSONL. The default executable and directory are the ones above; override
-them with `--mata` and `--directory`, and set the count with `--runs N`. Composed simulation runs before collapse on
+[`benchmark_ta.py`](benchmark_ta.py) repeats all six runs and emits model, mode, verdict, process status, per-model wall
+time, and post, collapse, reduction, inclusion, and backtrack timing as JSONL. The default executable and directory are
+the ones above; override them with `--mata` and `--directory`, and set the count with `--runs N`. Each batch has a
+60-second timeout by default; change it with `--timeout N`. Malformed, incomplete, mismatched, and timed-out runs are
+reported as failures. Composed simulation runs before collapse on
 automata with at least 16 states by default; append `off` to the native command or pass `--reduction-min-states off` to
 disable it, `0` to force it, or another size to change the threshold. The threshold preserves all verdicts and was
 selected from per-model phase timings, not a blanket reduction on every intermediate automaton.
