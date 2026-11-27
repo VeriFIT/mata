@@ -24,6 +24,7 @@
 #include "mata/core/concepts.hh"
 #include "mata/core/cursor.hh"
 #include "mata/core/moves.hh"
+#include "mata/core/post-workspace.hh"
 #include "mata/core/post.hh"
 #include "mata/core/traits.hh"
 #include "mata/core/transition.hh"
@@ -558,6 +559,41 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	 */
 	static PostType::const_iterator
 		epsilon_symbol_posts(const PostType& state_post, Key<0> epsilon = Reserved<0>::min_epsilon);
+
+	/// @name Post and epsilon closure with reusable buffers
+	/// Generic in the key arity: the epsilon position is the one whose reserved keys name @p epsilon.
+	///@{
+	/**
+	 * @brief The epsilon closure of @p states over @p epsilons, using the buffers of @p workspace.
+	 *
+	 * @param states States to take the closure of.
+	 * @param epsilons The epsilon keys to close over. Empty means the relation's own smallest epsilon.
+	 * @param workspace Reusable buffers; a call writes all of them, so a workspace serves one call at a time.
+	 * @return The closure, sorted and duplicate-free.
+	 */
+	std::vector<State> epsilon_closure(
+		const std::vector<State>& states, const std::vector<Key<0>>& epsilons, PostWorkspace& workspace
+	) const;
+
+	/**
+	 * @brief The successors of @p states over @p key, with the epsilon closures of @p epsilon_closure_opt,
+	 *  gathered into @p workspace.gathered.
+	 *
+	 * @param states States to step from.
+	 * @param key The key of the step.
+	 * @param epsilon_closure_opt Whether to close over epsilons before and/or after the step.
+	 * @param epsilons The epsilon keys to close over. Empty means the relation's own smallest epsilon.
+	 * @param workspace Reusable buffers; a call writes all of them, so a workspace serves one call at a time.
+	 * @return The gathered targets, unsorted and possibly with duplicates; the caller sorts and deduplicates.
+	 */
+	std::vector<State>& gather_post(
+		const std::vector<State>& states,
+		Key<0> key,
+		EpsilonClosureOpt epsilon_closure_opt,
+		const std::vector<Key<0>>& epsilons,
+		PostWorkspace& workspace
+	) const;
+	///@}
 
   protected:
 	/// @name Keys on the transitions

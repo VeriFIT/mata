@@ -189,19 +189,6 @@ static_assert(std::is_trivially_copyable_v<Move> && sizeof(Move) == sizeof(posts
 ///@}
 
 /**
- * @brief Reusable buffers of @c Delta::post() and @c Delta::epsilon_closure(), so that a loop of steps allocates once.
- *
- * A call writes all of its buffers, so one workspace serves one call at a time. Concurrent calls, even const queries
- *  of the same delta, each need their own; in particular a workspace must never be a function-local @c static.
- */
-struct PostWorkspace {
-	std::vector<State> sources{}; ///< Epsilon closure of the source states of a step.
-	std::vector<State> gathered{}; ///< Targets of a step, or the closure being built.
-	std::vector<State> worklist{}; ///< Closure states whose epsilon posts are still unread.
-	std::vector<State> visited{}; ///< Open-addressed hash table of the states of the closure being built.
-};
-
-/**
  * @brief The depth-2 relation: (state, symbol, StateSet).
  *
  * @note Exposes the generic relation as a concrete type, so that users are shielded from the template plumbing.

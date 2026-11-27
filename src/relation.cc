@@ -146,10 +146,7 @@ void check_append_shifted_range(const State offset, const size_t other_num_of_st
 StateSet Delta::epsilon_closure(
 	const StateSet& states, const std::vector<Symbol>& epsilons, PostWorkspace& workspace
 ) const {
-	std::vector<State>& closure{workspace.gathered};
-	closure.assign(states.begin(), states.end());
-	close_over_epsilons(*this, epsilons, closure, workspace);
-	return StateSet{closure};
+	return StateSet{this->DeltaBase::epsilon_closure(states.to_vector(), epsilons, workspace)};
 }
 
 StateSet Delta::post(
@@ -159,7 +156,7 @@ StateSet Delta::post(
 	const std::vector<Symbol>& epsilons,
 	PostWorkspace& workspace
 ) const {
-	return StateSet{gather_post(*this, states, symbol, epsilon_closure_opt, epsilons, workspace)};
+	return StateSet{this->DeltaBase::gather_post(states.to_vector(), symbol, epsilon_closure_opt, epsilons, workspace)};
 }
 
 StateSet Delta::post_adopt_buffer(
@@ -169,7 +166,9 @@ StateSet Delta::post_adopt_buffer(
 	const std::vector<Symbol>& epsilons,
 	PostWorkspace& workspace
 ) const {
-	return StateSet{std::move(gather_post(*this, states, symbol, epsilon_closure_opt, epsilons, workspace))};
+	return StateSet{
+		std::move(this->DeltaBase::gather_post(states.to_vector(), symbol, epsilon_closure_opt, epsilons, workspace))
+	};
 }
 
 StateSet
