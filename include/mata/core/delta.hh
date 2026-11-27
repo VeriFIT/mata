@@ -24,6 +24,7 @@
 #include "mata/core/concepts.hh"
 #include "mata/core/cursor.hh"
 #include "mata/core/moves.hh"
+#include "mata/core/post-workspace.hh"
 #include "mata/core/post.hh"
 #include "mata/core/traits.hh"
 #include "mata/core/transition.hh"
@@ -185,6 +186,8 @@ template <typename D, typename P> class KeyedAccess<D, P, std::index_sequence<0>
  *  transition above it. @see mata::posts::DefaultTransitionTraits.
  * @see mata::DeltaLike.
  */
+/// Builds a relation in its final form; the friendship below is its only back door. @see DeltaBuilder.
+template <typename D> class DeltaBuilder;
 template <typename P, typename TT = DefaultTransitionTraits<P>>
 class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
   public:
@@ -559,6 +562,41 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	static PostType::const_iterator
 		epsilon_symbol_posts(const PostType& state_post, Key<0> epsilon = Reserved<0>::min_epsilon);
 
+	/// @name Post and epsilon closure with reusable buffers
+	/// Generic in the key arity: the epsilon position is the one whose reserved keys name @p epsilon.
+	///@{
+	/**
+	 * @brief The epsilon closure of @p states over @p epsilons, using the buffers of @p workspace.
+	 *
+	 * @param states States to take the closure of.
+	 * @param epsilons The epsilon keys to close over. Empty means the relation's own smallest epsilon.
+	 * @param workspace Reusable buffers; a call writes all of them, so a workspace serves one call at a time.
+	 * @return The closure, sorted and duplicate-free.
+	 */
+	std::vector<State> epsilon_closure(
+		const std::vector<State>& states, const std::vector<Key<0>>& epsilons, PostWorkspace& workspace
+	) const;
+
+	/**
+	 * @brief The successors of @p states over @p key, with the epsilon closures of @p epsilon_closure_opt,
+	 *  gathered into @p workspace.gathered.
+	 *
+	 * @param states States to step from.
+	 * @param key The key of the step.
+	 * @param epsilon_closure_opt Whether to close over epsilons before and/or after the step.
+	 * @param epsilons The epsilon keys to close over. Empty means the relation's own smallest epsilon.
+	 * @param workspace Reusable buffers; a call writes all of them, so a workspace serves one call at a time.
+	 * @return The gathered targets, unsorted and possibly with duplicates; the caller sorts and deduplicates.
+	 */
+	std::vector<State>& gather_post(
+		const std::vector<State>& states,
+		Key<0> key,
+		EpsilonClosureOpt epsilon_closure_opt,
+		const std::vector<Key<0>>& epsilons,
+		PostWorkspace& workspace
+	) const;
+	///@}
+
   protected:
 	/// @name Keys on the transitions
 	///
@@ -717,7 +755,111 @@ class DeltaBase : public KeyedAccess<DeltaBase<P, TT>, P> {
 	mutable std::atomic<size_t> cached_transition_count_{0};
 	/// Set by edits whose effect on the count is not known, such as through @c mutable_state_post().
 	mutable std::atomic<bool> count_dirty_{false};
+	/// The builder installs finished posts directly; @see DeltaBuilder.
+	template <typename D> friend class DeltaBuilder;
 }; // class mata::posts::DeltaBase.
+
+/**
+ * @brief Builds a relation in its final form from transitions given in order: sources, then keys of a source, then
+ *  targets of a key, each strictly increasing.
+ *
+ * Every post entry is created once with exact capacity, instead of being grown target by target. Arity 1 only: at a
+ *  deeper key chain, the "targets" of a key are themselves keyed posts, which this builder does not shape.
+ *
+ * @tparam D The concrete relation to build. Needs no extra members on @p D: the finished posts are installed through
+ *  the @c DeltaBase it derives from.
+ */
+template <typename D> class DeltaBuilder {
+  public:
+	using Base = DeltaBase<typename D::PostType, typename D::TransitionTraits>;
+	using State = typename Base::State;
+	using Key = typename Base::template Key<0>;
+	static_assert(D::key_arity == 1, "the builder shapes one level of keys only");
+
+	DeltaBuilder() = default;
+	explicit DeltaBuilder(const size_t num_of_states_hint) { state_posts_.reserve(num_of_states_hint); }
+
+	void begin_state(State source) {
+		MATA_ASSERT(!in_state_ && "begin_state() called before finish_state()");
+		MATA_ASSERT((state_posts_.empty() || source >= state_posts_.size()) && "sources must be strictly increasing");
+		// Throws for the "no state" sentinel before the builder changes, instead of wrapping `source + 1` to zero.
+		state_posts_.resize(Base::num_of_states_for_(source));
+		source_ = source;
+		in_state_ = true;
+		has_key_ = false;
+	}
+
+	void reserve_keys(const size_t num_of_keys) {
+		MATA_ASSERT(in_state_ && "reserve_keys() called outside of a state");
+		state_posts_[source_].reserve(num_of_keys);
+	}
+
+	void begin_key(const Key key) {
+		MATA_ASSERT(in_state_ && "begin_key() called outside of a state");
+		MATA_ASSERT(!in_key_ && "begin_key() called before finish_key()");
+		MATA_ASSERT((!has_key_ || key > key_) && "keys must be strictly increasing");
+		key_ = key;
+		targets_.clear();
+		in_key_ = true;
+	}
+
+	void push_sorted_target(const State target) {
+		MATA_ASSERT(in_key_ && "push_sorted_target() called outside of a key");
+		MATA_ASSERT((targets_.empty() || target > targets_.back()) && "targets must be strictly increasing");
+		targets_.push_back(target);
+	}
+
+	void finish_key() {
+		MATA_ASSERT(in_key_ && "finish_key() without begin_key()");
+		if (targets_.empty()) {
+			in_key_ = false;
+			return;
+		}
+		state_posts_[source_].emplace_back(key_, std::span<const State>{targets_});
+		// Committed only once the post entry is stored, so a throwing emplace_back() leaves the builder as it was.
+		num_of_transitions_ += targets_.size();
+		max_target_ = std::max(max_target_, targets_.back()); // Sorted, so the last target is the largest.
+		has_key_ = true;
+		in_key_ = false;
+	}
+
+	void finish_state() {
+		MATA_ASSERT(in_state_ && "finish_state() without begin_state()");
+		MATA_ASSERT(!in_key_ && "finish_state() called before finish_key()");
+		in_state_ = false;
+	}
+
+	/// Hands over the finished relation and empties the builder, which can then build another one.
+	D finish() {
+		MATA_ASSERT(!in_state_ && !in_key_ && "finish() called inside an unfinished state or key");
+		// A target state needs its own (possibly empty) post, like every other state of the relation.
+		if (!state_posts_.empty() && max_target_ >= state_posts_.size()) {
+			state_posts_.resize(Base::num_of_states_for_(max_target_));
+		}
+		D delta{};
+		Base& base{delta};
+		base.state_posts_ = std::move(state_posts_);
+		// Every stored target was counted, so the relation starts with an exact count.
+		base.set_count(num_of_transitions_);
+		// A moved-from vector is only valid, not empty, so it is cleared before the next build.
+		state_posts_.clear();
+		num_of_transitions_ = 0;
+		max_target_ = 0;
+		return delta;
+	}
+
+  private:
+	std::vector<typename Base::PostType> state_posts_{};
+	std::vector<State> targets_{};
+	Key key_{};
+	State source_{};
+	State max_target_{};
+	/// Targets of the stored post entries, which finish() hands over as the exact count.
+	size_t num_of_transitions_{0};
+	bool in_state_{false};
+	bool in_key_{false};
+	bool has_key_{false}; ///< Has the current state emitted a post entry already?
+}; // class DeltaBuilder.
 
 /// A whole relation from its keys, spelled in terms of @c PostChain:
 ///  `RelationOf<Symbol, StateSet>` is @c mata::Delta.

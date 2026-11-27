@@ -4,6 +4,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <concepts>
 #include <cstddef>
 #include <stdexcept>
@@ -546,5 +547,97 @@ TEST_CASE("mata::posts::PostEntry - structured bindings at arity 1") {
 		std::vector<std::pair<Symbol, StateSet>> seen{};
 		for (const auto& [symbol, targets] : delta.state_post(0)) { seen.emplace_back(symbol, targets); }
 		CHECK(seen == std::vector<std::pair<Symbol, StateSet>>{{1, StateSet{5}}, {2, StateSet{6}}});
+	}
+}
+
+TEST_CASE("mata::posts::DeltaBase::epsilon_closure / gather_post - generic in the arity") {
+	PostWorkspace workspace{};
+
+	SECTION("arity 2, epsilon at the outermost key") {
+		D2 delta{};
+		delta.add(0, EPSILON, 1, StateSet{1});
+		delta.add(1, EPSILON, 2, StateSet{2});
+		delta.add(2, 7, 3, StateSet{3});
+		delta.add(3, EPSILON, 0, StateSet{0});
+
+		CHECK(delta.epsilon_closure({0}, {}, workspace) == std::vector<State>{0, 1, 2});
+		CHECK(delta.epsilon_closure({3}, {}, workspace) == std::vector<State>{0, 1, 2, 3});
+		CHECK(delta.epsilon_closure({}, {}, workspace).empty());
+
+		// A step over 7, closed before: from {0} the closure is {0,1,2}, whose 7-target is {3}.
+		CHECK(delta.gather_post({0}, 7, EpsilonClosureOpt::Before, {}, workspace) == std::vector<State>{3});
+		// Without a closure the step finds nothing.
+		CHECK(delta.gather_post({0}, 7, EpsilonClosureOpt::None, {}, workspace).empty());
+		// A step over the epsilon key itself yields the sources (they are reachable over no symbol) plus the
+		//  epsilon targets of the closure.
+		CHECK(delta.gather_post({0}, EPSILON, EpsilonClosureOpt::Before, {}, workspace) == std::vector<State>{0, 1, 2});
+	}
+
+	SECTION("an explicit epsilon key list in a relation with a reserved key position") {
+		Mixed2 delta{};
+		// Reserved<1> (min_epsilon 100) reserves the second key position; the outermost epsilon stays EPSILON.
+		delta.add(0, EPSILON, 5, StateSet{1});
+		delta.add(1, EPSILON, 5, StateSet{2});
+		delta.add(2, 7, 5, StateSet{3});
+
+		CHECK(delta.epsilon_closure({0}, {}, workspace) == std::vector<State>{0, 1, 2});
+		CHECK(delta.epsilon_closure({0}, {EPSILON}, workspace) == std::vector<State>{0, 1, 2});
+		CHECK(delta.gather_post({0}, 7, EpsilonClosureOpt::Before, {}, workspace) == std::vector<State>{3});
+		CHECK(
+			delta.gather_post({0}, EPSILON, EpsilonClosureOpt::BeforeAndAfter, {}, workspace) ==
+			std::vector<State>{0, 1, 2}
+		);
+	}
+
+	SECTION("duplicate input states and unsorted traversal order do not leak to the caller") {
+		D2 delta{};
+		delta.add(1, EPSILON, 2, StateSet{2});
+		// The traversal order starts at 2 and follows the chain; duplicates come from the input, not the delta.
+		CHECK(delta.epsilon_closure({2, 1, 1}, {}, workspace) == std::vector<State>{1, 2});
+	}
+
+	SECTION("an empty epsilon list closes over nothing, not over the default epsilon") {
+		D2 delta{};
+		delta.add(0, EPSILON, 1, StateSet{1});
+		// Reserved<0>::min_epsilon is the default epsilon; an explicit empty list must not select it.
+		CHECK(delta.epsilon_closure({0}, {D2::Reserved<0>::min_epsilon + 1}, workspace) == std::vector<State>{0});
+	}
+
+	SECTION("gather_post with the states of an earlier call over the same workspace") {
+		// The caller passes the previous result back as the input; the workspace owns that input, so the call must
+		//  copy it before clearing the output.
+		D2 delta{};
+		delta.add(0, 1, 1, StateSet{1});
+		delta.add(1, 2, 2, StateSet{2});
+		delta.add(2, 3, 3, StateSet{3});
+		CHECK(delta.gather_post({0}, 1, EpsilonClosureOpt::None, {}, workspace) == std::vector<State>{1});
+		CHECK(
+			delta.gather_post(workspace.gathered, 2, EpsilonClosureOpt::None, {}, workspace) == std::vector<State>{2}
+		);
+		CHECK(delta.gather_post({0}, 1, EpsilonClosureOpt::Before, {}, workspace) == std::vector<State>{1});
+		CHECK(
+			delta.gather_post(workspace.gathered, 2, EpsilonClosureOpt::Before, {}, workspace) == std::vector<State>{2}
+		);
+		CHECK(
+			delta.gather_post(workspace.gathered, 3, EpsilonClosureOpt::BeforeAndAfter, {}, workspace) ==
+			std::vector<State>{3}
+		);
+		CHECK(delta.epsilon_closure(workspace.gathered, {}, workspace) == std::vector<State>{3});
+	}
+
+	SECTION("gather_post over epsilon with an aliased input") {
+		// Stepping over the epsilon key seeds the output with the input states; the aliased input must survive the
+		//  clearing of the output. The result may repeat a state the input already held.
+		D2 delta{};
+		delta.add(0, EPSILON, 1, StateSet{1});
+		delta.add(1, EPSILON, 2, StateSet{2});
+		delta.add(2, 7, 3, StateSet{3});
+		CHECK(delta.gather_post({0}, EPSILON, EpsilonClosureOpt::Before, {}, workspace) == std::vector<State>{0, 1, 2});
+		const std::vector<State> chained{
+			delta.gather_post(workspace.gathered, EPSILON, EpsilonClosureOpt::BeforeAndAfter, {}, workspace)
+		};
+		CHECK(chained.size() == 5);
+		CHECK(chained.front() == 0);
+		CHECK(std::is_permutation(chained.begin(), chained.end(), std::vector<State>{0, 1, 2, 1, 2}.begin()));
 	}
 }

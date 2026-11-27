@@ -877,13 +877,13 @@ TEST_CASE("mata::nfa::DeltaBuilder") {
 			builder.begin_state(source);
 			while (index < transitions.size() && transitions[index].source == source) {
 				const Symbol symbol{transitions[index].symbol};
-				builder.begin_symbol(symbol);
+				builder.begin_key(symbol);
 				while (index < transitions.size() && transitions[index].source == source &&
 					   transitions[index].symbol == symbol) {
 					builder.push_sorted_target(transitions[index].target);
 					++index;
 				}
-				builder.finish_symbol();
+				builder.finish_key();
 			}
 			builder.finish_state();
 		}
@@ -899,8 +899,8 @@ TEST_CASE("mata::nfa::DeltaBuilder") {
 	SECTION("a state with no emitted symbol keeps an empty post") {
 		DeltaBuilder builder{};
 		builder.begin_state(2);
-		builder.begin_symbol('a');
-		builder.finish_symbol(); // No target: nothing is emitted.
+		builder.begin_key('a');
+		builder.finish_key(); // No target: nothing is emitted.
 		builder.finish_state();
 		const Delta built{builder.finish()};
 		CHECK(built.empty());
@@ -915,9 +915,9 @@ TEST_CASE("mata::nfa::DeltaBuilder") {
 	SECTION("finish() empties the builder, which then builds another relation") {
 		DeltaBuilder builder{};
 		builder.begin_state(0);
-		builder.begin_symbol('a');
+		builder.begin_key('a');
 		builder.push_sorted_target(4);
-		builder.finish_symbol();
+		builder.finish_key();
 		builder.finish_state();
 		const Delta first{builder.finish()};
 		CHECK(first.num_of_transitions() == 1);
@@ -928,9 +928,9 @@ TEST_CASE("mata::nfa::DeltaBuilder") {
 		CHECK(again.num_of_states() == 0);
 
 		builder.begin_state(1);
-		builder.begin_symbol('b');
+		builder.begin_key('b');
 		builder.push_sorted_target(2);
-		builder.finish_symbol();
+		builder.finish_key();
 		builder.finish_state();
 		const Delta second{builder.finish()};
 		CHECK(second.num_of_transitions() == 1);
@@ -997,9 +997,9 @@ TEST_CASE("mata::nfa::DeltaBuilder and the batched Delta::add() build symbol pos
 		DeltaBuilder builder{};
 		builder.begin_state(0);
 		for (Symbol symbol{0}; symbol < num_of_targets.size(); ++symbol) {
-			builder.begin_symbol(symbol);
+			builder.begin_key(symbol);
 			for (State target{1}; target <= num_of_targets[symbol]; ++target) { builder.push_sorted_target(target); }
-			builder.finish_symbol();
+			builder.finish_key();
 		}
 		builder.finish_state();
 		check_final_form(builder.finish());

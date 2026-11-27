@@ -391,6 +391,12 @@ StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClo
 	return delta.post_adopt_buffer(states, symbol, epsilon_closure_opt, {EPSILON}, workspace);
 }
 
+StateSet Nfa::post(
+	const StateSet& states, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt, PostWorkspace& workspace
+) const {
+	return delta.post_adopt_buffer(states, symbol, epsilon_closure_opt, {EPSILON}, workspace);
+}
+
 Nfa& Nfa::unify_initial(const bool force_new_state) & {
 	if (!force_new_state && (initial.empty() || initial.size() == 1)) { return *this; }
 
@@ -689,6 +695,9 @@ Nfa Nfa::decode_utf8() const {
 }
 
 StateSet Nfa::mk_epsilon_closure(const StateSet& source_states, const std::vector<Symbol>& epsilons) const {
+	// An empty selection considers no symbols as epsilons; the shared closure would otherwise substitute the
+	//  relation's default epsilon and close over it.
+	if (epsilons.empty()) { return source_states; }
 	PostWorkspace workspace{};
 	return delta.epsilon_closure(source_states, epsilons, workspace);
 }

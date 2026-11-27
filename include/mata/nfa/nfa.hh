@@ -611,6 +611,16 @@ class Nfa : public Automaton {
 	) const;
 
 	/**
+	 * @brief The same as the overloads without a workspace, reusing @p workspace buffers across calls.
+	 *
+	 * A loop of steps allocates once. One workspace serves one call at a time; it must not be shared
+	 *  between concurrent calls, and it is written by every call.
+	 */
+	StateSet post(
+		const StateSet& states, Symbol symbol, EpsilonClosureOpt epsilon_closure_opt, PostWorkspace& workspace
+	) const;
+
+	/**
 	 * @brief Get the set of states reachable from the given state over the given symbol.
 	 *
 	 * @param state A state to compute the post set from.
