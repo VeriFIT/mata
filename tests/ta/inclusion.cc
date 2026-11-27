@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <utility>
+#include <vector>
 
 using namespace mata::ta;
 
@@ -252,4 +253,90 @@ TEST_CASE("mata::ta::is_included handles token bad states and a concrete transdu
 	Tree initial_counterexample{99};
 	REQUIRE_FALSE(is_included(singleton_post, initial, &initial_counterexample));
 	CHECK(initial_counterexample == post_tree);
+}
+
+TEST_CASE("mata::ta::is_included instantiates every tuple over repeated child states") {
+	constexpr Symbol a{0};
+	constexpr Symbol b{1};
+	constexpr Symbol f{2};
+	constexpr unsigned arity{3};
+	constexpr unsigned combinations{1U << arity};
+	Ta smaller{};
+	const State leaf{smaller.add_state()};
+	const State root{smaller.add_state()};
+	smaller.final.insert(root);
+	smaller.add_transition(a, leaf);
+	smaller.add_transition(b, leaf);
+	smaller.add_transition(f, {leaf, leaf, leaf}, root);
+
+	// Bit i of a combination selects leaf b at child i. The two leaves give one smaller state two incomparable
+	// bigger macrostates, so each mixed tuple of them needs its own visit. Passing @c combinations drops no rule.
+	const auto bigger_without{[&](const unsigned missing) {
+		Ta bigger{};
+		const State big_a{bigger.add_state()};
+		const State big_b{bigger.add_state()};
+		const State big_root{bigger.add_state()};
+		bigger.final.insert(big_root);
+		bigger.add_transition(a, big_a);
+		bigger.add_transition(b, big_b);
+		for (unsigned combination{0}; combination < combinations; ++combination) {
+			if (combination == missing) { continue; }
+			std::vector<State> children{};
+			for (unsigned position{0}; position < arity; ++position) {
+				children.push_back(((combination >> position) & 1U) != 0 ? big_b : big_a);
+			}
+			bigger.add_transition(f, std::move(children), big_root);
+		}
+		return bigger;
+	}};
+
+	CHECK(is_included(smaller, bigger_without(combinations)));
+	for (unsigned missing{0}; missing < combinations; ++missing) {
+		INFO("missing combination " << missing);
+		std::vector<Tree> children{};
+		for (unsigned position{0}; position < arity; ++position) {
+			children.emplace_back(((missing >> position) & 1U) != 0 ? b : a);
+		}
+		Tree counterexample{99};
+		REQUIRE_FALSE(is_included(smaller, bigger_without(missing), &counterexample));
+		CHECK(counterexample == Tree{f, std::move(children)});
+	}
+}
+
+TEST_CASE("mata::ta::is_included replaces a node dominated after its expansion") {
+	constexpr Symbol a{0};
+	constexpr Symbol g{1};
+	constexpr Symbol f{2};
+	Ta smaller{};
+	const State leaf{smaller.add_state()};
+	const State root{smaller.add_state()};
+	smaller.final.insert(root);
+	smaller.add_transition(a, leaf);
+	smaller.add_transition(g, {leaf}, leaf);
+	smaller.add_transition(f, {leaf, leaf}, root);
+
+	// a yields {p1,p2}; expanding it yields g(a) with {p1}, which prunes the expanded node. Only f(p1,p1) is bad.
+	Ta bigger{};
+	const State p1{bigger.add_state()};
+	const State p2{bigger.add_state()};
+	const State good{bigger.add_state()};
+	const State bad{bigger.add_state()};
+	bigger.final.insert(good);
+	bigger.add_transition(a, p1);
+	bigger.add_transition(a, p2);
+	bigger.add_transition(g, {p1}, p1);
+	bigger.add_transition(g, {p2}, p1);
+	bigger.add_transition(f, {p1, p2}, good);
+	bigger.add_transition(f, {p2, p1}, good);
+	bigger.add_transition(f, {p2, p2}, good);
+	bigger.add_transition(f, {p1, p1}, bad);
+
+	Tree counterexample{99};
+	REQUIRE_FALSE(is_included(smaller, bigger, &counterexample));
+	const Tree g_leaf{g, {Tree{a}}};
+	CHECK(counterexample == Tree{f, {g_leaf, g_leaf}});
+	check_counterexample(smaller, bigger, counterexample);
+
+	bigger.add_transition(f, {p1, p1}, good);
+	CHECK(is_included(smaller, bigger));
 }

@@ -11,6 +11,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <span>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -63,7 +64,8 @@ bool is_included(const Ta& smaller, const Ta& bigger, Tree* const counterexample
 	std::vector<Step> steps{};
 	std::vector<size_t> worklist{};
 	std::vector<ProcessedAntichain> processed(smaller.num_of_states());
-	std::vector<std::vector<size_t>> live_nodes(smaller.num_of_states());
+	// Nodes already taken from the worklist, per smaller state. Dominated ones stay here and are skipped when read.
+	std::vector<std::vector<size_t>> expanded_nodes(smaller.num_of_states());
 
 	// Every visit corresponds to one concrete tree. Its bigger set is the complete post-image of the child
 	// macrostates, not one nondeterministically selected bigger run.
@@ -92,7 +94,6 @@ bool is_included(const Ta& smaller, const Ta& bigger, Tree* const counterexample
 		);
 		if (counterexample != nullptr) { steps.push_back(Step{symbol, child_nodes}); }
 		processed[smaller_state].insert(nodes, node_idx);
-		live_nodes[smaller_state].push_back(node_idx);
 		worklist.push_back(node_idx);
 		return true;
 	};
@@ -136,48 +137,69 @@ bool is_included(const Ta& smaller, const Ta& bigger, Tree* const counterexample
 		}
 	}
 
+	// Semi-naive expansion: a tuple of child nodes is instantiated once, when the last of its nodes is expanded, at
+	// the first position holding that node. Earlier positions of the same smaller state draw only from the nodes
+	// expanded before it, later ones also from the node itself, which keeps repeated children such as f(q,q).
+	std::vector<size_t> same_state_nodes{};
+	std::vector<std::vector<size_t>> choices{};
+	std::vector<size_t> selected{};
 	while (!worklist.empty()) {
 		const size_t node_idx{worklist.back()};
 		worklist.pop_back();
 		if (nodes[node_idx].dominated) { continue; }
 		const State smaller_state{nodes[node_idx].smaller_state};
+		same_state_nodes.clear();
+		for (const size_t earlier : expanded_nodes[smaller_state]) {
+			if (!nodes[earlier].dominated) { same_state_nodes.push_back(earlier); }
+		}
+		same_state_nodes.push_back(node_idx);
+		expanded_nodes[smaller_state].push_back(node_idx);
+		const std::span<const size_t> earlier_nodes{same_state_nodes.data(), same_state_nodes.size() - 1};
 
 		for (const Rule smaller_rule : rules_by_child[smaller_state]) {
 			const size_t arity{smaller_rule->children.size()};
-			std::vector<std::vector<size_t>> choices{};
-			choices.reserve(arity);
+			choices.resize(arity);
 			bool has_all_children{true};
-			for (const State child : smaller_rule->children) {
-				std::vector<size_t> child_choices{};
-				for (const size_t child_node : live_nodes[child]) {
-					if (!nodes[child_node].dominated) { child_choices.push_back(child_node); }
+			for (size_t position{0}; position < arity && has_all_children; ++position) {
+				const State child{smaller_rule->children[position]};
+				choices[position].clear();
+				if (child == smaller_state) { continue; }
+				for (const size_t child_node : expanded_nodes[child]) {
+					if (!nodes[child_node].dominated) { choices[position].push_back(child_node); }
 				}
-				if (child_choices.empty()) {
-					has_all_children = false;
-					break;
-				}
-				choices.push_back(std::move(child_choices));
+				has_all_children = !choices[position].empty();
 			}
 			if (!has_all_children) { continue; }
 
-			std::vector<size_t> selected(arity);
-			const auto instantiate = [&](auto&& self, const size_t position) -> bool {
-				if (position == arity) {
-					for (const size_t child : selected) {
-						if (nodes[child].dominated) { return true; }
+			selected.resize(arity);
+			for (size_t new_position{0}; new_position < arity; ++new_position) {
+				if (smaller_rule->children[new_position] != smaller_state) { continue; }
+				const auto instantiate = [&](auto&& self, const size_t position) -> bool {
+					if (position == arity) {
+						for (const size_t child : selected) {
+							if (nodes[child].dominated) { return true; }
+						}
+						return visit(
+							smaller_rule->target, bigger_post(smaller_rule->symbol, selected), smaller_rule->symbol,
+							selected
+						);
 					}
-					return visit(
-						smaller_rule->target, bigger_post(smaller_rule->symbol, selected), smaller_rule->symbol,
-						selected
-					);
-				}
-				for (const size_t child_node : choices[position]) {
-					selected[position] = child_node;
-					if (!self(self, position + 1)) { return false; }
-				}
-				return true;
-			};
-			if (!instantiate(instantiate, 0)) { return false; }
+					if (position == new_position) {
+						selected[position] = node_idx;
+						return self(self, position + 1);
+					}
+					std::span<const size_t> options{choices[position]};
+					if (smaller_rule->children[position] == smaller_state) {
+						options = position < new_position ? earlier_nodes : std::span<const size_t>{same_state_nodes};
+					}
+					for (const size_t child_node : options) {
+						selected[position] = child_node;
+						if (!self(self, position + 1)) { return false; }
+					}
+					return true;
+				};
+				if (!instantiate(instantiate, 0)) { return false; }
+			}
 		}
 	}
 	return true;
