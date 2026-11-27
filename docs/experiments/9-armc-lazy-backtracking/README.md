@@ -8,8 +8,6 @@ related: []
 tags: [armc, lazy, backtracking, fixpoint]
 ---
 
-# EXP-9: Lazy and early-exit backtracking in ARMC
-
 ## Question
 
 Can lazy `mata-lazy` pre-images, eager pre-images without minimization, or an inclusion test of the concrete post before

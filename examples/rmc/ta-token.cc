@@ -70,13 +70,12 @@ class Cegar {
 	)
 		: initial_{initial},
 		  bad_{bad},
+		  predicates_{bad},
 		  backward_{step.invert()},
 		  step_{&step},
 		  use_predicates_{predicates},
 		  timings_{timings},
-		  reduction_min_states_{reduction_min_states} {
-		predicates_ = bad;
-	}
+		  reduction_min_states_{reduction_min_states} {}
 
 	std::string run() {
 		for (refinement_ = 0;; ++refinement_) {
@@ -191,12 +190,14 @@ int main(int argc, char** argv) {
 			{"percolate", "ta-percolate", "ta-percolate-step.mata"},
 		};
 		for (const bool predicates : {true, false}) {
-			for (const auto& [name, prefix, step] : models) {
+			for (const Model& model : models) {
 				const auto started{std::chrono::steady_clock::now()};
 				Timings timings{};
-				const std::string verdict{verify(directory, prefix, step, predicates, timings, reduction_min_states)};
+				const std::string verdict{
+					verify(directory, model.prefix, model.step, predicates, timings, reduction_min_states)
+				};
 				const double seconds{std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count()};
-				std::cout << name << ": " << verdict << '\n';
+				std::cout << model.name << ": " << verdict << '\n';
 				std::cout << "post: " << timings.post << "\ncollapse: " << timings.collapse
 						  << "\nreduction: " << timings.reduction << "\ninclusion: " << timings.inclusion
 						  << "\nbacktrack: " << timings.backtrack << "\nseconds: " << seconds << '\n';
