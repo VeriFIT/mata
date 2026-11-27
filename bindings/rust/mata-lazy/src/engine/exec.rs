@@ -461,7 +461,7 @@ enum Key {
 	Prefixes(ExecId),
 }
 
-/// Depth and log2 of a bound on the number of macrostates, to order operands.
+/// The depth and the log2 of a bound on the number of macrostates, to order operands by their bound first.
 #[derive(Clone, Copy)]
 struct Cost {
 	depth: u32,
@@ -470,9 +470,9 @@ struct Cost {
 
 impl Ord for Cost {
 	fn cmp(&self, other: &Cost) -> Ordering {
-		self.depth
-			.cmp(&other.depth)
-			.then(self.log_states.total_cmp(&other.log_states))
+		self.log_states
+			.total_cmp(&other.log_states)
+			.then(self.depth.cmp(&other.depth))
 	}
 }
 
