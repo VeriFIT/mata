@@ -341,6 +341,15 @@ class Nfa : public Automaton {
 	 * @return Epsilon closure of the given set of states.
 	 */
 	StateSet mk_epsilon_closure(const StateSet& source_states, const std::vector<Symbol>& epsilons = {EPSILON}) const;
+	/**
+	 * @brief The same as the overload without a workspace, reusing @p workspace buffers across calls.
+	 *
+	 * One workspace serves one call at a time; it is written by the call and must not be shared between
+	 *  concurrent calls.
+	 */
+	StateSet mk_epsilon_closure(
+		const StateSet& source_states, const std::vector<Symbol>& epsilons, PostWorkspace& workspace
+	) const;
 
 	/**
 	 * @brief Get some shortest accepting run from state @p state.
