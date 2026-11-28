@@ -201,6 +201,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a23f97b5b12b578077367b51a688118e2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Test for transducer completeness with regard to a set of symbols.  <br /></td></tr>
 <tr class="memitem:a25ec3e7056ba4874a753f7893201dd53" id="r_a25ec3e7056ba4874a753f7893201dd53"><td class="memItemLeft"><a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a>&#160;</td><td class="memItemRight"><a class="el" href="#a25ec3e7056ba4874a753f7893201dd53">mk_epsilon_closure</a> (const <a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a> &amp;source_states, const std::vector&lt; <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">Symbol</a> &gt; &amp;epsilons={<a class="el" href="namespacemata_1_1nft.html#a7ab819e148ca173289b95c321befc27e">EPSILON</a>}) const</td></tr>
 <tr class="memdesc:a25ec3e7056ba4874a753f7893201dd53"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the epsilon closure of the given set of states.  <br /></td></tr>
+<tr class="memitem:a1fa2d6ff627f22cbf5586617ad74939e" id="r_a1fa2d6ff627f22cbf5586617ad74939e"><td class="memItemLeft"><a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a>&#160;</td><td class="memItemRight"><a class="el" href="#a1fa2d6ff627f22cbf5586617ad74939e">mk_epsilon_closure</a> (const <a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a> &amp;source_states, const std::vector&lt; <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">Symbol</a> &gt; &amp;epsilons, <a class="el" href="structmata_1_1PostWorkspace.html">PostWorkspace</a> &amp;workspace) const</td></tr>
+<tr class="memdesc:a1fa2d6ff627f22cbf5586617ad74939e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the epsilon closure of the given set of states, reusing the buffers of <code class="param">workspace</code>.  <br /></td></tr>
 <tr class="memitem:ac8bb3912a3ce86b15842e79d0b421204" id="r_ac8bb3912a3ce86b15842e79d0b421204"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#ac8bb3912a3ce86b15842e79d0b421204">clear</a> ()</td></tr>
 <tr class="memdesc:ac8bb3912a3ce86b15842e79d0b421204"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clear the underlying NFT to a blank NFT.  <br /></td></tr>
 <tr class="memitem:abf9d41e3ce06db8c65eadf37ce1cca32" id="r_abf9d41e3ce06db8c65eadf37ce1cca32"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#abf9d41e3ce06db8c65eadf37ce1cca32">is_identical</a> (const <a class="el" href="#a7ca33d231df2f5655475b40592bf22df">Nft</a> &amp;aut) const</td></tr>
@@ -251,8 +253,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:ad21abd57f9f5ff16f737f3b530d15525"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prints the automaton to the file in mata format.  <br /></td></tr>
 <tr class="memitem:a35b61598d7f3e1d17c5863716fb99ce9" id="r_a35b61598d7f3e1d17c5863716fb99ce9"><td class="memItemLeft"><a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a>&#160;</td><td class="memItemRight"><a class="el" href="#a35b61598d7f3e1d17c5863716fb99ce9">post</a> (const <a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a> &amp;states, <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">Symbol</a> symbol, <a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1">EpsilonClosureOpt</a> epsilon_closure_opt=<a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1a6adf97f83acf6453d4a6a4b1070f3754">EpsilonClosureOpt::None</a>) const</td></tr>
 <tr class="memdesc:a35b61598d7f3e1d17c5863716fb99ce9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the set of states reachable from the given set of states over the given symbol.  <br /></td></tr>
+<tr class="memitem:a917fbdb31ceeaaef94ee68190d44a6e8" id="r_a917fbdb31ceeaaef94ee68190d44a6e8"><td class="memItemLeft"><a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a>&#160;</td><td class="memItemRight"><a class="el" href="#a917fbdb31ceeaaef94ee68190d44a6e8">post</a> (const <a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a> &amp;states, <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">Symbol</a> symbol, <a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1">EpsilonClosureOpt</a> epsilon_closure_opt, <a class="el" href="structmata_1_1PostWorkspace.html">PostWorkspace</a> &amp;workspace) const</td></tr>
+<tr class="memdesc:a917fbdb31ceeaaef94ee68190d44a6e8"><td class="mdescLeft">&#160;</td><td class="mdescRight">The same as the overload without a workspace, reusing <code class="param">workspace</code> buffers across calls.  <br /></td></tr>
 <tr class="memitem:a595f0f6810cc8cdaa297c72f1489bc5b" id="r_a595f0f6810cc8cdaa297c72f1489bc5b"><td class="memItemLeft"><a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a>&#160;</td><td class="memItemRight"><a class="el" href="#a595f0f6810cc8cdaa297c72f1489bc5b">post</a> (const <a class="el" href="#af2ccb30ddd63e3ff5a135eb902f2b934">State</a> state, const <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">Symbol</a> symbol, const <a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1">EpsilonClosureOpt</a> epsilon_closure_opt) const</td></tr>
 <tr class="memdesc:a595f0f6810cc8cdaa297c72f1489bc5b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the set of states reachable from the given state over the given symbol.  <br /></td></tr>
+<tr class="memitem:a8f33b924cd5ae0f6534fb9cf58c040e4" id="r_a8f33b924cd5ae0f6534fb9cf58c040e4"><td class="memItemLeft"><a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a>&#160;</td><td class="memItemRight"><a class="el" href="#a8f33b924cd5ae0f6534fb9cf58c040e4">post</a> (const <a class="el" href="#af2ccb30ddd63e3ff5a135eb902f2b934">State</a> state, const <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">Symbol</a> symbol, const <a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1">EpsilonClosureOpt</a> epsilon_closure_opt, <a class="el" href="structmata_1_1PostWorkspace.html">PostWorkspace</a> &amp;workspace) const</td></tr>
+<tr class="memdesc:a8f33b924cd5ae0f6534fb9cf58c040e4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the set of states reachable from the given state over the given symbol, reusing the buffers of <code class="param">workspace</code> across calls.  <br /></td></tr>
 <tr class="memitem:a3228cfe9d7e6885cb5a457ed0df3b945" id="r_a3228cfe9d7e6885cb5a457ed0df3b945"><td class="memItemLeft"><a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a>&#160;</td><td class="memItemRight"><a class="el" href="#a3228cfe9d7e6885cb5a457ed0df3b945">post</a> (const <a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a> &amp;states, <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">Symbol</a> symbol, <a class="el" href="namespacemata_1_1nft.html#a97aecfb9b258182c8667d88fe93f9d4f">Level</a> symbol_level, <a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1">EpsilonClosureOpt</a> epsilon_closure_opt=<a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1a6adf97f83acf6453d4a6a4b1070f3754">EpsilonClosureOpt::None</a>, <a class="el" href="namespacemata_1_1nft.html#a4a010f2382b9dad51fc143c081d2829b">JumpMode</a> jump_mode=<a class="el" href="namespacemata_1_1nft.html#a4a010f2382b9dad51fc143c081d2829ba18cfbf1298b4f112b6637ea6a9d3ff1a">JumpMode::RepeatSymbol</a>) const</td></tr>
 <tr class="memdesc:a3228cfe9d7e6885cb5a457ed0df3b945"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the set of zero-level states reachable from the given set of zero-level <code class="param">states</code>, over the <code class="param">symbol</code> on a given <code class="param">symbol_level</code>.  <br /></td></tr>
 <tr class="memitem:afd0c3202c77b0f352b6cdcdbc7961ce0" id="r_afd0c3202c77b0f352b6cdcdbc7961ce0"><td class="memItemLeft"><a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a>&#160;</td><td class="memItemRight"><a class="el" href="#afd0c3202c77b0f352b6cdcdbc7961ce0">post</a> (const <a class="el" href="#af2ccb30ddd63e3ff5a135eb902f2b934">State</a> state, const <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">Symbol</a> symbol, const <a class="el" href="namespacemata_1_1nft.html#a97aecfb9b258182c8667d88fe93f9d4f">Level</a> symbol_level, const <a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1">EpsilonClosureOpt</a> epsilon_closure_opt=<a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1a6adf97f83acf6453d4a6a4b1070f3754">EpsilonClosureOpt::None</a>, const <a class="el" href="namespacemata_1_1nft.html#a4a010f2382b9dad51fc143c081d2829b">JumpMode</a> jump_mode=<a class="el" href="namespacemata_1_1nft.html#a4a010f2382b9dad51fc143c081d2829ba18cfbf1298b4f112b6637ea6a9d3ff1a">JumpMode::RepeatSymbol</a>) const</td></tr>
@@ -1488,7 +1494,7 @@ Private Member Functions</h2></td></tr>
 <p>In-place concatenation. </p>
 <dl class="section return"><dt>Returns</dt><dd><code>this</code> after concatenation. </dd></dl>
 
-<p class="reference">Referenced by <a class="el" href="nft_8hh_source.html#l00782">concatenate()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="nft_8hh_source.html#l00791">concatenate()</a>.</p>
 
 </div>
 </div>
@@ -1518,7 +1524,7 @@ Private Member Functions</h2></td></tr>
 <p>In-place concatenation on an rvalue, returning the concatenated transducer by value. </p>
 <dl class="section return"><dt>Returns</dt><dd><code>this</code> after concatenation, as a value. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l00782">782</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l00791">791</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="#aa81fbc3184af90494c2e21a3ff04e1f1">concatenate()</a>.</p>
 
@@ -1570,7 +1576,7 @@ Private Member Functions</h2></td></tr>
 <p>In-place concatenation on an rvalue, consuming <code class="param">aut</code> and returning the result by value. </p>
 <dl class="section return"><dt>Returns</dt><dd><code>this</code> after concatenation, as a value. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l00799">799</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l00808">808</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
 
 </div>
 </div>
@@ -2751,7 +2757,7 @@ Private Member Functions</h2></td></tr>
 <dl class="section warning"><dt>Warning</dt><dd>If <code class="param">has_epsilon_cycles</code> is unknown, it is recommended leave it set to <code>true</code>. if it is set to <code>false</code> and the automaton does have an epsilon cycle, the query will loop forever.</dd></dl>
 <dl class="section return"><dt>Returns</dt><dd><code>true</code> if <code class="param">word</code> is in the language of the automaton, <code>false</code> otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01292">1292</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01321">1321</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
 
 </div>
 </div>
@@ -2845,7 +2851,7 @@ Private Member Functions</h2></td></tr>
 <dl class="section warning"><dt>Warning</dt><dd>If <code class="param">has_epsilon_cycles</code> is unknown, it is recommended leave it set to <code>true</code>. if it is set to <code>false</code> and the automaton does have an epsilon cycle, the query will loop forever.</dd></dl>
 <dl class="section return"><dt>Returns</dt><dd><code>true</code> if the prefix of <code class="param">run</code> is in the language of the automaton, <code>false</code> otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01317">1317</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01346">1346</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
 
 </div>
 </div>
@@ -2893,7 +2899,7 @@ Private Member Functions</h2></td></tr>
 <dl class="section warning"><dt>Warning</dt><dd>If <code class="param">has_epsilon_cycles</code> is unknown, it is recommended leave it set to <code>true</code>. if it is set to <code>false</code> and the automaton does have an epsilon cycle, the query will loop forever.</dd></dl>
 <dl class="section return"><dt>Returns</dt><dd><code>true</code> if the prefix of <code class="param">word</code> is in the language of the automaton, <code>false</code> otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01339">1339</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01368">1368</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
 
 </div>
 </div>
@@ -2942,7 +2948,7 @@ Private Member Functions</h2></td></tr>
 <dl class="section warning"><dt>Warning</dt><dd>If <code class="param">has_epsilon_cycles</code> is unknown, it is recommended leave it set to <code>true</code>. if it is set to <code>false</code> and the automaton does have an epsilon cycle, the query will loop forever.</dd></dl>
 <dl class="section return"><dt>Returns</dt><dd><code>true</code> if the prefix of <code class="param">word</code> is in the language of the automaton, <code>false</code> otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01395">1395</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01424">1424</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
 
 </div>
 </div>
@@ -3243,8 +3249,37 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 
 </div>
 </div>
+<a id="a1fa2d6ff627f22cbf5586617ad74939e" name="a1fa2d6ff627f22cbf5586617ad74939e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1fa2d6ff627f22cbf5586617ad74939e">&#9670;&#160;</a></span>mk_epsilon_closure() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a> mk_epsilon_closure </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>source_states</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::vector&lt; <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">Symbol</a> &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>epsilons</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structmata_1_1PostWorkspace.html">PostWorkspace</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>workspace</em></span>&#160;) const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get the epsilon closure of the given set of states, reusing the buffers of <code class="param">workspace</code>. </p>
+<p>One workspace serves one call at a time; it is written by the call and must not be shared between concurrent calls. </p>
+
+</div>
+</div>
 <a id="a25ec3e7056ba4874a753f7893201dd53" name="a25ec3e7056ba4874a753f7893201dd53"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a25ec3e7056ba4874a753f7893201dd53">&#9670;&#160;</a></span>mk_epsilon_closure()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a25ec3e7056ba4874a753f7893201dd53">&#9670;&#160;</a></span>mk_epsilon_closure() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -3427,7 +3462,7 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </div>
 </div>
 <a id="a69cb6de65dcd3885f7285858ed278d9a" name="a69cb6de65dcd3885f7285858ed278d9a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a69cb6de65dcd3885f7285858ed278d9a">&#9670;&#160;</a></span>post() <span class="overload">[1/10]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a69cb6de65dcd3885f7285858ed278d9a">&#9670;&#160;</a></span>post() <span class="overload">[1/12]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -3489,12 +3524,12 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Set of states reachable from the given set of states over the given words. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01230">1230</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01259">1259</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
 
 </div>
 </div>
 <a id="a282f977f9fd8527fa04a3f4e0d1b98f1" name="a282f977f9fd8527fa04a3f4e0d1b98f1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a282f977f9fd8527fa04a3f4e0d1b98f1">&#9670;&#160;</a></span>post() <span class="overload">[2/10]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a282f977f9fd8527fa04a3f4e0d1b98f1">&#9670;&#160;</a></span>post() <span class="overload">[2/12]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -3550,12 +3585,12 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Set of states reachable from the given set of states over the given words. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01164">1164</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01193">1193</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
 
 </div>
 </div>
 <a id="a46d88acc7ff3070eee4802c1221de3e5" name="a46d88acc7ff3070eee4802c1221de3e5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a46d88acc7ff3070eee4802c1221de3e5">&#9670;&#160;</a></span>post() <span class="overload">[3/10]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a46d88acc7ff3070eee4802c1221de3e5">&#9670;&#160;</a></span>post() <span class="overload">[3/12]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -3598,7 +3633,7 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </div>
 </div>
 <a id="a595f0f6810cc8cdaa297c72f1489bc5b" name="a595f0f6810cc8cdaa297c72f1489bc5b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a595f0f6810cc8cdaa297c72f1489bc5b">&#9670;&#160;</a></span>post() <span class="overload">[4/10]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a595f0f6810cc8cdaa297c72f1489bc5b">&#9670;&#160;</a></span>post() <span class="overload">[4/12]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -3642,12 +3677,55 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Set of states reachable from the given state over the given symbol. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01022">1022</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01042">1042</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
+
+</div>
+</div>
+<a id="a8f33b924cd5ae0f6534fb9cf58c040e4" name="a8f33b924cd5ae0f6534fb9cf58c040e4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8f33b924cd5ae0f6534fb9cf58c040e4">&#9670;&#160;</a></span>post() <span class="overload">[5/12]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a> post </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="#af2ccb30ddd63e3ff5a135eb902f2b934">State</a></td>          <td class="paramname"><span class="paramname"><em>state</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">Symbol</a></td>          <td class="paramname"><span class="paramname"><em>symbol</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1">EpsilonClosureOpt</a></td>          <td class="paramname"><span class="paramname"><em>epsilon_closure_opt</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structmata_1_1PostWorkspace.html">PostWorkspace</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>workspace</em></span>&#160;) const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get the set of states reachable from the given state over the given symbol, reusing the buffers of <code class="param">workspace</code> across calls. </p>
+
+<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01049">1049</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
 
 </div>
 </div>
 <a id="afd0c3202c77b0f352b6cdcdbc7961ce0" name="afd0c3202c77b0f352b6cdcdbc7961ce0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afd0c3202c77b0f352b6cdcdbc7961ce0">&#9670;&#160;</a></span>post() <span class="overload">[5/10]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#afd0c3202c77b0f352b6cdcdbc7961ce0">&#9670;&#160;</a></span>post() <span class="overload">[6/12]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -3703,12 +3781,12 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Set of zero-level states reachable from the given state over the given symbol on the given level. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01066">1066</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01095">1095</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
 
 </div>
 </div>
 <a id="a564adac35c63934ce9ddaa01ca0099ff" name="a564adac35c63934ce9ddaa01ca0099ff"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a564adac35c63934ce9ddaa01ca0099ff">&#9670;&#160;</a></span>post() <span class="overload">[6/10]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a564adac35c63934ce9ddaa01ca0099ff">&#9670;&#160;</a></span>post() <span class="overload">[7/12]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -3771,7 +3849,7 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </div>
 </div>
 <a id="a0b85b4fd8544ee67a560c02a901effd7" name="a0b85b4fd8544ee67a560c02a901effd7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0b85b4fd8544ee67a560c02a901effd7">&#9670;&#160;</a></span>post() <span class="overload">[7/10]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a0b85b4fd8544ee67a560c02a901effd7">&#9670;&#160;</a></span>post() <span class="overload">[8/12]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -3828,7 +3906,7 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </div>
 </div>
 <a id="a62783889d41a87d4e63da8bbf6810cca" name="a62783889d41a87d4e63da8bbf6810cca"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a62783889d41a87d4e63da8bbf6810cca">&#9670;&#160;</a></span>post() <span class="overload">[8/10]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a62783889d41a87d4e63da8bbf6810cca">&#9670;&#160;</a></span>post() <span class="overload">[9/12]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -3889,12 +3967,47 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Set of states reachable from the given set of states over the given words. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01131">1131</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01160">1160</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
+
+</div>
+</div>
+<a id="a917fbdb31ceeaaef94ee68190d44a6e8" name="a917fbdb31ceeaaef94ee68190d44a6e8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a917fbdb31ceeaaef94ee68190d44a6e8">&#9670;&#160;</a></span>post() <span class="overload">[10/12]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a> post </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>states</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">Symbol</a></td>          <td class="paramname"><span class="paramname"><em>symbol</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="namespacemata.html#a0fba67d07394ceb378cf331acbd458a1">EpsilonClosureOpt</a></td>          <td class="paramname"><span class="paramname"><em>epsilon_closure_opt</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structmata_1_1PostWorkspace.html">PostWorkspace</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>workspace</em></span>&#160;) const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The same as the overload without a workspace, reusing <code class="param">workspace</code> buffers across calls. </p>
+<p>A loop of steps allocates once. One workspace serves one call at a time; it must not be shared between concurrent calls, and it is written by every call.</p>
+<dl class="section warning"><dt>Warning</dt><dd>Like the overload without a workspace, computes epsilon closures over multiple levels. </dd></dl>
 
 </div>
 </div>
 <a id="a35b61598d7f3e1d17c5863716fb99ce9" name="a35b61598d7f3e1d17c5863716fb99ce9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a35b61598d7f3e1d17c5863716fb99ce9">&#9670;&#160;</a></span>post() <span class="overload">[9/10]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a35b61598d7f3e1d17c5863716fb99ce9">&#9670;&#160;</a></span>post() <span class="overload">[11/12]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -3932,7 +4045,7 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </div>
 </div>
 <a id="a3228cfe9d7e6885cb5a457ed0df3b945" name="a3228cfe9d7e6885cb5a457ed0df3b945"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3228cfe9d7e6885cb5a457ed0df3b945">&#9670;&#160;</a></span>post() <span class="overload">[10/10]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a3228cfe9d7e6885cb5a457ed0df3b945">&#9670;&#160;</a></span>post() <span class="overload">[12/12]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -4337,7 +4450,7 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Set of all reachable zero-level states after reading <code class="param">word</code> to the end on every level. Note: This returns all reachable states, not just final states. Use <a class="el" href="#a72b1144c2461e7759d9578a2e4e108ae" title="Check whether a run (or its prefix with match_prefix set) is in the language of an automaton.">is_in_lang()</a> if you need to check language membership, or intersect the result with final states manually if needed. Note: The returned set is empty if the word cannot be read to the end. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01445">1445</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01474">1474</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
 
 </div>
 </div>
@@ -4496,7 +4609,7 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 <dl class="section note"><dt>Note</dt><dd>Prefer <code><a class="el" href="#aa24be6d09e6cb77b02c20acfd42a90ae" title="Move NFT as NFA.">to_nfa_move()</a></code> when <code>this</code> is no longer needed. </dd></dl>
 <dl class="section return"><dt>Returns</dt><dd>A newly created NFA with copied members from NFT. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01586">1586</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01615">1615</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
 
 </div>
 </div>
@@ -4527,7 +4640,7 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 <p>The NFT can no longer be used. Transitions are not updated to only have one level. </p><dl class="section warning"><dt>Warning</dt><dd>Lossy: levels are dropped, so the result reads an NFT transition sequence as a flat word on a single tape. </dd></dl>
 <dl class="section return"><dt>Returns</dt><dd>A newly created NFA with moved members from NFT. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01596">1596</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l01625">1625</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
 
 </div>
 </div>
@@ -4696,7 +4809,7 @@ Reached only through a leaf's own one-line <code><a class="el" href="#a3f67a0e0f
 </dl>
 <dl class="section return"><dt>Returns</dt><dd><code>this</code> after trimming, as a value. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l00761">761</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l00770">770</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
 
 </div>
 </div>
@@ -4897,7 +5010,7 @@ Reached only through a leaf's own one-line <code><a class="el" href="#a3f67a0e0f
 </dl>
 <dl class="section return"><dt>Returns</dt><dd><code>this</code> after uniting with <code class="param">nft</code>. </dd></dl>
 
-<p class="reference">Referenced by <a class="el" href="nft_2plumbing_8hh_source.html#l00077">mata::nft::plumbing::union_nondet()</a>, <a class="el" href="nft_2plumbing_8hh_source.html#l00086">mata::nft::plumbing::union_nondet()</a>, and <a class="el" href="nft_8hh_source.html#l00817">unite_nondet_with()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="nft_2plumbing_8hh_source.html#l00077">mata::nft::plumbing::union_nondet()</a>, <a class="el" href="nft_2plumbing_8hh_source.html#l00086">mata::nft::plumbing::union_nondet()</a>, and <a class="el" href="nft_8hh_source.html#l00826">unite_nondet_with()</a>.</p>
 
 </div>
 </div>
@@ -4927,7 +5040,7 @@ Reached only through a leaf's own one-line <code><a class="el" href="#a3f67a0e0f
 <p>In-place nondeterministic union on an rvalue, returning the result by value. </p>
 <dl class="section return"><dt>Returns</dt><dd><code>this</code> after uniting with <code class="param">nft</code>, as a value. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l00817">817</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l00826">826</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="#a62b0da6d426830b76f34e1072cf63953">unite_nondet_with()</a>.</p>
 
@@ -4986,7 +5099,7 @@ Reached only through a leaf's own one-line <code><a class="el" href="#a3f67a0e0f
 <p>In-place nondeterministic union on an rvalue, consuming <code class="param">nft</code> and returning the result by value. </p>
 <dl class="section return"><dt>Returns</dt><dd><code>this</code> after uniting with <code class="param">nft</code>, as a value. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l00837">837</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nft_8hh_source.html#l00846">846</a> of file <a class="el" href="nft_8hh_source.html">nft.hh</a>.</p>
 
 </div>
 </div>

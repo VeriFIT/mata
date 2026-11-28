@@ -1,5 +1,11 @@
 var NAVTREEINDEX20 =
 {
+"structmata_1_1parser_1_1BodyToken.html#a9407665d89cbc297c3aacc063eefb668":[14,0,0,5,0,4],
+"structmata_1_1parser_1_1BodyToken.html#a9d1ca0934fbcd65975742949a31cc8a1":[12,0,0,5,0,6],
+"structmata_1_1parser_1_1BodyToken.html#a9d1ca0934fbcd65975742949a31cc8a1":[14,0,0,5,0,6],
+"structmata_1_1parser_1_1BodyToken.html#ab9c30ca8b09db27c5c6a8e12ace94be4":[12,0,0,5,0,5],
+"structmata_1_1parser_1_1BodyToken.html#ab9c30ca8b09db27c5c6a8e12ace94be4":[14,0,0,5,0,5],
+"structmata_1_1parser_1_1BodyToken.html#af0f5d2de7e09cf6e6b3a5e40f784dbab":[12,0,0,5,0,7],
 "structmata_1_1parser_1_1BodyToken.html#af0f5d2de7e09cf6e6b3a5e40f784dbab":[14,0,0,5,0,7],
 "structmata_1_1parser_1_1ExplicitToken.html":[12,0,0,5,5],
 "structmata_1_1parser_1_1ExplicitToken.html":[14,0,0,5,5],
@@ -243,11 +249,5 @@ var NAVTREEINDEX20 =
 "structstd_1_1tuple__element_3_011_00_01mata_1_1posts_1_1PostEntry_3_01K_00_01N_01_4_01_4.html":[14,0,1,2],
 "structstd_1_1tuple__element_3_011_00_01mata_1_1posts_1_1PostEntry_3_01K_00_01N_01_4_01_4.html#a78bd62dfcdfed3f20febffbb08ad8a8e":[14,0,1,2,0],
 "structstd_1_1tuple__size_3_01mata_1_1SymbolPost_01_4.html":[14,0,1,9],
-"structstd_1_1tuple__size_3_01mata_1_1posts_1_1PostEntry_3_01K_00_01N_01_4_01_4.html":[14,0,1,0],
-"synchronized-iterator_8hh.html":[15,0,1,0,5,9],
-"synchronized-iterator_8hh_source.html":[15,0,1,0,5,9],
-"synchronized-symbol-post-iterator_8hh.html":[15,0,1,0,8],
-"synchronized-symbol-post-iterator_8hh_source.html":[15,0,1,0,8],
-"synchronized_iterator.html":[3],
-"tarjan_8hh.html":[15,0,1,0,1,7]
+"structstd_1_1tuple__size_3_01mata_1_1posts_1_1PostEntry_3_01K_00_01N_01_4_01_4.html":[14,0,1,0]
 };

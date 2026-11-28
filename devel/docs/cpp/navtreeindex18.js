@@ -1,5 +1,11 @@
 var NAVTREEINDEX18 =
 {
+"namespacemembers_u.html":[12,1,0,20],
+"namespacemembers_v.html":[12,1,0,21],
+"namespacemembers_vars.html":[12,1,2],
+"namespacemembers_w.html":[12,1,0,22],
+"namespaces.html":[12,0],
+"nfa.html":[1],
 "nfa.html#nfa_design":[1,0],
 "nfa.html#nfa_usage":[1,1],
 "nfa_2algorithms_8hh.html":[15,0,1,0,2,0],
@@ -243,11 +249,5 @@ var NAVTREEINDEX18 =
 "structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols.html#a80a51fb3bd42bd96065fb29620e7d4cf":[14,0,0,10,1,6],
 "structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols.html#a893f1101c650c08c98612515c2b1a89c":[12,0,0,10,1,4],
 "structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols.html#a893f1101c650c08c98612515c2b1a89c":[14,0,0,10,1,4],
-"structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols.html#a9b396d717da5c6e946b42d9bee838b43":[12,0,0,10,1,8],
-"structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols.html#a9b396d717da5c6e946b42d9bee838b43":[14,0,0,10,1,8],
-"structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols.html#afcada172ec7922ea0fb96a4e922e9b52":[12,0,0,10,1,3],
-"structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols.html#afcada172ec7922ea0fb96a4e922e9b52":[14,0,0,10,1,3],
-"structmata_1_1OnTheFlyAlphabet_1_1SymbolNames.html":[12,0,0,10,0],
-"structmata_1_1OnTheFlyAlphabet_1_1SymbolNames.html":[14,0,0,10,0],
-"structmata_1_1OnTheFlyAlphabet_1_1SymbolNames.html#a4b03a814e986eae2ba7f9d20622d6d70":[12,0,0,10,0,1]
+"structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols.html#a9b396d717da5c6e946b42d9bee838b43":[12,0,0,10,1,8]
 };
