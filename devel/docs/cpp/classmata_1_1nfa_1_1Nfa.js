@@ -65,6 +65,7 @@ var classmata_1_1nfa_1_1Nfa =
     [ "is_universal", "classmata_1_1nfa_1_1Nfa.html#a57fccf876a85bb13166d35575872d4f5", null ],
     [ "make_complete", "classmata_1_1nfa_1_1Nfa.html#a1bdab2c4b43f3b86919d31b32eb64531", null ],
     [ "make_complete", "classmata_1_1nfa_1_1Nfa.html#aa77634d156ad88686d320276223a316a", null ],
+    [ "mk_epsilon_closure", "classmata_1_1nfa_1_1Nfa.html#a1fa2d6ff627f22cbf5586617ad74939e", null ],
     [ "mk_epsilon_closure", "classmata_1_1nfa_1_1Nfa.html#a25ec3e7056ba4874a753f7893201dd53", null ],
     [ "num_of_states", "classmata_1_1nfa_1_1Nfa.html#a517ccaad5cfcaece95baead025656370", null ],
     [ "operator=", "classmata_1_1nfa_1_1Nfa.html#a336ee1a00794a3dd345444b6d8ccd368", null ],

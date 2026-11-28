@@ -168,6 +168,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a7032347d158b8e7d3f7144a9ea134520"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decodes automaton from UTF-8 encoding.  <br /></td></tr>
 <tr class="memitem:a25ec3e7056ba4874a753f7893201dd53" id="r_a25ec3e7056ba4874a753f7893201dd53"><td class="memItemLeft"><a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a>&#160;</td><td class="memItemRight"><a class="el" href="#a25ec3e7056ba4874a753f7893201dd53">mk_epsilon_closure</a> (const <a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a> &amp;source_states, const std::vector&lt; <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">Symbol</a> &gt; &amp;epsilons={<a class="el" href="namespacemata_1_1nfa.html#a7ab819e148ca173289b95c321befc27e">EPSILON</a>}) const</td></tr>
 <tr class="memdesc:a25ec3e7056ba4874a753f7893201dd53"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the epsilon closure of the given set of states.  <br /></td></tr>
+<tr class="memitem:a1fa2d6ff627f22cbf5586617ad74939e" id="r_a1fa2d6ff627f22cbf5586617ad74939e"><td class="memItemLeft"><a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a>&#160;</td><td class="memItemRight"><a class="el" href="#a1fa2d6ff627f22cbf5586617ad74939e">mk_epsilon_closure</a> (const <a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a> &amp;source_states, const std::vector&lt; <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">Symbol</a> &gt; &amp;epsilons, <a class="el" href="namespacemata_1_1nfa.html#a8b6f41a8da6c6da56bb27964b15deaec">PostWorkspace</a> &amp;workspace) const</td></tr>
+<tr class="memdesc:a1fa2d6ff627f22cbf5586617ad74939e"><td class="mdescLeft">&#160;</td><td class="mdescRight">The same as the overload without a workspace, reusing <code class="param">workspace</code> buffers across calls.  <br /></td></tr>
 <tr class="memitem:afefc03487e0c6e5ed842f50ef56815dd" id="r_afefc03487e0c6e5ed842f50ef56815dd"><td class="memItemLeft"><a class="el" href="#afbcdf1e3c3f31021362c6e1c237b10de">Run</a>&#160;</td><td class="memItemRight"><a class="el" href="#afefc03487e0c6e5ed842f50ef56815dd">get_shortest_accepting_run_from_state</a> (<a class="el" href="#af2ccb30ddd63e3ff5a135eb902f2b934">State</a> state, const std::vector&lt; <a class="el" href="#af2ccb30ddd63e3ff5a135eb902f2b934">State</a> &gt; &amp;<a class="el" href="classmata_1_1AutomatonBase.html#a4d562115feb24aede81bbe933fd180df">distances_to_final</a>) const</td></tr>
 <tr class="memdesc:afefc03487e0c6e5ed842f50ef56815dd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get some shortest accepting run from state <code class="param">state</code>.  <br /></td></tr>
 <tr class="memitem:a8271b8e003d1377b210b0758b52c12af" id="r_a8271b8e003d1377b210b0758b52c12af"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a8271b8e003d1377b210b0758b52c12af">remove_epsilon</a> (<a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">Symbol</a> epsilon=<a class="el" href="namespacemata_1_1nfa.html#a7ab819e148ca173289b95c321befc27e">EPSILON</a>)</td></tr>
@@ -916,7 +918,7 @@ Private Member Functions</h2></td></tr>
 <dl class="section return"><dt>Returns</dt><dd>DFA complemented in-place, as a value. </dd></dl>
 <dl class="section pre"><dt>Precondition</dt><dd><code>this</code> is a deterministic automaton. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l01012">1012</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l01021">1021</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>
@@ -938,7 +940,7 @@ Private Member Functions</h2></td></tr>
 <p>In-place concatenation. </p>
 <dl class="section return"><dt>Returns</dt><dd><code>this</code> after concatenation. </dd></dl>
 
-<p class="reference">Referenced by <a class="el" href="nfa_8hh_source.html#l00368">concatenate()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="nfa_8hh_source.html#l00377">concatenate()</a>.</p>
 
 </div>
 </div>
@@ -968,7 +970,7 @@ Private Member Functions</h2></td></tr>
 <p>In-place concatenation on an rvalue, returning the concatenated automaton by value. </p>
 <dl class="section return"><dt>Returns</dt><dd><code>this</code> after concatenation, as a value. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00368">368</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00377">377</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="#ac3df08c9e20ee882592ec22269a17048">concatenate()</a>.</p>
 
@@ -1020,7 +1022,7 @@ Private Member Functions</h2></td></tr>
 <p>In-place concatenation on an rvalue, consuming <code class="param">aut</code> and returning the result by value. </p>
 <dl class="section return"><dt>Returns</dt><dd><code>this</code> after concatenation, as a value. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00385">385</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00394">394</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>
@@ -1711,7 +1713,7 @@ Private Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True if the passed <code class="param">symbol</code> is epsilon, false otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00437">437</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00446">446</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>
@@ -1882,7 +1884,7 @@ Private Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True if the word (or its prefix) is in the language of the automaton, false otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00795">795</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00804">804</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>
@@ -1923,7 +1925,7 @@ Private Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True if the prefix of the run is in the language of the automaton, false otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00857">857</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00866">866</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>
@@ -1964,7 +1966,7 @@ Private Member Functions</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True if the prefix of the word is in the language of the automaton, false otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00869">869</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00878">878</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>
@@ -2071,7 +2073,7 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>True if the language is empty, false otherwise. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00658">658</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00667">667</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>
@@ -2102,7 +2104,7 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 <dl class="deprecated"><dt><b><a class="el" href="deprecated.html#_deprecated000004">Deprecated</a></b></dt><dd>Kept for source compatibility; the emptiness check no longer uses Tarjan's SCC discovery. Call <code><a class="el" href="#afbf14c77ba56ae2ee696d17a5f2510bc" title="Check whether the language of NFA is empty.">is_lang_empty()</a></code> instead. </dd></dl>
 <dl class="section return"><dt>Returns</dt><dd>Language empty &lt;-&gt; True </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00667">667</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00676">676</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>
@@ -2311,8 +2313,37 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 
 </div>
 </div>
+<a id="a1fa2d6ff627f22cbf5586617ad74939e" name="a1fa2d6ff627f22cbf5586617ad74939e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1fa2d6ff627f22cbf5586617ad74939e">&#9670;&#160;</a></span>mk_epsilon_closure() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a> mk_epsilon_closure </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="#a26ca9782c3aca8b018af5e2d7a72365d">StateSet</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>source_states</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::vector&lt; <a class="el" href="namespacemata.html#a50fb6a6d4e205026dc120f9d2feefee4">Symbol</a> &gt; &amp;</td>          <td class="paramname"><span class="paramname"><em>epsilons</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="namespacemata_1_1nfa.html#a8b6f41a8da6c6da56bb27964b15deaec">PostWorkspace</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>workspace</em></span>&#160;) const</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The same as the overload without a workspace, reusing <code class="param">workspace</code> buffers across calls. </p>
+<p>One workspace serves one call at a time; it is written by the call and must not be shared between concurrent calls. </p>
+
+</div>
+</div>
 <a id="a25ec3e7056ba4874a753f7893201dd53" name="a25ec3e7056ba4874a753f7893201dd53"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a25ec3e7056ba4874a753f7893201dd53">&#9670;&#160;</a></span>mk_epsilon_closure()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a25ec3e7056ba4874a753f7893201dd53">&#9670;&#160;</a></span>mk_epsilon_closure() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -2460,7 +2491,7 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Set of states reachable from the given state over the given symbol. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00645">645</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00654">654</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>
@@ -2507,7 +2538,7 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Set of states reachable from the given state over the given symbol. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00632">632</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00641">641</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>
@@ -3046,7 +3077,7 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Set of all reachable states after reading the word. Note: This returns all reachable states, not just final states. Use <a class="el" href="#ab5e3e1794ae760fe801178b6910b36dc" title="Check whether a run over the word (or its prefix) is in the language of an automaton.">is_in_lang()</a> if you need to check language membership, or intersect the result with final states manually if needed. Note: The returned set is empty if the word cannot be read. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00823">823</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00832">832</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>
@@ -3110,7 +3141,7 @@ Unifying the two searches &ndash; having the Tarjan search emit a witness on dem
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>The reachable state after reading the word or std::nullopt if the word cannot be read. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00847">847</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00856">856</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>
@@ -3569,7 +3600,7 @@ Reached only through a leaf's own one-line <code><a class="el" href="#acfb388b2f
 <p>In-place nondeterministic union of <code>this</code> with <code class="param">nfa</code>. </p>
 <p>Does not add epsilon transitions, just unites initial and final states. </p><dl class="section return"><dt>Returns</dt><dd><code>this</code> after uniting with <code class="param">nfa</code>. </dd></dl>
 
-<p class="reference">Referenced by <a class="el" href="nfa_2plumbing_8hh_source.html#l00094">mata::nfa::plumbing::union_nondet()</a>, <a class="el" href="nfa_2plumbing_8hh_source.html#l00103">mata::nfa::plumbing::union_nondet()</a>, and <a class="el" href="nfa_8hh_source.html#l00401">unite_nondet_with()</a>.</p>
+<p class="reference">Referenced by <a class="el" href="nfa_2plumbing_8hh_source.html#l00094">mata::nfa::plumbing::union_nondet()</a>, <a class="el" href="nfa_2plumbing_8hh_source.html#l00103">mata::nfa::plumbing::union_nondet()</a>, and <a class="el" href="nfa_8hh_source.html#l00410">unite_nondet_with()</a>.</p>
 
 </div>
 </div>
@@ -3599,7 +3630,7 @@ Reached only through a leaf's own one-line <code><a class="el" href="#acfb388b2f
 <p>In-place nondeterministic union on an rvalue, returning the result by value. </p>
 <dl class="section return"><dt>Returns</dt><dd><code>this</code> after uniting with <code class="param">nfa</code>, as a value. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00401">401</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00410">410</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 <p class="reference">References <a class="el" href="#af4a786bbc45905bfe76e45b999787300">unite_nondet_with()</a>.</p>
 
@@ -3651,7 +3682,7 @@ Reached only through a leaf's own one-line <code><a class="el" href="#acfb388b2f
 <p>In-place nondeterministic union on an rvalue, consuming <code class="param">nfa</code> and returning the result by value. </p>
 <dl class="section return"><dt>Returns</dt><dd><code>this</code> after uniting with <code class="param">nfa</code>, as a value. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00420">420</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
+<p class="definition">Definition at line <a class="el" href="nfa_8hh_source.html#l00429">429</a> of file <a class="el" href="nfa_8hh_source.html">nfa.hh</a>.</p>
 
 </div>
 </div>

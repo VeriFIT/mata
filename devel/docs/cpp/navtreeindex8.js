@@ -1,5 +1,7 @@
 var NAVTREEINDEX8 =
 {
+"classmata_1_1nft_1_1Nft.html#a1fa2d6ff627f22cbf5586617ad74939e":[14,0,0,4,1,84],
+"classmata_1_1nft_1_1Nft.html#a23f97b5b12b578077367b51a688118e2":[12,0,0,4,4,64],
 "classmata_1_1nft_1_1Nft.html#a23f97b5b12b578077367b51a688118e2":[14,0,0,4,1,64],
 "classmata_1_1nft_1_1Nft.html#a24380a09bc8571212f0437beba4470e2":[12,0,0,4,4,125],
 "classmata_1_1nft_1_1Nft.html#a24380a09bc8571212f0437beba4470e2":[14,0,0,4,1,125],
@@ -247,7 +249,5 @@ var NAVTREEINDEX8 =
 "classmata_1_1nft_1_1Nft.html#affb3e6ae15c0ecf5112d5217f5a9fed9":[14,0,0,4,1,26],
 "classmata_1_1parser_1_1ExplicitSectionReader.html":[12,0,0,5,6],
 "classmata_1_1parser_1_1ExplicitSectionReader.html":[14,0,0,5,6],
-"classmata_1_1parser_1_1ExplicitSectionReader.html#a1c6ac9fd33cf9c518b3f36604d96a93a":[12,0,0,5,6,8],
-"classmata_1_1parser_1_1ExplicitSectionReader.html#a1c6ac9fd33cf9c518b3f36604d96a93a":[14,0,0,5,6,8],
-"classmata_1_1parser_1_1ExplicitSectionReader.html#a1eaab656caed8a37e17852de9b1b967f":[12,0,0,5,6,0]
+"classmata_1_1parser_1_1ExplicitSectionReader.html#a1c6ac9fd33cf9c518b3f36604d96a93a":[12,0,0,5,6,8]
 };

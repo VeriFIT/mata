@@ -1,5 +1,7 @@
 var NAVTREEINDEX18 =
 {
+"namespacemembers_t.html":[12,1,0,19],
+"namespacemembers_type.html":[12,1,3],
 "namespacemembers_u.html":[12,1,0,20],
 "namespacemembers_v.html":[12,1,0,21],
 "namespacemembers_vars.html":[12,1,2],
@@ -247,7 +249,5 @@ var NAVTREEINDEX18 =
 "structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols.html#a6a1c56a30fef59e8f25234c41362acc8":[14,0,0,10,1,9],
 "structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols.html#a80a51fb3bd42bd96065fb29620e7d4cf":[12,0,0,10,1,6],
 "structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols.html#a80a51fb3bd42bd96065fb29620e7d4cf":[14,0,0,10,1,6],
-"structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols.html#a893f1101c650c08c98612515c2b1a89c":[12,0,0,10,1,4],
-"structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols.html#a893f1101c650c08c98612515c2b1a89c":[14,0,0,10,1,4],
-"structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols.html#a9b396d717da5c6e946b42d9bee838b43":[12,0,0,10,1,8]
+"structmata_1_1OnTheFlyAlphabet_1_1SortedSymbols.html#a893f1101c650c08c98612515c2b1a89c":[12,0,0,10,1,4]
 };

@@ -1,5 +1,7 @@
 var NAVTREEINDEX15 =
 {
+"classmata_1_1utils_1_1TwoDimensionalMap.html#aee90eeea96d9edce8dec9e70477b22cc":[14,0,0,6,9,30],
+"classmata_1_1utils_1_1TwoDimensionalMap.html#af049d46a119151c4f6bf3ce2896d3605":[12,0,0,6,9,36],
 "classmata_1_1utils_1_1TwoDimensionalMap.html#af049d46a119151c4f6bf3ce2896d3605":[14,0,0,6,9,36],
 "classmata_1_1utils_1_1TwoDimensionalMap.html#af1f9ae0a7b28fae4ac04b18f29796275":[12,0,0,6,9,22],
 "classmata_1_1utils_1_1TwoDimensionalMap.html#af1f9ae0a7b28fae4ac04b18f29796275":[14,0,0,6,9,22],
@@ -247,7 +249,5 @@ var NAVTREEINDEX15 =
 "namespacemata.html#a7ab819e148ca173289b95c321befc27e":[12,0,0,75],
 "namespacemata.html#a7bc29ef86c92eec2d3d6cc26dd6b19f5":[12,0,0,42],
 "namespacemata.html#a7fe48f2f7fb05de852190003ac808e80":[12,0,0,47],
-"namespacemata.html#a80df479a6368a9ae1edd6b64fd62a70a":[12,0,0,48],
-"namespacemata.html#a8303ec143c29a00d6c75060ade2c6843":[12,0,0,52],
-"namespacemata.html#a8c8fc3e408f07e88c398b2239437ad46":[12,0,0,70]
+"namespacemata.html#a80df479a6368a9ae1edd6b64fd62a70a":[12,0,0,48]
 };

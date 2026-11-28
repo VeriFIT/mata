@@ -1,5 +1,7 @@
 var NAVTREEINDEX21 =
 {
+"structstd_1_1tuple__size_3_01mata_1_1SymbolPost_01_4.html":[14,0,1,9],
+"structstd_1_1tuple__size_3_01mata_1_1posts_1_1PostEntry_3_01K_00_01N_01_4_01_4.html":[14,0,1,0],
 "synchronized-iterator_8hh.html":[15,0,1,0,5,9],
 "synchronized-iterator_8hh_source.html":[15,0,1,0,5,9],
 "synchronized-symbol-post-iterator_8hh.html":[15,0,1,0,8],
