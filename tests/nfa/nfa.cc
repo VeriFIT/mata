@@ -7943,6 +7943,38 @@ TEST_CASE("mata::nfa::Nfa::post() with epsilon closure options") {
 	}
 }
 
+TEST_CASE("mata::nfa::Nfa::mk_epsilon_closure() reuses a workspace") {
+	// 0 -eps-> 1 -a-> 2 -eps-> 3, 3 -eps-> 1 (a cycle back into the closure).
+	Nfa aut(4);
+	aut.delta.add(0, EPSILON, 1);
+	aut.delta.add(1, 'a', 2);
+	aut.delta.add(2, EPSILON, 3);
+	aut.delta.add(3, EPSILON, 1);
+
+	SECTION("the workspace overload matches the overload without one") {
+		PostWorkspace workspace{};
+		CHECK(aut.mk_epsilon_closure(StateSet{0}, {EPSILON}, workspace) == aut.mk_epsilon_closure(StateSet{0}));
+		CHECK(aut.mk_epsilon_closure(StateSet{2}, {EPSILON}, workspace) == aut.mk_epsilon_closure(StateSet{2}));
+		CHECK(aut.mk_epsilon_closure(StateSet{0}, {}, workspace) == aut.mk_epsilon_closure(StateSet{0}, {}));
+		CHECK(aut.mk_epsilon_closure(StateSet{}, {EPSILON}, workspace) == aut.mk_epsilon_closure(StateSet{}));
+		CHECK(
+			aut.mk_epsilon_closure(StateSet{0}, {EPSILON, EPSILON - 1}, workspace) ==
+			aut.mk_epsilon_closure(StateSet{0}, {EPSILON, EPSILON - 1})
+		);
+	}
+
+	SECTION("chained closures over one workspace stay correct when the input aliases the previous result") {
+		// The aliased input was the crash of #1159's fix: gathered is cleared while being read.
+		PostWorkspace workspace{};
+		StateSet current{0};
+		StateSet next{aut.mk_epsilon_closure(current, {EPSILON}, workspace)};
+		CHECK(next == StateSet{0, 1});
+		current = std::move(next);
+		current = aut.mk_epsilon_closure(current, {EPSILON}, workspace);
+		CHECK(current == StateSet{0, 1});
+	}
+}
+
 TEST_CASE("mata::Automaton::distances_to_final matches the reverted BFS - #740") { // {{{
 	std::mt19937 gen{740};
 	for (size_t iteration{0}; iteration < 30; ++iteration) {
