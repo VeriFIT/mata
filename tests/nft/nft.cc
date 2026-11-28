@@ -7529,3 +7529,54 @@ TEST_CASE("mata::nft::Nft::mk_epsilon_closure() matches the shared Delta closure
 		CHECK(without_epsilon.mk_epsilon_closure(StateSet{}, {}) == StateSet{});
 	}
 }
+TEST_CASE("mata::nft::Nft::post() reuses a workspace across steps") {
+	// 0 -eps-> 1 -a-> 2 -eps-> 3, 3 -eps-> 1 (a cycle back into the closure) and 3 -a-> 4.
+	Nft aut(5);
+	aut.delta.add(0, EPSILON, 1);
+	aut.delta.add(1, 'a', 2);
+	aut.delta.add(2, EPSILON, 3);
+	aut.delta.add(3, EPSILON, 1);
+	aut.delta.add(3, 'a', 4);
+
+	SECTION("the workspace overload matches the overload without one") {
+		PostWorkspace workspace{};
+		CHECK(
+			aut.post(StateSet{0}, 'a', EpsilonClosureOpt::BeforeAndAfter, workspace) ==
+			aut.post(StateSet{0}, 'a', EpsilonClosureOpt::BeforeAndAfter)
+		);
+		CHECK(
+			aut.post(StateSet{0}, 'a', EpsilonClosureOpt::Before, workspace) ==
+			aut.post(StateSet{0}, 'a', EpsilonClosureOpt::Before)
+		);
+		CHECK(
+			aut.post(StateSet{0}, 'a', EpsilonClosureOpt::After, workspace) ==
+			aut.post(StateSet{0}, 'a', EpsilonClosureOpt::After)
+		);
+		CHECK(
+			aut.post(StateSet{0}, 'a', EpsilonClosureOpt::None, workspace) ==
+			aut.post(StateSet{0}, 'a', EpsilonClosureOpt::None)
+		);
+		CHECK(
+			aut.post(StateSet{0}, EPSILON, EpsilonClosureOpt::BeforeAndAfter, workspace) ==
+			aut.post(StateSet{0}, EPSILON, EpsilonClosureOpt::BeforeAndAfter)
+		);
+	}
+
+	SECTION("chained steps over one workspace stay correct when the input aliases the previous result") {
+		// The aliased input was the crash of #1159's fix: gathered is cleared while being read.
+		PostWorkspace workspace{};
+		StateSet current{0};
+		current = aut.post(current, 'a', EpsilonClosureOpt::Before, workspace);
+		CHECK(current == StateSet{2});
+		current = aut.post(current, 'a', EpsilonClosureOpt::Before, workspace);
+		CHECK(current == StateSet{2, 4});
+	}
+
+	SECTION("the closure reuses the workspace buffers and stays correct after a previous larger closure") {
+		// The first closure is much larger than the second one, so the second call must shrink the buffers.
+		PostWorkspace workspace{};
+		CHECK(aut.mk_epsilon_closure(StateSet{0, 2}, {EPSILON}, workspace) == StateSet{0, 1, 2, 3});
+		CHECK(aut.mk_epsilon_closure(StateSet{4}, {EPSILON}, workspace) == StateSet{4});
+		CHECK(aut.mk_epsilon_closure(StateSet{2}, {EPSILON}, workspace) == StateSet{1, 2, 3});
+	}
+}

@@ -504,6 +504,51 @@ StateSet Nft::post(const StateSet& states, const Symbol symbol, const EpsilonClo
 	return res;
 }
 
+StateSet Nft::post(
+	const StateSet& states, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt, PostWorkspace& workspace
+) const {
+	StateSet res{};
+
+	// If the symbol is EPSILON, we can stay in the same state.
+	if (symbol == EPSILON && (closes_before(epsilon_closure_opt) || closes_after(epsilon_closure_opt))) {
+		res = states;
+	}
+
+	if (delta.empty()) { return res; }
+
+	StateSet from_states = states;
+	if (epsilon_closure_opt == EpsilonClosureOpt::Before) {
+		// Before making the step using the symbol, we compute the epsilon closure.
+		from_states = mk_epsilon_closure(states, {EPSILON}, workspace);
+	}
+
+	// Now, we can make the step using the symbol.
+	for (const State state : from_states) {
+		if (symbol == DONT_CARE) {
+			for (const SymbolPost& symbol_post : delta[state]) {
+				if (symbol_post.symbol == EPSILON) { continue; }
+				res.insert(symbol_post.targets);
+			}
+			continue;
+		}
+
+		const StatePost& state_post{delta[state]};
+		if (const auto move_it{state_post.find(symbol)}; move_it != state_post.end()) { res.insert(move_it->targets); }
+
+		if (symbol == EPSILON) { continue; }
+		if (const auto move_it{state_post.find(DONT_CARE)}; move_it != state_post.end()) {
+			res.insert(move_it->targets);
+		}
+	}
+
+	if (epsilon_closure_opt == EpsilonClosureOpt::After) {
+		// We need to compute the epsilon closure of the resulting states.
+		res = mk_epsilon_closure(res, {EPSILON}, workspace);
+	}
+
+	return res;
+}
+
 void mata::nft::internal::validate_nft_levels(const Nft& nft, const char* const operation) {
 	// num_of_states() counts only states used in delta, initial and final; the level vector may legitimately
 	//  be longer (e.g. sized by construction or before trimming). Missing levels for used states are the hazard.
@@ -1765,12 +1810,18 @@ bool Nft::is_complete(const OrdVector<Symbol>& symbols) const {
 }
 
 StateSet Nft::mk_epsilon_closure(const StateSet& source_states, const std::vector<Symbol>& epsilons) const {
+	PostWorkspace workspace{};
+	return mk_epsilon_closure(source_states, epsilons, workspace);
+}
+
+StateSet Nft::mk_epsilon_closure(
+	const StateSet& source_states, const std::vector<Symbol>& epsilons, PostWorkspace& workspace
+) const {
 	// An empty selection considers no symbols as epsilons; the shared closure would otherwise substitute the
 	//  relation's default epsilon and close over it.
 	if (epsilons.empty()) { return source_states; }
 	// The shared closure of mata::Delta reuses its buffers and keeps the visited states in a hash table sized to
 	//  the closure, so the cost follows the closure instead of the number of states of the delta.
-	PostWorkspace workspace{};
 	return delta.epsilon_closure(source_states, epsilons, workspace);
 }
 
